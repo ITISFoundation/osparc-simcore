@@ -234,7 +234,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const node = workbench.getNode(nodeId);
         if (node.isContainer()) {
           if (node.isInKey("dash-plot")) {
-            this.showScreenshotInExtraView("container");
+            this.showScreenshotInExtraView("dash-plot");
           } else {
             this.showScreenshotInExtraView("container");
           }
