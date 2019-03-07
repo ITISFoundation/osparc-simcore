@@ -99,18 +99,25 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
 
       let cellEditor = new qxapp.component.widget.cell.Editor(cellHandler);
       cellEditor.addListener("backToGrid", () => {
+        cellHandler.retrieveOutput();
         this.__stack.setSelection([this.__mainView]);
       }, this);
       this.__cellEditors[cellHandler.getUuid()] = cellEditor;
 
       let cellOutput = new qxapp.component.widget.cell.Output(cellHandler);
+
       let htmlElement = this.__gridterWr.addWidget(cellOutput);
       if (htmlElement) {
         // this.__outputs[cellHandler.getUuid()] = htmlElement;
-        cellHandler.addListener("changeTitle", e => {
+        node.addListener("changeLabel", e => {
           this.__gridterWr.rebuildWidget(cellOutput, htmlElement);
         }, this);
+        cellHandler.addListener("outputUpdated", () => {
+          this.__gridterWr.rebuildWidget(cellOutput, htmlElement);
+        }, this);
+        return true;
       }
+      return false;
     }
   }
 });
