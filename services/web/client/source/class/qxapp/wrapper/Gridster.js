@@ -98,12 +98,12 @@ qx.Class.define("qxapp.wrapper.Gridster", {
 
     __init: function() {
       // initialize the script loading
-      const jQueryPath = "gridsterjs/jquery-3.3.1.min.js";
+      const jQueryPath = "qxapp/gridsterjs/jquery-3.3.1.min.js";
       const extras = false;
-      const gridsterPath = extras ? "gridsterjs/jquery.gridster.with-extras-0.7.0.min.js" : "gridsterjs/jquery.gridster-0.7.0.min.js";
-      const gridsterCss = "gridsterjs/jquery.gridster-0.7.0.min.css";
-      const gridsterDemoCss = "gridsterjs/jquery.gridster.demo.css";
-      const gridsterOsparcCss = "gridsterjs/jquery.gridster.osparc.css";
+      const gridsterPath = extras ? "qxapp/gridsterjs/jquery.gridster.with-extras-0.7.0.min.js" : "qxapp/gridsterjs/jquery.gridster-0.7.0.min.js";
+      const gridsterCss = "qxapp/gridsterjs/jquery.gridster-0.7.0.min.css";
+      const gridsterDemoCss = "qxapp/gridsterjs/jquery.gridster.demo.css";
+      const gridsterOsparcCss = "qxapp/gridsterjs/jquery.gridster.osparc.css";
       const gridsterCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterCss);
       const gridsterDemoCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterDemoCss);
       const gridsterOsparcCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterOsparcCss);
@@ -137,8 +137,11 @@ qx.Class.define("qxapp.wrapper.Gridster", {
       qx.bom.element.Attribute.set(gridsterPlaceholder, "class", "gridster");
       qx.bom.element.Style.set(gridsterPlaceholder, "width", "100%");
       qx.bom.element.Style.set(gridsterPlaceholder, "height", "100%");
-      this.getContentElement().getDomElement()
-        .appendChild(gridsterPlaceholder);
+      const domEl = this.getContentElement().getDomElement();
+      while (domEl.hasChildNodes()) {
+        domEl.removeChild(domEl.lastChild);
+      }
+      domEl.appendChild(gridsterPlaceholder);
 
       let cellsList = qx.dom.Element.create("ul");
       gridsterPlaceholder.appendChild(cellsList);
