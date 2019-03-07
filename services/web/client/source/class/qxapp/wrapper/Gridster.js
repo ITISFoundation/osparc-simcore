@@ -171,7 +171,7 @@ qx.Class.define("qxapp.wrapper.Gridster", {
     __getMaxSize: function() {
       return {
         nColsMax: Math.floor(this.getBounds().width/this.getAtomWidth()),
-        nRowsMax: Math.floor(this.getBounds().height/this.getAtomHeight())
+        nRowsMax: Math.floor(2*this.getBounds().height/this.getAtomHeight())
       };
     },
 
