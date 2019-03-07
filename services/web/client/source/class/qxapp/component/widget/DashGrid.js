@@ -122,6 +122,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
         cellHandler.addListener("outputUpdated", () => {
           this.__gridterWr.rebuildWidget(cellOutput, htmlElement);
         }, this);
+        cellHandler.retrieveOutput();
         return true;
       }
       return false;
