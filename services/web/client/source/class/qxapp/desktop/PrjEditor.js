@@ -231,28 +231,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
         if (node.isContainer()) {
-          this.showScreenshotInExtraView("container");
-        } else {
-          let nodeKey = node.getKey();
-          if (nodeKey.includes("file-picker")) {
-            this.showScreenshotInExtraView("file-picker");
-          } else if (nodeKey.includes("modeler")) {
-            this.showScreenshotInExtraView("modeler");
-          } else if (nodeKey.includes("3d-viewer")) {
-            this.showScreenshotInExtraView("postpro");
-          } else if (nodeKey.includes("viewer")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("jupyter")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("Grid")) {
-            this.showScreenshotInExtraView("grid");
-          } else if (nodeKey.includes("Voxel")) {
-            this.showScreenshotInExtraView("voxels");
+          if (node.isInKey("dash-plot")) {
+            this.showScreenshotInExtraView("container");
           } else {
-            this.showScreenshotInExtraView("form");
+            this.showScreenshotInExtraView("container");
           }
+        } else if (node.isInKey("file-picker")) {
+          this.showScreenshotInExtraView("file-picker");
+        } else if (node.isInKey("modeler")) {
+          this.showScreenshotInExtraView("modeler");
+        } else if (node.isInKey("3d-viewer")) {
+          this.showScreenshotInExtraView("postpro");
+        } else if (node.isInKey("viewer")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("jupyter")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("Grid")) {
+          this.showScreenshotInExtraView("grid");
+        } else if (node.isInKey("Voxel")) {
+          this.showScreenshotInExtraView("voxels");
+        } else {
+          this.showScreenshotInExtraView("form");
         }
       }
     },
