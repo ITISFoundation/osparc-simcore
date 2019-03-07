@@ -23,4 +23,7 @@
 .gridster li content {
   filter: invert(85%);  
 }
+.gs-resize-handle-both {
+  filter: invert(85%)
+}
 /*# sourceMappingURL=demos/assets/css/demo.css.map */
