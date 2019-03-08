@@ -43,10 +43,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     let nodeInputLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInputLayout);
 
-    this.set({
-      decorator: "main"
-    });
-
     let label = new qx.ui.basic.Label().set({
       font: "title-16",
       alignX: "center",
@@ -55,7 +51,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     node.bind("label", label, "value");
     this._add(label);
 
-    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(nodeUIPorts);
 
     this.setIsInputModel(isInputModel);
