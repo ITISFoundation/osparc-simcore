@@ -165,3 +165,14 @@ async def test_core_service_running(core_service_name, docker_client, loop):
         "Expected running, got \n{}\n{}".format(
                 pformat(task),
                 get_failed_tasks_logs(running_service, docker_client))
+
+
+async def test_check_serve_root():
+    req = urllib.request.Request("http://localhost:9081/")
+    try:
+        resp = urllib.request.urlopen(req)
+        print("Reason: ", resp)
+    except urllib.error.HTTPError as err:
+        pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
+    except urllib.error.URLError as e:
+        pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
