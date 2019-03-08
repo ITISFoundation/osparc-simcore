@@ -176,3 +176,13 @@ async def test_check_serve_root():
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
     except urllib.error.URLError as e:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
+
+
+async def test_check_serve_root_data():
+    req = urllib.request.Request("http://localhost:9081/")
+    resp = urllib.request.urlopen(req)
+    charset = resp.info().get_content_charset()
+    content = resp.read().decode(charset)
+    search = "qxapp/boot.js"
+    if content.find(search) < 0:
+        pytest.fail("{} not found in main index.html".format(search))
