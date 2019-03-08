@@ -102,21 +102,25 @@ function callInputRetriever(request, response) {
 
 function addViewBoxAttr(svgCode) {
   // get width value and replace it by 'auto'
-  let width = svgCode.match(/width="([^']+)" height/);
+  let width = svgCode.match(/"(.*?)"/);
   if (width) {
     width = width[1];
     svgCode = svgCode.replace(/width="(.*?)"/,"width='auto'");
   }
 
   // get height value and replace it by 'auto'
-  let height = svgCode.match(/height="([^']+)" xmlns/);
+  let height = svgCode.match(/"(.*?)"/);
   if (height) {
+    for (let i=0; i<height.length; i++) {
+      console.log("height_"+i, height[i]);
+    }
     height = height[1];
     svgCode = svgCode.replace(/height="(.*?)"/,"height='auto'");
   }
 
   // add viewBox attribute right after svg tag
   const viewBoxStr = " viewBox='0 0 "+width+" " +height+ "'";
+  console.log(viewBoxStr);
   svgCode = svgCode.slice(0, 4) + viewBoxStr + svgCode.slice(4);
 
   return svgCode;
