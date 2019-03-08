@@ -124,6 +124,9 @@ function setOutput(request, response) {
 function getOutput(request, response) {
   console.log('getOutput');
   const outputsDir = '../outputs/';
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir);
+  }
   fs.readdir(outputsDir, (err, files) => {
     if (err) {
       console.log(err);
