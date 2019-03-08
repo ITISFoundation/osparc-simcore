@@ -21,7 +21,8 @@
   cursor: move;
 }
 .gridster li content {
-  filter: invert(85%);  
+  filter: invert(85%);
+  vertical-align: middle;
 }
 .gs-resize-handle-both {
   filter: invert(85%)
