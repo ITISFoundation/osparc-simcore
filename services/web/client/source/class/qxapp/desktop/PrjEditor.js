@@ -300,7 +300,28 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }, this);
       }
 
-      this.__mainPanel.setMainView(widget);
+      const node = this.getProject().getWorkbench().getNode(nodeId);
+      if (node && node.hasDedicatedWidget()) {
+        let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+        const dedicatedWidget = node.getDedicatedWidget();
+        const bntText = dedicatedWidget ? this.tr("To expert mode") : this.tr("To guided mode");
+        let expertModeBtn = new qx.ui.form.Button(bntText).set({
+          alignX: "right",
+          height: 25,
+          maxWidth: 150
+        });
+        expertModeBtn.addListener("execute", () => {
+          node.setDedicatedWidget(!dedicatedWidget);
+          this.nodeSelected(nodeId);
+        }, this);
+        dedicatedWrapper.add(expertModeBtn);
+        dedicatedWrapper.add(widget, {
+          flex: 1
+        });
+        this.__mainPanel.setMainView(dedicatedWrapper);
+      } else {
+        this.__mainPanel.setMainView(widget);
+      }
 
       let nodesPath = this.getProject().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
