@@ -33,7 +33,8 @@ qx.Theme.define("qxapp.theme.Decoration", {
       decorator: qx.ui.decoration.Decorator,
       style: {
         color: "#828282",
-        width: 1
+        width: 1,
+        radius: 4
       }
     },
 
@@ -41,7 +42,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
         widthTop: 1,
-        color: "border-separator"
+        color: "border"
       }
     },
 
