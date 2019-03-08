@@ -20,34 +20,41 @@
  * Display widget with a title bar and collapsible content.
  */
 qx.Class.define("qxapp.desktop.PanelView", {
+
   extend: qx.ui.core.Widget,
 
   construct: function(title, content) {
     this.base(arguments);
 
     // Layout
-    const layout = new qx.ui.layout.VBox();
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.VBox());
 
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       .set({
-        appearance: "titlebar"
+        appearance: "panelview-titlebar",
+        decorator: "panelview-titlebar"
       });
     this._add(this.__titleBar);
 
+    // Set if coming in the constructor arguments
     if (title) {
       this.setTitle(title);
     }
-
-    // Content
     if (content) {
-      content.setAppearance("panelview-content");
       this.setContent(content);
     }
 
+    // Transition effect
+    this.setDecorator("panelview-close-collapse-transition");
+
     // Attach handlers
     this.__attachEventHandlers();
+  },
+
+  statics: {
+    MORE_CARET: "@MaterialIcons/expand_more/20",
+    LESS_CARET: "@MaterialIcons/expand_less/20"
   },
 
   properties: {
@@ -76,6 +83,9 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __titleBar: null,
     __titleLabel: null,
     __caret: null,
+    __innerContainer: null,
+    __containerHeight: null,
+    __layoutFlex: null,
 
     toggleContentVisibility: function() {
       this.setContentVisibility(!this.getContentVisibility());
@@ -83,39 +93,61 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
-        this.__caret.setSource(this.getContentVisibility() ? lessCaret : moreCaret);
+        this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
         if (isVisible) {
-          // BUGGY. Not using setTimeout causes weird rendering issue in QX. Using it causes a small flicker.
-          this.getContent().setVisibility("visible");
-          setTimeout(() => qx.bom.element.Animation.animateReverse(this.getContent().getContentElement()
-            .getDomElement(),
-          contentTransition(this.getContent().getContentElement()
-            .getDomElement().style.height)), 0);
+          this.__innerContainer.show();
+          this.setLayoutProperties({
+            flex: this.__layoutFlex || 0
+          });
         } else {
-          qx.bom.element.Animation.animate(this.getContent().getContentElement()
-            .getDomElement(),
-          contentTransition(this.getContent().getContentElement()
-            .getDomElement().style.height));
-          setTimeout(() => this.getContent().setVisibility("excluded"), contentTransition().duration - 10);
+          this.__layoutFlex = this.getLayoutProperties().flex;
+          this.setLayoutProperties({
+            flex: 0
+          });
         }
+        this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-close-collapse-transition");
+        this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
       }
     },
 
     _applyContent: function(content, oldContent) {
-      const contentIndex = this._indexOf(oldContent);
-      if (contentIndex > -1) {
-        this._removeAt(contentIndex);
+      if (this.__innerContainer === null) {
+        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+          appearance: "panelview-content",
+          decorator: "panelview-content",
+          minHeight: 0
+        });
+        this._addAt(this.__innerContainer, 1, {
+          flex: 1
+        });
+
+        this.__innerContainer.addListener("changeHeight", e => {
+          const height = e.getOldData();
+          if (height != 0) {
+            this.__containerHeight = height;
+          }
+        }, this);
+
+        this.__innerContainer.addListenerOnce("appear", () => {
+          this.__innerContainer.getContentElement().getDomElement()
+            .addEventListener("transitionend", () => {
+              this.__innerContainer.setDecorator("panelview-content");
+              if (this.__innerContainer.getHeight() === 0) {
+                this.__innerContainer.exclude();
+              }
+            });
+        }, this);
       }
-      content.set({
-        appearance: "panelview-content",
-        decorator: "panelview-content"
-      });
-      this._addAt(content, 1, {
-        flex: 1
+
+      this.__innerContainer.removeAll();
+      this.__innerContainer.add(content, {
+        top: 0,
+        right: 0,
+        left: 0
       });
 
       if (this.__caret === null) {
-        this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? lessCaret : moreCaret).set({
+        this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET).set({
           marginTop: 2
         });
         this.__titleBar.add(this.__caret);
@@ -123,12 +155,12 @@ qx.Class.define("qxapp.desktop.PanelView", {
     },
 
     _applyTitle: function(title) {
-      if (this.__titlelabel) {
+      if (this.__titleLabel) {
         this.__titleLabel.setValue(title);
       } else {
         this.__titleLabel = new qx.ui.basic.Label(title)
           .set({
-            appearance: "titlebar-label",
+            appearance: "panelview-titlebar-label",
             font: "title-14"
           });
         this.__titleBar.add(this.__titleLabel);
@@ -143,19 +175,3 @@ qx.Class.define("qxapp.desktop.PanelView", {
   }
 
 });
-
-const contentTransition = height => ({
-  duration: 200,
-  timing: "ease-in",
-  keyFrames: {
-    0: {
-      height: height
-    },
-    100: {
-      height: 0
-    }
-  }
-});
-
-const moreCaret = "@MaterialIcons/expand_more/20";
-const lessCaret = "@MaterialIcons/expand_less/20";
