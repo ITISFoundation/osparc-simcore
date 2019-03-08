@@ -835,8 +835,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
-
-      // qx.ui.core.queue.Widget.flush();
     },
 
     __selectedItemChanged: function(newID) {
