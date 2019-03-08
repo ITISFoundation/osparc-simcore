@@ -128,7 +128,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
         case "dragIcon": {
           control = new qx.ui.basic.Atom().set({
             icon: "@FontAwesome5Solid/arrows-alt/14",
-            alignX: "center"
+            alignX: "center",
+            toolTip: new qx.ui.tooltip.ToolTip("Drag and drop over desired input...")
           });
           this._add(control, {
             row: 0,
