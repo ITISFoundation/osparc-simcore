@@ -11,13 +11,13 @@ const app = express();
 const server = require('http').createServer(app);
 const routes = require('./routes');
 const config = require('./config');
-const bodyParser = require('body-parser');
 
 console.log(`received basepath: ${config.BASEPATH}`);
 // serve static assets normally
 console.log('Serving static : ' + config.APP_PATH);
 app.use(`${config.BASEPATH}`, express.static(config.APP_PATH));
 
+const bodyParser = require('body-parser');
 app.use(bodyParser.json({
   limit: "5MB"
 }))
