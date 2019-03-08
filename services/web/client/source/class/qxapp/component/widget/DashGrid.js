@@ -14,11 +14,23 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     let gridView = this.__gridView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     stack.add(gridView);
 
-    let addBtn = new qx.ui.form.Button(this.tr("Add plot"));
+    let controls = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+    controls.add(new qx.ui.core.Spacer(), {
+      flex: 1
+    });
+    let addBtn = new qx.ui.form.Button(this.tr("Add plot")).set({
+      height: 25,
+      width: 300
+    });
     addBtn.addListener("execute", e => {
       this.addClonedNode();
     }, this);
-    gridView.add(addBtn);
+    controls.add(addBtn);
+    controls.add(new qx.ui.core.Spacer(), {
+      flex: 1
+    });
+    gridView.add(controls);
+
 
     let dashboradLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     let gridster = this.__gridterWr = new qxapp.wrapper.Gridster();
