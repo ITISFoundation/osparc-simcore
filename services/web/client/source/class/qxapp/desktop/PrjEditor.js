@@ -487,31 +487,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.getControls().setCanStart(value);
     },
 
-    __addWidgetToMainView: function(widget) {
-      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-
-      widgetContainer.add(widget, {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-
-      let closeBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/window-close/24",
-        zIndex: widget.getZIndex() + 1
-      });
-      widgetContainer.add(closeBtn, {
-        right: 0,
-        top: 0
-      });
-      let previousWidget = this.__mainPanel.getMainView();
-      closeBtn.addListener("execute", function() {
-        this.__mainPanel.setMainView(previousWidget);
-      }, this);
-      this.__mainPanel.setMainView(widgetContainer);
-    },
-
     __startAutoSaveTimer: function() {
       let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
