@@ -47,9 +47,10 @@ qx.Class.define("qxapp.component.widget.cell.Handler", {
         if (data === "") {
           const width = 100;
           const height = 100;
-          const backgroundColor = "cccccc";
-          const plusColor = 757575;
-          this.__output = "https://imgplaceholder.com/"+width+"x"+height+"/"+backgroundColor+"/"+plusColor+"/ion-plus-round";
+          const backgroundColor = "transparent";
+          const plusColor = "757575";
+          const plusUrl = "https://imgplaceholder.com/"+width+"x"+height+"/"+backgroundColor+"/"+plusColor+"/ion-plus-round";
+          this.__output = "<img src='"+plusUrl+"' alt='Add new plot'></img>";
         } else {
           this.__output = data;
         }
