@@ -177,8 +177,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     __createDropMechanism: function(uiElement, portId) {
       if (this.getNode()) {
         uiElement.set({
-          droppable: true,
-          decorator: "droppableWidget"
+          droppable: true
         });
         uiElement.nodeId = this.getNode().getNodeId();
         uiElement.portId = portId;
