@@ -145,6 +145,7 @@ qx.Class.define("qxapp.data.Store", {
         key: "simcore/services/dynamic/itis/dash-plot",
         version: "1.0.0",
         type: "container",
+        dedicatedWidget: true,
         name: "2D plot - Multi",
         description: "2D plot - Multi",
         authors: [{
@@ -190,7 +191,7 @@ qx.Class.define("qxapp.data.Store", {
             key: "simcore/services/dynamic/raw-graphs",
             version: "2.8.0",
             inputNodes: [],
-            outputNode: false
+            outputNode: true
           }
         }
       }, {

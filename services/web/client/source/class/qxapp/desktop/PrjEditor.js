@@ -202,7 +202,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
-      let widget;
+      let widget = null;
       const workbench = this.getProject().getWorkbench();
       if (nodeId === "root") {
         this.__workbenchUI.loadModel();
@@ -210,9 +210,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       } else {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
-          if (node.isInKey("dash-plot")) {
-            widget = new qxapp.component.widget.DashGrid(node);
-          } else {
+          if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
+            if (node.isInKey("dash-plot")) {
+              widget = new qxapp.component.widget.DashGrid(node);
+            }
+          }
+          if (widget === null) {
             this.__workbenchUI.loadModel(node);
             widget = this.__workbenchUI;
           }
