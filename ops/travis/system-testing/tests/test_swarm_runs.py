@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from pprint import pformat
 from typing import Dict
+import urllib
 
 import docker
 import pytest
