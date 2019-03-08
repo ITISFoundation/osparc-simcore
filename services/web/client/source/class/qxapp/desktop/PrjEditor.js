@@ -227,11 +227,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
       this.showInMainView(widget, nodeId);
 
+      this.__switchExtraView(nodeId);
+    },
+
+    __switchExtraView: function(nodeId) {
       // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        const node = workbench.getNode(nodeId);
+        const node = this.getProject().getWorkbench().getNode(nodeId);
         if (node.isContainer()) {
           if (node.isInKey("dash-plot")) {
             this.showScreenshotInExtraView("dash-plot");
