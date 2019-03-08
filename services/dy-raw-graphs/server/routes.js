@@ -100,6 +100,28 @@ function callInputRetriever(request, response) {
   });
 }
 
+function addViewBoxAttr(svgCode) {
+  // get width value and replace it by 'auto'
+  let width = svgCode.match(/width="([^']+)" height/);
+  if (width) {
+    width = width[1];
+    svgCode = svgCode.replace(/width="(.*?)"/,"width='auto'");
+  }
+
+  // get height value and replace it by 'auto'
+  let height = svgCode.match(/height="([^']+)" xmlns/);
+  if (height) {
+    height = height[1];
+    svgCode = svgCode.replace(/height="(.*?)"/,"height='auto'");
+  }
+
+  // add viewBox attribute right after svg tag
+  const viewBoxStr = " viewBox='0 0 "+width+" " +height+ "'";
+  svgCode = svgCode.slice(0, 4) + viewBoxStr + svgCode.slice(4);
+
+  return svgCode;
+}
+
 function setOutput(request, response) {
   console.log('setOutput');
   const outputsDir = '../outputs/';
@@ -107,7 +129,8 @@ function setOutput(request, response) {
     fs.mkdirSync(outputsDir);
   }
   const outputFileName = outputsDir + "output.svg";
-  const svgCode = request.body.svgCode;
+  let svgCode = request.body.svgCode;
+  svgCode = addViewBoxAttr(svgCode);
   fs.writeFile(outputFileName, svgCode, err => {
     if (err) {
       console.log(err);
