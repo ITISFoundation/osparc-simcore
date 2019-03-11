@@ -87,11 +87,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     }
   },
 
-  events: {
-    "dragStart": "qx.event.type.Data",
-    "dragEnd": "qx.event.type.Data"
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -155,16 +150,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
         e.addAction("copy");
         // Register supported types
         e.addType("osparc-port-link");
-        // Fire data event for someone to catch it
-        this.fireDataEvent("dragStart", {
-          event: e,
-          action: "copy",
-          type: "osparc-port-link"
-        });
-      }, this);
-
-      uiPort.addListener("dragend", e => {
-        this.fireDataEvent("dragEnd");
       }, this);
     },
 
