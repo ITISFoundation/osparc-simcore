@@ -129,23 +129,27 @@ function addViewBoxAttr(svgCode) {
 function setOutput(request, response) {
   console.log('setOutput');
   const outputsDir = '../outputs/';
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir);
-  }
-  const outputFileName = outputsDir + "output.svg";
-  let svgCode = request.body.svgCode;
-  svgCode = addViewBoxAttr(svgCode);
-  fs.writeFile(outputFileName, svgCode, err => {
-    if (err) {
-      console.log(err);
-      response.sendStatus("500");
-      return;
+  const ports = ["output_1/"];
+  for (let i=0; i<ports.length; i++) {
+    const outputsDirPort = outputsDir + ports[i];
+    if (!fs.existsSync(outputsDirPort)) {
+      fs.mkdirSync(outputsDirPort);
     }
-    console.log("The file was saved!");
-    response.send({
-      status: "ok"
+    const outputFileName = outputsDirPort + "output.svg";
+    let svgCode = request.body.svgCode;
+    svgCode = addViewBoxAttr(svgCode);
+    fs.writeFile(outputFileName, svgCode, err => {
+      if (err) {
+        console.log(err);
+        response.sendStatus("500");
+        return;
+      }
+      console.log("The file was saved!");
+      response.send({
+        status: "ok"
+      });
     });
-  });
+  }
 }
 
 function getOutput(request, response) {
