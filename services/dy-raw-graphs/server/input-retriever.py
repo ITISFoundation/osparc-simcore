@@ -1,9 +1,9 @@
 import asyncio
-
 import json
 import logging
 import os
 import shutil
+import sys
 import tarfile
 import time
 import zipfile
@@ -58,6 +58,38 @@ async def retrieve_data():
             end_time = time.time()
         print("time to download: {} seconds".format(end_time - start_time))
 
+async def retrieve_data2():
+    logger.info("retrieving data from simcore...")
+    print("retrieving data from simcore...")
+
+    # get all files in the local system and copy them to the input folder
+    PORTS = node_ports.ports()
+    for port in PORTS.inputs:
+        if not port or port.value is None:
+            continue
+
+        local_path = await port.get()
+        dest_path = _INPUT_PATH / port.key
+        dest_path.mkdir(exist_ok=True, parents=True)
+
+        # clean up destination directory
+        for path in dest_path.iterdir():
+            if path.is_file():
+                path.unlink()
+            elif path.is_dir():
+                shutil.rmtree(path)
+        # check if local_path is a compressed file
+        if tarfile.is_tarfile(local_path):
+            with tarfile.open(local_path) as tar_file:
+                tar_file.extractall(dest_path, members=_no_relative_path_tar(tar_file))
+        elif zipfile.is_zipfile(local_path):
+            with zipfile.ZipFile(local_path) as zip_file:
+                zip_file.extractall(dest_path, members=_no_relative_path_zip(zip_file))
+        else:
+            dest_path_name = _INPUT_PATH / (port.key + ":" + Path(local_path).name)
+            shutil.move(local_path, dest_path_name)
+            shutil.rmtree(Path(local_path).parents[0])
+
 # asyncio.get_event_loop().run_until_complete(retrieve_data())
 
 
@@ -66,6 +98,14 @@ _INPUTS_FOLDER = Path(os.environ.get("RAWGRAPHS_INPUT_PATH"))
 _OUTPUTS_FOLDER = Path(os.environ.get("RAWGRAPHS_OUTPUT_PATH"))
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
+
+if not _INPUTS_FOLDER.exists():
+    _INPUTS_FOLDER.mkdir()
+    logger.debug("Created input folder at %s", _INPUTS_FOLDER)
+
+if not _OUTPUTS_FOLDER.exists():
+    _OUTPUTS_FOLDER.mkdir()
+    logger.debug("Created output folder at %s", _OUTPUTS_FOLDER)
 
 def _no_relative_path_tar(members: tarfile.TarFile):
     for tarinfo in members:
@@ -164,12 +204,14 @@ async def upload_data():
 
 async def sync_data():
     try:
-        await download_data()
-        await upload_data()
+        # await download_data()
+        await retrieve_data2()
+        # await upload_data()
         # self.set_status(200)
     except node_ports.exceptions.NodeportsException as exc:
         # self.set_status(500, reason=str(exc))
         logger.error("error when syncing '%s'", str(exc))
+        sys.exit(1)
     finally:
         # self.finish('completed retrieve!')
         logger.info("download and upload finished")
