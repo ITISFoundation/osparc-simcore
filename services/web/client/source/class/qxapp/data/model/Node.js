@@ -324,7 +324,7 @@ qx.Class.define("qxapp.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.__inputNodes = nodeData.inputNodes;
+          this.setInputNodes(nodeData);
         }
 
         if (nodeData.outputNode) {
@@ -471,6 +471,14 @@ qx.Class.define("qxapp.data.model.Node", {
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+      }
+    },
+
+    setInputNodes: function(nodeData) {
+      if (nodeData.inputNodes) {
+        for (let i=0; i<nodeData.inputNodes.length; i++) {
+          this.addInputNode(nodeData.inputNodes[i]);
+        }
       }
     },
 
