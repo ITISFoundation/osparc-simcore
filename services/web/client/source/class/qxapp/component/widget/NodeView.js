@@ -65,13 +65,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      padding: 5
+      padding: [0, 40]
     });
     this._add(mainLayout, {
       flex: 1
     });
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
