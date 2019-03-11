@@ -307,7 +307,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
         const dedicatedWidget = node.getDedicatedWidget();
-        const bntText = dedicatedWidget ? this.tr("To expert mode") : this.tr("To guided mode");
+        const bntText = dedicatedWidget ? this.tr("To setup mode") : this.tr("To dedicated view");
         let expertModeBtn = new qx.ui.form.Button(bntText).set({
           alignX: "right",
           height: 25,
