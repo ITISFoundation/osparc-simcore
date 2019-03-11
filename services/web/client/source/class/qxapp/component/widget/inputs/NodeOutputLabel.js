@@ -95,7 +95,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
             font: text14Font,
-            margin: [10, 0],
+            margin: [10, 5],
             rich: true,
             alignX: "right"
           });
@@ -109,8 +109,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
             font: text14Font,
-            margin: [10, 0],
-            maxWidth: 250,
+            margin: [10, 5],
             rich: true,
             alignX: "left"
           });
