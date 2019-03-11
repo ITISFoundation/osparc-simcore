@@ -1175,6 +1175,9 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/comp/kember/cardiac": {
           "category": "Solver"
         },
+        "simcore/services/comp/kember-cardiac-model": {
+          "category": "Solver"
+        },
         "simcore/services/comp/ucdavis/cardiac-oned": {
           "category": "Solver"
         },
@@ -1279,6 +1282,9 @@ qx.Class.define("qxapp.data.Store", {
         },
         "simcore/services/dynamic/raw-graphs": {
           "category": "PostPro"
+        },
+        "simcore/services/dynamic/itis/dash-plot": {
+          "category": "PostPro"
         }
       };
       for (const serviceKey in services) {
@@ -1286,10 +1292,16 @@ qx.Class.define("qxapp.data.Store", {
           let service = services[serviceKey];
           if (serviceKey in cats) {
             for (const version in service) {
+              let serv = service[version];
               if (Object.prototype.hasOwnProperty.call(service, version)) {
-                let serv = service[version];
                 serv["category"] = cats[serviceKey]["category"];
+              } else {
+                serv["category"] = "Unknowkn";
               }
+            }
+          } else {
+            for (const version in service) {
+              service[version]["category"] = "Unknowkn";
             }
           }
         }
