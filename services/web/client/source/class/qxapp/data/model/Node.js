@@ -678,6 +678,33 @@ qx.Class.define("qxapp.data.model.Node", {
         x: this.__posX,
         y: this.__posY
       };
+    },
+
+    serialize: function(saveContainers, savePosition) {
+      if (!saveContainers && this.isContainer()) {
+        return null;
+      }
+
+      // node generic
+      let nodeEntry = {
+        key: this.getKey(),
+        version: this.getVersion(),
+        label: this.getLabel(),
+        inputs: this.getInputValues(), // can a container have inputs?
+        inputNodes: this.getInputNodes(),
+        outputNode: this.getIsOutputNode(),
+        outputs: this.getOutputValues(), // can a container have outputs?
+        parent: this.getParentNodeId(),
+        progress: this.getProgress()
+      };
+
+      if (savePosition) {
+        nodeEntry.position = {
+          x: this.getPosition().x,
+          y: this.getPosition().y
+        };
+      }
+      return nodeEntry;
     }
   }
 });

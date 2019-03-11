@@ -308,28 +308,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        if (!saveContainers && node.isContainer()) {
-          continue;
-        }
-
-        // node generic
-        let nodeEntry = workbench[node.getNodeId()] = {
-          key: node.getKey(),
-          version: node.getVersion(),
-          label: node.getLabel(),
-          inputs: node.getInputValues(), // can a container have inputs?
-          inputNodes: node.getInputNodes(),
-          outputNode: node.getIsOutputNode(),
-          outputs: node.getOutputValues(), // can a container have outputs?
-          parent: node.getParentNodeId(),
-          progress: node.getProgress()
-        };
-
-        if (savePosition) {
-          nodeEntry.position = {
-            x: node.getPosition().x,
-            y: node.getPosition().y
-          };
+        const data = node.serialize(saveContainers, savePosition);
+        if (data) {
+          workbench[node.getNodeId()] = data;
         }
       }
       return workbench;
