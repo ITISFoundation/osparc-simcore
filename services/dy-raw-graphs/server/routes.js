@@ -129,6 +129,9 @@ function addViewBoxAttr(svgCode) {
 function setOutput(request, response) {
   console.log('setOutput');
   const outputsDir = '../outputs/';
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir);
+  }
   const ports = ["output_1/"];
   for (let i=0; i<ports.length; i++) {
     const outputsDirPort = outputsDir + ports[i];
@@ -154,7 +157,7 @@ function setOutput(request, response) {
 
 function getOutput(request, response) {
   console.log('getOutput');
-  const outputsDir = '../outputs/';
+  const outputsDir = '../outputs/output_1/';
   if (!fs.existsSync(outputsDir)) {
     fs.mkdirSync(outputsDir);
   }
