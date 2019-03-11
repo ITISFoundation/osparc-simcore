@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     let sidePanel = this.__sidePanel = new qxapp.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 800,
-      width: 600
+      width: 500
     });
 
     this.add(mainPanel, 1); // flex 1
@@ -273,7 +273,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeNode: function(nodeId) {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
+      if (nodeId === this.__currentNodeId) {
         return;
       }
       // remove first the connected links
