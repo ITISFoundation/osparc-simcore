@@ -532,7 +532,18 @@ qx.Class.define("qxapp.component.form.Auto", {
       this.__ctrlLinkMap[key] = controlLink;
     },
 
+    isPortAvailable: function(portId) {
+      const port = this.getControl(portId);
+      if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
+        return false;
+      }
+      return true;
+    },
+
     addLink: function(toPortId, fromNodeId, fromPortId) {
+      if (!this.isPortAvailable(toPortId)) {
+        return false;
+      }
       this.getControl(toPortId).setEnabled(false);
       this.getControl(toPortId).link = {
         nodeUuid: fromNodeId,
@@ -555,6 +566,8 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
 
       this.fireDataEvent("linkAdded", toPortId);
+
+      return true;
     },
 
     removeLink: function(toPortId) {
