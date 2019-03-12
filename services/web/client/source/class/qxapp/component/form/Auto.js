@@ -55,13 +55,13 @@
  */
 
 qx.Class.define("qxapp.component.form.Auto", {
-  extend : qx.ui.form.Form,
-  include : [qx.locale.MTranslation],
+  extend: qx.ui.form.Form,
+  include: [qx.locale.MTranslation],
 
   /**
      * @param structure {Array} form structure
      */
-  construct : function(content, node) {
+  construct: function(content, node) {
     // node is necessary for creating links
     if (node) {
       this.setNode(node);
@@ -95,24 +95,24 @@ qx.Class.define("qxapp.component.form.Auto", {
     }
   },
 
-  events : {
+  events: {
     /**
      * fire when the form changes content and
      * and provide access to the data
      */
-    "changeData" : "qx.event.type.Data",
-    "linkAdded" : "qx.event.type.Data",
-    "linkRemoved" : "qx.event.type.Data"
+    "changeData": "qx.event.type.Data",
+    "linkAdded": "qx.event.type.Data",
+    "linkRemoved": "qx.event.type.Data"
   },
 
-  members : {
-    __boxCtrl : null,
-    __ctrlMap : null,
-    __ctrlLinkMap : null,
+  members: {
+    __boxCtrl: null,
+    __ctrlMap: null,
+    __ctrlLinkMap: null,
     __formCtrl: null,
-    __model : null,
-    __settingData : false,
-    __typeMap : null,
+    __model: null,
+    __settingData: false,
+    __typeMap: null,
 
 
     /**
@@ -120,7 +120,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      *
      * @return {let} validation output
      */
-    validate : function() {
+    validate: function() {
       return this.__formCtrl.validate();
     },
 
@@ -129,7 +129,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      * Reset the form content
      *
      */
-    reset : function() {
+    reset: function() {
       this.__formCtrl.reset();
     },
 
@@ -140,11 +140,11 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param key {let} key of the the field
      * @return {let} control associated with the field
      */
-    getControl : function(key) {
+    getControl: function(key) {
       return this.__ctrlMap[key];
     },
 
-    getControlLink : function(key) {
+    getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
     },
 
@@ -154,7 +154,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      *
      * @return {let} all data from the form
      */
-    getData : function() {
+    getData: function() {
       return this.__getData(this.__model);
     },
 
@@ -164,7 +164,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param data {let} map with key value pairs to apply
      * @param relax {let} ignore non existing keys
      */
-    setData : function(data, relax) {
+    setData: function(data, relax) {
       this.__setData(this.__model, data, relax);
     },
 
@@ -175,14 +175,14 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param box {let} selectbox name
      * @param data {let} configuration of the box
      */
-    setSelectBoxData : function(box, data) {
+    setSelectBoxData: function(box, data) {
       let model;
       this.__settingData = true;
 
       if (data.length == 0) {
         model = qx.data.marshal.Json.createModel([{
-          label : "",
-          key   : null
+          label: "",
+          key: null
         }]);
       } else {
         model = qx.data.marshal.Json.createModel(data);
@@ -202,7 +202,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param data {let} TODOC
      * @param relax {let} TODOC
      */
-    __setData : function(model, data, relax) {
+    __setData: function(model, data, relax) {
       this.__settingData = true;
 
       for (let key in data) {
@@ -234,7 +234,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param model {let} TODOC
      * @return {let} TODOC
      */
-    __getData : function(model) {
+    __getData: function(model) {
       let props = model.constructor.$$properties;
       let data = {};
 
@@ -248,7 +248,7 @@ qx.Class.define("qxapp.component.form.Auto", {
     __setupDateField: function(s) {
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             if (/^\d+$/.test(String(data))) {
               let d = new Date();
               d.setTime(parseInt(data) * 1000);
@@ -262,7 +262,7 @@ qx.Class.define("qxapp.component.form.Auto", {
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             if (qx.lang.Type.isDate(data)) {
               let d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate(), 0, 0, 0, 0));
               return Math.round(d.getTime()/1000);
@@ -299,12 +299,12 @@ qx.Class.define("qxapp.component.form.Auto", {
     __setupTextField: function(s, key) {
       this.__formCtrl.addBindingOptions(key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             return String(data);
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             return data;
           }
         }
@@ -321,7 +321,7 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
       this.__formCtrl.addBindingOptions(key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             if (qx.lang.Type.isNumber(data)) {
               return String(data);
             }
@@ -329,7 +329,7 @@ qx.Class.define("qxapp.component.form.Auto", {
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             return parseFloat(data);
           }
         }
@@ -346,7 +346,7 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
       this.__formCtrl.addBindingOptions(key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             let d = String(data);
             if (/^\d+$/.test(d)) {
               return parseInt(d);
@@ -355,7 +355,7 @@ qx.Class.define("qxapp.component.form.Auto", {
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             return parseInt(data);
           }
         }
@@ -365,7 +365,7 @@ qx.Class.define("qxapp.component.form.Auto", {
     __setupSelectBox: function(s, key, control) {
       let controller = this.__boxCtrl[key] = new qx.data.controller.List(null, control, "label");
       controller.setDelegate({
-        bindItem : function(ctrl, item, index) {
+        bindItem: function(ctrl, item, index) {
           ctrl.bindProperty("key", "model", null, item, index);
           ctrl.bindProperty("label", "label", null, item, index);
         }
@@ -377,8 +377,8 @@ qx.Class.define("qxapp.component.form.Auto", {
         }, this);
       } else {
         cfg.structure = [{
-          label : "",
-          key   : null
+          label: "",
+          key: null
         }];
       }
       if (s.defaultValue) {
@@ -406,12 +406,12 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
       this.__formCtrl.addBindingOptions(key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             return data;
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             return data;
           }
         }
@@ -420,12 +420,12 @@ qx.Class.define("qxapp.component.form.Auto", {
     __setupFileButton: function(s, key) {
       this.__formCtrl.addBindingOptions(key,
         { // model2target
-          converter : function(data) {
+          converter: function(data) {
             return String(data);
           }
         },
         { // target2model
-          converter : function(data) {
+          converter: function(data) {
             return data;
           }
         }
