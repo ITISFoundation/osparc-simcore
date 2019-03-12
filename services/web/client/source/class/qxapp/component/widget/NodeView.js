@@ -30,6 +30,7 @@
  *   let nodeView = new qxapp.component.widget.NodeView();
  *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
+ *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
@@ -84,8 +85,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     node: {
-      check: "qxapp.data.model.Node",
-      apply: "__applyNode"
+      check: "qxapp.data.model.Node"
     }
   },
 
@@ -133,22 +133,15 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    __createInputPortsUI: function(inputNode, isInputModel = true) {
-      let nodePorts = null;
-      if (isInputModel) {
-        nodePorts = inputNode.getOutputWidget();
-      } else {
-        nodePorts = inputNode.getInputsDefaultWidget();
-      }
-      if (nodePorts) {
-        this.__inputNodesLayout.add(nodePorts, {
-          flex: 1
-        });
-      }
-      return nodePorts;
+    buildLayout: function() {
+      this.__addInputPortsUIs();
+      this.__addSettings();
+      this.__addMapper();
+      this.__addIFrame();
+      this.__addButtons();
     },
 
-    __addInputPortsUIs: function(node) {
+    __addInputPortsUIs: function() {
       this.__clearInputPortsUIs();
 
       // Add the default inputs if any
@@ -157,7 +150,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
 
       // Add the representations for the inputs
-      const inputNodes = node.getInputNodes();
+      const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNode = this.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
@@ -178,7 +171,23 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addSettings: function(propsWidget) {
+    __createInputPortsUI: function(inputNode, isInputModel = true) {
+      let nodePorts = null;
+      if (isInputModel) {
+        nodePorts = inputNode.getOutputWidget();
+      } else {
+        nodePorts = inputNode.getInputsDefaultWidget();
+      }
+      if (nodePorts) {
+        this.__inputNodesLayout.add(nodePorts, {
+          flex: 1
+        });
+      }
+      return nodePorts;
+    },
+
+    __addSettings: function() {
+      const propsWidget = this.getNode().getPropsWidget();
       this.__settingsLayout.removeAll();
       if (propsWidget) {
         let box = new qx.ui.layout.HBox();
@@ -204,7 +213,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addMapper: function(mapper) {
+    __addMapper: function() {
+      const mapper = this.getNode().getInputsMapper();
       this.__mapperLayout.removeAll();
       if (mapper) {
         this.__mapperLayout.add(mapper, {
@@ -218,7 +228,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addIFrame: function(iFrame) {
+    __addIFrame: function() {
+      const iFrame = this.getNode().getIFrame();
       this.__iFrameLayout.removeAll();
       if (iFrame) {
         iFrame.addListener("maximize", e => {
@@ -247,26 +258,18 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__buttonsLayout.setVisibility(othersStatus);
     },
 
-    __addButtons: function(node) {
+    __addButtons: function() {
       this.__buttonsLayout.removeAll();
-      let retrieveIFrameButton = node.getRetrieveIFrameButton();
+      let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
       if (retrieveIFrameButton) {
         this.__buttonsLayout.add(retrieveIFrameButton);
       }
-      let restartIFrameButton = node.getRestartIFrameButton();
+      let restartIFrameButton = this.getNode().getRestartIFrameButton();
       if (restartIFrameButton) {
         this.__buttonsLayout.add(restartIFrameButton);
       }
       this.__buttonsLayout.add(this.__openFolder);
       this.__mainLayout.add(this.__buttonsLayout);
-    },
-
-    __applyNode: function(node, oldNode, propertyName) {
-      this.__addInputPortsUIs(node);
-      this.__addSettings(node.getPropsWidget());
-      this.__addMapper(node.getInputsMapper());
-      this.__addIFrame(node.getIFrame());
-      this.__addButtons(node);
     }
   }
 });

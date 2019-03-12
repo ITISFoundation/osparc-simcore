@@ -27,7 +27,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ *   let project = new qxapp.data.model.Project(projectData);
+ *   let prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
  * </pre>
  */
 

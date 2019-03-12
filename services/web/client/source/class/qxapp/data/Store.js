@@ -142,6 +142,59 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
+        key: "simcore/services/dynamic/itis/dash-plot",
+        version: "1.0.0",
+        type: "container",
+        dedicatedWidget: true,
+        name: "2D plot - Multi",
+        description: "2D plot - Multi",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {
+          "input_1": {
+            "label": "input 1",
+            "displayOrder": 0,
+            "description": "Input 1",
+            "type": "data:*/*"
+          },
+          "input_2": {
+            "label": "input 2",
+            "displayOrder": 1,
+            "description": "Input 2",
+            "type": "data:*/*"
+          },
+          "input_3": {
+            "label": "input 3",
+            "displayOrder": 2,
+            "description": "Input 3",
+            "type": "data:*/*"
+          },
+          "input_4": {
+            "label": "input 4",
+            "displayOrder": 3,
+            "description": "Input 4",
+            "type": "data:*/*"
+          },
+          "input_5": {
+            "label": "input 5",
+            "displayOrder": 4,
+            "description": "Input 5",
+            "type": "data:*/*"
+          }
+        },
+        outputs: {},
+        innerNodes: {
+          "inner1_raw": {
+            key: "simcore/services/dynamic/raw-graphs",
+            version: "2.8.0",
+            inputNodes: [],
+            outputNode: true
+          }
+        }
+      }, {
         key: "simcore/services/demodec/dynamic/itis/s4l/neuroman",
         version: "0.0.0",
         type: "dynamic",
@@ -1122,6 +1175,9 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/comp/kember/cardiac": {
           "category": "Solver"
         },
+        "simcore/services/comp/kember-cardiac-model": {
+          "category": "Solver"
+        },
         "simcore/services/comp/ucdavis/cardiac-oned": {
           "category": "Solver"
         },
@@ -1226,6 +1282,9 @@ qx.Class.define("qxapp.data.Store", {
         },
         "simcore/services/dynamic/raw-graphs": {
           "category": "PostPro"
+        },
+        "simcore/services/dynamic/itis/dash-plot": {
+          "category": "PostPro"
         }
       };
       for (const serviceKey in services) {
@@ -1233,10 +1292,16 @@ qx.Class.define("qxapp.data.Store", {
           let service = services[serviceKey];
           if (serviceKey in cats) {
             for (const version in service) {
+              let serv = service[version];
               if (Object.prototype.hasOwnProperty.call(service, version)) {
-                let serv = service[version];
                 serv["category"] = cats[serviceKey]["category"];
+              } else {
+                serv["category"] = "Unknown";
               }
+            }
+          } else {
+            for (const version in service) {
+              service[version]["category"] = "Unknown";
             }
           }
         }

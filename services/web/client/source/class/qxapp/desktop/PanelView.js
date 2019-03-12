@@ -55,7 +55,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
   },
 
   properties: {
-
     title: {
       check: "String",
       nullable: true,
@@ -76,7 +75,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
   },
 
   members: {
-
     __titleBar: null,
     __titleLabel: null,
     __caret: null,
