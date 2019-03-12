@@ -475,6 +475,7 @@ qx.Class.define("qxapp.data.model.Node", {
             this.createAutomaticPortConns(inputNode, innerNode);
           }
         }
+        this.__retrieveInputs();
       }
     },
 

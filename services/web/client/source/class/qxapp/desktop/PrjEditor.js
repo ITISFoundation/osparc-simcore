@@ -220,6 +220,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         } else {
           this.__nodeView.setNode(node);
+          this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
           } else {
