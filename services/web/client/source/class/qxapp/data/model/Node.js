@@ -464,8 +464,37 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
+    // post link creation routine
+    linkAdded: function(link) {
+      if (this.isInKey("dash-plot")) {
+        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const innerNode = innerNodes[i];
+          innerNode.addInputNode(inputNode.getNodeId());
+          this.createAutomaticPortConns(inputNode, innerNode);
+        }
+      }
+    },
+
+    createAutomaticPortConns: function(node1, node2) {
+      // create automatic port connections
+      console.log("createAutomaticPortConns", node1, node2);
+      const outPorts = node1.getOutputs();
+      const inPorts = node2.getInputs();
+      for (const outPort in outPorts) {
+        for (const inPort in inPorts) {
+          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              break;
+            }
+          }
+        }
+      }
+    },
+
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {

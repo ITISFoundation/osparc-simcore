@@ -148,6 +148,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
       let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
       this.addLink(link);
+
+      // post link creation
+      this.getNode(node2Id).linkAdded(link);
+
       return link;
     },
 
