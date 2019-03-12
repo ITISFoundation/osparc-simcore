@@ -569,10 +569,6 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __retrieveInputs: function() {
-      this.__updateBackendAndRetrieveInputs();
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },
 
