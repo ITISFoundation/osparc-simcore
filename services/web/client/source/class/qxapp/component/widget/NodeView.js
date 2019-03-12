@@ -183,7 +183,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
       return nodePorts;
     },
-      
+
     __addSettings: function() {
       const propsWidget = this.getNode().getPropsWidget();
       this.__settingsLayout.removeAll();
