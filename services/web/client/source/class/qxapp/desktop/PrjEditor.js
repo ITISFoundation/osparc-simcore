@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     let sidePanel = this.__sidePanel = new qxapp.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 800,
-      width: 600
+      width: 500
     });
 
     this.add(mainPanel, 1); // flex 1
@@ -197,9 +197,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__currentNodeId = nodeId;
-      this.__treeView.nodeSelected(nodeId);
 
-      let widget;
+      let widget = null;
       const workbench = this.getProject().getWorkbench();
       if (nodeId === "root") {
         this.__workbenchUI.loadModel();
@@ -207,11 +206,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       } else {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
-          this.__workbenchUI.loadModel(node);
-          widget = this.__workbenchUI;
+          if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
+            if (node.isInKey("dash-plot")) {
+              widget = new qxapp.component.widget.DashGrid(node);
+            }
+          }
+          if (widget === null) {
+            this.__workbenchUI.loadModel(node);
+            widget = this.__workbenchUI;
+          }
         } else {
           this.__nodeView.setNode(node);
-          if (node.getMetaData().key.includes("file-picker")) {
+          this.__nodeView.buildLayout();
+          if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
           } else {
             widget = this.__nodeView;
@@ -220,32 +227,39 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
       this.showInMainView(widget, nodeId);
 
+      this.__switchExtraView(nodeId);
+
+      this.__treeView.nodeSelected(nodeId);
+    },
+
+    __switchExtraView: function(nodeId) {
       // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let node = workbench.getNode(nodeId);
+        const node = this.getProject().getWorkbench().getNode(nodeId);
         if (node.isContainer()) {
-          this.showScreenshotInExtraView("container");
-        } else {
-          let nodeKey = node.getKey();
-          if (nodeKey.includes("file-picker")) {
-            this.showScreenshotInExtraView("file-picker");
-          } else if (nodeKey.includes("modeler")) {
-            this.showScreenshotInExtraView("modeler");
-          } else if (nodeKey.includes("3d-viewer")) {
-            this.showScreenshotInExtraView("postpro");
-          } else if (nodeKey.includes("viewer")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("jupyter")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("Grid")) {
-            this.showScreenshotInExtraView("grid");
-          } else if (nodeKey.includes("Voxel")) {
-            this.showScreenshotInExtraView("voxels");
+          if (node.isInKey("dash-plot")) {
+            this.showScreenshotInExtraView("dash-plot");
           } else {
-            this.showScreenshotInExtraView("form");
+            this.showScreenshotInExtraView("container");
           }
+        } else if (node.isInKey("file-picker")) {
+          this.showScreenshotInExtraView("file-picker");
+        } else if (node.isInKey("modeler")) {
+          this.showScreenshotInExtraView("modeler");
+        } else if (node.isInKey("3d-viewer")) {
+          this.showScreenshotInExtraView("postpro");
+        } else if (node.isInKey("viewer")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("jupyter")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("Grid")) {
+          this.showScreenshotInExtraView("grid");
+        } else if (node.isInKey("Voxel")) {
+          this.showScreenshotInExtraView("voxels");
+        } else {
+          this.showScreenshotInExtraView("form");
         }
       }
     },
@@ -258,7 +272,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeNode: function(nodeId) {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
+      if (nodeId === this.__currentNodeId) {
         return;
       }
       // remove first the connected links
@@ -288,7 +302,32 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }, this);
       }
 
-      this.__mainPanel.setMainView(widget);
+      const node = this.getProject().getWorkbench().getNode(nodeId);
+      if (node && node.hasDedicatedWidget()) {
+        let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+        const dedicatedWidget = node.getDedicatedWidget();
+        const btnLabel = dedicatedWidget ? this.tr("Setup view") : this.tr("Grid view");
+        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
+        let expertModeBtn = new qx.ui.form.Button().set({
+          label: btnLabel,
+          icon: btnIcon,
+          gap: 10,
+          alignX: "right",
+          height: 25,
+          maxWidth: 150
+        });
+        expertModeBtn.addListener("execute", () => {
+          node.setDedicatedWidget(!dedicatedWidget);
+          this.nodeSelected(nodeId);
+        }, this);
+        dedicatedWrapper.add(expertModeBtn);
+        dedicatedWrapper.add(widget, {
+          flex: 1
+        });
+        this.__mainPanel.setMainView(dedicatedWrapper);
+      } else {
+        this.__mainPanel.setMainView(widget);
+      }
 
       let nodesPath = this.getProject().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
@@ -473,31 +512,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     __applyCanStart: function(value, old) {
       this.__mainPanel.getControls().setCanStart(value);
-    },
-
-    __addWidgetToMainView: function(widget) {
-      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-
-      widgetContainer.add(widget, {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-
-      let closeBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/window-close/24",
-        zIndex: widget.getZIndex() + 1
-      });
-      widgetContainer.add(closeBtn, {
-        right: 0,
-        top: 0
-      });
-      let previousWidget = this.__mainPanel.getMainView();
-      closeBtn.addListener("execute", function() {
-        this.__mainPanel.setMainView(previousWidget);
-      }, this);
-      this.__mainPanel.setMainView(widgetContainer);
     },
 
     __startAutoSaveTimer: function() {

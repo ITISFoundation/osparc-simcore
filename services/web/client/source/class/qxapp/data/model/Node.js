@@ -31,9 +31,7 @@
  *
  * <pre class='javascript'>
  *   let node = new qxapp.data.model.Node(this, key, version, uuid);
- *   if (nodeData) {
- *     node.populateNodeData(nodeData);
- *   }
+ *   node.populateNodeData(nodeData);
  * </pre>
  */
 
@@ -83,6 +81,9 @@ qx.Class.define("qxapp.data.model.Node", {
         if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
+        if (metaData.dedicatedWidget) {
+          this.setDedicatedWidget(metaData.dedicatedWidget);
+        }
       }
     }
   },
@@ -128,6 +129,12 @@ qx.Class.define("qxapp.data.model.Node", {
 
     parentNodeId: {
       check: "String",
+      nullable: true
+    },
+
+    dedicatedWidget: {
+      check: "Boolean",
+      init: null,
       nullable: true
     },
 
@@ -186,8 +193,34 @@ qx.Class.define("qxapp.data.model.Node", {
       this.__logs.push(log);
     },
 
+    isInKey: function(str) {
+      if (this.getMetaData() === null) {
+        return false;
+      }
+      if (this.getKey() === null) {
+        return false;
+      }
+      return this.getKey().includes(str);
+    },
+
+    hasDedicatedWidget: function() {
+      if (this.getDedicatedWidget() === null) {
+        return false;
+      }
+      return true;
+    },
+
+    showDedicatedWidget: function() {
+      if (this.hasDedicatedWidget()) {
+        return this.getDedicatedWidget();
+      }
+      return false;
+    },
+
     isContainer: function() {
-      return (this.getKey() === null);
+      const hasKey = (this.getKey() === null);
+      const hasChildren = this.hasChildren();
+      return hasKey || hasChildren;
     },
 
     getMetaData: function() {
@@ -231,6 +264,14 @@ qx.Class.define("qxapp.data.model.Node", {
       return output;
     },
 
+    hasChildren: function() {
+      const innerNodes = this.getInnerNodes();
+      if (innerNodes) {
+        return Object.keys(innerNodes).length > 0;
+      }
+      return false;
+    },
+
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
@@ -244,6 +285,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
+      innerNode.setParentNodeId(this.getNodeId());
     },
 
     removeInnerNode: function(innerNodeId) {
@@ -282,7 +324,7 @@ qx.Class.define("qxapp.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.__inputNodes = nodeData.inputNodes;
+          this.setInputNodes(nodeData);
         }
 
         if (nodeData.outputNode) {
@@ -422,13 +464,54 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
+    // post link creation routine
+    linkAdded: function(link) {
+      if (this.isInKey("dash-plot")) {
+        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const innerNode = innerNodes[i];
+          if (innerNode.addInputNode(inputNode.getNodeId())) {
+            this.createAutomaticPortConns(inputNode, innerNode);
+          }
+        }
+        this.__retrieveInputs();
+      }
+    },
+
+    createAutomaticPortConns: function(node1, node2) {
+      // create automatic port connections
+      console.log("createAutomaticPortConns", node1, node2);
+      const outPorts = node1.getOutputs();
+      const inPorts = node2.getInputs();
+      for (const outPort in outPorts) {
+        for (const inPort in inPorts) {
+          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              break;
+            }
+          }
+        }
+      }
+    },
+
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+        return true;
+      }
+      return false;
+    },
+
+    setInputNodes: function(nodeData) {
+      if (nodeData.inputNodes) {
+        for (let i=0; i<nodeData.inputNodes.length; i++) {
+          this.addInputNode(nodeData.inputNodes[i]);
+        }
       }
     },
 
@@ -487,10 +570,6 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __retrieveInputs: function() {
-      this.__updateBackendAndRetrieveInputs();
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },
 
@@ -610,11 +689,22 @@ qx.Class.define("qxapp.data.model.Node", {
         qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
+
+        this.__retrieveInputs();
       }
     },
 
     removeNode: function() {
       this.__stopInteractiveNode();
+      const innerNodes = Object.values(this.getInnerNodes());
+      for (const innerNode of innerNodes) {
+        innerNode.removeNode();
+      }
+      const parentNodeId = this.getParentNodeId();
+      if (parentNodeId) {
+        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        parentNode.removeInnerNode(this.getNodeId());
+      }
     },
 
     __stopInteractiveNode: function() {
@@ -636,6 +726,33 @@ qx.Class.define("qxapp.data.model.Node", {
         x: this.__posX,
         y: this.__posY
       };
+    },
+
+    serialize: function(saveContainers, savePosition) {
+      if (!saveContainers && this.isContainer()) {
+        return null;
+      }
+
+      // node generic
+      let nodeEntry = {
+        key: this.getKey(),
+        version: this.getVersion(),
+        label: this.getLabel(),
+        inputs: this.getInputValues(), // can a container have inputs?
+        inputNodes: this.getInputNodes(),
+        outputNode: this.getIsOutputNode(),
+        outputs: this.getOutputValues(), // can a container have outputs?
+        parent: this.getParentNodeId(),
+        progress: this.getProgress()
+      };
+
+      if (savePosition) {
+        nodeEntry.position = {
+          x: this.getPosition().x,
+          y: this.getPosition().y
+        };
+      }
+      return nodeEntry;
     }
   }
 });
