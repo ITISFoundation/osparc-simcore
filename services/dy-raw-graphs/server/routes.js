@@ -63,8 +63,29 @@ function callInputRetriever(request, response) {
   });
 }
 
-function getInputFile(request, response) {
+function getInputDir() {
   const inputsDir = '../inputs/';
+  if (!fs.existsSync(inputsDir)) {
+    fs.mkdirSync(inputsDir);
+  }
+  return inputsDir;
+}
+
+function getOutputDir() {
+  const outputsDir = '../outputs/';
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir);
+  }
+  const port = "output_1/";
+  const outputsDirPort = outputsDir + port;
+  if (!fs.existsSync(outputsDirPort)) {
+    fs.mkdirSync(outputsDirPort);
+  }
+  return outputsDirPort;
+}
+
+function getInputFile(request, response) {
+  const inputsDir = getInputDir();
   const fileName = inputsDir + request.query["fileName"];
   console.log('getInputFile', fileName);
   fs.readFile(fileName, (err, data) => {
@@ -79,7 +100,7 @@ function getInputFile(request, response) {
 
 function getInputFiles(request, response) {
   console.log('getInputFiles');
-  const inputsDir = '../inputs/';
+  const inputsDir = getInputDir();
   fs.readdir(inputsDir, (err, files) => {
     if (err) {
       console.error(err);
@@ -88,11 +109,13 @@ function getInputFiles(request, response) {
     }
     let metadata = [];
     for (let i=0; i<files.length; i++) {
-      metadata.push({
-        title: files[i],
-        type: 'Other',
-        url: files[i]
-      });
+      if (fs.lstatSync(inputsDir+files[i]).isFile()) {
+        metadata.push({
+          title: files[i],
+          type: 'Other',
+          url: files[i]
+        });
+      }
     }
     response.send(metadata);
   });
@@ -122,19 +145,6 @@ function addViewBoxAttr(svgCode) {
   svgCode = svgCode.slice(0, 4) + viewBoxStr + svgCode.slice(4);
 
   return svgCode;
-}
-
-function getOutputDir() {
-  const outputsDir = '../outputs/';
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir);
-  }
-  const port = "output_1/";
-  const outputsDirPort = outputsDir + port;
-  if (!fs.existsSync(outputsDirPort)) {
-    fs.mkdirSync(outputsDirPort);
-  }
-  return outputsDirPort;
 }
 
 function setOutput(request, response) {
