@@ -688,6 +688,8 @@ qx.Class.define("qxapp.data.model.Node", {
         qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
+
+        this.__retrieveInputs();
       }
     },
 
