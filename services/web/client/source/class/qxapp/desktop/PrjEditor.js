@@ -200,7 +200,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__currentNodeId = nodeId;
-      this.__treeView.nodeSelected(nodeId);
 
       let widget = null;
       const workbench = this.getProject().getWorkbench();
@@ -231,6 +230,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.showInMainView(widget, nodeId);
 
       this.__switchExtraView(nodeId);
+
+      this.__treeView.nodeSelected(nodeId);
     },
 
     __switchExtraView: function(nodeId) {
