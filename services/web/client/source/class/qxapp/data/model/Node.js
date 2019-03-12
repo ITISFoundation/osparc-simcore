@@ -471,8 +471,9 @@ qx.Class.define("qxapp.data.model.Node", {
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
-          innerNode.addInputNode(inputNode.getNodeId());
-          this.createAutomaticPortConns(inputNode, innerNode);
+          if (innerNode.addInputNode(inputNode.getNodeId())) {
+            this.createAutomaticPortConns(inputNode, innerNode);
+          }
         }
       }
     },
@@ -500,7 +501,9 @@ qx.Class.define("qxapp.data.model.Node", {
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+        return true;
       }
+      return false;
     },
 
     setInputNodes: function(nodeData) {
