@@ -147,6 +147,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
         return existingLink;
       }
       let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+      this.addLink(link);
       return link;
     },
 

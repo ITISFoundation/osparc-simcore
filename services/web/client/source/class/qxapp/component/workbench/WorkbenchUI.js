@@ -331,7 +331,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
-      this.getWorkbench().addLink(link);
 
       // build representation
       let node1 = this.getNodeUI(node1Id);
