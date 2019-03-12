@@ -126,49 +126,49 @@ function addViewBoxAttr(svgCode) {
   return svgCode;
 }
 
-function setOutput(request, response) {
-  console.log('setOutput');
+function getOutputDir() {
   const outputsDir = '../outputs/';
   if (!fs.existsSync(outputsDir)) {
     fs.mkdirSync(outputsDir);
   }
-  const ports = ["output_1/"];
-  for (let i=0; i<ports.length; i++) {
-    const outputsDirPort = outputsDir + ports[i];
-    if (!fs.existsSync(outputsDirPort)) {
-      fs.mkdirSync(outputsDirPort);
-    }
-    const outputFileName = outputsDirPort + "output.svg";
-    let svgCode = request.body.svgCode;
-    svgCode = addViewBoxAttr(svgCode);
-    fs.writeFile(outputFileName, svgCode, err => {
-      if (err) {
-        console.log(err);
-        response.sendStatus("500");
-        return;
-      }
-      console.log("The file was saved!");
-      response.send({
-        status: "ok"
-      });
-    });
+  const port = "output_1/";
+  const outputsDirPort = outputsDir + port;
+  if (!fs.existsSync(outputsDirPort)) {
+    fs.mkdirSync(outputsDirPort);
   }
+  return outputsDirPort;
+}
+
+function setOutput(request, response) {
+  console.log('setOutput');
+  const outputsDirPort = getOutputDir();
+  const outputFileName = outputsDirPort + "output.svg";
+  let svgCode = request.body.svgCode;
+  svgCode = addViewBoxAttr(svgCode);
+  fs.writeFile(outputFileName, svgCode, err => {
+    if (err) {
+      console.log(err);
+      response.sendStatus("500");
+      return;
+    }
+    console.log("The file was saved!");
+    response.send({
+      status: "ok"
+    });
+  });
 }
 
 function getOutput(request, response) {
   console.log('getOutput');
-  const outputsDir = '../outputs/output_1/';
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir);
-  }
-  fs.readdir(outputsDir, (err, files) => {
+  const outputsDirPort = getOutputDir();
+  fs.readdir(outputsDirPort, (err, files) => {
     if (err) {
       console.log(err);
       response.sendStatus("500");
       return;
     }
     if (files.length > 0) {
-      const fileName = outputsDir + files[0];
+      const fileName = outputsDirPort + files[0];
       fs.readFile(fileName, (err, data) => {
         if (err) {
           console.log(err);
