@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ *   project.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
  * </pre>
  */
 
