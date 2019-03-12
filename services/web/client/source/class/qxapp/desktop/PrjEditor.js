@@ -307,8 +307,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
         const dedicatedWidget = node.getDedicatedWidget();
-        const bntText = dedicatedWidget ? this.tr("To setup mode") : this.tr("To dedicated view");
-        let expertModeBtn = new qx.ui.form.Button(bntText).set({
+        const btnLabel = dedicatedWidget ? this.tr("Setup") : this.tr("View");
+        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
+        let expertModeBtn = new qx.ui.form.Button().set({
+          label: btnLabel,
+          icon: btnIcon,
+          gap: 10,
           alignX: "right",
           height: 25,
           maxWidth: 150
