@@ -22,16 +22,46 @@ appRouter.get('/', function (request, response) {
   response.sendFile(path.resolve(config.APP_PATH, 'index.html'));
 });
 
-appRouter.get('/input', getInputFile);
-
-appRouter.get('/inputs', getInputFiles);
-
 appRouter.get('/retrieve', callInputRetriever);
-
+appRouter.get('/input', getInputFile);
+appRouter.get('/inputs', getInputFiles);
 appRouter.get('/output', getOutput);
 appRouter.put('/output', setOutput);
 
 module.exports = appRouter;
+
+
+function callInputRetriever(request, response) {
+  console.log('Received a call to retrieve the data on input ports from ' + request.ip);
+
+  var pyProcess = spawn("python3", ["/home/scu/server/input-retriever.py"]);
+
+  pyProcess.on("error", (err) => {
+    console.log(`ERROR: ${err}`);
+    response.sendStatus("500");
+  });
+
+  pyProcess.stdout.setEncoding("utf8");
+  pyProcess.stdout.on("data", (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  pyProcess.stderr.on("data", (data) => {
+    console.log(`stderr: ${data}`);
+  });
+
+  pyProcess.on("close", (code) => {
+    console.log(`Function completed with code ${code}.`);
+    if (code === 0) {
+      response.sendStatus("200");
+      console.log("All went fine");
+    }
+    else {
+      response.sendStatus("500");
+      console.log(code, ":(");
+    }
+  });
+}
 
 function getInputFile(request, response) {
   const inputsDir = '../inputs/';
@@ -65,38 +95,6 @@ function getInputFiles(request, response) {
       });
     }
     response.send(metadata);
-  });
-}
-
-function callInputRetriever(request, response) {
-  console.log('Received a call to retrieve the data on input ports from ' + request.ip);
-
-  var pyProcess = spawn("python3", ["/home/scu/server/input-retriever.py"]);
-
-  pyProcess.on("error", (err) => {
-    console.log(`ERROR: ${err}`);
-    response.sendStatus("500");
-  });
-
-  pyProcess.stdout.setEncoding("utf8");
-  pyProcess.stdout.on("data", (data) => {
-    console.log(`stdout: ${data}`);
-  });
-
-  pyProcess.stderr.on("data", (data) => {
-    console.log(`stderr: ${data}`);
-  });
-
-  pyProcess.on("close", (code) => {
-    console.log(`Function completed with code ${code}.`);
-    if (code === 0) {
-      response.sendStatus("200");
-      console.log("All went fine");
-    }
-    else {
-      response.sendStatus("500");
-      console.log(code, ":(");
-    }
   });
 }
 
