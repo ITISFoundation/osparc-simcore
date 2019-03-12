@@ -256,16 +256,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
     removeNode: function(nodeId) {
       let node = this.getNode(nodeId);
       if (node) {
+        node.removeNode();
         const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
         if (isTopLevel) {
           delete this.__nodesTopLevel[nodeId];
         }
-        const parentNodeId = node.getParentNodeId();
-        if (parentNodeId) {
-          let parentNode = this.getNode(parentNodeId);
-          parentNode.removeInnerNode(nodeId);
-        }
-        node.removeNode();
         this.fireEvent("workbenchChanged");
         return true;
       }

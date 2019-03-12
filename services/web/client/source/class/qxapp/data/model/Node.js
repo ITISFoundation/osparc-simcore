@@ -694,6 +694,15 @@ qx.Class.define("qxapp.data.model.Node", {
 
     removeNode: function() {
       this.__stopInteractiveNode();
+      const innerNodes = Object.values(this.getInnerNodes());
+      for (const innerNode of innerNodes) {
+        innerNode.removeNode();
+      }
+      const parentNodeId = this.getParentNodeId();
+      if (parentNodeId) {
+        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        parentNode.removeInnerNode(this.getNodeId());
+      }
     },
 
     __stopInteractiveNode: function() {
