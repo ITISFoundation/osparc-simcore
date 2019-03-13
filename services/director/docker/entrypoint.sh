@@ -28,10 +28,10 @@ then
     then
         addgroup scu root
     else
-        # take host's credentials in myu
+        # take host's credentials in scu
         if [[ -z "$GROUPNAME" ]]
         then
-            GROUPNAME=myu
+            GROUPNAME=scu
             addgroup -g $GROUPID $GROUPNAME
         else
             addgroup scu $GROUPNAME
