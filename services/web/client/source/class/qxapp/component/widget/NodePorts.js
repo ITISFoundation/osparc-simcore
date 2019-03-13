@@ -43,23 +43,16 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     let nodeInputLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInputLayout);
 
-    this.set({
-      decorator: "main"
-    });
-
-    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
     let label = new qx.ui.basic.Label().set({
-      font: title16Font,
+      font: "title-16",
       alignX: "center",
-      alignY: "middle"
+      marginTop: 10
     });
     node.bind("label", label, "value");
     this._add(label);
 
-    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this._add(nodeUIPorts, {
-      flex: 1
-    });
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    this._add(nodeUIPorts);
 
     this.setIsInputModel(isInputModel);
     this.setNode(node);
@@ -121,9 +114,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             }
           }
           if (widget !== null) {
-            this.__nodeUIPorts.add(widget, {
-              flex: 1
-            });
+            this.__nodeUIPorts.add(widget);
           }
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNode(), port, portKey);

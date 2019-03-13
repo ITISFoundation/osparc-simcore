@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       padding: 10
     });
 
-    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     inputNodesLayout.set({
       width: PORT_INPUTS_WIDTH,
       maxWidth: PORT_INPUTS_WIDTH,
@@ -66,13 +66,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      padding: 5
+      padding: [0, 40]
     });
     this._add(mainLayout, {
       flex: 1
     });
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
@@ -179,9 +179,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         nodePorts = inputNode.getInputsDefaultWidget();
       }
       if (nodePorts) {
-        this.__inputNodesLayout.add(nodePorts, {
-          flex: 1
-        });
+        this.__inputNodesLayout.add(nodePorts);
       }
       return nodePorts;
     },
@@ -193,16 +191,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         let box = new qx.ui.layout.HBox();
         box.set({
           spacing: 10,
-          alignX: "right"
-        });
-        let titleBox = new qx.ui.container.Composite(box);
-        let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
-        settLabel.set({
           alignX: "center"
         });
-        titleBox.add(settLabel, {
-          width: "75%"
+        let titleBox = new qx.ui.container.Composite(box);
+        let settLabel = new qx.ui.basic.Label(this.tr("Settings")).set({
+          font: "nav-bar-label"
         });
+        titleBox.add(settLabel);
 
         this.__settingsLayout.add(titleBox);
         this.__settingsLayout.add(propsWidget);
