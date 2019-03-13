@@ -464,14 +464,47 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
+    // post link creation routine
+    linkAdded: function(link) {
+      if (this.isInKey("dash-plot")) {
+        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const innerNode = innerNodes[i];
+          if (innerNode.addInputNode(inputNode.getNodeId())) {
+            this.createAutomaticPortConns(inputNode, innerNode);
+          }
+        }
+        this.__retrieveInputs();
+      }
+    },
+
+    createAutomaticPortConns: function(node1, node2) {
+      // create automatic port connections
+      console.log("createAutomaticPortConns", node1, node2);
+      const outPorts = node1.getOutputs();
+      const inPorts = node2.getInputs();
+      for (const outPort in outPorts) {
+        for (const inPort in inPorts) {
+          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              break;
+            }
+          }
+        }
+      }
+    },
+
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+        return true;
       }
+      return false;
     },
 
     setInputNodes: function(nodeData) {
@@ -537,10 +570,6 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __retrieveInputs: function() {
-      this.__updateBackendAndRetrieveInputs();
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },
 
@@ -660,11 +689,22 @@ qx.Class.define("qxapp.data.model.Node", {
         qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
+
+        this.__retrieveInputs();
       }
     },
 
     removeNode: function() {
       this.__stopInteractiveNode();
+      const innerNodes = Object.values(this.getInnerNodes());
+      for (const innerNode of innerNodes) {
+        innerNode.removeNode();
+      }
+      const parentNodeId = this.getParentNodeId();
+      if (parentNodeId) {
+        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        parentNode.removeInnerNode(this.getNodeId());
+      }
     },
 
     __stopInteractiveNode: function() {

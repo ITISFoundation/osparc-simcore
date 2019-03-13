@@ -1296,12 +1296,12 @@ qx.Class.define("qxapp.data.Store", {
               if (Object.prototype.hasOwnProperty.call(service, version)) {
                 serv["category"] = cats[serviceKey]["category"];
               } else {
-                serv["category"] = "Unknowkn";
+                serv["category"] = "Unknown";
               }
             }
           } else {
             for (const version in service) {
-              service[version]["category"] = "Unknowkn";
+              service[version]["category"] = "Unknown";
             }
           }
         }

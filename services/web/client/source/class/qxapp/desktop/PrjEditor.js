@@ -200,7 +200,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__currentNodeId = nodeId;
-      this.__treeView.nodeSelected(nodeId);
 
       let widget = null;
       const workbench = this.getProject().getWorkbench();
@@ -221,6 +220,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         } else {
           this.__nodeView.setNode(node);
+          this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
           } else {
@@ -231,6 +231,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.showInMainView(widget, nodeId);
 
       this.__switchExtraView(nodeId);
+
+      this.__treeView.nodeSelected(nodeId);
     },
 
     __switchExtraView: function(nodeId) {
@@ -307,8 +309,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
         const dedicatedWidget = node.getDedicatedWidget();
-        const bntText = dedicatedWidget ? this.tr("To setup mode") : this.tr("To dedicated view");
-        let expertModeBtn = new qx.ui.form.Button(bntText).set({
+        const btnLabel = dedicatedWidget ? this.tr("Setup view") : this.tr("Grid view");
+        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
+        let expertModeBtn = new qx.ui.form.Button().set({
+          label: btnLabel,
+          icon: btnIcon,
+          gap: 10,
           alignX: "right",
           height: 25,
           maxWidth: 150

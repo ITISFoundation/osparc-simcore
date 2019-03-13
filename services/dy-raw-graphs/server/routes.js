@@ -22,51 +22,14 @@ appRouter.get('/', function (request, response) {
   response.sendFile(path.resolve(config.APP_PATH, 'index.html'));
 });
 
-appRouter.get('/input', getInputFile);
-
-appRouter.get('/inputs', getInputFiles);
-
 appRouter.get('/retrieve', callInputRetriever);
-
+appRouter.get('/input', getInputFile);
+appRouter.get('/inputs', getInputFiles);
 appRouter.get('/output', getOutput);
 appRouter.put('/output', setOutput);
 
 module.exports = appRouter;
 
-function getInputFile(request, response) {
-  const inputsDir = '../inputs/';
-  const fileName = inputsDir + request.query["fileName"];
-  console.log('getInputFile', fileName);
-  fs.readFile(fileName, (err, data) => {
-    if (err) {
-      console.error(err);
-      response.sendStatus("500");
-      return;
-    }
-    response.send(data);
-  });
-}
-
-function getInputFiles(request, response) {
-  console.log('getInputFiles');
-  const inputsDir = '../inputs/';
-  fs.readdir(inputsDir, (err, files) => {
-    if (err) {
-      console.error(err);
-      response.sendStatus("500");
-      return;
-    }
-    let metadata = [];
-    for (let i=0; i<files.length; i++) {
-      metadata.push({
-        title: files[i],
-        type: 'Other',
-        url: files[i]
-      });
-    }
-    response.send(metadata);
-  });
-}
 
 function callInputRetriever(request, response) {
   console.log('Received a call to retrieve the data on input ports from ' + request.ip);
@@ -100,6 +63,64 @@ function callInputRetriever(request, response) {
   });
 }
 
+function getInputDir() {
+  const inputsDir = '../inputs/';
+  if (!fs.existsSync(inputsDir)) {
+    fs.mkdirSync(inputsDir);
+  }
+  return inputsDir;
+}
+
+function getOutputDir() {
+  const outputsDir = '../outputs/';
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir);
+  }
+  const port = "output_1/";
+  const outputsDirPort = outputsDir + port;
+  if (!fs.existsSync(outputsDirPort)) {
+    fs.mkdirSync(outputsDirPort);
+  }
+  return outputsDirPort;
+}
+
+function getInputFile(request, response) {
+  const inputsDir = getInputDir();
+  const fileName = inputsDir + request.query["fileName"];
+  console.log('getInputFile', fileName);
+  fs.readFile(fileName, (err, data) => {
+    if (err) {
+      console.error(err);
+      response.sendStatus("500");
+      return;
+    }
+    response.send(data);
+  });
+}
+
+function getInputFiles(request, response) {
+  console.log('getInputFiles');
+  const inputsDir = getInputDir();
+  fs.readdir(inputsDir, (err, files) => {
+    if (err) {
+      console.error(err);
+      response.sendStatus("500");
+      return;
+    }
+    let metadata = [];
+    for (let i=0; i<files.length; i++) {
+      if (fs.lstatSync(inputsDir+files[i]).isFile()) {
+        metadata.push({
+          title: files[i],
+          type: 'Other',
+          url: files[i]
+        });
+      }
+    }
+    response.send(metadata);
+  });
+}
+
 function addViewBoxAttr(svgCode) {
   // get width value and replace it by 'auto'
   let width = svgCode.match(/"(.*?)"/);
@@ -128,47 +149,34 @@ function addViewBoxAttr(svgCode) {
 
 function setOutput(request, response) {
   console.log('setOutput');
-  const outputsDir = '../outputs/';
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir);
-  }
-  const ports = ["output_1/"];
-  for (let i=0; i<ports.length; i++) {
-    const outputsDirPort = outputsDir + ports[i];
-    if (!fs.existsSync(outputsDirPort)) {
-      fs.mkdirSync(outputsDirPort);
+  const outputsDirPort = getOutputDir();
+  const outputFileName = outputsDirPort + "output.svg";
+  let svgCode = request.body.svgCode;
+  svgCode = addViewBoxAttr(svgCode);
+  fs.writeFile(outputFileName, svgCode, err => {
+    if (err) {
+      console.log(err);
+      response.sendStatus("500");
+      return;
     }
-    const outputFileName = outputsDirPort + "output.svg";
-    let svgCode = request.body.svgCode;
-    svgCode = addViewBoxAttr(svgCode);
-    fs.writeFile(outputFileName, svgCode, err => {
-      if (err) {
-        console.log(err);
-        response.sendStatus("500");
-        return;
-      }
-      console.log("The file was saved!");
-      response.send({
-        status: "ok"
-      });
+    console.log("The file was saved!");
+    response.send({
+      status: "ok"
     });
-  }
+  });
 }
 
 function getOutput(request, response) {
   console.log('getOutput');
-  const outputsDir = '../outputs/output_1/';
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir);
-  }
-  fs.readdir(outputsDir, (err, files) => {
+  const outputsDirPort = getOutputDir();
+  fs.readdir(outputsDirPort, (err, files) => {
     if (err) {
       console.log(err);
       response.sendStatus("500");
       return;
     }
     if (files.length > 0) {
-      const fileName = outputsDir + files[0];
+      const fileName = outputsDirPort + files[0];
       fs.readFile(fileName, (err, data) => {
         if (err) {
           console.log(err);
