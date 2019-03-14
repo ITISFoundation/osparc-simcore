@@ -33,7 +33,16 @@ qx.Theme.define("qxapp.theme.Decoration", {
       decorator: qx.ui.decoration.Decorator,
       style: {
         color: "#828282",
-        width: 1
+        width: 1,
+        radius: 4
+      }
+    },
+
+    "panelview-titlebar": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        widthTop: 1,
+        color: "border"
       }
     },
 
@@ -49,6 +58,23 @@ qx.Theme.define("qxapp.theme.Decoration", {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
         width: 0
+      }
+    },
+
+    "panelview-close-collapse-transition": {
+      style: {
+        transitionProperty: ["height", "top"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "panelview-open-collapse-transition": {
+      include: "panelview-content",
+      style: {
+        transitionProperty: ["height", "top"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
       }
     }
   }
