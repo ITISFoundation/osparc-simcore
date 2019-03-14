@@ -67,7 +67,7 @@ RUN $SC_PIP2 install numpy==1.16.0 &&\
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as scu with same gid/uid as host
 #
 #  + /devel         WORKDIR
 #    + packages  (mounted volume)
