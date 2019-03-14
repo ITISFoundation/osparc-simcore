@@ -76,6 +76,27 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginTop: 11,
         marginRight: 3
       })
+    },
+    "splitpane": {
+      style: state => ({
+        offset: 0
+      })
+    },
+    "splitpane/splitter": {
+      style: state => ({
+        width: 0
+      })
+    },
+    "splitpane/splitter/knob": {
+      style: state => ({
+        source: "https://dummyimage.com/1x1/222222.jpg",
+        padding: 0
+      })
+    },
+    sidebar: {
+      style: state => ({
+        backgroundColor: "background-main-lighter"
+      })
     }
   }
 });

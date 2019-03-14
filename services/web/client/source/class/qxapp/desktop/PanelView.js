@@ -32,8 +32,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       .set({
-        appearance: "panelview-titlebar",
-        decorator: "panelview-titlebar"
+        appearance: "panelview-titlebar"
       });
     this._add(this.__titleBar);
 
