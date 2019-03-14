@@ -76,6 +76,17 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginTop: 11,
         marginRight: 3
       })
+    },
+    "window-small-cap/captionbar": {
+      include: "window/captionbar", // load defaults from window captionbar
+      alias: "window/captionbar", // redirect kids
+      style: function(states) {
+        return {
+          padding: [0, 3, 0, 3],
+          minHeight: 20,
+          decorator: "workbench-node-captionbar"
+        };
+      }
     }
   }
 });

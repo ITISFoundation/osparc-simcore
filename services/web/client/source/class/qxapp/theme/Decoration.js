@@ -76,6 +76,13 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
+    },
+
+    "workbench-node-captionbar": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        width: 0
+      }
     }
   }
 });
