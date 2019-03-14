@@ -118,35 +118,21 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         flex: 1
       });
 
-      const levelGroup = new qx.ui.toolbar.Part();
-      const logButtons = [];
+      const part = new qx.ui.toolbar.Part();
+      const group = new qx.ui.form.RadioGroup();
       for (let level in LOG_LEVEL) {
         const label = level.charAt(0).toUpperCase() + level.slice(1);
         const button = new qx.ui.form.ToggleButton(label).set({
           appearance: "toolbar-button"
         });
         button.logLevel = LOG_LEVEL[level];
-        levelGroup.add(button);
-        logButtons.push(button);
+        group.add(button);
+        part.add(button);
       }
-      toolbar.add(levelGroup);
-
-      const group = new qx.ui.form.RadioGroup();
-      const defSelected = [];
-      for (let i=0; i<logButtons.length; i++) {
-        const logLevelBtn = logButtons[i];
-        group.add(logLevelBtn);
-        if (this.getLogLevel() === logLevelBtn.logLevel) {
-          defSelected.push(logLevelBtn);
-        }
-        logLevelBtn.addListener("changeValue", e => {
-          if (e.getData() === true) {
-            this.setLogLevel(logLevelBtn.logLevel);
-          }
-        }, this);
-      }
-      group.setSelection(defSelected);
-      group.setAllowEmptySelection(false);
+      group.addListener("changeValue", e => {
+        this.setLogLevel(e.getData().logLevel);
+      }, this);
+      toolbar.add(part);
 
       return toolbar;
     },
