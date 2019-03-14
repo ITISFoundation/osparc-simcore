@@ -91,7 +91,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
-        this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
+        this.__caret.setSource(isVisible ? this.self().LESS_CARET : this.self().MORE_CARET);
         if (isVisible) {
           this.__innerContainer.show();
           this.setLayoutProperties({
@@ -102,6 +102,9 @@ qx.Class.define("qxapp.desktop.PanelView", {
           this.setLayoutProperties({
             flex: 0
           });
+          if (this.__innerContainer.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
+            this.__innerContainer.exclude();
+          }
         }
         this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-close-collapse-transition");
         this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
@@ -113,6 +116,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
         this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
           appearance: "panelview-content",
           decorator: "panelview-content",
+          visibility: this.getContentVisibility() ? "visible" : "excluded",
           minHeight: 0
         });
         this._addAt(this.__innerContainer, 1, {
