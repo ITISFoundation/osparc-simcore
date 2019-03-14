@@ -168,22 +168,23 @@ async def test_core_service_running(core_service_name, docker_client, loop):
                 get_failed_tasks_logs(running_service, docker_client))
 
 
-async def test_check_serve_root():
+async def test_check_serve_root(docker_client, services_docker_compose, tools_docker_compose):
+    """
+        NOTE: Assumes `make up-swarm` executed
+    """
+    running_services = docker_client.services.list()
+    assert (len(services_docker_compose["services"]) + len(tools_docker_compose["services"])) == len(running_services)
+
     req = urllib.request.Request("http://localhost:9081/")
     try:
         resp = urllib.request.urlopen(req)
-        print("Reason: ", resp)
+        charset = resp.info().get_content_charset()
+        content = resp.read().decode(charset)
+        search = "qxapp/boot.js"
+        if content.find(search) < 0:
+            pytest.fail("{} not found in main index.html".format(search))
     except urllib.error.HTTPError as err:
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
     except urllib.error.URLError as e:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
 
-
-async def test_check_serve_root_data():
-    req = urllib.request.Request("http://localhost:9081/")
-    resp = urllib.request.urlopen(req)
-    charset = resp.info().get_content_charset()
-    content = resp.read().decode(charset)
-    search = "qxapp/boot.js"
-    if content.find(search) < 0:
-        pytest.fail("{} not found in main index.html".format(search))
