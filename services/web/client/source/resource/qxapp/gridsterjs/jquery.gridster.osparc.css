@@ -1,6 +1,5 @@
 .gridster .gs-w {
   background: #262626;
-  margin-bottom: "-10px";
 }
 .gridster .preview-holder {
   background: #666666 !important;
@@ -10,19 +9,29 @@
 }
 .gridster li {
   font-weight: normal;
+  display: flex;
+  flex-direction: column;
 }
 .gridster li header {
   background: #343434;
-  display: block;
   font-size: 16px;
   line-height: normal;
-  padding: 2px 0 2px;
-  margin-bottom: 10px;
-  cursor: move;
+  flex: 0;
+  padding: 4px 0;
+  cursor: grab;
+  cursor: -webkit-grab;
+}
+.gridster li header:active {
+  cursor: grabbing;
+  cursor: -webkit-grabbing;
 }
 .gridster li content {
   filter: invert(85%);
-  vertical-align: middle;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
 }
 .gs-resize-handle-both {
   filter: invert(85%)
