@@ -48,13 +48,13 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return style;
       }
     },
-    "titlebar": {
+    "panelview-titlebar": {
       style: state => ({
         height: 24,
         padding: [0, 5]
       })
     },
-    "titlebar-label": {
+    "panelview-titlebar-label": {
       style: state => ({
         marginTop: 4
       })
