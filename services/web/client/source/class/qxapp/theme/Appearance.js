@@ -87,12 +87,6 @@ qx.Theme.define("qxapp.theme.Appearance", {
         width: 0
       })
     },
-    "splitpane/splitter/knob": {
-      style: state => ({
-        source: "https://dummyimage.com/1x1/222222.jpg",
-        padding: 0
-      })
-    },
     sidebar: {
       style: state => ({
         backgroundColor: "background-main-lighter"
