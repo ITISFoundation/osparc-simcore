@@ -75,7 +75,7 @@ services:
         io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
         io.simcore.inputs: '{"inputs": {"ap":{"label": "ap", "displayOrder":0, "description": "these are computed data out of a 2d solver", "type": "data:*/*"}}}'
-        io.simcore.outputs: ''
+        io.simcore.outputs: '{"outputs": {}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
