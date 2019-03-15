@@ -55,7 +55,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   construct: function() {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox());
 
     let filterToolbar = this.__createFilterToolbar();
     this._add(filterToolbar);
