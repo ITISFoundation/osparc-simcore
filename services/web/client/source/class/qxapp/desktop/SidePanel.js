@@ -40,9 +40,9 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    let topView = new qxapp.desktop.PanelView("Service tree");
-    let midView = new qxapp.desktop.PanelView("Overview");
-    let bottomView = new qxapp.desktop.PanelView("Logger");
+    let topView = new qxapp.desktop.PanelView(this.tr("Service tree"));
+    let midView = new qxapp.desktop.PanelView(this.tr("Overview"));
+    let bottomView = new qxapp.desktop.PanelView(this.tr("Logger"));
 
     this._add(topView);
     this._add(midView);

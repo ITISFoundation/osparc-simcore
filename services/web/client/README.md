@@ -86,6 +86,9 @@ docker-volume-watcher
 **NOTE** Use scripts in ``osparc-simcore/scripts/win-watcher.bat``
 
 
+## Frontend UI Workflow
+
+![Frontend UI Workflow](frontend-diagram.svg)
 
 
 

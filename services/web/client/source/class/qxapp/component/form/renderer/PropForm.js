@@ -40,6 +40,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     fl.setColumnAlign(0, "left", "top");
     fl.setColumnFlex(1, 1);
     fl.setColumnMinWidth(1, 130);
+
+    this.setDroppable(true);
+    this.__attachDragoverHighlighter();
   },
 
   events: {
@@ -95,7 +98,6 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             item: items[i]
           });
         }
-        // this.__createDropMechanism(label, item.key);
         this.__createDropMechanism(item, item.key);
       }
     },
@@ -183,7 +185,6 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
-          let compatible = false;
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
             let dragNodeId = from.nodeId;
@@ -191,10 +192,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
-            compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
-          }
-          if (!compatible) {
-            e.preventDefault();
+            if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
+              this.__hightlightCompatibles(e.getRelatedTarget());
+              e.stopPropagation();
+            } else {
+              e.preventDefault();
+            }
           }
         }, this);
 
@@ -210,6 +213,43 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           }
         }, this);
       }
+    },
+
+    __getCompatibleInputs: function(output) {
+      return this._getChildren().filter(child => child.nodeId && this.__arePortsCompatible(output.nodeId, output.portId, child.nodeId, child.portId));
+    },
+
+    __hightlightCompatibles: function(output) {
+      const inputs = this.__getCompatibleInputs(output);
+      for (let i in inputs) {
+        const input = inputs[i];
+        input.setDecorator("material-textfield-focused");
+      }
+    },
+
+    __unhightlightAll: function() {
+      const inputs = this._getChildren().filter(child => child.nodeId);
+      for (let i in inputs) {
+        const input = inputs[i];
+        input.resetDecorator();
+      }
+    },
+
+    __attachDragoverHighlighter: function() {
+      this.addListener("dragover", e => {
+        if (e.supportsType("osparc-port-link")) {
+          this.__hightlightCompatibles(e.getRelatedTarget());
+          e.preventDefault();
+        }
+      }, this);
+      this.addListener("dragleave", e => {
+        if (e.supportsType("osparc-port-link")) {
+          this.__unhightlightAll();
+        }
+      }, this);
+      this.addListener("mouseup", e => {
+        this.__unhightlightAll();
+      });
     }
   }
 });
