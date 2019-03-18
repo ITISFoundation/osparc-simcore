@@ -47,7 +47,7 @@ services:
         io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
         io.simcore.inputs: '{"inputs": {"ECGs":{"label": "ECGs", "displayOrder":0, "description": "Computed ECGs out of a solver", "type": "data:*/*"}, "y_1D":{"label": "action potentials", "displayOrder":1, "description": "Action potentials out of solver", "type": "data:*/*"}}}'
-        io.simcore.outputs: '{"outputs": {"out_1":{"label": "ECG", "displayOrder":0, "description": "ECG csv", "type": "data:text/csv"}, {"out_2":{"label": "Action potentials 1D", "displayOrder": 1, "description": "Action potentials 1D csv", "type": "data:text/csv"}}}'
+        io.simcore.outputs: '{"outputs": {"out_1":{"label": "ECG", "displayOrder":0, "description": "ECG csv", "type": "data:text/csv"}}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
