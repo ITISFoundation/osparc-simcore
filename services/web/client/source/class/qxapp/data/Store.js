@@ -1274,6 +1274,9 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/dynamic/kember-viewer": {
           "category": "PostPro"
         },
+        "simcore/services/dynamic/mattword-viewer": {
+          "category": "PostPro"
+        },
         "simcore/services/dynamic/modeler/webserver": {
           "category": "Modeling"
         },
