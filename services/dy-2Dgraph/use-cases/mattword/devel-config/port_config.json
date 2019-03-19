@@ -2,28 +2,22 @@
     "version":"0.1",
     "schema": {
         "inputs": {
-            "in_1": {
-                "displayOrder":0,
-                "label": "computational data",
-                "description": "these are computed data out of a pipeline",
-                "type": "data:*/*"
-            }
         },
         "outputs": {
             "output_1": {
                 "displayOrder": 0,
                 "label": "output 1",
                 "description": "this is the output number 1",
-                "type": "data:*/*"
+                "type": "data:text/csv"
             },
             "output_2": {
                 "displayOrder": 1,
                 "label": "output 2",
                 "description": "this is the output number 2",
-                "type": "data:*/*"
+                "type": "data:text/csv"
             }
         }
     },
     "inputs":{},
-    "outputs":{}    
+    "outputs":{}
 }
