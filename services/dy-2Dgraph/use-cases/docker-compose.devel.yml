@@ -16,6 +16,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-single-cell/notebook:/home/jovyan/notebook
@@ -41,6 +42,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-oned/notebook:/home/jovyan/notebook
@@ -66,6 +68,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-twod/notebook:/home/jovyan/notebook
@@ -91,6 +94,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=100 6000 20 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./kember/notebook:/home/jovyan/notebook
@@ -116,6 +120,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=100 6000 20 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./mattword/notebook:/home/jovyan/notebook
@@ -126,12 +131,12 @@ services:
       - minio
   #--------------------------------------------------------------------
   apihub:
-    image: services_apihub:latest
+    image: itisfoundation/apihub:staging-latest
     ports:
       - 8043:8043
   #--------------------------------------------------------------------
   storage:
-    image: services_storage:latest
+    image: itisfoundation/storage:staging-latest
     ports:
       - 11111:8080
     environment:
