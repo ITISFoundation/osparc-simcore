@@ -26,19 +26,19 @@ ifndef DOCKER_REGISTRY
 endif
 
 build-devel: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --parallel
 
 rebuild-devel: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache --parallel
 
 up-devel: .env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
 
 build: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml build --parallel
 
 rebuild: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
+	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache --parallel
 
 up: .env
 	${DOCKER_COMPOSE} -f docker-compose.yml up
