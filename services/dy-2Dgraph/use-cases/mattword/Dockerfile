@@ -34,5 +34,4 @@ FROM common AS production
 ARG NOTEBOOK_NAME
 # copy the notebook in the image
 COPY --chown=jovyan:users mattword/${NOTEBOOK_NAME} ${NOTEBOOK_NAME}
-COPY --chown=jovyan:users mattword/input /home/jovyan/input
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
