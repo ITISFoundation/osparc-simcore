@@ -46,11 +46,10 @@ qx.Class.define("qxapp.test.data.MimeType",
       */
 
       testMatch: function() {
-        const store = qxapp.data.Store.getInstance();
         const aPortType = "data:*/*";
         const bPortType = "data:text/csv";
-        const a = store.__getMatchType(aPortType);
-        const b = store.__getMatchType(bPortType);
+        const a = qxapp.data.MimeType.getMimeType(aPortType);
+        const b = qxapp.data.MimeType.getMimeType(bPortType);
         this.assert(a.match(b), "*/* should match everything");
       }
     }
