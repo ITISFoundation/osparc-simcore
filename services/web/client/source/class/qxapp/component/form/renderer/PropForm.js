@@ -105,10 +105,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
         item.addListener("focus", () => {
           qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
-        }, this)
+        }, this);
         item.addListener("focusout", () => {
           qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
-        }, this)
+        }, this);
       }
     },
 

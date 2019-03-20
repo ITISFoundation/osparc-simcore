@@ -168,7 +168,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     },
 
     __subscribeToMessages: function() {
-      const msgCb = (decoratorName) => (msg) => {
+      const msgCb = decoratorName => msg => {
         const compareFn = msg.getData();
         if (compareFn(this.getNode().getNodeId(), this.__portId)) {
           this.setDecorator(decoratorName);
