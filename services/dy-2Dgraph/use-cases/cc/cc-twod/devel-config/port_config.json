@@ -8,20 +8,6 @@
                 "description": "these are computed data out of a pipeline",
                 "type": "data:*/zip"
             }
-        },
-        "outputs": {
-            "output_1": {                
-                "label": "Output 1",
-                "displayOrder": 0,
-                "description": "The output 1",
-                "type": "data:*/*"
-            },
-            "output_2": {
-                "label": "Output 2",
-                "displayOrder": 1,
-                "description": "The output 2",
-                "type": "data:*/*"
-            }
         }
     },
     "inputs": {},

@@ -21,12 +21,6 @@
                 "displayOrder":0,
                 "description": "The output 1",
                 "type": "data:*/*"
-            },
-            "output_2": {
-                "label": "Output 2",
-                "displayOrder":1,
-                "description": "The output 2",
-                "type": "data:*/*"
             }
         }
     },
