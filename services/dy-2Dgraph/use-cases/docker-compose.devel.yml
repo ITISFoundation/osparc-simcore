@@ -124,6 +124,8 @@ services:
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./mattword/notebook:/home/jovyan/notebook
+      - ./mattword/input:/home/jovyan/input
+      - ./mattword/output:/home/jovyan/output
       - ./mattword/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
     depends_on:

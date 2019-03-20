@@ -8,7 +8,6 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-# export SERVICES_VERSION=1.2.0
 export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export BASE_IMAGE=masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
@@ -20,28 +19,28 @@ all:
 
 check-env:
 ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
+	$(error SERVICES_VERSION variable is undefined, try this 'export SERVICES_VERSION=2.8.0')
 endif
 ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
+	$(error DOCKER_REGISTRY variable is undefined, try this 'export DOCKER_REGISTRY=masu.speag.com')
 endif
 
 build-devel: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --parallel
 
 rebuild-devel: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache --parallel
 
-up-devel:
+up-devel: .env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
 
 build: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml build --parallel
 
 rebuild: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
+	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache --parallel
 
-up:
+up: .env
 	${DOCKER_COMPOSE} -f docker-compose.yml up
 
 down:
@@ -55,3 +54,14 @@ push_service_images: check-env
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/cc-2d-viewer:${SERVICES_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/kember-viewer:${SERVICES_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/mattword-viewer:${SERVICES_VERSION}
+
+.env: .env-devel
+	# first check if file exists, copies it
+	@if [ ! -f $@ ]	; then \
+		echo "##### $@ does not exist, copying $< ############"; \
+		cp $< $@; \
+	else \
+		echo "#####  $< is newer than $@ ####"; \
+		diff -uN $@ $<; \
+		false; \
+	fi
