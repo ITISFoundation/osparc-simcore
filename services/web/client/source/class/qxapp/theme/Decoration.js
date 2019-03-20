@@ -56,16 +56,21 @@ qx.Theme.define("qxapp.theme.Decoration", {
     "outputPort": {
       decorator: qx.ui.decoration.Decorator,
       style: {
-        color: "#828282",
+        color: "button-border-hovered",
         width: 1,
         radius: 4
       }
     },
 
     "outputPortHighlighted": {
+      decorator: qx.ui.decoration.MBoxShadow,
       include: "outputPort",
       style: {
-        width: 2
+        shadowColor: "button-border-hovered",
+        shadowBlurRadius: 3,
+        shadowSpreadRadius: 2,
+        shadowLength: [0, 0],
+        inset: false
       }
     }
   }

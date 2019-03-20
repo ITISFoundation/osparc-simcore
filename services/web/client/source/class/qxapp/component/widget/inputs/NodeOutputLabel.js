@@ -50,6 +50,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     grid.setColumnFlex(1, 1);
     grid.setColumnWidth(2, 23);
     this._setLayout(grid);
+    this.setPadding([0, 5]);
 
 
     let portLabel = this._createChildControlImpl("portLabel");
@@ -120,7 +121,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           control = new qx.ui.basic.Label().set({
             font: text14Font,
             margin: [10, 0],
-            maxWidth: 250,
             rich: true,
             alignX: "left"
           });
@@ -133,7 +133,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
         case "dragIcon": {
           control = new qx.ui.basic.Atom().set({
             icon: "@FontAwesome5Solid/arrows-alt/14",
-            alignX: "center",
+            alignX: "right",
             toolTip: new qx.ui.tooltip.ToolTip("Drag and drop over desired input...")
           });
           this._add(control, {

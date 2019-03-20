@@ -101,15 +101,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
+        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+
         item.addListener("focus", () => {
-          qx.event.message.Bus.getInstance().dispatchByName("inputFocus",
-            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key)
-          );
+          qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
         }, this)
         item.addListener("focusout", () => {
-          qx.event.message.Bus.getInstance().dispatchByName("inputFocusout",
-            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key)
-          );
+          qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
         }, this)
       }
     },
