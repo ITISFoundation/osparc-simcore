@@ -630,8 +630,7 @@ qx.Class.define("qxapp.data.model.Node", {
           this.setProgress(newProgress);
           if (newProgress === 100) {
             increment = false;
-          }
-          else if (newProgress === 0) {
+          } else if (newProgress === 0) {
             increment = true;
           }
         } else {
