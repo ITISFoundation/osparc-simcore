@@ -116,7 +116,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContent: function(content, oldContent) {
       if (this.__innerContainer === null) {
-        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
+        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
           appearance: "panelview-content",
           decorator: "panelview-content",
           visibility: this.getContentVisibility() ? "visible" : "excluded"
@@ -149,15 +149,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
       this.__innerContainer.removeAll();
       content.setMinHeight(0);
-<<<<<<< HEAD
-      this.__innerContainer.add(content);
-=======
       this.__innerContainer.add(content, {
         top: 0,
         right: 0,
         left: 0
       });
->>>>>>> master
 
       if (this.__caret === null) {
         this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET).set({
