@@ -32,8 +32,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       .set({
-        appearance: "panelview-titlebar",
-        decorator: "panelview-titlebar"
+        appearance: "panelview-titlebar"
       });
     this._add(this.__titleBar);
 
@@ -91,7 +90,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
-        this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
+        this.__caret.setSource(isVisible ? this.self().LESS_CARET : this.self().MORE_CARET);
         if (isVisible) {
           this.__innerContainer.show();
           this.setLayoutProperties({
@@ -102,6 +101,9 @@ qx.Class.define("qxapp.desktop.PanelView", {
           this.setLayoutProperties({
             flex: 0
           });
+          if (this.__innerContainer.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
+            this.__innerContainer.exclude();
+          }
         }
         this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-close-collapse-transition");
         this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
@@ -113,7 +115,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
         this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
           appearance: "panelview-content",
           decorator: "panelview-content",
-          minHeight: 0
+          visibility: this.getContentVisibility() ? "visible" : "excluded"
         });
         this._addAt(this.__innerContainer, 1, {
           flex: 1
@@ -134,9 +136,14 @@ qx.Class.define("qxapp.desktop.PanelView", {
               }
             });
         }, this);
+
+        content.addListenerOnce("appear", () => {
+          content.getContentElement().getDomElement().style.transform = "translateZ(0)";
+        });
       }
 
       this.__innerContainer.removeAll();
+      content.setMinHeight(0);
       this.__innerContainer.add(content, {
         top: 0,
         right: 0,

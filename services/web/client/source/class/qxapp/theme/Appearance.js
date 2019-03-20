@@ -80,13 +80,26 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "window-small-cap/captionbar": {
       include: "window/captionbar", // load defaults from window captionbar
       alias: "window/captionbar", // redirect kids
-      style: function(states) {
-        return {
-          padding: [0, 3, 0, 3],
-          minHeight: 20,
-          decorator: "workbench-node-captionbar"
-        };
-      }
+      style: state => ({
+        padding: [0, 3, 0, 3],
+        minHeight: 20,
+        decorator: "workbench-node-captionbar"
+      })
+    },
+    "splitpane": {
+      style: state => ({
+        offset: 0
+      })
+    },
+    "splitpane/splitter": {
+      style: state => ({
+        width: 0
+      })
+    },
+    sidebar: {
+      style: state => ({
+        backgroundColor: "background-main-lighter"
+      })
     }
   }
 });
