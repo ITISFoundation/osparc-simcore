@@ -607,40 +607,61 @@ qx.Class.define("qxapp.data.model.Node", {
 
         this.__showLoadingIFrame();
 
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
-        const msgData = {
-          nodeLabel: this.getLabel(),
-          msg: msg
-        };
-        this.fireDataEvent("showInLogger", msgData);
-
-        // start the service
-        const url = "/running_interactive_services";
-        let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        if (metaData.key.includes("/neuroman")) {
-          // HACK: Only Neuroman should enter here
-          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        }
-        let request = new qxapp.io.request.ApiRequest(url+query, "POST");
-        request.addListener("success", this.__onInteractiveNodeStarted, this);
-        request.addListener("error", e => {
-          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const errorMsgData = {
-            nodeLabel: this.getLabel(),
-            msg: errorMsg
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-        }, this);
-        request.addListener("fail", e => {
-          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const failMsgData = {
-            nodeLabel: this.getLabel(),
-            msg: failMsg
-          };
-          this.fireDataEvent("showInLogger", failMsgData);
-        }, this);
-        request.send();
+        this.__startService();
       }
+    },
+
+    __startService: function() {
+      const metaData = this.getMetaData();
+
+      const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+      const msgData = {
+        nodeLabel: this.getLabel(),
+        msg: msg
+      };
+      this.fireDataEvent("showInLogger", msgData);
+
+      const interval = 100;
+      let progressTimer = new qx.event.Timer(interval);
+      progressTimer.addListener("interval", () => {
+        if (this.getServiceUrl() === null) {
+          let newProgress = this.getProgress() + 10;
+          if (newProgress >= 100) {
+            newProgress = 0;
+            this.setProgress(newProgress);
+          }
+        } else {
+          progressTimer.stop();
+        }
+      }, this);
+      progressTimer.start();
+
+      // start the service
+      const url = "/running_interactive_services";
+      let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+      if (metaData.key.includes("/neuroman")) {
+        // HACK: Only Neuroman should enter here
+        query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+      }
+      let request = new qxapp.io.request.ApiRequest(url+query, "POST");
+      request.addListener("success", this.__onInteractiveNodeStarted, this);
+      request.addListener("error", e => {
+        const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+        const errorMsgData = {
+          nodeLabel: this.getLabel(),
+          msg: errorMsg
+        };
+        this.fireDataEvent("showInLogger", errorMsgData);
+      }, this);
+      request.addListener("fail", e => {
+        const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+        const failMsgData = {
+          nodeLabel: this.getLabel(),
+          msg: failMsg
+        };
+        this.fireDataEvent("showInLogger", failMsgData);
+      }, this);
+      request.send();
     },
 
     __onInteractiveNodeStarted: function(e) {
@@ -674,24 +695,31 @@ qx.Class.define("qxapp.data.model.Node", {
         } else if (this.getKey().includes("3d-viewer")) {
           srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
         }
-        this.setServiceUrl(srvUrl);
-        const msg = "Service ready on " + srvUrl;
-        const msgData = {
-          nodeLabel: this.getLabel(),
-          msg: msg
-        };
-        this.fireDataEvent("showInLogger", msgData);
 
-        this.getRetrieveIFrameButton().setEnabled(true);
-        this.getRestartIFrameButton().setEnabled(true);
-        // FIXME: Apparently no all services are inmediately ready when they publish the port
-        const waitFor = 4000;
-        qx.event.Timer.once(ev => {
-          this.__restartIFrame();
-        }, this, waitFor);
-
-        this.__retrieveInputs();
+        this.__serviceReadyIn(srvUrl);
       }
+    },
+
+    __serviceReadyIn: function(srvUrl) {
+      this.setServiceUrl(srvUrl);
+      const msg = "Service ready on " + srvUrl;
+      const msgData = {
+        nodeLabel: this.getLabel(),
+        msg: msg
+      };
+      this.fireDataEvent("showInLogger", msgData);
+
+      this.getRetrieveIFrameButton().setEnabled(true);
+      this.getRestartIFrameButton().setEnabled(true);
+      this.setProgress(100);
+
+      // FIXME: Apparently no all services are inmediately ready when they publish the port
+      const waitFor = 4000;
+      qx.event.Timer.once(ev => {
+        this.__restartIFrame();
+      }, this, waitFor);
+
+      this.__retrieveInputs();
     },
 
     removeNode: function() {
