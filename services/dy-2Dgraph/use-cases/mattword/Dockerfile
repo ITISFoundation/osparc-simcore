@@ -3,7 +3,7 @@ FROM masu.speag.com/simcore/base-images/jupyter-cnap:latest AS common
 LABEL maintainer="sanderegg"
 
 # install requirements --------------------------------------------------------
-COPY --chown=jovyan:users mattword/requirements.txt .
+COPY --chown=jovyan:users mattward/requirements.txt .
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 RUN pip --cache-dir=/tmp/.pipcache install -r requirements.txt &&\
     rm -rf /tmp/.pipcache
@@ -33,5 +33,5 @@ FROM common AS production
 # set of arguments to copy the right notebook
 ARG NOTEBOOK_NAME
 # copy the notebook in the image
-COPY --chown=jovyan:users mattword/${NOTEBOOK_NAME} ${NOTEBOOK_NAME}
+COPY --chown=jovyan:users mattward/${NOTEBOOK_NAME} ${NOTEBOOK_NAME}
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

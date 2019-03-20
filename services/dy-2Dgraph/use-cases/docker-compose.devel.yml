@@ -104,8 +104,8 @@ services:
       - postgres
       - minio
   #--------------------------------------------------------------------
-  mattword:
-    image: services_mattword-viewer-dev
+  mattward:
+    image: services_mattward-viewer-dev
     build:
       target: development
     environment:
@@ -123,10 +123,10 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./mattword/notebook:/home/jovyan/notebook
-      - ./mattword/input:/home/jovyan/input
-      - ./mattword/output:/home/jovyan/output
-      - ./mattword/devel-config:/home/jovyan/devel-config
+      - ./mattward/notebook:/home/jovyan/notebook
+      - ./mattward/input:/home/jovyan/input
+      - ./mattward/output:/home/jovyan/output
+      - ./mattward/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
     depends_on:
       - postgres

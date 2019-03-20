@@ -53,7 +53,7 @@ push_service_images: check-env
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/cc-1d-viewer:${SERVICES_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/cc-2d-viewer:${SERVICES_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/kember-viewer:${SERVICES_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/mattword-viewer:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/mattward-viewer:${SERVICES_VERSION}
 
 .env: .env-devel
 	# first check if file exists, copies it
