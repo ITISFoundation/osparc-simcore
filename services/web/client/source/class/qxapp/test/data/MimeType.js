@@ -44,8 +44,8 @@ qx.Class.define("qxapp.test.data.MimeType",
       */
 
       testMatch: function() {
-        const a = "data:*/*";
-        const b = "data:text/csv";
+        const a = "*/*";
+        const b = "text/csv";
         this.assert(a.match(b), "*/* should match everything");
       }
     }
