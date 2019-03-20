@@ -38,6 +38,8 @@ qx.Class.define("qxapp.desktop.SidePanel", {
   construct: function() {
     this.base(arguments);
 
+    this.setAppearance("sidebar");
+
     this._setLayout(new qx.ui.layout.VBox());
 
     let topView = new qxapp.desktop.PanelView(this.tr("Service tree"));
