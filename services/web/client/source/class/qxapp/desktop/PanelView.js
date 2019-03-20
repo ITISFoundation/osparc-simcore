@@ -137,6 +137,10 @@ qx.Class.define("qxapp.desktop.PanelView", {
               }
             });
         }, this);
+
+        content.addListenerOnce("appear", () => {
+          content.getContentElement().getDomElement().style.transform = "translateZ(0)";
+        });
       }
 
       this.__innerContainer.removeAll();
@@ -144,8 +148,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
       this.__innerContainer.add(content, {
         top: 0,
         right: 0,
-        left: 0,
-        bottom: 0
+        left: 0
       });
 
       if (this.__caret === null) {
