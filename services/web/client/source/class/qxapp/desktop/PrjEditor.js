@@ -23,6 +23,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(project, isNew) {
     this.base(arguments, "horizontal");
 
+    this.getChildControl("splitter").getChildControl("knob").hide();
+
     qxapp.utils.UuidToName.getInstance().setProject(project);
 
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
