@@ -141,11 +141,23 @@ qx.Class.define("qxapp.desktop.PanelView", {
               }
             });
         }, this);
+
+        content.addListenerOnce("appear", () => {
+          content.getContentElement().getDomElement().style.transform = "translateZ(0)";
+        });
       }
 
       this.__innerContainer.removeAll();
       content.setMinHeight(0);
+<<<<<<< HEAD
       this.__innerContainer.add(content);
+=======
+      this.__innerContainer.add(content, {
+        top: 0,
+        right: 0,
+        left: 0
+      });
+>>>>>>> master
 
       if (this.__caret === null) {
         this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET).set({
