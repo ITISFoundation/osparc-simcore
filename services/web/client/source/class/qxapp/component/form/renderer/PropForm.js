@@ -102,17 +102,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
         // Notify focus and focus out
         item.addListener("focus", () => {
-          const nodeId2 = this.getNode().getNodeId();
-          const portId2 = item.key;
           qx.event.message.Bus.getInstance().dispatchByName("inputFocus",
-            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, nodeId2, portId2)
+            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key)
           );
         }, this)
         item.addListener("focusout", () => {
-          const nodeId2 = this.getNode().getNodeId();
-          const portId2 = item.key;
           qx.event.message.Bus.getInstance().dispatchByName("inputFocusout",
-            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, nodeId2, portId2)
+            (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key)
           );
         }, this)
       }
@@ -184,10 +180,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
       if (this.getWorkbench() && node1Id && node2Id) {
         const node1 = this.getWorkbench().getNode(node1Id);
-        const port1 = node1.getOutput(port1Id);
         const node2 = this.getWorkbench().getNode(node2Id);
-        const port2 = node2.getInput(port2Id);
-        return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+        if (node1 && node2) {
+          const port1 = node1.getOutput(port1Id);
+          const port2 = node2.getInput(port2Id);
+          return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+        }
       }
       return false;
     },

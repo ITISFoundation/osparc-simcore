@@ -178,18 +178,20 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     },
 
     __subscribeToMessages: function() {
-      qx.event.message.Bus.getInstance().subscribe("inputFocus", (msg) => {
+      const msgCb = (decoratorName) => (msg) => {
         const compareFn = msg.getData();
         if (compareFn(this.getNode().getNodeId(), this.__portId)) {
-          this.setDecorator("outputPortHighlighted");
+          this.setDecorator(decoratorName);
         }
-      }, this);
-      qx.event.message.Bus.getInstance().subscribe("inputFocusout", (msg) => {
-        const compareFn = msg.getData();
-        if (compareFn(this.getNode().getNodeId(), this.__portId)) {
-          this.setDecorator("outputPort");
-        }
-      }, this);
+      };
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("inputFocus", msgCb("outputPortHighlighted"));
+        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb("outputPort"));
+      });
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocus", msgCb("outputPortHighlighted"));
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb("outputPort"));
+      });
     }
   }
 });

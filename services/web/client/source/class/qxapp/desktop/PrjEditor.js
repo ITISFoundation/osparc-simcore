@@ -24,7 +24,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.base(arguments, "horizontal");
 
     this.getChildControl("splitter").getChildControl("knob").hide();
-    this.setOffset(0)
+    this.setOffset(0);
 
     qxapp.utils.UuidToName.getInstance().setProject(project);
 

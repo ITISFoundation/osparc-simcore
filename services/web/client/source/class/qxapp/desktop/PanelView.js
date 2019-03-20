@@ -93,14 +93,18 @@ qx.Class.define("qxapp.desktop.PanelView", {
         this.__caret.setSource(isVisible ? this.self().LESS_CARET : this.self().MORE_CARET);
         if (isVisible) {
           this.__innerContainer.show();
-          this.setLayoutProperties({
-            flex: this.__layoutFlex || 0
-          });
+          if (this.__layoutFlex) {
+            this.setLayoutProperties({
+              flex: this.__layoutFlex
+            });
+          }
         } else {
-          this.__layoutFlex = this.getLayoutProperties().flex;
-          this.setLayoutProperties({
-            flex: 0
-          });
+          if (this.getLayoutProperties().flex) {
+            this.__layoutFlex = this.getLayoutProperties().flex;
+            this.setLayoutProperties({
+              flex: 0
+            });
+          }
           if (this.__innerContainer.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
             this.__innerContainer.exclude();
           }

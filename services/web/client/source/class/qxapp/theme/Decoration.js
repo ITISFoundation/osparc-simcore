@@ -21,14 +21,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
   decorations: {
 
-    "panelview-titlebar": {
-      decorator: qx.ui.decoration.MSingleBorder,
-      style: {
-        widthTop: 1,
-        color: "border"
-      }
-    },
-
     "panelview-content": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
