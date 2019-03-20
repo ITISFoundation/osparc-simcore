@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: 0 */
+
 /**
  * Test MimeType class
  *
@@ -44,8 +46,11 @@ qx.Class.define("qxapp.test.data.MimeType",
       */
 
       testMatch: function() {
-        const a = "*/*";
-        const b = "text/csv";
+        const store = qxapp.data.Store.getInstance();
+        const aPortType = "data:*/*";
+        const bPortType = "data:text/csv";
+        const a = store.__getMatchType(aPortType);
+        const b = store.__getMatchType(bPortType);
         this.assert(a.match(b), "*/* should match everything");
       }
     }
