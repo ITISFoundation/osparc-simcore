@@ -56,16 +56,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     this.__tree = this._createChildControlImpl("tree");
     this.populateTree();
 
-    this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "Delete") {
-        this.__deleteNode();
-      }
-    }, this);
-    this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "F2") {
-        this.__renameNode();
-      }
-    }, this);
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -144,7 +135,8 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         decorator: "service-tree",
-        openMode: "none"
+        openMode: "none",
+        contentPadding: 0
       });
       tree.addListener("dbltap", e => {
         const currentSelection = this.__getOneSelectedRow();
@@ -269,6 +261,19 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         this.__tree.openNodeAndParents(nodeInTree);
         this.__tree.setSelection(new qx.data.Array([nodeInTree]));
       }
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "Delete") {
+          this.__deleteNode();
+        }
+      }, this);
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "F2") {
+          this.__renameNode();
+        }
+      }, this);
     }
   }
 });

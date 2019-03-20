@@ -20,6 +20,8 @@ VOLUME /packages
 VOLUME /home/jovyan/devel
 VOLUME /home/jovyan/devel-config
 VOLUME /home/jovyan/notebook
+VOLUME /home/jovyan/input
+VOLUME /home/jovyan/output
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"
 ENV INIT_OPTIONS="100 6000 20 space"
 ENV CREATE_DUMMY_TABLE=1
