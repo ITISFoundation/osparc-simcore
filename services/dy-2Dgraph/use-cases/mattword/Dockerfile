@@ -1,5 +1,5 @@
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE} AS common
+#ARG BASE_IMAGE
+FROM masu.speag.com/simcore/base-images/jupyter-cnap:latest AS common
 LABEL maintainer="sanderegg"
 
 # install requirements --------------------------------------------------------
