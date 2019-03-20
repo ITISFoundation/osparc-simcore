@@ -20,14 +20,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
   extend: osparc.theme.osparcdark.Decoration,
 
   decorations: {
-    "droppableWidget": {
-      decorator: qx.ui.decoration.Decorator,
-      style: {
-        style: "dashed",
-        color: "#828282",
-        width: 1
-      }
-    },
 
     "panelview-titlebar": {
       decorator: qx.ui.decoration.MSingleBorder,
