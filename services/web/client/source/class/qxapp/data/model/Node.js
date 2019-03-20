@@ -621,14 +621,18 @@ qx.Class.define("qxapp.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      const interval = 100;
+      const interval = 50;
+      let increment = true;
       let progressTimer = new qx.event.Timer(interval);
       progressTimer.addListener("interval", () => {
         if (this.getServiceUrl() === null) {
-          let newProgress = this.getProgress() + 10;
-          if (newProgress >= 100) {
-            newProgress = 0;
-            this.setProgress(newProgress);
+          const newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          this.setProgress(newProgress);
+          if (newProgress === 100) {
+            increment = false;
+          }
+          else if (newProgress === 0) {
+            increment = true;
           }
         } else {
           progressTimer.stop();
@@ -652,6 +656,7 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
+        progressTimer.stop();
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -660,6 +665,7 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
+        progressTimer.stop();
       }, this);
       request.send();
     },
