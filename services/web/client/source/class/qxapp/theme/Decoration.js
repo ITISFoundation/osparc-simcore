@@ -29,28 +29,11 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "draggableWidget": {
-      decorator: qx.ui.decoration.Decorator,
-      style: {
-        color: "#828282",
-        width: 1,
-        radius: 4
-      }
-    },
-
     "panelview-titlebar": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
         widthTop: 1,
         color: "border"
-      }
-    },
-
-    "panelview-titlebar": {
-      decorator: qx.ui.decoration.MSingleBorder,
-      style: {
-        widthTop: 1,
-        color: "border-separator"
       }
     },
 
@@ -69,7 +52,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-close-collapse-transition": {
+    "panelview-collapse-transition": {
       style: {
         transitionProperty: ["height", "top"],
         transitionDuration: "0.2s",
@@ -83,6 +66,22 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionProperty: ["height", "top"],
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "outputPort": {
+      decorator: qx.ui.decoration.Decorator,
+      style: {
+        color: "#828282",
+        width: 1,
+        radius: 4
+      }
+    },
+
+    "outputPortHighlighted": {
+      include: "outputPort",
+      style: {
+        width: 2
       }
     }
   }

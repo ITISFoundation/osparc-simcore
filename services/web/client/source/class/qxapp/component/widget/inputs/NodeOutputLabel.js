@@ -43,6 +43,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     this.base();
 
     this.setNode(node);
+    this.__portId = portKey;
 
     const grid = new qx.ui.layout.Grid(5, 5);
     grid.setColumnFlex(0, 1);
@@ -78,6 +79,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     this._createChildControlImpl("dragIcon");
 
     this.__createDragMechanism(this, portKey);
+
+    this.__subscribeToMessages();
   },
 
   properties: {
@@ -93,6 +96,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   },
 
   members: {
+    __portId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -145,7 +150,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     __createDragMechanism: function(uiPort, portKey) {
       uiPort.set({
         draggable: true,
-        decorator: "draggableWidget"
+        decorator: "outputPort"
       });
       uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
@@ -170,6 +175,21 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     getOutputWidget: function() {
       return this;
+    },
+
+    __subscribeToMessages: function() {
+      qx.event.message.Bus.getInstance().subscribe("inputFocus", (msg) => {
+        const compareFn = msg.getData();
+        if (compareFn(this.getNode().getNodeId(), this.__portId)) {
+          this.setDecorator("outputPortHighlighted");
+        }
+      }, this);
+      qx.event.message.Bus.getInstance().subscribe("inputFocusout", (msg) => {
+        const compareFn = msg.getData();
+        if (compareFn(this.getNode().getNodeId(), this.__portId)) {
+          this.setDecorator("outputPort");
+        }
+      }, this);
     }
   }
 });

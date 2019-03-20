@@ -46,7 +46,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     }
 
     // Transition effect
-    this.setDecorator("panelview-close-collapse-transition");
+    this.setDecorator("panelview-collapse-transition");
 
     // Attach handlers
     this.__attachEventHandlers();
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
             flex: 0
           });
         }
-        this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-close-collapse-transition");
+        this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-collapse-transition");
         this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
       }
     },
