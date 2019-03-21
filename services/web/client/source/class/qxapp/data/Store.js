@@ -66,20 +66,12 @@ qx.Class.define("qxapp.data.Store", {
     __reloadingServices: null,
     __servicesCached: null,
 
-    __getMimeType: function(type) {
-      let match = type.match(/^data:([^/\s]+\/[^/;\s])/);
-      if (match) {
-        return match[1];
-      }
-      return null;
-    },
-
     __matchPortType: function(typeA, typeB) {
       if (typeA === typeB) {
         return true;
       }
-      let mtA = this.__getMimeType(typeA);
-      let mtB = this.__getMimeType(typeB);
+      let mtA = qxapp.data.MimeType.getMimeType(typeA);
+      let mtB = qxapp.data.MimeType.getMimeType(typeB);
       return mtA && mtB &&
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
     },
