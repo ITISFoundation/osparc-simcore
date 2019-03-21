@@ -20,10 +20,10 @@ all:
 
 check-env:
 ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
+	$(error SERVICES_VERSION variable is undefined, try this 'export SERVICES_VERSION=2.8.0')
 endif
 ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
+	$(error DOCKER_REGISTRY variable is undefined, try this 'export DOCKER_REGISTRY=masu.speag.com')
 endif
 
 build-devel: check-env
