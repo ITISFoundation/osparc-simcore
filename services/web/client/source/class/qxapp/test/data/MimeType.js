@@ -44,17 +44,15 @@ qx.Class.define("qxapp.test.data.MimeType",
       */
 
       testGetMimeType: function() {
-        const aPortType = "image";
-        const a = qxapp.data.MimeType.getMimeType(aPortType);
-        this.assertIdentical(a, null, "should return null");
-
-        const bPortType = "data:*/*";
-        const b = qxapp.data.MimeType.getMimeType(bPortType);
-        this.assertIdentical(b, "*/*", "should return */*");
-
-        const cPortType = "data:text/csv";
-        const c = qxapp.data.MimeType.getMimeType(cPortType);
-        this.assertIdentical(c, "data:text/csv", "should return text/csv");
+        [
+          ["image", null],
+          ["data:*/*", "*/*"],
+          ["data:text/csv", "text/csv"],
+          ["data:image/svg+xml", "image/svg+xml"]
+        ].forEach(pair => {
+          const a = qxapp.data.MimeType.getMimeType(pair[0]);
+          this.assertIdentical(a, pair[1], "should return " + pair[1]);
+        });
       },
 
       testMatch: function() {

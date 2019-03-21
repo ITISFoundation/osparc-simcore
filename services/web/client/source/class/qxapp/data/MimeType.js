@@ -47,7 +47,7 @@ qx.Class.define("qxapp.data.MimeType", {
 
   statics: {
     getMimeType: function(type) {
-      let match = type.match(/^data:([^/\s]+\/[^/;\s])/);
+      let match = type.match(/data:([^/\s]+\/[^/;\s]*)/);
       if (match) {
         return match[1];
       }
