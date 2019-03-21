@@ -93,18 +93,17 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
     populateNodeLayout: function() {
       const metaData = this.getNode().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
-      // this.__createUIPorts(true, metaData.inputs);
+      this.__inputPort = null;
+      this.__outputPort = null;
       this.__createUIPorts(false, metaData.outputs);
     },
 
     getInputPort: function() {
-      return this.__inputPort["Input"];
+      return this.__inputPort;
     },
 
     getOutputPort: function() {
-      return this.__outputPort["Output"];
+      return this.__outputPort;
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -119,9 +118,9 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
       };
       label.ui.isInput = isInput;
       if (isInput) {
-        this.__inputPort["Input"] = label;
+        this.__inputPort = label;
       } else {
-        this.__outputPort["Output"] = label;
+        this.__outputPort = label;
       }
     },
 
