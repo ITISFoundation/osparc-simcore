@@ -17,7 +17,7 @@ export DOCKER=docker
 endif
 
 
-DEFAULT_SERVICES_VERSION=1.8.0
+DEFAULT_SERVICES_VERSION=2.8.0
 DEFAULT_DOCKER_REGISTRY=masu.speag.com
 export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
