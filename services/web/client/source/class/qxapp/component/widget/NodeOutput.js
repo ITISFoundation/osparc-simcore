@@ -40,7 +40,7 @@ qx.Class.define("qxapp.component.widget.NodeOutput", {
   construct: function(node) {
     this.base(arguments, node);
 
-    let atom = this.getChildren()[0];
+    const atom = this.getAtom();
     this.getNode().bind("label", atom, "label", {
       converter: function(data) {
         return data + "'s<br>outputs";

@@ -37,7 +37,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       decorator: "main"
     });
 
-    let atom = new qx.ui.basic.Atom().set({
+    let atom = this.__atom = new qx.ui.basic.Atom().set({
       rich: true,
       center: true,
       draggable: true,
@@ -68,8 +68,13 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
   },
 
   members: {
+    __atom: null,
     __inputPort: null,
     __outputPort: null,
+
+    getAtom: function() {
+      return this.__atom;
+    },
 
     getNodeId: function() {
       return this.getNode().getNodeId();
