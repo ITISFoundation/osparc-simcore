@@ -45,6 +45,16 @@ qx.Class.define("qxapp.data.MimeType", {
     this.parse(string);
   },
 
+  statics: {
+    getMimeType: function(type) {
+      let match = type.match(/data:([^/\s]+\/[^/;\s]*)/);
+      if (match) {
+        return match[1];
+      }
+      return null;
+    }
+  },
+
   members: {
     parse: function(string) {
       let input = String(string).split(";");
@@ -82,11 +92,11 @@ qx.Class.define("qxapp.data.MimeType", {
       return this.getType() + "/" + this.getSubType();
     },
     match: function(partner) {
-      const type = this.getType();
+      const atype = this.getType();
       const subType = this.getSubType();
       const partnerType = partner.getType();
       const partnerSubType = partner.getSubType();
-      const matchType = type === partnerType || type === "*" || partnerType === "*";
+      const matchType = atype === partnerType || atype === "*" || partnerType === "*";
       const matchSubType = subType === partnerSubType || subType === "*" || partnerSubType === "*";
       return matchType && matchSubType;
     }
