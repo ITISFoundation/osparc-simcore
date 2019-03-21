@@ -67,7 +67,7 @@ services:
         - minio
   #--------------------------------------------------------------------
   apihub:
-    image: services_apihub:latest
+    image: itisfoundation/apihub:staging-latest
     ports:
       - 8043:8043
   storage:
