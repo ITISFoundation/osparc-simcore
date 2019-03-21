@@ -25,19 +25,21 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutput = new qxapp.component.widget.NodeExposed(node);
+ *   let nodeOutput = new qxapp.component.widget.NodeOutput(node);
  *   nodeOutput.populateNodeLayout();
  *   this.getRoot().add(nodeOutput);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeExposed", {
+qx.Class.define("qxapp.component.widget.NodeOutput", {
   extend: qx.ui.core.Widget,
 
   /**
     * @param node {qxapp.data.model.Node} Node owning the widget
   */
   construct: function(node) {
+    this.setNode(node);
+
     this.base();
 
     let nodeExposedLayout = new qx.ui.layout.VBox(10);
@@ -65,8 +67,6 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
     this._add(atom, {
       flex: 1
     });
-
-    this.setNode(node);
   },
 
   properties: {
@@ -95,19 +95,19 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       return this.getNode().getMetaData();
     },
 
-    populateNodeLayout: function() {
-      const metaData = this.getNode().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
-      this.__createUIPorts(true, metaData.inputs);
-    },
-
     getInputPort: function() {
-      return this.__inputPort["Input"];
+      return this.__inputPort;
     },
 
     getOutputPort: function() {
-      return this.__outputPort["Output"];
+      return this.__outputPort;
+    },
+
+    populateNodeLayout: function() {
+      const metaData = this.getNode().getMetaData();
+      this.__inputPort = null;
+      this.__outputPort = null;
+      this.__createUIPorts(true, metaData.inputs);
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -122,9 +122,9 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       };
       label.ui.isInput = isInput;
       if (isInput) {
-        this.__inputPort["Input"] = label;
+        this.__inputPort = label;
       } else {
-        this.__outputPort["Output"] = label;
+        this.__outputPort = label;
       }
     },
 

@@ -17,7 +17,7 @@
 
 /**
  *   Widget containing the layout where NodeUIs and LinkUIs, and when the model loaded
- * is a container-node, also NodeInput and NodeExposed are rendered.
+ * is a container-node, also NodeInput and NodeOutput are rendered.
  *
  * *Example*
  *
@@ -478,7 +478,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
     },
 
-    __createInputNodeUI: function(inputNode) {
+    __createNodeInputUI: function(inputNode) {
       let nodeInput = new qxapp.component.widget.NodeInput(inputNode);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
@@ -488,24 +488,24 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeInput;
     },
 
-    __createInputNodeUIs: function(model) {
+    __createNodeInputUIs: function(model) {
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
         let inputNode = this.getWorkbench().getNode(inputNodes[i]);
-        let inputLabel = this.__createInputNodeUI(inputNode);
+        let inputLabel = this.__createNodeInputUI(inputNode);
         this.__nodesUI.push(inputLabel);
       }
     },
 
-    __clearInputNodeUIs: function() {
+    __clearNodeInputUIs: function() {
       // remove all but the title
       while (this.__inputNodesLayout.getChildren().length > 1) {
         this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length - 1);
       }
     },
 
-    __createNodeExposedUI: function(currentModel) {
-      let nodeOutput = new qxapp.component.widget.NodeExposed(currentModel);
+    __createNodeOutputUI: function(currentModel) {
+      let nodeOutput = new qxapp.component.widget.NodeOutput(currentModel);
       nodeOutput.populateNodeLayout();
       this.__createDragDropMechanism(nodeOutput);
       this.__outputNodesLayout.add(nodeOutput, {
@@ -514,12 +514,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeOutput;
     },
 
-    __createNodeExposedUIs: function(model) {
-      let outputLabel = this.__createNodeExposedUI(model);
+    __createNodeOutputUIs: function(model) {
+      let outputLabel = this.__createNodeOutputUI(model);
       this.__nodesUI.push(outputLabel);
     },
 
-    __clearNodeExposedUIs: function() {
+    __clearNodeOutputUIs: function() {
       // remove all but the title
       while (this.__outputNodesLayout.getChildren().length > 1) {
         this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
@@ -778,11 +778,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const isContainer = model.isContainer();
         if (isContainer) {
           this.__inputNodesLayout.setVisibility("visible");
-          this.__clearInputNodeUIs();
-          this.__createInputNodeUIs(model);
+          this.__clearNodeInputUIs();
+          this.__createNodeInputUIs(model);
           this.__outputNodesLayout.setVisibility("visible");
-          this.__clearNodeExposedUIs();
-          this.__createNodeExposedUIs(model);
+          this.__clearNodeOutputUIs();
+          this.__createNodeOutputUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
           this.__outputNodesLayout.setVisibility("excluded");
