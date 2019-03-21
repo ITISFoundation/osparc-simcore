@@ -8,7 +8,7 @@ then
     echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
     result="$(python scripts/dy_services_helpers/platform_initialiser_csv_files.py ${USE_CASE_CONFIG_FILE} ${INIT_OPTIONS})"
     echo "Received result of $result";
-    IFS=, read -a array <<< "$result"; 
+    IFS=, read -a array <<< "$result";
     echo "Received result pipeline id of ${array[0]}";
     echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
@@ -21,4 +21,5 @@ start-notebook.sh \
     --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
     --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
     --NotebookApp.token='' \
+    --NotebookApp.nbserver_extensions="{'input_retriever':True}" \
     --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL}

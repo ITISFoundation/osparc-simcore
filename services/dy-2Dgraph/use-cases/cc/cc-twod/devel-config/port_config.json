@@ -2,12 +2,15 @@
     "version":"0.1",
     "schema": {
         "inputs": {
-            "in_1": {                
+            "in_1": {
                 "label": "ap",
                 "displayOrder": 0,
                 "description": "these are computed data out of a pipeline",
                 "type": "data:*/zip"
             }
+        },
+        "outputs": {
+
         }
     },
     "inputs": {},
