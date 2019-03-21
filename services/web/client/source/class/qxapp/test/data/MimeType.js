@@ -52,7 +52,7 @@ qx.Class.define("qxapp.test.data.MimeType",
         ].forEach(pair => {
           const a = qxapp.data.MimeType.getMimeType(pair[0]);
           this.assertIdentical(a, pair[1], "should return " + pair[1]);
-        });
+        }, this);
       },
 
       testMatch: function() {
