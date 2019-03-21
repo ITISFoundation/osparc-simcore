@@ -51,6 +51,7 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
       const metaData = this.getNode().getMetaData();
       this._createUIPorts(false, metaData.outputs);
     },
+
     getLinkPoint: function(port) {
       if (port.isInput === true) {
         console.log("Port should always be output");

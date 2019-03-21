@@ -30,8 +30,8 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
 
     this.base();
 
-    let nodeInputLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeInputLayout);
+    let nodeInOutLayout = new qx.ui.layout.VBox(10);
+    this._setLayout(nodeInOutLayout);
 
     this.set({
       decorator: "main"
@@ -92,7 +92,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       this.__outputPort = null;
     },
 
-    __createUIPorts: function(isInput, ports) {
+    _createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
@@ -126,38 +126,6 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);
-    },
-
-    getLinkPoint: function(port) {
-      if (port.isInput === true) {
-        console.log("Port should always be output");
-        return null;
-      }
-      let nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
-        // not rendered yet
-        return null;
-      }
-      // It is always on the very left of the Desktop
-      let x = 0;
-      let y = nodeBounds.top + nodeBounds.height/2;
-      return [x, y];
-    },
-
-    getCurrentBounds: function() {
-      let bounds = this.getBounds();
-      let cel = this.getContentElement();
-      if (cel) {
-        let domeEle = cel.getDomElement();
-        if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
-        }
-      }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
-      return bounds;
     }
   }
 });
