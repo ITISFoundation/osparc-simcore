@@ -333,36 +333,39 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
 
       // build representation
-      let node1 = this.getNodeUI(node1Id);
-      let node2 = this.getNodeUI(node2Id);
-      if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
-        node1.getNode().setIsOutputNode(true);
-      } else {
-        node2.getNode().addInputNode(node1Id);
+      const nodeUI1 = this.getNodeUI(node1Id);
+      const nodeUI2 = this.getNodeUI(node2Id);
+      const port1 = nodeUI1.getOutputPort();
+      const port2 = nodeUI2.getInputPort();
+      if (port1 && port2) {
+        if (this.__currentModel.isContainer() && nodeUI2.getNodeId() === this.__currentModel.getNodeId()) {
+          nodeUI1.getNode().setIsOutputNode(true);
+        } else {
+          nodeUI2.getNode().addInputNode(node1Id);
+        }
+        const pointList = this.__getLinkPoints(nodeUI1, port1, nodeUI2, port2);
+        const x1 = pointList[0] ? pointList[0][0] : 0;
+        const y1 = pointList[0] ? pointList[0][1] : 0;
+        const x2 = pointList[1] ? pointList[1][0] : 0;
+        const y2 = pointList[1] ? pointList[1][1] : 0;
+        let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+
+        let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
+        this.__linksUI.push(linkUI);
+
+        linkUI.getRepresentation().node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          linkUI.fireDataEvent("linkSelected", linkUI.getLinkId());
+          e.stopPropagation();
+        }, this);
+
+        linkUI.addListener("linkSelected", e => {
+          this.__selectedItemChanged(linkUI.getLinkId());
+        }, this);
+
+        return linkUI;
       }
-      let port1 = node1.getOutputPort();
-      let port2 = node2.getInputPort();
-      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-      const x1 = pointList[0] ? pointList[0][0] : 0;
-      const y1 = pointList[0] ? pointList[0][1] : 0;
-      const x2 = pointList[1] ? pointList[1][0] : 0;
-      const y2 = pointList[1] ? pointList[1][1] : 0;
-      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
-
-      let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
-      this.__linksUI.push(linkUI);
-
-      linkUI.getRepresentation().node.addEventListener("click", e => {
-        // this is needed to get out of the context of svg
-        linkUI.fireDataEvent("linkSelected", linkUI.getLinkId());
-        e.stopPropagation();
-      }, this);
-
-      linkUI.addListener("linkSelected", e => {
-        this.__selectedItemChanged(linkUI.getLinkId());
-      }, this);
-
-      return linkUI;
+      return null;
     },
 
     __createDragDropMechanism: function(nodeUI) {
