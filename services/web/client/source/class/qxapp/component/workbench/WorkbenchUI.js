@@ -673,16 +673,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (p2[0] === null) {
         p2[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
       }
-      /*
-      if (this.__currentModel.isContainer() && node2.getNode().getNodeId() === this.__currentModel.getNodeId()) {
-        // connection to the exposed output
-        const xPos = parseInt(this.__desktopCanvas.getBounds().width - 6);
-        const yPos = parseInt(this.__outputNodesLayout.getBounds().height / 2);
-        p2 = [xPos, yPos];
-      } else {
-        p2 = node2.getLinkPoint(port2);
-      }
-      */
       return [p1, p2];
     },
 
