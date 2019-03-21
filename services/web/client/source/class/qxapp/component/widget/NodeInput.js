@@ -50,38 +50,6 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
       const metaData = this.getNode().getMetaData();
       this._createUIPorts(false, metaData.outputs);
-    },
-
-    getLinkPoint: function(port) {
-      if (port.isInput === true) {
-        console.log("Port should always be output");
-        return null;
-      }
-      let nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
-        // not rendered yet
-        return null;
-      }
-      // It is always on the very left of the Desktop
-      let x = 0;
-      let y = nodeBounds.top + nodeBounds.height/2;
-      return [x, y];
-    },
-
-    getCurrentBounds: function() {
-      let bounds = this.getBounds();
-      let cel = this.getContentElement();
-      if (cel) {
-        let domeEle = cel.getDomElement();
-        if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
-        }
-      }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
-      return bounds;
     }
   }
 });

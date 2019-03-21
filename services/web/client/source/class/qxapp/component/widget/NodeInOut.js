@@ -97,6 +97,30 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       this.__outputPort = null;
     },
 
+    getLinkPoint: function(port) {
+      const nodeBounds = this.getCurrentBounds();
+      if (nodeBounds === null) {
+        // not rendered yet
+        return null;
+      }
+      const x = port.isInput ? null : 0;
+      const y = nodeBounds.top + nodeBounds.height/2;
+      return [x, y];
+    },
+
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
+      }
+      return bounds;
+    },
+
     _createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {

@@ -617,17 +617,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return;
       }
 
-      let x1;
-      let y1;
-      let x2;
-      let y2;
-      const portPos = nodeUI.getLinkPoint(port);
-      // FIXME:
       const navBarHeight = 50;
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
       this.__pointerPosY = pointerEvent.getViewportTop() - navBarHeight;
 
+      let portPos = nodeUI.getLinkPoint(port);
+      if (portPos[0] === null) {
+        portPos[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
+      }
+
+      let x1;
+      let y1;
+      let x2;
+      let y2;
       if (port.isInput) {
         x1 = this.__pointerPosX;
         y1 = this.__pointerPosY;
@@ -665,17 +668,21 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
       p1 = node1.getLinkPoint(port1);
+
+      p2 = node2.getLinkPoint(port2);
+      if (p2[0] === null) {
+        p2[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
+      }
+      /*
       if (this.__currentModel.isContainer() && node2.getNode().getNodeId() === this.__currentModel.getNodeId()) {
         // connection to the exposed output
-        const dc = this.__desktopCanvas.getBounds();
-        const onl = this.__outputNodesLayout.getBounds();
-        p2 = [
-          parseInt(dc.width - 6),
-          parseInt(onl.height / 2)
-        ];
+        const xPos = parseInt(this.__desktopCanvas.getBounds().width - 6);
+        const yPos = parseInt(this.__outputNodesLayout.getBounds().height / 2);
+        p2 = [xPos, yPos];
       } else {
         p2 = node2.getLinkPoint(port2);
       }
+      */
       return [p1, p2];
     },
 
