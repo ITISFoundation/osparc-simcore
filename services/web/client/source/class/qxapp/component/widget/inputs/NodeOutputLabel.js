@@ -91,11 +91,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     }
   },
 
-  events: {
-    "dragStart": "qx.event.type.Data",
-    "dragEnd": "qx.event.type.Data"
-  },
-
   members: {
     __portId: null,
 
