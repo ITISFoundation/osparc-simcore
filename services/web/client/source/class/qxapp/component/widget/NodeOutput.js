@@ -32,118 +32,28 @@
  */
 
 qx.Class.define("qxapp.component.widget.NodeOutput", {
-  extend: qx.ui.core.Widget,
+  extend: qxapp.component.widget.NodeInOut,
 
   /**
     * @param node {qxapp.data.model.Node} Node owning the widget
   */
   construct: function(node) {
-    this.setNode(node);
+    this.base(arguments, node);
 
-    this.base();
-
-    let nodeExposedLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeExposedLayout);
-
-    this.set({
-      decorator: "main"
-    });
-
-    let atom = new qx.ui.basic.Atom().set({
-      rich: true,
-      center: true,
-      draggable: true,
-      droppable: true
-    });
-    atom.getChildControl("label").set({
-      textAlign: "center"
-    });
-    node.bind("label", atom, "label", {
+    let atom = this.getChildren()[0];
+    this.getNode().bind("label", atom, "label", {
       converter: function(data) {
         return data + "'s<br>outputs";
       }
     });
-
-    this._add(atom, {
-      flex: 1
-    });
-  },
-
-  properties: {
-    node: {
-      check: "qxapp.data.model.Node",
-      nullable: false
-    }
-  },
-
-  events: {
-    "linkDragStart": "qx.event.type.Data",
-    "linkDragOver": "qx.event.type.Data",
-    "linkDrop": "qx.event.type.Data",
-    "linkDragEnd": "qx.event.type.Data"
   },
 
   members: {
-    __inputPort: null,
-    __outputPort: null,
-
-    getNodeId: function() {
-      return this.getNode().getNodeId();
-    },
-
-    getMetaData: function() {
-      return this.getNode().getMetaData();
-    },
-
-    getInputPort: function() {
-      return this.__inputPort;
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort;
-    },
-
     populateNodeLayout: function() {
+      this.emptyPorts();
+
       const metaData = this.getNode().getMetaData();
-      this.__inputPort = null;
-      this.__outputPort = null;
-      this.__createUIPorts(true, metaData.inputs);
-    },
-
-    __createUIPorts: function(isInput, ports) {
-      // Always create ports if node is a container
-      if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
-        return;
-      }
-      this.__createUIPortConnections(this, isInput);
-      let label = {
-        isInput: isInput,
-        ui: this
-      };
-      label.ui.isInput = isInput;
-      if (isInput) {
-        this.__inputPort = label;
-      } else {
-        this.__outputPort = label;
-      }
-    },
-
-    __createUIPortConnections: function(uiPort, isInput) {
-      [
-        ["dragstart", "linkDragStart"],
-        ["dragover", "linkDragOver"],
-        ["drop", "linkDrop"],
-        ["dragend", "linkDragEnd"]
-      ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            nodeId: this.getNodeId(),
-            isInput: isInput
-          };
-          this.fireDataEvent(eventPair[1], eData);
-        }, this);
-      }, this);
+      this._createUIPorts(true, metaData.inputs);
     }
   }
 });
