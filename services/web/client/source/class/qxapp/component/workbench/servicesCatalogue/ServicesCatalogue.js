@@ -105,7 +105,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         this.__updateList();
       }, this);
       // FIXME: Backend should do the filtering
-      if (qxapp.data.Permissions.getInstance().canDo("test")) {
+      if (qxapp.data.Permissions.getInstance().canDo("show_all_services")) {
         filterLayout.add(showAll);
       }
       // buttons for reloading services
@@ -282,6 +282,10 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
 
     __onAddService: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_node")) {
+        return;
+      }
+
       if (this.__list.isSelectionEmpty()) {
         return;
       }

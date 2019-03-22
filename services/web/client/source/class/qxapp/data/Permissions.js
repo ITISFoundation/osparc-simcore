@@ -40,7 +40,9 @@ qx.Class.define("qxapp.data.Permissions", {
   type : "singleton",
 
   construct() {
-    this.addAction("tester", "test");
+    this.addAction("tester", "show_all_services");
+    this.addAction("user", "write_node");
+    this.addAction("user", "write_link");
   },
 
   events: {
