@@ -764,12 +764,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     loadModel: function(model) {
       this.clearAll();
-
-      if (!model) {
-        model = this.getWorkbench();
-      }
       this.__currentModel = model;
-
       if (model) {
         const isContainer = model.isContainer();
         if (isContainer) {
