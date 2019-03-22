@@ -226,7 +226,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
-      if (!qxapp.data.Permissions.getInstance().canDo("write_node")) {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_node", true)) {
         return;
       }
 
