@@ -41,6 +41,7 @@ qx.Class.define("qxapp.data.Permissions", {
 
   construct() {
     this.addAction("tester", "show_all_services");
+    this.addAction("user", "go_to_dashboard");
     this.addAction("user", "write_node");
     this.addAction("user", "write_link");
   },
