@@ -27,41 +27,6 @@
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
       ]
-    },
-    {
-      "class": "qxl.apiviewer.Application",
-      "theme": "qxl.apiviewer.Theme",
-      "name": "apiviewer",
-      "title": "Qooxdoo API Viewer",
-      "environment": {
-        "excludeFromAPIViewer": [
-          "qxl.*",
-          "q",
-          "qxWeb"
-        ]
-      },
-      "include": [
-        "qx.*"
-      ],
-      "exclude": [
-        "qx.test.*",
-        "qx.module.Blocker",
-        "qx.module.Placement"
-      ]
-    },
-    {
-      "class": "qxl.testtapper.Application",
-      "theme": "qxapp.theme.Theme",
-      "name": "testtapper",
-      "title": "Qooxdoo TestTAPper",
-      "include": [
-        "qxapp.test.*"
-      ],
-      "exclude": [
-        "qx.test.*",
-        "qx.module.Blocker",
-        "qx.module.Placement"
-      ]
     }
   ],
   "common": {
