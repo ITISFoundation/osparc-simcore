@@ -16,22 +16,22 @@
 ************************************************************************ */
 
 /**
- * Widget that represents an input node in a container.
+ * Widget that represents what nodes need to be exposed to outside the container.
  *
- * It offers Drag&Drop mechanism for connecting input nodes to inner nodes.
+ * It offers Drag&Drop mechanism for exposing inner nodes.
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeInput = new qxapp.component.widget.NodeInput(node);
- *   nodeInput.populateNodeLayout();
- *   this.getRoot().add(nodeInput);
+ *   let nodeOutput = new qxapp.component.widget.NodeOutput(node);
+ *   nodeOutput.populateNodeLayout();
+ *   this.getRoot().add(nodeOutput);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeInput", {
+qx.Class.define("qxapp.component.widget.NodeOutput", {
   extend: qxapp.component.widget.NodeInOut,
 
   /**
@@ -41,7 +41,11 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
     this.base(arguments, node);
 
     const atom = this.getAtom();
-    this.getNode().bind("label", atom, "label");
+    this.getNode().bind("label", atom, "label", {
+      converter: function(data) {
+        return data + "'s<br>outputs";
+      }
+    });
   },
 
   members: {
@@ -49,7 +53,7 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
       this.emptyPorts();
 
       const metaData = this.getNode().getMetaData();
-      this._createUIPorts(false, metaData.outputs);
+      this._createUIPorts(true, metaData.inputs);
     }
   }
 });

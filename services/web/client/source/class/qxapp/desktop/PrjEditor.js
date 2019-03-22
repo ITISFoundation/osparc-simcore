@@ -24,6 +24,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.base(arguments, "horizontal");
 
     this.getChildControl("splitter").getChildControl("knob").hide();
+    this.setOffset(0);
 
     qxapp.utils.UuidToName.getInstance().setProject(project);
 
@@ -197,13 +198,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (!nodeId) {
         return;
       }
-
       this.__currentNodeId = nodeId;
+      let widget = this.__getWidgetForNode(nodeId);
+      this.showInMainView(widget, nodeId);
+      if (widget === this.__workbenchUI) {
+        const workbench = this.getProject().getWorkbench();
+        if (nodeId === "root") {
+          this.__workbenchUI.loadModel(workbench);
+        } else {
+          let node = workbench.getNode(nodeId);
+          this.__workbenchUI.loadModel(node);
+        }
+      }
 
-      let widget = null;
+      this.__switchExtraView(nodeId);
+
+      this.__treeView.nodeSelected(nodeId);
+    },
+
+    __getWidgetForNode: function(nodeId) {
+      // Find widget for the given nodeId
       const workbench = this.getProject().getWorkbench();
+      let widget = null;
       if (nodeId === "root") {
-        this.__workbenchUI.loadModel();
         widget = this.__workbenchUI;
       } else {
         let node = workbench.getNode(nodeId);
@@ -214,7 +231,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             }
           }
           if (widget === null) {
-            this.__workbenchUI.loadModel(node);
             widget = this.__workbenchUI;
           }
         } else {
@@ -227,11 +243,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         }
       }
-      this.showInMainView(widget, nodeId);
-
-      this.__switchExtraView(nodeId);
-
-      this.__treeView.nodeSelected(nodeId);
+      return widget;
     },
 
     __switchExtraView: function(nodeId) {
