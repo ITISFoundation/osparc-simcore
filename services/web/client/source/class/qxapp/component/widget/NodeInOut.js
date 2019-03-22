@@ -57,6 +57,16 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
+    },
+
+    inputPort: {
+      init: null,
+      nullable: true
+    },
+
+    outputPort: {
+      init: null,
+      nullable: true
     }
   },
 
@@ -69,8 +79,6 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
 
   members: {
     __atom: null,
-    __inputPort: null,
-    __outputPort: null,
 
     getAtom: function() {
       return this.__atom;
@@ -84,17 +92,9 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       return this.getNode().getMetaData();
     },
 
-    getInputPort: function() {
-      return this.__inputPort;
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort;
-    },
-
     emptyPorts: function() {
-      this.__inputPort = null;
-      this.__outputPort = null;
+      this.setInputPort(null);
+      this.setOutputPort(null);
     },
 
     getLinkPoint: function(port) {
@@ -132,11 +132,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
         ui: this
       };
       label.ui.isInput = isInput;
-      if (isInput) {
-        this.__inputPort = label;
-      } else {
-        this.__outputPort = label;
-      }
+      isInput ? this.setInputPort(label) : this.setOutputPort(label);
     },
 
     __createUIPortConnections: function(uiPort, isInput) {
