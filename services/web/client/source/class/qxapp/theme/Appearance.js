@@ -77,11 +77,6 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginRight: 3
       })
     },
-    "splitpane": {
-      style: state => ({
-        offset: 0
-      })
-    },
     "splitpane/splitter": {
       style: state => ({
         width: 0

@@ -92,12 +92,8 @@ qx.Class.define("qxapp.data.MimeType", {
       return this.getType() + "/" + this.getSubType();
     },
     match: function(partner) {
-      const atype = this.getType();
-      const subType = this.getSubType();
-      const partnerType = partner.getType();
-      const partnerSubType = partner.getSubType();
-      const matchType = atype === partnerType || atype === "*" || partnerType === "*";
-      const matchSubType = subType === partnerSubType || subType === "*" || partnerSubType === "*";
+      let matchType = this.getType() === partner.getType() || this.getType() === "*" || partner.getType() === "*";
+      let matchSubType = this.getSubType() === partner.getSubType() || this.getSubType() === "*" || partner.getSubType() === "*";
       return matchType && matchSubType;
     }
   }

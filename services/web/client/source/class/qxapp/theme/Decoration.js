@@ -20,23 +20,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
   extend: osparc.theme.osparcdark.Decoration,
 
   decorations: {
-    "droppableWidget": {
-      decorator: qx.ui.decoration.Decorator,
-      style: {
-        style: "dashed",
-        color: "#828282",
-        width: 1
-      }
-    },
-
-    "draggableWidget": {
-      decorator: qx.ui.decoration.Decorator,
-      style: {
-        color: "#828282",
-        width: 1,
-        radius: 4
-      }
-    },
 
     "panelview-content": {
       decorator: qx.ui.decoration.MSingleBorder,
@@ -53,7 +36,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-close-collapse-transition": {
+    "panelview-collapse-transition": {
       style: {
         transitionProperty: ["height", "top"],
         transitionDuration: "0.2s",
@@ -67,6 +50,27 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionProperty: ["height", "top"],
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "outputPort": {
+      decorator: qx.ui.decoration.Decorator,
+      style: {
+        color: "button-border-hovered",
+        width: 1,
+        radius: 4
+      }
+    },
+
+    "outputPortHighlighted": {
+      decorator: qx.ui.decoration.MBoxShadow,
+      include: "outputPort",
+      style: {
+        shadowColor: "button-border-hovered",
+        shadowBlurRadius: 3,
+        shadowSpreadRadius: 2,
+        shadowLength: [0, 0],
+        inset: false
       }
     }
   }
