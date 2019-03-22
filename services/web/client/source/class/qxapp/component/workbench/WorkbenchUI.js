@@ -489,6 +489,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createNodeInputUIs: function(model) {
+      this.__clearNodeInputUIs();
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
         let inputNode = this.getWorkbench().getNode(inputNodes[i]);
@@ -515,6 +516,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createNodeOutputUIs: function(model) {
+      this.__clearNodeOutputUIs();
       let outputLabel = this.__createNodeOutputUI(model);
       this.__nodesUI.push(outputLabel);
     },
@@ -772,10 +774,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const isContainer = model.isContainer();
         if (isContainer) {
           this.__inputNodesLayout.setVisibility("visible");
-          this.__clearNodeInputUIs();
           this.__createNodeInputUIs(model);
           this.__outputNodesLayout.setVisibility("visible");
-          this.__clearNodeOutputUIs();
           this.__createNodeOutputUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
