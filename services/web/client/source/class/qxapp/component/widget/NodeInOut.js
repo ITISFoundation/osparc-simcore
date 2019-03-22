@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2019 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -16,63 +16,57 @@
 ************************************************************************ */
 
 /**
- * Widget that represents what nodes need to be exposed to outside the container.
- *
- * It offers Drag&Drop mechanism for exposing inner nodes.
- *
- * *Example*
- *
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   let nodeOutput = new qxapp.component.widget.NodeExposed(node);
- *   nodeOutput.populateNodeLayout();
- *   this.getRoot().add(nodeOutput);
- * </pre>
+ * Base class for NodeInput and NodeOutput
  */
 
-qx.Class.define("qxapp.component.widget.NodeExposed", {
+qx.Class.define("qxapp.component.widget.NodeInOut", {
   extend: qx.ui.core.Widget,
 
   /**
     * @param node {qxapp.data.model.Node} Node owning the widget
   */
   construct: function(node) {
+    this.setNode(node);
+
     this.base();
 
-    let nodeExposedLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeExposedLayout);
+    let nodeInOutLayout = new qx.ui.layout.VBox(10);
+    this._setLayout(nodeInOutLayout);
 
     this.set({
       decorator: "main"
     });
 
-    let atom = new qx.ui.basic.Atom().set({
+    let atom = this.__atom = new qx.ui.basic.Atom().set({
       rich: true,
       center: true,
       draggable: true,
       droppable: true
     });
     atom.getChildControl("label").set({
+      font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]),
       textAlign: "center"
-    });
-    node.bind("label", atom, "label", {
-      converter: function(data) {
-        return data + "'s<br>outputs";
-      }
     });
 
     this._add(atom, {
       flex: 1
     });
-
-    this.setNode(node);
   },
 
   properties: {
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
+    },
+
+    inputPort: {
+      init: null,
+      nullable: true
+    },
+
+    outputPort: {
+      init: null,
+      nullable: true
     }
   },
 
@@ -84,8 +78,11 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
   },
 
   members: {
-    __inputPort: null,
-    __outputPort: null,
+    __atom: null,
+
+    getAtom: function() {
+      return this.__atom;
+    },
 
     getNodeId: function() {
       return this.getNode().getNodeId();
@@ -95,22 +92,36 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       return this.getNode().getMetaData();
     },
 
-    populateNodeLayout: function() {
-      const metaData = this.getNode().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
-      this.__createUIPorts(true, metaData.inputs);
+    emptyPorts: function() {
+      this.setInputPort(null);
+      this.setOutputPort(null);
     },
 
-    getInputPort: function() {
-      return this.__inputPort["Input"];
+    getLinkPoint: function(port) {
+      const nodeBounds = this.getCurrentBounds();
+      if (nodeBounds === null) {
+        // not rendered yet
+        return null;
+      }
+      const x = port.isInput ? null : 0;
+      const y = nodeBounds.top + nodeBounds.height/2;
+      return [x, y];
     },
 
-    getOutputPort: function() {
-      return this.__outputPort["Output"];
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
+      }
+      return bounds;
     },
 
-    __createUIPorts: function(isInput, ports) {
+    _createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
@@ -121,11 +132,7 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
         ui: this
       };
       label.ui.isInput = isInput;
-      if (isInput) {
-        this.__inputPort["Input"] = label;
-      } else {
-        this.__outputPort["Output"] = label;
-      }
+      isInput ? this.setInputPort(label) : this.setOutputPort(label);
     },
 
     __createUIPortConnections: function(uiPort, isInput) {

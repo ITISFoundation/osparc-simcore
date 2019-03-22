@@ -138,8 +138,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (node.isContainer()) {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
-      this.__inputPort = {};
-      this.__outputPort = {};
+      this.__inputPort = null;
+      this.__outputPort = null;
       const metaData = node.getMetaData();
       if (metaData) {
         this.__createUIPorts(true, metaData.inputs);
@@ -154,11 +154,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     getInputPort: function() {
-      return this.__inputPort["Input"];
+      return this.__inputPort;
     },
 
     getOutputPort: function() {
-      return this.__outputPort["Output"];
+      return this.__outputPort;
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -174,10 +174,10 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       };
       label.ui.isInput = isInput;
       if (isInput) {
-        this.__inputPort["Input"] = label;
+        this.__inputPort = label;
         this.__inputPortLayout.add(label.ui);
       } else {
-        this.__outputPort["Output"] = label;
+        this.__outputPort = label;
         this.__outputPortLayout.add(label.ui);
       }
     },
