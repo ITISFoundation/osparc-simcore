@@ -1,4 +1,8 @@
-#pylint: disable=R0915
+# pylint: disable=unused-argument
+# pylint: disable=unused-import
+# pylint: disable=bare-except
+# pylint: disable=redefined-outer-name
+# pylint: disable=R0915
 
 import json
 import uuid
