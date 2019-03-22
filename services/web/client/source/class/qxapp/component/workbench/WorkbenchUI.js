@@ -185,24 +185,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return plusButton;
     },
 
-    __getRemoveButton: function() {
-      const icon = "@FontAwesome5Solid/trash/32";
-      let removeButton = new qx.ui.form.Button(null, icon);
-      removeButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      removeButton.addListener("execute", function() {
-        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
-          this.__removeLink(this.__getLinkUI(this.__selectedItemId));
-          this.__selectedItemId = null;
-        } else {
-          this.__removeSelectedNode();
-        }
-      }, this);
-      return removeButton;
-    },
-
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
       let unlinkBtn = new qx.ui.form.Button(null, icon);
