@@ -661,15 +661,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __getLinkPoints: function(node1, port1, node2, port2) {
-      let p1 = null;
-      let p2 = null;
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
-      p1 = node1.getLinkPoint(port1);
-
-      p2 = node2.getLinkPoint(port2);
+      let p1 = node1.getLinkPoint(port1);
+      let p2 = node2.getLinkPoint(port2);
       if (p2[0] === null) {
         p2[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
       }
