@@ -56,22 +56,14 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     this.__tree = this._createChildControlImpl("tree");
     this.populateTree();
 
-    this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "Delete") {
-        this.__deleteNode();
-      }
-    }, this);
-    this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "F2") {
-        this.__renameNode();
-      }
-    }, this);
+    this.__attachEventHandlers();
   },
 
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
-    "removeNode": "qx.event.type.Data"
+    "removeNode": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -132,16 +124,30 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       return toolbar;
     },
 
+    __getOneSelectedRow: function() {
+      const selection = this.__tree.getSelection();
+      if (selection && selection.toArray().length > 0) {
+        return selection.toArray()[0];
+      }
+      return null;
+    },
+
     __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        openMode: "none"
+        decorator: "service-tree",
+        openMode: "none",
+        contentPadding: 0
       });
       tree.addListener("dbltap", e => {
-        let selection = this.__tree.getSelection();
-        let currentSelection = selection.toArray();
-        if (currentSelection.length > 0) {
-          let selectedRow = currentSelection[0];
-          this.fireDataEvent("nodeDoubleClicked", selectedRow.getNodeId());
+        const currentSelection = this.__getOneSelectedRow();
+        if (currentSelection) {
+          this.fireDataEvent("nodeDoubleClicked", currentSelection.getNodeId());
+        }
+      }, this);
+      tree.addListener("tap", e => {
+        const currentSelection = this.__getOneSelectedRow();
+        if (currentSelection) {
+          this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
         }
       }, this);
       return tree;
@@ -243,7 +249,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         let node = this.getWorkbench().getNode(nodeId);
         node.setLabel(newLabel);
       }, this);
-      const bounds = this.getLayoutParent().getBounds();
+      const bounds = this.getLayoutParent().getContentLocation();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
       treeItemRenamer.open();
     },
@@ -255,6 +261,19 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         this.__tree.openNodeAndParents(nodeInTree);
         this.__tree.setSelection(new qx.data.Array([nodeInTree]));
       }
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "Delete") {
+          this.__deleteNode();
+        }
+      }, this);
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "F2") {
+          this.__renameNode();
+        }
+      }, this);
     }
   }
 });

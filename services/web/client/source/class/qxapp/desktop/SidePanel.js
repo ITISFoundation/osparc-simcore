@@ -38,22 +38,17 @@ qx.Class.define("qxapp.desktop.SidePanel", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10, null, "separator-vertical"));
+    this.setAppearance("sidebar");
 
-    let topView = new qx.ui.core.Widget();
-    let midView = new qx.ui.core.Widget();
-    let bottomView = new qx.ui.core.Widget();
+    this._setLayout(new qx.ui.layout.VBox());
 
-    this._add(topView, {
-      height: "33%",
-      flex: 1
-    });
-    this._add(midView, {
-      height: "33%",
-      flex: 1
-    });
+    let topView = new qxapp.desktop.PanelView(this.tr("Service tree"));
+    let midView = new qxapp.desktop.PanelView(this.tr("Overview"));
+    let bottomView = new qxapp.desktop.PanelView(this.tr("Logger"));
+
+    this._add(topView);
+    this._add(midView);
     this._add(bottomView, {
-      height: "33%",
       flex: 1
     });
   },
@@ -82,24 +77,21 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
   members: {
     __applyTopView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 0);
+      this._getChildren()[0].setContent(newWidget);
     },
 
     __applyMidView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 1);
+      this._getChildren()[1].setContent(newWidget);
     },
 
     __applyBottomView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 2);
+      this._getChildren()[2].setContent(newWidget);
     },
 
     __replaceWidgetAt: function(newWidget, indexOf) {
       if (this._indexOf(newWidget) !== indexOf) {
         this._removeAt(indexOf);
-        this._addAt(newWidget, indexOf, {
-          height: "33%",
-          flex: 1
-        });
+        this._addAt(newWidget, indexOf);
       }
     }
   }

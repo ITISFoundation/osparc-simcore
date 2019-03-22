@@ -55,10 +55,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   construct: function() {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox());
 
-    let filterLayout = this.__createFilterLayout();
-    this._add(filterLayout);
+    let filterToolbar = this.__createFilterToolbar();
+    this._add(filterToolbar);
 
     let table = this.__createTableLayout();
     this._add(table, {
@@ -96,52 +96,45 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     __logView: null,
     __messengerColors: null,
 
-    __createFilterLayout: function() {
-      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    __createFilterToolbar: function() {
+      const toolbar = new qx.ui.toolbar.ToolBar();
 
-      let clearButton = new qx.ui.form.Button("Clear");
+      const clearButton = new qx.ui.toolbar.Button("Clear", "@FontAwesome5Solid/ban/16");
       clearButton.addListener("execute", e => {
         this.clearLogger();
       }, this);
-      filterLayout.add(clearButton);
+      toolbar.add(clearButton);
 
-      let searchLabel = new qx.ui.basic.Label(this.tr("Filter"));
-      filterLayout.add(searchLabel);
-      this.__textfield = new qx.ui.form.TextField();
-      this.__textfield.setLiveUpdate(true);
-      filterLayout.add(this.__textfield, {
+      toolbar.add(new qx.ui.toolbar.Separator());
+
+      toolbar.add(new qx.ui.basic.Label("Filter:").set({
+        appearance: "toolbar-label"
+      }));
+      this.__textfield = new qx.ui.form.TextField().set({
+        appearance: "toolbar-textfield",
+        liveUpdate: true
+      });
+      toolbar.add(this.__textfield, {
         flex: 1
       });
 
-      let logLevelButtons = new qx.ui.toolbar.Part();
-      let logLevelBtns = [];
-      for (var key in LOG_LEVEL) {
-        let text = String(key)[0].toUpperCase() + String(key).slice(1);
-        let filterButton = new qx.ui.form.ToggleButton(text);
-        filterButton.logLevel = LOG_LEVEL[key];
-        logLevelButtons.add(filterButton);
-        logLevelBtns.push(filterButton);
+      const part = new qx.ui.toolbar.Part();
+      const group = new qx.ui.form.RadioGroup();
+      for (let level in LOG_LEVEL) {
+        const label = level.charAt(0).toUpperCase() + level.slice(1);
+        const button = new qx.ui.form.ToggleButton(label).set({
+          appearance: "toolbar-button"
+        });
+        button.logLevel = LOG_LEVEL[level];
+        group.add(button);
+        part.add(button);
       }
-      filterLayout.add(logLevelButtons);
+      group.addListener("changeValue", e => {
+        this.setLogLevel(e.getData().logLevel);
+      }, this);
+      toolbar.add(part);
 
-      let group = new qx.ui.form.RadioGroup();
-      let defSelected = [];
-      for (let i=0; i<logLevelBtns.length; i++) {
-        let logLevelBtn = logLevelBtns[i];
-        group.add(logLevelBtn);
-        if (this.getLogLevel() === logLevelBtn.logLevel) {
-          defSelected.push(logLevelBtn);
-        }
-        logLevelBtn.addListener("changeValue", e => {
-          if (e.getData() === true) {
-            this.setLogLevel(logLevelBtn.logLevel);
-          }
-        }, this);
-      }
-      group.setSelection(defSelected);
-      group.setAllowEmptySelection(false);
-
-      return filterLayout;
+      return toolbar;
     },
 
     __createTableLayout: function() {

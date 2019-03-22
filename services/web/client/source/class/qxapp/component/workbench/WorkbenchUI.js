@@ -145,7 +145,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
-    "removeLink": "qx.event.type.Data"
+    "removeLink": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -248,13 +249,21 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion());
-      node.populateNodeData();
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      this.getWorkbench().addNode(node, parent);
+      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
+      node.populateNodeData();
+
+      const metaData = node.getMetaData();
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
+        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
+        for (const innerNodeMetaData of innerNodeMetaDatas) {
+          let innerNode = this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, null, node);
+          innerNode.populateNodeData();
+        }
+      }
 
       let nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
@@ -322,7 +331,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
-      this.getWorkbench().addLink(link);
 
       // build representation
       let node1 = this.getNodeUI(node1Id);
@@ -826,8 +834,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
-
-      // qx.ui.core.queue.Widget.flush();
     },
 
     __selectedItemChanged: function(newID) {
@@ -849,6 +855,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         let selectedLink = this.__getLinkUI(newID);
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
+      } else if (newID) {
+        this.fireDataEvent("changeSelectedNode", newID);
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
