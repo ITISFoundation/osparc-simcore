@@ -226,6 +226,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_node")) {
+        return;
+      }
+
       const data = e.getData();
       const service = data.service;
       let nodeAId = data.contextNodeId;

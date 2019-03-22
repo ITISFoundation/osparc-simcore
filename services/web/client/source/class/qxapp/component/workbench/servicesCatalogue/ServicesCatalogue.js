@@ -282,10 +282,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
 
     __onAddService: function() {
-      if (!qxapp.data.Permissions.getInstance().canDo("write_node")) {
-        return;
-      }
-
       if (this.__list.isSelectionEmpty()) {
         return;
       }
