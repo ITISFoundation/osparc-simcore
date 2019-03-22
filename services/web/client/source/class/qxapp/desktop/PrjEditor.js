@@ -263,6 +263,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeNode: function(nodeId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_node")) {
+        return;
+      }
       if (nodeId === this.__currentNodeId) {
         return;
       }
@@ -281,6 +284,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeLink: function(linkId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_link")) {
+        return;
+      }
       let workbench = this.getProject().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       const link = workbench.getLink(linkId);
