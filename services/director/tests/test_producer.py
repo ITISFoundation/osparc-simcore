@@ -12,7 +12,7 @@ from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
-async def run_services(loop, configure_registry_access, push_services, docker_swarm, user_id):
+async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn):
         pushed_services = push_services(number_comp, number_dyn, 60)
