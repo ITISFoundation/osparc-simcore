@@ -116,11 +116,15 @@ qx.Class.define("qxapp.data.Permissions", {
       return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
     },
 
-    canDo: function(action) {
+    canDo: function(action, showMsg) {
+      let canDo = false;
       if (this.__userRole) {
-        return this.__canRoleDo(this.__userRole, action);
+        canDo = this.__canRoleDo(this.__userRole, action);
       }
-      return false;
+      if (showMsg && !canDo) {
+        qxapp.component.widget.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+      }
+      return canDo;
     },
 
     loadUserRoleFromBackend: function() {
