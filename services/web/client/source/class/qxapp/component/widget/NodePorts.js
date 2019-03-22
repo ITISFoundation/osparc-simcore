@@ -51,7 +51,9 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     node.bind("label", label, "value");
     this._add(label);
 
-    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+      padding: 5
+    });
     this._add(nodeUIPorts);
 
     this.setIsInputModel(isInputModel);
