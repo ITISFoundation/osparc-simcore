@@ -80,7 +80,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __outputPortLayout: null,
     __inputPort: null,
     __outputPort: null,
-    __progressLabel: null,
     __progressBar: null,
 
     getNodeId: function() {
@@ -116,17 +115,13 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
       progressBox.setMinWidth(nodeWidth-20);
 
-      this.__progressBar = new qx.ui.indicator.ProgressBar();
+      this.__progressBar = new qx.ui.indicator.ProgressBar().set({
+        height: 10
+      });
       this.__progressBar.setWidth(nodeWidth-20);
       progressBox.add(this.__progressBar, {
         top: 0,
         left: 0
-      });
-
-      this.__progressLabel = new qx.ui.basic.Label("0%");
-      progressBox.add(this.__progressLabel, {
-        top: 3,
-        left: nodeWidth/2 - 20
       });
 
       this.add(progressBox);
@@ -145,11 +140,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
-      node.bind("progress", this.__progressLabel, "value", {
-        converter: function(value) {
-          return value + "%";
-        }
-      });
       node.bind("progress", this.__progressBar, "value");
     },
 
