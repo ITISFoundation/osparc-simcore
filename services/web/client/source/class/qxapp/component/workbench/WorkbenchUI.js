@@ -316,6 +316,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("write_link", true)) {
+        return;
+      }
+
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
 
       // build representation
