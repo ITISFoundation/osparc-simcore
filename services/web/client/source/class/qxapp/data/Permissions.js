@@ -40,10 +40,14 @@ qx.Class.define("qxapp.data.Permissions", {
   type : "singleton",
 
   construct() {
-    this.addAction("tester", "show_all_services");
-    this.addAction("user", "go_to_dashboard");
-    this.addAction("user", "write_node");
-    this.addAction("user", "write_link");
+    const initPermissions = this.__getInitPermissions();
+    for (const role in initPermissions) {
+      if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
+        initPermissions[role].forEach(action => {
+          this.addAction(role, action);
+        }, this);
+      }
+    }
   },
 
   events: {
@@ -79,16 +83,6 @@ qx.Class.define("qxapp.data.Permissions", {
   members: {
     __userRole: null,
 
-    __nextAction: function() {
-      let highestAction = 0.5;
-      for (const key in this.self().ACTIONS) {
-        if (highestAction < this.self().ACTIONS[key]) {
-          highestAction = this.self().ACTIONS[key];
-        }
-      }
-      return 2*highestAction;
-    },
-
     addAction: function(role, action) {
       if (!this.self().ROLES[role]) {
         return;
@@ -96,27 +90,6 @@ qx.Class.define("qxapp.data.Permissions", {
 
       this.self().ACTIONS[action] = this.__nextAction();
       this.self().ROLES[role].can.push(action);
-    },
-
-    // https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1#2405
-    __canRoleDo: function(role, action) {
-      role = role.toLowerCase();
-      // Check if role exists
-      const roles = this.self().ROLES;
-      if (!roles[role]) {
-        return false;
-      }
-      let roleObj = roles[role];
-      // Check if this role has access
-      if (roleObj.can.indexOf(action) !== -1) {
-        return true;
-      }
-      // Check if there are any parents
-      if (!roleObj.inherits || roleObj.inherits.length < 1) {
-        return false;
-      }
-      // Check child roles until one returns true or all return false
-      return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
     },
 
     canDo: function(action, showMsg) {
@@ -143,6 +116,52 @@ qx.Class.define("qxapp.data.Permissions", {
         console.error(e);
       });
       profile.get();
+    },
+
+    __getInitPermissions: function() {
+      const initPermissions = {
+        "tester": [
+          "show_all_services"
+        ],
+        "user": [
+          "go_to_dashboard",
+          "create_new_project",
+          "write_node",
+          "write_link"
+        ]
+      };
+      return initPermissions;
+    },
+
+    __nextAction: function() {
+      let highestAction = 0.5;
+      for (const key in this.self().ACTIONS) {
+        if (highestAction < this.self().ACTIONS[key]) {
+          highestAction = this.self().ACTIONS[key];
+        }
+      }
+      return 2*highestAction;
+    },
+
+    // https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1#2405
+    __canRoleDo: function(role, action) {
+      role = role.toLowerCase();
+      // Check if role exists
+      const roles = this.self().ROLES;
+      if (!roles[role]) {
+        return false;
+      }
+      let roleObj = roles[role];
+      // Check if this role has access
+      if (roleObj.can.indexOf(action) !== -1) {
+        return true;
+      }
+      // Check if there are any parents
+      if (!roleObj.inherits || roleObj.inherits.length < 1) {
+        return false;
+      }
+      // Check child roles until one returns true or all return false
+      return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
     }
   }
 });
