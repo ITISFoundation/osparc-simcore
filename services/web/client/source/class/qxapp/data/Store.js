@@ -134,6 +134,19 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
+        key: "simcore/services/dynamic/itis/remote-renderer",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "Remote Renderer",
+        description: "Remote Renderer",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {},
+        outputs: {}
+      }, {
         key: "simcore/services/dynamic/itis/dash-plot",
         version: "1.0.0",
         type: "container",
