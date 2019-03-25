@@ -84,13 +84,23 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "window-small-cap": {
+      include: "window",
+      alias: "window",
+      style: state => ({
+        backgroundColor: "background-selected-dark",
+        decorator: "window-small-cap"
+      })
+    },
+
     "window-small-cap/captionbar": {
-      include: "window/captionbar", // load defaults from window captionbar
-      alias: "window/captionbar", // redirect kids
+      include: "window/captionbar",
+      alias: "window/captionbar",
       style: state => ({
         padding: [0, 3, 0, 3],
         minHeight: 20,
-        decorator: "workbench-node-captionbar"
+        backgroundColor: "background-selected-dark",
+        decorator: "workbench-small-cap-captionbar"
       })
     },
 

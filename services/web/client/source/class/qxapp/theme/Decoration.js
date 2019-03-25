@@ -53,8 +53,15 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "workbench-node-captionbar": {
-      decorator: qx.ui.decoration.MSingleBorder,
+    "window-small-cap": {
+      include: "window",
+      style: {
+        width: 0,
+        radius: 3
+      }
+    },
+
+    "workbench-small-cap-captionbar": {
       style: {
         width: 0
       }
