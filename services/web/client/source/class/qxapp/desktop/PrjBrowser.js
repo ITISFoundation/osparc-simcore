@@ -264,13 +264,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       resources.addListenerOnce("getSuccess", e => {
         let userPrjList = e.getRequest().getResponse().data;
         let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
-        userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
-          name: this.tr("New Study"),
-          thumbnail: "@FontAwesome5Solid/plus-circle/80",
-          uuid: null,
-          lastChangeDate: null,
-          prjOwner: null
-        }));
+        if (qxapp.data.Permissions.getInstance().canDo("create_new_project")) {
+          userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
+            name: this.tr("New Study"),
+            thumbnail: "@FontAwesome5Solid/plus-circle/80",
+            uuid: null,
+            lastChangeDate: null,
+            prjOwner: null
+          }));
+        }
         // controller
         let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
         const fromTemplate = false;
