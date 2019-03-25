@@ -5,14 +5,14 @@ import json
 from simcore_service_director import registry_proxy
 
 
-async def test_list_no_services_available(docker_registry, configure_registry_access, configure_schemas_location):
+async def test_list_no_services_available(docker_registry, configure_registry_access):
     computational_services = await registry_proxy.list_computational_services()
     assert (not computational_services) # it's empty
     interactive_services = await registry_proxy.list_interactive_services()
     assert (not interactive_services)
 
 
-async def test_list_computational_services(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_list_computational_services(docker_registry, push_services, configure_registry_access):
     push_services( number_of_computational_services=6,
                    number_of_interactive_services=3)
 
@@ -20,14 +20,14 @@ async def test_list_computational_services(docker_registry, push_services, confi
     assert len(computational_services) == 6
 
 
-async def test_list_interactive_services(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_list_interactive_services(docker_registry, push_services, configure_registry_access):
     push_services( number_of_computational_services=5,
                    number_of_interactive_services=4)
     interactive_services = await registry_proxy.list_interactive_services()
     assert len(interactive_services) == 4
 
 
-async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, configure_registry_access):
     images = push_services( number_of_computational_services=5,
                             number_of_interactive_services=3)
     image_number = {}
@@ -43,7 +43,7 @@ async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, c
         assert len(list_of_images["tags"]) == number
 
 
-async def test_list_interactive_service_dependencies(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_list_interactive_service_dependencies(docker_registry, push_services, configure_registry_access):
     images = push_services( number_of_computational_services=2,
                             number_of_interactive_services=2,
                             inter_dependent_services=True)
@@ -60,7 +60,7 @@ async def test_list_interactive_service_dependencies(docker_registry, push_servi
 
 
 
-async def test_retrieve_labels_of_image(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_retrieve_labels_of_image(docker_registry, push_services, configure_registry_access):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
     for image in images:
@@ -113,7 +113,7 @@ def test_get_service_last_namess():
     assert registry_proxy.get_service_last_names(repo) == "invalid service"
 
 
-async def test_get_service_details(push_services, configure_registry_access, configure_schemas_location):
+async def test_get_service_details(push_services, configure_registry_access):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
     for image in images:

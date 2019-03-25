@@ -82,6 +82,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __outputPortLayout: null,
     __inputPort: null,
     __outputPort: null,
+    __progressLabel: null,
     __progressBar: null,
 
     getNodeId: function() {

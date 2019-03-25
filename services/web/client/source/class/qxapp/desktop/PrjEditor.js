@@ -502,8 +502,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __onPipelinesubmitted: function(e) {
-      const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["project_id"];
+      let req = e.getTarget();
+
+      const pipelineId = req.getResponse()["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -511,7 +512,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__pipelineId = null;
         this.getLogger().error("Workbench", "Submition failed");
       } else {
-        // this.setCanStart(false);
+        this.setCanStart(false);
         this.__pipelineId = pipelineId;
         this.getLogger().info("Workbench", "Pipeline started");
       }

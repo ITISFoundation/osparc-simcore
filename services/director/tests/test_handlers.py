@@ -1,8 +1,4 @@
-# pylint: disable=unused-argument
-# pylint: disable=unused-import
-# pylint: disable=bare-except
-# pylint: disable=redefined-outer-name
-# pylint: disable=R0915
+#pylint: disable=R0915
 
 import json
 import uuid
@@ -48,7 +44,7 @@ def _check_services(created_services, services, schema_version="v1"):
         json_schema_validator.validate_instance_object(service, service_schema)
 
 
-async def test_services_get(docker_registry, configure_schemas_location, push_services):
+async def test_services_get(docker_registry, push_services):
     fake_request = "fake request"
     # no registry defined
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as no registry URL is defined"):
@@ -110,7 +106,7 @@ async def test_services_get(docker_registry, configure_schemas_location, push_se
     assert len(services) == 2
 
 
-async def test_v0_services_conversion_to_new(configure_registry_access, configure_schemas_location, push_v0_schema_services): #pylint: disable=W0613, W0621
+async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_schema_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
     created_services = push_v0_schema_services(3,2)
     assert len(created_services) == 5
@@ -124,7 +120,7 @@ async def test_v0_services_conversion_to_new(configure_registry_access, configur
     assert len(services) == 0
 
 
-async def test_services_by_key_version_get(configure_registry_access, configure_schemas_location, push_services): #pylint: disable=W0613, W0621
+async def test_services_by_key_version_get(configure_registry_access, push_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
@@ -169,7 +165,7 @@ async def _start_get_stop_services(push_services, user_id):
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None)
-
+    
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None")
 
@@ -208,9 +204,9 @@ async def _start_get_stop_services(push_services, user_id):
         # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
         service_entry_point = running_service_enveloped["data"]["entry_point"]
-        service_host = running_service_enveloped["data"]["service_host"]
+        service_host = running_service_enveloped["data"]["service_host"]        
         service_basepath = running_service_enveloped["data"]["service_basepath"]
-
+        
 
         # get the service
         web_response = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
@@ -235,10 +231,10 @@ async def _start_get_stop_services(push_services, user_id):
         assert web_response.text is None
 
 
-async def test_running_services_post_and_delete_no_swarm(configure_registry_access, configure_schemas_location, push_services, user_id): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete_no_swarm(configure_registry_access, push_services, user_id): #pylint: disable=W0613, W0621
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal error as there is no docker swarm"):
         await _start_get_stop_services(push_services, user_id)
 
 
-async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete(configure_registry_access, push_services, docker_swarm, user_id): #pylint: disable=W0613, W0621    
     await _start_get_stop_services(push_services, user_id)
