@@ -64,6 +64,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
+    },
+    thumbnail: {
+      check: "String",
+      nullable: true,
+      apply: "_applyThumbnail"
     }
   },
 
@@ -91,8 +96,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     __createNodeLayout: function() {
-      let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
-      this.setLayout(nodeLayout);
+      this.setLayout(new qx.ui.layout.VBox(5));
+
+      if (this.getNode().getThumbnail()) {
+        this.setThumbnail(this.getNode().getThumbnail());
+      }
 
       let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this.add(inputsOutputsLayout, {
@@ -218,12 +226,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       }
 
       const captionHeight = this.__childControls.captionbar.getBounds().height;
-      const inputOutputs = this.getChildren()[0];
       let ports = null;
       if (port.isInput) {
-        ports = inputOutputs.getChildren()[0].getChildren();
+        ports = this.__inputPortLayout.getChildren();
       } else {
-        ports = inputOutputs.getChildren()[1].getChildren();
+        ports = this.__outputPortLayout.getChildren();
       }
       let portBounds;
       if (ports.length > 0) {
@@ -255,6 +262,16 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (e.getPropagationStopped() === true) {
         this.fireEvent("nodeMoving");
       }
+    },
+
+    _applyThumbnail: function(thumbnail, oldThumbnail) {
+      if (oldThumbnail !== null) {
+        this.removeAt(0);
+      }
+      this.addAt(new qx.ui.embed.Html(thumbnail).set({
+        height: 100,
+        cssClass: "no-user-select"
+      }), 0);
     }
   }
 });
