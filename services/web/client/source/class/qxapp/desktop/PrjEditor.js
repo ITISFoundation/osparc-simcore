@@ -113,6 +113,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       workbenchUI.addListener("removeLink", e => {
         const linkId = e.getData();
         this.__removeLink(linkId);
+        workbenchUI.fireDataEvent("changeActiveWindow", false);
       }, this);
       this.showInMainView(workbenchUI, "root");
 
