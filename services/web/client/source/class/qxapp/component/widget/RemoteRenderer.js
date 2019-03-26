@@ -56,6 +56,7 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       left: 0
     });
 
+    this.__counter = 0;
     this.addListenerOnce("appear", () => {
       const elem = this.getContentElement().getDomElement();
       const events = [
@@ -75,6 +76,7 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       events.forEach(event => {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
       }, this);
+      this.__requestScreenshot();
     }, this);
 
     this.addListener("resize", e => {
@@ -88,6 +90,7 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
         width: width,
         height: height
       });
+      console.log(data);
     }, this);
   },
 
@@ -116,10 +119,42 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       const evXPosRel = evXPos / docWidth;
       const evYPosRel = evYPos / docHeight;
       console.log(evType, evButton, evXPos, evYPos, evXPosRel, evYPosRel);
+      this.__requestScreenshot();
+    },
+
+    __requestScreenshot: function() {
+      const latency = 100;
+      qx.event.Timer.once(e => {
+        const imageUrl = this.__getAScreenshot();
+        this.__updateScreenshot(imageUrl);
+      }, this, latency);
     },
 
     __updateScreenshot: function(image) {
       this.__backgroundImage.setSource(image);
+    },
+
+    __getAScreenshot: function() {
+      const images = [
+        "00",
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "11"
+      ];
+      const imageUrl = "qxapp/Horse_" + images[this.__counter] + ".png";
+      this.__counter++;
+      if (this.__counter === images.length) {
+        this.__counter = 0;
+      }
+      return imageUrl;
     }
   }
 });
