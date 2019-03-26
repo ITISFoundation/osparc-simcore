@@ -3,6 +3,29 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
 
   statics: {
     itemList: {
+      "simcore/services/dynamic/itis/s4l/simulator/neuron": [{
+        key: "setup-uuid",
+        label: "Setup"
+      }, {
+        key: "neurons-uuid",
+        label: "Neurons"
+      }, {
+        key: "sources-uuid",
+        label: "Sources"
+      }, {
+        key: "point-processes-uuid",
+        label: "Point Processes"
+      }, {
+        key: "network-connection-uuid",
+        label: "Network Connection"
+      }, {
+        key: "sensors-uuid",
+        label: "Sensors"
+      }, {
+        key: "solver-uuid",
+        label: "Solver"
+      }],
+
       "defaultNeurons": [{
         key: "SENN-UUID",
         label: "SENN"

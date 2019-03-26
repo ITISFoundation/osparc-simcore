@@ -1607,6 +1607,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
 
     getItemList: function(nodeKey, portKey) {
+      if (nodeKey) {
+        switch (nodeKey) {
+          case "simcore/services/dynamic/itis/s4l/simulator/neuron":
+            return qxapp.dev.fake.neuron.Data.getItemList(nodeKey);
+          case "simcore/services/dynamic/itis/s4l/simulator/lf":
+            return qxapp.dev.fake.lf.Data.getItemList(nodeKey);
+        }
+        return [];
+      }
+
       switch (portKey) {
         case "defaultNeuromanModels":
           return qxapp.dev.fake.neuroman.Data.getItemList(portKey);

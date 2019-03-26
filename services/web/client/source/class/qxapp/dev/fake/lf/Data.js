@@ -3,6 +3,29 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
 
   statics: {
     itemList: {
+      "simcore/services/dynamic/itis/s4l/simulator/lf": [{
+        key: "setup-uuid",
+        label: "Setup"
+      }, {
+        key: "materials-uuid",
+        label: "Materials"
+      }, {
+        key: "boundary-conditions-uuid",
+        label: "Boundary Conditions"
+      }, {
+        key: "sensors-uuid",
+        label: "Sensors"
+      }, {
+        key: "grid-uuid",
+        label: "Grid"
+      }, {
+        key: "voxels-uuid",
+        label: "Voxels"
+      }, {
+        key: "solver-uuid",
+        label: "Solver"
+      }],
+
       "defaultLFMaterials": [{
         key: "Air-UUID",
         label: "Air"
