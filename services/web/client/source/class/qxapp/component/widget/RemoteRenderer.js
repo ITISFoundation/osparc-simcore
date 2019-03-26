@@ -76,21 +76,9 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       events.forEach(event => {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
       }, this);
-      this.__requestScreenshot();
-    }, this);
 
-    this.addListener("resize", e => {
-      const width = e.getData().width;
-      const height = e.getData().height;
-      const data = {
-        width: width,
-        height: height
-      };
-      this.__backgroundImage.set({
-        width: width,
-        height: height
-      });
-      console.log(data);
+      this.addListener("resize", this.__resize, this);
+      this.__requestScreenshot();
     }, this);
   },
 
@@ -107,6 +95,21 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
   },
 
   members: {
+    __resize: function(e) {
+      const width = e.getData().width;
+      const height = e.getData().height;
+      const data = {
+        width: width,
+        height: height
+      };
+      this.__backgroundImage.set({
+        width: width,
+        height: height
+      });
+      this.__requestScreenshot();
+      console.log(data);
+    },
+
     __logPointerEvent: function(pointerEvent) {
       pointerEvent.preventDefault();
 
