@@ -65,16 +65,11 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      padding: [0, 40]
+      padding: [0, 10]
     });
     this._add(mainLayout, {
       flex: 1
     });
-
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
-    this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__initButtons();
   },
 
   properties: {
@@ -98,47 +93,21 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     __buttonsLayout: null,
     __openFolder: null,
 
-    __initButtons: function() {
-      let box = new qx.ui.layout.HBox();
-      box.set({
-        spacing: 10,
-        alignX: "right"
-      });
-      let buttonsLayout = this.__buttonsLayout = new qx.ui.container.Composite(box);
-
-      let openFolder = this.__openFolder = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/folder-open/32"
-      });
-      openFolder.addListener("execute", function() {
-        let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
-
-        let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-          layout: new qx.ui.layout.Canvas(),
-          contentPadding: 0,
-          showMinimize: false,
-          width: 900,
-          height: 600
-        });
-        win.add(nodeDataManager, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
-
-        win.center();
-        win.open();
-      }, this);
-
-      buttonsLayout.add(openFolder);
-    },
-
     _rebuildLayout: function() {
       this.__addInputPortsUIs();
-      this.__addSettings();
-      this.__addMapper();
-      this.__addIFrame();
-      this.__addButtons();
+
+      if (this.getNode().isInKey("s4l/simulator")) {
+        let widget = new qxapp.component.widget.Simulator(this.getNode());
+        console.log(widget);
+        this.__mainLayout.add(widget, {
+          flex: 1
+        });
+      } else {
+        this.__addSettings();
+        this.__addMapper();
+        this.__addIFrame();
+        this.__addButtons();
+      }
     },
 
     __addInputPortsUIs: function() {
@@ -185,8 +154,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __addSettings: function() {
-      const propsWidget = this.getNode().getPropsWidget();
+      if (!this.__settingsLayout) {
+        this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
+      }
       this.__settingsLayout.removeAll();
+
+      const propsWidget = this.getNode().getPropsWidget();
       if (propsWidget) {
         let box = new qx.ui.layout.HBox();
         box.set({
@@ -209,8 +182,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __addMapper: function() {
-      const mapper = this.getNode().getInputsMapper();
+      if (!this.__mapperLayout) {
+        this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      }
       this.__mapperLayout.removeAll();
+
+      const mapper = this.getNode().getInputsMapper();
       if (mapper) {
         this.__mapperLayout.add(mapper, {
           flex: 1
@@ -224,8 +201,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __addIFrame: function() {
-      const iFrame = this.getNode().getIFrame();
+      if (!this.__iFrameLayout) {
+        this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      }
       this.__iFrameLayout.removeAll();
+
+      const iFrame = this.getNode().getIFrame();
       if (iFrame) {
         iFrame.addListener("maximize", e => {
           this.__maximizeIFrame(true);
@@ -245,16 +226,18 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __maximizeIFrame: function(maximize) {
-      const othersStatus = maximize ? "excluded" : "visible";
-      this.__inputNodesLayout.setVisibility(othersStatus);
-      this.__settingsLayout.setVisibility(othersStatus);
-      this.__mapperLayout.setVisibility(othersStatus);
-      this.__buttonsLayout.setVisibility(othersStatus);
-    },
-
     __addButtons: function() {
+      if (!this.__buttonsLayout) {
+        let box = new qx.ui.layout.HBox();
+        box.set({
+          spacing: 10,
+          alignX: "right"
+        });
+        this.__buttonsLayout = new qx.ui.container.Composite(box);
+        this.__initButtons();
+      }
       this.__buttonsLayout.removeAll();
+
       let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
       if (retrieveIFrameButton) {
         this.__buttonsLayout.add(retrieveIFrameButton);
@@ -265,6 +248,42 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
       this.__buttonsLayout.add(this.__openFolder);
       this.__mainLayout.add(this.__buttonsLayout);
+    },
+
+    __initButtons: function() {
+      let openFolder = this.__openFolder = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/folder-open/32"
+      });
+      openFolder.addListener("execute", function() {
+        let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+
+        let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+          layout: new qx.ui.layout.Canvas(),
+          contentPadding: 0,
+          showMinimize: false,
+          width: 900,
+          height: 600
+        });
+        win.add(nodeDataManager, {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        });
+
+        win.center();
+        win.open();
+      }, this);
+
+      this.__buttonsLayout.add(openFolder);
+    },
+
+    __maximizeIFrame: function(maximize) {
+      const othersStatus = maximize ? "excluded" : "visible";
+      this.__inputNodesLayout.setVisibility(othersStatus);
+      this.__settingsLayout.setVisibility(othersStatus);
+      this.__mapperLayout.setVisibility(othersStatus);
+      this.__buttonsLayout.setVisibility(othersStatus);
     }
   }
 });
