@@ -134,7 +134,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/dynamic/itis/remote-renderer",
+        key: "simcore/services/dynamic/itis/s4l/modeler/remote-renderer",
         version: "1.0.0",
         type: "dynamic",
         name: "Remote Renderer",
@@ -145,6 +145,77 @@ qx.Class.define("qxapp.data.Store", {
         }],
         contact: "maiz@itis.ethz.ch",
         inputs: {},
+        outputs: {
+          "modeler": {
+            "label": "Modeler",
+            "displayOrder": 0,
+            "description": "Modeler",
+            "type": "data:application/s4l-api/modeler"
+          },
+          "modeler-tree": {
+            "label": "Modeler Tree",
+            "displayOrder": 1,
+            "description": "Modeler",
+            "type": "node-output-tree-api-v0.0.1"
+          }
+        }
+      }, {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "Neuron Simulator",
+        description: "Neuron Simulator",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {
+          modeler: {
+            label: "Modeler",
+            displayOrder: 0,
+            description: "Modeler",
+            type: "data:application/s4l-api/modeler"
+          },
+          mapper: {
+            displayOrder: 1,
+            label: "Neuron Simulator",
+            description: "Maps Model entities into Neurons",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        },
+        outputs: {}
+      }, {
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "LF Simulator",
+        description: "LF Simulator",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {
+          modeler: {
+            label: "Modeler",
+            displayOrder: 0,
+            description: "Modeler",
+            type: "data:application/s4l-api/modeler"
+          },
+          mapper: {
+            displayOrder: 1,
+            label: "LF Simulator",
+            description: "Maps Model entities into Neurons",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        },
         outputs: {}
       }, {
         key: "simcore/services/dynamic/itis/dash-plot",
