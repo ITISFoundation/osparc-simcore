@@ -53,6 +53,20 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
+    "window-small-cap": {
+      include: "window",
+      style: {
+        width: 0,
+        radius: 3
+      }
+    },
+
+    "workbench-small-cap-captionbar": {
+      style: {
+        width: 0
+      }
+    },
+
     "outputPort": {
       decorator: qx.ui.decoration.Decorator,
       style: {

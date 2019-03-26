@@ -98,16 +98,8 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       let control;
       switch (id) {
         case "icon":
-          {
-            control = new qx.ui.basic.Image(this.getIcon());
-            this._add(control);
-            let dummyProgress = new qx.ui.indicator.ProgressBar().set({
-              height: 10,
-              maximum: 100,
-              value: Math.floor(Math.random() * 101)
-            });
-            this._add(dummyProgress);
-          }
+          control = new qx.ui.basic.Image(this.getIcon());
+          this._add(control);
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({

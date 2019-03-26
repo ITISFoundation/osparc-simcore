@@ -29,6 +29,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
         };
       }
     },
+
     "pb-listitem":  {
       // FIXME
       include: "material-button",
@@ -48,22 +49,26 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return style;
       }
     },
+
     "panelview-titlebar": {
       style: state => ({
         height: 24,
         padding: [0, 5]
       })
     },
+
     "panelview-titlebar-label": {
       style: state => ({
         marginTop: 4
       })
     },
+
     "panelview-content": {
       style: state => ({
         margin: [0, 4, 4, 4]
       })
     },
+
     "toolbar-textfield": {
       include: "material-textfield",
       style: state => ({
@@ -71,17 +76,40 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginTop: 8
       })
     },
+
     "toolbar-label": {
       style: state => ({
         marginTop: 11,
         marginRight: 3
       })
     },
+
+    "window-small-cap": {
+      include: "window",
+      alias: "window",
+      style: state => ({
+        backgroundColor: "background-selected-dark",
+        decorator: "window-small-cap"
+      })
+    },
+
+    "window-small-cap/captionbar": {
+      include: "window/captionbar",
+      alias: "window/captionbar",
+      style: state => ({
+        padding: [0, 3, 0, 3],
+        minHeight: 20,
+        backgroundColor: "background-selected-dark",
+        decorator: "workbench-small-cap-captionbar"
+      })
+    },
+
     "splitpane/splitter": {
       style: state => ({
         width: 0
       })
     },
+
     sidebar: {
       style: state => ({
         backgroundColor: "background-main-lighter"
