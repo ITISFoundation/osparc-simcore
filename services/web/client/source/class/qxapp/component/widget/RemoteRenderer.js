@@ -39,11 +39,21 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
   construct: function(node, webSocketUrl) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.Canvas());
-
     this.set({
       node: node,
       webSocketUrl: webSocketUrl
+    });
+
+    this._setLayout(new qx.ui.layout.Canvas());
+
+    const backgroundImage = this.__backgroundImage = new qx.ui.basic.Image().set({
+      scale: true
+    });
+    this._add(backgroundImage, {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
     });
 
     this.addListenerOnce("appear", () => {
@@ -65,6 +75,19 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       events.forEach(event => {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
       }, this);
+    }, this);
+
+    this.addListener("resize", e => {
+      const width = e.getData().width;
+      const height = e.getData().height;
+      const data = {
+        width: width,
+        height: height
+      };
+      this.__backgroundImage.set({
+        width: width,
+        height: height
+      });
     }, this);
   },
 
@@ -93,6 +116,10 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
       const evXPosRel = evXPos / docWidth;
       const evYPosRel = evYPos / docHeight;
       console.log(evType, evButton, evXPos, evYPos, evXPosRel, evYPosRel);
+    },
+
+    __updateScreenshot: function(image) {
+      this.__backgroundImage.setSource(image);
     }
   }
 });
