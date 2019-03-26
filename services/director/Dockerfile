@@ -141,6 +141,8 @@ ENV SC_BOOT_MODE development
 WORKDIR /devel
 VOLUME  /devel/packages
 VOLUME  /devel/services/director/
+VOLUME /devel/services/api
+ENV NODE_SCHEMA_LOCATION ../../../api/specs/shared/schemas/node-meta-v0.0.1.json
 
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]
