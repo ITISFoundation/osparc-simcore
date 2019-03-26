@@ -233,18 +233,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           if (widget === null) {
             widget = this.__workbenchUI;
           }
+        } else if (node.isInKey("file-picker")) {
+          widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
+        } else if (node.isInKey("remote-renderer")) {
+          widget = new qxapp.component.widget.RemoteRenderer(node, null);
+        } else if (node.isInKey("s4l/simulator")) {
+          widget = new qxapp.component.widget.Simulator(node);
         } else {
           this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
-          if (node.isInKey("file-picker")) {
-            widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
-          } else if (node.isInKey("remote-renderer")) {
-            widget = new qxapp.component.widget.RemoteRenderer(node, null);
-          } else if (node.isInKey("s4l/simulator")) {
-            widget = new qxapp.component.widget.Simulator(node);
-          } else {
-            widget = this.__nodeView;
-          }
+          widget = this.__nodeView;
         }
       }
       return widget;

@@ -30,12 +30,11 @@
  *   let nodeView = new qxapp.component.widget.NodeView();
  *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
- *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
 
-const PORT_INPUTS_WIDTH = 300;
+const PORT_INPUTS_WIDTH = 250;
 
 qx.Class.define("qxapp.component.widget.NodeView", {
   extend: qx.ui.core.Widget,
@@ -85,7 +84,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     node: {
-      check: "qxapp.data.model.Node"
+      check: "qxapp.data.model.Node",
+      apply: "_rebuildLayout"
     }
   },
 
@@ -133,7 +133,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    buildLayout: function() {
+    _rebuildLayout: function() {
       this.__addInputPortsUIs();
       this.__addSettings();
       this.__addMapper();
