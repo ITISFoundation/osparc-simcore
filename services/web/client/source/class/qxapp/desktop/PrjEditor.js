@@ -239,7 +239,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
           } else if (node.isInKey("remote-renderer")) {
-            widget = new qxapp.component.widget.RemoteRenderer(null);
+            widget = new qxapp.component.widget.RemoteRenderer(node, null);
           } else {
             widget = this.__nodeView;
           }
