@@ -139,10 +139,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
+      this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      nodeView.setWorkbench(project.getWorkbench());
     },
 
     connectEvents: function() {

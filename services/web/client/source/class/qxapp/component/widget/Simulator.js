@@ -67,7 +67,7 @@ qx.Class.define("qxapp.component.widget.Simulator", {
       });
     }
     let data = {
-      label: "Neuron Simulator",
+      label: "Simulator",
       children: children
     };
     let model = qx.data.marshal.Json.createModel(data, true);

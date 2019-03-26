@@ -28,7 +28,6 @@
  *
  * <pre class='javascript'>
  *   let nodeView = new qxapp.component.widget.NodeView();
- *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
  *   this.getRoot().add(nodeView);
  * </pre>
@@ -73,11 +72,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   properties: {
-    workbench: {
-      check: "qxapp.data.model.Workbench",
-      nullable: false
-    },
-
     node: {
       check: "qxapp.data.model.Node",
       apply: "_rebuildLayout"
@@ -96,6 +90,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     _rebuildLayout: function() {
       this.__addInputPortsUIs();
 
+      this.__mainLayout.removeAll();
       if (this.getNode().isInKey("s4l/simulator")) {
         let widget = new qxapp.component.widget.Simulator(this.getNode());
         console.log(widget);
