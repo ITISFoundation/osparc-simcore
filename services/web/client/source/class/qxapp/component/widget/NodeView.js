@@ -152,7 +152,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       // Add the representations for the inputs
       const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
+        let inputNode = inputNodes[i];
         if (inputNode.isContainer()) {
           for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
             const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];
