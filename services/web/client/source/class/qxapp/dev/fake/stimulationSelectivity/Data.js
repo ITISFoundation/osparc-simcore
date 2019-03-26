@@ -7,20 +7,8 @@ qx.Class.define("qxapp.dev.fake.stimulationSelectivity.Data", {
       label: "Subgroup"
     }],
 
-    compare: function(a, b) {
-      if (a.label < b.label) {
-        return -1;
-      }
-      if (a.label > b.label) {
-        return 1;
-      }
-      return 0;
-    },
-
     getItemList: function() {
-      let itemList = qxapp.dev.fake.stimulationSelectivity.Data.itemList;
-      itemList.sort(this.compare);
-      return itemList;
+      return qxapp.dev.fake.stimulationSelectivity.Data.itemList;
     }
   } // statics
 

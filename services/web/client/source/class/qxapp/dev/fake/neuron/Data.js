@@ -478,22 +478,8 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       }
     },
 
-    compare: function(a, b) {
-      if (a.label < b.label) {
-        return -1;
-      }
-      if (a.label > b.label) {
-        return 1;
-      }
-      return 0;
-    },
-
     getItemList: function(simSettingsId) {
-      let itemList = qxapp.dev.fake.neuron.Data.itemList[simSettingsId];
-      if (itemList) {
-        itemList.sort(this.compare);
-      }
-      return itemList;
+      return qxapp.dev.fake.neuron.Data.itemList[simSettingsId];
     },
 
     getItem: function(simSettingsId, itemId) {

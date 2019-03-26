@@ -231,11 +231,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     },
 
     getItemList: function(simSettingsId) {
-      let itemList = qxapp.dev.fake.lf.Data.itemList[simSettingsId];
-      if (itemList) {
-        itemList.sort(this.compare);
-      }
-      return itemList;
+      return qxapp.dev.fake.lf.Data.itemList[simSettingsId];
     },
 
     getItem: function(simSettingsId, itemId) {

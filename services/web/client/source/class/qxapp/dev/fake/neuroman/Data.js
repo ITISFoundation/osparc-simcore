@@ -30,20 +30,8 @@ qx.Class.define("qxapp.dev.fake.neuroman.Data", {
       }]
     },
 
-    compare: function(a, b) {
-      if (a.label < b.label) {
-        return -1;
-      }
-      if (a.label > b.label) {
-        return 1;
-      }
-      return 0;
-    },
-
     getItemList: function(key) {
-      let itemList = qxapp.dev.fake.neuroman.Data.itemList[key];
-      itemList.sort(this.compare);
-      return itemList;
+      return qxapp.dev.fake.neuroman.Data.itemList[key];
     }
   } // statics
 
