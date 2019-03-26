@@ -240,6 +240,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
           } else if (node.isInKey("remote-renderer")) {
             widget = new qxapp.component.widget.RemoteRenderer(node, null);
+          } else if (node.isInKey("s4l/simulator")) {
+            widget = new qxapp.component.widget.Simulator(node);
           } else {
             widget = this.__nodeView;
           }
