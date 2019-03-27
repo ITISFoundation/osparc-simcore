@@ -1642,7 +1642,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       return [];
     },
 
-    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
+    getItem: function(nodeKey, portKey, itemUuid) {
       switch (portKey) {
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);

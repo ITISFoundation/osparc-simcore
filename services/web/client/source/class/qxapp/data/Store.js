@@ -1406,8 +1406,8 @@ qx.Class.define("qxapp.data.Store", {
       return qxapp.dev.fake.Data.getItemList(nodeKey, portKey);
     },
 
-    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
-      return qxapp.dev.fake.Data.getItem(nodeInstanceUUID, portKey, itemUuid);
+    getItem: function(nodeKey, portKey, itemUuid) {
+      return qxapp.dev.fake.Data.getItem(nodeKey, portKey, itemUuid);
     },
 
     getFakeFiles: function() {
