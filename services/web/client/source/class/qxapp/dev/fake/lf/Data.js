@@ -10,7 +10,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
         label: "Materials"
       }, {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary-conditions",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
         label: "Boundary Conditions"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
@@ -458,6 +458,9 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     },
 
     getItem: function(simSettingsId, itemId) {
+      if (itemId === undefined) {
+        return qxapp.dev.fake.lf.Data.item[simSettingsId];
+      }
       return qxapp.dev.fake.lf.Data.item[simSettingsId][itemId];
     }
   } // statics
