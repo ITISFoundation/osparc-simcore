@@ -90,7 +90,7 @@ ARG BRANCH_NAME
 RUN git clone https://github.com/ITISFoundation/raw.git --branch ${BRANCH_NAME}
 WORKDIR $HOME/raw
 RUN npm install -g bower
-RUN bower install --force --allow-root
+RUN bower install --allow-root
 
 WORKDIR $HOME
 COPY --chown=scu:scu services/dy-raw-graphs/docker $HOME/docker

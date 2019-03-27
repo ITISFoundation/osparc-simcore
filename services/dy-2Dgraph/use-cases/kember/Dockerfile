@@ -11,6 +11,9 @@ RUN pip --cache-dir=/tmp/.pipcache install -r requirements.txt &&\
 
 # prepare for booting ---------------------------------------------------------
 COPY --chown=jovyan:users docker /docker
+# copy some helper scripts-----------------------------------------------------
+COPY --chown=jovyan:users scripts /scripts
+ENV PYTHONPATH=/scripts:$PYTHONPATH
 # set of arguments to copy the right notebook ---------------------------------
 ARG NOTEBOOK_NAME
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}

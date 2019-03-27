@@ -135,6 +135,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
         this.__innerContainer.addListenerOnce("appear", () => {
           this.__innerContainer.getContentElement().getDomElement()
             .addEventListener("transitionend", () => {
+              this.__innerContainer.setDecorator("panelview-content");
               if (this.__innerContainer.getHeight() === 0) {
                 this.__innerContainer.exclude();
               }

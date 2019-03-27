@@ -41,7 +41,6 @@ qx.Class.define("qxapp.Application", {
       // Call super class
       this.base();
       this.__preventAutofillBrowserSyles();
-      this.__addGeneralCss();
 
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
@@ -167,17 +166,6 @@ qx.Class.define("qxapp.Application", {
           "transition: background-color 0s linear 5000s, color 0s linear 5000s"
         );
       }
-    },
-
-    __addGeneralCss: function() {
-      const stylesheet = qx.ui.style.Stylesheet.getInstance();
-      stylesheet.addRule(
-        ".no-user-select, .no-user-select > svg",
-
-        "-webkit-touch-callout: none;" +
-        "-webkit-user-select: none;" +
-        "user-select: none;"
-      );
     }
   }
 });
