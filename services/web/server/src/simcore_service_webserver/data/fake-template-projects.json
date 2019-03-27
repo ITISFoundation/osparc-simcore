@@ -695,5 +695,63 @@
         }
       }
     }
+  }, {
+    "uuid": "template-uuid-5678-6542-123443211234",
+    "name": "Simulators",
+    "description": "LF and Neuron Simulators",
+    "notes": "Empty",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?19.jpg",
+    "prjOwner": "Odei Maiz",
+    "collaborators": {},
+    "creationDate": "2019-03-27T09:13:13.360Z",
+    "lastChangeDate": "2019-03-27T09:33:41.858Z",
+    "workbench": {
+      "template-uuid-4674-1234-946151cae351": {
+        "key": "simcore/services/dynamic/itis/s4l/modeler/remote-renderer",
+        "version": "1.0.0",
+        "label": "Modeler (Remote)",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 100,
+          "y": 200
+        }
+      },
+      "template-uuid-409d-1234-c1f04de67f8b": {
+        "key": "simcore/services/dynamic/itis/s4l/simulator/lf",
+        "version": "1.0.0",
+        "label": "LF Simulator",
+        "inputs": {},
+        "inputNodes": [
+          "template-uuid-4674-1234-946151cae351"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 350,
+          "y": 100
+        }
+      },
+      "template-uuid-43e7-9fda-cf9625e59986": {
+        "key": "simcore/services/dynamic/itis/s4l/simulator/neuron",
+        "version": "1.0.0",
+        "label": "Neuron Simulator",
+        "inputs": {},
+        "inputNodes": [
+          "template-uuid-4674-1234-946151cae351"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 350,
+          "y": 300
+        }
+      }
+    }
   }
 ]
