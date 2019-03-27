@@ -23,14 +23,14 @@
 qx.Class.define("qxapp.component.widget.simulator.ConceptSettings", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node, settingKey) {
+  construct: function(node, settings) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
       node: node,
-      settingKey: settingKey
+      settings: settings
     });
   },
 
@@ -40,9 +40,9 @@ qx.Class.define("qxapp.component.widget.simulator.ConceptSettings", {
       nullable: false
     },
 
-    settingKey: {
-      check: "String",
-      apply: "_applySettingKey",
+    settings: {
+      check: "qx.core.Object",
+      apply: "_applySettings",
       nullable: true
     }
   },
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.component.widget.simulator.ConceptSettings", {
       return this.__tree;
     },
 
-    _applySettingKey: function() {
+    _applySettings: function() {
       this._removeAll();
 
       const label = new qx.ui.basic.Label(this.tr("Properties")).set({
@@ -63,13 +63,23 @@ qx.Class.define("qxapp.component.widget.simulator.ConceptSettings", {
       });
       this._add(label);
 
-      const settKey = this.getSettingKey();
+      const settKey = this.getSettings();
       if (settKey) {
-        const label2 = new qx.ui.basic.Label(this.tr("Properties2")).set({
-          allowGrowX: true,
-          appearance: "toolbar-textfield"
-        });
-        this._add(label2);
+        // const metaData = qxapp.data.Store.getInstance().getItem(this.getKey(), settKey);
+        const metaData = this.getSettings();
+        if (metaData) {
+          console.log(metaData);
+          /*
+          if (metaData.inputsDefault) {
+            this.__addInputsDefault(metaData.inputsDefault);
+          }
+          */
+          const label2 = new qx.ui.basic.Label(this.tr("Properties2")).set({
+            allowGrowX: true,
+            appearance: "toolbar-textfield"
+          });
+          this._add(label2);
+        }
       }
     },
 

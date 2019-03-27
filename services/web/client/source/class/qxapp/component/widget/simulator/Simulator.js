@@ -63,8 +63,8 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     splitpane.add(vBox, 0);
 
     tree.addListener("selectionChanged", e => {
-      const settingKey = e.getData();
-      this.__conceptSettTree.setSettingKey(settingKey);
+      const settings = e.getData();
+      this.__conceptSettTree.setSettings(settings);
     }, this);
 
     this.__checkModelerIsConnected();
