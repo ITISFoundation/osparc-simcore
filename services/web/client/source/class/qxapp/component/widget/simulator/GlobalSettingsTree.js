@@ -32,7 +32,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettingsTree", {
     });
 
     this.setDelegate({
-      createItem: () => new qxapp.component.widget.GlobalSettingsTreeItem(),
+      createItem: () => new qxapp.component.widget.simulator.GlobalSettingsTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
@@ -79,7 +79,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettingsTree", {
     __selectionChanged: function() {
       const currentSelection = this.__getOneSelectedRow();
       if (currentSelection) {
-        this.fireDataEvent("selectionChanged", currentSelection.getModel());
+        this.fireDataEvent("selectionChanged", currentSelection.getKey());
       }
     },
 
