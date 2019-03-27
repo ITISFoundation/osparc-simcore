@@ -1643,6 +1643,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
     },
 
     getItem: function(nodeKey, portKey, itemUuid) {
+      if (nodeKey) {
+        switch (nodeKey) {
+          case "simcore/services/dynamic/itis/s4l/simulator/neuron":
+            return qxapp.dev.fake.neuron.Data.getItem(portKey);
+          case "simcore/services/dynamic/itis/s4l/simulator/lf":
+            return qxapp.dev.fake.lf.Data.getItem(portKey);
+        }
+        return {};
+      }
+
       switch (portKey) {
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);

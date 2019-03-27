@@ -57,12 +57,14 @@ qx.Class.define("qxapp.component.widget.Simulator", {
     const tree = this.__settingsTree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
       openMode: "none"
     });
-    const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey());
+    const store = qxapp.data.Store.getInstance();
+    const itemList = store.getItemList(node.getKey());
     let children = [];
     for (let i=0; i<itemList.length; i++) {
       children.push({
         label: itemList[i].label,
         key: itemList[i].key,
+        metadata: store.getItem(node.getKey(), itemList[i].key),
         children: []
       });
     }
