@@ -4,25 +4,25 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
   statics: {
     itemList: {
       "simcore/services/dynamic/itis/s4l/simulator/lf": [{
-        key: "setup-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
         label: "Setup"
       }, {
-        key: "materials-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
         label: "Materials"
       }, {
-        key: "boundary-conditions-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary-conditions",
         label: "Boundary Conditions"
       }, {
-        key: "sensors-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
         label: "Sensors"
       }, {
-        key: "grid-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
         label: "Grid"
       }, {
-        key: "voxels-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxels",
         label: "Voxels"
       }, {
-        key: "solver-uuid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
         label: "Solver"
       }],
 

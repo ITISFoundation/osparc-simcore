@@ -62,7 +62,7 @@ qx.Class.define("qxapp.component.widget.Simulator", {
     for (let i=0; i<itemList.length; i++) {
       children.push({
         label: itemList[i].label,
-        uuid: itemList[i].key,
+        key: itemList[i].key,
         children: []
       });
     }
