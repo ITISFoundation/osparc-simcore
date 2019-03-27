@@ -53,16 +53,19 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       left: 0
     });
 
-    const vBox = this.__vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    const tree = this.__globalSettTree = new qxapp.component.widget.simulator.GlobalSettingsTree(node);
-    tree.addListener("selectionChanged", e => {
-      const settingId = e.getData();
-      tree.getMetadata(settingId);
-    }, this);
+    const tree = this.__globalSettTree = new qxapp.component.widget.simulator.GlobalSettings(node);
+    const tree2 = this.__conceptSettTree = new qxapp.component.widget.simulator.ConceptSettings(node, null);
+    const vBox = this.__vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     vBox.add(tree);
+    vBox.add(tree2);
     vBox.setWidth(250);
     vBox.setMinWidth(150);
     splitpane.add(vBox, 0);
+
+    tree.addListener("selectionChanged", e => {
+      const settingKey = e.getData();
+      this.__conceptSettTree.setSettingKey(settingKey);
+    }, this);
 
     this.__checkModelerIsConnected();
   },
@@ -79,7 +82,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     __vBox: null,
     __modeler: null,
     __globalSettTree: null,
-    __globalSettProps: null,
+    __conceptSettTree: null,
 
     __checkModelerIsConnected: function() {
       const inputNodes = this.getNode().getInputNodes();
