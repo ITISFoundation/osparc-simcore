@@ -337,7 +337,7 @@ qx.Class.define("qxapp.data.Store", {
             description: "Maps Model entities into Subgroups",
             type: "mapper",
             maps: {
-              leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons"
+              leaf: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons"
             }
           }
         },
@@ -390,7 +390,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/container/itis/s4l/Simulator/LF",
+        key: "simcore/services/demodec/container/itis/s4l/simulator/lf",
         version: "0.0.0",
         type: "container",
         name: "LF Simulator",
@@ -424,13 +424,13 @@ qx.Class.define("qxapp.data.Store", {
         },
         innerNodes: {
           "inner1": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
             version: "0.0.0",
             inputNodes: [],
             outputNode: false
           },
           "inner2": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
             version: "0.0.0",
             inputNodes: [
               "modeler",
@@ -439,7 +439,7 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner3": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
             version: "0.0.0",
             inputNodes: [
               "modeler"
@@ -447,7 +447,7 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner4": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
             version: "0.0.0",
             inputNodes: [
               "modeler"
@@ -455,7 +455,7 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner5": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
             version: "0.0.0",
             inputNodes: [
               "modeler"
@@ -463,7 +463,7 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner6": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
             version: "0.0.0",
             inputNodes: [
               "modeler"
@@ -471,14 +471,14 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner7": {
-            key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings",
             version: "0.0.0",
             inputNodes: [],
             outputNode: true
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
         version: "0.0.0",
         type: "computational",
         name: "LF Setup",
@@ -506,7 +506,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
         version: "0.0.0",
         type: "computational",
         name: "LF Materials",
@@ -569,7 +569,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
         version: "0.0.0",
         type: "computational",
         name: "LF Boundary Conditions",
@@ -623,7 +623,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
         version: "0.0.0",
         type: "computational",
         name: "LF Sensors",
@@ -678,7 +678,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
         version: "0.0.0",
         type: "computational",
         name: "LF Grid",
@@ -719,7 +719,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
         version: "0.0.0",
         type: "computational",
         name: "LF Voxels",
@@ -767,7 +767,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings",
         version: "0.0.0",
         type: "computational",
         name: "LF Solver Settings",
@@ -850,7 +850,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/setup",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Setup",
@@ -906,7 +906,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Neurons",
@@ -950,7 +950,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sources",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Sources",
@@ -981,7 +981,7 @@ qx.Class.define("qxapp.data.Store", {
             description: "Maps LF Fields into Sources",
             type: "mapper",
             maps: {
-              leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors"
+              leaf: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors"
             }
           }
         },
@@ -994,7 +994,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/pointProcesses",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Point Processes",
@@ -1038,7 +1038,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/networkConnection",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Network Connection",
@@ -1082,7 +1082,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Sensors",
@@ -1126,7 +1126,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/solverSettings",
         version: "0.0.0",
         type: "computational",
         name: "Neuron Solver Settings",
@@ -1266,7 +1266,7 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/demodec/computational/itis/Solver-LF": {
           "category": "Solver"
         },
-        "simcore/services/demodec/container/itis/s4l/Simulator/LF": {
+        "simcore/services/demodec/container/itis/s4l/simulator/lf": {
           "category": "Simulator"
         },
         "simcore/services/demodec/dynamic/itis/s4l/MaterialDB": {
@@ -1324,46 +1324,46 @@ qx.Class.define("qxapp.data.Store", {
           "category": "PostPro"
         },
 
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/boundary": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/grid": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/materials": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/sensors": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/setup": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/solverSettings": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/voxel": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/networkConnection": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/neurons": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/pointProcesses": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/sensors": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/setup": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/solverSettings": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
+        "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/sources": {
           "category": "Simulator"
         }
       };

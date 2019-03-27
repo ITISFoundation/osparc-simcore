@@ -416,7 +416,7 @@
         "outputNode": false
       },
       "lfSetupId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/setup",
         "version": "0.0.0",
         "label": "Setup",
         "inputNodes": [],
@@ -428,7 +428,7 @@
         "parent": "lfContainerId"
       },
       "lfMaterialsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/materials",
         "version": "0.0.0",
         "label": "Material Settings",
         "inputNodes": [
@@ -443,7 +443,7 @@
         "parent": "lfContainerId"
       },
       "lfBoundaryId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/boundary",
         "version": "0.0.0",
         "label": "Boundary Conditions",
         "inputNodes": [
@@ -457,7 +457,7 @@
         "parent": "lfContainerId"
       },
       "lfSensorsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/sensors",
         "version": "0.0.0",
         "label": "Sensors",
         "inputNodes": [
@@ -471,7 +471,7 @@
         "parent": "lfContainerId"
       },
       "lfGridId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/grid",
         "version": "0.0.0",
         "label": "Grid",
         "inputNodes": [
@@ -485,7 +485,7 @@
         "parent": "lfContainerId"
       },
       "lfVoxelId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/voxel",
         "version": "0.0.0",
         "label": "Voxel",
         "inputNodes": [
@@ -499,7 +499,7 @@
         "parent": "lfContainerId"
       },
       "lfSolverSettingsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/lf/solverSettings",
         "version": "0.0.0",
         "label": "Solver Settings",
         "inputNodes": [],
@@ -555,7 +555,7 @@
         "outputNode": false
       },
       "NeuronSetupId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/setup",
         "version": "0.0.0",
         "label": "Setup",
         "inputNodes": [],
@@ -567,7 +567,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronNeuronsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/neurons",
         "version": "0.0.0",
         "label": "Neurons",
         "inputNodes": [
@@ -581,7 +581,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronSourcesId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/sources",
         "version": "0.0.0",
         "label": "Sources",
         "inputNodes": [
@@ -596,7 +596,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronPointProcessesId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/pointProcesses",
         "version": "0.0.0",
         "label": "Point Processes",
         "inputNodes": [
@@ -610,7 +610,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronNetworkConnectionId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/networkConnection",
         "version": "0.0.0",
         "label": "Network Connection",
         "inputNodes": [
@@ -624,7 +624,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronSensorsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/sensors",
         "version": "0.0.0",
         "label": "Sensors",
         "inputNodes": [
@@ -638,7 +638,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronSolverSettingsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+        "key": "simcore/services/demodec/dynamic/itis/s4l/simulator/neuron/solverSettings",
         "version": "0.0.0",
         "label": "Solver Settings",
         "inputNodes": [],
