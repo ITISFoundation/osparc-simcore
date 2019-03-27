@@ -410,7 +410,7 @@ qx.Class.define("qxapp.data.model.Node", {
      * Add settings widget with those inputs that can be represented in a form
      *
      */
-    __addSetttings: function(inputs) {
+    __addSettings: function(inputs) {
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
@@ -453,7 +453,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSetttings(filteredInputs);
+      this.__addSettings(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
