@@ -68,23 +68,7 @@ qx.Class.define("qxapp.data.model.Node", {
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
-      if (metaData) {
-        if (metaData.name) {
-          this.setLabel(metaData.name);
-        }
-        if (metaData.inputsDefault) {
-          this.__addInputsDefault(metaData.inputsDefault);
-        }
-        if (metaData.inputs) {
-          this.__addInputs(metaData.inputs);
-        }
-        if (metaData.outputs) {
-          this.__addOutputs(metaData.outputs);
-        }
-        if (metaData.dedicatedWidget) {
-          this.setDedicatedWidget(metaData.dedicatedWidget);
-        }
-      }
+      this.populateMetaData(metaData);
     }
   },
 
@@ -322,6 +306,29 @@ qx.Class.define("qxapp.data.model.Node", {
 
     getInputNodeIds: function() {
       return this.__inputNodes;
+    },
+
+    populateMetaData: function(metaData) {
+      if (!metaData) {
+        metaData = this.__metaData;
+      }
+      if (metaData) {
+        if (metaData.name) {
+          this.setLabel(metaData.name);
+        }
+        if (metaData.inputsDefault) {
+          this.__addInputsDefault(metaData.inputsDefault);
+        }
+        if (metaData.inputs) {
+          this.__addInputs(metaData.inputs);
+        }
+        if (metaData.outputs) {
+          this.__addOutputs(metaData.outputs);
+        }
+        if (metaData.dedicatedWidget) {
+          this.setDedicatedWidget(metaData.dedicatedWidget);
+        }
+      }
     },
 
     populateNodeData: function(nodeData) {

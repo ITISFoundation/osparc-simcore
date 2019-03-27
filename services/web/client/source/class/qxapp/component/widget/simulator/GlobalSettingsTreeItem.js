@@ -30,7 +30,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettingsTreeItem", {
   properties: {
     metadata: {
       check: "Object",
-      nullable: false
+      nullable: true
     }
   }
 });
