@@ -19,7 +19,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
         label: "Grid"
       }, {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxels",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
         label: "Voxels"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
@@ -245,8 +245,8 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         }
       },
 
-      "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings",
+      "simcore/services/dynamic/itis/s4l/simulator/lf/solver": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
         version: "1.0.0",
         name: "LF Solver Settings",
         description: "LF Simulator Solver Settings",

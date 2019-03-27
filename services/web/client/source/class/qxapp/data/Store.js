@@ -485,7 +485,7 @@ qx.Class.define("qxapp.data.Store", {
             outputNode: false
           },
           "inner7": {
-            key: "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings",
+            key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
             version: "0.0.0",
             inputNodes: [],
             outputNode: true
@@ -781,7 +781,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solverSettings",
+        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
         version: "0.0.0",
         type: "computational",
         name: "LF Solver Settings",
