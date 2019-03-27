@@ -92,7 +92,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
       this.__mainLayout.removeAll();
       if (this.getNode().isInKey("s4l/simulator")) {
-        let widget = new qxapp.component.widget.Simulator(this.getNode());
+        let widget = new qxapp.component.widget.simulator.Simulator(this.getNode());
         console.log(widget);
         this.__mainLayout.add(widget, {
           flex: 1

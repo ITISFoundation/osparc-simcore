@@ -22,12 +22,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const simulator = new qxapp.component.widget.Simulator(node);
+ *   const simulator = new qxapp.component.widget.simulator.Simulator(node);
  *   this.getRoot().add(simulator);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.Simulator", {
+qx.Class.define("qxapp.component.widget.simulator.Simulator", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -53,33 +53,18 @@ qx.Class.define("qxapp.component.widget.Simulator", {
       left: 0
     });
 
-    const mappers = this.__mappers = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    const tree = this.__settingsTree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-      openMode: "none"
-    });
-    const store = qxapp.data.Store.getInstance();
-    const itemList = store.getItemList(node.getKey());
-    let children = [];
-    for (let i=0; i<itemList.length; i++) {
-      children.push({
-        label: itemList[i].label,
-        key: itemList[i].key,
-        metadata: store.getItem(node.getKey(), itemList[i].key),
-        children: []
-      });
-    }
-    let data = {
-      label: "Simulator",
-      children: children
-    };
-    let model = qx.data.marshal.Json.createModel(data, true);
-    tree.setModel(model);
-    mappers.add(tree);
-    mappers.setWidth(250);
-    mappers.setMinWidth(150);
-    splitpane.add(mappers, 0);
+    const vBox = this.__vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    const tree = this.__globalSettTree = new qxapp.component.widget.simulator.GlobalSettingsTree(node);
+    tree.addListener("selectionChanged", e => {
+      const settingId = e.getData();
+      tree.getMetadata(settingId);
+    }, this);
+    vBox.add(tree);
+    vBox.setWidth(250);
+    vBox.setMinWidth(150);
+    splitpane.add(vBox, 0);
 
-    this.checkModeler();
+    this.__checkModelerIsConnected();
   },
 
   properties: {
@@ -91,11 +76,12 @@ qx.Class.define("qxapp.component.widget.Simulator", {
 
   members: {
     __splitpane: null,
-    __mappers: null,
+    __vBox: null,
     __modeler: null,
-    __settingsTree: null,
+    __globalSettTree: null,
+    __globalSettProps: null,
 
-    checkModeler: function() {
+    __checkModelerIsConnected: function() {
       const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         if (inputNodes[i].isInKey("remote-renderer")) {
