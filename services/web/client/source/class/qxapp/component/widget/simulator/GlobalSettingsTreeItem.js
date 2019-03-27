@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * VirtualTreeItem used mainly by GlobalSettingsTree
+ * VirtualTreeItem used mainly by GlobalSettings
  *
  */
 
