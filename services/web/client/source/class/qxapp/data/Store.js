@@ -1275,48 +1275,6 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/demodec/dynamic/itis/s4l/Modeler": {
           "category": "Modeling"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
-          "category": "Simulator"
-        },
         "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity": {
           "category": "PostPro"
         },
@@ -1364,6 +1322,49 @@ qx.Class.define("qxapp.data.Store", {
         },
         "simcore/services/dynamic/itis/dash-plot": {
           "category": "PostPro"
+        },
+
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
+          "category": "Simulator"
         }
       };
       for (const serviceKey in services) {
