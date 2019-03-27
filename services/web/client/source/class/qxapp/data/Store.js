@@ -187,7 +187,14 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        outputs: {}
+        outputs: {
+          outFile: {
+            displayOrder: 0,
+            label: "Input file",
+            description: "Neuron Solver Input File",
+            type: "data:application/hdf5"
+          }
+        }
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf",
         version: "1.0.0",
@@ -216,7 +223,14 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        outputs: {}
+        outputs: {
+          outFile: {
+            displayOrder: 0,
+            label: "Input file",
+            description: "LF Solver Input File",
+            type: "data:application/hdf5"
+          }
+        }
       }, {
         key: "simcore/services/dynamic/itis/dash-plot",
         version: "1.0.0",
