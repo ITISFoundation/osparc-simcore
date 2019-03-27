@@ -91,6 +91,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
       let data = {
         label: "Simulator",
         key: null,
+        metadata: null,
         children: children
       };
       let model = qx.data.marshal.Json.createModel(data, true);
@@ -100,7 +101,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
     __selectionChanged: function() {
       const currentSelection = this.__getOneSelectedRow();
       if (currentSelection) {
-        this.fireDataEvent("selectionChanged", currentSelection.getKey());
+        this.fireDataEvent("selectionChanged", currentSelection.getMetadata());
       }
     },
 
