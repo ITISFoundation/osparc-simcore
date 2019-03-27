@@ -69,7 +69,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/setup": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
         version: "1.0.0",
-        label: "LF Setup",
+        name: "LF Setup",
         inputs: {
           frequency: {
             displayOrder: 0,

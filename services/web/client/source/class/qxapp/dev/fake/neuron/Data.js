@@ -13,10 +13,10 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sources",
         label: "Sources"
       }, {
-        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/point-processes",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/point",
         label: "Point Processes"
       }, {
-        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network-connection",
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network",
         label: "Network Connection"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors",
@@ -79,6 +79,219 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
     },
 
     item: {
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/setup": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/setup",
+        version: "1.0.0",
+        name: "Neuron Setup",
+        inputs: {
+          temperature: {
+            displayOrder: 0,
+            label: "Global Temperature (°C)",
+            description: "Global Temperature (°C)",
+            type: "number",
+            defaultValue: 37
+          },
+          titration: {
+            displayOrder: 1,
+            label: "Perform Titration",
+            description: "Perform Titration",
+            type: "boolean",
+            defaultValue: false
+          },
+          convergence: {
+            displayOrder: 2,
+            label: "Titration convergence criterion",
+            description: "Titration convergence criterion",
+            type: "number",
+            defaultValue: 1
+          },
+          actionPotential: {
+            displayOrder: 3,
+            label: "Action Potential detection method",
+            description: "Action Potential detection method",
+            type: "string",
+            defaultValue: "Threshold"
+          },
+          threshold: {
+            displayOrder: 4,
+            label: "Threshold for depolarization (mV)",
+            description: "Threshold for depolarization (mV)",
+            type: "number",
+            defaultValue: 80
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons",
+        version: "1.0.0",
+        name: "Neuron Neurons",
+        inputsDefault: {
+          defaultNeurons: {
+            displayOrder: 0,
+            label: "Default Neurons",
+            description: "Default Neurons",
+            type: "node-output-tree-api-v0.0.1"
+          }
+        },
+        inputs: {
+          mapper: {
+            displayOrder: 0,
+            label: "Neurons",
+            description: "Maps Model entities into Neurons",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/sources": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sources",
+        version: "1.0.0",
+        name: "Neuron Sources",
+        inputsDefault: {
+          defaultNeuronSources: {
+            displayOrder: 0,
+            label: "Default Sources Settings",
+            description: "Default Sources Settings",
+            type: "node-output-tree-api-v0.0.1"
+          }
+        },
+        inputs: {
+          mapper: {
+            displayOrder: 0,
+            label: "Sources Conditions",
+            description: "Maps LF Fields into Sources",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors"
+            }
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/point": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/point",
+        version: "1.0.0",
+        name: "Neuron Point Processes",
+        inputsDefault: {
+          defaultNeuronPointProcesses: {
+            displayOrder: 0,
+            label: "Default Point Processes",
+            description: "Default Point Processes",
+            type: "node-output-tree-api-v0.0.1"
+          }
+        },
+        inputs: {
+          mapper: {
+            displayOrder: 0,
+            label: "Point Processes",
+            description: "Maps Model entities into Point Processes",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/network": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network",
+        version: "1.0.0",
+        name: "Neuron Network Connection",
+        description: "Neuron Simulator Network Connection Settings",
+        inputsDefault: {
+          defaultNeuronNetworkConnection: {
+            displayOrder: 0,
+            label: "Default Network Connection",
+            description: "Default Network Connection",
+            type: "node-output-tree-api-v0.0.1"
+          }
+        },
+        inputs: {
+          mapper: {
+            displayOrder: 0,
+            label: "Network Connection",
+            description: "Maps Model entities into Network Connection",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors",
+        version: "1.0.0",
+        name: "Neuron Sensors",
+        inputsDefault: {
+          defaultNeuronSensors: {
+            displayOrder: 0,
+            label: "Default Sensors",
+            description: "Default Sensors",
+            type: "node-output-tree-api-v0.0.1"
+          }
+        },
+        inputs: {
+          mapper: {
+            displayOrder: 0,
+            label: "Sensors",
+            description: "Maps Model entities into Sensors",
+            type: "mapper",
+            maps: {
+              leaf: "simcore/services/dynamic/modeler/webserver"
+            }
+          }
+        }
+      },
+      "simcore/services/dynamic/itis/s4l/simulator/neuron/solver": {
+        key: "simcore/services/dynamic/itis/s4l/simulator/neuron/solver",
+        version: "1.0.0",
+        name: "Neuron Solver Settings",
+        inputs: {
+          parallelization: {
+            displayOrder: 0,
+            label: "Parallelization Handling",
+            description: "Parallelization Handling",
+            type: "string",
+            defaultValue: "Manual"
+          },
+          threads: {
+            displayOrder: 1,
+            label: "Number of threads",
+            description: "Number of threads",
+            type: "number",
+            defaultValue: 1
+          },
+          priority: {
+            displayOrder: 2,
+            label: "Priority in queue",
+            description: "Priority in queue",
+            type: "number",
+            defaultValue: 0
+          },
+          duration: {
+            displayOrder: 3,
+            label: "Duration (ms)",
+            description: "Duration (ms)",
+            type: "number",
+            defaultValue: 1
+          },
+          timeStep: {
+            displayOrder: 4,
+            label: "Time Step (ms)",
+            description: "Time Step (ms)",
+            type: "number",
+            defaultValue: 0.0025
+          },
+          sectionName: {
+            displayOrder: 5,
+            label: "Section names for spike detection",
+            description: "Section names for spike detection",
+            type: "string",
+            defaultValue: ""
+          }
+        }
+      },
+
       "defaultNeurons": {
         "SENN-UUID": {
           "restingPotential": {
@@ -483,6 +696,9 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
     },
 
     getItem: function(simSettingsId, itemId) {
+      if (itemId === undefined) {
+        return qxapp.dev.fake.neuron.Data.item[simSettingsId];
+      }
       return qxapp.dev.fake.neuron.Data.item[simSettingsId][itemId];
     }
   } // statics
