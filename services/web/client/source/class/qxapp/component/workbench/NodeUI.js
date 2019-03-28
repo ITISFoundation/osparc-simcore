@@ -210,31 +210,13 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     getLinkPoint: function(port) {
-      let nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
-        // not rendered yet
-        return null;
+      const bounds = this.getCurrentBounds();
+      const captionHeight = 20; // Otherwise is changing and misplacing the links
+      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
+      let y = bounds.top + captionHeight + portHeight/2 + 2;
+      if (this.getThumbnail()) {
+        y += this.getThumbnail().getBounds().height;
       }
-      let x = nodeBounds.left;
-      if (port.isInput === false) {
-        x += nodeBounds.width;
-      } else {
-        // hack to place the arrow-head properly
-        x -= 6;
-      }
-
-      const captionHeight = this.__childControls.captionbar.getBounds().height;
-      let ports = null;
-      if (port.isInput) {
-        ports = this.__inputPortLayout.getChildren();
-      } else {
-        ports = this.__outputPortLayout.getChildren();
-      }
-      let portBounds;
-      if (ports.length > 0) {
-        portBounds = ports[0].getBounds();
-      }
-      let y = nodeBounds.top + captionHeight + 10 + portBounds.top + portBounds.height/2;
       return [x, y];
     },
 

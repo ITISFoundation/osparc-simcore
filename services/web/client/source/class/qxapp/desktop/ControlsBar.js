@@ -81,8 +81,8 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     setCanStart: function(canStart) {
-      this.__startButton.setEnabled(canStart);
-      this.__stopButton.setEnabled(!canStart);
+      this.__startButton.setVisibility(canStart ? "visible" : "excluded");
+      this.__stopButton.setVisibility(canStart ? "excluded" : "visible");
     }
   }
 });

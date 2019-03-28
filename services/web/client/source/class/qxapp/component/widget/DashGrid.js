@@ -138,7 +138,6 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
           if (parentNode && plot) {
             parentNode.setThumbnail(plot.outerHTML);
             node.setThumbnail(plot.outerHTML);
-            console.log(node);
           }
         }, this);
         cellHandler.retrieveOutput();
