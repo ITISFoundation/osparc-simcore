@@ -53,9 +53,9 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       left: 0
     });
 
-    const SimulatorBox = this.__SimulatorBox = new qxapp.component.widget.simulator.SimulatorBox(node);
+    const simulatorBox = this.__simulatorBox = new qxapp.component.widget.simulator.SimulatorBox(node);
     const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    vBox.add(SimulatorBox, {
+    vBox.add(simulatorBox, {
       flex: 1
     });
     vBox.setWidth(250);
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
 
   members: {
     __splitpane: null,
-    __SimulatorBox: null,
+    __simulatorBox: null,
     __modeler: null,
 
     __checkModelerIsConnected: function() {
