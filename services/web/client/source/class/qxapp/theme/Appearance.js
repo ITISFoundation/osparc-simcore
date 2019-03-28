@@ -149,7 +149,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "toolbar-textfield": {
       include: "material-textfield",
       style: state => ({
-        backgroundColor: "material-button-background",
+        backgroundColor: "transparent",
         marginTop: 8
       })
     },
