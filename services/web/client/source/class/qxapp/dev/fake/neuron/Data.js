@@ -5,25 +5,25 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
     itemList: {
       "simcore/services/dynamic/itis/s4l/simulator/neuron": [{
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/setup",
-        label: "Setup"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons",
-        label: "Neurons"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sources",
-        label: "Sources"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/point",
-        label: "Point Processes"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network",
-        label: "Network Connection"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors",
-        label: "Sensors"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/solver",
-        label: "Solver"
+        version: "1.0.0"
       }],
 
       "defaultNeurons": [{
@@ -82,7 +82,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/setup": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/setup",
         version: "1.0.0",
-        name: "Neuron Setup",
+        label: "Neuron Setup",
         inputs: {
           temperature: {
             displayOrder: 0,
@@ -124,7 +124,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons",
         version: "1.0.0",
-        name: "Neuron Neurons",
+        label: "Neuron Neurons",
         inputsDefault: {
           defaultNeurons: {
             displayOrder: 0,
@@ -148,7 +148,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/sources": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sources",
         version: "1.0.0",
-        name: "Neuron Sources",
+        label: "Neuron Sources",
         inputsDefault: {
           defaultNeuronSources: {
             displayOrder: 0,
@@ -172,7 +172,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/point": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/point",
         version: "1.0.0",
-        name: "Neuron Point Processes",
+        label: "Neuron Point Processes",
         inputsDefault: {
           defaultNeuronPointProcesses: {
             displayOrder: 0,
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/network": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network",
         version: "1.0.0",
-        name: "Neuron Network Connection",
+        label: "Neuron Network Connection",
         description: "Neuron Simulator Network Connection Settings",
         inputsDefault: {
           defaultNeuronNetworkConnection: {
@@ -221,7 +221,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/sensors",
         version: "1.0.0",
-        name: "Neuron Sensors",
+        label: "Neuron Sensors",
         inputsDefault: {
           defaultNeuronSensors: {
             displayOrder: 0,
@@ -245,7 +245,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/solver": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/solver",
         version: "1.0.0",
-        name: "Neuron Solver Settings",
+        label: "Neuron Solver Settings",
         inputs: {
           parallelization: {
             displayOrder: 0,

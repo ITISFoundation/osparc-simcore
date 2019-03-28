@@ -5,25 +5,25 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     itemList: {
       "simcore/services/dynamic/itis/s4l/simulator/lf": [{
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
-        label: "Setup"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
-        label: "Materials"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
-        label: "Boundary Conditions"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
-        label: "Sensors"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
-        label: "Grid"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
-        label: "Voxels"
+        version: "1.0.0"
       }, {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
-        label: "Solver"
+        version: "1.0.0"
       }],
 
       "defaultLFMaterials": [{
@@ -69,7 +69,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/setup": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
         version: "1.0.0",
-        name: "LF Setup",
+        label: "LF Setup",
         inputs: {
           frequency: {
             displayOrder: 0,
@@ -84,7 +84,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/materials": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
         version: "1.0.0",
-        name: "LF Materials",
+        label: "LF Materials",
         inputsDefault: {
           defaultLFMaterials: {
             displayOrder: 0,
@@ -122,7 +122,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/boundary": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
         version: "1.0.0",
-        name: "LF Boundary Conditions",
+        label: "LF Boundary Conditions",
         inputsDefault: {
           defaultLFBoundaries: {
             displayOrder: 0,
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/sensors": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
         version: "1.0.0",
-        name: "LF Sensors",
+        label: "LF Sensors",
         inputsDefault: {
           defaultLFSensors: {
             displayOrder: 0,
@@ -195,7 +195,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/grid": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
         version: "1.0.0",
-        name: "LF Grid",
+        label: "LF Grid",
         description: "LF Simulator Grid Settings",
         inputs: {
           homogeneous: {
@@ -218,7 +218,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/voxel": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
         version: "1.0.0",
-        name: "LF Voxels",
+        label: "LF Voxels",
         description: "LF Simulator Voxel Settings",
         inputs: {
           voxelEngine: {
@@ -248,7 +248,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/lf/solver": {
         key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
         version: "1.0.0",
-        name: "LF Solver Settings",
+        label: "LF Solver Settings",
         description: "LF Simulator Solver Settings",
         inputs: {
           parallelization: {
