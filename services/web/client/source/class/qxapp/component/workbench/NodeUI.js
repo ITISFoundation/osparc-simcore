@@ -87,7 +87,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __outputPortLayout: null,
     __inputPort: null,
     __outputPort: null,
-    __progressLabel: null,
     __progressBar: null,
     __thumbnail: null,
 
@@ -212,9 +211,10 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     getLinkPoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = 20; // HARDCODED: Otherwise the caption height is changing and misplacing the links
+      const captionHeight = qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().height
+        || qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
-      let y = bounds.top + captionHeight + portHeight/2 + 1; // HARDCODED: Make it hit the exact pixel ;)
+      let y = bounds.top + captionHeight + portHeight/2 + 1;
       if (this.__thumbnail) {
         y += this.__thumbnail.getBounds().height;
       }
@@ -231,9 +231,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
           bounds.top = parseInt(domeEle.style.top);
         }
       }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
       return bounds;
     },
 
@@ -250,8 +247,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.removeAt(0);
       }
       this.__thumbnail = new qx.ui.embed.Html(thumbnail).set({
-        height: 100,
-        cssClass: "no-user-select"
+        height: 100
       });
       this.addAt(this.__thumbnail, 0);
     }

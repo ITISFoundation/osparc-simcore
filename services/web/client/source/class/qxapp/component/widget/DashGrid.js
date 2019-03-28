@@ -136,6 +136,9 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
           const parentNode = this.getContainerNode();
           const plot = htmlElement.getElementsByTagName("svg")[0];
           if (parentNode && plot) {
+            plot.style.WebkitTouchCallout = "none";
+            plot.style.WebkitUserSelect = "none";
+            plot.style.userSelect = "none";
             parentNode.setThumbnail(plot.outerHTML);
             node.setThumbnail(plot.outerHTML);
           }

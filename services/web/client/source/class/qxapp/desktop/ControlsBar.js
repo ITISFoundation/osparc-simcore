@@ -72,7 +72,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createStopButton: function() {
-      let stopButton = this.__stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/16");
+      let stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/16");
 
       stopButton.addListener("execute", () => {
         this.fireEvent("stopPipeline");
