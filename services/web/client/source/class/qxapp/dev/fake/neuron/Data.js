@@ -124,7 +124,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/neurons",
         version: "1.0.0",
-        label: "Neuron Neurons",
+        name: "Neurons",
         inputsDefault: {
           defaultNeurons: {
             displayOrder: 0,
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       "simcore/services/dynamic/itis/s4l/simulator/neuron/network": {
         key: "simcore/services/dynamic/itis/s4l/simulator/neuron/network",
         version: "1.0.0",
-        label: "Neuron Network Connection",
+        name: "Network Connection",
         description: "Neuron Simulator Network Connection Settings",
         inputsDefault: {
           defaultNeuronNetworkConnection: {
