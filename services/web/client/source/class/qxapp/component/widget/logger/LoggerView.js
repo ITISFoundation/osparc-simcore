@@ -107,7 +107,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       toolbar.add(new qx.ui.toolbar.Separator());
 
-      toolbar.add(new qx.ui.basic.Label("Filter:").set({
+      toolbar.add(new qx.ui.basic.Label(this.tr("Filter") + ":").set({
         appearance: "toolbar-label"
       }));
       this.__textfield = new qx.ui.form.TextField().set({
