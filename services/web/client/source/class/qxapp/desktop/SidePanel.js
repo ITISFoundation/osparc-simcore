@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Widget containing a Vertical Box with three widgets equaly sized.
+ * Widget containing a Vertical Box with widgets.
  * Used for the side panel in the project editor.
  *
  * *Example*
@@ -25,15 +25,15 @@
  *
  * <pre class='javascript'>
  *   let sidePanel = new qxapp.desktop.SidePanel();
- *   sidePanel.setTopView(widget1);
- *   sidePanel.setMidView(widget2);
- *   sidePanel.setBottomView(widget3);
+ *   sidePanel.addAt(widget1, 0);
+ *   sidePanel.addAt(widget2, 1);
+ *   sidePanel.addAt(widget3, 2);
  *   this.getRoot().add(sidePanel);
  * </pre>
  */
 
 qx.Class.define("qxapp.desktop.SidePanel", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.container.Composite,
 
   construct: function() {
     this.base(arguments);
@@ -41,58 +41,21 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     this.setAppearance("sidebar");
 
     this._setLayout(new qx.ui.layout.VBox());
-
-    let topView = new qxapp.desktop.PanelView(this.tr("Service tree"));
-    let midView = new qxapp.desktop.PanelView(this.tr("Overview"));
-    let bottomView = new qxapp.desktop.PanelView(this.tr("Logger"));
-
-    this._add(topView);
-    this._add(midView);
-    this._add(bottomView, {
-      flex: 1
-    });
   },
-
-  properties: {
-    topView: {
-      nullable: false,
-      check : "qx.ui.core.Widget",
-      apply : "__applyTopView"
-    },
-
-    midView: {
-      nullable: false,
-      check : "qx.ui.core.Widget",
-      apply : "__applyMidView"
-    },
-
-    bottomView: {
-      nullable: false,
-      check : "qx.ui.core.Widget",
-      apply : "__applyBottomView"
-    }
-  },
-
-  events: {},
 
   members: {
-    __applyTopView: function(newWidget) {
-      this._getChildren()[0].setContent(newWidget);
-    },
-
-    __applyMidView: function(newWidget) {
-      this._getChildren()[1].setContent(newWidget);
-    },
-
-    __applyBottomView: function(newWidget) {
-      this._getChildren()[2].setContent(newWidget);
-    },
-
-    __replaceWidgetAt: function(newWidget, indexOf) {
-      if (this._indexOf(newWidget) !== indexOf) {
-        this._removeAt(indexOf);
-        this._addAt(newWidget, indexOf);
+    /**
+     * Add a widget at the specified index. If the index already has a child, then replace it.
+     *
+     * @param {qx.ui.core.LayoutItem} child Widget to add
+     * @param {Integer} index Index, at which the widget will be inserted
+     * @param {Map?null} options Optional layout data for widget.
+     */
+    addOrReplaceAt: function(child, index, options = null) {
+      if (this.getChildren()[index]) {
+        this.removeAt(index);
       }
+      this.addAt(child, index, options);
     }
   }
 });
