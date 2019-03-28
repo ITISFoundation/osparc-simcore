@@ -16,11 +16,11 @@
 ************************************************************************ */
 
 /**
- * VirtualTreeItem used mainly by GlobalSettings
+ * VirtualTreeItem used mainly by SimulatorTree
  *
  */
 
-qx.Class.define("qxapp.component.widget.simulator.GlobalSettingsTreeItem", {
+qx.Class.define("qxapp.component.widget.simulator.SimulatorTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function() {

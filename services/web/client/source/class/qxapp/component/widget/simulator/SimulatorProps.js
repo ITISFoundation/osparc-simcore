@@ -16,11 +16,11 @@
 ************************************************************************ */
 
 /**
- * Widget used for showing ConceptSettings (props and tree) from GlobalSettings
+ * Widget used for showing SimulatorProps (props and tree) from SimulatorTree
  *
  */
 
-qx.Class.define("qxapp.component.widget.simulator.ConceptSettings", {
+qx.Class.define("qxapp.component.widget.simulator.SimulatorProps", {
   extend: qx.ui.core.Widget,
 
   construct: function(node, settings) {

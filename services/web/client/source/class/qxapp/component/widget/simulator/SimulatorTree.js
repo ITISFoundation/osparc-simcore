@@ -16,46 +16,34 @@
 ************************************************************************ */
 
 /**
- * Widget/VirtualTree used for showing GlobalSettings from Simulator
+ * VirtualTree used for showing SimulatorTree from Simulator
  *
  */
 
-qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
-  extend: qx.ui.core.Widget,
+qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
+  extend: qx.ui.tree.VirtualTree,
 
   construct: function(node) {
-    this.base(arguments);
+    this.base(arguments, null, "label", "children");
 
     this.set({
       node: node
     });
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    const label = new qx.ui.basic.Label(this.tr("Explorer")).set({
-      allowGrowX: true,
-      appearance: "toolbar-textfield"
-    });
-    this._add(label);
-
-    const tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
-    tree.set({
+    this.set({
       openMode: "none"
     });
-    tree.setDelegate({
-      createItem: () => new qxapp.component.widget.simulator.GlobalSettingsTreeItem(),
+    this.setDelegate({
+      createItem: () => new qxapp.component.widget.simulator.SimulatorTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
         c.bindProperty("metadata", "metadata", null, item, id);
       }
     });
-    tree.addListener("tap", this.__selectionChanged, this);
-    this.__populateTree();
+    this.addListener("tap", this.__selectionChanged, this);
 
-    this._add(tree, {
-      flex: 1
-    });
+    this.__populateTree();
   },
 
   properties: {
@@ -70,12 +58,6 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
   },
 
   members: {
-    __tree: null,
-
-    getTree: function() {
-      return this.__tree;
-    },
-
     __populateTree: function() {
       const store = qxapp.data.Store.getInstance();
       const itemList = store.getItemList(this.getNode().getKey());
@@ -95,7 +77,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
         children: children
       };
       let model = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(model);
+      this.setModel(model);
     },
 
     __selectionChanged: function() {
@@ -106,7 +88,7 @@ qx.Class.define("qxapp.component.widget.simulator.GlobalSettings", {
     },
 
     __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection();
+      const selection = this.getSelection();
       if (selection && selection.toArray().length > 0) {
         return selection.toArray()[0];
       }
