@@ -68,14 +68,14 @@ qx.Class.define("qxapp.data.model.Node", {
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
-      this.populateMetaData(metaData);
+      this.initMetaData(metaData);
     }
   },
 
   properties: {
     workbench: {
       check: "qxapp.data.model.Workbench",
-      nullable: false
+      nullable: true
     },
 
     key: {
@@ -308,7 +308,7 @@ qx.Class.define("qxapp.data.model.Node", {
       return this.__inputNodes;
     },
 
-    populateMetaData: function(metaData) {
+    initMetaData: function(metaData) {
       if (!metaData) {
         metaData = this.__metaData;
       }

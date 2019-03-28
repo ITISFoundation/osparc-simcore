@@ -42,6 +42,14 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorBox", {
       bottom: 0,
       left: 0
     });
+
+    this.__simulatorTree = this.__addSimulatorTree();
+    this.__simulatorProps = this.__addSimulatorProps();
+
+    this.__simulatorTree.addListener("selectionChanged", e => {
+      const selectedNode = e.getData();
+      this.__simulatorProps.setNode(selectedNode);
+    }, this);
   },
 
   properties: {
@@ -52,47 +60,48 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorBox", {
   },
 
   members: {
-    __tree: null,
+    __splitpane: null,
+    __simulatorTree: null,
+    __simulatorProps: null,
 
-    getTree: function() {
-      return this.__tree;
+    __addSimulatorTree: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+
+      const label = new qx.ui.basic.Label(this.tr("Explorer")).set({
+        allowGrowX: true,
+        paddingLeft: 10,
+        appearance: "toolbar-textfield"
+      });
+      const simulatorTree = new qxapp.component.widget.simulator.SimulatorTree(this.getNode());
+
+      vBox.add(label);
+      vBox.add(simulatorTree, {
+        flex: 1
+      });
+
+      this.__splitpane.add(vBox);
+
+      return simulatorTree;
     },
 
-    __populateTree: function() {
-      const store = qxapp.data.Store.getInstance();
-      const itemList = store.getItemList(this.getNode().getKey());
-      let children = [];
-      for (let i=0; i<itemList.length; i++) {
-        children.push({
-          label: itemList[i].label,
-          key: itemList[i].key,
-          metadata: store.getItem(this.getNode().getKey(), itemList[i].key),
-          children: []
-        });
-      }
-      let data = {
-        label: "Simulator",
-        key: null,
-        metadata: null,
-        children: children
-      };
-      let model = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(model);
-    },
+    __addSimulatorProps: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
 
-    __selectionChanged: function() {
-      const currentSelection = this.__getOneSelectedRow();
-      if (currentSelection) {
-        this.fireDataEvent("selectionChanged", currentSelection.getMetadata());
-      }
-    },
+      const label = new qx.ui.basic.Label(this.tr("Properties")).set({
+        allowGrowX: true,
+        paddingLeft: 10,
+        appearance: "toolbar-textfield"
+      });
+      const simulatorProps = new qxapp.component.widget.simulator.SimulatorProps(this.getNode(), null);
 
-    __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection();
-      if (selection && selection.toArray().length > 0) {
-        return selection.toArray()[0];
-      }
-      return null;
+      vBox.add(label);
+      vBox.add(simulatorProps, {
+        flex: 1
+      });
+
+      this.__splitpane.add(vBox);
+
+      return simulatorProps;
     }
   }
 });

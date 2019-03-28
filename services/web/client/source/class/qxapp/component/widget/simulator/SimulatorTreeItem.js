@@ -28,9 +28,38 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTreeItem", {
   },
 
   properties: {
+    key: {
+      check: "String",
+      nullable: true
+    },
+
+    version: {
+      check: "String",
+      nullable: true
+    },
+
     metadata: {
       check: "Object",
       nullable: true
+    },
+
+    node: {
+      check: "qxapp.data.model.Node",
+      nullable: false
+    }
+  },
+
+  members: {
+    createNode: function() {
+      const node = new qxapp.data.model.Node(null, this.getKey(), this.getVersion());
+      this.setNode(node);
+
+      const metadata = this.getMetadata();
+      if (metadata) {
+        const metadata2 = qx.util.Serializer.toNativeObject(metadata);
+        node.initMetaData(metadata2);
+        this.setLabel(node.getLabel());
+      }
     }
   }
 });

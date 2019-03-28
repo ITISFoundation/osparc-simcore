@@ -38,7 +38,9 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
+        c.bindProperty("version", "version", null, item, id);
         c.bindProperty("metadata", "metadata", null, item, id);
+        item.createNode();
       }
     });
     this.addListener("tap", this.__selectionChanged, this);
@@ -63,12 +65,16 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       const itemList = store.getItemList(this.getNode().getKey());
       let children = [];
       for (let i=0; i<itemList.length; i++) {
-        children.push({
-          label: itemList[i].label,
+        const metadata = store.getItem(this.getNode().getKey(), itemList[i].key);
+        let newEntry = {
           key: itemList[i].key,
-          metadata: store.getItem(this.getNode().getKey(), itemList[i].key),
-          children: []
-        });
+          version: itemList[i].version,
+          metadata: metadata
+        };
+        if ("inputs" in metadata && "mapper" in metadata.inputs) {
+          newEntry["children"] = [];
+        }
+        children.push(newEntry);
       }
       let data = {
         label: "Simulator",
@@ -80,19 +86,13 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       this.setModel(model);
     },
 
-    __selectionChanged: function() {
-      const currentSelection = this.__getOneSelectedRow();
-      if (currentSelection) {
-        this.fireDataEvent("selectionChanged", currentSelection.getMetadata());
+    __selectionChanged: function(e) {
+      const selection = e.getTarget();
+      if ("getNode" in selection) {
+        this.fireDataEvent("selectionChanged", selection.getNode());
+      } else {
+        this.fireDataEvent("selectionChanged", null);
       }
-    },
-
-    __getOneSelectedRow: function() {
-      const selection = this.getSelection();
-      if (selection && selection.toArray().length > 0) {
-        return selection.toArray()[0];
-      }
-      return null;
     }
   }
 });
