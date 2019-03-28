@@ -48,6 +48,82 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return style;
       }
     },
+
+    /*
+    ---------------------------------------------------------------------------
+      WINDOW-SMALL-CAP CHOOSER
+    ---------------------------------------------------------------------------
+    */
+    "window-small-cap": {
+      include: "window", // get all the settings from window
+      alias: "window", // redirect kids to window/kid
+      style: function(states) {
+        return {
+          backgroundColor: "background-selected-dark",
+          decorator: "window-small-cap"
+        };
+      }
+    },
+
+    "window-small-cap/captionbar":{
+      include: "window/captionbar", // load defaults from window captionbar
+      alias: "window/captionbar", // redirect kids
+      style: function(states) {
+        return {
+          padding: [0, 3, 0, 3],
+          minHeight: 20,
+          backgroundColor: "background-selected-dark",
+          decorator: "workbench-small-cap-captionbar"
+        };
+      }
+    },
+
+    "window-small-cap/title": {
+      include: "window/title",
+      style: function(states) {
+        return {
+          marginLeft: 2,
+          font: "small"
+        };
+      }
+    },
+
+    "window-small-cap/minimize-button": {
+      alias: "window/minimize-button",
+      include: "window/minimize-button",
+      style: function(states) {
+        return {icon: osparc.theme.osparcdark.Image.URLS["window-minimize"]+"/14"};
+      }
+    },
+
+    "window-small-cap/restore-button": {
+      alias: "window/restore-button",
+      include: "window/restore-button",
+      style: function(states) {
+        return {icon: osparc.theme.osparcdark.Image.URLS["window-restore"]+"/14"};
+      }
+    },
+
+    "window-small-cap/maximize-button": {
+      alias: "window/maximize-button",
+      include: "window/maximize-button",
+      style: function(states) {
+        return {icon: osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/14"};
+      }
+    },
+
+    "window-small-cap/close-button": {
+      alias: "window/close-button",
+      include: "window/close-button",
+      style: function(states) {
+        return {icon: osparc.theme.osparcdark.Image.URLS["window-close"]+"/14"};
+      }
+    },
+    /*
+    ---------------------------------------------------------------------------
+      PanelView
+    ---------------------------------------------------------------------------
+    */
     "panelview-titlebar": {
       style: state => ({
         height: 24,
@@ -64,6 +140,12 @@ qx.Theme.define("qxapp.theme.Appearance", {
         margin: [0, 4, 4, 4]
       })
     },
+
+    /*
+    ---------------------------------------------------------------------------
+      Toolbar
+    ---------------------------------------------------------------------------
+    */
     "toolbar-textfield": {
       include: "material-textfield",
       style: state => ({
@@ -77,11 +159,12 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginRight: 3
       })
     },
-    "splitpane/splitter": {
-      style: state => ({
-        width: 0
-      })
-    },
+
+    /*
+    ---------------------------------------------------------------------------
+      SideBar
+    ---------------------------------------------------------------------------
+    */
     sidebar: {
       style: state => ({
         backgroundColor: "background-main-lighter"

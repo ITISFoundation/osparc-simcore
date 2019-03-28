@@ -133,6 +133,12 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
         }, this);
         cellHandler.addListener("outputUpdated", () => {
           this.__gridterWr.rebuildWidget(cellOutput, htmlElement);
+          const parentNode = this.getContainerNode();
+          const plot = htmlElement.getElementsByTagName("svg")[0];
+          if (parentNode && plot) {
+            parentNode.setThumbnail(plot.outerHTML);
+            node.setThumbnail(plot.outerHTML);
+          }
         }, this);
         cellHandler.retrieveOutput();
         return true;
