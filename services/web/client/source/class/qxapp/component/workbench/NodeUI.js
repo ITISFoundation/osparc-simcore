@@ -89,6 +89,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __outputPort: null,
     __progressLabel: null,
     __progressBar: null,
+    __thumbnail: null,
 
     getNodeId: function() {
       return this.getNode().getNodeId();
@@ -99,7 +100,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     __createNodeLayout: function() {
-      this.setLayout(new qx.ui.layout.VBox(5));
+      this.setLayout(new qx.ui.layout.VBox());
 
       if (this.getNode().getThumbnail()) {
         this.setThumbnail(this.getNode().getThumbnail());
@@ -128,7 +129,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
       this.__progressBar = new qx.ui.indicator.ProgressBar().set({
         height: 10,
-        margin: [0, 4, 4, 4]
+        margin: 4
       });
       this.add(this.__progressBar);
     },
@@ -211,11 +212,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     getLinkPoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = 20; // Otherwise is changing and misplacing the links
+      const captionHeight = 20; // HARDCODED: Otherwise the caption height is changing and misplacing the links
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
-      let y = bounds.top + captionHeight + portHeight/2 + 2;
-      if (this.getThumbnail()) {
-        y += this.getThumbnail().getBounds().height;
+      let y = bounds.top + captionHeight + portHeight/2 + 1; // HARDCODED: Make it hit the exact pixel ;)
+      if (this.__thumbnail) {
+        y += this.__thumbnail.getBounds().height;
       }
       return [x, y];
     },
@@ -248,10 +249,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (oldThumbnail !== null) {
         this.removeAt(0);
       }
-      this.addAt(new qx.ui.embed.Html(thumbnail).set({
+      this.__thumbnail = new qx.ui.embed.Html(thumbnail).set({
         height: 100,
         cssClass: "no-user-select"
-      }), 0);
+      });
+      this.addAt(this.__thumbnail, 0);
     }
   }
 });
