@@ -1620,6 +1620,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         case "defaultNeuromanModels":
           return qxapp.dev.fake.neuroman.Data.getItemList(portKey);
         case "modeler":
+        case "modeler-tree":
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItemList();
