@@ -38,7 +38,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorProps", {
     node: {
       check: "qxapp.data.model.Node",
       apply: "_applyNode",
-      nullable: false
+      nullable: true
     }
   },
 
