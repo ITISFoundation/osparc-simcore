@@ -138,21 +138,15 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     },
 
     __getAScreenshot: function() {
-      const images = [
-        "00",
-        "01",
-        "02",
-        "03",
-        "04",
-        "05",
-        "06",
-        "07",
-        "08",
-        "09",
-        "10",
-        "11"
-      ];
-      const imageUrl = "qxapp/Horse_" + images[this.__counter] + ".png";
+      const nImages = 23;
+      const pad = "000";
+      const images = [];
+      for (let i=1; i<=nImages; i++) {
+        const str = String(i);
+        const padded = pad.substring(0, pad.length - str.length) + str;
+        images.push(padded);
+      }
+      const imageUrl = "qxapp/S4L_" + images[this.__counter] + ".png";
       this.__counter++;
       if (this.__counter === images.length) {
         this.__counter = 0;
