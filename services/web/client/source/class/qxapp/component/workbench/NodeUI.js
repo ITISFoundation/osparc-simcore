@@ -211,8 +211,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     getLinkPoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().height
-        || qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+      const captionHeight = qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
+        qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + portHeight/2 + 1;
       if (this.__thumbnail) {

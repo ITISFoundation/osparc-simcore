@@ -65,7 +65,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       }
     },
 
-    "window-small-cap/captionbar":{
+    "window-small-cap/captionbar": {
       include: "window/captionbar", // load defaults from window captionbar
       alias: "window/captionbar", // redirect kids
       style: function(states) {
@@ -92,7 +92,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
       alias: "window/minimize-button",
       include: "window/minimize-button",
       style: function(states) {
-        return {icon: osparc.theme.osparcdark.Image.URLS["window-minimize"]+"/14"};
+        return {
+          icon: osparc.theme.osparcdark.Image.URLS["window-minimize"]+"/14"
+        };
       }
     },
 
@@ -100,7 +102,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
       alias: "window/restore-button",
       include: "window/restore-button",
       style: function(states) {
-        return {icon: osparc.theme.osparcdark.Image.URLS["window-restore"]+"/14"};
+        return {
+          icon: osparc.theme.osparcdark.Image.URLS["window-restore"]+"/14"
+        };
       }
     },
 
@@ -108,7 +112,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
       alias: "window/maximize-button",
       include: "window/maximize-button",
       style: function(states) {
-        return {icon: osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/14"};
+        return {
+          icon: osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/14"
+        };
       }
     },
 
@@ -116,7 +122,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
       alias: "window/close-button",
       include: "window/close-button",
       style: function(states) {
-        return {icon: osparc.theme.osparcdark.Image.URLS["window-close"]+"/14"};
+        return {
+          icon: osparc.theme.osparcdark.Image.URLS["window-close"]+"/14"
+        };
       }
     },
     /*
