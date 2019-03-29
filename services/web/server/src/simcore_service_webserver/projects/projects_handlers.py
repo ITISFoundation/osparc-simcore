@@ -6,8 +6,11 @@ import logging
 
 from aiohttp import web
 
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
 from ..login.decorators import RQT_USERID_KEY, login_required
 from .projects_fakes import Fake
+from .projects_models import ProjectDB
 
 log = logging.getLogger(__name__)
 
@@ -21,20 +24,22 @@ async def list_projects(request: web.Request):
     # TODO: implement all query parameters as in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     ptype = request.query.get('type', 'user')
 
-    projects = []
+    projects_list = []
     if ptype in ("template", "all"):
-        projects += [prj.data for prj in Fake.projects.values() if prj.template]
+        projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
 
     if ptype in ("user", "all"):
-        projects += [Fake.projects[pid].data
-                        for pid in Fake.user_to_projects_map.get(uid, list())]
+        projects_list += await ProjectDB.load_user_projects(user_id=uid, db_engine=request.app[APP_DB_ENGINE_KEY])
+
+        # projects_list += [Fake.projects[pid].data
+        #                 for pid in Fake.user_to_projects_map.get(uid, list())]
 
     start = int(request.query.get('start', 0))
-    count = int(request.query.get('count',len(projects)))
+    count = int(request.query.get('count',len(projects_list)))
 
-    stop = min(start+count, len(projects))
-    projects = projects[start:stop]
-    return {'data': projects}
+    stop = min(start+count, len(projects_list))
+    projects_list = projects_list[start:stop]
+    return {'data': projects_list}
 
 
 @login_required
@@ -45,8 +50,10 @@ async def create_projects(request: web.Request):
 
     pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    Fake.projects[pid] = Fake.ProjectItem(id=pid, template=False, data=project)
-    Fake.user_to_projects_map[uid].append(pid)
+    # Fake.projects[pid] = Fake.ProjectItem(id=pid, template=False, data=project)
+    # Fake.user_to_projects_map[uid].append(pid)
+
+    await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
 
     raise web.HTTPCreated(text=json.dumps(project),
                           content_type='application/json')
@@ -54,15 +61,17 @@ async def create_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
-    pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    project = Fake.projects.get(pid)
-    if not project:
-        raise web.HTTPNotFound(content_type='application/json')
+    project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
 
-    assert_ownership(pid, uid)
+    # project = Fake.projects.get(puuid)
+    # if not project:
+    #     raise web.HTTPNotFound(content_type='application/json')
 
-    return {'data': project.data}
+    # assert_ownership(puuid, uid)
+
+    return {'data': project}
 
 
 @login_required
@@ -81,37 +90,40 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     new_values = await request.json()
     # TODO: validate project data
 
-    current_project = Fake.projects.get(pid)
-    if not current_project:
-        raise web.HTTPNotFound(content_type='application/json')
+    await ProjectDB.update_user_project(new_values, uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    # current_project = Fake.projects.get(pid)
+    # if not current_project:
+    #     raise web.HTTPNotFound(content_type='application/json')
 
-    assert_ownership(pid, uid)
+    # assert_ownership(pid, uid)
 
-    new_project = current_project._asdict()
-    new_project['data'] = new_values
-    Fake.projects[pid] = Fake.ProjectItem(**new_project)
+    # new_project = current_project._asdict()
+    # new_project['data'] = new_values
+    # Fake.projects[pid] = Fake.ProjectItem(**new_project)
 
 @login_required
 async def delete_project(request: web.Request):
-    pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    assert_ownership(pid, uid)
+    await ProjectDB.delete_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
 
-    # TODO: sharing policy: can user delete if shared?
-    Fake.projects.pop(pid, None)
-    delete = []
-    for key, project_ids in Fake.user_to_projects_map.items():
-        project_ids[:] = [i for i in project_ids if i!=pid]
-        if not project_ids:
-            delete.append(key)
+    # assert_ownership(pid, uid)
 
-    for key in delete:
-        Fake.user_to_projects_map.pop(key, None)
+    # # TODO: sharing policy: can user delete if shared?
+    # Fake.projects.pop(pid, None)
+    # delete = []
+    # for key, project_ids in Fake.user_to_projects_map.items():
+    #     project_ids[:] = [i for i in project_ids if i!=pid]
+    #     if not project_ids:
+    #         delete.append(key)
+
+    # for key in delete:
+    #     Fake.user_to_projects_map.pop(key, None)
 
     raise web.HTTPNoContent(content_type='application/json')
 

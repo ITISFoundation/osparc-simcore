@@ -15,6 +15,7 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
 from . import nodes_handlers, projects_handlers
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from .projects_fakes import Fake
+# from .projects_models import projects_table
 
 CONFIG_SECTION_NAME = "projects"
 
@@ -67,6 +68,8 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         # injects fake projects to User with id=1
         Fake.load_user_projects(user_id=1)
         Fake.load_template_projects()
+
+
 
 # alias
 setup_projects = setup
