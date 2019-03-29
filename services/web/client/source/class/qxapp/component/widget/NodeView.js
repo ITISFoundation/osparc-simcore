@@ -102,6 +102,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         this.__addMapper();
         this.__addIFrame();
         this.__addButtons();
+
+        this.__initIFrame();
+        this.__initButtons();
       }
     },
 
@@ -203,13 +206,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
       const iFrame = this.getNode().getIFrame();
       if (iFrame) {
-        iFrame.addListener("maximize", e => {
-          this.__maximizeIFrame(true);
-        }, this);
-        iFrame.addListener("restore", e => {
-          this.__maximizeIFrame(false);
-        }, this);
-        this.__maximizeIFrame(iFrame.hasState("maximized"));
         this.__iFrameLayout.add(iFrame, {
           flex: 1
         });
@@ -229,7 +225,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
           alignX: "right"
         });
         this.__buttonsLayout = new qx.ui.container.Composite(box);
-        this.__initButtons();
       }
       this.__buttonsLayout.removeAll();
 
@@ -241,36 +236,49 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       if (restartIFrameButton) {
         this.__buttonsLayout.add(restartIFrameButton);
       }
-      this.__buttonsLayout.add(this.__openFolder);
-      this.__mainLayout.add(this.__buttonsLayout);
-    },
-
-    __initButtons: function() {
       let openFolder = this.__openFolder = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/folder-open/32"
       });
-      openFolder.addListener("execute", function() {
-        let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
-
-        let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-          layout: new qx.ui.layout.Canvas(),
-          contentPadding: 0,
-          showMinimize: false,
-          width: 900,
-          height: 600
-        });
-        win.add(nodeDataManager, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
-
-        win.center();
-        win.open();
-      }, this);
-
       this.__buttonsLayout.add(openFolder);
+      this.__mainLayout.add(this.__buttonsLayout);
+    },
+
+    __initIFrame: function() {
+      const iFrame = this.getNode().getIFrame();
+      if (iFrame) {
+        iFrame.addListener("maximize", e => {
+          this.__maximizeIFrame(true);
+        }, this);
+        iFrame.addListener("restore", e => {
+          this.__maximizeIFrame(false);
+        }, this);
+        this.__maximizeIFrame(iFrame.hasState("maximized"));
+      }
+    },
+
+    __initButtons: function() {
+      if (this.__openFolder) {
+        this.__openFolder.addListener("execute", function() {
+          let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+
+          let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+            layout: new qx.ui.layout.Canvas(),
+            contentPadding: 0,
+            showMinimize: false,
+            width: 900,
+            height: 600
+          });
+          win.add(nodeDataManager, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+
+          win.center();
+          win.open();
+        }, this);
+      }
     },
 
     __maximizeIFrame: function(maximize) {
