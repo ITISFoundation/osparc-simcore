@@ -1614,7 +1614,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
           case "simcore/services/dynamic/itis/s4l/simulator/lf":
             return qxapp.dev.fake.lf.Data.getItemList(nodeKey);
         }
-        return [];
       }
 
       switch (portKey) {
