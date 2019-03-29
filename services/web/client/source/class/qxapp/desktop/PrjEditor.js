@@ -23,13 +23,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(project, isNew) {
     this.base(arguments, "horizontal");
 
-    if (this.setSplitterVisible) {
-      console.warn("Qooxdoo's feaure splitterVisible is now available: feature toggle can be removed.");
-      this.setSplitterVisible(false);
-    } else {
-      console.warn("FEATURE TOGGLE: Qooxdoo's feaure splitterVisible is not yet available: Splitter will stay visible.");
-    }
-
     qxapp.utils.UuidToName.getInstance().setProject(project);
 
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
