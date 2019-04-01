@@ -1,5 +1,5 @@
 """
-    Object Relational Models
+    Object Relational Models and access to DB
 """
 # pylint: disable=E1101
 
@@ -135,7 +135,7 @@ class ProjectDB:
             return _convert_to_schema_names(result_dict)
 
     @classmethod
-    async def update_user_project(cls, project_data: Dict, user_id: str, project_uuid: str, db_engine) -> Dict:
+    async def update_user_project(cls, project_data: Dict, user_id: str, project_uuid: str, db_engine):
         """ updates a project from a user
 
         """
