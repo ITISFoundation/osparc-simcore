@@ -186,32 +186,44 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     },
 
     __populateTree: function() {
+      let data = this.__createRootData();
+      let rootModel = qx.data.marshal.Json.createModel(data, true);
+      this.setModel(rootModel);
+
       const store = qxapp.data.Store.getInstance();
       const itemList = store.getItemList(this.getNode().getKey());
-      let children = [];
       for (let i=0; i<itemList.length; i++) {
-        const metadata = store.getItem(this.getNode().getKey(), itemList[i].key);
-        let newEntry = {
-          key: itemList[i].key,
-          version: itemList[i].version,
-          metadata: metadata,
-          isDir: false
-        };
-        if ("inputs" in metadata && "mapper" in metadata.inputs) {
-          newEntry.children = [];
-          newEntry.isDir = true;
-        }
-        children.push(newEntry);
+        const newEntry = this.__createConceptSettingData(itemList[i].key, itemList[i].version);
+        const model = qx.data.marshal.Json.createModel(newEntry, true);
+        this.getModel().getChildren()
+          .push(model);
       }
-      let data = {
+    },
+
+    __createRootData: function() {
+      return {
         label: this.getNode().getLabel(),
         key: null,
         metadata: null,
         isRoot: true,
-        children: children
+        children: []
       };
-      let model = qx.data.marshal.Json.createModel(data, true);
-      this.setModel(model);
+    },
+
+    __createConceptSettingData: function(settingKey, settingVersion) {
+      const store = qxapp.data.Store.getInstance();
+      const metadata = store.getItem(this.getNode().getKey(), settingKey);
+      let newEntry = {
+        key: settingKey,
+        version: settingVersion,
+        metadata: metadata,
+        isDir: false
+      };
+      if ("inputs" in metadata && "mapper" in metadata.inputs) {
+        newEntry.children = [];
+        newEntry.isDir = true;
+      }
+      return newEntry;
     },
 
     __initEvents: function() {
@@ -264,6 +276,36 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         this.fireDataEvent("selectionChanged", null);
       }
     },
+
+    /*
+    addConceptSetting: function(globalSettingsKey, settingKey, itemKey) {
+      data["children"] = [];
+      let newItem = qx.data.marshal.Json.createModel(data, true);
+      to.getModel().getChildren()
+        .push(newItem);
+      const itemProps = qxapp.data.Store.getInstance().getItem(null, settingKey, itemKey);
+      if (itemProps) {
+        let form = new qxapp.component.form.Auto(itemProps, this.getNode());
+        let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+        newItem["propsWidget"] = propsWidget;
+      }
+    },
+
+    addComponent: function(globalSettingsKey, settingKey) {
+      let newItem = qx.data.marshal.Json.createModel(data, true);
+      to.getModel().getChildren()
+        .push(newItem);
+    },
+
+    __createItemAndPush2: function(data, to, fromNodeKey, fromPortKey) {
+      const willBeBranch = this.__willBeBranch(fromNodeKey);
+      if (willBeBranch) {
+        this.addConceptSetting(data, to, fromNodeKey, fromPortKey);
+      } else {
+        this.addComponent(data, to, fromNodeKey, fromPortKey);
+      }
+    },
+    */
 
     __createItemAndPush: function(data, to, fromNodeKey, fromPortKey) {
       const willBeBranch = this.__willBeBranch(fromNodeKey);
