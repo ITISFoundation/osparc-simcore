@@ -37,7 +37,9 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorActions", {
       flex: 1
     });
 
-    const newSettings = this.__newSettings = new qx.ui.toolbar.MenuButton(this.tr("New Settings"));
+    const newSettings = this.__newSettings = new qx.ui.toolbar.MenuButton(this.tr("New Settings")).set({
+      enabled: false
+    });
     actions.add(newSettings);
   },
 
