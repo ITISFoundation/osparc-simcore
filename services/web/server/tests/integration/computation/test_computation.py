@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
+import sys
 import time
 import uuid
 from contextlib import contextmanager
@@ -45,8 +46,8 @@ tool_services = [
 ]
 
 @pytest.fixture(scope='session')
-def here(integration_test_dir: Path) -> Path:
-    return (integration_test_dir / "computation")
+def here() -> Path:
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
 def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, here, docker_compose_file):
