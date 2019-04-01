@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     this.base(arguments);
 
     this.setSpacing(10);
-    this.setAppearance("sidebar");
+    this.setAppearance("sidepanel");
 
     this.__initDefault();
 

@@ -50,6 +50,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.updateProjectDocument();
     }
     this.__startAutoSaveTimer();
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -94,13 +95,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.setTopView(treeView);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set();
-      this.__sidePanel.setMidView(extraView);
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView().set();
-      this.__sidePanel.setBottomView(loggerView);
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2, {
+        flex: 1
+      });
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
@@ -345,7 +348,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.setMidView(widget);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -358,7 +361,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         height: 300
       });
       container.add(imageWidget);
-      this.__sidePanel.setMidView(container);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
     },
 
     getLogger: function() {
@@ -580,6 +583,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapse.bind(this.__sidePanel));
     }
   }
 });
