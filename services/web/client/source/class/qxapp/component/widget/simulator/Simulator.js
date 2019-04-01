@@ -105,7 +105,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     },
 
     __buildSimulatorTree: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       const label = new qx.ui.basic.Label(this.tr("Explorer")).set({
         allowGrowX: true,
@@ -123,7 +123,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     },
 
     __buildSimulatorProps: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       const label = new qx.ui.basic.Label(this.tr("Properties")).set({
         allowGrowX: true,

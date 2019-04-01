@@ -223,7 +223,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     hasInputsDefault: function() {
-      return Object.keys(this.__inputsDefault);
+      return Object.keys(this.__inputsDefault).length;
     },
 
     getInput: function(outputId) {
