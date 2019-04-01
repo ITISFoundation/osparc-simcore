@@ -7,7 +7,7 @@ import simcore_service_webserver
 
 
 @pytest.fixture(scope='session')
-def here():
+def fixture_dir():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope='session')
@@ -17,8 +17,8 @@ def package_dir():
     return dirpath
 
 @pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.parent.parent.parent.resolve()
+def osparc_simcore_root_dir(fixture_dir):
+    root_dir = fixture_dir.parent.parent.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
@@ -30,21 +30,27 @@ def api_specs_dir(osparc_simcore_root_dir):
     return specs_dir
 
 @pytest.fixture(scope='session')
-def mock_dir(here):
-    dirpath = here / "mock"
-    assert dirpath.exists()
-    return dirpath
+def integration_test_dir(fixture_dir):
+    tests_dir = fixture_dir.parent.resolve()
+    assert tests_dir.exists()
+    return tests_dir
 
-@pytest.fixture(scope='session')
-def docker_compose_file(mock_dir):
-    """
-      Path to docker-compose configuration files used for testing
+# @pytest.fixture(scope='session')
+# def mock_dir(fixture_dir):
+#     dirpath = fixture_dir / "mock"
+#     assert dirpath.exists()
+#     return dirpath
 
-      - fixture defined in pytest-docker
-    """
-    fpath = mock_dir / 'docker-compose.yml'
-    assert fpath.exists()
-    return str(fpath)
+# @pytest.fixture(scope='session')
+# def docker_compose_file(mock_dir):
+#     """
+#       Path to docker-compose configuration files used for testing
+
+#       - fixture defined in pytest-docker
+#     """
+#     fpath = mock_dir / 'docker-compose.yml'
+#     assert fpath.exists()
+#     return str(fpath)
 
 @pytest.fixture(scope="session")
 def server_test_configfile(mock_dir):

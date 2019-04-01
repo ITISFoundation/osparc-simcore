@@ -44,6 +44,10 @@ tool_services = [
     'portainer'
 ]
 
+@pytest.fixture(scope='session')
+def here(integration_test_dir: Path) -> Path:
+    return (integration_test_dir / "computation")
+
 @pytest.fixture
 def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, here, docker_compose_file):
     port = app_config["main"]["port"] = aiohttp_unused_port()

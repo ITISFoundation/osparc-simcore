@@ -8,7 +8,7 @@ from simcore_service_webserver.db import DSN
 
 
 @pytest.fixture(scope='module')
-def postgres_db(app_config):
+def postgres_db(app_config, webserver_environ, docker_stack):
     cfg = app_config["db"]["postgres"]
     url = DSN.format(**cfg)
 

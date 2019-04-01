@@ -8,14 +8,10 @@ from typing import Dict
 import pytest
 import trafaret_config
 import yaml
-from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
-from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.resources import resources as app_resources
-from simcore_service_webserver.rest import setup_rest
 
 # imports the fixtures for the integration tests
 pytest_plugins = [

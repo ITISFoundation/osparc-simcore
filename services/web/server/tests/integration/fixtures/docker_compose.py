@@ -1,5 +1,6 @@
 import socket
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict
 
 import pytest
@@ -49,31 +50,38 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
         env_devel['REGISTRY_AUTH'] = False
     return env_devel
 
+@pytest.fixture(scope="module")
+def temp_folder(request, tmpdir_factory) -> Path:
+    tmp = Path(tmpdir_factory.mktemp("docker_compose_{}".format(request.module.__name__)))
+    yield tmp
+
 @pytest.fixture(scope='module')
-def docker_compose_file(request, here, services_docker_compose, devel_environ):
+def docker_compose_file(request, temp_folder, services_docker_compose, devel_environ):
     """ Overrides pytest-docker fixture
 
     """
     core_services = getattr(request.module, 'core_services', [])
-    docker_compose_path = here / 'docker-compose.yml'
+    docker_compose_path = temp_folder / 'docker-compose.yml'
+    # docker_compose_path = tmp_path / 'docker-compose.yml'
     _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
 
-    yield docker_compose_path
+    yield Path(docker_compose_path)
     # cleanup
-    docker_compose_path.unlink()
+    # docker_compose_path.unlink()
 
 @pytest.fixture(scope='module')
-def tools_docker_compose_file(request, here, tools_docker_compose, devel_environ):
+def tools_docker_compose_file(request, temp_folder, tools_docker_compose, devel_environ):
     """ Overrides pytest-docker fixture
 
     """
     tool_services = getattr(request.module, 'tool_services', [])
-    docker_compose_path = here / 'docker-compose.tools.yml'
+    docker_compose_path = temp_folder / 'docker-compose.tools.yml'
+    # docker_compose_path = tmp_path / 'docker-compose.tools.yml'
     _recreate_compose_file(tool_services, tools_docker_compose, docker_compose_path, devel_environ)
 
-    yield docker_compose_path
+    yield Path(docker_compose_path)
     # cleanup
-    docker_compose_path.unlink()
+    # Path(docker_compose_path).unlink()
 
 # HELPERS ---------------------------------------------
 def _get_ip()->str:
