@@ -86,6 +86,25 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
           break;
         }
       }
+    },
+
+    checkCompatibility: function(settingKey, fromNodeKey, fromItemKey, e) {
+      console.log(this.getNode().getKey(), settingKey, fromNodeKey, fromItemKey);
+      let compatible = false;
+      const nodeKey = this.getNode().getKey();
+      if (nodeKey) {
+        switch (nodeKey) {
+          case "simcore/services/dynamic/itis/s4l/simulator/neuron":
+            compatible = qxapp.dev.fake.neuron.Data.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
+            break;
+          case "simcore/services/dynamic/itis/s4l/simulator/lf":
+            compatible = qxapp.dev.fake.lf.Data.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
+            break;
+        }
+      }
+      if (!compatible) {
+        e.preventDefault();
+      }
     }
   }
 });

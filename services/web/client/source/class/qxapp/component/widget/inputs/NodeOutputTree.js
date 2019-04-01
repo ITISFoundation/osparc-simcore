@@ -68,6 +68,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
     const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showAsDirs);
     let data = {
       label: port.label,
+      key: "key" in port ? port.key : null,
       children: children
     };
     let model = qx.data.marshal.Json.createModel(data, true);
