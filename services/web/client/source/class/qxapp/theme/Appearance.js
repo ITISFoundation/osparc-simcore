@@ -162,10 +162,10 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     /*
     ---------------------------------------------------------------------------
-      SideBar
+      SidePanel
     ---------------------------------------------------------------------------
     */
-    sidebar: {
+    sidepanel: {
       style: state => ({
         backgroundColor: "background-main-lighter"
       })

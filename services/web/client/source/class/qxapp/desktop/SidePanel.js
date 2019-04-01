@@ -38,12 +38,24 @@ qx.Class.define("qxapp.desktop.SidePanel", {
   construct: function() {
     this.base(arguments);
 
-    this.setAppearance("sidebar");
+    this.setAppearance("sidepanel");
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    this.__attachEventHandlers();
+  },
+
+  properties: {
+    collapsed: {
+      init: false,
+      check: "Boolean",
+      apply: "_applyCollapsed"
+    }
   },
 
   members: {
+    __savedWidth: null,
+    __collapsingDisabled: false,
     /**
      * Add a widget at the specified index. If the index already has a child, then replace it.
      *
@@ -56,6 +68,42 @@ qx.Class.define("qxapp.desktop.SidePanel", {
         this.removeAt(index);
       }
       this.addAt(child, index, options);
+    },
+
+    toggleCollapse: function() {
+      this.setCollapsed(!this.getCollapsed());
+    },
+
+    _applyCollapsed: function(collapsed, old) {
+      this.setDecorator("sidepanel");
+      this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
+      if (collapsed) {
+        this.__savedWidth = this.getWidth();
+        this.setWidth(20);
+      } else {
+        this.setWidth(this.__savedWidth);
+      }
+      this.getLayoutParent().__endSize = this.__savedWidth; // Workaround: have to update splitpane's prop
+    },
+
+    __attachEventHandlers: function() {
+      this.addListenerOnce("appear", () => {
+        this.getContentElement().getDomElement()
+          .addEventListener("transitionend", (() => {
+            if (this.getCollapsed()) {
+              this.addListenerOnce("resize", e => {
+                if (this.getCollapsed() && this.getWidth() !== this.__savedWidth) {
+                  this.__savedWidth = e.getData().width;
+                  this.setCollapsed(false);
+                } else {
+                  this.__savedWidth = e.getData().width;
+                }
+              }, this);
+            } else {
+              this.resetDecorator();
+            }
+          }).bind(this));
+      }, this);
     }
   }
 });

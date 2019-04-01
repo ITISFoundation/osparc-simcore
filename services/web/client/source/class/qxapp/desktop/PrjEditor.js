@@ -57,6 +57,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.updateProjectDocument();
     }
     this.__startAutoSaveTimer();
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -354,7 +355,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView("Overview", widget), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -367,7 +368,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         height: 300
       });
       container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView("Overview", container), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
     },
 
     getLogger: function() {
@@ -589,6 +590,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapse.bind(this.__sidePanel));
     }
   }
 });

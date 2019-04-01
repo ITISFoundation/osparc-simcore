@@ -86,6 +86,14 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         width: 0
       }
+    },
+
+    "sidepanel": {
+      style: {
+        transitionProperty: ["left"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
     }
   }
 });
