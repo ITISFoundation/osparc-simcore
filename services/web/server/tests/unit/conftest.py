@@ -4,10 +4,12 @@
 # pylint:disable=redefined-outer-name
 
 import collections
+import json
 import logging
 import os
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import yaml
@@ -68,3 +70,7 @@ def light_test_configfile(mock_dir):
     fpath = mock_dir / "configs/light-test.yaml"
     assert fpath.exists()
     return fpath
+
+@pytest.fixture
+def fake_project(mock_dir: Path) -> Dict:
+    yield json.load((mock_dir / "fake-project.json").open())
