@@ -67,221 +67,235 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
 
     item: {
       "simcore/services/dynamic/itis/s4l/simulator/lf/setup": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
-        version: "1.0.0",
-        name: "Setup",
-        inputs: {
-          frequency: {
-            displayOrder: 0,
-            label: "Frequency",
-            description: "Frequency (Hz)",
-            type: "number",
-            defaultValue: 1000
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/setup",
+          version: "1.0.0",
+          name: "Setup",
+          inputs: {
+            frequency: {
+              displayOrder: 0,
+              label: "Frequency",
+              description: "Frequency (Hz)",
+              type: "number",
+              defaultValue: 1000
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/materials": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
-        version: "1.0.0",
-        name: "Materials",
-        inputsDefault: {
-          defaultLFMaterials: {
-            displayOrder: 0,
-            label: "Default Material Settings",
-            description: "Default Material Settings",
-            type: "node-output-tree-api-v0.0.1"
-          }
-        },
-        inputs: {
-          updateDispersive: {
-            displayOrder: 0,
-            label: "Enable automatic update of dispersive materials",
-            description: "Enable automatic update of dispersive materials",
-            type: "boolean",
-            defaultValue: false
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/materials",
+          version: "1.0.0",
+          name: "Materials",
+          inputsDefault: {
+            defaultLFMaterials: {
+              displayOrder: 0,
+              label: "Default Material Settings",
+              description: "Default Material Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
           },
-          mapper: {
-            displayOrder: 1,
-            label: "Material Settings",
-            description: "Maps Model entities into Materials",
-            type: "mapper",
-            maps: {
-              branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
-              leaf: "simcore/services/dynamic/modeler/webserver"
+          inputs: {
+            updateDispersive: {
+              displayOrder: 0,
+              label: "Enable automatic update of dispersive materials",
+              description: "Enable automatic update of dispersive materials",
+              type: "boolean",
+              defaultValue: false
             },
-            defaultValue: [{
-              "Air-UUID": [
-                "Background"
-              ]
-            }]
+            mapper: {
+              displayOrder: 1,
+              label: "Material Settings",
+              description: "Maps Model entities into Materials",
+              type: "mapper",
+              maps: {
+                branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+                leaf: "simcore/services/dynamic/modeler/webserver"
+              },
+              defaultValue: [{
+                "Air-UUID": [
+                  "Background"
+                ]
+              }]
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/boundary": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
-        version: "1.0.0",
-        name: "Boundary Conditions",
-        inputsDefault: {
-          defaultLFBoundaries: {
-            displayOrder: 0,
-            label: "Default Boundary Settings",
-            description: "Default Boundary Settings",
-            type: "node-output-tree-api-v0.0.1"
-          }
-        },
-        inputs: {
-          mapper: {
-            displayOrder: 0,
-            label: "Boundary Conditions",
-            description: "Maps Model entities into Boundary Conditions",
-            type: "mapper",
-            maps: {
-              leaf: "simcore/services/dynamic/modeler/webserver"
-            },
-            defaultValue: [{
-              "Neumann-UUID": [
-                "Plane X+",
-                "Plane X-",
-                "Plane Y+",
-                "Plane Y-",
-                "Plane Z+",
-                "Plane Z-"
-              ]
-            }]
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/boundary",
+          version: "1.0.0",
+          name: "Boundary Conditions",
+          inputsDefault: {
+            defaultLFBoundaries: {
+              displayOrder: 0,
+              label: "Default Boundary Settings",
+              description: "Default Boundary Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            mapper: {
+              displayOrder: 0,
+              label: "Boundary Conditions",
+              description: "Maps Model entities into Boundary Conditions",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/dynamic/modeler/webserver"
+              },
+              defaultValue: [{
+                "Neumann-UUID": [
+                  "Plane X+",
+                  "Plane X-",
+                  "Plane Y+",
+                  "Plane Y-",
+                  "Plane Z+",
+                  "Plane Z-"
+                ]
+              }]
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/sensors": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
-        version: "1.0.0",
-        name: "Sensors",
-        inputsDefault: {
-          defaultLFSensors: {
-            displayOrder: 0,
-            label: "Default Sensors",
-            description: "Default Sensors",
-            type: "node-output-tree-api-v0.0.1"
-          }
-        },
-        inputs: {
-          mapper: {
-            displayOrder: 0,
-            label: "Sensor Settings",
-            description: "Maps Model entities into Sensor Settings",
-            type: "mapper",
-            maps: {
-              leaf: "simcore/services/dynamic/modeler/webserver"
-            },
-            defaultValue: [{
-              "Field-Sensor-UUID": [
-                "Overall Field"
-              ]
-            }]
-          }
-        },
-        outputs: {
-          sensorSettingAPI: {
-            displayOrder: 0,
-            label: "LF Sensors",
-            description: "LF Sensors",
-            type: "node-output-tree-api-v0.0.1"
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/sensors",
+          version: "1.0.0",
+          name: "Sensors",
+          inputsDefault: {
+            defaultLFSensors: {
+              displayOrder: 0,
+              label: "Default Sensors",
+              description: "Default Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            mapper: {
+              displayOrder: 0,
+              label: "Sensor Settings",
+              description: "Maps Model entities into Sensor Settings",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/dynamic/modeler/webserver"
+              },
+              defaultValue: [{
+                "Field-Sensor-UUID": [
+                  "Overall Field"
+                ]
+              }]
+            }
+          },
+          outputs: {
+            sensorSettingAPI: {
+              displayOrder: 0,
+              label: "LF Sensors",
+              description: "LF Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/grid": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
-        version: "1.0.0",
-        name: "Grid",
-        inputs: {
-          homogeneous: {
-            displayOrder: 0,
-            label: "Homogeneous grid",
-            description: "Homogeneous grid",
-            type: "boolean",
-            defaultValue: true
-          },
-          resolution: {
-            displayOrder: 1,
-            label: "Resolution (mm)",
-            description: "Resolution in mm",
-            type: "number",
-            defaultValue: 1
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
+          version: "1.0.0",
+          name: "Grid",
+          inputs: {
+            homogeneous: {
+              displayOrder: 0,
+              label: "Homogeneous grid",
+              description: "Homogeneous grid",
+              type: "boolean",
+              defaultValue: true
+            },
+            resolution: {
+              displayOrder: 1,
+              label: "Resolution (mm)",
+              description: "Resolution in mm",
+              type: "number",
+              defaultValue: 1
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/voxel": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
-        version: "1.0.0",
-        name: "Voxels",
-        inputs: {
-          voxelEngine: {
-            displayOrder: 0,
-            label: "Used Voxel Engine",
-            description: "Used Voxel Engine",
-            type: "string",
-            defaultValue: "Topological Voxeler"
-          },
-          maximumFraction: {
-            displayOrder: 1,
-            label: "Maximum Fraction",
-            description: "Maximum Fraction",
-            type: "number",
-            defaultValue: 21
-          },
-          congruentSubgrid: {
-            displayOrder: 2,
-            label: "Congruent Subgrid Voxeling",
-            description: "Congruent Subgrid Voxeling",
-            type: "boolean",
-            defaultValue: true
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
+          version: "1.0.0",
+          name: "Voxels",
+          inputs: {
+            voxelEngine: {
+              displayOrder: 0,
+              label: "Used Voxel Engine",
+              description: "Used Voxel Engine",
+              type: "string",
+              defaultValue: "Topological Voxeler"
+            },
+            maximumFraction: {
+              displayOrder: 1,
+              label: "Maximum Fraction",
+              description: "Maximum Fraction",
+              type: "number",
+              defaultValue: 21
+            },
+            congruentSubgrid: {
+              displayOrder: 2,
+              label: "Congruent Subgrid Voxeling",
+              description: "Congruent Subgrid Voxeling",
+              type: "boolean",
+              defaultValue: true
+            }
           }
         }
       },
 
       "simcore/services/dynamic/itis/s4l/simulator/lf/solver": {
-        key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
-        version: "1.0.0",
-        name: "Solver Settings",
-        inputs: {
-          parallelization: {
-            displayOrder: 0,
-            label: "Parallelization Handling",
-            description: "Parallelization Handling",
-            type: "string",
-            defaultValue: "Manual"
-          },
-          processes: {
-            displayOrder: 1,
-            label: "Number of processes",
-            description: "Number of processes",
-            type: "number",
-            defaultValue: 1
-          },
-          priority: {
-            displayOrder: 2,
-            label: "Priority in queue",
-            description: "Priority in queue",
-            type: "number",
-            defaultValue: 0
-          },
-          convergence: {
-            displayOrder: 3,
-            label: "Convergence Tolerance",
-            description: "Convergence Tolerance",
-            type: "string",
-            defaultValue: "Medium"
-          },
-          additionalOptions: {
-            displayOrder: 4,
-            label: "Additional Solver Options",
-            description: "Additional Solver Options",
-            type: "string",
-            defaultValue: ""
+        "root": {
+          key: "simcore/services/dynamic/itis/s4l/simulator/lf/solver",
+          version: "1.0.0",
+          name: "Solver Settings",
+          inputs: {
+            parallelization: {
+              displayOrder: 0,
+              label: "Parallelization Handling",
+              description: "Parallelization Handling",
+              type: "string",
+              defaultValue: "Manual"
+            },
+            processes: {
+              displayOrder: 1,
+              label: "Number of processes",
+              description: "Number of processes",
+              type: "number",
+              defaultValue: 1
+            },
+            priority: {
+              displayOrder: 2,
+              label: "Priority in queue",
+              description: "Priority in queue",
+              type: "number",
+              defaultValue: 0
+            },
+            convergence: {
+              displayOrder: 3,
+              label: "Convergence Tolerance",
+              description: "Convergence Tolerance",
+              type: "string",
+              defaultValue: "Medium"
+            },
+            additionalOptions: {
+              displayOrder: 4,
+              label: "Additional Solver Options",
+              description: "Additional Solver Options",
+              type: "string",
+              defaultValue: ""
+            }
           }
         }
       },
@@ -456,7 +470,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
 
     getItem: function(simSettingsId, itemId) {
       if (itemId === undefined) {
-        return qxapp.dev.fake.lf.Data.item[simSettingsId];
+        itemId = "root";
       }
       return qxapp.dev.fake.lf.Data.item[simSettingsId][itemId];
     },
