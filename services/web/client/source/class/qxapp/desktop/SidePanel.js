@@ -70,6 +70,9 @@ qx.Class.define("qxapp.desktop.SidePanel", {
       this.addAt(child, index, options);
     },
 
+    /**
+     * Toggle the visibility of the side panel with a nice transition.
+     */
     toggleCollapse: function() {
       this.setCollapsed(!this.getCollapsed());
     },
@@ -83,13 +86,14 @@ qx.Class.define("qxapp.desktop.SidePanel", {
       } else {
         this.setWidth(this.__savedWidth);
       }
-      this.getLayoutParent().__endSize = this.__savedWidth; // Workaround: have to update splitpane's prop
+      // Workaround: have to update splitpane's prop
+      this.getLayoutParent().__endSize = this.__savedWidth; // eslint-disable-line no-underscore-dangle
     },
 
     __attachEventHandlers: function() {
       this.addListenerOnce("appear", () => {
         this.getContentElement().getDomElement()
-          .addEventListener("transitionend", (() => {
+          .addEventListener("transitionend", () => {
             if (this.getCollapsed()) {
               this.addListenerOnce("resize", e => {
                 if (this.getCollapsed() && this.getWidth() !== this.__savedWidth) {
@@ -102,7 +106,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
             } else {
               this.resetDecorator();
             }
-          }).bind(this));
+          });
       }, this);
     }
   }
