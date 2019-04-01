@@ -1656,26 +1656,15 @@ qx.Class.define("qxapp.dev.fake.Data", {
       if (nodeKey) {
         switch (nodeKey) {
           case "simcore/services/dynamic/itis/s4l/simulator/neuron":
-            return qxapp.dev.fake.neuron.Data.getItem(portKey);
+            return qxapp.dev.fake.neuron.Data.getItem(portKey, itemUuid);
           case "simcore/services/dynamic/itis/s4l/simulator/lf":
-            return qxapp.dev.fake.lf.Data.getItem(portKey);
+            return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
         }
-        return {};
       }
 
       switch (portKey) {
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);
-        case "defaultLFMaterials":
-        case "defaultLFBoundaries":
-        case "defaultLFSensors":
-          return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
-        case "defaultNeurons":
-        case "defaultNeuronSources":
-        case "defaultNeuronPointProcesses":
-        case "defaultNeuronNetworkConnection":
-        case "defaultNeuronSensors":
-          return qxapp.dev.fake.neuron.Data.getItem(portKey, itemUuid);
       }
       return {};
     }
