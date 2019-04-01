@@ -101,7 +101,7 @@ class ProjectDB:
 
     @classmethod
     async def load_user_projects(cls, user_id: str, db_engine) -> List[Dict]:
-        """ adds a project per user
+        """ loads a project for a user
 
         """
 
