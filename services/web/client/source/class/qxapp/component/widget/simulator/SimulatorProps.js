@@ -24,26 +24,27 @@
 qx.Class.define("qxapp.component.widget.simulator.SimulatorProps", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
-
-    this.set({
-      node: node
-    });
   },
 
   properties: {
     node: {
       check: "qxapp.data.model.Node",
-      apply: "_applyNode",
       nullable: true
     }
   },
 
   members: {
-    _applyNode: function() {
+    setContextNode: function(node) {
+      this.setNode(node);
+
+      this.updateProps();
+    },
+
+    updateProps: function() {
       this._removeAll();
 
       const node = this.getNode();

@@ -17,6 +17,11 @@
 
 /**
  *
+ * -----------SimulatorActions--------------
+ * -SimulatorTree--|------------------------
+ * ----------------|-----RemoteRenderer-----
+ * -SimulatorProps-|------------------------
+ *
  * *Example*
  *
  * Here is a little example of how to use the widget.
@@ -40,29 +45,10 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       node: node
     });
 
-    this._setLayout(new qx.ui.layout.Canvas());
-    const splitpane = this.__splitpane = new qx.ui.splitpane.Pane("horizontal");
-    splitpane.getChildControl("splitter").getChildControl("knob")
-      .hide();
-    splitpane.setOffset(0);
+    this._setLayout(new qx.ui.layout.VBox());
 
-    this._add(splitpane, {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0
-    });
-
-    const simulatorBox = this.__simulatorBox = new qxapp.component.widget.simulator.SimulatorBox(node);
-    const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    vBox.add(simulatorBox, {
-      flex: 1
-    });
-    vBox.setWidth(250);
-    vBox.setMinWidth(150);
-    splitpane.add(vBox, 0);
-
-    this.__checkModelerIsConnected();
+    this.__buildLayout();
+    this.__initSignals();
   },
 
   properties: {
@@ -73,19 +59,109 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
   },
 
   members: {
-    __splitpane: null,
-    __simulatorBox: null,
+    __simulatorActions: null,
+    __simulatorTree: null,
+    __simulatorProps: null,
     __modeler: null,
+
+    __buildLayout: function() {
+      const simulatorActions = this.__simulatorActions = new qxapp.component.widget.simulator.SimulatorActions(this.getNode());
+      this._add(simulatorActions);
+
+      const splitpane = new qx.ui.splitpane.Pane("horizontal");
+      splitpane.getChildControl("splitter").getChildControl("knob")
+        .hide();
+      splitpane.setOffset(0);
+
+      this._add(splitpane, {
+        flex: 1
+      });
+
+      const sidePanel = this.__buildSidePanel();
+      splitpane.add(sidePanel);
+
+      const modeler = this.__checkModelerIsConnected();
+      if (modeler) {
+        splitpane.add(modeler);
+      }
+    },
+
+    __buildSidePanel: function() {
+      const splitpane = new qx.ui.splitpane.Pane("vertical").set({
+        width: 250,
+        minWidth: 200
+      });
+      splitpane.getChildControl("splitter").getChildControl("knob")
+        .hide();
+      splitpane.setOffset(0);
+
+      const simulatorTree = this.__buildSimulatorTree();
+      const simulatorProps = this.__buildSimulatorProps();
+
+      splitpane.add(simulatorTree);
+      splitpane.add(simulatorProps);
+
+      return splitpane;
+    },
+
+    __buildSimulatorTree: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+
+      const label = new qx.ui.basic.Label(this.tr("Explorer")).set({
+        allowGrowX: true,
+        paddingLeft: 10,
+        appearance: "toolbar-textfield"
+      });
+      const simulatorTree = this.__simulatorTree = new qxapp.component.widget.simulator.SimulatorTree(this.getNode());
+
+      vBox.add(label);
+      vBox.add(simulatorTree, {
+        flex: 1
+      });
+
+      return vBox;
+    },
+
+    __buildSimulatorProps: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+
+      const label = new qx.ui.basic.Label(this.tr("Properties")).set({
+        allowGrowX: true,
+        paddingLeft: 10,
+        appearance: "toolbar-textfield"
+      });
+      const simulatorProps = this.__simulatorProps = new qxapp.component.widget.simulator.SimulatorProps(this.getNode());
+
+      vBox.add(label);
+      vBox.add(simulatorProps, {
+        flex: 1
+      });
+
+      return vBox;
+    },
 
     __checkModelerIsConnected: function() {
       const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         if (inputNodes[i].isInKey("remote-renderer")) {
           const modeler = this.__modeler = new qxapp.component.widget.RemoteRenderer(inputNodes[i], null);
-          this.__splitpane.add(modeler, 1);
-          break;
+          return modeler;
         }
       }
+      return null;
+    },
+
+    __initSignals: function() {
+      this.__simulatorTree.addListener("selectionChanged", e => {
+        const selectedNode = e.getData();
+        this.__simulatorActions.setContextNode(selectedNode);
+        this.__simulatorProps.setContextNode(selectedNode);
+      }, this);
+
+      this.__simulatorActions.addListener("newSetting", e => {
+        const data = e.getData();
+        this.__simulatorTree.addChild(data.settingKey, data.itemKey);
+      }, this);
     },
 
     checkCompatibility: function(settingKey, fromNodeKey, fromItemKey, e) {

@@ -1610,9 +1610,31 @@ qx.Class.define("qxapp.dev.fake.Data", {
       if (nodeKey) {
         switch (nodeKey) {
           case "simcore/services/dynamic/itis/s4l/simulator/neuron":
-            return qxapp.dev.fake.neuron.Data.getItemList(nodeKey);
+            if (portKey === undefined) {
+              return qxapp.dev.fake.neuron.Data.getItemList(nodeKey);
+            }
+            switch (portKey) {
+              case "defaultNeurons":
+              case "defaultNeuronSources":
+              case "defaultNeuronPointProcesses":
+              case "defaultNeuronNetworkConnection":
+              case "defaultNeuronSensors":
+              case "neuronsSetting":
+                return qxapp.dev.fake.neuron.Data.getItemList(portKey);
+            }
+            break;
           case "simcore/services/dynamic/itis/s4l/simulator/lf":
-            return qxapp.dev.fake.lf.Data.getItemList(nodeKey);
+            if (portKey === undefined) {
+              return qxapp.dev.fake.lf.Data.getItemList(nodeKey);
+            }
+            switch (portKey) {
+              case "defaultLFMaterials":
+              case "defaultLFBoundaries":
+              case "defaultLFSensors":
+              case "sensorSettingAPI":
+                return qxapp.dev.fake.lf.Data.getItemList(portKey);
+            }
+            break;
         }
       }
 
@@ -1624,18 +1646,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItemList();
-        case "defaultLFMaterials":
-        case "defaultLFBoundaries":
-        case "defaultLFSensors":
-        case "sensorSettingAPI":
-          return qxapp.dev.fake.lf.Data.getItemList(portKey);
-        case "defaultNeurons":
-        case "defaultNeuronSources":
-        case "defaultNeuronPointProcesses":
-        case "defaultNeuronNetworkConnection":
-        case "defaultNeuronSensors":
-        case "neuronsSetting":
-          return qxapp.dev.fake.neuron.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
           return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
       }

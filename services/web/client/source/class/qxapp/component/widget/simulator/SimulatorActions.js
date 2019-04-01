@@ -23,29 +23,78 @@
 qx.Class.define("qxapp.component.widget.simulator.SimulatorActions", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node) {
+  construct: function(simulator) {
     this.base(arguments);
 
     this.set({
-      node: node
+      simulator: simulator
     });
 
-    this._setLayout(new qx.ui.layout.Toolbar());
+    this._setLayout(new qx.ui.layout.HBox());
+
+    const actions = new qx.ui.toolbar.ToolBar();
+    this._add(actions, {
+      flex: 1
+    });
 
     const newSettings = this.__newSettings = new qx.ui.toolbar.MenuButton(this.tr("New Settings"));
-    this._add(newSettings);
+    actions.add(newSettings);
   },
 
   properties: {
+    simulator: {
+      check: "qxapp.data.model.Node",
+      nullable: false
+    },
+
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
     }
   },
 
+  events: {
+    "newSetting": "qx.event.type.Data"
+  },
+
   members: {
-    addNewSettings: function() {
-      
+    __newSettings: null,
+
+    setContextNode: function(node) {
+      this.setNode(node);
+
+      this.__updateNewSettings();
+    },
+
+    __updateNewSettings: function() {
+      const newSettings = this.__newSettings;
+      newSettings.resetMenu();
+      const node = this.getNode();
+      if (node && node.hasInputsDefault()) {
+        const store = qxapp.data.Store.getInstance();
+        const inputs = node.getInputsDefault();
+        newSettings.setEnabled(true);
+        const menu = new qx.ui.menu.Menu();
+        for (const inputKey in inputs) {
+          const simKey = this.getSimulator().getKey();
+          const itemList = store.getItemList(simKey, inputKey);
+          for (let i=0; i<itemList.length; i++) {
+            const item = itemList[i];
+            const btn = new qx.ui.menu.Button(item.label);
+            btn.addListener("execute", () => {
+              const data = {
+                settingKey: node.getKey(),
+                itemKey: item.key
+              };
+              this.fireDataEvent("newSetting", data);
+            });
+            menu.add(btn);
+          }
+        }
+        newSettings.setMenu(menu);
+      } else {
+        newSettings.setEnabled(false);
+      }
     }
   }
 });
