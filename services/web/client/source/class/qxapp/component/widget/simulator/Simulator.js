@@ -89,7 +89,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     __buildSidePanel: function() {
       const splitpane = new qx.ui.splitpane.Pane("vertical").set({
         width: 250,
-        minWidth: 200
+        minWidth: 250
       });
       splitpane.getChildControl("splitter").getChildControl("knob")
         .hide();
