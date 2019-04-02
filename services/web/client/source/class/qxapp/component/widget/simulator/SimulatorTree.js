@@ -156,11 +156,10 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       this.addListener("tap", this.__selectionChanged, this);
 
       this.addListener("keypress", function(keyEvent) {
-        let treeSelection = this.getSelection();
-        if (treeSelection.length < 1) {
+        let selectedItem = this.__getSelectedEntryModel();
+        if (!selectedItem) {
           return;
         }
-        let selectedItem = treeSelection.toArray()[0];
         if (selectedItem.getIsRoot && selectedItem.getIsRoot()) {
           return;
         }
@@ -196,6 +195,14 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       }, this);
     },
 
+    __getSelectedEntryModel: function() {
+      let treeSelection = this.getSelection();
+      if (treeSelection.length < 1) {
+        return null;
+      }
+      return treeSelection.toArray()[0];
+    },
+
     __selectionChanged: function(e) {
       const selection = e.getTarget();
       if ("getNode" in selection) {
@@ -206,7 +213,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     },
 
     addConceptSetting: function(settingsKey, itemKey) {
-      const globalSetting = this.__getGlobalSetting(settingsKey);
+      const globalSetting = this.__getGlobalSettingModel(settingsKey);
       if (globalSetting) {
         const thisClass = qxapp.component.widget.simulator.SimulatorTree;
         const simulatorKey = this.getNode().getKey();
@@ -216,12 +223,23 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       }
     },
 
-    __getGlobalSetting: function(settingsKey) {
+    __getGlobalSettingModel: function(settingsKey) {
       const children = this.getModel().getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children.toArray()[i];
         if (child.getKey() === settingsKey) {
           return child;
+        }
+      }
+      return null;
+    },
+
+    __getGlobalSetting: function(settingsKey) {
+      const children = this.getModel().getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children.toArray()[i];
+        if (child.getKey() === settingsKey) {
+          return children[i];
         }
       }
       return null;
