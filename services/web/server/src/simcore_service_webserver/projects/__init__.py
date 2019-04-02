@@ -67,7 +67,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
 
     assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], "{} is missing from configuration".format(CONFIG_SECTION_NAME)
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    if not cfg["enabled"]:
+    if "enabled" in cfg and not cfg["enabled"]:
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
