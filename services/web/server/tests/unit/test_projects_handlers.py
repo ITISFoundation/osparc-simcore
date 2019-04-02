@@ -132,14 +132,17 @@ async def test_list(client, fake_db, mocker, fake_project):
     assert projects[0] == fake_project
 
     # list all template projects
+    mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.load_template_projects', return_value=Future())
+    mock.return_value.set_result([fake_project])
     resp = await client.get(url.with_query(type="template"))
     payload = await resp.json()
     assert resp.status == 200, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error
-    # fake-template-projects.json + fake-template-projects.osparc.json
-    assert len(projects) == 4 + 1
+    mock.assert_called_with(db_engine=None)
+    # fake-template-projects.json + fake-template-projects.osparc.json + fake project
+    assert len(projects) == 4 + 1 + 1
 
 
 

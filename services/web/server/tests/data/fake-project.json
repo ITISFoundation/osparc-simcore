@@ -9,13 +9,14 @@
         "write"
         ]
     },
-    "creationDate": "1865-11-30T04:00:14",
-    "lastChangeDate": "7364-11-30T10:04:52",
+    "creationDate": "1865-11-30T04:00:14Z",
+    "lastChangeDate": "7364-11-30T10:04:52Z",
     "thumbnail": "sunt adipisicing enim anim nisi",
     "workbench": {
         "Xw)F": {
-        "key": "service/dynamic/7r52.#`/`@jTV,fdk0[/J/<WB'/~+/f!<Y#M5/9751",
+        "key": "simcore/services/dynamic/unseen/university/of/ankh/morpork",
         "version": "0.2249944.0",
+        "label": "some funky label",
         "position": {
             "x": -29926723,
             "y": 92196123

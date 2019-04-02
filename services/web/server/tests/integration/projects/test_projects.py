@@ -8,6 +8,7 @@ import json
 import sys
 from copy import deepcopy
 from pathlib import Path
+from pprint import pprint
 from typing import Dict, List
 
 import pytest
@@ -87,7 +88,7 @@ async def _list_projects(client) -> List[Dict]:
     assert resp.status == 200, payload
 
     projects, error = unwrap_envelope(payload)
-    assert not error
+    assert not error, pprint(error)
 
     return projects
 
@@ -98,7 +99,7 @@ async def _get_project(client, pid) -> Dict:
     assert resp.status == 200, payload
 
     project, error = unwrap_envelope(payload)
-    assert not error
+    assert not error, pprint(error)
     assert project
 
     return project
@@ -110,7 +111,7 @@ async def _create_project(client, project):
     assert resp.status == 201, payload
     project, error = unwrap_envelope(payload)
     assert project
-    assert not error
+    assert not error, pprint(error)
 
 async def _update_project(client, project, pid):
     # PUT /v0/projects/{project_id}
@@ -120,7 +121,7 @@ async def _update_project(client, project, pid):
     assert resp.status == 200, payload
 
     project, error = unwrap_envelope(payload)
-    assert not error
+    assert not error, pprint(error)
     assert not project
 
 async def _delete_project(client, pid):
@@ -130,7 +131,7 @@ async def _delete_project(client, pid):
     assert resp.status == 204, payload
 
     project, error = unwrap_envelope(payload)
-    assert not error
+    assert not error, pprint(error)
     assert not project
 
 async def test_workflow(loop, client, fake_project):
@@ -149,7 +150,7 @@ async def test_workflow(loop, client, fake_project):
         modified_project["name"] = "some other name"
         modified_project["notes"] = "John Raynor killed Kerrigan"
         modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop("Xw)F")
-        modified_project["workbench"]["ReNamed"]["position"]["x"] = 0.0
+        modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
         # modifiy
         pid = modified_project["uuid"]
         await _update_project(client, modified_project, pid)
@@ -197,7 +198,7 @@ async def test_delete_invalid_project(loop, client):
         resp = await client.delete(url)
         payload = await resp.json()
 
-        assert resp.status == 404, payload
+        assert resp.status == 404, pprint(payload)
         data, error = unwrap_envelope(payload)
         assert not data
         assert error
@@ -214,9 +215,9 @@ async def test_list_template_projects(loop, client, fake_db):
         url = client.app.router["list_projects"].url_for()
         resp = await client.get(url.with_query(type="template"))
         payload = await resp.json()
-        assert resp.status == 200, payload
+        assert resp.status == 200, pprint(payload)
 
         projects, error = unwrap_envelope(payload)
-        assert not error
+        assert not error, pprint(error)
         # fake-template-projects.json + fake-template-projects.osparc.json
-        assert len(projects) == 4 + 1
+        assert len(projects) == 3 + 1

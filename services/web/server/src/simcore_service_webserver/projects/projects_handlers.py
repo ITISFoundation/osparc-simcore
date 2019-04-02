@@ -3,15 +3,23 @@
 
 import json
 import logging
+from typing import Dict, List
 
 from aiohttp import web
+from jsonschema import ValidationError
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.application_keys import (APP_DB_ENGINE_KEY,
+                                         APP_JSONSCHEMA_SPECS_KEY)
+from servicelib.jsonschema_validation import \
+    validate_instance as validate_project
 
 from ..login.decorators import RQT_USERID_KEY, login_required
+from .config import CONFIG_SECTION_NAME
+from .projects_exceptions import (ProjectInvalidRightsError,
+                                  ProjectNotFoundError)
 from .projects_fakes import Fake
 from .projects_models import ProjectDB
-from .projects_exceptions import ProjectNotFoundError, ProjectInvalidRightsError
+
 log = logging.getLogger(__name__)
 
 
@@ -20,6 +28,11 @@ ANONYMOUS_UID = -1 # For testing purposes
 @login_required
 async def create_projects(request: web.Request):
     project = await request.json()
+    try:
+        _validate(request.app, [project])
+    except ValidationError:
+        raise web.HTTPBadRequest
+
     pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
     try:
         await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
@@ -37,6 +50,7 @@ async def list_projects(request: web.Request):
     projects_list = []
     if ptype in ("template", "all"):
         projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
+        projects_list += await ProjectDB.load_template_projects(db_engine=request.app[APP_DB_ENGINE_KEY])
 
     if ptype in ("user", "all"):
         projects_list += await ProjectDB.load_user_projects(user_id=uid, db_engine=request.app[APP_DB_ENGINE_KEY])
@@ -46,6 +60,9 @@ async def list_projects(request: web.Request):
 
     stop = min(start+count, len(projects_list))
     projects_list = projects_list[start:stop]
+    # validate response
+    _validate(request.app, projects_list)
+
     return {'data': projects_list}
 
 
@@ -55,6 +72,7 @@ async def get_project(request: web.Request):
 
     try:
         project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        _validate(request.app, [project])
         return {'data': project}
     except ProjectNotFoundError:
         raise web.HTTPNotFound
@@ -79,6 +97,11 @@ async def replace_project(request: web.Request):
 
     new_values = await request.json()
     try:
+        _validate(request.app, [new_values])
+    except ValidationError:
+        raise web.HTTPBadRequest
+
+    try:
         await ProjectDB.update_user_project(new_values, uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectNotFoundError:
         raise web.HTTPNotFound
@@ -93,3 +116,9 @@ async def delete_project(request: web.Request):
         raise web.HTTPNotFound
 
     raise web.HTTPNoContent(content_type='application/json')
+
+
+def _validate(app: web.Application, projects: List[Dict]):
+    project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
+    for project in projects:
+        validate_project(project, project_schema)

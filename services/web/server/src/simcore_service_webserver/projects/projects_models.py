@@ -72,7 +72,7 @@ def _convert_to_schema_names(project_db_data) -> Dict:
             continue
         converted_value = value
         if isinstance(value, datetime):
-            converted_value = value.strftime('%Y-%m-%dT%H:%M:%SZ')
+            converted_value = "{}Z".format(value.isoformat())
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -120,6 +120,24 @@ class ProjectDB:
         async with db_engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).select_from(joint_table).where(user_to_projects.c.user_id == user_id)
+
+            async for row in conn.execute(query):
+                result_dict = {key:value for key,value in row.items()}
+                log.debug("found project: %s", result_dict)
+                projects_list.append(_convert_to_schema_names(result_dict))
+        return projects_list
+
+    @classmethod
+    async def load_template_projects(cls, db_engine) -> List[Dict]:
+        """ loads the template project from the db
+
+        """
+
+        log.info("Loading template projects")
+        projects_list = []
+        async with db_engine.acquire() as conn:
+            query = select([projects]).\
+                where(projects.c.type == ProjectType.TEMPLATE)
 
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
