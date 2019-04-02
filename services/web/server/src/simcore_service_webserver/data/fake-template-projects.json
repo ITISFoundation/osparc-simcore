@@ -335,7 +335,7 @@
         "version": "1.0.0",
         "label": "Clancy 0D solver (2)",
         "inputs": {
-          "Na": 10,
+          "Na": 5,
           "Kr": 0,
           "BCL": 200,
           "NBeats": 5,
@@ -387,7 +387,7 @@
         "version": "1.0.0",
         "label": "Clancy 0D solver (3)",
         "inputs": {
-          "Na": 20,
+          "Na": 10,
           "Kr": 0,
           "BCL": 200,
           "NBeats": 5,
@@ -439,7 +439,7 @@
         "version": "1.0.0",
         "label": "Clancy 0D solver (4)",
         "inputs": {
-          "Na": 30,
+          "Na": 15,
           "Kr": 0,
           "BCL": 200,
           "NBeats": 5,
