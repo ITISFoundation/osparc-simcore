@@ -22,7 +22,7 @@ def docker_swarm(docker_client):
     docker_client.swarm.init()
     yield
     # teardown
-    assert docker_client.swarm.leave(force=True) == True
+    assert docker_client.swarm.leave(force=True)
 
 @pytest.fixture(scope='module')
 def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
