@@ -212,9 +212,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         const simulatorKey = this.getNode().getKey();
         const newEntry = thisClass.createConceptSettingData(simulatorKey, settingsKey, itemKey);
         const model = qx.data.marshal.Json.createModel(newEntry, true);
-        globalSetting.getChildren()
-          .push(model);
-        globalSetting.open();
+        globalSetting.getChildren().push(model);
       }
     },
 
