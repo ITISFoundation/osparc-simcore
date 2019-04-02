@@ -171,34 +171,33 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     if (mapper.defaultValue) {
       const defValues = mapper["defaultValue"];
       for (const defValueId in defValues) {
-          let newBranch = {
-            key: defValueId,
-            label: defValueId.replace("-UUID", ""),
+        let newBranch = {
+          key: defValueId,
+          label: defValueId.replace("-UUID", ""),
+          nodeKey: node.getKey(),
+          portKey: "myPort",
+          isDir: true,
+          children: []
+        };
+        let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
+        const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
+        if (itemProps) {
+          let form = new qxapp.component.form.Auto(itemProps, this.getNode());
+          let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+          newItemBranch["propsWidget"] = propsWidget;
+        }
+        data.children.push(newItemBranch);
+        const values = defValues[defValueId];
+        for (let j=0; j<values.length; j++) {
+          let newLeaf = {
+            key: values[j],
+            label: values[j],
             nodeKey: node.getKey(),
             portKey: "myPort",
-            isDir: true,
-            children: []
+            isDir: true
           };
-          let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
-          if (itemProps) {
-            let form = new qxapp.component.form.Auto(itemProps, this.getNode());
-            let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-            newItemBranch["propsWidget"] = propsWidget;
-          }
-          data.children.push(newItemBranch);
-          const values = defValues[defValueId];
-          for (let j=0; j<values.length; j++) {
-            let newLeaf = {
-              key: values[j],
-              label: values[j],
-              nodeKey: node.getKey(),
-              portKey: "myPort",
-              isDir: true
-            };
-            let newItemLeaf = qx.data.marshal.Json.createModel(newLeaf, true);
-            newItemBranch.getChildren().push(newItemLeaf);
-          }
+          let newItemLeaf = qx.data.marshal.Json.createModel(newLeaf, true);
+          newItemBranch.getChildren().push(newItemLeaf);
         }
       }
     }
