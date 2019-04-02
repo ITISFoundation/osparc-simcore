@@ -66,6 +66,10 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
     )
 
     assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], "{} is missing from configuration".format(CONFIG_SECTION_NAME)
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    if not cfg["enabled"]:
+        logger.warning("'%s' explicitly disabled in config", __name__)
+        return
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -77,7 +81,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
     app.router.add_routes(routes)
 
     # get project jsonschema definition
-    project_schema_location = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]['location']
+    project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
     specs = loop.run_until_complete( get_specs(project_schema_location) )
     if APP_JSONSCHEMA_SPECS_KEY in app:
@@ -87,7 +91,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
 
     if enable_fake_data:
         # injects fake projects to User with id=1
-        Fake.load_user_projects(user_id=1)
+        # Fake.load_user_projects(user_id=1)
         Fake.load_template_projects()
 
 
