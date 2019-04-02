@@ -45,7 +45,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     }
 
     // Transition effect
-    this.setDecorator("panelview-collapse-transition");
+    this.setDecorator("panelview");
 
     // Attach handlers
     this.__attachEventHandlers();
@@ -92,7 +92,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (this.getContent()) {
         this.__caret.setSource(isVisible ? this.self().LESS_CARET : this.self().MORE_CARET);
         if (isVisible) {
-          this.__innerContainer.show();
           if (this.__layoutFlex) {
             this.setLayoutProperties({
               flex: this.__layoutFlex
@@ -109,17 +108,17 @@ qx.Class.define("qxapp.desktop.PanelView", {
             this.__innerContainer.exclude();
           }
         }
-        this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-collapse-transition");
         this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
       }
     },
 
     _applyContent: function(content, oldContent) {
       if (this.__innerContainer === null) {
-        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
           appearance: "panelview-content",
           decorator: "panelview-content",
-          visibility: this.getContentVisibility() ? "visible" : "excluded"
+          visibility: this.getContentVisibility() ? "visible" : "excluded",
+          padding: 0
         });
         this._addAt(this.__innerContainer, 1, {
           flex: 1
@@ -132,16 +131,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
           }
         }, this);
 
-        this.__innerContainer.addListenerOnce("appear", () => {
-          this.__innerContainer.getContentElement().getDomElement()
-            .addEventListener("transitionend", () => {
-              this.__innerContainer.setDecorator("panelview-content");
-              if (this.__innerContainer.getHeight() === 0) {
-                this.__innerContainer.exclude();
-              }
-            });
-        }, this);
-
         content.addListenerOnce("appear", () => {
           content.getContentElement().getDomElement().style.transform = "translateZ(0)";
         });
@@ -149,11 +138,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
       this.__innerContainer.removeAll();
       content.setMinHeight(0);
-      this.__innerContainer.add(content, {
-        top: 0,
-        right: 0,
-        left: 0
-      });
+      this.__innerContainer.add(content);
 
       if (this.__caret === null) {
         this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET).set({

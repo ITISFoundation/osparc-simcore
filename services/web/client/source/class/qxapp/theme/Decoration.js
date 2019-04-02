@@ -21,14 +21,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
   decorations: {
 
-    "panelview-content": {
-      decorator: qx.ui.decoration.MSingleBorder,
-      style: {
-        width: 1,
-        color: "border"
-      }
-    },
-
     "service-tree": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
@@ -36,17 +28,18 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-collapse-transition": {
+    "panelview": {
       style: {
-        transitionProperty: ["height", "top"],
+        transitionProperty: "top",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
     },
 
-    "panelview-open-collapse-transition": {
-      include: "panelview-content",
+    "panelview-content": {
       style: {
+        width: 1,
+        color: "border",
         transitionProperty: ["height", "top"],
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
