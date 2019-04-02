@@ -144,8 +144,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     __createDragMechanism: function(uiPort, portKey) {
       uiPort.set({
-        draggable: true,
-        decorator: "outputPort"
+        draggable: true
       });
       uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
@@ -166,16 +165,20 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       const msgCb = decoratorName => msg => {
         const compareFn = msg.getData();
         if (compareFn(this.getNode().getNodeId(), this.__portId)) {
-          this.setDecorator(decoratorName);
+          if (decoratorName) {
+            this.setDecorator(decoratorName);
+          } else {
+            this.resetDecorator();
+          }
         }
       };
       this.addListener("appear", () => {
         qx.event.message.Bus.getInstance().subscribe("inputFocus", msgCb("outputPortHighlighted"));
-        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb("outputPort"));
+        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb());
       });
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("inputFocus", msgCb("outputPortHighlighted"));
-        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb("outputPort"));
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb());
       });
     }
   }
