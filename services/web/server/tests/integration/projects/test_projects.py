@@ -1,0 +1,195 @@
+import json
+import sys
+from copy import deepcopy
+from pathlib import Path
+from typing import Dict, List
+
+import pytest
+from aiohttp import web
+
+from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.session import setup_session
+from utils_login import LoggedUser
+
+API_VERSION = "v0"
+
+# Tests CRUD operations --------------------------------------------
+PREFIX = "/" + API_VERSION
+
+# Selection of core and tool services started in this swarm fixture (integration)
+core_services = [
+    'apihub',
+    'postgres'
+]
+
+tool_services = [
+    'adminer'
+]
+
+@pytest.fixture(scope='session')
+def here() -> Path:
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+@pytest.fixture
+def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+    port = app_config["main"]["port"] = aiohttp_unused_port()
+    app_config['main']['host'] = '127.0.0.1'
+
+    assert app_config["rest"]["version"] == API_VERSION
+    assert API_VERSION in app_config["rest"]["location"]
+
+    app_config['storage']['enabled'] = False
+    app_config['rabbit']['enabled'] = False
+
+    app = web.Application()
+    app[APP_CONFIG_KEY] = app_config
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app, debug=True)
+    setup_login(app)
+    setup_projects(app,
+        enable_fake_data=False, # no fake data
+        disable_login=False
+    )
+
+    yield loop.run_until_complete( aiohttp_server(app, port=port) )
+
+@pytest.fixture
+def client(loop, webserver_service, aiohttp_client):
+    client = loop.run_until_complete(aiohttp_client(webserver_service))
+    yield client
+
+@pytest.fixture
+def fake_project(fake_data_dir: Path) -> Dict:
+    yield json.load((fake_data_dir / "fake-project.json").open())
+
+
+async def _list_projects(client) -> List[Dict]:
+    # GET /v0/projects
+    url = client.app.router["list_projects"].url_for()
+    resp = await client.get(url.with_query(start=0, count=3))
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    projects, error = unwrap_envelope(payload)
+    assert not error
+
+    return projects
+
+async def _get_project(client, pid) -> Dict:
+    url = client.app.router["get_project"].url_for(project_id=pid)
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert project
+
+    return project
+
+async def _create_project(client, project):
+    url = client.app.router["create_projects"].url_for()
+    resp = await client.post(url, json=project)
+    payload = await resp.json()
+    assert resp.status == 201, payload
+    project, error = unwrap_envelope(payload)
+    assert project
+    assert not error
+
+async def _update_project(client, project, pid):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=pid)
+    resp = await client.put(url, json=project)
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert not project
+
+async def _delete_project(client, pid):
+    url = client.app.router["delete_project"].url_for(project_id=pid)
+    resp = await client.delete(url)
+    payload = await resp.json()
+    assert resp.status == 204, payload
+
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert not project
+
+async def test_workflow(loop, client, fake_project):
+    async with LoggedUser(client):
+        # empty list
+        projects = await _list_projects(client)
+        assert not projects
+        # creation
+        await _create_project(client, fake_project)
+        # list not empty
+        projects = await _list_projects(client)
+        assert len(projects) == 1
+        assert projects[0] == fake_project
+
+        modified_project = deepcopy(projects[0])
+        modified_project["name"] = "some other name"
+        modified_project["notes"] = "John Raynor killed Kerrigan"
+        modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop("Xw)F")
+        modified_project["workbench"]["ReNamed"]["position"]["x"] = 0.0
+        # modifiy
+        pid = modified_project["uuid"]
+        await _update_project(client, modified_project, pid)
+
+        # list not empty
+        projects = await _list_projects(client)
+        assert len(projects) == 1
+        assert projects[0] == modified_project
+
+        # get
+        project = await _get_project(client, pid)
+        assert project == modified_project
+
+        # delete
+        await _delete_project(client, pid)
+        # list empty
+        projects = await _list_projects(client)
+        assert not projects
+
+async def test_get_invalid_project(loop, client):
+    async with LoggedUser(client):
+        url = client.app.router["get_project"].url_for(project_id="some-fake-id")
+        resp = await client.get(url)
+        payload = await resp.json()
+
+        assert resp.status == 404, payload
+        data, error = unwrap_envelope(payload)
+        assert not data
+        assert error
+
+async def test_update_invalid_project(loop, client):
+    async with LoggedUser(client):
+        url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
+        resp = await client.get(url)
+        payload = await resp.json()
+
+        assert resp.status == 404, payload
+        data, error = unwrap_envelope(payload)
+        assert not data
+        assert error
+
+async def test_delete_invalid_project(loop, client):
+    async with LoggedUser(client):
+        url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
+        resp = await client.delete(url)
+        payload = await resp.json()
+
+        assert resp.status == 404, payload
+        data, error = unwrap_envelope(payload)
+        assert not data
+        assert error

@@ -11,12 +11,23 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from .projects_fakes import Fake
 from .projects_models import ProjectDB
-
+from .projects_exceptions import ProjectNotFoundError, ProjectInvalidRightsError
 log = logging.getLogger(__name__)
 
 
 ANONYMOUS_UID = -1 # For testing purposes
 
+@login_required
+async def create_projects(request: web.Request):
+    project = await request.json()
+    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    try:
+        await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    except ProjectInvalidRightsError:
+        raise web.HTTPUnauthorized
+
+    raise web.HTTPCreated(text=json.dumps(project),
+                          content_type='application/json')
 
 @login_required
 async def list_projects(request: web.Request):
@@ -39,27 +50,14 @@ async def list_projects(request: web.Request):
 
 
 @login_required
-async def create_projects(request: web.Request):
-    project = await request.json()
-    # TODO: validate here
-    #TODO: create as template .. ?type=template
-
-    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
-
-    await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
-
-    raise web.HTTPCreated(text=json.dumps(project),
-                          content_type='application/json')
-
-
-@login_required
 async def get_project(request: web.Request):
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
-
-    return {'data': project}
-
+    try:
+        project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        return {'data': project}
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound
 
 @login_required
 async def replace_project(request: web.Request):
@@ -80,14 +78,18 @@ async def replace_project(request: web.Request):
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     new_values = await request.json()
-    # TODO: validate project data
-
-    await ProjectDB.update_user_project(new_values, uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    try:
+        await ProjectDB.update_user_project(new_values, uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound
 
 @login_required
 async def delete_project(request: web.Request):
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    await ProjectDB.delete_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    try:
+        await ProjectDB.delete_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound
 
     raise web.HTTPNoContent(content_type='application/json')

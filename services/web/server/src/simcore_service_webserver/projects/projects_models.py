@@ -10,8 +10,10 @@ from typing import Dict, List
 
 import sqlalchemy as sa
 from change_case import ChangeCase
-from sqlalchemy.sql import select, and_
+from psycopg2 import IntegrityError
+from sqlalchemy.sql import and_, select
 
+from .projects_exceptions import ProjectNotFoundError, ProjectInvalidRightsError
 from simcore_sdk.models import metadata
 
 from ..db_models import users
@@ -93,10 +95,18 @@ class ProjectDB:
                 result = await conn.execute(query)
                 row = await result.fetchone()
                 project_id = row["id"]
-                query = user_to_projects.insert().values(
-                    user_id=user_id,
-                    project_id=project_id)
-                await conn.execute(query)
+                try:
+                    query = user_to_projects.insert().values(
+                        user_id=user_id,
+                        project_id=project_id)
+                    await conn.execute(query)
+                except IntegrityError as exc:
+                    log.exception("Unregistered user trying to add project")
+                    # rollback projects database
+                    query = projects.delete().\
+                        where(projects.c.id == project_id)
+                    await conn.execute(query)
+                    raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
 
     @classmethod
@@ -130,6 +140,8 @@ class ProjectDB:
                     where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
             result = await conn.execute(query)
             row = await result.fetchone()
+            if not row:
+                raise ProjectNotFoundError(project_uuid)
             result_dict = {key:value for key,value in row.items()}
             log.info("found project: %s", result_dict)
             return _convert_to_schema_names(result_dict)
@@ -147,7 +159,10 @@ class ProjectDB:
                     where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
             result = await conn.execute(query)
             # ensure we have found one
-            row = await result.fetchone()
+            rows = await result.fetchall()
+            if not rows:
+                raise ProjectNotFoundError(project_uuid)
+            row = rows[0]
             # now update it
             #FIXME: E1120:No value for argument 'dml' in method call
             # pylint: disable=E1120
@@ -170,6 +185,9 @@ class ProjectDB:
             result = await conn.execute(query)
             # ensure we have found one
             rows = await result.fetchall()
+            if not rows:
+                # no project found
+                raise ProjectNotFoundError(project_uuid)
             if len(rows) == 1:
                 row = rows[0]
                 # now let's delete the link to the user
