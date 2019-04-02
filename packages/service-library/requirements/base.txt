@@ -1,5 +1,6 @@
 aiohttp
 openapi-core
-werkzeug
+jsonschema
 pyyaml>=4.2b1
 ujson
+werkzeug
