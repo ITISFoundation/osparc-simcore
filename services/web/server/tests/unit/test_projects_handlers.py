@@ -42,7 +42,10 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
             "version": "v0",
             "location": str(api_specs_dir / API_VERSION / "openapi.yaml")
         },
-        "db": {"enabled": False} # inits postgres_service
+        "db": {"enabled": False}, # inits postgres_service,
+        "projects": {
+            "location": str(api_specs_dir / API_VERSION / "components/schemas/project-v0.0.1.json")
+        }
     }
 
     setup_db(app)
