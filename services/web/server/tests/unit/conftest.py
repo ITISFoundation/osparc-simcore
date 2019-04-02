@@ -79,4 +79,5 @@ def light_test_configfile(mock_dir):
 
 @pytest.fixture
 def fake_project(fake_data_dir: Path) -> Dict:
-    yield json.load((fake_data_dir / "fake-project.json").open())
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        yield json.load(fp)

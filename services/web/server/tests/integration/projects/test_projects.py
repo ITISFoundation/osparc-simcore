@@ -75,7 +75,8 @@ def client(loop, webserver_service, aiohttp_client):
 
 @pytest.fixture
 def fake_project(fake_data_dir: Path) -> Dict:
-    yield json.load((fake_data_dir / "fake-project.json").open())
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        yield json.load(fp)
 
 
 async def _list_projects(client) -> List[Dict]:
