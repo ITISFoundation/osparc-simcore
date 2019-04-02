@@ -49,7 +49,7 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     const backgroundImage = this.__backgroundImage = new qx.ui.basic.Image().set({
       scale: true
     });
-    const padding = 0; // different padding to  0 triggers resize...
+    const padding = 0; // different padding to 0 triggers resize...
     this._add(backgroundImage, {
       top: padding,
       right: padding,
