@@ -59,6 +59,22 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         label: "Voltage-Sensor"
       }],
 
+      "defaultLFGrids": [{
+        key: "Automatic-Grid-UUID",
+        label: "Automatic"
+      }, {
+        key: "Manual-Grid-UUID",
+        label: "Manual"
+      }],
+
+      "defaultLFVoxels": [{
+        key: "Automatic-Voxel-UUID",
+        label: "Automatic"
+      }, {
+        key: "Manual-Voxel-UUID",
+        label: "Manual"
+      }],
+
       "sensorSettingAPI": [{
         key: "Field-Sensor-UUID",
         label: "LF Field-Sensor (Overall Field)"
@@ -230,7 +246,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
                 leaf: "simcore/services/dynamic/modeler/webserver"
               },
               defaultValue: {
-                "Neumann-UUID": [
+                "Dirichlet-UUID": [
                   "Plane X+-UUID",
                   "Plane X--UUID",
                   "Plane Y+-UUID",
@@ -374,12 +390,17 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
           }
         },
         "Voltage-Sensor-UUID": {
-          "revertDirection": {
-            displayOrder: 0,
-            label: "Revert Direction",
-            unit: "",
-            type: "boolean",
-            defaultValue: false
+          key: "Voltage-Sensor-UUID",
+          version: "1.0.0",
+          name: "Voltage Sensor",
+          inputs: {
+            "revertDirection": {
+              displayOrder: 0,
+              label: "Revert Direction",
+              unit: "",
+              type: "boolean",
+              defaultValue: false
+            }
           }
         }
       },
@@ -389,6 +410,14 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
           key: "simcore/services/dynamic/itis/s4l/simulator/lf/grid",
           version: "1.0.0",
           name: "Grid",
+          inputsDefault: {
+            defaultLFGrids: {
+              displayOrder: 0,
+              label: "Default Grid Settings",
+              description: "Default Grid Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
           inputs: {
             homogeneous: {
               displayOrder: 0,
@@ -403,6 +432,67 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               description: "Resolution in mm",
               type: "number",
               defaultValue: 1
+            },
+            mapper: {
+              displayOrder: 2,
+              label: "Grid",
+              description: "Grid",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/dynamic/modeler/webserver"
+              },
+              defaultValue: {
+                "Automatic-Grid-UUID": []
+              }
+            }
+          }
+        },
+        "Automatic-Grid-UUID": {
+          key: "Automatic-Grid-UUID",
+          version: "1.0.0",
+          name: "Automatic Grid",
+          inputs: {
+            "refinment": {
+              displayOrder: 0,
+              label: "Refinment",
+              unit: "",
+              type: "string",
+              defaultValue: "Default"
+            },
+            "groupName": {
+              displayOrder: 1,
+              label: "Group Name",
+              unit: "",
+              type: "string",
+              defaultValue: ""
+            }
+          }
+        },
+        "Manual-Grid-UUID": {
+          key: "Manual-Grid-UUID",
+          version: "1.0.0",
+          name: "Manual Grid",
+          inputs: {
+            "maxStep": {
+              displayOrder: 0,
+              label: "Maximum Step",
+              unit: "mm",
+              type: "number",
+              defaultValue: 1
+            },
+            "geomRes": {
+              displayOrder: 1,
+              label: "Geometry Resolution",
+              unit: "mm",
+              type: "number",
+              defaultValue: 1
+            },
+            "priority": {
+              displayOrder: 2,
+              label: "Priority",
+              unit: "",
+              type: "number",
+              defaultValue: 50
             }
           }
         }
@@ -413,6 +503,14 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
           key: "simcore/services/dynamic/itis/s4l/simulator/lf/voxel",
           version: "1.0.0",
           name: "Voxels",
+          inputsDefault: {
+            defaultLFVoxels: {
+              displayOrder: 0,
+              label: "Default Voxel Settings",
+              description: "Default Voxel Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
           inputs: {
             voxelEngine: {
               displayOrder: 0,
@@ -434,6 +532,74 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               description: "Congruent Subgrid Voxeling",
               type: "boolean",
               defaultValue: true
+            },
+            mapper: {
+              displayOrder: 3,
+              label: "Voxel",
+              description: "Voxel",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/dynamic/modeler/webserver"
+              },
+              defaultValue: {
+                "Automatic-Voxel-UUID": []
+              }
+            }
+          }
+        },
+        "Automatic-Voxel-UUID": {
+          key: "Automatic-Voxel-UUID",
+          version: "1.0.0",
+          name: "Automatic Voxel",
+          inputs: {
+            "priority": {
+              displayOrder: 0,
+              label: "Priority",
+              unit: "",
+              type: "number",
+              defaultValue: 0
+            },
+            "useCons": {
+              displayOrder: 1,
+              label: "Use Constraints",
+              unit: "",
+              type: "boolean",
+              defaultValue: false
+            }
+          }
+        },
+        "Manual-Voxel-UUID": {
+          key: "Manual-Voxel-UUID",
+          version: "1.0.0",
+          name: "Manual Voxel",
+          inputs: {
+            "priority": {
+              displayOrder: 0,
+              label: "Priority",
+              unit: "",
+              type: "number",
+              defaultValue: 0
+            },
+            "region": {
+              displayOrder: 1,
+              label: "Characteristic Region",
+              unit: "",
+              type: "string",
+              defaultValue: "Volume"
+            },
+            "maxNormDist": {
+              displayOrder: 2,
+              label: "Max Normal Distance",
+              unit: "",
+              type: "number",
+              defaultValue: 100
+            },
+            "useConstraints": {
+              displayOrder: 3,
+              label: "Use Constraints",
+              unit: "",
+              type: "boolean",
+              defaultValue: false
             }
           }
         }
@@ -480,169 +646,6 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               type: "string",
               defaultValue: ""
             }
-          }
-        }
-      },
-
-      "defaultLFMaterials": {
-        "Air-UUID": {
-          "massDensity": {
-            "displayOrder": 0,
-            "label": "Mass Density",
-            "unit": "kg/m^3",
-            "type": "number",
-            "defaultValue": 1.205
-          },
-          "electricConductivity": {
-            "displayOrder": 1,
-            "label": "Electric Conductivity",
-            "unit": "S/m",
-            "type": "number",
-            "defaultValue": 0.0
-          },
-          "relativePermittivity": {
-            "displayOrder": 2,
-            "label": "Relative Permittivity",
-            "unit": "",
-            "type": "number",
-            "defaultValue": 1.0
-          },
-          "magneticConductivity": {
-            "displayOrder": 3,
-            "label": "Magnetic Conductivity",
-            "unit": "Ohm/m",
-            "type": "number",
-            "defaultValue": 0.0
-          },
-          "relativePermeability": {
-            "displayOrder": 4,
-            "label": "Relative Permeability",
-            "unit": "",
-            "type": "number",
-            "defaultValue": 1.0
-          }
-        },
-        "Dielectric-UUID": {
-          "massDensity": {
-            displayOrder: 0,
-            label: "Mass Density",
-            unit: "kg/m3",
-            type: "number",
-            defaultValue: 1000
-          },
-          "electricConductivity": {
-            displayOrder: 1,
-            label: "Electric Conductivity",
-            unit: "S/m",
-            type: "number",
-            defaultValue: 0
-          },
-          "electricRelativePermitivity": {
-            displayOrder: 2,
-            label: "Electric Relative Permittivity",
-            unit: "",
-            type: "number",
-            defaultValue: 1
-          },
-          "magneticRelativePermeability": {
-            displayOrder: 3,
-            label: "Magnetic Relative Permeability",
-            unit: "",
-            type: "number",
-            defaultValue: 1
-          },
-          "magneticConductivity": {
-            displayOrder: 4,
-            label: "Magnetic Conductivity",
-            unit: "Ohm/m",
-            type: "number",
-            defaultValue: 0
-          }
-        }
-      },
-
-      "defaultLFBoundaries": {
-        "Dirichlet-UUID": {
-          "constantPotential": {
-            displayOrder: 0,
-            label: "Constant Potential",
-            unit: "V",
-            type: "number",
-            defaultValue: 0
-          },
-          "phase": {
-            displayOrder: 1,
-            label: "Phase",
-            unit: "deg",
-            type: "number",
-            defaultValue: 0
-          }
-        },
-        "Neumann-UUID": {
-          "normalDerivative": {
-            displayOrder: 0,
-            label: "Normal Derivative",
-            unit: "V/m",
-            type: "number",
-            defaultValue: 0
-          },
-          "phase": {
-            displayOrder: 1,
-            label: "Phase",
-            unit: "deg",
-            type: "number",
-            defaultValue: 0
-          }
-        },
-        "Flux-UUID": {
-          "constantFlux": {
-            displayOrder: 0,
-            label: "Constant Flux",
-            unit: "",
-            type: "number",
-            defaultValue: 0
-          },
-          "phase": {
-            displayOrder: 1,
-            label: "Phase",
-            unit: "deg",
-            type: "number",
-            defaultValue: 0
-          }
-        }
-      },
-
-      "defaultLFSensors": {
-        "Field-Sensor-UUID": {
-          "recordEField": {
-            displayOrder: 0,
-            label: "Record E-Field",
-            unit: "",
-            type: "boolean",
-            defaultValue: true
-          },
-          "recordHField": {
-            displayOrder: 1,
-            label: "Record H-Field",
-            unit: "",
-            type: "boolean",
-            defaultValue: true
-          },
-          "recordMagnetic": {
-            displayOrder: 3,
-            label: "Record Magnetic Vector-Potential-Field",
-            unit: "",
-            type: "boolean",
-            defaultValue: true
-          }
-        },
-        "Voltage-Sensor-UUID": {
-          "revertDirection": {
-            displayOrder: 0,
-            label: "Revert Direction",
-            unit: "",
-            type: "boolean",
-            defaultValue: false
           }
         }
       }

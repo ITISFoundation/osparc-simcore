@@ -407,7 +407,6 @@ qx.Class.define("qxapp.data.Store", {
       return builtInServices;
     },
 
-
     getBuiltInServicesDeprecated: function() {
       return [{
         key: "simcore/services/demodec/container/itis/s4l/simulator/lf",

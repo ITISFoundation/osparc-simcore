@@ -1631,6 +1631,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               case "defaultLFMaterials":
               case "defaultLFBoundaries":
               case "defaultLFSensors":
+              case "defaultLFGrids":
+              case "defaultLFVoxels":
               case "sensorSettingAPI":
                 return qxapp.dev.fake.lf.Data.getItemList(portKey);
             }
