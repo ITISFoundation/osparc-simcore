@@ -403,7 +403,13 @@ qx.Class.define("qxapp.data.Store", {
             type: "node-output-tree-api-v0.0.1"
           }
         }
-      }, {
+      }];
+      return builtInServices;
+    },
+
+
+    getBuiltInServicesDeprecated: function() {
+      return [{
         key: "simcore/services/demodec/container/itis/s4l/simulator/lf",
         version: "0.0.0",
         type: "container",
@@ -1203,7 +1209,6 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }];
-      return builtInServices;
     },
 
     getFakeServices: function() {
