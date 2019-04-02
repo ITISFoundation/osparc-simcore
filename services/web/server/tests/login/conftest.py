@@ -24,6 +24,7 @@ from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.application_config import app_schema as app_schema
 
+sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
 
 @pytest.fixture(scope="session")
 def here():
