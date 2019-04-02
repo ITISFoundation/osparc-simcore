@@ -1,7 +1,6 @@
 """
     Object Relational Models and access to DB
 """
-# pylint: disable=E1101
 
 import enum
 import logging
@@ -13,10 +12,11 @@ from change_case import ChangeCase
 from psycopg2 import IntegrityError
 from sqlalchemy.sql import and_, select
 
-from .projects_exceptions import ProjectNotFoundError, ProjectInvalidRightsError
 from simcore_sdk.models import metadata
 
 from ..db_models import users
+from .projects_exceptions import (ProjectInvalidRightsError,
+                                  ProjectNotFoundError)
 
 log = logging.getLogger(__name__)
 

@@ -1,3 +1,9 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import pytest
 import sqlalchemy as sa
 import tenacity
