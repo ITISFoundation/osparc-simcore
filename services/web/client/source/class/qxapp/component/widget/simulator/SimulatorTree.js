@@ -73,6 +73,20 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       if ("inputs" in metadata && "mapper" in metadata.inputs) {
         newEntry.isDir = true;
         newEntry.children = [];
+        const mapper = metadata.inputs.mapper;
+        if ("defaultValue" in mapper) {
+          const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+          const defaultInputs = mapper.defaultValue;
+          for (const defaultInputKey in defaultInputs) {
+            const concSet = thisClass.createConceptSettingData(simulatorKey, settingKey, defaultInputKey);
+            newEntry.children.push(concSet);
+            const values = defaultInputs[defaultInputKey];
+            for (let i=0; i<values.length; i++) {
+              const comp = thisClass.createComponentData(values[i]);
+              concSet.children.push(comp);
+            }
+          }
+        }
       }
       return newEntry;
     },
@@ -87,6 +101,18 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         isRoot: false,
         isDir: true,
         children: []
+      };
+      return newEntry;
+    },
+
+    createComponentData: function(itemKey) {
+      let newEntry = {
+        key: itemKey,
+        label: itemKey.replace("-UUID", ""),
+        version: null,
+        metadata: null,
+        isRoot: false,
+        isDir: false
       };
       return newEntry;
     }
