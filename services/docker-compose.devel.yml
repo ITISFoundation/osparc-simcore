@@ -15,6 +15,7 @@ services:
     volumes:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
+      - ../api:/devel/services/api
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
