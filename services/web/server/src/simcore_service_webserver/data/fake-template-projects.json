@@ -272,11 +272,11 @@
         "label": "cc-0d-viewer",
         "inputs": {
           "vm_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
             "output": "out_4"
           },
           "all_results_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
             "output": "out_1"
           }
         },
