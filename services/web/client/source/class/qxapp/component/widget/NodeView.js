@@ -45,7 +45,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.SlideBar("vertical");
     inputNodesLayout.set({
-      appearance: "sidebar"
+      appearance: "sidepanel"
     });
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
@@ -55,7 +55,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     inputNodesLayout.setLayout(new qx.ui.layout.VBox());
     inputNodesLayout.add(inputLabel);
     this.add(inputNodesLayout, 0);
-
 
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({

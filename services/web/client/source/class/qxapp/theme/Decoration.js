@@ -40,7 +40,15 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         width: 1,
         color: "border",
-        transitionProperty: ["height", "top"],
+        transitionProperty: "height",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "panelview-content-noborder": {
+      style: {
+        transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
@@ -54,6 +62,28 @@ qx.Theme.define("qxapp.theme.Decoration", {
         shadowSpreadRadius: 2,
         shadowLength: [0, 0],
         inset: true
+      }
+    },
+
+    "window-small-cap": {
+      include: "window",
+      style: {
+        width: 0,
+        radius: 3
+      }
+    },
+
+    "workbench-small-cap-captionbar": {
+      style: {
+        width: 0
+      }
+    },
+
+    "sidepanel": {
+      style: {
+        transitionProperty: ["left"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
       }
     }
   }
