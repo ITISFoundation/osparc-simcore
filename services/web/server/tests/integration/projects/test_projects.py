@@ -1,3 +1,9 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import json
 import sys
 from copy import deepcopy
@@ -12,6 +18,7 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.projects_handlers import Fake
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
@@ -193,3 +200,22 @@ async def test_delete_invalid_project(loop, client):
         data, error = unwrap_envelope(payload)
         assert not data
         assert error
+
+@pytest.fixture
+def fake_db():
+    Fake.reset()
+    yield Fake
+    Fake.reset()
+
+async def test_list_template_projects(loop, client, fake_db):
+    fake_db.load_template_projects()
+    async with LoggedUser(client):
+        url = client.app.router["list_projects"].url_for()
+        resp = await client.get(url.with_query(type="template"))
+        payload = await resp.json()
+        assert resp.status == 200, payload
+
+        projects, error = unwrap_envelope(payload)
+        assert not error
+        # fake-template-projects.json + fake-template-projects.osparc.json
+        assert len(projects) == 4 + 1
