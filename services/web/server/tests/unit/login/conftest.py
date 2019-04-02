@@ -24,7 +24,7 @@ from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.application_config import app_schema as app_schema
 
-sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
+sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent.parent / 'helpers'))
 
 @pytest.fixture(scope="session")
 def here():
@@ -36,7 +36,7 @@ def mock_dir(here):
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.parent.parent.resolve()
+    root_dir = here.parent.parent.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
