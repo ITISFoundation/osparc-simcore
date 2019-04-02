@@ -120,6 +120,90 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               }]
             }
           }
+        },
+        "Air-UUID": {
+          key: "Air-UUID",
+          version: "1.0.0",
+          name: "Air",
+          inputs: {
+            "massDensity": {
+              "displayOrder": 0,
+              "label": "Mass Density",
+              "unit": "kg/m^3",
+              "type": "number",
+              "defaultValue": 1.205
+            },
+            "electricConductivity": {
+              "displayOrder": 1,
+              "label": "Electric Conductivity",
+              "unit": "S/m",
+              "type": "number",
+              "defaultValue": 0.0
+            },
+            "relativePermittivity": {
+              "displayOrder": 2,
+              "label": "Relative Permittivity",
+              "unit": "",
+              "type": "number",
+              "defaultValue": 1.0
+            },
+            "magneticConductivity": {
+              "displayOrder": 3,
+              "label": "Magnetic Conductivity",
+              "unit": "Ohm/m",
+              "type": "number",
+              "defaultValue": 0.0
+            },
+            "relativePermeability": {
+              "displayOrder": 4,
+              "label": "Relative Permeability",
+              "unit": "",
+              "type": "number",
+              "defaultValue": 1.0
+            }
+          }
+        },
+        "Dielectric-UUID": {
+          key: "Dielectric-UUID",
+          version: "1.0.0",
+          name: "Dielectric",
+          inputs: {
+            "massDensity": {
+              displayOrder: 0,
+              label: "Mass Density",
+              unit: "kg/m3",
+              type: "number",
+              defaultValue: 1000
+            },
+            "electricConductivity": {
+              displayOrder: 1,
+              label: "Electric Conductivity",
+              unit: "S/m",
+              type: "number",
+              defaultValue: 0
+            },
+            "electricRelativePermitivity": {
+              displayOrder: 2,
+              label: "Electric Relative Permittivity",
+              unit: "",
+              type: "number",
+              defaultValue: 1
+            },
+            "magneticRelativePermeability": {
+              displayOrder: 3,
+              label: "Magnetic Relative Permeability",
+              unit: "",
+              type: "number",
+              defaultValue: 1
+            },
+            "magneticConductivity": {
+              displayOrder: 4,
+              label: "Magnetic Conductivity",
+              unit: "Ohm/m",
+              type: "number",
+              defaultValue: 0
+            }
+          }
         }
       },
 
@@ -155,6 +239,69 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
                   "Plane Z-"
                 ]
               }]
+            }
+          }
+        },
+        "Dirichlet-UUID": {
+          key: "Dirichlet-UUID",
+          version: "1.0.0",
+          name: "Dirichlet",
+          inputs: {
+            "constantPotential": {
+              displayOrder: 0,
+              label: "Constant Potential",
+              unit: "V",
+              type: "number",
+              defaultValue: 0
+            },
+            "phase": {
+              displayOrder: 1,
+              label: "Phase",
+              unit: "deg",
+              type: "number",
+              defaultValue: 0
+            }
+          }
+        },
+        "Neumann-UUID": {
+          key: "Neumann-UUID",
+          version: "1.0.0",
+          name: "Neumann",
+          inputs: {
+            "normalDerivative": {
+              displayOrder: 0,
+              label: "Normal Derivative",
+              unit: "V/m",
+              type: "number",
+              defaultValue: 0
+            },
+            "phase": {
+              displayOrder: 1,
+              label: "Phase",
+              unit: "deg",
+              type: "number",
+              defaultValue: 0
+            }
+          }
+        },
+        "Flux-UUID": {
+          key: "Flux-UUID",
+          version: "1.0.0",
+          name: "Flux",
+          inputs: {
+            "constantFlux": {
+              displayOrder: 0,
+              label: "Constant Flux",
+              unit: "",
+              type: "number",
+              defaultValue: 0
+            },
+            "phase": {
+              displayOrder: 1,
+              label: "Phase",
+              unit: "deg",
+              type: "number",
+              defaultValue: 0
             }
           }
         }
@@ -196,6 +343,43 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               description: "LF Sensors",
               type: "node-output-tree-api-v0.0.1"
             }
+          }
+        },
+        "Field-Sensor-UUID": {
+          key: "Field-Sensor-UUID",
+          version: "1.0.0",
+          name: "Field Sensor",
+          inputs: {
+            "recordEField": {
+              displayOrder: 0,
+              label: "Record E-Field",
+              unit: "",
+              type: "boolean",
+              defaultValue: true
+            },
+            "recordHField": {
+              displayOrder: 1,
+              label: "Record H-Field",
+              unit: "",
+              type: "boolean",
+              defaultValue: true
+            },
+            "recordMagnetic": {
+              displayOrder: 3,
+              label: "Record Magnetic Vector-Potential-Field",
+              unit: "",
+              type: "boolean",
+              defaultValue: true
+            }
+          }
+        },
+        "Voltage-Sensor-UUID": {
+          "revertDirection": {
+            displayOrder: 0,
+            label: "Revert Direction",
+            unit: "",
+            type: "boolean",
+            defaultValue: false
           }
         }
       },
