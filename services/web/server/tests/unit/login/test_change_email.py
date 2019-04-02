@@ -37,7 +37,6 @@ async def test_change_to_existing_email(client):
 
 
 async def test_change_and_confirm(client, capsys):
-    import pdb; pdb.set_trace()
     cfg = client.app[APP_LOGIN_CONFIG]
 
     url = client.app.router['auth_change_email'].url_for()
