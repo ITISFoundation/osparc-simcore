@@ -72,7 +72,7 @@ def _convert_to_schema_names(project_db_data) -> Dict:
             continue
         converted_value = value
         if isinstance(value, datetime):
-            converted_value = value.isoformat()
+            converted_value = value.strftime('%Y-%m-%dT%H:%M:%SZ')
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
