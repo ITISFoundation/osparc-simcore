@@ -27,14 +27,11 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     this.base(arguments, null, "label", "children");
 
     this.set({
+      openMode: "none",
       node: simulator
     });
 
-    this.set({
-      openMode: "none"
-    });
     this.setDelegate(this.__getDelegate());
-    this.addListener("tap", this.__selectionChanged, this);
 
     this.__populateTree();
 
@@ -45,15 +42,54 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
-    },
-
-    mapper: {
-      nullable: false
     }
   },
 
   events: {
     "selectionChanged": "qx.event.type.Data"
+  },
+
+  statics: {
+    createRootData: function(label) {
+      return {
+        label: label,
+        key: null,
+        metadata: null,
+        isRoot: true,
+        children: []
+      };
+    },
+
+    createGlobalSettingData: function(simulatorKey, settingKey, settingVersion) {
+      const store = qxapp.data.Store.getInstance();
+      const metadata = store.getItem(simulatorKey, settingKey);
+      let newEntry = {
+        key: settingKey,
+        version: settingVersion,
+        metadata: metadata,
+        isRoot: false,
+        isDir: false
+      };
+      if ("inputs" in metadata && "mapper" in metadata.inputs) {
+        newEntry.isDir = true;
+        newEntry.children = [];
+      }
+      return newEntry;
+    },
+
+    createConceptSettingData: function(simulatorKey, settingKey, itemKey) {
+      const store = qxapp.data.Store.getInstance();
+      const metadata = store.getItem(simulatorKey, settingKey, itemKey);
+      let newEntry = {
+        key: itemKey,
+        version: null,
+        metadata: metadata,
+        isRoot: false,
+        isDir: true,
+        children: []
+      };
+      return newEntry;
+    }
   },
 
   members: {
@@ -84,49 +120,6 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
               e.preventDefault();
             }
           });
-          item.addListener("drop", e => {
-            if (e.supportsType("osparc-mapping")) {
-              const from = e.getRelatedTarget();
-              const fromNodeKey = from.getNodeKey();
-              const fromPortKey = from.getPortKey();
-              const to = e.getCurrentTarget();
-              if (from.getLabel() === "20181113_Yoon-sun_V4_preview") {
-                // HACK
-                const mat2ent = qxapp.dev.fake.mat2ent.Data.mat2ent(from.getLabel());
-                for (let i=0; i<mat2ent.length; i++) {
-                  to.getModel().getChildren()
-                    .push(mat2ent[i]);
-                }
-              } else if (from.getModel().getChildren && from.getModel().getChildren().length>0) {
-                // allow folder drag&drop
-                let children = from.getModel().getChildren();
-                for (let i=0; i<children.length; i++) {
-                  let child = children.toArray()[i];
-                  if (!child.getChildren) {
-                    let data = {
-                      key: child.getKey(),
-                      label: child.getLabel(),
-                      nodeKey: from.getNodeKey(),
-                      portKey: from.getPortKey(),
-                      isDir: false
-                    };
-                    this.__createItemAndPush(data, to, fromNodeKey, fromPortKey);
-                  }
-                }
-              } else {
-                let data = {
-                  key: from.getModel(),
-                  label: from.getLabel(),
-                  nodeKey: from.getNodeKey(),
-                  portKey: from.getPortKey(),
-                  isDir: from.getIsDir()
-                };
-                this.__createItemAndPush(data, to, fromNodeKey, fromPortKey);
-              }
-              to.setOpen(true);
-              this.focus();
-            }
-          });
         },
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
@@ -138,95 +131,30 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
           c.bindProperty("isRoot", "isRoot", null, item, id);
           const simulator = this.getNode();
           item.createNode(simulator.getWorkbench());
-          if (item.getNode().getInputsMapper()) {
-            const mapper = item.getNode().getInputsMapper();
-            if (mapper.defaultValue) {
-              const node = this.getNode();
-              const defValues = mapper["defaultValue"];
-              for (let i=0; i<defValues.length; i++) {
-                const defValue = defValues[i];
-                for (const defValueId in defValue) {
-                  let newBranch = {
-                    key: defValueId,
-                    label: defValueId.replace("-UUID", ""),
-                    nodeKey: node.getKey(),
-                    portKey: "myPort",
-                    isDir: true,
-                    children: []
-                  };
-                  let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-                  const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
-                  if (itemProps) {
-                    const itemNode = item.getNode();
-                    const workbench = node.getWorkbench();
-                    let form = new qxapp.component.form.Auto(itemProps, itemNode);
-                    let propsWidget = new qxapp.component.form.renderer.PropForm(form, workbench, itemNode);
-                    newItemBranch["propsWidget"] = propsWidget;
-                  }
-                  // data.children.push(newItemBranch);
-                  item.getChildren().push(newItemBranch);
-                  const values = defValue[defValueId];
-                  for (let j=0; j<values.length; j++) {
-                    let newLeaf = {
-                      key: values[j],
-                      label: values[j],
-                      nodeKey: node.getKey(),
-                      portKey: "myPort",
-                      isDir: true
-                    };
-                    let newItemLeaf = qx.data.marshal.Json.createModel(newLeaf, true);
-                    newItemBranch.getChildren().push(newItemLeaf);
-                  }
-                }
-              }
-            }
-          }
         }
       };
     },
 
     __populateTree: function() {
-      let data = this.__createRootData();
+      const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+      let data = thisClass.createRootData(this.getNode().getLabel());
       let rootModel = qx.data.marshal.Json.createModel(data, true);
       this.setModel(rootModel);
 
+      const simulatorKey = this.getNode().getKey();
       const store = qxapp.data.Store.getInstance();
-      const itemList = store.getItemList(this.getNode().getKey());
+      const itemList = store.getItemList(simulatorKey);
       for (let i=0; i<itemList.length; i++) {
-        const newEntry = this.__createConceptSettingData(itemList[i].key, itemList[i].version);
+        const newEntry = thisClass.createGlobalSettingData(simulatorKey, itemList[i].key, itemList[i].version);
         const model = qx.data.marshal.Json.createModel(newEntry, true);
         this.getModel().getChildren()
           .push(model);
       }
     },
 
-    __createRootData: function() {
-      return {
-        label: this.getNode().getLabel(),
-        key: null,
-        metadata: null,
-        isRoot: true,
-        children: []
-      };
-    },
-
-    __createConceptSettingData: function(settingKey, settingVersion) {
-      const store = qxapp.data.Store.getInstance();
-      const metadata = store.getItem(this.getNode().getKey(), settingKey);
-      let newEntry = {
-        key: settingKey,
-        version: settingVersion,
-        metadata: metadata,
-        isDir: false
-      };
-      if ("inputs" in metadata && "mapper" in metadata.inputs) {
-        newEntry.children = [];
-        newEntry.isDir = true;
-      }
-      return newEntry;
-    },
-
     __initEvents: function() {
+      this.addListener("tap", this.__selectionChanged, this);
+
       this.addListener("keypress", function(keyEvent) {
         let treeSelection = this.getSelection();
         if (treeSelection.length < 1) {
@@ -277,76 +205,28 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       }
     },
 
-    /*
-    addConceptSetting: function(globalSettingsKey, settingKey, itemKey) {
-      data["children"] = [];
-      let newItem = qx.data.marshal.Json.createModel(data, true);
-      to.getModel().getChildren()
-        .push(newItem);
-      const itemProps = qxapp.data.Store.getInstance().getItem(null, settingKey, itemKey);
-      if (itemProps) {
-        let form = new qxapp.component.form.Auto(itemProps, this.getNode());
-        let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-        newItem["propsWidget"] = propsWidget;
+    addConceptSetting: function(settingsKey, itemKey) {
+      const globalSetting = this.__getGlobalSetting(settingsKey);
+      if (globalSetting) {
+        const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+        const simulatorKey = this.getNode().getKey();
+        const newEntry = thisClass.createConceptSettingData(simulatorKey, settingsKey, itemKey);
+        const model = qx.data.marshal.Json.createModel(newEntry, true);
+        globalSetting.getChildren()
+          .push(model);
+        globalSetting.open();
       }
     },
 
-    addComponent: function(globalSettingsKey, settingKey) {
-      let newItem = qx.data.marshal.Json.createModel(data, true);
-      to.getModel().getChildren()
-        .push(newItem);
-    },
-
-    __createItemAndPush2: function(data, to, fromNodeKey, fromPortKey) {
-      const willBeBranch = this.__willBeBranch(fromNodeKey);
-      if (willBeBranch) {
-        this.addConceptSetting(data, to, fromNodeKey, fromPortKey);
-      } else {
-        this.addComponent(data, to, fromNodeKey, fromPortKey);
-      }
-    },
-    */
-
-    __createItemAndPush: function(data, to, fromNodeKey, fromPortKey) {
-      const willBeBranch = this.__willBeBranch(fromNodeKey);
-      if (willBeBranch) {
-        data["children"] = [];
-      }
-      let newItem = qx.data.marshal.Json.createModel(data, true);
-      to.getModel().getChildren()
-        .push(newItem);
-      if (willBeBranch) {
-        // Hmmmm not sure about the double getKey :(
-        const itemProps = qxapp.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
-        if (itemProps) {
-          let form = new qxapp.component.form.Auto(itemProps, this.getNode());
-          let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-          newItem["propsWidget"] = propsWidget;
+    __getGlobalSetting: function(settingsKey) {
+      const children = this.getModel().getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children.toArray()[i];
+        if (child.getKey() === settingsKey) {
+          return child;
         }
       }
-    },
-
-    __willBeBranch: function(candidate) {
-      let isBranch = false;
-      const maps = this.getMapper().maps;
-      if (maps.branch) {
-        if (maps["branch"] === candidate) {
-          isBranch = true;
-        }
-      }
-      const isDefault = candidate === this.getNode().getKey();
-      return isDefault || isBranch;
-    },
-
-    __willBeLeaf: function(candidate) {
-      let isLeave = false;
-      const maps = this.getMapper().maps;
-      if (maps.leaf) {
-        if (maps["leaf"] === candidate) {
-          isLeave = true;
-        }
-      }
-      return isLeave;
+      return null;
     }
   }
 });

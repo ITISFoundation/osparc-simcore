@@ -160,7 +160,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
 
       this.__simulatorActions.addListener("newSetting", e => {
         const data = e.getData();
-        this.__simulatorTree.addChild(data.settingKey, data.itemKey);
+        this.__simulatorTree.addConceptSetting(data.settingKey, data.itemKey);
       }, this);
     },
 
