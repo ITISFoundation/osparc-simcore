@@ -567,11 +567,11 @@ qx.Class.define("qxapp.data.Store", {
               branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
               leaf: "simcore/services/dynamic/modeler/webserver"
             },
-            defaultValue: [{
+            defaultValue: {
               "Air-UUID": [
                 "Background"
               ]
-            }]
+            }
           }
         },
         outputs: {
@@ -616,7 +616,7 @@ qx.Class.define("qxapp.data.Store", {
             maps: {
               leaf: "simcore/services/dynamic/modeler/webserver"
             },
-            defaultValue: [{
+            defaultValue: {
               "Neumann-UUID": [
                 "Plane X+",
                 "Plane X-",
@@ -625,7 +625,7 @@ qx.Class.define("qxapp.data.Store", {
                 "Plane Z+",
                 "Plane Z-"
               ]
-            }]
+            }
           }
         },
         outputs: {
@@ -670,11 +670,11 @@ qx.Class.define("qxapp.data.Store", {
             maps: {
               leaf: "simcore/services/dynamic/modeler/webserver"
             },
-            defaultValue: [{
+            defaultValue: {
               "Field-Sensor-UUID": [
                 "Overall Field"
               ]
-            }]
+            }
           }
         },
         outputs: {

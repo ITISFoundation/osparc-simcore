@@ -36,11 +36,11 @@
  *     branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
  *     leaf: "simcore/services/dynamic/modeler/webserver"
  *   },
- *   defaultValue: [{
+ *   defaultValue: {
  *    "Air-UUID": [
  *       "Background"
  *      ]
- *   }]
+ *   }
  * }
  *
  * *Example*
@@ -170,9 +170,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     };
     if (mapper.defaultValue) {
       const defValues = mapper["defaultValue"];
-      for (let i=0; i<defValues.length; i++) {
-        const defValue = defValues[i];
-        for (const defValueId in defValue) {
+      for (const defValueId in defValues) {
           let newBranch = {
             key: defValueId,
             label: defValueId.replace("-UUID", ""),
@@ -189,7 +187,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             newItemBranch["propsWidget"] = propsWidget;
           }
           data.children.push(newItemBranch);
-          const values = defValue[defValueId];
+          const values = defValues[defValueId];
           for (let j=0; j<values.length; j++) {
             let newLeaf = {
               key: values[j],
