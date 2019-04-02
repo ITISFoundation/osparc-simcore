@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+import sys
+from pathlib import Path
 from typing import Dict
 
 import pytest
@@ -22,6 +24,8 @@ pytest_plugins = [
     "fixtures.celery_service",
     "fixtures.postgres_service"
 ]
+
+sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
 
 log = logging.getLogger(__name__)
 API_VERSION = "v0"

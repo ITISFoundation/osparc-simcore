@@ -49,6 +49,12 @@ def mock_dir(here):
     return dirpath
 
 @pytest.fixture(scope='session')
+def fake_data_dir(here):
+    dirpath = (here / "../data").resolve()
+    assert dirpath.exists()
+    return dirpath
+
+@pytest.fixture(scope='session')
 def docker_compose_file(mock_dir):
     """
       Path to docker-compose configuration files used for testing
@@ -72,5 +78,5 @@ def light_test_configfile(mock_dir):
     return fpath
 
 @pytest.fixture
-def fake_project(mock_dir: Path) -> Dict:
-    yield json.load((mock_dir / "fake-project.json").open())
+def fake_project(fake_data_dir: Path) -> Dict:
+    yield json.load((fake_data_dir / "fake-project.json").open())
