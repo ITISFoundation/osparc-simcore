@@ -115,7 +115,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               },
               defaultValue: {
                 "Air-UUID": [
-                  "Background"
+                  "Background-UUID"
                 ]
               }
             }
@@ -231,12 +231,12 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               },
               defaultValue: {
                 "Neumann-UUID": [
-                  "Plane X+",
-                  "Plane X-",
-                  "Plane Y+",
-                  "Plane Y-",
-                  "Plane Z+",
-                  "Plane Z-"
+                  "Plane X+-UUID",
+                  "Plane X--UUID",
+                  "Plane Y+-UUID",
+                  "Plane Y--UUID",
+                  "Plane Z+-UUID",
+                  "Plane Z--UUID"
                 ]
               }
             }
@@ -331,7 +331,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               },
               defaultValue: {
                 "Field-Sensor-UUID": [
-                  "Overall Field"
+                  "Overall Field-UUID"
                 ]
               }
             }
