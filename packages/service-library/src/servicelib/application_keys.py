@@ -20,6 +20,7 @@ All keys are constants with a unique name convention:
 APP_CONFIG_KEY         = __name__ + '.config'
 APP_OPENAPI_SPECS_KEY  = __name__ + '.openapi_specs'
 APP_SESSION_SECRET_KEY = __name__ + '.session_secret'
+APP_JSONSCHEMA_SPECS_KEY = __name__ + '.jsonschema_specs'
 
 APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
 APP_DB_SESSION_KEY     = __name__ + '.db_session'

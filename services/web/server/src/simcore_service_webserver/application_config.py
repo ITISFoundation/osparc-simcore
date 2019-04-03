@@ -25,8 +25,9 @@ from servicelib import application_keys  # pylint:disable=unused-import
 from . import (computation_config, db_config, email_config, rest_config,
                storage_config)
 from .director import config as director_config
-from .resources import resources
 from .login import config as login_config
+from .projects import config as projects_config
+from .resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ def create_schema():
         db_config.CONFIG_SECTION_NAME: db_config.schema,
         director_config.CONFIG_SECTION_NAME: director_config.schema,
         rest_config.CONFIG_SECTION_NAME: rest_config.schema,
+        projects_config.CONFIG_SECTION_NAME: projects_config.schema,
         email_config.CONFIG_SECTION_NAME: email_config.schema,
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
         storage_config.CONFIG_SECTION_NAME: storage_config.schema,
