@@ -33,7 +33,7 @@ async def create_projects(request: web.Request):
     except ValidationError:
         raise web.HTTPBadRequest
 
-    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    _, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
     try:
         await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectInvalidRightsError:
@@ -69,6 +69,9 @@ async def list_projects(request: web.Request):
 @login_required
 async def get_project(request: web.Request):
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+
+    if project_uuid in Fake.projects:
+        return {'data': Fake.projects[project_uuid].data}
 
     try:
         project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
