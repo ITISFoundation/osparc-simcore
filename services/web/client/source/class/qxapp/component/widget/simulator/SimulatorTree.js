@@ -23,12 +23,13 @@
 qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
   extend: qx.ui.tree.VirtualTree,
 
-  construct: function(simulator) {
+  construct: function(simulator, node) {
     this.base(arguments, null, "label", "children");
 
     this.set({
       openMode: "none",
-      node: simulator
+      simulator: simulator,
+      node: node
     });
 
     this.setDelegate(this.__getDelegate());
@@ -39,6 +40,12 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
   },
 
   properties: {
+    // ToDo: OM Create a non UI Simulator for data handling
+    simulator: {
+      check: "qx.ui.core.Widget",
+      nullable: false
+    },
+
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
@@ -136,14 +143,51 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
               const fromItemKey = from.getModel().getKey();
               const to = e.getCurrentTarget();
               if (to.getIsDir()) {
-                const simulator = this.getNode();
                 const settingKey = to.getKey();
-                simulator.checkCompatibility(settingKey, fromNodeKey, fromItemKey, e);
+                let cbk = function(ev, compatible) {
+                  if (!compatible) {
+                    ev.preventDefault();
+                  }
+                };
+                const simulator = this.getSimulator();
+                simulator.checkDragOver(settingKey, fromNodeKey, fromItemKey, cbk);
               } else {
                 e.preventDefault();
               }
             } else {
               e.preventDefault();
+            }
+          });
+          item.addListener("drop", e => {
+            if (e.supportsType("osparc-mapping")) {
+              const from = e.getRelatedTarget();
+              const fromNodeKey = from.getNodeKey();
+              const fromItemKey = from.getModel().getKey();
+              const to = e.getCurrentTarget();
+              if (to.getIsDir()) {
+                const settingKey = to.getKey();
+                let cbk = function(isBranch) {
+                  let data = {
+                    key: fromItemKey,
+                    label: fromItemKey,
+                    nodeKey: fromNodeKey,
+                    portKey: fromNodeKey,
+                    isRoot: false
+                  };
+                  if (isBranch) {
+                    data["isDir"] = true;
+                    data["children"] = [];
+                  } else {
+                    data["isDir"] = false;
+                  }
+                  let newItem = qx.data.marshal.Json.createModel(data, true);
+                  to.getModel().getChildren()
+                    .push(newItem);
+                  to.setOpen(true);
+                };
+                const simulator = this.getSimulator();
+                simulator.checkDrop(settingKey, fromNodeKey, fromItemKey, cbk);
+              }
             }
           });
         },
@@ -155,8 +199,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
           c.bindProperty("metadata", "metadata", null, item, id);
           c.bindProperty("isDir", "isDir", null, item, id);
           c.bindProperty("isRoot", "isRoot", null, item, id);
-          const simulator = this.getNode();
-          item.createNode(simulator.getWorkbench());
+          const node = this.getNode();
+          item.createNode(node.getWorkbench());
         }
       };
     },

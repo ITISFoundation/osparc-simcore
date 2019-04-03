@@ -112,7 +112,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
         paddingLeft: 10,
         appearance: "toolbar-textfield"
       });
-      const simulatorTree = this.__simulatorTree = new qxapp.component.widget.simulator.SimulatorTree(this.getNode());
+      const simulatorTree = this.__simulatorTree = new qxapp.component.widget.simulator.SimulatorTree(this, this.getNode());
 
       vBox.add(label);
       vBox.add(simulatorTree, {
@@ -166,6 +166,16 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       this.__simulatorActions.addListener("writeFile", e => {
         this.__writeFile();
       }, this);
+    },
+
+    checkDragOver: function(settingKey, fromNodeKey, fromItemKey, cbk) {
+      const compatible = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey, cbk);
+      cbk.call(compatible);
+    },
+
+    checkDrop: function(settingKey, fromNodeKey, fromItemKey, cbk) {
+      const isBranch = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey, cbk);
+      cbk.call(isBranch);
     },
 
     checkCompatibility: function(settingKey, fromNodeKey, fromItemKey, e) {
