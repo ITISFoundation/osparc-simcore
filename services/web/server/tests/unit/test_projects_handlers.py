@@ -165,10 +165,7 @@ async def test_list_template_projects(client, fake_db, mocker, fake_project: Dic
 
     assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_osparc) + 1)
 
-
-
-
-async def test_get(client, fake_db, fake_project, mocker):
+async def test_get(client, fake_project, mocker):
     pid = fake_project["uuid"]
     #-----------------
     mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.get_user_project', return_value=Future())
@@ -189,6 +186,28 @@ async def test_get(client, fake_db, fake_project, mocker):
     assert project
 
     assert project == fake_project
+
+async def test_get_project_template(client, fake_db, fake_template_projects: Dict, fake_template_projects_osparc: Dict):
+    fake_db.load_template_projects()
+    template_projects = fake_template_projects
+    template_projects.extend(fake_template_projects_osparc)
+
+    for template in template_projects:
+        pid = template["uuid"]
+        url = client.app.router["get_project"].url_for(project_id=pid)
+        assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
+
+        # GET /v0/projects/{project_id}
+        resp = await client.get(url)
+        payload = await resp.json()
+        assert resp.status == 200, payload
+
+        project, error = unwrap_envelope(payload)
+        assert not error
+        assert project
+
+        assert project == template
+
 
 
 async def test_update(client, fake_db, fake_project, mocker):
