@@ -152,6 +152,11 @@ qx.Class.define("qxapp.data.model.Node", {
       check: "Number",
       init: 0,
       event: "changeProgress"
+    },
+
+    thumbnail: {
+      check: "String",
+      nullable: true
     }
   },
 
@@ -360,6 +365,10 @@ qx.Class.define("qxapp.data.model.Node", {
 
         if (nodeData.progress) {
           this.setProgress(nodeData.progress);
+        }
+
+        if (nodeData.thumbnail) {
+          this.setThumbnail(nodeData.thumbnail);
         }
       }
 
@@ -799,7 +808,8 @@ qx.Class.define("qxapp.data.model.Node", {
         outputNode: this.getIsOutputNode(),
         outputs: this.getOutputValues(), // can a container have outputs?
         parent: this.getParentNodeId(),
-        progress: this.getProgress()
+        progress: this.getProgress(),
+        thumbnail: this.getThumbnail()
       };
 
       if (savePosition) {

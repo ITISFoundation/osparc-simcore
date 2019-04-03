@@ -99,7 +99,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     __createFilterToolbar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
 
-      const clearButton = new qx.ui.toolbar.Button("Clear", "@FontAwesome5Solid/ban/16");
+      const clearButton = new qx.ui.toolbar.Button(this.tr("Clear"), "@FontAwesome5Solid/ban/16");
       clearButton.addListener("execute", e => {
         this.clearLogger();
       }, this);

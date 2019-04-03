@@ -72,6 +72,28 @@ qx.Theme.define("qxapp.theme.Decoration", {
         shadowLength: [0, 0],
         inset: false
       }
+    },
+
+    "window-small-cap": {
+      include: "window",
+      style: {
+        width: 0,
+        radius: 3
+      }
+    },
+
+    "workbench-small-cap-captionbar": {
+      style: {
+        width: 0
+      }
+    },
+
+    "sidepanel": {
+      style: {
+        transitionProperty: ["left"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
     }
   }
 });
