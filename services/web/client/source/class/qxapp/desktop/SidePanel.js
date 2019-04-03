@@ -64,6 +64,8 @@ qx.Class.define("qxapp.desktop.SidePanel", {
      */
     addOrReplaceAt: function(child, index, options = null) {
       if (this.getChildren()[index]) {
+        const visibility = this.getChildren()[index].getVisibility();
+        child.setVisibility(visibility);
         this.removeAt(index);
       }
       this.addAt(child, index, options);
