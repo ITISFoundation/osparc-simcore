@@ -132,7 +132,8 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (this.__innerContainer === null) {
         this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
           appearance: "panelview-content",
-          visibility: this.getCollapsed() ? "excluded" : "visible"
+          visibility: this.getCollapsed() ? "excluded" : "visible",
+          padding: 0
         });
         this._addAt(this.__innerContainer, 1, {
           flex: 1

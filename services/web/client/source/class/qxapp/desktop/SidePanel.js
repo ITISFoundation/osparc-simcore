@@ -55,7 +55,6 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
   members: {
     __savedWidth: null,
-    __collapsingDisabled: false,
     /**
      * Add a widget at the specified index. If the index already has a child, then replace it.
      *
@@ -73,30 +72,78 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     /**
      * Toggle the visibility of the side panel with a nice transition.
      */
-    toggleCollapse: function() {
+    toggleCollapsed: function() {
       this.setCollapsed(!this.getCollapsed());
     },
 
-    _applyCollapsed: function(collapsed, old) {
-      this.setDecorator("sidepanel");
+    _applyCollapsed: function(collapsed) {
+      this.__setDecorators("sidepanel");
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
       if (collapsed) {
-        this.__savedWidth = this.getWidth();
-        this.setWidth(20);
+        this.__savedWidth = this.__getCssWidth();
+        this.__getSplitpaneContainer().setWidth(20);
       } else {
-        this.setWidth(this.__savedWidth);
+        this.__getSplitpaneContainer().setWidth(this.__savedWidth);
       }
       // Workaround: have to update splitpane's prop
-      this.getLayoutParent().__endSize = this.__savedWidth; // eslint-disable-line no-underscore-dangle
+      const splitpane = this.__getParentSplitpane();
+      if (splitpane && this.__savedWidth) {
+        splitpane.__endSize = this.__savedWidth; // eslint-disable-line no-underscore-dangle
+      }
+    },
+
+    __getParentSplitpane: function() {
+      let parent = this.getLayoutParent();
+      while (parent && parent instanceof qx.ui.splitpane.Pane === false) {
+        parent = parent.getLayoutParent();
+      }
+      return parent;
+    },
+
+    __getSplitpaneContainer: function() {
+      const splitpane = this.__getParentSplitpane();
+      if (splitpane == null) {
+        return this;
+      }
+      let container = this;
+      while (container.getLayoutParent() !== splitpane) {
+        container = container.getLayoutParent();
+      }
+      return container;
+    },
+
+    __getCssWidth: function() {
+      return this.__getSplitpaneContainer().getWidth() ||
+        parseInt(this.__getSplitpaneContainer().getContentElement().getDomElement().style.width);
+    },
+
+    __setDecorators: function(decorator) {
+      const splitpane = this.__getParentSplitpane() || this;
+      let widget = this;
+      do {
+        widget.setDecorator(decorator);
+        widget = widget.getLayoutParent();
+      }
+      while (widget && widget !== splitpane);
+    },
+
+    __resetDecorators: function() {
+      const splitpane = this.__getParentSplitpane() || this;
+      let widget = this;
+      do {
+        widget.resetDecorator();
+        widget = widget.getLayoutParent();
+      }
+      while (widget && widget !== splitpane);
     },
 
     __attachEventHandlers: function() {
       this.addListenerOnce("appear", () => {
-        this.getContentElement().getDomElement()
+        this.__getSplitpaneContainer().getContentElement().getDomElement()
           .addEventListener("transitionend", () => {
             if (this.getCollapsed()) {
               this.addListenerOnce("resize", e => {
-                if (this.getCollapsed() && this.getWidth() !== this.__savedWidth) {
+                if (this.getCollapsed() && this.__getCssWidth() !== this.__savedWidth) {
                   this.__savedWidth = e.getData().width;
                   this.setCollapsed(false);
                 } else {
@@ -104,7 +151,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
                 }
               }, this);
             } else {
-              this.resetDecorator();
+              this.__resetDecorators();
             }
           });
       }, this);

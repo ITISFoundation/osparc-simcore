@@ -586,7 +586,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapse.bind(this.__sidePanel));
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
     }
   }
 });

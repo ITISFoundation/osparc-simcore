@@ -36,21 +36,19 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-content": {
+    "panelview-content-noborder": {
       style: {
-        width: 1,
-        color: "border",
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
     },
 
-    "panelview-content-noborder": {
+    "panelview-content": {
+      include: "panelview-content-noborder",
       style: {
-        transitionProperty: "height",
-        transitionDuration: "0.2s",
-        transitionTimingFunction: "ease-in"
+        width: 1,
+        color: "border"
       }
     },
 
@@ -81,29 +79,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "sidepanel": {
       style: {
-        transitionProperty: ["left"],
-        transitionDuration: "0.2s",
-        transitionTimingFunction: "ease-in"
-      }
-    },
-
-    "window-small-cap": {
-      include: "window",
-      style: {
-        width: 0,
-        radius: 3
-      }
-    },
-
-    "workbench-small-cap-captionbar": {
-      style: {
-        width: 0
-      }
-    },
-
-    "sidepanel": {
-      style: {
-        transitionProperty: ["left"],
+        transitionProperty: ["left", "width"],
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
