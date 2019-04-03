@@ -32,7 +32,7 @@ before_script() {
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=api -v api/tests
+        pytest --cov=api --cov-append -v api/tests
         pytest --cov=services/apihub --cov-append -v services/apihub/tests
     else
         echo "No changes detected. Skipping unit-testing of apihub."
