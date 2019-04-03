@@ -41,6 +41,12 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorActions", {
       enabled: false
     });
     actions.add(newSettings);
+
+    const writeInputFile = this.__writeInputFile = new qx.ui.toolbar.Button(this.tr("Write file"));
+    writeInputFile.addListener("execute", () => {
+      this.fireEvent("writeFile");
+    }, this);
+    actions.add(writeInputFile);
   },
 
   properties: {
@@ -56,7 +62,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorActions", {
   },
 
   events: {
-    "newSetting": "qx.event.type.Data"
+    "newSetting": "qx.event.type.Data",
+    "writeFile": "qx.event.type.Event"
   },
 
   members: {

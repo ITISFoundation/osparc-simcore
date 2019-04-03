@@ -162,6 +162,10 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
         const data = e.getData();
         this.__simulatorTree.addConceptSetting(data.settingKey, data.itemKey);
       }, this);
+
+      this.__simulatorActions.addListener("writeFile", e => {
+        this.__writeFile();
+      }, this);
     },
 
     checkCompatibility: function(settingKey, fromNodeKey, fromItemKey, e) {
@@ -181,6 +185,11 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       if (!compatible) {
         e.preventDefault();
       }
+    },
+
+    __writeFile: function() {
+      console.log("Serialize tree");
+      console.log(this.__simulatorTree.toString());
     }
   }
 });
