@@ -29,24 +29,13 @@
  */
 
 qx.Class.define("qxapp.desktop.ControlsBar", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.toolbar.ToolBar,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
-
-    let leftBox = new qx.ui.layout.HBox(10, "left");
-    this.__leftSide = new qx.ui.container.Composite(leftBox);
-    this._add(this.__leftSide, {
-      width: "50%"
-    });
-
-    let rightBox = new qx.ui.layout.HBox(10, "right");
-    this.__rightSide = new qx.ui.container.Composite(rightBox);
-    this._add(this.__rightSide, {
-      width: "50%"
-    });
+    this.setSpacing(10);
+    this.setAppearance("sidepanel");
 
     this.__initDefault();
 
@@ -63,16 +52,17 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     __stopButton: null,
 
     __initDefault: function() {
-      let playBtn = this.__startButton = this.__createStartButton();
-      let stopButton = this.__stopButton = this.__createStopButton();
-      this.__rightSide.add(playBtn);
-      this.__rightSide.add(stopButton);
+      this.addSpacer();
+      const simCtrls = new qx.ui.toolbar.Part();
+      this.__startButton = this.__createStartButton();
+      this.__stopButton = this.__createStopButton();
+      simCtrls.add(this.__startButton);
+      simCtrls.add(this.__stopButton);
+      this.add(simCtrls);
     },
 
     __createStartButton: function() {
-      let startButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/play/32"
-      });
+      let startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/16");
 
       startButton.addListener("execute", () => {
         this.fireEvent("startPipeline");
@@ -82,9 +72,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createStopButton: function() {
-      let stopButton = this.__stopButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/stop-circle/32"
-      });
+      let stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/16");
 
       stopButton.addListener("execute", () => {
         this.fireEvent("stopPipeline");
@@ -92,14 +80,9 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
       return stopButton;
     },
 
-    setCanStart: function(value) {
-      if (value) {
-        this.__startButton.setVisibility("visible");
-        this.__stopButton.setVisibility("excluded");
-      } else {
-        this.__startButton.setVisibility("excluded");
-        this.__stopButton.setVisibility("visible");
-      }
+    setCanStart: function(canStart) {
+      this.__startButton.setVisibility(canStart ? "visible" : "excluded");
+      this.__stopButton.setVisibility(canStart ? "excluded" : "visible");
     }
   }
 });
