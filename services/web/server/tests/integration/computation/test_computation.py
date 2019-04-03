@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
+import sys
 import time
 import uuid
 from contextlib import contextmanager
@@ -26,6 +27,27 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 
 API_VERSION = "v0"
+
+# Selection of core and tool services started in this swarm fixture (integration)
+core_services = [
+    'director',
+    'apihub',
+    'rabbit',
+    'postgres',
+    'sidecar',
+    'storage',
+    'minio'
+]
+
+tool_services = [
+    'adminer',
+    'flower',
+    'portainer'
+]
+
+@pytest.fixture(scope='session')
+def here() -> Path:
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
 def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, here, docker_compose_file):
