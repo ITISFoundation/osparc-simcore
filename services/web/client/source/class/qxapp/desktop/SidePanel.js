@@ -117,21 +117,15 @@ qx.Class.define("qxapp.desktop.SidePanel", {
         parseInt(this.__getSplitpaneContainer().getContentElement().getDomElement().style.width);
     },
 
-    __setDecorators: function(decorator) {
+    __setDecorators: function(decorator = null) {
       const splitpane = this.__getParentSplitpane() || this;
       let widget = this;
       do {
-        widget.setDecorator(decorator);
-        widget = widget.getLayoutParent();
-      }
-      while (widget && widget !== splitpane);
-    },
-
-    __resetDecorators: function() {
-      const splitpane = this.__getParentSplitpane() || this;
-      let widget = this;
-      do {
-        widget.resetDecorator();
+        if (decorator) {
+          widget.setDecorator(decorator);
+        } else {
+          widget.resetDecorator(decorator);
+        }
         widget = widget.getLayoutParent();
       }
       while (widget && widget !== splitpane);
@@ -151,7 +145,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
                 }
               }, this);
             } else {
-              this.__resetDecorators();
+              this.__setDecorators();
             }
           });
       }, this);
