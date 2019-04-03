@@ -8,4 +8,4 @@ pytest-cov~=2.5
 pytest-docker~=0.6
 requests==2.20.1
 requests-html~=0.9
-openapi-core~=0.8
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
