@@ -209,7 +209,21 @@ def fake_db():
     yield Fake
     Fake.reset()
 
-async def test_list_template_projects(loop, client, fake_db):
+@pytest.fixture(scope="session")
+def fake_template_projects(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_osparc(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+async def test_list_template_projects(loop, client, fake_db, fake_template_projects, fake_template_projects_osparc):
     fake_db.load_template_projects()
     async with LoggedUser(client):
         url = client.app.router["list_projects"].url_for()
@@ -220,4 +234,4 @@ async def test_list_template_projects(loop, client, fake_db):
         projects, error = unwrap_envelope(payload)
         assert not error, pprint(error)
         # fake-template-projects.json + fake-template-projects.osparc.json
-        assert len(projects) == 3 + 1
+        assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_osparc))
