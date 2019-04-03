@@ -42,8 +42,8 @@ script() {
 after_success() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        coveralls
         codecov
+        coveralls
     fi
 }
 
