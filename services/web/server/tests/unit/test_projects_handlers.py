@@ -142,7 +142,7 @@ async def test_list(client, fake_db, mocker, fake_project):
     assert not error
     mock.assert_called_with(db_engine=None)
     # fake-template-projects.json + fake-template-projects.osparc.json + fake project
-    assert len(projects) == 3 + 1 + 1
+    assert len(projects) == 4 + 1
 
 
 
