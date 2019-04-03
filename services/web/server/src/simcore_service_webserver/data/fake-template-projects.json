@@ -2,7 +2,7 @@
   {
     "uuid": "template-uuid-4d5e-9b09-ddcc63121ef4",
     "name": "Sleepers",
-    "description": null,
+    "description": "",
     "notes": "",
     "thumbnail": "",
     "prjOwner": "Maiz",
@@ -13,7 +13,6 @@
       "template-uuid-4434-9504-d4a9bebeda37": {
         "label": "sleeper 0",
         "inputs": {
-          "in_1": null,
           "in_2": 2
         },
         "inputNodes": [],
@@ -77,7 +76,6 @@
       "template-uuid-499e-86d6-9980c33dc8bb": {
         "label": "sleeper 3",
         "inputs": {
-          "in_1": null,
           "in_2": {
             "nodeUuid": "template-uuid-4434-9504-d4a9bebeda37",
             "output": "out_2"

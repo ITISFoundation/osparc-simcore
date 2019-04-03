@@ -37,7 +37,6 @@ script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-        pytest --cov=simcore_service_webserver -v services/web/server/tests/login
     else
         echo "No changes detected. Skipping unit-testing of webserver."
     fi
