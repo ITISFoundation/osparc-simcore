@@ -170,12 +170,12 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
 
     checkDragOver: function(settingKey, fromNodeKey, fromItemKey, cbk) {
       const compatible = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
-      cbk.call(compatible);
+      cbk.call(this, compatible);
     },
 
     checkDrop: function(settingKey, fromNodeKey, fromItemKey, cbk) {
       const isBranch = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
-      cbk.call(isBranch);
+      cbk.call(this, isBranch);
     },
 
     checkCompatibility: function(settingKey, fromNodeKey, fromItemKey) {

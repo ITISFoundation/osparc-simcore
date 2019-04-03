@@ -186,7 +186,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
                   to.setOpen(true);
                 };
                 const simulator = this.getSimulator();
-                simulator.checkDrop(settingKey, fromNodeKey, fromItemKey, cbk);
+                simulator.checkDrop(settingKey, fromNodeKey, fromItemKey, cbk, e);
               }
             }
           });
