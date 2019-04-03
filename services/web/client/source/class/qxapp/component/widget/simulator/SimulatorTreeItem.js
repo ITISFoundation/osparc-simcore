@@ -43,11 +43,6 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTreeItem", {
       nullable: true
     },
 
-    node: {
-      check: "qxapp.data.model.Node",
-      nullable: false
-    },
-
     isDir: {
       check: "Boolean",
       nullable: false,
@@ -58,6 +53,11 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTreeItem", {
       check: "Boolean",
       nullable: false,
       init: false
+    },
+
+    node: {
+      check: "qxapp.data.model.Node",
+      nullable: false
     }
   },
 
