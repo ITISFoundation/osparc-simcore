@@ -122,6 +122,19 @@
                 "0.0.1"
               ]
             },
+            "progress": {
+              "type":"number",
+              "maximum": 1.0,
+              "minimum": 0,
+              "description": "the node progress value"
+            },
+            "thumbnail": {
+              "type": "string",
+              "description": "url of the latest screenshot of the node",
+              "examples": [
+                "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+              ]
+            },
             "inputs": {
               "type": "object",
               "description": "values of input properties",
