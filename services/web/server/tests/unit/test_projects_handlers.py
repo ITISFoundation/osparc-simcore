@@ -5,8 +5,11 @@
 # pylint:disable=redefined-outer-name
 
 import collections
+import json
 from asyncio import Future
 from copy import deepcopy
+from pathlib import Path
+from typing import Dict
 
 import pytest
 from aiohttp import web
@@ -89,9 +92,7 @@ async def test_create(client, fake_project, mocker):
 
     mock.assert_called_once_with([fake_project], -1, db_engine=None)
 
-async def test_list(client, fake_db, mocker, fake_project):
-    fake_db.load_user_projects(ANONYMOUS_UID)
-    fake_db.load_template_projects()
+async def test_list(client, mocker, fake_project):
     #-----------------
     mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.load_user_projects', return_value=Future())
     mock.return_value.set_result([fake_project])
@@ -131,6 +132,25 @@ async def test_list(client, fake_db, mocker, fake_project):
     assert len(projects)==1
     assert projects[0] == fake_project
 
+@pytest.fixture(scope="session")
+def fake_template_projects(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_osparc(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+async def test_list_template_projects(client, fake_db, mocker, fake_project: Dict, fake_template_projects: Dict, fake_template_projects_osparc: Dict):
+    fake_db.load_template_projects()
+
+    url = client.app.router["list_projects"].url_for()
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
     # list all template projects
     mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.load_template_projects', return_value=Future())
     mock.return_value.set_result([fake_project])
@@ -142,7 +162,8 @@ async def test_list(client, fake_db, mocker, fake_project):
     assert not error
     mock.assert_called_with(db_engine=None)
     # fake-template-projects.json + fake-template-projects.osparc.json + fake project
-    assert len(projects) == 4 + 1
+
+    assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_osparc) + 1)
 
 
 
