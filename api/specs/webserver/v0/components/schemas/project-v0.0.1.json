@@ -70,7 +70,7 @@
     "creationDate": {
       "type": "string",
       "description": "project creation date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -78,7 +78,7 @@
     "lastChangeDate": {
       "type": "string",
       "description": "last save date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -97,18 +97,20 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "key",
-            "version",
+            "label",
             "position"
           ],
           "properties": {
+            "label": {
+              "type": "string"
+            },
             "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
-              "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
               "examples": [
-                "service/computational/sleeper",
-                "service/dynamic/3dviewer"
+                "simcore/services/comp/sleeper",
+                "simcore/services/dynamic/3dviewer"
               ]
             },
             "version": {
@@ -170,6 +172,13 @@
                 }
               }
             },
+            "inputNodes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\S+$"
+              }
+            },
             "outputs": {
               "type": "object",
               "patternProperties": {
@@ -202,6 +211,13 @@
                   ]
                 }
               }
+            },
+            "outputNode": {
+              "type": "boolean"
+            },
+            "parent": {
+              "type": ["string", "null"],
+              "pattern": "^\\S+$"
             },
             "links": {
               "type": "array",

@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.MainPanel", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox());
 
     let hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
       allowGrowY: true
