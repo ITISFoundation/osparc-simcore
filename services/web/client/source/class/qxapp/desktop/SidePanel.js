@@ -124,7 +124,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
         if (decorator) {
           widget.setDecorator(decorator);
         } else {
-          widget.resetDecorator(decorator);
+          widget.resetDecorator();
         }
         widget = widget.getLayoutParent();
       }
