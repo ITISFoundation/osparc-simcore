@@ -169,16 +169,16 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     },
 
     checkDragOver: function(settingKey, fromNodeKey, fromItemKey, cbk) {
-      const compatible = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey, cbk);
+      const compatible = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
       cbk.call(compatible);
     },
 
     checkDrop: function(settingKey, fromNodeKey, fromItemKey, cbk) {
-      const isBranch = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey, cbk);
+      const isBranch = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
       cbk.call(isBranch);
     },
 
-    checkCompatibility: function(settingKey, fromNodeKey, fromItemKey, e) {
+    checkCompatibility: function(settingKey, fromNodeKey, fromItemKey) {
       console.log(this.getNode().getKey(), settingKey, fromNodeKey, fromItemKey);
       let compatible = false;
       const nodeKey = this.getNode().getKey();
@@ -186,15 +186,13 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
         switch (nodeKey) {
           case "simcore/services/dynamic/itis/s4l/simulator/neuron":
             compatible = qxapp.dev.fake.neuron.Data.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
-            break;
+            return compatible;
           case "simcore/services/dynamic/itis/s4l/simulator/lf":
             compatible = qxapp.dev.fake.lf.Data.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
-            break;
+            return compatible;
         }
       }
-      if (!compatible) {
-        e.preventDefault();
-      }
+      return false;
     },
 
     __writeFile: function() {
