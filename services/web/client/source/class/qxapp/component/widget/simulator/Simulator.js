@@ -189,7 +189,8 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
 
     __writeFile: function() {
       console.log("Serialize tree");
-      console.log(this.__simulatorTree.toString());
+      const model = this.__simulatorTree.getModel();
+      console.log(qx.util.Serializer.toNativeObject(model));
     }
   }
 });

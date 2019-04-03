@@ -71,11 +71,6 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTreeItem", {
         const metadata2 = qx.util.Serializer.toNativeObject(metadata);
         node.initMetaData(metadata2);
         this.setLabel(node.getLabel());
-        /*
-        if (node.getInputsMapper()) {
-          this.setMapper(node.getInputsMapper());
-        }
-        */
       }
     }
   }
