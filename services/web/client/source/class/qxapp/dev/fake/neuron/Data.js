@@ -716,7 +716,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       return qxapp.dev.fake.neuron.Data.item[simSettingsId][itemId];
     },
 
-    checkCompatiblity: function(settingKey, fromNodeKey, fromItemKey) {
+    checkCompatibility: function(settingKey, fromNodeKey, fromItemKey) {
       return true;
     }
   } // statics

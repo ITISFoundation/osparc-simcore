@@ -662,7 +662,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       return qxapp.dev.fake.lf.Data.item[simSettingsId][itemId];
     },
 
-    checkCompatiblity: function(settingKey, fromNodeKey, fromItemKey) {
+    checkCompatibility: function(settingKey, fromNodeKey, fromItemKey) {
       return true;
     }
   } // statics
