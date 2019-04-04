@@ -27,9 +27,6 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       }],
 
       "defaultLFMaterials": [{
-        key: "Air-UUID",
-        label: "Air"
-      }, {
         key: "Dielectric-UUID",
         label: "Dielectric"
       }, {
