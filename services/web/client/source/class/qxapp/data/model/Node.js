@@ -799,7 +799,7 @@ qx.Class.define("qxapp.data.model.Node", {
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {
-        if (nodeEntry[key] != null) {
+        if (nodeEntry[key] !== null) {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }

@@ -126,13 +126,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           }
         }
         // FIXME: "null" should be a valid input
-        if (data[portId] === "null") {          
+        if (data[portId] === "null") {
           data[portId] = null;
-        }        
+        }
       }
       let filteredData = {};
       for (const key in data) {
-        if (data[key] != null) {
+        if (data[key] !== null) {
           filteredData[key] = data[key];
         }
       }
