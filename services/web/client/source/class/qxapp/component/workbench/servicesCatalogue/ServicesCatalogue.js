@@ -280,19 +280,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-
     __onAddService: function() {
       if (this.__list.isSelectionEmpty()) {
         return;
       }
 
-      const selection = this.__list.getSelection()[0];
-      const serviceKey = selection.getModel().getKey();
-      let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
-      if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
-        serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
-      }
-      let service = qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
+      const service = this.__getSelectedService();
       if (service) {
         let serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
@@ -303,6 +296,16 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         this.fireDataEvent("addService", eData);
       }
       this.close();
+    },
+
+    __getSelectedService: function() {
+      const selection = this.__list.getSelection()[0];
+      const serviceKey = selection.getModel().getKey();
+      let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
+      if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
+        serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+      }
+      return qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
     },
 
     __onCancel: function() {
