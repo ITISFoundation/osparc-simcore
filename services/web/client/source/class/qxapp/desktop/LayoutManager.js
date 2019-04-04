@@ -98,6 +98,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.setSelection([this.__dashboard]);
       this.__dashboard.getPrjBrowser().reloadUserProjects();
       this.__navBar.setPathButtons([]);
+      if (this.__prjEditor) {
+        this.__prjEditor.destruct();
+      }
     },
 
     __showProjectEditor: function(projectEditor) {

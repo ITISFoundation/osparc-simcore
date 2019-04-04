@@ -279,7 +279,7 @@ class Sidecar:
                             'services_log'    : {'bind'  : '/log'}},
                  environment=self._docker.env)
         except docker.errors.ContainerError as _e:
-            log.exception("Run container returned non zero exit code")
+            log.exception("Run container returned non zero exit code %s", str(_e))
         except docker.errors.ImageNotFound as _e:
             log.exception("Run container: Image not found")
         except docker.errors.APIError as _e:

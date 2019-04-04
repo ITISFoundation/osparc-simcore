@@ -136,7 +136,11 @@ qx.Class.define("qxapp.data.model.Project", {
       let jsonObject = {};
       let properties = this.constructor.$$properties;
       for (let key in properties) {
-        jsonObject[key] = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        if (value !== null) {
+          // only put the value in the payload if there is a value
+          jsonObject[key] = value;
+        }
       }
       return jsonObject;
     }
