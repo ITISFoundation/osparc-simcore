@@ -50,9 +50,21 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
   members: {
     __startButton: null,
     __stopButton: null,
+    __filterField: null,
 
     __initDefault: function() {
+      const filterCtrls = new qx.ui.toolbar.Part();
+      filterCtrls.add(new qx.ui.basic.Label(this.tr("Filter") + ":").set({
+        appearance: "toolbar-label"
+      }));
+      this.__filterField = new qx.ui.form.TextField().set({
+        appearance: "toolbar-textfield"
+      });
+      filterCtrls.add(this.__filterField);
+      this.add(filterCtrls);
+
       this.addSpacer();
+
       const simCtrls = new qx.ui.toolbar.Part();
       this.__startButton = this.__createStartButton();
       this.__stopButton = this.__createStopButton();
