@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 import servicelib
-from servicelib.openapi import create_specs
+from servicelib.openapi import create_openapi_specs
 
 import pytest
 
@@ -40,6 +40,6 @@ def petstore_spec_file(here):
 
 
 @pytest.fixture
-def petstore_specs(petstore_spec_file):
-    specs = create_specs(petstore_spec_file)
+async def petstore_specs(loop, petstore_spec_file):
+    specs = await create_openapi_specs(petstore_spec_file)
     return specs

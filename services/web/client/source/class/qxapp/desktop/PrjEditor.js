@@ -38,14 +38,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       width: 500
     });
 
+    const scroll = new qx.ui.container.Scroll().set({
+      minWidth: 0
+    });
+    scroll.add(sidePanel);
+
     this.add(mainPanel, 1); // flex 1
-    this.add(sidePanel, 0); // flex 0
+    this.add(scroll, 0); // flex 0
 
     this.initDefault();
     this.connectEvents();
 
     if (isNew) {
-      this.replaceProjectDocument();
+      this.createProjectDocument();
     } else {
       this.updateProjectDocument();
     }
@@ -83,6 +88,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __loggerView: null,
     __nodeView: null,
     __currentNodeId: null,
+    __autoSaveTimer: null,
+
+    /**
+     * Destructor
+     */
+    destruct: function() {
+      this.__stopAutoSaveTimer();
+    },
 
     initDefault: function() {
       let project = this.getProject();
@@ -101,9 +114,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
 
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2, {
-        flex: 1
-      });
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
@@ -531,7 +542,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
-      let timer = new qx.event.Timer(interval);
+      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getProject().serializeProject();
         const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
@@ -550,23 +561,23 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       timer.start();
     },
 
-    replaceProjectDocument: function(newObj) {
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    createProjectDocument: function(newObj) {
       if (newObj === undefined) {
         newObj = this.getProject().serializeProject();
       }
-      const prjUuid = this.getProject().getUuid();
-      let resource = this.__projectResources.project;
-      resource.addListenerOnce("delSuccess", e => {
-        let resources = this.__projectResources.projects;
-        resources.addListenerOnce("postSuccess", ev => {
-          console.log("Project replaced");
-          this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        }, this);
-        resources.post(null, newObj);
+      let resources = this.__projectResources.projects;
+      resources.addListenerOnce("postSuccess", ev => {
+        console.log("Project replaced");
+        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
-      resource.del({
-        "project_id": prjUuid
-      });
+      resources.post(null, newObj);
     },
 
     updateProjectDocument: function(newObj) {
@@ -586,7 +597,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapse.bind(this.__sidePanel));
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
     }
   }
 });

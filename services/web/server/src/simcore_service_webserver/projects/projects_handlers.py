@@ -3,7 +3,7 @@
 
 import json
 import logging
-from typing import Dict, List
+from typing import Dict
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -29,11 +29,11 @@ ANONYMOUS_UID = -1 # For testing purposes
 async def create_projects(request: web.Request):
     project = await request.json()
     try:
-        _validate(request.app, [project])
+        _validate(request.app, project)
     except ValidationError:
         raise web.HTTPBadRequest
 
-    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    _, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
     try:
         await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectInvalidRightsError:
@@ -61,18 +61,27 @@ async def list_projects(request: web.Request):
     stop = min(start+count, len(projects_list))
     projects_list = projects_list[start:stop]
     # validate response
-    _validate(request.app, projects_list)
+    validated_projects = []
+    for project in projects_list:
+        try:
+            _validate(request.app, project)
+            validated_projects.append(project)
+        except ValidationError:
+            continue
 
-    return {'data': projects_list}
+    return {'data': validated_projects}
 
 
 @login_required
 async def get_project(request: web.Request):
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
+    if project_uuid in Fake.projects:
+        return {'data': Fake.projects[project_uuid].data}
+
     try:
         project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
-        _validate(request.app, [project])
+        _validate(request.app, project)
         return {'data': project}
     except ProjectNotFoundError:
         raise web.HTTPNotFound
@@ -97,7 +106,7 @@ async def replace_project(request: web.Request):
 
     new_values = await request.json()
     try:
-        _validate(request.app, [new_values])
+        _validate(request.app, new_values)
     except ValidationError:
         raise web.HTTPBadRequest
 
@@ -118,7 +127,6 @@ async def delete_project(request: web.Request):
     raise web.HTTPNoContent(content_type='application/json')
 
 
-def _validate(app: web.Application, projects: List[Dict]):
+def _validate(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
-    for project in projects:
-        validate_project(project, project_schema)
+    validate_project(project, project_schema)
