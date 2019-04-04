@@ -88,6 +88,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __loggerView: null,
     __nodeView: null,
     __currentNodeId: null,
+    __autoSaveTimer: null,
+
+    /**
+     * Destructor
+     */
+    destruct: function() {
+      this.__stopAutoSaveTimer();
+    },
 
     initDefault: function() {
       let project = this.getProject();
@@ -534,7 +542,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
-      let timer = new qx.event.Timer(interval);
+      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getProject().serializeProject();
         const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
@@ -551,6 +559,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
       timer.start();
+    },
+
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
+      }
     },
 
     createProjectDocument: function(newObj) {
