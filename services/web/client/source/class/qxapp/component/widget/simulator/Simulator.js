@@ -68,32 +68,22 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       const simulatorActions = this.__simulatorActions = new qxapp.component.widget.simulator.SimulatorActions(this.getNode());
       this._add(simulatorActions);
 
-      const splitpane = new qx.ui.splitpane.Pane("horizontal");
-      splitpane.getChildControl("splitter").getChildControl("knob")
-        .hide();
-      splitpane.setOffset(0);
-
+      const splitpane = new qx.ui.splitpane.Pane();
       this._add(splitpane, {
         flex: 1
       });
 
       const sidePanel = this.__buildSidePanel();
-      splitpane.add(sidePanel);
+      splitpane.add(sidePanel, 0);
 
       const modeler = this.__checkModelerIsConnected();
       if (modeler) {
-        splitpane.add(modeler);
+        splitpane.add(modeler, 1);
       }
     },
 
     __buildSidePanel: function() {
-      const splitpane = new qx.ui.splitpane.Pane("vertical").set({
-        width: 250,
-        minWidth: 250
-      });
-      splitpane.getChildControl("splitter").getChildControl("knob")
-        .hide();
-      splitpane.setOffset(0);
+      const splitpane = new qx.ui.splitpane.Pane("vertical");
 
       const simulatorTree = this.__buildSimulatorTree();
       const simulatorProps = this.__buildSimulatorProps();
