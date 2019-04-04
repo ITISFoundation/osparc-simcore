@@ -47,6 +47,10 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     const backgroundImage = this.__backgroundImage = new qx.ui.basic.Image().set({
+      allowGrowX: true,
+      allowGrowY: true,
+      allowShrinkX: true,
+      allowShrinkY: true,
       scale: true
     });
     const padding = 0; // different padding to 0 triggers resize...
