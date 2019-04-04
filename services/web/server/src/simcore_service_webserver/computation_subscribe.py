@@ -15,7 +15,7 @@ log = logging.getLogger(__file__)
 
 
 async def on_message(message: aio_pika.IncomingMessage):
-    async with message.process():
+    with message.process():
         data = json.loads(message.body)
         log.debug(data)
         if data["Channel"] == "Log":
