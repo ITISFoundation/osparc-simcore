@@ -54,6 +54,7 @@ qx.Class.define("qxapp.component.EntityList", {
   members: {
     __tree: null,
     __progressBar: null,
+    __treeMap: null,
 
     modelLoading: function() {
       if (this.indexOf(this.__progressBar) != -1) {
@@ -88,8 +89,9 @@ qx.Class.define("qxapp.component.EntityList", {
         children: []
       };
       let model = qx.data.marshal.Json.createModel(data, true);
-      // configure model for triState usage
-      this.configureTriState(model);
+      this.__treeMap = {
+        "root": model
+      };
 
       // data binding
       this.__tree.setModel(model);
@@ -109,51 +111,6 @@ qx.Class.define("qxapp.component.EntityList", {
           }, this);
         }
       });
-    },
-
-    // from http://www.qooxdoo.org/current/demobrowser/#virtual~Tree_Columns.html
-    // TODO: It's not working
-    configureTriState: function(item) {
-      item.getModel = function() {
-        return this;
-      };
-
-      if (item.getChildren != null) { // eslint-disable-line no-eq-null
-        let children = item.getChildren();
-        for (let i = 0; i < children.getLength(); i++) {
-          let child = children.getItem(i);
-          this.configureTriState(child);
-
-          // bind parent with child
-          item.bind("checked", child, "checked", {
-            converter: function(value, child2) {
-              // when parent is set to null than the child should keep it's value
-              if (value === null) {
-                return child2.getChecked();
-              }
-              return value;
-            }
-          });
-
-          // bind child with parent
-          child.bind("checked", item, "checked", {
-            converter: function(value, parent) {
-              let children2 = parent.getChildren().toArray();
-              let isAllChecked = children2.every(function(item2) {
-                return item2.getChecked();
-              });
-              let isOneChecked = children2.some(function(item2) {
-                return item.getChecked() || item2.getChecked() === null;
-              });
-              // Set triState (on parent node) when one child is checked
-              if (isOneChecked) {
-                return isAllChecked ? true : null;
-              }
-              return false;
-            }
-          });
-        }
-      }
     },
 
     __onSelectionChanged: function(e) {
@@ -198,53 +155,60 @@ qx.Class.define("qxapp.component.EntityList", {
     },
 
     addEntity: function(name, entityId, pathId, pathName) {
-      let rootModel = this.__tree.getModel();
       let newItem = {
-        label: name,
         entityId: entityId,
         pathId: pathId ? pathId : "root/"+entityId,
         pathLabel: pathName ? pathName : "Model/"+name,
         checked: true
       };
-
+      let pathSplit = newItem.pathId.split("/");
+      newItem.label = name ? name : pathSplit[pathSplit.length-1];
       // create first the folders if do not exist yet
-      let parent = rootModel;
-      let pathSplitted = newItem.pathId.split("/");
-      let labelSplitted = newItem.pathLabel.split("/");
-      // i=0 is always there
-      for (let i=1; i<pathSplitted.length-1; i++) {
-        let found = false;
-        for (let j=0; j<parent.getChildren().length; j++) {
-          if (parent.getChildren().toArray()[j].getEntityId() === pathSplitted[i]) {
-            parent = parent.getChildren().toArray()[j];
-            found = true;
-            break;
-          }
+      let parent = this.__tree.getModel();
+      // console.log(parent);
+      let tm = this.__treeMap;
+      pathSplit.forEach(key => {
+        if (!tm[key]) {
+          let kid = tm[key] = qx.data.marshal.Json.createModel(
+            {
+              label: key,
+              entityId: null,
+              pathId: null,
+              pathLabel: null,
+              checked: true,
+              children: []
+            },
+            true
+          );
+          parent.getChildren().push(kid);
+
+          parent.bind("checked", kid, "checked", {
+            converter: valueParent => {
+              if (valueParent === null) {
+                return kid.getChecked();
+              }
+              return valueParent;
+            }
+          });
+          let myParent = parent;
+          kid.bind("checked", myParent, "checked", {
+            converter: () => {
+              let kids = myParent.getChildren().toArray();
+              let isAllChecked = kids.every(item => item.getChecked());
+              let isOneChecked = kids.some(item => item.getChecked());
+              return (
+                // eslint-disable-next-line no-nested-ternary
+                isAllChecked ? true :
+                  isOneChecked ? null : false
+              );
+            }
+          });
         }
-        if (!found) {
-          let folderItem = {
-            label: labelSplitted[i],
-            entityId: pathSplitted[i],
-            pathId: pathSplitted.slice(0, i).join("/"),
-            pathLabel: labelSplitted.slice(0, i).join("/"),
-            checked: true,
-            children: []
-          };
-          parent.getChildren().push(qx.data.marshal.Json.createModel(folderItem, true));
-          parent = parent.getChildren().toArray()[0];
-        }
-      }
-
-      let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
-      parent.getChildren().push(newItemModel);
-
-      this.configureTriState(rootModel);
-      this.__tree.setModel(rootModel);
-
-      // select new item
-      let newSelection = new qx.data.Array([newItemModel]);
-      this.__tree.setSelection(newSelection);
+        parent = tm[key];
+      });
+      parent.set(newItem);
     },
+
 
     __getLeafList: function(item, leaves) {
       if (item.getChildren == null) { // eslint-disable-line no-eq-null
