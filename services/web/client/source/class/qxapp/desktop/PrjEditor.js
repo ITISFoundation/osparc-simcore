@@ -23,9 +23,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(project, isNew) {
     this.base(arguments, "horizontal");
 
-    this.getChildControl("splitter").getChildControl("knob").hide();
-    this.setOffset(0);
-
     qxapp.utils.UuidToName.getInstance().setProject(project);
 
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
@@ -41,8 +38,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       width: 500
     });
 
+    const scroll = new qx.ui.container.Scroll().set({
+      minWidth: 0
+    });
+    scroll.add(sidePanel);
+
     this.add(mainPanel, 1); // flex 1
-    this.add(sidePanel, 0); // flex 0
+    this.add(scroll, 0); // flex 0
 
     this.initDefault();
     this.connectEvents();
@@ -53,6 +55,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.updateProjectDocument();
     }
     this.__startAutoSaveTimer();
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -97,13 +100,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.setTopView(treeView);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set();
-      this.__sidePanel.setMidView(extraView);
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView().set();
-      this.__sidePanel.setBottomView(loggerView);
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
@@ -348,7 +351,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.setMidView(widget);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -361,7 +364,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         height: 300
       });
       container.add(imageWidget);
-      this.__sidePanel.setMidView(container);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
     },
 
     getLogger: function() {
@@ -502,9 +505,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __onPipelinesubmitted: function(e) {
-      let req = e.getTarget();
-
-      const pipelineId = req.getResponse()["project_id"];
+      const resp = e.getTarget().getResponse();
+      const pipelineId = resp.data["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -512,7 +514,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__pipelineId = null;
         this.getLogger().error("Workbench", "Submition failed");
       } else {
-        this.setCanStart(false);
+        // this.setCanStart(false);
         this.__pipelineId = pipelineId;
         this.getLogger().info("Workbench", "Pipeline started");
       }
@@ -584,6 +586,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
     }
   }
 });

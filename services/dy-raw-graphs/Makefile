@@ -22,6 +22,7 @@ DEFAULT_DOCKER_REGISTRY=masu.speag.com
 export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export SERVICE_BASE_PATH=simcore/services/dynamic/raw-graphs
+export SERVICE_BASE_PATH_TABLE=simcore/services/dynamic/raw-graphs-table
 
 all:
 	@echo 'run `make build` to build'
@@ -63,3 +64,4 @@ down:
 push_service_images: check-env
 	${DOCKER} login ${DOCKER_REGISTRY}
 	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH_TABLE}:${SERVICES_VERSION}

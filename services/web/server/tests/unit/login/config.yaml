@@ -1,6 +1,6 @@
 version: '1.0'
 main:
-  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/login/static
+  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/unit/login/static
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
@@ -47,3 +47,6 @@ storage:
 rest:
   version: v0
   location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
+projects:
+  enabled: False
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json

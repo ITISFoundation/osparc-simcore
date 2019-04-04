@@ -4,10 +4,12 @@
 # pylint:disable=redefined-outer-name
 
 import collections
+import json
 import logging
 import os
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import yaml
@@ -47,6 +49,12 @@ def mock_dir(here):
     return dirpath
 
 @pytest.fixture(scope='session')
+def fake_data_dir(here):
+    dirpath = (here / "../data").resolve()
+    assert dirpath.exists()
+    return dirpath
+
+@pytest.fixture(scope='session')
 def docker_compose_file(mock_dir):
     """
       Path to docker-compose configuration files used for testing
@@ -68,3 +76,8 @@ def light_test_configfile(mock_dir):
     fpath = mock_dir / "configs/light-test.yaml"
     assert fpath.exists()
     return fpath
+
+@pytest.fixture
+def fake_project(fake_data_dir: Path) -> Dict:
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        yield json.load(fp)

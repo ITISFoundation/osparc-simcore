@@ -371,7 +371,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }
           });
           item.addListener("tap", e => {
-            list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+            const prjUuid = item.getModel();
+            if (prjUuid) {
+              list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+            } else {
+              item.fireEvent("dbltap");
+            }
           });
           return item;
         },

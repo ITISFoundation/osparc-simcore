@@ -1,5 +1,5 @@
 {
-    "version":"0.1",
+    "version": "0.1",
     "schema": {
         "inputs": {
             "in_1": {
@@ -16,17 +16,119 @@
             }
         },
         "outputs": {
-            "output_1": {                
-                "label": "Output 1",
+            "out_1": {
+                "label": "Membrane Potential",
                 "displayOrder": 0,
-                "description": "The output 1",
-                "type": "data:*/*"
+                "description": "Membrane Potential csv",
+                "type": "data:text/csv"
             },
-            "output_2": {                
-                "label": "Output 2",
+            "out_2": {
+                "label": "LCC current",
                 "displayOrder": 1,
-                "description": "The output 2",
-                "type": "data:*/*"
+                "description": "LCC current csv",
+                "type": "data:text/csv"
+            },
+            "out_3": {
+                "label": "CaSRT",
+                "displayOrder": 2,
+                "description": "CaSRT csv",
+                "type": "data:text/csv"
+            },
+            "out_4": {
+                "label": "Ca Dyad",
+                "displayOrder": 3,
+                "description": "Ca Dyad csv",
+                "type": "data:text/csv"
+            },
+            "out_5": {
+                "label": "Ca sl",
+                "displayOrder": 4,
+                "description": "Ca sl csv",
+                "type": "data:text/csv"
+            },
+            "out_6": {
+                "label": "Cai",
+                "displayOrder": 5,
+                "description": "Cai csv",
+                "type": "data:text/csv"
+            },
+            "out_7": {
+                "label": "Ito",
+                "displayOrder": 6,
+                "description": "Ito csv",
+                "type": "data:text/csv"
+            },
+            "out_8": {
+                "label": "INa",
+                "displayOrder": 7,
+                "description": "INa csv",
+                "type": "data:text/csv"
+            },
+            "out_9": {
+                "label": "IKs",
+                "displayOrder": 8,
+                "description": "IKs csv",
+                "type": "data:text/csv"
+            },
+            "out_10": {
+                "label": "ICFTR",
+                "displayOrder": 9,
+                "description": "ICFTR csv",
+                "type": "data:text/csv"
+            },
+            "out_11": {
+                "label": "IKr",
+                "displayOrder": 10,
+                "description": "IKr csv",
+                "type": "data:text/csv"
+            },
+            "out_12": {
+                "label": "IK1",
+                "displayOrder": 11,
+                "description": "IK1 csv",
+                "type": "data:text/csv"
+            },
+            "out_13": {
+                "label": "Naj",
+                "displayOrder": 12,
+                "description": "Naj csv",
+                "type": "data:text/csv"
+            },
+            "out_14": {
+                "label": "Nas",
+                "displayOrder": 13,
+                "description": "Nas csv",
+                "type": "data:text/csv"
+            },
+            "out_15": {
+                "label": "Nal",
+                "displayOrder": 14,
+                "description": "Nal csv",
+                "type": "data:text/csv"
+            },
+            "out_16": {
+                "label": "Incx",
+                "displayOrder": 15,
+                "description": "Incx csv",
+                "type": "data:text/csv"
+            },
+            "out_17": {
+                "label": "JRyR",
+                "displayOrder": 16,
+                "description": "JRyR csv",
+                "type": "data:text/csv"
+            },
+            "out_18": {
+                "label": "Passive Leak",
+                "displayOrder": 17,
+                "description": "Passive Leak csv",
+                "type": "data:text/csv"
+            },
+            "out_19": {
+                "label": "SR Ca release",
+                "displayOrder": 18,
+                "description": "SR Ca release csv",
+                "type": "data:text/csv"
             }
         }
     },
