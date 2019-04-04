@@ -50,7 +50,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.connectEvents();
 
     if (isNew) {
-      this.replaceProjectDocument();
+      this.createProjectDocument();
     } else {
       this.updateProjectDocument();
     }
@@ -551,6 +551,18 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       timer.start();
     },
 
+    createProjectDocument: function(newObj) {
+      if (newObj === undefined) {
+        newObj = this.getProject().serializeProject();
+      }
+      let resources = this.__projectResources.projects;
+      resources.addListenerOnce("postSuccess", ev => {
+        console.log("Project replaced");
+        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+      }, this);
+      resources.post(null, newObj);
+    },
+
     replaceProjectDocument: function(newObj) {
       if (newObj === undefined) {
         newObj = this.getProject().serializeProject();
@@ -558,12 +570,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const prjUuid = this.getProject().getUuid();
       let resource = this.__projectResources.project;
       resource.addListenerOnce("delSuccess", e => {
-        let resources = this.__projectResources.projects;
-        resources.addListenerOnce("postSuccess", ev => {
-          console.log("Project replaced");
-          this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        }, this);
-        resources.post(null, newObj);
+        this.createProjectDocument(newObj);
       }, this);
       resource.del({
         "project_id": prjUuid
