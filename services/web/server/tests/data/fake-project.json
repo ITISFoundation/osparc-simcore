@@ -1,0 +1,26 @@
+{
+    "uuid": "f298d06b-707a-6257-a462-d7bf73b76c0c",
+    "name": "ex",
+    "description": "anim sint pariatur do dolore",
+    "notes": "enim nisi consequat",
+    "prjOwner": "dolore ad do consectetur",
+    "collaborators": {
+        "WS(q": [
+        "write"
+        ]
+    },
+    "creationDate": "1865-11-30T04:00:14Z",
+    "lastChangeDate": "7364-11-30T10:04:52Z",
+    "thumbnail": "sunt adipisicing enim anim nisi",
+    "workbench": {
+        "Xw)F": {
+        "key": "simcore/services/dynamic/unseen/university/of/ankh/morpork",
+        "version": "0.2249944.0",
+        "label": "some funky label",
+        "position": {
+            "x": -29926723,
+            "y": 92196123
+        }
+        }
+    }
+}

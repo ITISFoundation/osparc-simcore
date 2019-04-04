@@ -9,11 +9,15 @@
 echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
+echo "  scuUser :`id scu`"
 
+
+USERNAME=scu
+GROUPNAME=scu
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-
+    echo "development mode detected..."
     # NOTE: expects docker run ... -v $(pwd):/devel/services/sidecar
     DEVEL_MOUNT=/devel/services/sidecar
 
@@ -26,14 +30,17 @@ then
 
     if [[ $USERID -eq 0 ]]
     then
+        echo "mounted folder from root, adding scu to root..."
         addgroup scu root
     else
         # take host's credentials in scu
         if [[ -z "$GROUPNAME" ]]
         then
+            echo "mounted folder from $USERID, creating new group..."
             GROUPNAME=host_group
             addgroup -g $GROUPID $GROUPNAME
         else
+            echo "mounted folder from $USERID, adding scu to $GROUPNAME..."
             addgroup scu $GROUPNAME
         fi
 
@@ -51,27 +58,7 @@ stat $DOCKER_MOUNT &> /dev/null
 if [[ $? -eq 0 ]]
 then
     GROUPID=$(stat -c %g $DOCKER_MOUNT)
-    GROUPNAME=docker
-
-    addgroup -g $GROUPID $GROUPNAME &> /dev/null
-    if [[ $? -gt 0 ]]
-    then
-        # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
-    fi
-    addgroup scu $GROUPNAME
-fi
-
-
-
-# Appends docker group if socket is mounted
-DOCKER_MOUNT=/var/run/docker.sock
-
-stat $DOCKER_MOUNT &> /dev/null
-if [[ $? -eq 0 ]]
-then
-    GROUPID=$(stat -c %g $DOCKER_MOUNT)
-    GROUPNAME=docker
+    GROUPNAME=scdocker
 
     addgroup -g $GROUPID $GROUPNAME &> /dev/null
     if [[ $? -gt 0 ]]
@@ -83,8 +70,8 @@ then
 fi
 
 echo "Starting boot ..."
-chown -R scu:scu /home/scu/input
-chown -R scu:scu /home/scu/output
-chown -R scu:scu /home/scu/log
+chown -R $USERNAME:$GROUPNAME /home/scu/input
+chown -R $USERNAME:$GROUPNAME /home/scu/output
+chown -R $USERNAME:$GROUPNAME /home/scu/log
 
 su-exec scu "$@"
