@@ -104,7 +104,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
     __getSplitpaneContainer: function() {
       const splitpane = this.__getParentSplitpane();
-      if (splitpane == null) {
+      if (splitpane == null) { // eslint-disable-line no-eq-null
         return this;
       }
       let container = this;
@@ -116,7 +116,8 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
     __getCssWidth: function() {
       return this.__getSplitpaneContainer().getWidth() ||
-        parseInt(this.__getSplitpaneContainer().getContentElement().getDomElement().style.width);
+        parseInt(this.__getSplitpaneContainer().getContentElement()
+          .getDomElement().style.width);
     },
 
     __setDecorators: function(decorator = null) {
@@ -135,8 +136,8 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
     __attachEventHandlers: function() {
       this.addListenerOnce("appear", () => {
-        this.__getSplitpaneContainer().getContentElement().getDomElement()
-          .addEventListener("transitionend", () => {
+        this.__getSplitpaneContainer().getContentElement()
+          .getDomElement().addEventListener("transitionend", () => {
             if (this.getCollapsed()) {
               this.addListenerOnce("resize", e => {
                 if (this.getCollapsed() && this.__getCssWidth() !== this.__savedWidth) {

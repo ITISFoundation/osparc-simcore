@@ -111,12 +111,10 @@ qx.Class.define("qxapp.desktop.PanelView", {
           if (this.__innerContainer.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
             this.__innerContainer.exclude();
           }
-        } else {
-          if (this.__layoutFlex) {
-            this.setLayoutProperties({
-              flex: this.__layoutFlex
-            });
-          }
+        } else if (this.__layoutFlex) {
+          this.setLayoutProperties({
+            flex: this.__layoutFlex
+          });
         }
 
         if (collapsed) {
