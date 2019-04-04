@@ -40,9 +40,14 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
   members: {
     __filterId: null,
     __textField: null,
+
+    _getMessageName: function(prefix = "filter") {
+      return prefix + this.__filterId.charAt(0).toUpperCase() + this.__filterId.slice(1);
+    },
+
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
-        // Do something
+        qx.event.message.Bus.getInstance().dispatchByName(this._getMessageName(), evt.getData().trim().toLowerCase());
       });
     }
   }
