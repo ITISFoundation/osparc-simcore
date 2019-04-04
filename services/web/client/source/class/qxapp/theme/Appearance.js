@@ -145,6 +145,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
     },
     "panelview-content": {
       style: state => ({
+        decorator: "panelview-content",
         margin: [0, 4, 4, 4]
       })
     },
@@ -176,6 +177,17 @@ qx.Theme.define("qxapp.theme.Appearance", {
     sidepanel: {
       style: state => ({
         backgroundColor: "background-main-lighter"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Splitpane
+    ---------------------------------------------------------------------------
+    */
+    "splitpane/splitter": {
+      style: state => ({
+        visible: false
       })
     }
   }
