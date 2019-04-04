@@ -137,7 +137,8 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     __attachEventHandlers: function() {
       this.addListenerOnce("appear", () => {
         this.__getSplitpaneContainer().getContentElement()
-          .getDomElement().addEventListener("transitionend", () => {
+          .getDomElement()
+          .addEventListener("transitionend", () => {
             if (this.getCollapsed()) {
               this.addListenerOnce("resize", e => {
                 if (this.getCollapsed() && this.__getCssWidth() !== this.__savedWidth) {
