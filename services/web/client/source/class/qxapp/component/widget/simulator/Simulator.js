@@ -75,6 +75,9 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
 
       const sidePanel = this.__buildSidePanel();
       splitpane.add(sidePanel, 0);
+      sidePanel.set({
+        width: 200
+      });
 
       const modeler = this.__checkModelerIsConnected();
       if (modeler) {

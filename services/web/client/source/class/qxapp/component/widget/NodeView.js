@@ -89,6 +89,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         this.__mainLayout.add(widget, {
           flex: 1
         });
+        this.__inputNodesLayout.set({
+          width: 200
+        });
       } else {
         this.__addSettings();
         this.__addMapper();
