@@ -21,14 +21,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
   decorations: {
 
-    "panelview-content": {
-      decorator: qx.ui.decoration.MSingleBorder,
-      style: {
-        width: 1,
-        color: "border"
-      }
-    },
-
     "service-tree": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
@@ -36,41 +28,38 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-collapse-transition": {
+    "panelview": {
       style: {
-        transitionProperty: ["height", "top"],
+        transitionProperty: "top",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
     },
 
-    "panelview-open-collapse-transition": {
-      include: "panelview-content",
+    "panelview-content-noborder": {
       style: {
-        transitionProperty: ["height", "top"],
+        transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
     },
 
-    "outputPort": {
-      decorator: qx.ui.decoration.Decorator,
+    "panelview-content": {
+      include: "panelview-content-noborder",
       style: {
-        color: "button-border-hovered",
         width: 1,
-        radius: 4
+        color: "border"
       }
     },
 
     "outputPortHighlighted": {
       decorator: qx.ui.decoration.MBoxShadow,
-      include: "outputPort",
       style: {
         shadowColor: "button-border-hovered",
         shadowBlurRadius: 3,
         shadowSpreadRadius: 2,
         shadowLength: [0, 0],
-        inset: false
+        inset: true
       }
     },
 
@@ -90,7 +79,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "sidepanel": {
       style: {
-        transitionProperty: ["left"],
+        transitionProperty: ["left", "width"],
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
