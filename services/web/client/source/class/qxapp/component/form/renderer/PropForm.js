@@ -130,7 +130,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           data[portId] = null;
         }
       }
-      return data;
+      let filteredData = {};
+      for (const key in data) {
+        if (data[key] !== null) {
+          filteredData[key] = data[key];
+        }
+      }
+      return filteredData;
     },
 
     linkAdded: function(portId) {
