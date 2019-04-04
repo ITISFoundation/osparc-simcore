@@ -33,42 +33,34 @@
  * </pre>
  */
 
-const PORT_INPUTS_WIDTH = 250;
-
 qx.Class.define("qxapp.component.widget.NodeView", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function() {
-    this.base();
+    this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
-    this.set({
-      padding: 10
-    });
-
-    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    inputNodesLayout.set({
-      width: PORT_INPUTS_WIDTH,
-      maxWidth: PORT_INPUTS_WIDTH,
-      allowGrowX: false
-    });
+    const inputNodesLayout = this.__inputNodesLayout = new qxapp.desktop.SidePanel();
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
       font: navBarLabelFont,
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this._add(inputNodesLayout);
 
+    const scroll = new qx.ui.container.Scroll().set({
+      minWidth: 0
+    });
+    scroll.add(inputNodesLayout);
+    this.add(scroll, 0);
 
-    let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    mainLayout.set({
+    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       alignX: "center",
       padding: [0, 10]
     });
-    this._add(mainLayout, {
-      flex: 1
-    });
+
+    this.add(mainLayout, 1);
+
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -287,6 +279,10 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__settingsLayout.setVisibility(othersStatus);
       this.__mapperLayout.setVisibility(othersStatus);
       this.__buttonsLayout.setVisibility(othersStatus);
+    },
+
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__inputNodesLayout.toggleCollapsed.bind(this.__inputNodesLayout));
     }
   }
 });
