@@ -43,7 +43,7 @@ def test_convert_to_schema_names(fake_db_dict):
     fake_db_dict["time_entry"] = date
     db_entries = _convert_to_schema_names(fake_db_dict)
     assert "timeEntry" in db_entries
-    assert datetime.datetime.strptime(db_entries["timeEntry"], '%Y-%m-%dT%H:%M:%S.%fZ') == date
+    assert db_entries["timeEntry"] == date.isoformat(timespec='milliseconds')
 
 
 @pytest.fixture
