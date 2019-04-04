@@ -220,6 +220,18 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
               defaultValue: 0
             }
           }
+        },
+        "PEC-UUID": {
+          key: "PEC-UUID",
+          version: "1.0.0",
+          name: "PEC",
+          inputs: {}
+        },
+        "PMC-UUID": {
+          key: "PMC-UUID",
+          version: "1.0.0",
+          name: "PMC",
+          inputs: {}
         }
       },
 
