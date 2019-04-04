@@ -124,7 +124,7 @@
             },
             "progress": {
               "type":"number",
-              "maximum": 1.0,
+              "maximum": 100,
               "minimum": 0,
               "description": "the node progress value"
             },
