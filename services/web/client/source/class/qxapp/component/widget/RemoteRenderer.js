@@ -82,7 +82,8 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
       }, this);
 
-      this.addListener("resize", this.__resize, this);
+      // this.addListener("resize", this.__resize, this);
+
       this.__requestScreenshot();
     }, this);
   },
@@ -116,8 +117,6 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     },
 
     __logPointerEvent: function(pointerEvent) {
-      pointerEvent.preventDefault();
-
       const evType = pointerEvent.getType();
       const evButton = pointerEvent.getButton();
       const evXPos = pointerEvent.getDocumentLeft();
