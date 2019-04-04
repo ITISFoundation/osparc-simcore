@@ -1,6 +1,6 @@
 aiohttp
 coveralls~=1.3
-codecov
+codecov~=2.0
 jsonschema~=2.6
 openapi-spec-validator
 pytest~=3.6
