@@ -211,6 +211,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (!nodeId) {
         return;
       }
+      if (this.__nodeView) {
+        this.__nodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
       let widget = this.__getWidgetForNode(nodeId);
       this.showInMainView(widget, nodeId);
@@ -251,6 +254,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
+            widget.addListener("finished", function() {
+              let loadNodeId = "root";
+              const filePicker = widget.getNode();
+              if (filePicker.isPropertyInitialized("parentNodeId")) {
+                loadNodeId = filePicker.getParentNodeId();
+              }
+              this.nodeSelected(loadNodeId);
+            }, this);
           } else {
             widget = this.__nodeView;
           }
@@ -322,13 +333,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      if (this.__mainPanel.isPropertyInitialized("mainView")) {
-        let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("finished", function() {
-          this.__mainPanel.setMainView(previousWidget);
-        }, this);
-      }
-
       const node = this.getProject().getWorkbench().getNode(nodeId);
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
