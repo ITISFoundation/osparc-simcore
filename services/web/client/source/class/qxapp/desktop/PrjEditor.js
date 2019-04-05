@@ -164,8 +164,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__workbenchUI.getLogger().info("Can not start pipeline");
         }
       }, this);
-
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
+        this.__updatePipeline();
+      }, this);
 
       let workbench = this.getProject().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -413,6 +415,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
+        } else {
+          const workbench = this.getProject().getWorkbench();
+          const allNodes = workbench.getNodes(true);
+          Object.values(allNodes).forEach(node2 => {
+            node2.retrieveInputs();
+          }, this);
         }
       }, this);
       req.addListener("error", e => {
