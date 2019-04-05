@@ -209,6 +209,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (!nodeId) {
         return;
       }
+      if (this.__nodeView) {
+        this.__nodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
       let widget = this.__getWidgetForNode(nodeId);
       this.showInMainView(widget, nodeId);
