@@ -87,7 +87,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
       let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
 
       retrieveBtn.addListener("execute", () => {
-        this.fireEvent("retrieveInput");
+        this.fireEvent("retrieveInputs");
       }, this);
       return retrieveBtn;
     },
