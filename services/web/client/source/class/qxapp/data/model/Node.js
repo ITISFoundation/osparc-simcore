@@ -172,7 +172,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     thumbnail: {
       check: "String",
-      nullable: true
+      nullable: true,
+      init: ""
     }
   },
 
@@ -795,7 +796,15 @@ qx.Class.define("qxapp.data.model.Node", {
           y: this.getPosition().y
         };
       }
-      return nodeEntry;
+      // remove null entries from the payload
+      let filteredNodeEntry = {};
+      for (const key in nodeEntry) {
+        if (nodeEntry[key] !== null) {
+          filteredNodeEntry[key] = nodeEntry[key];
+        }
+      }
+
+      return filteredNodeEntry;
     }
   }
 });

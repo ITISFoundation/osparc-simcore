@@ -31,7 +31,7 @@ before_script() {
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_service_director -v services/director/tests
+        pytest --cov=simcore_service_director --cov-append -v services/director/tests
     else
         echo "No changes detected. Skipping unit-testing of director."
     fi
@@ -41,6 +41,7 @@ after_success() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         coveralls
+        codecov
     fi
 }
 
