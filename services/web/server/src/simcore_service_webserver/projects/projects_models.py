@@ -161,7 +161,7 @@ class ProjectDB:
             if not row:
                 raise ProjectNotFoundError(project_uuid)
             result_dict = {key:value for key,value in row.items()}
-            log.info("found project: %s", result_dict)
+            log.debug("found project: %s", result_dict)
             return _convert_to_schema_names(result_dict)
 
     @classmethod
