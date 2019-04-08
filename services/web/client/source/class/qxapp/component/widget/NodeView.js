@@ -244,6 +244,19 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__buttonsLayout.setVisibility(othersStatus);
     },
 
+    hasIFrame: function() {
+      return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
+    },
+
+    restoreIFrame: function() {
+      if (this.hasIFrame()) {
+        const iFrame = this.getNode().getIFrame();
+        if (iFrame) {
+          iFrame.maximizeIFrame(false);
+        }
+      }
+    },
+
     __addButtons: function() {
       this.__buttonsLayout.removeAll();
       let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
