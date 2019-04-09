@@ -174,7 +174,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
               if (to.getIsDir()) {
                 const settingKey = to.getKey();
                 let cbk = function(isBranch) {
-                  // const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+                  const thisClass = qxapp.component.widget.simulator.SimulatorTree;
                   let data = {};
                   if (isBranch) {
                     data = {
@@ -189,15 +189,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
                     // const metadata = thisClass.getMetaData(fromNodeKey, fromItemKey);
                     // data = thisClass.createConceptSettingData(fromItemKey, metadata);
                   } else {
-                    data = {
-                      key: fromItemKey,
-                      label: fromItemKey,
-                      nodeKey: fromNodeKey,
-                      portKey: fromNodeKey,
-                      isRoot: false,
-                      isDir: false
-                    };
-                    // data = thisClass.createComponentData(fromItemKey);
+                    data = thisClass.createComponentData(fromItemKey);
                   }
                   let newItem = qx.data.marshal.Json.createModel(data, true);
                   to.getModel().getChildren()
