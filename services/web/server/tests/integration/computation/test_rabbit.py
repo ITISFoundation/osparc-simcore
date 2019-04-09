@@ -105,7 +105,7 @@ def node_uuid() -> str:
 def fake_log_message(node_uuid: str):
     yield {
         "Channel":"Log",
-        "Message": "Some fake message",
+        "Messages": ["Some fake message"],
         "Node": node_uuid
     }
 
@@ -113,7 +113,7 @@ def fake_log_message(node_uuid: str):
 def fake_progress_message(node_uuid: str):
     yield {
         "Channel":"Progress",
-        "Message": 0.56,
+        "Progress": 0.56,
         "Node": node_uuid
     }
 
