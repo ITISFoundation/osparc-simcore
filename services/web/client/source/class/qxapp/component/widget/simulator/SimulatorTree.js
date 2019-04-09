@@ -57,6 +57,11 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
   },
 
   statics: {
+    getMetaData(nodeKey, b, c) {
+      const store = qxapp.data.Store.getInstance();
+      return store.getItem(nodeKey, b, c);
+    },
+
     createRootData: function(label) {
       return {
         label: label,
@@ -68,8 +73,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     },
 
     createGlobalSettingData: function(simulatorKey, globalSettingKey, globalSettingVersion) {
-      const store = qxapp.data.Store.getInstance();
-      const metadata = store.getItem(simulatorKey, globalSettingKey);
+      const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+      const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey);
       let newEntry = {
         key: globalSettingKey,
         version: globalSettingVersion,
@@ -82,7 +87,6 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         newEntry.children = [];
         const mapper = metadata.inputs.mapper;
         if ("defaultValue" in mapper) {
-          const thisClass = qxapp.component.widget.simulator.SimulatorTree;
           const defaultInputs = mapper.defaultValue;
           for (const defaultInputKey in defaultInputs) {
             const concSet = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, defaultInputKey);
@@ -99,8 +103,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
     },
 
     createConceptSettingData: function(simulatorKey, globalSettingKey, conceptSettingKey) {
-      const store = qxapp.data.Store.getInstance();
-      const metadata = store.getItem(simulatorKey, globalSettingKey, conceptSettingKey);
+      const thisClass = qxapp.component.widget.simulator.SimulatorTree;
+      const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey, conceptSettingKey);
       let newEntry = {
         key: conceptSettingKey,
         version: null,
