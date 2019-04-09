@@ -63,7 +63,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     this.__createNodeLayout();
 
-    this._subscribeToFilterGroup("WorkbenchFilter");
+    this._subscribeToFilterGroup("workbench");
   },
 
   properties: {

@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Base class for GUI filter controllers. Stores the state of all filters and dispatches it when it changes.
+ * GUI filter controller. Stores the state of all filters and dispatches it when it changes.
  */
 qx.Class.define("qxapp.component.filter.UIFilterController", {
   extend: qx.core.Object,

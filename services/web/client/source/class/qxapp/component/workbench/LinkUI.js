@@ -44,7 +44,7 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
     this.setLink(link);
     this.setRepresentation(representation);
 
-    this._subscribeToFilterGroup("WorkbenchFilter");
+    this._subscribeToFilterGroup("workbench");
   },
 
   events: {

@@ -40,10 +40,6 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
       return this.__capitalizeFn(this.__filterId, this.__groupId, suffix);
     },
 
-    __getControllerName: function() {
-      return this.__capitalizeFn(this.__groupId) + "FilterController";
-    },
-
     _filterChange: function(data) {
       const msgData = {
         groupId: this.__groupId,
