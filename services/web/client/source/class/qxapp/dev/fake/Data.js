@@ -1661,6 +1661,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
             return qxapp.dev.fake.neuron.Data.getItem(portKey, itemUuid);
           case "simcore/services/dynamic/itis/s4l/simulator/lf":
             return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
+          case "simcore/services/dynamic/itis/s4l/materialDB":
+            return qxapp.dev.fake.materialDB.Data.getItem(portKey, itemUuid);
         }
       }
 
