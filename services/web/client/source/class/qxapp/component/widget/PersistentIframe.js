@@ -74,16 +74,8 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
         top:-10000
       });
       actionButton.addListener("execute", e => {
-        if (this.hasState("maximized")) {
-          this.fireEvent("restore");
-          this.removeState("maximized");
-          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20");
-        } else {
-          this.fireEvent("maximize");
-          this.addState("maximized");
-          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]+"/20");
-        }
-      });
+        this.maximizeIFrame(!this.hasState("maximized"));
+      }, this);
       appRoot.add(actionButton);
       standin.addListener("appear", e => {
         this.__syncIframePos();
@@ -116,6 +108,20 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       return standin;
     },
+
+    maximizeIFrame: function(maximize) {
+      const actionButton = this.__actionButton;
+      if (maximize) {
+        this.fireEvent("maximize");
+        this.addState("maximized");
+        actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]+"/20");
+      } else {
+        this.fireEvent("restore");
+        this.removeState("maximized");
+        actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20");
+      }
+    },
+
     __syncIframePos: function() {
       if (this.__syncScheduled) {
         return;

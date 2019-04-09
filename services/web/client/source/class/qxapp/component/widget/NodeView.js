@@ -103,6 +103,19 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
+    hasIFrame: function() {
+      return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
+    },
+
+    restoreIFrame: function() {
+      if (this.hasIFrame()) {
+        const iFrame = this.getNode().getIFrame();
+        if (iFrame) {
+          iFrame.maximizeIFrame(false);
+        }
+      }
+    },
+
     __addInputPortsUIs: function() {
       this.__clearInputPortsUIs();
 

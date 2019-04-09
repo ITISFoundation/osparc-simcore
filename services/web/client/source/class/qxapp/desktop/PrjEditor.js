@@ -163,8 +163,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__workbenchUI.getLogger().info("Can not start pipeline");
         }
       }, this);
-
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
+        this.__updatePipeline();
+      }, this);
 
       let workbench = this.getProject().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -208,6 +210,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (!nodeId) {
         return;
       }
+      if (this.__nodeView) {
+        this.__nodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
       let widget = this.__getWidgetForNode(nodeId);
       this.showInMainView(widget, nodeId);
@@ -245,6 +250,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         } else if (node.isInKey("file-picker")) {
           widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
+          widget.addListener("finished", function() {
+            let loadNodeId = "root";
+            const filePicker = widget.getNode();
+            if (filePicker.isPropertyInitialized("parentNodeId")) {
+              loadNodeId = filePicker.getParentNodeId();
+            }
+            this.nodeSelected(loadNodeId);
+          }, this);
         } else if (node.isInKey("remote-renderer")) {
           widget = new qxapp.component.widget.RemoteRenderer(node, null);
         } else {
@@ -318,13 +331,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      if (this.__mainPanel.isPropertyInitialized("mainView")) {
-        let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("finished", function() {
-          this.__mainPanel.setMainView(previousWidget);
-        }, this);
-      }
-
       const node = this.getProject().getWorkbench().getNode(nodeId);
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -411,6 +417,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
+        } else {
+          const workbench = this.getProject().getWorkbench();
+          const allNodes = workbench.getNodes(true);
+          Object.values(allNodes).forEach(node2 => {
+            node2.retrieveInputs();
+          }, this);
         }
       }, this);
       req.addListener("error", e => {

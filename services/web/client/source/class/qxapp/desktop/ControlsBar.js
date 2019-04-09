@@ -44,7 +44,8 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
 
   events: {
     "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "stopPipeline": "qx.event.type.Event",
+    "retrieveInputs": "qx.event.type.Event"
   },
 
   members: {
@@ -56,8 +57,10 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
       const simCtrls = new qx.ui.toolbar.Part();
       this.__startButton = this.__createStartButton();
       this.__stopButton = this.__createStopButton();
+      const retrieveBtn = this.__createRetrieveButton();
       simCtrls.add(this.__startButton);
       simCtrls.add(this.__stopButton);
+      simCtrls.add(retrieveBtn);
       this.add(simCtrls);
     },
 
@@ -78,6 +81,15 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
         this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
+    },
+
+    __createRetrieveButton: function() {
+      let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
+
+      retrieveBtn.addListener("execute", () => {
+        this.fireEvent("retrieveInputs");
+      }, this);
+      return retrieveBtn;
     },
 
     setCanStart: function(canStart) {
