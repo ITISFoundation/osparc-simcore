@@ -87,29 +87,61 @@ async def log_channel(loop, rabbit_config, pika_connection):
     )
     yield logs_exchange
 
+@pytest.fixture
+async def progress_channel(loop, rabbit_config, pika_connection):
+    channel = await pika_connection.channel()
+    pika_progress_channel = rabbit_config["channels"]["log"]
+    progress_exchange = await channel.declare_exchange(
+        pika_progress_channel, aio_pika.ExchangeType.FANOUT,
+        auto_delete=True
+    )
+    yield progress_exchange
+
 @pytest.fixture(scope="session")
 def node_uuid() -> str:
     return str(uuid4())
 
 @pytest.fixture(scope="session")
-def fake_message(node_uuid: str):
+def fake_log_message(node_uuid: str):
     yield {
         "Channel":"Log",
         "Message": "Some fake message",
         "Node": node_uuid
     }
 
+@pytest.fixture(scope="session")
+def fake_progress_message(node_uuid: str):
+    yield {
+        "Channel":"Progress",
+        "Message": 0.56,
+        "Node": node_uuid
+    }
+
 # ------------------------------------------
-async def test_rabbit_connection(loop, client, log_channel, fake_message, mocker):
+async def test_rabbit_log_connection(loop, client, log_channel, fake_log_message, mocker):
     mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
     mock.return_value.set_result("")
 
     for i in range(1000):
         await log_channel.publish(
             aio_pika.Message(
-                body=json.dumps(fake_message).encode(),
+                body=json.dumps(fake_log_message).encode(),
                 content_type="text/json"), routing_key = ""
             )
 
 
-    mock.assert_called_with("logger", data=json.dumps(fake_message))
+    mock.assert_called_with("logger", data=json.dumps(fake_log_message))
+
+async def test_rabbit_progress_connection(loop, client, progress_channel, fake_progress_message, mocker):
+    mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
+    mock.return_value.set_result("")
+
+    for i in range(1000):
+        await progress_channel.publish(
+            aio_pika.Message(
+                body=json.dumps(fake_progress_message).encode(),
+                content_type="text/json"), routing_key = ""
+            )
+
+
+    mock.assert_called_with("progress", data=json.dumps(fake_progress_message))
