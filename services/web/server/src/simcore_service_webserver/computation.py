@@ -38,6 +38,10 @@ def setup(app: web.Application,* , disable_login=False):
     # TODO: add function to "unsubscribe"
     # app.on_cleanup.append(unsubscribe)
 
+    if not APP_OPENAPI_SPECS_KEY in app:
+        log.warning("rest submodule not initialised? computation routes will not be defined!")
+        return
+
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
         {'start_pipeline': computation_api.start_pipeline.__wrapped__ if disable_login else computation_api.start_pipeline,
