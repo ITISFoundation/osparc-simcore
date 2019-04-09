@@ -55,7 +55,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
 
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
-      this.__filterField = new qxapp.component.filter.TextFilter("workbenchNodesByText");
+      this.__filterField = new qxapp.component.filter.TextFilter("text", "workbench");
       filterCtrls.add(this.__filterField);
       this.add(filterCtrls);
 

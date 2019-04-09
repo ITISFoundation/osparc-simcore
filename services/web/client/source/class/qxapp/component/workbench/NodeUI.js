@@ -37,6 +37,7 @@ const portHeight = 16;
 qx.Class.define("qxapp.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
   include: qxapp.component.filter.MFiltrable,
+  implement: qxapp.component.filter.IFiltrable,
 
   /**
     * @param node {qxapp.data.model.Node} Node owning the widget
@@ -62,7 +63,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     this.__createNodeLayout();
 
-    this.__attachEventHandlers();
+    this._subscribeToFilterGroup("WorkbenchFilter");
   },
 
   properties: {
@@ -259,21 +260,25 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       this.setOpacity(0.4);
     },
 
-    _removeFilter: function() {
+    _unfilter: function() {
       this.setOpacity(1);
     },
 
     _shouldFilterOut: function(data) {
-      const label = this.getNode().getLabel().trim().toLowerCase();
-      return !(label.indexOf(data) > -1);
+      if (data.text) {
+        const label = this.getNode().getLabel().trim().toLowerCase();
+        if (label.indexOf(data.text) === -1) {
+          return true;
+        }
+      }
+      return false;
     },
 
     _shouldReactToFilter: function(data) {
-      return data.length > 1;
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.getInstance().subscribe("filterWorkbenchNodesByText", this._subscriber, this);
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      return false;
     }
   }
 });

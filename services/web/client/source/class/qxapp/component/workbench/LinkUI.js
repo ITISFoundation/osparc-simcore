@@ -32,6 +32,7 @@
 qx.Class.define("qxapp.component.workbench.LinkUI", {
   extend: qx.core.Object,
   include: qxapp.component.filter.MFiltrable,
+  implement: qxapp.component.filter.IFiltrable,
 
   /**
     * @param link {qxapp.data.model.Link} Link owning the object
@@ -43,7 +44,7 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
     this.setLink(link);
     this.setRepresentation(representation);
 
-    this.__attachEventHandlers();
+    this._subscribeToFilterGroup("WorkbenchFilter");
   },
 
   events: {
@@ -67,10 +68,10 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
     },
 
     _filterOut: function() {
-      this.getRepresentation().node.style.opacity = 0.2;
+      this.getRepresentation().node.style.opacity = 0.15;
     },
 
-    _removeFilter: function() {
+    _unfilter: function() {
       this.getRepresentation().node.style.opacity = 1;
     },
 
@@ -79,11 +80,10 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
     },
 
     _shouldReactToFilter: function(data) {
-      return data.length > 1;
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.getInstance().subscribe("filterWorkbenchNodesByText", this._subscriber, this);
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      return false;
     }
   }
 });

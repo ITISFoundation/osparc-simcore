@@ -186,6 +186,18 @@ qx.Class.define("qxapp.utils.Utils", {
         }
       };
       xhr.send();
+    },
+
+    capitalize: function() {
+      let res = "";
+      for (let i=0; i<arguments.length; i++) {
+        if (typeof arguments[i] !== "string" && arguments[i] instanceof String === false) {
+          continue;
+        }
+        const capitalized = arguments[i].charAt(0).toUpperCase() + arguments[i].slice(1);
+        res = res.concat(capitalized);
+      }
+      return res;
     }
   }
 });

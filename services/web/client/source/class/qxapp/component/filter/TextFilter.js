@@ -16,17 +16,16 @@
 ************************************************************************ */
 
 /**
- * Label and TextField meant for filtering
+ * Label and TextField bundled together to make a simple text filter.
  */
 qx.Class.define("qxapp.component.filter.TextFilter", {
-  extend: qx.ui.core.Widget,
+  extend: qxapp.component.filter.UIFilter,
 
-  construct: function(filterId, labelId = "Filter") {
-    this.base(arguments);
+  construct: function(filterId, groupId, labelTr = "Filter") {
+    this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__filterId = filterId;
-    this._add(new qx.ui.basic.Label(this.tr(labelId) + ":").set({
+    this._add(new qx.ui.basic.Label(this.tr(labelTr) + ":").set({
       appearance: "toolbar-label"
     }));
     const textField = this.__textField = new qx.ui.form.TextField().set({
@@ -38,16 +37,11 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
   },
 
   members: {
-    __filterId: null,
     __textField: null,
-
-    _getMessageName: function(prefix = "filter") {
-      return prefix + this.__filterId.charAt(0).toUpperCase() + this.__filterId.slice(1);
-    },
 
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
-        qx.event.message.Bus.getInstance().dispatchByName(this._getMessageName(), evt.getData().trim().toLowerCase());
+        this._filterChange(evt.getData().trim().toLowerCase());
       });
     }
   }

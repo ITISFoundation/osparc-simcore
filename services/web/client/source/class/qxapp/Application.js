@@ -149,7 +149,7 @@ qx.Class.define("qxapp.Application", {
           "select:-internal-autofill-previewed," +
           "select:-internal-autofill-selected",
 
-          "transition: background-color 0s linear 5000s, color 0s linear 5000s"
+          "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       } else if (qx.bom.client.Engine.getName() === "webkit") {
         stylesheet.addRule(
@@ -163,7 +163,7 @@ qx.Class.define("qxapp.Application", {
           "select:-webkit-autofill:hover," +
           "select:-webkit-autofill:focus",
 
-          "transition: background-color 0s linear 5000s, color 0s linear 5000s"
+          "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       }
     }

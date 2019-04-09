@@ -19,18 +19,25 @@
  * Common functions for all elements that can be filtered
  */
 qx.Mixin.define("qxapp.component.filter.MFiltrable", {
-
-  members:{
+  members: {
+    /**
+     * Used to subscribe the element to a filter group.
+     *
+     * @param {String} groupId Id of the filter group to subscribe to.
+     */
+    _subscribeToFilterGroup: function(groupId) {
+      qx.event.message.Bus.getInstance().subscribe(groupId, this.__subscriber, this);
+    },
     /**
      * Subscriber function for incoming messages.
      *
      * @param {qx.event.message.Message} msg Message dispatched.
      */
-    _subscriber: function(msg) {
-      if (this._shouldReactToFilter(msg.getData()) && this._shouldFilterOut(msg.getData())) {
-        this._filterOut();
+    __subscriber: function(msg) {
+      if (this._shouldReactToFilter(msg.getData(), msg) && this._shouldFilterOut(msg.getData(), msg)) {
+        this._filterOut(msg.getData(), msg);
       } else {
-        this._removeFilter();
+        this._unfilter(msg.getData(), msg);
       }
     }
   }
