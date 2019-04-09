@@ -67,12 +67,12 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       };
     },
 
-    createGlobalSettingData: function(simulatorKey, settingKey, settingVersion) {
+    createGlobalSettingData: function(simulatorKey, globalSettingKey, globalSettingVersion) {
       const store = qxapp.data.Store.getInstance();
-      const metadata = store.getItem(simulatorKey, settingKey);
+      const metadata = store.getItem(simulatorKey, globalSettingKey);
       let newEntry = {
-        key: settingKey,
-        version: settingVersion,
+        key: globalSettingKey,
+        version: globalSettingVersion,
         metadata: metadata,
         isRoot: false,
         isDir: false
@@ -85,7 +85,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
           const thisClass = qxapp.component.widget.simulator.SimulatorTree;
           const defaultInputs = mapper.defaultValue;
           for (const defaultInputKey in defaultInputs) {
-            const concSet = thisClass.createConceptSettingData(simulatorKey, settingKey, defaultInputKey);
+            const concSet = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, defaultInputKey);
             newEntry.children.push(concSet);
             const values = defaultInputs[defaultInputKey];
             for (let i=0; i<values.length; i++) {
@@ -98,11 +98,11 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       return newEntry;
     },
 
-    createConceptSettingData: function(simulatorKey, settingKey, itemKey) {
+    createConceptSettingData: function(simulatorKey, globalSettingKey, conceptSettingKey) {
       const store = qxapp.data.Store.getInstance();
-      const metadata = store.getItem(simulatorKey, settingKey, itemKey);
+      const metadata = store.getItem(simulatorKey, globalSettingKey, conceptSettingKey);
       let newEntry = {
-        key: itemKey,
+        key: conceptSettingKey,
         version: null,
         metadata: metadata,
         isRoot: false,
@@ -112,10 +112,10 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       return newEntry;
     },
 
-    createComponentData: function(itemKey) {
+    createComponentData: function(componentKey) {
       let newEntry = {
-        key: itemKey,
-        label: itemKey.replace("-UUID", ""),
+        key: componentKey,
+        label: componentKey.replace("-UUID", ""),
         version: null,
         metadata: null,
         isRoot: false,
@@ -282,12 +282,12 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       }
     },
 
-    addConceptSetting: function(settingsKey, itemKey) {
-      const globalSetting = this.__getGlobalSettingModel(settingsKey);
+    addConceptSetting: function(globalSettingKey, conceptSettingKey) {
+      const globalSetting = this.__getGlobalSettingModel(globalSettingKey);
       if (globalSetting) {
         const thisClass = qxapp.component.widget.simulator.SimulatorTree;
         const simulatorKey = this.getNode().getKey();
-        const newEntry = thisClass.createConceptSettingData(simulatorKey, settingsKey, itemKey);
+        const newEntry = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, conceptSettingKey);
         const model = qx.data.marshal.Json.createModel(newEntry, true);
         globalSetting.getChildren().push(model);
       }
