@@ -89,6 +89,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         if ("defaultValue" in mapper) {
           const defaultInputs = mapper.defaultValue;
           for (const defaultInputKey in defaultInputs) {
+            // const metadata2 = thisClass.getMetaData(simulatorKey, globalSettingKey, defaultInputKey);
+            // const concSet = thisClass.createConceptSettingData(defaultInputKey, metadata2);
             const concSet = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, defaultInputKey);
             newEntry.children.push(concSet);
             const values = defaultInputs[defaultInputKey];
@@ -102,6 +104,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       return newEntry;
     },
 
+    // createConceptSettingData: function(conceptSettingKey, metadata) {
     createConceptSettingData: function(simulatorKey, globalSettingKey, conceptSettingKey) {
       const thisClass = qxapp.component.widget.simulator.SimulatorTree;
       const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey, conceptSettingKey);
@@ -171,6 +174,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
               if (to.getIsDir()) {
                 const settingKey = to.getKey();
                 let cbk = function(isBranch) {
+                  // let data = {};
+                  // const thisClass = qxapp.component.widget.simulator.SimulatorTree;
                   let data = {
                     key: fromItemKey,
                     label: fromItemKey,
@@ -181,8 +186,11 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
                   if (isBranch) {
                     data["isDir"] = true;
                     data["children"] = [];
+                    // const metadata = thisClass.getMetaData(fromNodeKey, fromItemKey);
+                    // data = thisClass.createConceptSettingData(fromItemKey, metadata);
                   } else {
                     data["isDir"] = false;
+                    // data = thisClass.createComponentData(fromItemKey);
                   }
                   let newItem = qx.data.marshal.Json.createModel(data, true);
                   to.getModel().getChildren()
@@ -291,6 +299,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       if (globalSetting) {
         const thisClass = qxapp.component.widget.simulator.SimulatorTree;
         const simulatorKey = this.getNode().getKey();
+        // const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey);
+        // const newEntry = thisClass.createConceptSettingData(conceptSettingKey, metadata);
         const newEntry = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, conceptSettingKey);
         const model = qx.data.marshal.Json.createModel(newEntry, true);
         globalSetting.getChildren().push(model);
