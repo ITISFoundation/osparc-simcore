@@ -384,7 +384,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+        key: "simcore/services/dynamic/itis/s4l/materialDB",
         version: "0.0.0",
         type: "computational",
         name: "MaterialDB",
@@ -569,7 +569,7 @@ qx.Class.define("qxapp.data.Store", {
             description: "Maps Model entities into Materials",
             type: "mapper",
             maps: {
-              branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+              branch: "simcore/services/dynamic/itis/s4l/materialDB",
               leaf: "simcore/services/dynamic/modeler/webserver"
             },
             defaultValue: {
@@ -1287,7 +1287,7 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/demodec/container/itis/s4l/simulator/lf": {
           "category": "Simulator"
         },
-        "simcore/services/demodec/dynamic/itis/s4l/MaterialDB": {
+        "simcore/services/dynamic/itis/s4l/materialDB": {
           "category": "Solver"
         },
         "simcore/services/demodec/dynamic/itis/s4l/Modeler": {

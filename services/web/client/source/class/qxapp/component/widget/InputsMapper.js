@@ -33,7 +33,7 @@
  *   description: "Maps Model entities into Materials",
  *   type: "mapper",
  *   maps: {
- *     branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+ *     branch: "simcore/services/dynamic/itis/s4l/materialDB",
  *     leaf: "simcore/services/dynamic/modeler/webserver"
  *   },
  *   defaultValue: {
