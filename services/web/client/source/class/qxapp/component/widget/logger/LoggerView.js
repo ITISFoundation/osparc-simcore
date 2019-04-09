@@ -65,7 +65,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       flex: 1
     });
 
-    this.__logs = [];
     this.__messengerColors = new Set();
 
     this.__createInitMsg();
@@ -91,7 +90,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
   members: {
     __textfield: null,
-    __logs: null,
     __logModel: null,
     __logView: null,
     __messengerColors: null,
@@ -180,12 +178,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __addLog: function(who = "System", what = "", logLevel = 0) {
-      this.__logs.push({
-        who: who,
-        what: what,
-        logLevel: logLevel
-      });
-
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
       let msgLog = {
@@ -198,6 +190,35 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         }
       };
       this.__logModel.addRows([msgLog]);
+
+      this.__logModel.reloadData();
+
+      const nFilteredRows = this.__logModel.getFilteredRowCount();
+      this.__logView.scrollCellVisible(0, nFilteredRows);
+    },
+
+    infos: function(who = "System", whats = [""]) {
+      this.__addLogs(who, whats, LOG_LEVEL.info);
+    },
+
+    __addLogs: function(who = "System", whats = [""], logLevel = 0) {
+      const whoRich = this.__addWhoColorTag(who);
+      const whatRich = this.__addLevelColorTag(whats[0], logLevel);
+
+      let msgLogs = [];
+      for (let i=0; i<whats.length; i++) {
+        const msgLog = {
+          whoRich: whoRich,
+          whatRich: whatRich,
+          msg: {
+            who: who,
+            what: whats[i],
+            logLevel: logLevel
+          }
+        };
+        msgLogs.push(msgLog);
+      }
+      this.__logModel.addRows(msgLogs);
 
       this.__logModel.reloadData();
 
