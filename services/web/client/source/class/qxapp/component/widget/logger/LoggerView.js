@@ -169,6 +169,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       this.__addLog(who, what, LOG_LEVEL.info);
     },
 
+    infos: function(who = "System", whats = [""]) {
+      this.__addLogs(who, whats, LOG_LEVEL.info);
+    },
+
     warn: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.warning);
     },
@@ -191,14 +195,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       };
       this.__logModel.addRows([msgLog]);
 
-      this.__logModel.reloadData();
-
-      const nFilteredRows = this.__logModel.getFilteredRowCount();
-      this.__logView.scrollCellVisible(0, nFilteredRows);
-    },
-
-    infos: function(who = "System", whats = [""]) {
-      this.__addLogs(who, whats, LOG_LEVEL.info);
+      this.__updateTable();
     },
 
     __addLogs: function(who = "System", whats = [""], logLevel = 0) {
@@ -220,8 +217,11 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       }
       this.__logModel.addRows(msgLogs);
 
-      this.__logModel.reloadData();
+      this.__updateTable();
+    },
 
+    __updateTable: function(who) {
+      this.__logModel.reloadData();
       const nFilteredRows = this.__logModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
     },
