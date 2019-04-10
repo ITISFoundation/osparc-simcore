@@ -78,6 +78,6 @@ qx.Interface.define("qxapp.component.filter.IFiltrable", {
       if (msg) {
         this.assertInstance(msg, qx.event.message.Message);
       }
-    },
+    }
   }
 });

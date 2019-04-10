@@ -48,7 +48,8 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
 
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
-        this._filterChange(evt.getData().trim().toLowerCase());
+        this._filterChange(evt.getData().trim()
+          .toLowerCase());
       });
     }
   }

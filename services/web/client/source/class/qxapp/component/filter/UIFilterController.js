@@ -29,11 +29,11 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
   statics: {
     registerFilter: function(filterId) {
       this.getInstance().registerFilter(filterId);
-    },
+    }
   },
 
   members: {
-    __state: {},
+    __state: null,
     __capitalizeFn: qxapp.utils.Utils.capitalize,
 
     /**
@@ -57,6 +57,7 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
     __subscriber: function(msg) {
       // Update state
       const { groupId, filterId, data } = msg.getData();
+      this.__state = this.__state || {};
       this.__state[groupId] = this.__state[groupId] || {};
       this.__state[groupId][filterId] = data;
       // Dispatch relevant message

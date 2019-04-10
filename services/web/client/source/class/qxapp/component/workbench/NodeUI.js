@@ -266,7 +266,9 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     _shouldFilterOut: function(data) {
       if (data.text) {
-        const label = this.getNode().getLabel().trim().toLowerCase();
+        const label = this.getNode().getLabel()
+          .trim()
+          .toLowerCase();
         if (label.indexOf(data.text) === -1) {
           return true;
         }
