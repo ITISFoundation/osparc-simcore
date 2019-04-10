@@ -6,7 +6,7 @@
     "puppeteer": "^1.13.0",
     "puppeteer-to-istanbul": "^1.2.2",
     "qooxdoo-sdk": "^6.0.0-alpha-20190409-f79cc78",
-    "qxcompiler": "^0.3.0-alpha",
+    "qxcompiler": "^0.3.0-alpha.20190409-1543",
     "yargs": "^13.2.2"
   }
 }
