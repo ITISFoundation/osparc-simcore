@@ -188,6 +188,9 @@ qx.Class.define("qxapp.utils.Utils", {
       xhr.send();
     },
 
+    /**
+     * Function that takes an indefinite number of strings, and concatenates them capitalizing the first letter.
+     */
     capitalize: function() {
       let res = "";
       for (let i=0; i<arguments.length; i++) {

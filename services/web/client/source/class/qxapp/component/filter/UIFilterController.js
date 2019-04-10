@@ -24,7 +24,6 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
 
   construct: function() {
     this.base(arguments);
-    this._groupId = "workbench";
   },
 
   statics: {
@@ -34,10 +33,15 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
   },
 
   members: {
-    _groupId: null,
     __state: {},
     __capitalizeFn: qxapp.utils.Utils.capitalize,
 
+    /**
+     * Function called by the base filter class to register a filter when created, to register it.
+     *
+     * @param {string} filterId Group-unique id of the filter that will be registered.
+     * @param {*} groupId Group id for the filter to be registered to.
+     */
     registerFilter: function(filterId, groupId) {
       qx.event.message.Bus.getInstance().subscribe(this.__getInputMessageName(filterId, groupId), this.__subscriber, this);
     },
