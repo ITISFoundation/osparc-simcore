@@ -40,8 +40,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
   implement: qxapp.component.filter.IFiltrable,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
-  */
+   * @param node {qxapp.data.model.Node} Node owning the widget
+   */
   construct: function(node) {
     this.base();
 
