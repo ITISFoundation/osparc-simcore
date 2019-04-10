@@ -167,12 +167,11 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
     },
 
     checkDrop: function(settingKey, fromNodeKey, fromItemKey, cbk) {
-      const isBranch = this.checkCompatibility(settingKey, fromNodeKey, fromItemKey);
+      const isBranch = this.checkWillBeBranch(settingKey, fromNodeKey, fromItemKey);
       cbk.call(this, isBranch);
     },
 
     checkCompatibility: function(settingKey, fromNodeKey, fromItemKey) {
-      console.log(this.getNode().getKey(), settingKey, fromNodeKey, fromItemKey);
       let compatible = false;
       const nodeKey = this.getNode().getKey();
       if (nodeKey) {
@@ -186,6 +185,13 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
         }
       }
       return false;
+    },
+
+    checkWillBeBranch: function(settingKey, fromNodeKey, fromItemKey) {
+      if (fromNodeKey === "simcore/services/dynamic/itis/s4l/modeler/remote-renderer") {
+        return false;
+      }
+      return true;
     },
 
     __writeFile: function() {
