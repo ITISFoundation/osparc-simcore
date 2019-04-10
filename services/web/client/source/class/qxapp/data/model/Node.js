@@ -54,7 +54,6 @@ qx.Class.define("qxapp.data.model.Node", {
     this.__inputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
-    this.__logs = [];
 
     this.set({
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -193,11 +192,6 @@ qx.Class.define("qxapp.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
-    __logs: null,
-
-    addLog: function(log) {
-      this.__logs.push(log);
-    },
 
     isInKey: function(str) {
       if (this.getMetaData() === null) {
@@ -227,6 +221,14 @@ qx.Class.define("qxapp.data.model.Node", {
       const hasKey = (this.getKey() === null);
       const hasChildren = this.hasChildren();
       return hasKey || hasChildren;
+    },
+
+    isDynamic: function() {
+      let metaData = this.getMetaData();
+      if (metaData && metaData.type && metaData.type === "dynamic") {
+        return true;
+      }
+      return false;
     },
 
     getMetaData: function() {
@@ -550,7 +552,7 @@ qx.Class.define("qxapp.data.model.Node", {
       return (index > -1);
     },
 
-    __restartIFrame: function(loadThis) {
+    restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         this.setIFrame(new qxapp.component.widget.PersistentIframe());
       }
@@ -576,7 +578,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __showLoadingIFrame: function() {
       const loadingUri = qxapp.utils.Utils.getLoaderUri();
-      this.__restartIFrame(loadingUri);
+      this.restartIFrame(loadingUri);
     },
 
     __retrieveInputs: function() {
@@ -584,19 +586,20 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     retrieveInputs: function() {
-      let urlUpdate = this.getServiceUrl() + "/retrieve";
-      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-      let updReq = new qx.io.request.Xhr();
-      updReq.set({
-        url: urlUpdate,
-        method: "GET"
-      });
-      updReq.send();
+      if (this.isDynamic()) {
+        let urlUpdate = this.getServiceUrl() + "/retrieve";
+        urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+        let updReq = new qx.io.request.Xhr();
+        updReq.set({
+          url: urlUpdate,
+          method: "GET"
+        });
+        updReq.send();
+      }
     },
 
     __startInteractiveNode: function() {
-      let metaData = this.getMetaData();
-      if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
+      if (this.isDynamic()) {
         let retrieveBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/spinner/32"
         });
@@ -610,7 +613,7 @@ qx.Class.define("qxapp.data.model.Node", {
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
         restartBtn.addListener("execute", e => {
-          this.__restartIFrame();
+          this.restartIFrame();
         }, this);
         restartBtn.setEnabled(false);
         this.setRestartIFrameButton(restartBtn);
@@ -731,7 +734,7 @@ qx.Class.define("qxapp.data.model.Node", {
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       const waitFor = 4000;
       qx.event.Timer.once(ev => {
-        this.__restartIFrame();
+        this.restartIFrame();
       }, this, waitFor);
 
       this.__retrieveInputs();
@@ -751,7 +754,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __stopInteractiveNode: function() {
-      if (this.getMetaData().type == "dynamic") {
+      if (this.isDynamic()) {
         let url = "/running_interactive_services";
         let query = "/"+encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");

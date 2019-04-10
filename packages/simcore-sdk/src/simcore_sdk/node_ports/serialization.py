@@ -61,7 +61,7 @@ def save_to_json(nodeports_obj):
 
     if nodeports_obj.autowrite:
         nodeports_obj.db_mgr.write_ports_configuration(nodeports_json, config.NODE_UUID)
-    log.info("Saved Nodeports object to json: %s", nodeports_json)
+    log.debug("Saved Nodeports object to json: %s", nodeports_json)
 
 class _NodeportsEncoder(json.JSONEncoder):
     # SAN: looks like pylint is having an issue here

@@ -41,7 +41,7 @@ projects = sa.Table("projects", metadata,
     sa.Column("id", sa.BigInteger, nullable=False, primary_key=True),
     sa.Column("type", sa.Enum(ProjectType), nullable=False, default=ProjectType.STANDARD),
 
-    sa.Column("uuid", sa.String, nullable=False),
+    sa.Column("uuid", sa.String, nullable=False, unique=True),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
     sa.Column("notes", sa.String, nullable=False),
@@ -161,7 +161,7 @@ class ProjectDB:
             if not row:
                 raise ProjectNotFoundError(project_uuid)
             result_dict = {key:value for key,value in row.items()}
-            log.info("found project: %s", result_dict)
+            log.debug("found project: %s", result_dict)
             return _convert_to_schema_names(result_dict)
 
     @classmethod

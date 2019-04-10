@@ -36,19 +36,11 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "panelview-content-noborder": {
+    "panelview-content": {
       style: {
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
-      }
-    },
-
-    "panelview-content": {
-      include: "panelview-content-noborder",
-      style: {
-        width: 1,
-        color: "border"
       }
     },
 

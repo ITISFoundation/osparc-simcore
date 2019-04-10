@@ -235,3 +235,14 @@ async def test_list_template_projects(loop, client, fake_db, fake_template_proje
         assert not error, pprint(error)
         # fake-template-projects.json + fake-template-projects.osparc.json
         assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_osparc))
+
+async def test_project_uuid_uniqueness(loop, client, fake_project):
+    async with LoggedUser(client):
+        # create the project once
+        await _create_project(client, fake_project)
+        # create a second project with same uuid shall fail
+        with pytest.raises(AssertionError):
+            await _create_project(client, fake_project)
+        # delete
+        pid = fake_project["uuid"]
+        await _delete_project(client, pid)

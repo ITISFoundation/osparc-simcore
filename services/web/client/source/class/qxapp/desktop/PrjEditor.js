@@ -164,8 +164,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__workbenchUI.getLogger().info("Can not start pipeline");
         }
       }, this);
-
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
+        this.__updatePipeline();
+      }, this);
 
       let workbench = this.getProject().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -209,6 +211,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (!nodeId) {
         return;
       }
+      if (this.__nodeView) {
+        this.__nodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
       let widget = this.__getWidgetForNode(nodeId);
       this.showInMainView(widget, nodeId);
@@ -249,6 +254,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
+            widget.addListener("finished", function() {
+              let loadNodeId = "root";
+              const filePicker = widget.getNode();
+              if (filePicker.isPropertyInitialized("parentNodeId")) {
+                loadNodeId = filePicker.getParentNodeId();
+              }
+              this.nodeSelected(loadNodeId);
+            }, this);
           } else {
             widget = this.__nodeView;
           }
@@ -320,13 +333,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      if (this.__mainPanel.isPropertyInitialized("mainView")) {
-        let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("finished", function() {
-          this.__mainPanel.setMainView(previousWidget);
-        }, this);
-      }
-
       const node = this.getProject().getWorkbench().getNode(nodeId);
       if (node && node.hasDedicatedWidget()) {
         let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -413,6 +419,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
+        } else {
+          const workbench = this.getProject().getWorkbench();
+          const allNodes = workbench.getNodes(true);
+          Object.values(allNodes).forEach(node2 => {
+            node2.retrieveInputs();
+          }, this);
         }
       }, this);
       req.addListener("error", e => {
@@ -437,13 +449,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       socket.on(slotName, function(data) {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
-        const msg = d["Message"];
+        const msgs = d["Messages"];
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
-        this.getLogger().info(node.getLabel(), msg);
-        if (node) {
-          node.addLog(msg);
-        }
+        const node = workbench.getNode(nodeId);
+        const who = node.getLabel();
+        this.getLogger().infos(who, msgs);
       }, this);
       socket.emit(slotName);
 
@@ -455,7 +465,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = d["Node"];
         const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
         if (node) {
           node.setProgress(progress);
         }
