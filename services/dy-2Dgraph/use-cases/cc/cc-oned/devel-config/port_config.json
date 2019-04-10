@@ -1,32 +1,26 @@
 {
-    "version":"0.1",
+    "version": "0.1",
     "schema": {
         "inputs": {
             "in_1": {
                 "label": "ECGs",
-                "displayOrder":0,
+                "displayOrder": 0,
                 "description": "these are computed data out of a pipeline",
                 "type": "data:*/*"
             },
             "in_2": {
                 "label": "all results 1Hz",
-                "displayOrder":1,
+                "displayOrder": 1,
                 "description": "computed data out of a pipeline",
                 "type": "data:*/*"
             }
         },
         "outputs": {
-            "output_1": {
-                "label": "Output 1",
-                "displayOrder":0,
-                "description": "The output 1",
-                "type": "data:*/*"
-            },
-            "output_2": {
-                "label": "Output 2",
-                "displayOrder":1,
-                "description": "The output 2",
-                "type": "data:*/*"
+            "out_1": {
+                "label": "ECG",
+                "displayOrder": 0,
+                "description": "ECG csv",
+                "type": "data:text/csv"
             }
         }
     },

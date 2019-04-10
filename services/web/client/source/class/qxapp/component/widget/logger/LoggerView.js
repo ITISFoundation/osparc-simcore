@@ -65,7 +65,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       flex: 1
     });
 
-    this.__logs = [];
     this.__messengerColors = new Set();
 
     this.__createInitMsg();
@@ -91,7 +90,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
   members: {
     __textfield: null,
-    __logs: null,
     __logModel: null,
     __logView: null,
     __messengerColors: null,
@@ -99,7 +97,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     __createFilterToolbar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
 
-      const clearButton = new qx.ui.toolbar.Button("Clear", "@FontAwesome5Solid/ban/16");
+      const clearButton = new qx.ui.toolbar.Button(this.tr("Clear"), "@FontAwesome5Solid/ban/16");
       clearButton.addListener("execute", e => {
         this.clearLogger();
       }, this);
@@ -171,6 +169,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       this.__addLog(who, what, LOG_LEVEL.info);
     },
 
+    infos: function(who = "System", whats = [""]) {
+      this.__addLogs(who, whats, LOG_LEVEL.info);
+    },
+
     warn: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.warning);
     },
@@ -180,12 +182,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __addLog: function(who = "System", what = "", logLevel = 0) {
-      this.__logs.push({
-        who: who,
-        what: what,
-        logLevel: logLevel
-      });
-
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
       let msgLog = {
@@ -199,8 +195,33 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       };
       this.__logModel.addRows([msgLog]);
 
-      this.__logModel.reloadData();
+      this.__updateTable();
+    },
 
+    __addLogs: function(who = "System", whats = [""], logLevel = 0) {
+      const whoRich = this.__addWhoColorTag(who);
+      const whatRich = this.__addLevelColorTag(whats[0], logLevel);
+
+      let msgLogs = [];
+      for (let i=0; i<whats.length; i++) {
+        const msgLog = {
+          whoRich: whoRich,
+          whatRich: whatRich,
+          msg: {
+            who: who,
+            what: whats[i],
+            logLevel: logLevel
+          }
+        };
+        msgLogs.push(msgLog);
+      }
+      this.__logModel.addRows(msgLogs);
+
+      this.__updateTable();
+    },
+
+    __updateTable: function(who) {
+      this.__logModel.reloadData();
       const nFilteredRows = this.__logModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
     },

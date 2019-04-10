@@ -1,29 +1,35 @@
 {
-    "version":"0.1",
+    "version": "0.1",
     "schema": {
         "inputs": {
             "in_1": {
-                "displayOrder":0,
+                "displayOrder": 0,
                 "label": "computational data",
                 "description": "these are computed data out of a pipeline",
                 "type": "data:*/*"
             }
         },
         "outputs": {
-            "output_1": {
+            "out_1": {
+                "label": "Table Data",
                 "displayOrder": 0,
-                "label": "output 1",
-                "description": "this is the output number 1",
-                "type": "data:*/*"
+                "description": "Table Data csv",
+                "type": "data:text/csv"
             },
-            "output_2": {
+            "out_2": {
+                "label": "Heart rate (r)",
                 "displayOrder": 1,
-                "label": "output 2",
-                "description": "this is the output number 2",
-                "type": "data:*/*"
+                "description": "Heart rate (r) csv",
+                "type": "data:text/csv"
+            },
+            "out_3": {
+                "label": "Parasympathetic Cell Activity",
+                "displayOrder": 2,
+                "description": "Parasympathetic Cell Activity: Cardiac Level csv",
+                "type": "data:text/csv"
             }
         }
     },
-    "inputs":{},
-    "outputs":{}    
+    "inputs": {},
+    "outputs": {}
 }

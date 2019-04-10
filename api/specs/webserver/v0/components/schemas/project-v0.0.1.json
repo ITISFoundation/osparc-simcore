@@ -70,7 +70,7 @@
     "creationDate": {
       "type": "string",
       "description": "project creation date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -78,7 +78,7 @@
     "lastChangeDate": {
       "type": "string",
       "description": "last save date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -97,18 +97,20 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "key",
-            "version",
+            "label",
             "position"
           ],
           "properties": {
+            "label": {
+              "type": "string"
+            },
             "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
-              "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic)(/[^\\s/]+)+$",
               "examples": [
-                "service/computational/sleeper",
-                "service/dynamic/3dviewer"
+                "simcore/services/comp/sleeper",
+                "simcore/services/dynamic/3dviewer"
               ]
             },
             "version": {
@@ -118,6 +120,19 @@
               "examples": [
                 "1.0.0",
                 "0.0.1"
+              ]
+            },
+            "progress": {
+              "type":"number",
+              "maximum": 100,
+              "minimum": 0,
+              "description": "the node progress value"
+            },
+            "thumbnail": {
+              "type": "string",
+              "description": "url of the latest screenshot of the node",
+              "examples": [
+                "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
               ]
             },
             "inputs": {
@@ -159,7 +174,7 @@
                       ],
                       "properties": {
                         "store": {
-                          "type": "string"
+                          "type": ["string", "integer"]
                         },
                         "path": {
                           "type": "string"
@@ -168,6 +183,13 @@
                     }
                   ]
                 }
+              }
+            },
+            "inputNodes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\S+$"
               }
             },
             "outputs": {
@@ -192,7 +214,7 @@
                       ],
                       "properties": {
                         "store": {
-                          "type": "string"
+                          "type": ["string", "integer"]
                         },
                         "path": {
                           "type": "string"
@@ -202,6 +224,13 @@
                   ]
                 }
               }
+            },
+            "outputNode": {
+              "type": "boolean"
+            },
+            "parent": {
+              "type": ["string", "null"],
+              "pattern": "^\\S+$"
             },
             "links": {
               "type": "array",

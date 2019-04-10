@@ -32,8 +32,8 @@ before_script() {
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest -v api/tests
-        pytest -v services/apihub/tests
+        pytest --cov=api --cov-append -v api/tests
+        pytest --cov=services_apihub --cov-append -v services/apihub/tests
     else
         echo "No changes detected. Skipping unit-testing of apihub."
     fi
@@ -42,6 +42,7 @@ script() {
 after_success() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        codecov
         coveralls
     fi
 }

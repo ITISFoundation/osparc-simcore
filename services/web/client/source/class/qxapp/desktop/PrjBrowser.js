@@ -81,6 +81,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __userProjectList: null,
     __publicProjectList: null,
     __editPrjLayout: null,
+    __creatingNewStudy: null,
 
     __initResources: function() {
       this.__getUserProfile();
@@ -145,6 +146,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __newPrjBtnClkd: function() {
+      if (this.__creatingNewStudy) {
+        return;
+      }
+      this.__creatingNewStudy = true;
+
       let win = new qx.ui.window.Window(this.tr("Create New Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -167,6 +173,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
       win.add(newProjectDlg);
       win.open();
+      win.addListener("close", () => {
+        this.__creatingNewStudy = false;
+      }, this);
     },
 
     __startProject: function(prjData, isNew = false) {
@@ -366,12 +375,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             const prjUuid = item.getModel();
             if (prjUuid) {
               that.__createProject(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
-            } else {
-              that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
           item.addListener("tap", e => {
-            list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+            const prjUuid = item.getModel();
+            if (prjUuid) {
+              list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+            } else {
+              that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
+            }
           });
           return item;
         },

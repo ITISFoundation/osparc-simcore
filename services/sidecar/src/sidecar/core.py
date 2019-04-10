@@ -5,17 +5,18 @@ import shutil
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Union
 
 import docker
 import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
+from sqlalchemy import and_, exc
+
 from simcore_sdk import node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
-from sqlalchemy import and_, exc
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
@@ -125,8 +126,11 @@ class Sidecar:
             raise docker.errors.APIError
 
 
-    def _log(self, channel, msg):
-        log_data = {"Channel" : "Log", "Node": self._task.node_id, "Message" : msg}
+    def _log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
+        log_data = {"Channel" : "Log",
+            "Node": self._task.node_id,
+            "Messages" : msg if isinstance(msg, list) else [msg]
+            }
         log_body = json.dumps(log_data)
         channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
@@ -147,30 +151,33 @@ class Sidecar:
             file_.seek(0,2)
             while self._executor.run_pool:
                 curr_position = file_.tell()
-                line = file_.readline()
-                if not line:
+                lines = [line.strip() for line in file_.readlines()]
+                if not lines:
                     file_.seek(curr_position)
-                    time.sleep(1)
-                else:
-                    clean_line = line.strip()
+                    continue
+                # find last progress if any
+                for line in reversed(lines):
                     # TODO: This should be 'settings', a regex for every service
-                    if clean_line.lower().startswith("[progress]"):
-                        progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
+                    if line.lower().startswith("[progress]"):
+                        progress = line.lower().lstrip("[progress]").rstrip("%").strip()
                         self._progress(channel, progress)
                         log.debug('PROGRESS %s', progress)
-                    elif "percent done" in clean_line.lower():
-                        progress = clean_line.lower().rstrip("percent done")
+                        break
+                    elif "percent done" in line.lower():
+                        progress = line.lower().rstrip("percent done")
                         try:
                             float_progress = float(progress) / 100.0
                             progress = str(float_progress)
                             self._progress(channel, progress)
                             log.debug('PROGRESS %s', progress)
+                            break
                         except ValueError:
                             log.exception("Could not extract progress from solver")
-                            self._log(channel, clean_line)
-                    else:
-                        self._log(channel, clean_line)
-                        log.debug('LOG %s', clean_line)
+                            self._log(channel, line)
+                self._log(channel, lines)
+                log.debug('LOG %s', lines)
+                # sometimes it is good to pause a little bit
+                time.sleep(1)
 
         # set progress to 1.0 at the end, ignore failures
         progress = "1.0"
@@ -279,11 +286,11 @@ class Sidecar:
                             'services_log'    : {'bind'  : '/log'}},
                  environment=self._docker.env)
         except docker.errors.ContainerError as _e:
-            log.error("Run container returned non zero exit code")
+            log.exception("Run container returned non zero exit code %s", str(_e))
         except docker.errors.ImageNotFound as _e:
-            log.error("Run container: Image not found")
+            log.exception("Run container: Image not found")
         except docker.errors.APIError as _e:
-            log.error("Run Container: Server returns error")
+            log.exception("Run Container: Server returns error")
 
 
         time.sleep(1)
