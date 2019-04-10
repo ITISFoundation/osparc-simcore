@@ -15,7 +15,25 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Widget that shows two lists of studies and study editor form:
+ * - List1: User's studies (PrjBrowserListItem)
+ * - List2: Template studies to start from (PrjBrowserListItem)
+ * - Form: Extra editable information of the selected study
+ *
+ * It is the entry point to start editing or creatina new study.
+ *
+ * Also takes care of retrieveing the list of services and pushing the changes in the metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let prjBrowser = this.__serviceBrowser = new qxapp.desktop.PrjBrowser();
+ *   this.getRoot().add(prjBrowser);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.core.Widget,
@@ -63,6 +81,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __userProjectList: null,
     __publicProjectList: null,
     __editPrjLayout: null,
+    __creatingNewStudy: null,
 
     __initResources: function() {
       this.__getUserProfile();
@@ -127,6 +146,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __newPrjBtnClkd: function() {
+      if (this.__creatingNewStudy) {
+        return;
+      }
+      this.__creatingNewStudy = true;
+
       let win = new qx.ui.window.Window(this.tr("Create New Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -138,7 +162,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
-      newProjectDlg.addListenerOnce("CreatePrj", e => {
+      newProjectDlg.addListenerOnce("createPrj", e => {
         const data = e.getData();
         const newPrj = {
           name: data.prjTitle,
@@ -149,6 +173,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
       win.add(newProjectDlg);
       win.open();
+      win.addListener("close", () => {
+        this.__creatingNewStudy = false;
+      }, this);
     },
 
     __startProject: function(prjData, isNew = false) {
@@ -256,7 +283,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // controller
         let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
         const fromTemplate = false;
-        let delegate = this.__getDelegate(fromTemplate);
+        let delegate = this.__getDelegate(fromTemplate, this.__userProjectList);
         prjCtr.setDelegate(delegate);
       }, this);
 
@@ -307,7 +334,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // controller
         let prjCtr = new qx.data.controller.List(publicPrjArrayModel, this.__publicProjectList, "name");
         const fromTemplate = true;
-        let delegate = this.__getDelegate(fromTemplate);
+        let delegate = this.__getDelegate(fromTemplate, this.__publicProjectList);
         prjCtr.setDelegate(delegate);
       }, this);
 
@@ -334,7 +361,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Delegates appearance and binding of each project item
      */
-    __getDelegate: function(fromTemplate) {
+    __getDelegate: function(fromTemplate, list) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
       const nThumbnails = 25;
@@ -348,6 +375,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             const prjUuid = item.getModel();
             if (prjUuid) {
               that.__createProject(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+            }
+          });
+          item.addListener("tap", e => {
+            const prjUuid = item.getModel();
+            if (prjUuid) {
+              list.setSelection([item]); // eslint-disable-line no-underscore-dangle
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }

@@ -16,41 +16,41 @@
 ************************************************************************ */
 
 /**
- *  Creates the widget that represents the output of an input node.
+ * Widget that represents the output of an input node.
  * It creates a VBox with widgets representing each of the output ports of the node.
  * It can also create widget for representing default inputs (isInputModel = false).
  *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodePorts = new qxapp.component.widget.NodePorts(node, isInputModel);
+ *   this.getRoot().add(nodePorts);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.NodePorts", {
-  extend: qx.ui.core.Widget,
-
+  extend: qxapp.desktop.PanelView,
+  /**
+   * @param node {qxapp.data.model.Node} Node owning the widget
+   * @param isInputModel {Boolean} false for representing defaultInputs
+   */
   construct: function(node, isInputModel = true) {
-    this.base();
-
     let nodeInputLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInputLayout);
 
-    this.set({
-      decorator: "main"
-    });
-
-    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
-    let label = new qx.ui.basic.Label().set({
-      font: title16Font,
-      alignX: "center",
-      alignY: "middle"
-    });
+    const label = new qx.ui.basic.Label();
     node.bind("label", label, "value");
-    this._add(label);
 
-    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this._add(nodeUIPorts, {
-      flex: 1
+    const nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+      appearance: "node-ports"
     });
 
     this.setIsInputModel(isInputModel);
     this.setNode(node);
+
+    this.base(arguments, label.getValue(), nodeUIPorts);
   },
 
   properties: {
@@ -109,9 +109,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             }
           }
           if (widget !== null) {
-            this.__nodeUIPorts.add(widget, {
-              flex: 1
-            });
+            this.__nodeUIPorts.add(widget);
           }
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNode(), port, portKey);

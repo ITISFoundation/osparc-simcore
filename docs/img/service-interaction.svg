@@ -8,115 +8,113 @@
   </defs>
   <title>blockdiag</title>
   <desc />
-  <rect fill="rgb(243,152,0)" height="220" style="filter:url(#filter_blur)" width="336" x="632" y="30" />
-  <rect fill="rgb(243,152,0)" height="220" style="filter:url(#filter_blur)" width="144" x="56" y="270" />
-  <rect fill="rgb(243,152,0)" height="220" style="filter:url(#filter_blur)" width="336" x="248" y="30" />
+  <rect fill="rgb(243,152,0)" height="220" style="filter:url(#filter_blur)" width="144" x="824" y="30" />
+  <rect fill="rgb(243,152,0)" height="140" style="filter:url(#filter_blur)" width="144" x="56" y="350" />
+  <path d="M 659 54 L 771 54 A8,8 0 0 1 779 62 L 779 86 A8,8 0 0 1 771 94 L 659 94 A8,8 0 0 1 651 86 L 651 62 A8,8 0 0 1 659 54" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 655 50 L 767 50 A8,8 0 0 1 775 58 L 775 82 A8,8 0 0 1 767 90 L 655 90 A8,8 0 0 1 647 82 L 647 58 A8,8 0 0 1 655 50" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 651 46 L 763 46 A8,8 0 0 1 771 54 L 771 78 A8,8 0 0 1 763 86 L 651 86 A8,8 0 0 1 643 78 L 643 54 A8,8 0 0 1 651 46" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="843" y="54" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="839" y="50" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="835" y="46" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="843" y="134" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="839" y="130" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="835" y="126" />
   <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="843" y="214" />
   <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="839" y="210" />
   <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="835" y="206" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="651" y="54" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="647" y="50" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="643" y="46" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="651" y="134" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="647" y="130" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="643" y="126" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="651" y="214" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="647" y="210" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="643" y="206" />
+  <path d="M 459 46 L 571 46 A8,8 0 0 1 579 54 L 579 78 A8,8 0 0 1 571 86 L 459 86 A8,8 0 0 1 451 78 L 451 54 A8,8 0 0 1 459 46" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 459 126 L 571 126 A8,8 0 0 1 579 134 L 579 158 A8,8 0 0 1 571 166 L 459 166 A8,8 0 0 1 451 158 L 451 134 A8,8 0 0 1 459 126" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 267 46 L 379 46 A8,8 0 0 1 387 54 L 387 78 A8,8 0 0 1 379 86 L 267 86 A8,8 0 0 1 259 78 L 259 54 A8,8 0 0 1 267 46" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
   <polygon fill="rgb(0,0,0)" points="133,60 133,63 143,63 143,66 133,66 133,69 141,78 137,78 131,72 125,78 121,78 129,69 129,66 119,66 119,63 129,63 129,60" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
   <ellipse cx="131" cy="57" fill="rgb(0,0,0)" rx="4" ry="4" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="286" />
+  <path d="M 75 286 L 187 286 A8,8 0 0 1 195 294 L 195 318 A8,8 0 0 1 187 326 L 75 326 A8,8 0 0 1 67 318 L 67 294 A8,8 0 0 1 75 286" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
   <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="366" />
   <path d="M 67 454 A64,8 0 0 1 195 454 L 195 478 A64,8 0 0 1 67 478 L 67 454" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="259" y="46" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="451" y="46" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="451" y="126" />
-  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="259" y="206" />
+  <path d="M 267 446 L 379 446 A8,8 0 0 1 387 454 L 387 478 A8,8 0 0 1 379 486 L 267 486 A8,8 0 0 1 259 478 L 259 454 A8,8 0 0 1 267 446" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 656 48 L 768 48 A8,8 0 0 1 776 56 L 776 80 A8,8 0 0 1 768 88 L 656 88 A8,8 0 0 1 648 80 L 648 56 A8,8 0 0 1 656 48" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <path d="M 652 44 L 764 44 A8,8 0 0 1 772 52 L 772 76 A8,8 0 0 1 764 84 L 652 84 A8,8 0 0 1 644 76 L 644 52 A8,8 0 0 1 652 44" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <path d="M 648 40 L 760 40 A8,8 0 0 1 768 48 L 768 72 A8,8 0 0 1 760 80 L 648 80 A8,8 0 0 1 640 72 L 640 48 A8,8 0 0 1 648 40" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="43" x="704" y="66">sidecar</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="840" y="48" />
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="836" y="44" />
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="832" y="40" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="79" x="896" y="66">computational</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="840" y="128" />
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="836" y="124" />
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="832" y="120" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="896" y="146">modeling</text>
   <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="840" y="208" />
   <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="836" y="204" />
   <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="832" y="200" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="79" x="896" y="226">computational</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="648" y="48" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="644" y="44" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="640" y="40" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="704" y="66">modeling</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="648" y="128" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="644" y="124" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="640" y="120" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="704" y="146">analysis</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="648" y="208" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="644" y="204" />
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="640" y="200" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="37" x="704" y="226">worker</text>
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="896" y="226">analysis</text>
+  <path d="M 456 40 L 568 40 A8,8 0 0 1 576 48 L 576 72 A8,8 0 0 1 568 80 L 456 80 A8,8 0 0 1 448 72 L 448 48 A8,8 0 0 1 456 40" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="512" y="66">director</text>
+  <path d="M 456 120 L 568 120 A8,8 0 0 1 576 128 L 576 152 A8,8 0 0 1 568 160 L 456 160 A8,8 0 0 1 448 152 L 448 128 A8,8 0 0 1 456 120" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="43" x="512" y="146">storage</text>
+  <path d="M 264 40 L 376 40 A8,8 0 0 1 384 48 L 384 72 A8,8 0 0 1 376 80 L 264 80 A8,8 0 0 1 256 72 L 256 48 A8,8 0 0 1 264 40" fill="rgb(173,216,230)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="320" y="66">web/server</text>
   <polygon fill="rgb(255,255,255)" points="130,54 130,57 140,57 140,60 130,60 130,63 138,72 134,72 128,66 122,72 118,72 126,63 126,60 116,60 116,57 126,57 126,54" stroke="rgb(0,0,0)" />
   <ellipse cx="128" cy="51" fill="rgb(255,255,255)" rx="4" ry="4" stroke="rgb(0,0,0)" />
   <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="128" y="85">web/client</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="280" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="91" x="128" y="306">images registry</text>
+  <path d="M 72 280 L 184 280 A8,8 0 0 1 192 288 L 192 312 A8,8 0 0 1 184 320 L 72 320 A8,8 0 0 1 64 312 L 64 288 A8,8 0 0 1 72 280" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="13" x="128" y="306">db</text>
   <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="360" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="31" x="128" y="386">minio</text>
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="91" x="128" y="386">images registry</text>
   <path d="M 64 448 A64,8 0 0 1 192 448 L 192 472 A64,8 0 0 1 64 472 L 64 448" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
   <path d="M 192 448 A64,8 0 0 1 64 448" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
   <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="13" x="128" y="470">s3</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="256" y="40" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="61" x="320" y="66">web/server</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="448" y="40" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="49" x="512" y="66">director</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="448" y="120" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="43" x="512" y="146">storage</text>
-  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="256" y="200" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="13" x="320" y="226">db</text>
-  <path d="M 148 60 L 248 60" fill="none" stroke="rgb(0,0,255)" />
-  <polygon fill="rgb(0,0,255)" points="141,60 148,56 148,64 141,60" stroke="rgb(0,0,255)" />
-  <polygon fill="rgb(0,0,255)" points="255,60 248,56 248,64 255,60" stroke="rgb(0,0,255)" />
-  <path d="M 776 220 L 824 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 264 440 L 376 440 A8,8 0 0 1 384 448 L 384 472 A8,8 0 0 1 376 480 L 264 480 A8,8 0 0 1 256 472 L 256 448 A8,8 0 0 1 264 440" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="31" x="320" y="466">minio</text>
+  <path d="M 776 60 L 824 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <polygon fill="rgb(0,0,0)" points="831,60 824,56 824,64 831,60" stroke="rgb(0,0,0)" />
+  <path d="M 576 60 L 608 60" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 608 60 L 608 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 508 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 508.0 260.0 A4,4 0 0 1 516.0 260.0" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 516 260 L 608 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 128 272" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="128,279 124,272 132,272 128,279" stroke="rgb(0,0,0)" />
+  <path d="M 576 60 L 608 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 608 60 L 608 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 608 220 L 824 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
   <polygon fill="rgb(0,0,0)" points="831,220 824,216 824,224 831,220" stroke="rgb(0,0,0)" />
-  <path d="M 128 432 L 128 408" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="2" />
-  <polygon fill="rgb(0,0,0)" points="128,439 124,432 132,432 128,439" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="128,401 124,408 132,408 128,401" stroke="rgb(0,0,0)" />
+  <path d="M 576 60 L 632 60" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="639,60 632,56 632,64 639,60" stroke="rgb(0,0,0)" />
+  <path d="M 576 60 L 608 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 608 60 L 608 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 608 140 L 824 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <polygon fill="rgb(0,0,0)" points="831,140 824,136 824,144 831,140" stroke="rgb(0,0,0)" />
+  <path d="M 320 80 L 320 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 320 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 128 272" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="128,279 124,272 132,272 128,279" stroke="rgb(0,0,0)" />
   <path d="M 384 60 L 440 60" fill="none" stroke="rgb(0,0,0)" />
   <polygon fill="rgb(0,0,0)" points="447,60 440,56 440,64 447,60" stroke="rgb(0,0,0)" />
-  <path d="M 320 80 L 320 192" fill="none" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="320,199 316,192 324,192 320,199" stroke="rgb(0,0,0)" />
   <path d="M 384 60 L 416 60" fill="none" stroke="rgb(0,0,0)" />
   <path d="M 416 60 L 416 140" fill="none" stroke="rgb(0,0,0)" />
   <path d="M 416 140 L 440 140" fill="none" stroke="rgb(0,0,0)" />
   <polygon fill="rgb(0,0,0)" points="447,140 440,136 440,144 447,140" stroke="rgb(0,0,0)" />
-  <path d="M 584 60 L 608 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <path d="M 608 60 L 608 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <path d="M 608 140 L 632 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <polygon fill="rgb(0,0,0)" points="577,60 584,56 584,64 577,60" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="639,140 632,136 632,144 639,140" stroke="rgb(0,0,0)" />
-  <path d="M 584 60 L 632 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <polygon fill="rgb(0,0,0)" points="577,60 584,56 584,64 577,60" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="639,60 632,56 632,64 639,60" stroke="rgb(0,0,0)" />
-  <path d="M 576 60 L 608 60" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 608 60 L 608 180" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 320 180 L 508 180" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 508.0 180.0 A4,4 0 0 1 516.0 180.0" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 516 180 L 608 180" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 320 180 L 320 192" fill="none" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="320,199 316,192 324,192 320,199" stroke="rgb(0,0,0)" />
-  <path d="M 584 60 L 608 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <path d="M 608 60 L 608 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <path d="M 608 220 L 632 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
-  <polygon fill="rgb(0,0,0)" points="577,60 584,56 584,64 577,60" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="639,220 632,216 632,224 639,220" stroke="rgb(0,0,0)" />
-  <path d="M 512 160 L 512 340" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 128 340 L 512 340" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 128 340 L 128 352" fill="none" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="128,359 124,352 132,352 128,359" stroke="rgb(0,0,0)" />
-  <path d="M 512 160 L 512 180" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 320 180 L 512 180" fill="none" stroke="rgb(0,0,0)" />
-  <path d="M 320 180 L 320 192" fill="none" stroke="rgb(0,0,0)" />
-  <polygon fill="rgb(0,0,0)" points="320,199 316,192 324,192 320,199" stroke="rgb(0,0,0)" />
-  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="204" y="38" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="224" y="51">9081</text>
+  <path d="M 148 60 L 248 60" fill="none" stroke="rgb(0,0,255)" />
+  <polygon fill="rgb(0,0,255)" points="141,60 148,56 148,64 141,60" stroke="rgb(0,0,255)" />
+  <polygon fill="rgb(0,0,255)" points="255,60 248,56 248,64 255,60" stroke="rgb(0,0,255)" />
+  <path d="M 512 160 L 512 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 512 260" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 128 260 L 128 272" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="128,279 124,272 132,272 128,279" stroke="rgb(0,0,0)" />
+  <path d="M 512 160 L 512 420" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 320 420 L 512 420" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 320 420 L 320 432" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="320,439 316,432 324,432 320,439" stroke="rgb(0,0,0)" />
+  <path d="M 200 460 L 256 460" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="2" />
+  <polygon fill="rgb(0,0,0)" points="193,460 200,456 200,464 193,460" stroke="rgb(0,0,0)" />
+  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="588" y="38" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="608" y="51">8000</text>
   <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="396" y="38" />
   <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="416" y="51">8001</text>
-  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="396" y="118" />
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="416" y="131">8080</text>
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="97" x="800" y="36">DYNAMIC services</text>
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="103" x="128" y="276">EXTERNAL services</text>
-  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="79" x="416" y="36">CORE services</text>
+  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="47" x="393" y="118" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="31" x="416" y="131">11111</text>
+  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="204" y="38" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="224" y="51">9081</text>
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="97" x="896" y="36">DYNAMIC services</text>
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="103" x="128" y="356">EXTERNAL services</text>
 </svg>

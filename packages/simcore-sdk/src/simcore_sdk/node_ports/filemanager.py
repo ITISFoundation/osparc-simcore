@@ -33,11 +33,10 @@ def _handle_api_exception(store_id:str, err: ApiException):
     if err.status > 399 and err.status < 500:
         # something invalid
         raise exceptions.StorageInvalidCall(err)
-    elif err.status > 499:
+    if err.status > 499:
         # something went bad inside the storage server
         raise exceptions.StorageServerIssue(err)
-    else:
-        raise exceptions.StorageConnectionError(store_id, err)
+    raise exceptions.StorageConnectionError(store_id, err)
 
 async def _get_location_id_from_location_name(store:str, api:UsersApi):
     try:

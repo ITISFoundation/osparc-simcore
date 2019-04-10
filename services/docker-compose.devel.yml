@@ -13,8 +13,9 @@ services:
     build:
       target: development
     volumes:
-      - ./director:/home/scu/services/director
-      - ../packages/service-library:/home/scu/packages/service-library
+      - ./director:/devel/services/director
+      - ../packages/service-library:/devel/packages/service-library
+      - ../api:/devel/services/api
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
@@ -24,17 +25,20 @@ services:
       target: development
     volumes:
       - './web/client:/home/scu/client'
-    command: compile --watch --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+    command: >
+      compile --watch
+        --set osparc.vcsOriginUrl='"${VCS_URL}"'
+        --set osparc.vcsRef='"${VCS_REF}"'
+        --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+        --set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
   webserver:
     image: services_webserver:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./web/server:/home/scu/services/web/server
-      - ./web/client/source-output:/home/scu/services/web/client
-      - ../packages:/home/scu/packages
+      - ./web/server:/devel/services/web/server
+      - ./web/client/source-output:/devel/services/web/client
+      - ../packages:/devel/packages
     stdin_open: true
     tty: true
     depends_on:
@@ -43,22 +47,18 @@ services:
   sidecar:
     image: services_sidecar:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/home/scu/services/sidecar
-      - ./storage/client-sdk:/home/scu/services/storage/client-sdk
-      - ../packages:/home/scu/packages
+      - ./sidecar:/devel/services/sidecar
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
+      - ../packages:/devel/packages
   #--------------------------------------------------------------------
   storage:
     image: services_storage:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./storage:/home/scu/services/storage
-      - ../packages:/home/scu/packages
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
     stdin_open: true
     tty: true

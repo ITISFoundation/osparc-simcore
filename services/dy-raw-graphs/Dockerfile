@@ -41,6 +41,7 @@ ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_NODE_BASEPATH="/raw" \
     STORAGE_ENDPOINT="=1" \
     RAWGRAPHS_INPUT_PATH="../inputs" \
+    RAWGRAPHS_OUTPUT_PATH="../outputs" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -85,10 +86,11 @@ RUN pip3 install $HOME/packages/simcore-sdk &&\
     pip3 install $HOME/packages/s3wrapper && \
     pip3 install $HOME/services/storage/client-sdk/python
 
-RUN git clone https://github.com/ITISFoundation/raw.git
+ARG BRANCH_NAME
+RUN git clone https://github.com/ITISFoundation/raw.git --branch ${BRANCH_NAME}
 WORKDIR $HOME/raw
 RUN npm install -g bower
-RUN bower install --allow-root
+RUN bower install --force --allow-root
 
 WORKDIR $HOME
 COPY --chown=scu:scu services/dy-raw-graphs/docker $HOME/docker

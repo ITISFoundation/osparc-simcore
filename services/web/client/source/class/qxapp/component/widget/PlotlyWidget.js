@@ -1,11 +1,46 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2019 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/**
+ * Widget containing a Plotly dom element.
+ *
+ * Data for being plotted can be dynamically set adn rendered.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let plotlyWidget = new qxapp.component.widget.PlotlyWidget("elemId");
+ *   this.getRoot().add(plotlyWidget);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.PlotlyWidget", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param elemId {String} Element id to set it as dom attribute
+  */
   construct: function(elemId) {
     this.base();
 
     this.addListenerOnce("appear", () => {
-      this.__plotlyWrapper = new qxapp.wrappers.Plotly();
+      this.__plotlyWrapper = new qxapp.wrapper.Plotly();
       this.__plotlyWrapper.addListener(("plotlyLibReady"), e => {
         let ready = e.getData();
         if (ready) {

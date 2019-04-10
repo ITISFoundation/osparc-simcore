@@ -1,4 +1,13 @@
+# root
+.*/
 ancillary/
 docs/
 ops/
-.*/
+
+# Docker
+**/Dockerfile
+**/docker-compose*
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__
+*.py[cod]

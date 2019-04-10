@@ -20,20 +20,60 @@ qx.Theme.define("qxapp.theme.Decoration", {
   extend: osparc.theme.osparcdark.Decoration,
 
   decorations: {
-    "droppableWidget": {
-      decorator: qx.ui.decoration.Decorator,
+
+    "service-tree": {
+      decorator: qx.ui.decoration.MSingleBorder,
       style: {
-        style: "dashed",
-        color: "#828282",
-        width: 1
+        width: 0
       }
     },
 
-    "draggableWidget": {
-      decorator: qx.ui.decoration.Decorator,
+    "panelview": {
       style: {
-        color: "#828282",
-        width: 1
+        transitionProperty: "top",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "panelview-content": {
+      style: {
+        transitionProperty: "height",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "outputPortHighlighted": {
+      decorator: qx.ui.decoration.MBoxShadow,
+      style: {
+        shadowColor: "button-border-hovered",
+        shadowBlurRadius: 3,
+        shadowSpreadRadius: 2,
+        shadowLength: [0, 0],
+        inset: true
+      }
+    },
+
+    "window-small-cap": {
+      include: "window",
+      style: {
+        width: 0,
+        radius: 3
+      }
+    },
+
+    "workbench-small-cap-captionbar": {
+      style: {
+        width: 0
+      }
+    },
+
+    "sidepanel": {
+      style: {
+        transitionProperty: ["left", "width"],
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
       }
     }
   }

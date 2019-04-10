@@ -16,57 +16,57 @@
 ************************************************************************ */
 
 /**
- *  Node Main view
+ * Widget that displays the main view of a node.
  * - On the left side shows the default inputs if any and also what the input nodes offer
  * - In the center the content of the node: settings, mapper, iframe...
+ *
+ * When a node is set the layout is built
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeView = new qxapp.component.widget.NodeView();
+ *   nodeView.setWorkbench(workbench);
+ *   nodeView.setNode(workbench.getNode1());
+ *   nodeView.buildLayout();
+ *   this.getRoot().add(nodeView);
+ * </pre>
  */
 
-const PORT_INPUTS_WIDTH = 300;
-
 qx.Class.define("qxapp.component.widget.NodeView", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function() {
-    this.base();
+    this.base(arguments);
 
-    let hBox = new qx.ui.layout.HBox(10);
-    this.set({
-      layout: hBox,
-      padding: 10
-    });
-
-    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    inputNodesLayout.set({
-      width: PORT_INPUTS_WIDTH,
-      maxWidth: PORT_INPUTS_WIDTH,
-      allowGrowX: false
-    });
+    const inputNodesLayout = this.__inputNodesLayout = new qxapp.desktop.SidePanel();
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
       font: navBarLabelFont,
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
 
+    const scroll = new qx.ui.container.Scroll().set({
+      minWidth: 0
+    });
+    scroll.add(inputNodesLayout);
+    this.add(scroll, 0);
 
-    let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    mainLayout.set({
+    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       alignX: "center",
-      padding: 5
+      padding: [0, 40]
     });
-    this.add(mainLayout, {
-      flex: 1
-    });
+    this.add(mainLayout, 1);
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
-  },
 
-  events: {
-    "ShowViewer": "qx.event.type.Data"
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -76,8 +76,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     node: {
-      check: "qxapp.data.model.Node",
-      apply: "__applyNode"
+      check: "qxapp.data.model.Node"
     }
   },
 
@@ -125,22 +124,15 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    __createInputPortsUI: function(inputNode, isInputModel = true) {
-      let nodePorts = null;
-      if (isInputModel) {
-        nodePorts = inputNode.getOutputWidget();
-      } else {
-        nodePorts = inputNode.getInputsDefaultWidget();
-      }
-      if (nodePorts) {
-        this.__inputNodesLayout.add(nodePorts, {
-          flex: 1
-        });
-      }
-      return nodePorts;
+    buildLayout: function() {
+      this.__addInputPortsUIs();
+      this.__addSettings();
+      this.__addMapper();
+      this.__addIFrame();
+      this.__addButtons();
     },
 
-    __addInputPortsUIs: function(node) {
+    __addInputPortsUIs: function() {
       this.__clearInputPortsUIs();
 
       // Add the default inputs if any
@@ -149,7 +141,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
 
       // Add the representations for the inputs
-      const inputNodes = node.getInputNodes();
+      const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNode = this.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
@@ -170,22 +162,33 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addSettings: function(propsWidget) {
+    __createInputPortsUI: function(inputNode, isInputModel = true) {
+      let nodePorts = null;
+      if (isInputModel) {
+        nodePorts = inputNode.getOutputWidget();
+      } else {
+        nodePorts = inputNode.getInputsDefaultWidget();
+      }
+      if (nodePorts) {
+        this.__inputNodesLayout.add(nodePorts);
+      }
+      return nodePorts;
+    },
+
+    __addSettings: function() {
+      const propsWidget = this.getNode().getPropsWidget();
       this.__settingsLayout.removeAll();
       if (propsWidget) {
         let box = new qx.ui.layout.HBox();
         box.set({
           spacing: 10,
-          alignX: "right"
-        });
-        let titleBox = new qx.ui.container.Composite(box);
-        let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
-        settLabel.set({
           alignX: "center"
         });
-        titleBox.add(settLabel, {
-          width: "75%"
+        let titleBox = new qx.ui.container.Composite(box);
+        let settLabel = new qx.ui.basic.Label(this.tr("Settings")).set({
+          font: "nav-bar-label"
         });
+        titleBox.add(settLabel);
 
         this.__settingsLayout.add(titleBox);
         this.__settingsLayout.add(propsWidget);
@@ -196,7 +199,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addMapper: function(mapper) {
+    __addMapper: function() {
+      const mapper = this.getNode().getInputsMapper();
       this.__mapperLayout.removeAll();
       if (mapper) {
         this.__mapperLayout.add(mapper, {
@@ -210,7 +214,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addIFrame: function(iFrame) {
+    __addIFrame: function() {
+      const iFrame = this.getNode().getIFrame();
       this.__iFrameLayout.removeAll();
       if (iFrame) {
         iFrame.addListener("maximize", e => {
@@ -239,13 +244,26 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__buttonsLayout.setVisibility(othersStatus);
     },
 
-    __addButtons: function(node) {
+    hasIFrame: function() {
+      return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
+    },
+
+    restoreIFrame: function() {
+      if (this.hasIFrame()) {
+        const iFrame = this.getNode().getIFrame();
+        if (iFrame) {
+          iFrame.maximizeIFrame(false);
+        }
+      }
+    },
+
+    __addButtons: function() {
       this.__buttonsLayout.removeAll();
-      let retrieveIFrameButton = node.getRetrieveIFrameButton();
+      let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
       if (retrieveIFrameButton) {
         this.__buttonsLayout.add(retrieveIFrameButton);
       }
-      let restartIFrameButton = node.getRestartIFrameButton();
+      let restartIFrameButton = this.getNode().getRestartIFrameButton();
       if (restartIFrameButton) {
         this.__buttonsLayout.add(restartIFrameButton);
       }
@@ -253,12 +271,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__mainLayout.add(this.__buttonsLayout);
     },
 
-    __applyNode: function(node, oldNode, propertyName) {
-      this.__addInputPortsUIs(node);
-      this.__addSettings(node.getPropsWidget());
-      this.__addMapper(node.getInputsMapper());
-      this.__addIFrame(node.getIFrame());
-      this.__addButtons(node);
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__inputNodesLayout.toggleCollapsed.bind(this.__inputNodesLayout));
     }
   }
 });

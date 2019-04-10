@@ -2,15 +2,44 @@
 
 # This entrypoint script:
 #
-# - Executes with root privileges *inside* of the container upon start
-# - Allows starting the container as root to perform some root-level operations at runtime
-#  (e.g. on volumes mapped inside)
-# - Notice that this way, the container *starts* as root but *runs* as scu (non-root user)
+# - Executes *inside* of the container upon start as --user [default root]
+# - Notice that the container *starts* as --user [default root] but
+#   *runs* as non-root user [scu]
 #
-# See https://stackoverflow.com/questions/39397548/how-to-give-non-root-user-in-docker-container-access-to-a-volume-mounted-on-the
+echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
 
 
-# HERE we have root priveleges
+if [[ ${SC_BUILD_TARGET} == "development" ]]
+then
+    # NOTE: expects docker run ... -v $(pwd):/devel/services/web/server
+    DEVEL_MOUNT=/devel/services/web/server
+
+    stat $DEVEL_MOUNT &> /dev/null || \
+        (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+
+    USERID=$(stat -c %u $DEVEL_MOUNT)
+    GROUPID=$(stat -c %g $DEVEL_MOUNT)
+    GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
+
+    if [[ $USERID -eq 0 ]]
+    then
+        addgroup scu root
+    else
+        # take host's credentials in scu
+        if [[ -z "$GROUPNAME" ]]
+        then
+            GROUPNAME=host_group
+            addgroup -g $GROUPID $GROUPNAME
+        else
+            addgroup scu $GROUPNAME
+        fi
+        
+        deluser scu &> /dev/null
+        adduser -u $USERID -G $GROUPNAME -D -s /bin/sh scu
+    fi
+fi
 
 
 su-exec scu "$@"

@@ -2,7 +2,6 @@ dist: xenial
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.23.2
-    - DOCKER_GID=1042
 services:
   - docker
 addons:
@@ -106,6 +105,7 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/storage after_success
 
+
     # test python, apihub ----------------------------------------------------------------------
     - stage: unit testing
       name: apihub
@@ -143,26 +143,45 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/python-linting after_success
 
-    # test node, linting ----------------------------------------------------------------------
+    # frontend testing ----------------------------------------------------------------------
     - stage: unit testing
-      name: node linting
+      name: front end testing
       language: node_js
       node_js:
-        - "8"
+        - "10"
+      addons:
+        apt:
+          packages:
+            - libgconf-2-4
       cache:
         directories:
           - .npm
           - "node_modules"
       before_install:
-        - bash ops/travis/unit-testing/node-linting before_install
+        - bash ops/travis/unit-testing/frontend before_install
       install:
-        - bash ops/travis/unit-testing/node-linting install
+        - bash ops/travis/unit-testing/frontend install
       before_script:
-        - bash ops/travis/unit-testing/node-linting before_script
+        - bash ops/travis/unit-testing/frontend before_script
       script:
-        - bash ops/travis/unit-testing/node-linting script
+        - bash ops/travis/unit-testing/frontend script
       after_success:
-        - bash ops/travis/unit-testing/node-linting after_success
+        - bash ops/travis/unit-testing/frontend after_success
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment/pages/
+        provider: pages
+        target-branch: master
+        # Set in travis-ci.org dashboard, marked secure
+        github-token: $GH_PAGES_TOKEN
+        skip-cleanup: true
+        keep-history: false
+        local-dir: itisfoundation.github.io
+        repo: ITISFoundation/itisfoundation.github.io
+        verbose: true
+        on:
+          branch: master
+
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration testing

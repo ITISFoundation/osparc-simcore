@@ -2,7 +2,7 @@
     "version":"0.1",
     "schema": {
         "inputs": {
-            "in_1": {                
+            "in_1": {
                 "label": "ap",
                 "displayOrder": 0,
                 "description": "these are computed data out of a pipeline",
@@ -10,18 +10,7 @@
             }
         },
         "outputs": {
-            "output_1": {                
-                "label": "Output 1",
-                "displayOrder": 0,
-                "description": "The output 1",
-                "type": "data:*/*"
-            },
-            "output_2": {
-                "label": "Output 2",
-                "displayOrder": 1,
-                "description": "The output 2",
-                "type": "data:*/*"
-            }
+
         }
     },
     "inputs": {},

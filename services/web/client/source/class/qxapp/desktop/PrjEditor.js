@@ -15,10 +15,8 @@
 
 ************************************************************************ */
 
-/* global window */
-
 /* eslint newline-per-chained-call: 0 */
-/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
@@ -31,27 +29,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.setProject(project);
 
-    let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
+    let mainPanel = this.__mainPanel = new qxapp.desktop.MainPanel().set({
       minWidth: 1000
     });
-    let sidePanel = this.__sidePanel = new qxapp.desktop.sidePanel.SidePanel().set({
+    let sidePanel = this.__sidePanel = new qxapp.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 800,
-      width: 600
+      width: 500
     });
 
+    const scroll = new qx.ui.container.Scroll().set({
+      minWidth: 0
+    });
+    scroll.add(sidePanel);
+
     this.add(mainPanel, 1); // flex 1
-    this.add(sidePanel, 0); // flex 0
+    this.add(scroll, 0); // flex 0
 
     this.initDefault();
     this.connectEvents();
 
     if (isNew) {
-      this.replaceProjectDocument();
+      this.createProjectDocument();
     } else {
       this.updateProjectDocument();
     }
     this.__startAutoSaveTimer();
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -69,7 +73,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   events: {
-    "changeMainViewCaption": "qx.event.type.Data"
+    "changeMainViewCaption": "qx.event.type.Data",
+    "projectSaved": "qx.event.type.Data"
   },
 
   members: {
@@ -83,11 +88,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __loggerView: null,
     __nodeView: null,
     __currentNodeId: null,
+    __autoSaveTimer: null,
+
+    /**
+     * Destructor
+     */
+    destruct: function() {
+      this.__stopAutoSaveTimer();
+    },
 
     initDefault: function() {
       let project = this.getProject();
 
-      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbench());
+      let treeView = this.__treeView = new qxapp.component.widget.NodesTree(project.getName(), project.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -95,16 +108,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.setTopView(treeView);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-        minHeight: 200,
-        maxHeight: 500
-      });
-      this.__sidePanel.setMidView(extraView);
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
 
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
-      this.__sidePanel.setBottomView(loggerView);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
@@ -154,8 +164,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__workbenchUI.getLogger().info("Can not start pipeline");
         }
       }, this);
-
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
+        this.__updatePipeline();
+      }, this);
 
       let workbench = this.getProject().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -181,67 +193,111 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
+
+      const workbenchUI = this.__workbenchUI;
+      const treeView = this.__treeView;
+      treeView.addListener("changeSelectedNode", e => {
+        const node = workbenchUI.getNodeUI(e.getData());
+        if (node && node.classname.includes("NodeUI")) {
+          node.setActive(true);
+        }
+      });
+      workbenchUI.addListener("changeSelectedNode", e => {
+        treeView.nodeSelected(e.getData());
+      });
     },
 
     nodeSelected: function(nodeId) {
       if (!nodeId) {
         return;
       }
-
+      if (this.__nodeView) {
+        this.__nodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
-      this.__treeView.nodeSelected(nodeId);
-
-      const workbench = this.getProject().getWorkbench();
-      if (nodeId === "root") {
-        this.__workbenchUI.loadModel(workbench);
-        this.showInMainView(this.__workbenchUI, nodeId);
-      } else {
-        let node = workbench.getNode(nodeId);
-
-        let widget;
-        if (node.isContainer()) {
-          widget = this.__workbenchUI;
+      let widget = this.__getWidgetForNode(nodeId);
+      this.showInMainView(widget, nodeId);
+      if (widget === this.__workbenchUI) {
+        const workbench = this.getProject().getWorkbench();
+        if (nodeId === "root") {
+          this.__workbenchUI.loadModel(workbench);
         } else {
-          this.__nodeView.setNode(node);
-          if (node.getMetaData().key.includes("file-picker")) {
-            widget = new qxapp.component.widget.FilePicker(node, this.getProject().getUuid());
-          } else {
-            widget = this.__nodeView;
-          }
-        }
-        this.showInMainView(widget, nodeId);
-
-        if (node.isContainer()) {
+          let node = workbench.getNode(nodeId);
           this.__workbenchUI.loadModel(node);
         }
       }
 
+      this.__switchExtraView(nodeId);
+
+      this.__treeView.nodeSelected(nodeId);
+    },
+
+    __getWidgetForNode: function(nodeId) {
+      // Find widget for the given nodeId
+      const workbench = this.getProject().getWorkbench();
+      let widget = null;
+      if (nodeId === "root") {
+        widget = this.__workbenchUI;
+      } else {
+        let node = workbench.getNode(nodeId);
+        if (node.isContainer()) {
+          if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
+            if (node.isInKey("dash-plot")) {
+              widget = new qxapp.component.widget.DashGrid(node);
+            }
+          }
+          if (widget === null) {
+            widget = this.__workbenchUI;
+          }
+        } else {
+          this.__nodeView.setNode(node);
+          this.__nodeView.buildLayout();
+          if (node.isInKey("file-picker")) {
+            widget = new qxapp.file.FilePicker(node, this.getProject().getUuid());
+            widget.addListener("finished", function() {
+              let loadNodeId = "root";
+              const filePicker = widget.getNode();
+              if (filePicker.isPropertyInitialized("parentNodeId")) {
+                loadNodeId = filePicker.getParentNodeId();
+              }
+              this.nodeSelected(loadNodeId);
+            }, this);
+          } else {
+            widget = this.__nodeView;
+          }
+        }
+      }
+      return widget;
+    },
+
+    __switchExtraView: function(nodeId) {
       // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let node = workbench.getNode(nodeId);
+        const node = this.getProject().getWorkbench().getNode(nodeId);
         if (node.isContainer()) {
-          this.showScreenshotInExtraView("container");
-        } else {
-          let nodeKey = node.getKey();
-          if (nodeKey.includes("file-picker")) {
-            this.showScreenshotInExtraView("file-picker");
-          } else if (nodeKey.includes("modeler")) {
-            this.showScreenshotInExtraView("modeler");
-          } else if (nodeKey.includes("3d-viewer")) {
-            this.showScreenshotInExtraView("postpro");
-          } else if (nodeKey.includes("viewer")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("jupyter")) {
-            this.showScreenshotInExtraView("notebook");
-          } else if (nodeKey.includes("Grid")) {
-            this.showScreenshotInExtraView("grid");
-          } else if (nodeKey.includes("Voxel")) {
-            this.showScreenshotInExtraView("voxels");
+          if (node.isInKey("dash-plot")) {
+            this.showScreenshotInExtraView("dash-plot");
           } else {
-            this.showScreenshotInExtraView("form");
+            this.showScreenshotInExtraView("container");
           }
+        } else if (node.isInKey("file-picker")) {
+          this.showScreenshotInExtraView("file-picker");
+        } else if (node.isInKey("modeler")) {
+          this.showScreenshotInExtraView("modeler");
+        } else if (node.isInKey("3d-viewer")) {
+          this.showScreenshotInExtraView("postpro");
+        } else if (node.isInKey("viewer")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("jupyter")) {
+          this.showScreenshotInExtraView("notebook");
+        } else if (node.isInKey("Grid")) {
+          this.showScreenshotInExtraView("grid");
+        } else if (node.isInKey("Voxel")) {
+          this.showScreenshotInExtraView("voxels");
+        } else {
+          this.showScreenshotInExtraView("form");
         }
       }
     },
@@ -254,7 +310,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeNode: function(nodeId) {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
+      if (nodeId === this.__currentNodeId) {
         return;
       }
       // remove first the connected links
@@ -277,21 +333,39 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      if (this.__mainPanel.isPropertyInitialized("mainView")) {
-        let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("finished", function() {
-          this.__mainPanel.setMainView(previousWidget);
+      const node = this.getProject().getWorkbench().getNode(nodeId);
+      if (node && node.hasDedicatedWidget()) {
+        let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+        const dedicatedWidget = node.getDedicatedWidget();
+        const btnLabel = dedicatedWidget ? this.tr("Setup view") : this.tr("Grid view");
+        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
+        let expertModeBtn = new qx.ui.form.Button().set({
+          label: btnLabel,
+          icon: btnIcon,
+          gap: 10,
+          alignX: "right",
+          height: 25,
+          maxWidth: 150
+        });
+        expertModeBtn.addListener("execute", () => {
+          node.setDedicatedWidget(!dedicatedWidget);
+          this.nodeSelected(nodeId);
         }, this);
+        dedicatedWrapper.add(expertModeBtn);
+        dedicatedWrapper.add(widget, {
+          flex: 1
+        });
+        this.__mainPanel.setMainView(dedicatedWrapper);
+      } else {
+        this.__mainPanel.setMainView(widget);
       }
-
-      this.__mainPanel.setMainView(widget);
 
       let nodesPath = this.getProject().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.setMidView(widget);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -300,7 +374,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         allowShrinkX: true,
         allowShrinkY: true
       });
-      this.__sidePanel.setMidView(imageWidget);
+      const container = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
+        height: 300
+      });
+      container.add(imageWidget);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
     },
 
     getLogger: function() {
@@ -341,6 +419,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
+        } else {
+          const workbench = this.getProject().getWorkbench();
+          const allNodes = workbench.getNodes(true);
+          Object.values(allNodes).forEach(node2 => {
+            node2.retrieveInputs();
+          }, this);
         }
       }, this);
       req.addListener("error", e => {
@@ -357,7 +441,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __startPipeline: function() {
       this.getProject().getWorkbench().clearProgressData();
 
-      let socket = qxapp.wrappers.WebSocket.getInstance();
+      let socket = qxapp.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -365,13 +449,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       socket.on(slotName, function(data) {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
-        const msg = d["Message"];
+        const msgs = d["Messages"];
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
-        this.getLogger().info(node.getLabel(), msg);
-        if (node) {
-          node.addLog(msg);
-        }
+        const node = workbench.getNode(nodeId);
+        const who = node.getLabel();
+        this.getLogger().infos(who, msgs);
       }, this);
       socket.emit(slotName);
 
@@ -383,7 +465,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = d["Node"];
         const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
         if (node) {
           node.setProgress(progress);
         }
@@ -441,9 +523,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __onPipelinesubmitted: function(e) {
-      let req = e.getTarget();
-
-      const pipelineId = req.getResponse()["project_id"];
+      const resp = e.getTarget().getResponse();
+      const pipelineId = resp.data["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -451,7 +532,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__pipelineId = null;
         this.getLogger().error("Workbench", "Submition failed");
       } else {
-        this.setCanStart(false);
+        // this.setCanStart(false);
         this.__pipelineId = pipelineId;
         this.getLogger().info("Workbench", "Pipeline started");
       }
@@ -467,36 +548,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.getControls().setCanStart(value);
     },
 
-    __addWidgetToMainView: function(widget) {
-      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-
-      widgetContainer.add(widget, {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-
-      let closeBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/window-close/24",
-        zIndex: widget.getZIndex() + 1
-      });
-      widgetContainer.add(closeBtn, {
-        right: 0,
-        top: 0
-      });
-      let previousWidget = this.__mainPanel.getMainView();
-      closeBtn.addListener("execute", function() {
-        this.__mainPanel.setMainView(previousWidget);
-      }, this);
-      this.__mainPanel.setMainView(widgetContainer);
-    },
-
     __startAutoSaveTimer: function() {
-      let diffPatcher = qxapp.wrappers.JsonDiffPatch.getInstance();
+      let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
-      let timer = new qx.event.Timer(interval);
+      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getProject().serializeProject();
         const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
@@ -515,23 +571,23 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       timer.start();
     },
 
-    replaceProjectDocument: function(newObj) {
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    createProjectDocument: function(newObj) {
       if (newObj === undefined) {
         newObj = this.getProject().serializeProject();
       }
-      const prjUuid = this.getProject().getUuid();
-      let resource = this.__projectResources.project;
-      resource.addListenerOnce("delSuccess", e => {
-        let resources = this.__projectResources.projects;
-        resources.addListenerOnce("postSuccess", ev => {
-          console.log("Project replaced");
-          this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
-        }, this);
-        resources.post(null, newObj);
+      let resources = this.__projectResources.projects;
+      resources.addListenerOnce("postSuccess", ev => {
+        console.log("Project replaced");
+        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
-      resource.del({
-        "project_id": prjUuid
-      });
+      resources.post(null, newObj);
     },
 
     updateProjectDocument: function(newObj) {
@@ -542,12 +598,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       let resource = this.__projectResources.project;
       resource.addListenerOnce("putSuccess", ev => {
-        console.log("Project updated");
-        this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
+        this.fireDataEvent("projectSaved", true);
+        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    __attachEventHandlers: function() {
+      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
     }
   }
 });

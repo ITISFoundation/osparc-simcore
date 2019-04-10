@@ -18,7 +18,7 @@
 /** Page to reset user's password
  *
  */
-/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.auth.ui.ResetPassPage", {
   extend: qxapp.auth.core.BaseAuthPage,
 

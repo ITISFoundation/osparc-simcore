@@ -16,21 +16,42 @@
 ************************************************************************ */
 
 /**
- *  Creates the widget that shows the outputs of the node in a key: value way.
+ *   Widget that shows the outputs of the node in a [key : value] way.
  * If the value is an object, it will show the internal key-value pairs
- * [PortLabel]: [PortValue]
+ * [PortLabel]: [PortValue]. It provides Drag mechanism.
  *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(node, port, portKey);
+ *   widget = nodeOutputLabel.getOutputWidget();
+ *   this.getRoot().add(widget);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param port {Object} Port owning the widget
+    * @param portKey {String} Port Key
+  */
   construct: function(node, port, portKey) {
     this.base();
 
     this.setNode(node);
+    this.__portId = portKey;
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    const grid = new qx.ui.layout.Grid(5, 5);
+    grid.setColumnFlex(0, 1);
+    grid.setColumnFlex(1, 1);
+    grid.setColumnWidth(2, 23);
+    this._setLayout(grid);
+    this.setPadding([0, 5]);
+
 
     let portLabel = this._createChildControlImpl("portLabel");
     portLabel.set({
@@ -43,8 +64,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     let toolTip = "";
     if (port.value) {
       if (typeof port.value === "object") {
-        outputValue = this.__pretifyObject(port.value, true);
-        toolTip = this.__pretifyObject(port.value, false);
+        outputValue = qxapp.utils.Utils.pretifyObject(port.value, true);
+        toolTip = qxapp.utils.Utils.pretifyObject(port.value, false);
       } else {
         outputValue = JSON.stringify(port.value);
       }
@@ -59,6 +80,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     this._createChildControlImpl("dragIcon");
 
     this.__createDragMechanism(this, portKey);
+
+    this.__subscribeToMessages();
   },
 
   properties: {
@@ -69,6 +92,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   },
 
   members: {
+    __portId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -76,13 +101,13 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
             font: text14Font,
-            textAlign: "right",
-            allowGrowX: true,
-            padding: 10,
-            rich: true
+            margin: [10, 0],
+            rich: true,
+            alignX: "right"
           });
           this._add(control, {
-            flex: 1
+            row: 0,
+            column: 0
           });
           break;
         }
@@ -90,22 +115,26 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
             font: text14Font,
-            textAlign: "right",
-            allowGrowX: true,
-            padding: 10,
-            maxWidth: 250,
-            rich: true
+            margin: [10, 0],
+            rich: true,
+            alignX: "left"
           });
-          this._add(control);
+          this._add(control, {
+            row: 0,
+            column: 1
+          });
           break;
         }
         case "dragIcon": {
           control = new qx.ui.basic.Atom().set({
             icon: "@FontAwesome5Solid/arrows-alt/14",
-            // icon: "@FontAwesome5Solid/grip-vertical/16"
-            paddingRight: 5
+            alignX: "right",
+            toolTip: new qx.ui.tooltip.ToolTip("Drag and drop over desired input...")
           });
-          this._add(control);
+          this._add(control, {
+            row: 0,
+            column: 2
+          });
           break;
         }
       }
@@ -115,8 +144,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     __createDragMechanism: function(uiPort, portKey) {
       uiPort.set({
-        draggable: true,
-        decorator: "draggableWidget"
+        draggable: true
       });
       uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
@@ -129,33 +157,29 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       }, this);
     },
 
-    __pretifyObject: function(object, short) {
-      let uuidToName = qxapp.utils.UuidToName.getInstance();
-      let myText = "";
-      const entries = Object.entries(object);
-      for (let i=0; i<entries.length; i++) {
-        const entry = entries[i];
-        myText += String(entry[0]);
-        myText += ": ";
-        // entry[1] might me a path of uuids
-        let entrySplitted = String(entry[1]).split("/");
-        if (short) {
-          myText += entrySplitted[entrySplitted.length-1];
-        } else {
-          for (let j=0; j<entrySplitted.length; j++) {
-            myText += uuidToName.convertToName(entrySplitted[j]);
-            if (j !== entrySplitted.length-1) {
-              myText += "/";
-            }
-          }
-        }
-        myText += "<br/>";
-      }
-      return myText;
-    },
-
     getOutputWidget: function() {
       return this;
+    },
+
+    __subscribeToMessages: function() {
+      const msgCb = decoratorName => msg => {
+        const compareFn = msg.getData();
+        if (compareFn(this.getNode().getNodeId(), this.__portId)) {
+          if (decoratorName) {
+            this.setDecorator(decoratorName);
+          } else {
+            this.resetDecorator();
+          }
+        }
+      };
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("inputFocus", msgCb("outputPortHighlighted"));
+        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb());
+      });
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocus", msgCb("outputPortHighlighted"));
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb());
+      });
     }
   }
 });

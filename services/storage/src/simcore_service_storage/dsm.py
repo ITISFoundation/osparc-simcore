@@ -45,7 +45,7 @@ async def _setup_dsm(app: web.Application):
     main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
-    python27_exec = Path(main_cfg["python2"]) / "bin" / "python2"
+    python27_exec = Path(main_cfg["python2"])
 
     engine = app.get(APP_DB_ENGINE_KEY)
     loop = app.loop
@@ -329,7 +329,7 @@ class DataStorageManager:
         elif source_location == DATCORE_STR:
             if dest_location == DATCORE_STR:
                 raise NotImplementedError("copy files from datcore 2 datcore not impl")
-            elif dest_location == SIMCORE_S3_STR:
+            if dest_location == SIMCORE_S3_STR:
                 # 2 steps: Get download link for local copy, the upload link to s3
                 # TODO: This should be a redirect stream!
                 dc_link = await self.download_link(user_id=user_id, location=source_location, file_uuid=source_uuid)

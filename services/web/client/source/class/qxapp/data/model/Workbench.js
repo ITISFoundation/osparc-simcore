@@ -15,11 +15,31 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Class that stores Workbench data.
+ *
+ * It takes care of creating, storing and managing nodes and links.
+ *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   project.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
+ * </pre>
+ */
 
 qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 
+  /**
+    * @param prjName {String} uuid if the link. If not provided, a random one will be assigned
+    * @param wbData {String} uuid of the node where the link comes from
+  */
   construct: function(prjName, wbData) {
     this.base(arguments);
 
@@ -64,8 +84,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
     getNodes: function(recursive = false) {
       let nodes = Object.assign({}, this.__nodesTopLevel);
       if (recursive) {
-        for (const nodeId in this.__nodesTopLevel) {
-          let innerNodes = this.__nodesTopLevel[nodeId].getInnerNodes(true);
+        let topLevelNodes = Object.values(this.__nodesTopLevel);
+        for (const topLevelNode of topLevelNodes) {
+          let innerNodes = topLevelNode.getInnerNodes(true);
           nodes = Object.assign(nodes, innerNodes);
         }
       }
@@ -93,8 +114,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
     getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
-      for (const linkId in this.__links) {
-        const link = this.__links[linkId];
+      const links = Object.values(this.__links);
+      for (const link of links) {
         if (link.getInputNodeId() === nodeId) {
           connectedLinks.push(link.getLinkId());
         }
@@ -110,11 +131,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (exists) {
         return this.__links[linkId];
       }
-      for (const id in this.__links) {
-        const link = this.__links[id];
+      const links = Object.values(this.__links);
+      for (const link of links) {
         if (link.getInputNodeId() === node1Id &&
           link.getOutputNodeId() === node2Id) {
-          return this.__links[id];
+          return link;
         }
       }
       return null;
@@ -126,6 +147,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
         return existingLink;
       }
       let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+      this.addLink(link);
+
+      // post link creation
+      this.getNode(node2Id).linkAdded(link);
+
       return link;
     },
 
@@ -139,7 +165,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
     },
 
-    createNode: function(key, version, uuid, nodeData) {
+    createNode: function(key, version, uuid, nodeData, parent) {
       let existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
@@ -154,6 +180,23 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (nodeData) {
         node.populateNodeData(nodeData);
       }
+      this.addNode(node, parent);
+
+      return node;
+    },
+
+    cloneNode: function(nodeToClone) {
+      const key = nodeToClone.getKey();
+      const version = nodeToClone.getVersion();
+      const uuid = null;
+      const parentNode = this.getNode(nodeToClone.getParentNodeId());
+      let node = this.createNode(key, version, uuid, null, parentNode);
+      node.populateNodeData(null);
+      const nodeData = nodeToClone.serialize();
+      node.setInputData(nodeData);
+      node.setOutputData(nodeData);
+      node.setInputNodes(nodeData);
+      node.setIsOutputNode(nodeToClone.getIsOutputNode());
       return node;
     },
 
@@ -179,19 +222,16 @@ qx.Class.define("qxapp.data.model.Workbench", {
             continue;
           }
         }
-        let node = null;
+        let parentNode = null;
+        if (nodeData.parent) {
+          parentNode = this.getNode(nodeData.parent);
+        }
         if (nodeData.key) {
           // not container
-          node = this.createNode(nodeData.key, nodeData.version, nodeId);
+          this.createNode(nodeData.key, nodeData.version, nodeId, null, parentNode);
         } else {
           // container
-          node = this.createNode(null, null, nodeId, nodeData);
-        }
-        if (nodeData.parent) {
-          let parentModel = this.getNode(nodeData.parent);
-          this.addNode(node, parentModel);
-        } else {
-          this.addNode(node);
+          this.createNode(null, null, nodeId, nodeData, parentNode);
         }
       }
 
@@ -207,7 +247,6 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const uuid = node.getNodeId();
       if (parentNode) {
         parentNode.addInnerNode(uuid, node);
-        node.setParentNodeId(parentNode.getNodeId());
       } else {
         this.__nodesTopLevel[uuid] = node;
       }
@@ -217,16 +256,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
     removeNode: function(nodeId) {
       let node = this.getNode(nodeId);
       if (node) {
+        node.removeNode();
         const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
         if (isTopLevel) {
           delete this.__nodesTopLevel[nodeId];
         }
-        const parentNodeId = node.getParentNodeId();
-        if (parentNodeId) {
-          let parentNode = this.getNode(parentNodeId);
-          parentNode.removeInnerNode(nodeId);
-        }
-        node.removeNode();
         this.fireEvent("workbenchChanged");
         return true;
       }
@@ -269,42 +303,20 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
     clearProgressData: function() {
       const allModels = this.getNodes(true);
-      for (const nodeId in allModels) {
-        allModels[nodeId].setProgress(0);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        node.setProgress(0);
       }
     },
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
       let workbench = {};
       const allModels = this.getNodes(true);
-      for (const nodeId in allModels) {
-        const node = allModels[nodeId];
-        if (!saveContainers && node.isContainer()) {
-          continue;
-        }
-
-        // node generic
-        let nodeEntry = workbench[node.getNodeId()] = {
-          label: node.getLabel(),
-          inputs: node.getInputValues(), // can a container have inputs?
-          inputNodes: node.getInputNodes(),
-          outputNode: node.getIsOutputNode(),
-          outputs: node.getOutputValues(), // can a container have outputs?
-          parent: node.getParentNodeId(),
-          progress: node.getProgress()
-        };
-
-        if (savePosition) {
-          nodeEntry.position = {
-            x: node.getPosition().x,
-            y: node.getPosition().y
-          };
-        }
-
-        // node especific
-        if (!node.isContainer()) {
-          nodeEntry.key = node.getKey();
-          nodeEntry.version = node.getVersion();
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        const data = node.serialize(saveContainers, savePosition);
+        if (data) {
+          workbench[node.getNodeId()] = data;
         }
       }
       return workbench;

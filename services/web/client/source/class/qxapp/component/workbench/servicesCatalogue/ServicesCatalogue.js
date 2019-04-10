@@ -15,9 +15,23 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
-
-const LATEST = "latest";
+/**
+ *   Window that shows a list of filter as you type services. For the selected service, below the list
+ * a dropdown menu is populated with al the available versions of the selection (by default latest
+ * is selected).
+ *
+ *   When the user really selects the service an "addService" data event is fired.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+ *   srvCat.center();
+ *   srvCat.open();
+ * </pre>
+ */
 
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue", {
   extend: qx.ui.window.Window,
@@ -58,6 +72,10 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
   events: {
     "addService": "qx.event.type.Data"
+  },
+
+  statics: {
+    LATEST: "latest"
   },
 
   members: {
@@ -159,9 +177,14 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       let versionLabel = new qx.ui.basic.Label(this.tr("Version"));
       versionLayout.add(versionLabel);
       let selectBox = this.__versionsBox = new qx.ui.form.SelectBox();
-      selectBox.add(new qx.ui.form.ListItem(this.tr(LATEST)));
+      selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
       selectBox.setValue(selectBox.getChildrenContainer().getSelectables()[0].getLabel());
       versionLayout.add(selectBox);
+      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/16");
+      infoBtn.addListener("execute", function() {
+        this.__showServiceInfo();
+      }, this);
+      versionLayout.add(infoBtn);
       return versionLayout;
     },
 
@@ -252,7 +275,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         selectBox.removeAll();
         if (serviceKey in this.__allServicesObj) {
           let versions = qxapp.utils.Services.getVersions(this.__allServicesObj, serviceKey);
-          const latest = new qx.ui.form.ListItem(this.tr(LATEST));
+          const latest = new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST));
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
             selectBox.add(new qx.ui.form.ListItem(versions[i]));
@@ -262,19 +285,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-
     __onAddService: function() {
       if (this.__list.isSelectionEmpty()) {
         return;
       }
 
-      const selection = this.__list.getSelection()[0];
-      const serviceKey = selection.getModel().getKey();
-      let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
-      if (serviceVersion == this.tr(LATEST).toString()) {
-        serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
-      }
-      let service = qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
+      const service = this.__getSelectedService();
       if (service) {
         let serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
@@ -285,6 +301,39 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         this.fireDataEvent("addService", eData);
       }
       this.close();
+    },
+
+    __getSelectedService: function() {
+      const selection = this.__list.getSelection()[0];
+      const serviceKey = selection.getModel().getKey();
+      let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
+      if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
+        serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+      }
+      return qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
+    },
+
+    __showServiceInfo: function() {
+      const selectedService = this.__getSelectedService();
+      const jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescriptionCatalogue");
+      const win = new qx.ui.window.Window("Service info").set({
+        showMinimize: false,
+        showMaximize: false,
+        allowMaximize: false,
+        showStatusbar: false,
+        modal: true,
+        width: 550,
+        height: 550,
+        layout: new qx.ui.layout.Canvas()
+      });
+      win.add(jsonTreeWidget, {
+        top: -30,
+        right: 0,
+        bottom: 0,
+        left: -60
+      });
+      win.center();
+      win.open();
     },
 
     __onCancel: function() {

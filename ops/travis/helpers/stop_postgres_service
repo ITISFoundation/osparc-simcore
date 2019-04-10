@@ -1,5 +1,9 @@
 #!/bin/bash
+set -e
 # shutdown postgres because sometimes is is already up ???
 sudo service postgresql stop
+
 # wait for postgresql to shutdown
-while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+while nc -z localhost 5432; do
+  sleep 1
+done

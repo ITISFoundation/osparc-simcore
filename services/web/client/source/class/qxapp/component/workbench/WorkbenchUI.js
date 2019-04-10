@@ -15,23 +15,38 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
-/* global window */
+/**
+ *   Widget containing the layout where NodeUIs and LinkUIs, and when the model loaded
+ * is a container-node, also NodeInput and NodeOutput are rendered.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let workbenchUI = new qxapp.component.workbench.WorkbenchUI(workbench);
+ *   this.getRoot().add(workbenchUI);
+ * </pre>
+ */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
 qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
+  /**
+    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+  */
   construct: function(workbench) {
-    this.base();
+    this.base(arguments);
+
+    this.__nodesUI = [];
+    this.__linksUI = [];
 
     let hBox = new qx.ui.layout.HBox();
-    this.set({
-      layout: hBox
-    });
+    this._setLayout(hBox);
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
@@ -45,10 +60,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
+    this._add(inputNodesLayout);
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this.add(this.__desktopCanvas, {
+    this._add(this.__desktopCanvas, {
       flex: 1
     });
 
@@ -63,7 +78,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     nodesExposedLayout.add(outputLabel);
-    this.add(nodesExposedLayout);
+    this._add(nodesExposedLayout);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.__desktopCanvas.add(this.__desktop, {
@@ -73,7 +88,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.setWorkbench(workbench);
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -81,7 +95,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
-      this.loadModel(this.getWorkbench());
+      this.setWorkbench(workbench);
       this.fireDataEvent("nodeDoubleClicked", "root");
     });
 
@@ -105,18 +119,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
     }, this);
 
-    this.__nodesUI = [];
-    this.__linksUI = [];
-
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.__desktopCanvas.add(buttonContainer, {
       bottom: 10,
       right: 10
     });
-    // let addButton = this.__getPlusButton();
-    // buttonContainer.add(addButton);
-    // let removeButton = this.__getRemoveButton();
-    // buttonContainer.add(removeButton);
     let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
     unlinkButton.setVisibility("excluded");
     buttonContainer.add(unlinkButton);
@@ -138,13 +145,15 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
-    "removeLink": "qx.event.type.Data"
+    "removeLink": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data"
   },
 
   properties: {
     workbench: {
       check: "qxapp.data.model.Workbench",
-      nullable: false
+      nullable: false,
+      apply: "loadModel"
     }
   },
 
@@ -240,13 +249,21 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion());
-      node.populateNodeData();
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      this.getWorkbench().addNode(node, parent);
+      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
+      node.populateNodeData();
+
+      const metaData = node.getMetaData();
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
+        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
+        for (const innerNodeMetaData of innerNodeMetaDatas) {
+          let innerNode = this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, null, node);
+          innerNode.populateNodeData();
+        }
+      }
 
       let nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
@@ -307,7 +324,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let node = this.getWorkbench().getNode(nodeId);
 
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
-      nodeUI.createNodeLayout();
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
       return nodeUI;
@@ -315,39 +331,41 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
-      this.getWorkbench().addLink(link);
 
       // build representation
-      let node1 = this.getNodeUI(node1Id);
-      let node2 = this.getNodeUI(node2Id);
-      if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
-        node1.getNode().setIsOutputNode(true);
-      } else {
-        node2.getNode().addInputNode(node1Id);
+      const nodeUI1 = this.getNodeUI(node1Id);
+      const nodeUI2 = this.getNodeUI(node2Id);
+      const port1 = nodeUI1.getOutputPort();
+      const port2 = nodeUI2.getInputPort();
+      if (port1 && port2) {
+        if (this.__currentModel.isContainer() && nodeUI2.getNodeId() === this.__currentModel.getNodeId()) {
+          nodeUI1.getNode().setIsOutputNode(true);
+        } else {
+          nodeUI2.getNode().addInputNode(node1Id);
+        }
+        const pointList = this.__getLinkPoints(nodeUI1, port1, nodeUI2, port2);
+        const x1 = pointList[0] ? pointList[0][0] : 0;
+        const y1 = pointList[0] ? pointList[0][1] : 0;
+        const x2 = pointList[1] ? pointList[1][0] : 0;
+        const y2 = pointList[1] ? pointList[1][1] : 0;
+        let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+
+        let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
+        this.__linksUI.push(linkUI);
+
+        linkUI.getRepresentation().node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          linkUI.fireDataEvent("linkSelected", linkUI.getLinkId());
+          e.stopPropagation();
+        }, this);
+
+        linkUI.addListener("linkSelected", e => {
+          this.__selectedItemChanged(linkUI.getLinkId());
+        }, this);
+
+        return linkUI;
       }
-      let port1 = node1.getOutputPort();
-      let port2 = node2.getInputPort();
-      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-      const x1 = pointList[0] ? pointList[0][0] : 0;
-      const y1 = pointList[0] ? pointList[0][1] : 0;
-      const x2 = pointList[1] ? pointList[1][0] : 0;
-      const y2 = pointList[1] ? pointList[1][1] : 0;
-      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
-
-      let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
-      this.__linksUI.push(linkUI);
-
-      linkUI.getRepresentation().node.addEventListener("click", e => {
-        // this is needed to get out of the context of svg
-        linkUI.fireDataEvent("linkSelected", linkUI.getLinkId());
-        e.stopPropagation();
-      }, this);
-
-      linkUI.addListener("linkSelected", e => {
-        this.__selectedItemChanged(linkUI.getLinkId());
-      }, this);
-
-      return linkUI;
+      return null;
     },
 
     __createDragDropMechanism: function(nodeUI) {
@@ -460,7 +478,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
     },
 
-    __createInputNodeUI: function(inputNode) {
+    __createNodeInputUI: function(inputNode) {
       let nodeInput = new qxapp.component.widget.NodeInput(inputNode);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
@@ -470,24 +488,25 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeInput;
     },
 
-    __createInputNodeUIs: function(model) {
+    __createNodeInputUIs: function(model) {
+      this.__clearNodeInputUIs();
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
         let inputNode = this.getWorkbench().getNode(inputNodes[i]);
-        let inputLabel = this.__createInputNodeUI(inputNode);
+        let inputLabel = this.__createNodeInputUI(inputNode);
         this.__nodesUI.push(inputLabel);
       }
     },
 
-    __clearInputNodeUIs: function() {
+    __clearNodeInputUIs: function() {
       // remove all but the title
       while (this.__inputNodesLayout.getChildren().length > 1) {
         this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length - 1);
       }
     },
 
-    __createNodeExposedUI: function(currentModel) {
-      let nodeOutput = new qxapp.component.widget.NodeExposed(currentModel);
+    __createNodeOutputUI: function(currentModel) {
+      let nodeOutput = new qxapp.component.widget.NodeOutput(currentModel);
       nodeOutput.populateNodeLayout();
       this.__createDragDropMechanism(nodeOutput);
       this.__outputNodesLayout.add(nodeOutput, {
@@ -496,12 +515,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeOutput;
     },
 
-    __createNodeExposedUIs: function(model) {
-      let outputLabel = this.__createNodeExposedUI(model);
+    __createNodeOutputUIs: function(model) {
+      this.__clearNodeOutputUIs();
+      let outputLabel = this.__createNodeOutputUI(model);
       this.__nodesUI.push(outputLabel);
     },
 
-    __clearNodeExposedUIs: function() {
+    __clearNodeOutputUIs: function() {
       // remove all but the title
       while (this.__outputNodesLayout.getChildren().length > 1) {
         this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
@@ -599,17 +619,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return;
       }
 
-      let x1;
-      let y1;
-      let x2;
-      let y2;
-      const portPos = nodeUI.getLinkPoint(port);
-      // FIXME:
       const navBarHeight = 50;
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
       this.__pointerPosY = pointerEvent.getViewportTop() - navBarHeight;
 
+      let portPos = nodeUI.getLinkPoint(port);
+      if (portPos[0] === null) {
+        portPos[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
+      }
+
+      let x1;
+      let y1;
+      let x2;
+      let y2;
       if (port.isInput) {
         x1 = this.__pointerPosX;
         y1 = this.__pointerPosY;
@@ -640,23 +663,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __getLinkPoints: function(node1, port1, node2, port2) {
-      let p1 = null;
-      let p2 = null;
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
-      p1 = node1.getLinkPoint(port1);
-      if (this.__currentModel.isContainer() && node2.getNode().getNodeId() === this.__currentModel.getNodeId()) {
-        // connection to the exposed output
-        const dc = this.__desktopCanvas.getBounds();
-        const onl = this.__outputNodesLayout.getBounds();
-        p2 = [
-          parseInt(dc.width - 6),
-          parseInt(onl.height / 2)
-        ];
-      } else {
-        p2 = node2.getLinkPoint(port2);
+      let p1 = node1.getLinkPoint(port1);
+      let p2 = node2.getLinkPoint(port2);
+      if (p2[0] === null) {
+        p2[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
       }
       return [p1, p2];
     },
@@ -750,18 +764,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     loadModel: function(model) {
       this.clearAll();
-
       this.__currentModel = model;
-
       if (model) {
         const isContainer = model.isContainer();
         if (isContainer) {
           this.__inputNodesLayout.setVisibility("visible");
-          this.__clearInputNodeUIs();
-          this.__createInputNodeUIs(model);
+          this.__createNodeInputUIs(model);
           this.__outputNodesLayout.setVisibility("visible");
-          this.__clearNodeExposedUIs();
-          this.__createNodeExposedUIs(model);
+          this.__createNodeOutputUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
           this.__outputNodesLayout.setVisibility("excluded");
@@ -816,8 +826,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
-
-      // qx.ui.core.queue.Widget.flush();
     },
 
     __selectedItemChanged: function(newID) {
@@ -839,6 +847,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         let selectedLink = this.__getLinkUI(newID);
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
+      } else if (newID) {
+        this.fireDataEvent("changeSelectedNode", newID);
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");

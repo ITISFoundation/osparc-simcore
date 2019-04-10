@@ -6,13 +6,12 @@
    Utf8Check: äöü
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
+
 /**
  * A special renderer for AutoForms which includes notes below the section header
  * widget and next to the individual form widgets.
  */
-
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
@@ -41,6 +40,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     fl.setColumnAlign(0, "left", "top");
     fl.setColumnFlex(1, 1);
     fl.setColumnMinWidth(1, 130);
+
+    this.setDroppable(true);
+    this.__attachDragoverHighlighter();
   },
 
   events: {
@@ -96,8 +98,17 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             item: items[i]
           });
         }
-        // this.__createDropMechanism(label, item.key);
         this.__createDropMechanism(item, item.key);
+
+        // Notify focus and focus out
+        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+
+        item.addListener("focus", () => {
+          qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
+        }, this);
+        item.addListener("focusout", () => {
+          qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
+        }, this);
       }
     },
 
@@ -119,7 +130,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           data[portId] = null;
         }
       }
-      return data;
+      let filteredData = {};
+      for (const key in data) {
+        if (data[key] !== null) {
+          filteredData[key] = data[key];
+        }
+      }
+      return filteredData;
     },
 
     linkAdded: function(portId) {
@@ -165,12 +182,14 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      if (this.getWorkbench()) {
+      if (this.getWorkbench() && node1Id && node2Id) {
         const node1 = this.getWorkbench().getNode(node1Id);
-        const port1 = node1.getOutput(port1Id);
         const node2 = this.getWorkbench().getNode(node2Id);
-        const port2 = node2.getInput(port2Id);
-        return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+        if (node1 && node2) {
+          const port1 = node1.getOutput(port1Id);
+          const port2 = node2.getInput(port2Id);
+          return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+        }
       }
       return false;
     },
@@ -178,14 +197,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     __createDropMechanism: function(uiElement, portId) {
       if (this.getNode()) {
         uiElement.set({
-          droppable: true,
-          decorator: "droppableWidget"
+          droppable: true
         });
         uiElement.nodeId = this.getNode().getNodeId();
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
-          let compatible = false;
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
             let dragNodeId = from.nodeId;
@@ -193,10 +210,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
-            compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
-          }
-          if (!compatible) {
-            e.preventDefault();
+            if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
+              this.__hightlightCompatibles(e.getRelatedTarget());
+              e.stopPropagation();
+            } else {
+              e.preventDefault();
+            }
           }
         }, this);
 
@@ -212,6 +231,43 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           }
         }, this);
       }
+    },
+
+    __getCompatibleInputs: function(output) {
+      return this._getChildren().filter(child => child.nodeId && this.__arePortsCompatible(output.nodeId, output.portId, child.nodeId, child.portId));
+    },
+
+    __hightlightCompatibles: function(output) {
+      const inputs = this.__getCompatibleInputs(output);
+      for (let i in inputs) {
+        const input = inputs[i];
+        input.setDecorator("material-textfield-focused");
+      }
+    },
+
+    __unhightlightAll: function() {
+      const inputs = this._getChildren().filter(child => child.nodeId);
+      for (let i in inputs) {
+        const input = inputs[i];
+        input.resetDecorator();
+      }
+    },
+
+    __attachDragoverHighlighter: function() {
+      this.addListener("dragover", e => {
+        if (e.supportsType("osparc-port-link")) {
+          this.__hightlightCompatibles(e.getRelatedTarget());
+          e.preventDefault();
+        }
+      }, this);
+      this.addListener("dragleave", e => {
+        if (e.supportsType("osparc-port-link")) {
+          this.__unhightlightAll();
+        }
+      }, this);
+      this.addListener("mouseup", e => {
+        this.__unhightlightAll();
+      });
     }
   }
 });

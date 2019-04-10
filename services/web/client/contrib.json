@@ -2,10 +2,10 @@
   "libraries": [
     {
       "library_name": "qx-osparc-theme",
-      "library_version": "0.4.0",
+      "library_version": "0.4.1",
       "repo_name": "ITISFoundation/qx-osparc-theme",
-      "repo_tag": "v0.4.0",
-      "path": "contrib/ITISFoundation_qx-osparc-theme_v0.4.0"
+      "repo_tag": "v0.4.1",
+      "path": "contrib/ITISFoundation_qx-osparc-theme_v0.4.1"
     },
     {
       "library_name": "qx-iconfont-material",
@@ -20,6 +20,30 @@
       "repo_name": "ITISFoundation/qx-iconfont-fontawesome5",
       "repo_tag": "v0.0.4",
       "path": "contrib/ITISFoundation_qx-iconfont-fontawesome5_v0.0.4"
+    },
+    {
+      "library_name": "Qooxdoo API Viewer",
+      "library_version": "0.1.12",
+      "uri": "qooxdoo/qxl.apiviewer",
+      "repo_name": "qooxdoo/qxl.apiviewer",
+      "repo_tag": "v0.1.12",
+      "path": "contrib/qooxdoo_qxl.apiviewer_v0.1.12"
+    },
+    {
+      "library_name": "versionlabel",
+      "library_version": "0.1.2",
+      "uri": "qooxdoo/qxl.versionlabel",
+      "repo_name": "qooxdoo/qxl.versionlabel",
+      "repo_tag": "v0.1.2",
+      "path": "contrib/qooxdoo_qxl.versionlabel_v0.1.2"
+    },
+    {
+      "library_name": "Commandline Testrunner for Qooxdoo Apps",
+      "library_version": "0.2.0",
+      "uri": "qooxdoo/qxl.testtapper",
+      "repo_name": "qooxdoo/qxl.testtapper",
+      "repo_tag": "v0.2.0",
+      "path": "contrib/qooxdoo_qxl.testtapper_v0.2.0"
     }
   ]
 }

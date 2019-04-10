@@ -15,11 +15,35 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Class that stores Node data.
+ *
+ *   For the given version-key, this class will take care of pulling the metadata, store it and
+ * fill in all the information.
+ *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let node = new qxapp.data.model.Node(this, key, version, uuid);
+ *   node.populateNodeData(nodeData);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 
+  /**
+    * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
+    * @param key {String} key of the service represented by the node (not needed for Containers)
+    * @param version {String} version of the service represented by the node (not needed for Containers)
+    * @param uuid {String} uuid of the service represented by the node (not needed fpr new Nodes)
+  */
   construct: function(workbench, key, version, uuid) {
     this.setWorkbench(workbench);
 
@@ -30,7 +54,6 @@ qx.Class.define("qxapp.data.model.Node", {
     this.__inputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
-    this.__logs = [];
 
     this.set({
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -40,8 +63,7 @@ qx.Class.define("qxapp.data.model.Node", {
       // not container
       this.set({
         key: key,
-        version: version,
-        nodeImageId: key + "-" + version
+        version: version
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
@@ -58,6 +80,9 @@ qx.Class.define("qxapp.data.model.Node", {
         if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
+        if (metaData.dedicatedWidget) {
+          this.setDedicatedWidget(metaData.dedicatedWidget);
+        }
       }
     }
   },
@@ -70,23 +95,17 @@ qx.Class.define("qxapp.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     version: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     nodeId: {
       check: "String",
       nullable: false
-    },
-
-    nodeImageId: {
-      check: "String",
-      init: null,
-      nullable: true
     },
 
     label: {
@@ -109,6 +128,12 @@ qx.Class.define("qxapp.data.model.Node", {
 
     parentNodeId: {
       check: "String",
+      nullable: true
+    },
+
+    dedicatedWidget: {
+      check: "Boolean",
+      init: null,
       nullable: true
     },
 
@@ -142,6 +167,12 @@ qx.Class.define("qxapp.data.model.Node", {
       check: "Number",
       init: 0,
       event: "changeProgress"
+    },
+
+    thumbnail: {
+      check: "String",
+      nullable: true,
+      init: ""
     }
   },
 
@@ -161,14 +192,43 @@ qx.Class.define("qxapp.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
-    __logs: null,
 
-    addLog: function(log) {
-      this.__logs.push(log);
+    isInKey: function(str) {
+      if (this.getMetaData() === null) {
+        return false;
+      }
+      if (this.getKey() === null) {
+        return false;
+      }
+      return this.getKey().includes(str);
+    },
+
+    hasDedicatedWidget: function() {
+      if (this.getDedicatedWidget() === null) {
+        return false;
+      }
+      return true;
+    },
+
+    showDedicatedWidget: function() {
+      if (this.hasDedicatedWidget()) {
+        return this.getDedicatedWidget();
+      }
+      return false;
     },
 
     isContainer: function() {
-      return (this.getNodeImageId() === null);
+      const hasKey = (this.getKey() === null);
+      const hasChildren = this.hasChildren();
+      return hasKey || hasChildren;
+    },
+
+    isDynamic: function() {
+      let metaData = this.getMetaData();
+      if (metaData && metaData.type && metaData.type === "dynamic") {
+        return true;
+      }
+      return false;
     },
 
     getMetaData: function() {
@@ -212,6 +272,14 @@ qx.Class.define("qxapp.data.model.Node", {
       return output;
     },
 
+    hasChildren: function() {
+      const innerNodes = this.getInnerNodes();
+      if (innerNodes) {
+        return Object.keys(innerNodes).length > 0;
+      }
+      return false;
+    },
+
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
@@ -225,6 +293,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
+      innerNode.setParentNodeId(this.getNodeId());
     },
 
     removeInnerNode: function(innerNodeId) {
@@ -263,7 +332,7 @@ qx.Class.define("qxapp.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.__inputNodes = nodeData.inputNodes;
+          this.setInputNodes(nodeData);
         }
 
         if (nodeData.outputNode) {
@@ -276,6 +345,10 @@ qx.Class.define("qxapp.data.model.Node", {
 
         if (nodeData.progress) {
           this.setProgress(nodeData.progress);
+        }
+
+        if (nodeData.thumbnail) {
+          this.setThumbnail(nodeData.thumbnail);
         }
       }
 
@@ -403,13 +476,54 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
+    // post link creation routine
+    linkAdded: function(link) {
+      if (this.isInKey("dash-plot")) {
+        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const innerNode = innerNodes[i];
+          if (innerNode.addInputNode(inputNode.getNodeId())) {
+            this.createAutomaticPortConns(inputNode, innerNode);
+          }
+        }
+        this.__retrieveInputs();
+      }
+    },
+
+    createAutomaticPortConns: function(node1, node2) {
+      // create automatic port connections
+      console.log("createAutomaticPortConns", node1, node2);
+      const outPorts = node1.getOutputs();
+      const inPorts = node2.getInputs();
+      for (const outPort in outPorts) {
+        for (const inPort in inPorts) {
+          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              break;
+            }
+          }
+        }
+      }
+    },
+
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
+        return true;
+      }
+      return false;
+    },
+
+    setInputNodes: function(nodeData) {
+      if (nodeData.inputNodes) {
+        for (let i=0; i<nodeData.inputNodes.length; i++) {
+          this.addInputNode(nodeData.inputNodes[i]);
+        }
       }
     },
 
@@ -438,7 +552,7 @@ qx.Class.define("qxapp.data.model.Node", {
       return (index > -1);
     },
 
-    __restartIFrame: function(loadThis) {
+    restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         this.setIFrame(new qxapp.component.widget.PersistentIframe());
       }
@@ -464,31 +578,28 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __showLoadingIFrame: function() {
       const loadingUri = qxapp.utils.Utils.getLoaderUri();
-      this.__restartIFrame(loadingUri);
+      this.restartIFrame(loadingUri);
     },
 
     __retrieveInputs: function() {
-      this.__updateBackendAndRetrieveInputs();
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },
 
     retrieveInputs: function() {
-      let urlUpdate = this.getServiceUrl() + "/retrieve";
-      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-      let updReq = new qx.io.request.Xhr();
-      updReq.set({
-        url: urlUpdate,
-        method: "GET"
-      });
-      updReq.send();
+      if (this.isDynamic()) {
+        let urlUpdate = this.getServiceUrl() + "/retrieve";
+        urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+        let updReq = new qx.io.request.Xhr();
+        updReq.set({
+          url: urlUpdate,
+          method: "GET"
+        });
+        updReq.send();
+      }
     },
 
     __startInteractiveNode: function() {
-      let metaData = this.getMetaData();
-      if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
+      if (this.isDynamic()) {
         let retrieveBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/spinner/32"
         });
@@ -502,47 +613,73 @@ qx.Class.define("qxapp.data.model.Node", {
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
         restartBtn.addListener("execute", e => {
-          this.__restartIFrame();
+          this.restartIFrame();
         }, this);
         restartBtn.setEnabled(false);
         this.setRestartIFrameButton(restartBtn);
 
         this.__showLoadingIFrame();
 
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
-        const msgData = {
-          nodeLabel: this.getLabel(),
-          msg: msg
-        };
-        this.fireDataEvent("showInLogger", msgData);
-
-        // start the service
-        const url = "/running_interactive_services";
-        let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        if (metaData.key.includes("/neuroman")) {
-          // HACK: Only Neuroman should enter here
-          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        }
-        let request = new qxapp.io.request.ApiRequest(url+query, "POST");
-        request.addListener("success", this.__onInteractiveNodeStarted, this);
-        request.addListener("error", e => {
-          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const errorMsgData = {
-            nodeLabel: this.getLabel(),
-            msg: errorMsg
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-        }, this);
-        request.addListener("fail", e => {
-          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const failMsgData = {
-            nodeLabel: this.getLabel(),
-            msg: failMsg
-          };
-          this.fireDataEvent("showInLogger", failMsgData);
-        }, this);
-        request.send();
+        this.__startService();
       }
+    },
+
+    __startService: function() {
+      const metaData = this.getMetaData();
+
+      const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+      const msgData = {
+        nodeLabel: this.getLabel(),
+        msg: msg
+      };
+      this.fireDataEvent("showInLogger", msgData);
+
+      const interval = 50;
+      let increment = true;
+      let progressTimer = new qx.event.Timer(interval);
+      progressTimer.addListener("interval", () => {
+        if (this.getServiceUrl() === null) {
+          const newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          this.setProgress(newProgress);
+          if (newProgress === 100) {
+            increment = false;
+          } else if (newProgress === 0) {
+            increment = true;
+          }
+        } else {
+          progressTimer.stop();
+        }
+      }, this);
+      progressTimer.start();
+
+      // start the service
+      const url = "/running_interactive_services";
+      let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+      if (metaData.key.includes("/neuroman")) {
+        // HACK: Only Neuroman should enter here
+        query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+      }
+      let request = new qxapp.io.request.ApiRequest(url+query, "POST");
+      request.addListener("success", this.__onInteractiveNodeStarted, this);
+      request.addListener("error", e => {
+        const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+        const errorMsgData = {
+          nodeLabel: this.getLabel(),
+          msg: errorMsg
+        };
+        this.fireDataEvent("showInLogger", errorMsgData);
+        progressTimer.stop();
+      }, this);
+      request.addListener("fail", e => {
+        const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+        const failMsgData = {
+          nodeLabel: this.getLabel(),
+          msg: failMsg
+        };
+        this.fireDataEvent("showInLogger", failMsgData);
+        progressTimer.stop();
+      }, this);
+      request.send();
     },
 
     __onInteractiveNodeStarted: function(e) {
@@ -576,30 +713,48 @@ qx.Class.define("qxapp.data.model.Node", {
         } else if (this.getKey().includes("3d-viewer")) {
           srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
         }
-        this.setServiceUrl(srvUrl);
-        const msg = "Service ready on " + srvUrl;
-        const msgData = {
-          nodeLabel: this.getLabel(),
-          msg: msg
-        };
-        this.fireDataEvent("showInLogger", msgData);
 
-        this.getRetrieveIFrameButton().setEnabled(true);
-        this.getRestartIFrameButton().setEnabled(true);
-        // FIXME: Apparently no all services are inmediately ready when they publish the port
-        const waitFor = 4000;
-        qx.event.Timer.once(ev => {
-          this.__restartIFrame();
-        }, this, waitFor);
+        this.__serviceReadyIn(srvUrl);
       }
+    },
+
+    __serviceReadyIn: function(srvUrl) {
+      this.setServiceUrl(srvUrl);
+      const msg = "Service ready on " + srvUrl;
+      const msgData = {
+        nodeLabel: this.getLabel(),
+        msg: msg
+      };
+      this.fireDataEvent("showInLogger", msgData);
+
+      this.getRetrieveIFrameButton().setEnabled(true);
+      this.getRestartIFrameButton().setEnabled(true);
+      this.setProgress(100);
+
+      // FIXME: Apparently no all services are inmediately ready when they publish the port
+      const waitFor = 4000;
+      qx.event.Timer.once(ev => {
+        this.restartIFrame();
+      }, this, waitFor);
+
+      this.__retrieveInputs();
     },
 
     removeNode: function() {
       this.__stopInteractiveNode();
+      const innerNodes = Object.values(this.getInnerNodes());
+      for (const innerNode of innerNodes) {
+        innerNode.removeNode();
+      }
+      const parentNodeId = this.getParentNodeId();
+      if (parentNodeId) {
+        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        parentNode.removeInnerNode(this.getNodeId());
+      }
     },
 
     __stopInteractiveNode: function() {
-      if (this.getMetaData().type == "dynamic") {
+      if (this.isDynamic()) {
         let url = "/running_interactive_services";
         let query = "/"+encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
@@ -617,6 +772,42 @@ qx.Class.define("qxapp.data.model.Node", {
         x: this.__posX,
         y: this.__posY
       };
+    },
+
+    serialize: function(saveContainers, savePosition) {
+      if (!saveContainers && this.isContainer()) {
+        return null;
+      }
+
+      // node generic
+      let nodeEntry = {
+        key: this.getKey(),
+        version: this.getVersion(),
+        label: this.getLabel(),
+        inputs: this.getInputValues(), // can a container have inputs?
+        inputNodes: this.getInputNodes(),
+        outputNode: this.getIsOutputNode(),
+        outputs: this.getOutputValues(), // can a container have outputs?
+        parent: this.getParentNodeId(),
+        progress: this.getProgress(),
+        thumbnail: this.getThumbnail()
+      };
+
+      if (savePosition) {
+        nodeEntry.position = {
+          x: this.getPosition().x,
+          y: this.getPosition().y
+        };
+      }
+      // remove null entries from the payload
+      let filteredNodeEntry = {};
+      for (const key in nodeEntry) {
+        if (nodeEntry[key] !== null) {
+          filteredNodeEntry[key] = nodeEntry[key];
+        }
+      }
+
+      return filteredNodeEntry;
     }
   }
 });

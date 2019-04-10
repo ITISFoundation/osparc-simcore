@@ -10,6 +10,7 @@ logging.basicConfig(
     )
 
 API_VERSION = "v0"
+API_ROOT = "oas3"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True", True]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")
@@ -29,3 +30,5 @@ SERVICES_DEFAULT_ENVS = {
 
 # some services need to know the published host to be functional (paraview)
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
+NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
+    "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))

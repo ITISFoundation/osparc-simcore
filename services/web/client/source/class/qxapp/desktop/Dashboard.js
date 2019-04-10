@@ -15,26 +15,42 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Widget containing a TabView including:
+ * - PrjBrowser
+ * - ServiceBrowser
+ * - DataManager
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let dashboard = new qxapp.desktop.Dashboard();
+ *   this.getRoot().add(dashboard);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.desktop.Dashboard", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.HBox());
+    this.base(arguments);
 
-    qxapp.wrappers.JsonDiffPatch.getInstance().init();
-    qxapp.wrappers.JsonTreeViewer.getInstance().init();
+    this._setLayout(new qx.ui.layout.HBox());
+
+    qxapp.wrapper.JsonDiffPatch.getInstance().init();
+    qxapp.wrapper.JsonTreeViewer.getInstance().init();
 
     let leftSpacer = new qx.ui.core.Spacer(60);
     let mainView = this.__createMainViewLayout();
     let rightSpacer = new qx.ui.core.Spacer(60);
 
-    this.add(leftSpacer);
-    this.add(mainView, {
+    this._add(leftSpacer);
+    this._add(mainView, {
       flex: 1
     });
-    this.add(rightSpacer);
+    this._add(rightSpacer);
   },
 
   members: {

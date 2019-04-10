@@ -15,9 +15,29 @@
 
 ************************************************************************ */
 
+/**
+ * Class that stores Project/Study data. It is also able to serialize itself.
+ *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let project = new qxapp.data.model.Project(projectData);
+ *   let prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.model.Project", {
   extend: qx.core.Object,
 
+  /**
+    * @param prjData {String} uuid if the link. If not provided, a random one will be assigned
+  */
   construct: function(prjData) {
     this.base(arguments);
 
@@ -116,7 +136,11 @@ qx.Class.define("qxapp.data.model.Project", {
       let jsonObject = {};
       let properties = this.constructor.$$properties;
       for (let key in properties) {
-        jsonObject[key] = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        if (value !== null) {
+          // only put the value in the payload if there is a value
+          jsonObject[key] = value;
+        }
       }
       return jsonObject;
     }

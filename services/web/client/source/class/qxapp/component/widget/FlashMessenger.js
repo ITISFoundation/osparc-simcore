@@ -15,6 +15,22 @@
 
 ************************************************************************ */
 
+/**
+ *   Singleton class that pops up a window showing a log message. The time the window is visible depends
+ * on the length of the message. Also if a second message is added will be stacked to the previous one.
+ *
+ *   Depending on the log level ("DEBUG", "INFO", "WARNING", "ERROR") the background color of the window
+ * will be different.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the class.
+ *
+ * <pre class='javascript'>
+ *   qxapp.component.widget.FlashMessenger.getInstance().log(log);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.FlashMessenger", {
   extend: qx.ui.window.Window,
 

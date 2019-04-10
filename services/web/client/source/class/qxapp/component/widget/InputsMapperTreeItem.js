@@ -15,6 +15,27 @@
 
 ************************************************************************ */
 
+/**
+ * VirtualTreeItem used mainly by InputMapper
+ *
+ *   It consists of an entry icon and label
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   tree.setDelegate({
+ *     createItem: () => new qxapp.component.widget.InputsMapperTreeItem(),
+ *     bindItem: (c, item, id) => {
+ *       c.bindDefaultProperties(item, id);
+ *       c.bindProperty("isDir", "isDir", null, item, id);
+ *       c.bindProperty("isRoot", "isRoot", null, item, id);
+ *     }
+ *   });
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.InputsMapperTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 

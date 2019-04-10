@@ -1,8 +1,8 @@
 pytest==3.10.1
 yarl==1.2.6
 jsonschema==2.6.0
-openapi_core==0.7.1
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
 aiohttp==3.3.2
-openapi_spec_validator==0.2.4
+openapi-spec-validator==0.2.4
 pyyaml>=4.2b1
 pytest-aiohttp

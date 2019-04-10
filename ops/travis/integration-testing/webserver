@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 before_install() {
     bash ops/travis/helpers/install_docker_compose
     bash ops/travis/helpers/show_system_versions
@@ -8,7 +8,7 @@ before_install() {
 install() {
     pip install --upgrade pip wheel setuptools && pip3 --version
     pushd services/web/server/tests; pip3 install -r requirements.txt; popd
-    pushd services/web/server/tests/integration-computation; pip3 install -r requirements.txt; popd
+    pushd services/web/server/tests/integration; pip3 install -r requirements.txt; popd
 }
 
 before_script() {
@@ -18,7 +18,7 @@ before_script() {
 }
 
 script() {
-    pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+    pytest --cov=simcore_service_webserver -v services/web/server/tests/integration
     # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
     #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }

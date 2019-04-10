@@ -15,34 +15,41 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Widget managing the layout once the user is logged in.
+ *
+ * It offers a:
+ * - NavigationBar
+ * - Main View (Stack).
+ *   - Dashboard (Stack):
+ *     - PrjBrowser
+ *     - ServiceBrowser
+ *     - DataManager
+ *   - PrjEditor
+ *
+ * <pre class='javascript'>
+ *   let layoutManager = new qxapp.desktop.LayoutManager();
+ *   this.getRoot().add(layoutManager);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base();
 
-    this.set({
-      layout: new qx.ui.layout.VBox()
-    });
+    this._setLayout(new qx.ui.layout.VBox());
 
-    this.__navBar = this.__createNavigationBar();
-    this.__navBar.setHeight(100);
-    this.__navBar.addListener("nodeDoubleClicked", e => {
-      if (this.__prjEditor) {
-        let nodeId = e.getData();
-        this.__prjEditor.nodeSelected(nodeId);
-      }
-    }, this);
-    this.add(this.__navBar);
+    let navBar = this.__navBar = this.__createNavigationBar();
+    this._add(navBar);
 
-    let prjStack = this.__prjStack = new qx.ui.container.Stack();
-    this.add(prjStack, {
+    let prjStack = this.__prjStack = this.__createMainView();
+    this._add(prjStack, {
       flex: 1
     });
 
-    this.__createMainLayout();
+    qxapp.io.WatchDog.getInstance().startCheck();
   },
 
   events: {},
@@ -54,32 +61,46 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __prjEditor: null,
 
     __createNavigationBar: function() {
-      let navBar = new qxapp.desktop.NavigationBar();
-      navBar.setMainViewCaption("Dashboard");
-      return navBar;
-    },
+      let navBar = new qxapp.desktop.NavigationBar().set({
+        height: 100
+      });
 
-    __createMainLayout: function() {
-      this.__dashboard = new qxapp.desktop.Dashboard();
-      this.__prjStack.add(this.__dashboard);
-
-      this.__navBar.addListener("dashboardPressed", () => {
+      navBar.addListener("dashboardPressed", () => {
         if (this.__prjEditor) {
           this.__prjEditor.updateProjectDocument();
         }
         this.__showDashboard();
       }, this);
 
-      this.__dashboard.getPrjBrowser().addListener("startProject", e => {
+      navBar.addListener("nodeDoubleClicked", e => {
+        if (this.__prjEditor) {
+          let nodeId = e.getData();
+          this.__prjEditor.nodeSelected(nodeId);
+        }
+      }, this);
+      return navBar;
+    },
+
+    __createMainView: function() {
+      let prjStack = new qx.ui.container.Stack();
+
+      let dashboard = this.__dashboard = new qxapp.desktop.Dashboard();
+      dashboard.getPrjBrowser().addListener("startProject", e => {
         const projectEditor = e.getData();
         this.__showProjectEditor(projectEditor);
       }, this);
+      prjStack.add(dashboard);
+
+      return prjStack;
     },
 
     __showDashboard: function() {
       this.__prjStack.setSelection([this.__dashboard]);
       this.__dashboard.getPrjBrowser().reloadUserProjects();
-      this.__navBar.setMainViewCaption(this.tr("Dashboard"));
+      this.__navBar.setPathButtons([]);
+      if (this.__prjEditor) {
+        this.__prjEditor.destruct();
+      }
     },
 
     __showProjectEditor: function(projectEditor) {
@@ -92,11 +113,18 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setProject(project);
-      this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
+      this.__navBar.setPathButtons(project.getWorkbench().getPathIds("root"));
 
       this.__prjEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();
-        this.__navBar.setMainViewCaption(elements);
+        this.__navBar.setPathButtons(elements);
+      }, this);
+
+      this.__prjEditor.addListener("projectSaved", ev => {
+        const wasSaved = ev.getData();
+        if (wasSaved) {
+          this.__navBar.projectSaved();
+        }
       }, this);
     }
   }
