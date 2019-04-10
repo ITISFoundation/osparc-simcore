@@ -21,6 +21,7 @@ pytest_plugins = [
     "fixtures.docker_compose",
     "fixtures.docker_swarm",
     "fixtures.docker_registry",
+    "fixtures.rabbit_service",
     "fixtures.celery_service",
     "fixtures.postgres_service"
 ]
