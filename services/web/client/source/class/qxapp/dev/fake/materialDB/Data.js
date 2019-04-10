@@ -427,7 +427,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Bone_Marrow__Yellow_-UUID": {
         key: "Bone_Marrow__Yellow_-UUID",
         version: "1.0.0",
-        name: "Bone Marrow - Yellow",
+        name: "Bone Marrow (Yellow)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -679,7 +679,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Eye__Sclera_-UUID": {
         key: "Eye__Sclera_-UUID",
         version: "1.0.0",
-        name: "Eye - Sclera",
+        name: "Eye (Sclera)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -1015,7 +1015,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Eye__Vitreous_Humor_-UUID": {
         key: "Eye__Vitreous_Humor_-UUID",
         version: "1.0.0",
-        name: "Eye - Vitreous Humor",
+        name: "Eye (Vitreous Humor)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -1141,7 +1141,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "SAT__Subcutaneous_Fat_-UUID": {
         key: "SAT__Subcutaneous_Fat_-UUID",
         version: "1.0.0",
-        name: "SAT - Subcutaneous Fat",
+        name: "SAT (Subcutaneous Fat)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -1183,7 +1183,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Eye__Cornea_-UUID": {
         key: "Eye__Cornea_-UUID",
         version: "1.0.0",
-        name: "Eye - Cornea",
+        name: "Eye (Cornea)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -1267,7 +1267,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Brain__Grey_Matter_-UUID": {
         key: "Brain__Grey_Matter_-UUID",
         version: "1.0.0",
-        name: "Brain - Grey Matter",
+        name: "Brain (Grey Matter)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -1603,7 +1603,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Bone__Cortical_-UUID": {
         key: "Bone__Cortical_-UUID",
         version: "1.0.0",
-        name: "Bone - Cortical",
+        name: "Bone (Cortical)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -2065,7 +2065,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Brain__White_Matter_-UUID": {
         key: "Brain__White_Matter_-UUID",
         version: "1.0.0",
-        name: "Brain - White Matter",
+        name: "Brain (White Matter)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -2275,7 +2275,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Bone__Cancellous_-UUID": {
         key: "Bone__Cancellous_-UUID",
         version: "1.0.0",
-        name: "Bone - Cancellous",
+        name: "Bone (Cancellous)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
@@ -2317,7 +2317,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       "Eye__Lens_-UUID": {
         key: "Eye__Lens_-UUID",
         version: "1.0.0",
-        name: "Eye - Lens",
+        name: "Eye (Lens)",
         inputs: {
           "RelativePermeability": {
             "defaultValue": 1.0,
