@@ -89,9 +89,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
         if ("defaultValue" in mapper) {
           const defaultInputs = mapper.defaultValue;
           for (const defaultInputKey in defaultInputs) {
-            // const metadata2 = thisClass.getMetaData(simulatorKey, globalSettingKey, defaultInputKey);
-            // const concSet = thisClass.createConceptSettingData(defaultInputKey, metadata2);
-            const concSet = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, defaultInputKey);
+            const metadata2 = thisClass.getMetaData(simulatorKey, globalSettingKey, defaultInputKey);
+            const concSet = thisClass.createConceptSettingData(defaultInputKey, metadata2);
             newEntry.children.push(concSet);
             const values = defaultInputs[defaultInputKey];
             for (let i=0; i<values.length; i++) {
@@ -104,10 +103,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       return newEntry;
     },
 
-    // createConceptSettingData: function(conceptSettingKey, metadata) {
-    createConceptSettingData: function(simulatorKey, globalSettingKey, conceptSettingKey) {
-      const thisClass = qxapp.component.widget.simulator.SimulatorTree;
-      const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey, conceptSettingKey);
+    createConceptSettingData: function(conceptSettingKey, metadata) {
       let newEntry = {
         key: conceptSettingKey,
         version: null,
@@ -177,17 +173,8 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
                   const thisClass = qxapp.component.widget.simulator.SimulatorTree;
                   let data = {};
                   if (isBranch) {
-                    data = {
-                      key: fromItemKey,
-                      label: fromItemKey,
-                      nodeKey: fromNodeKey,
-                      portKey: fromNodeKey,
-                      isRoot: false,
-                      isDir: true,
-                      children: []
-                    };
-                    // const metadata = thisClass.getMetaData(fromNodeKey, fromItemKey);
-                    // data = thisClass.createConceptSettingData(fromItemKey, metadata);
+                    const metadata = thisClass.getMetaData(fromNodeKey, fromItemKey);
+                    data = thisClass.createConceptSettingData(fromItemKey, metadata);
                   } else {
                     data = thisClass.createComponentData(fromItemKey);
                   }
@@ -298,12 +285,13 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       if (globalSetting) {
         const thisClass = qxapp.component.widget.simulator.SimulatorTree;
         const simulatorKey = this.getNode().getKey();
-        // const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey);
-        // const newEntry = thisClass.createConceptSettingData(conceptSettingKey, metadata);
-        const newEntry = thisClass.createConceptSettingData(simulatorKey, globalSettingKey, conceptSettingKey);
+        const metadata = thisClass.getMetaData(simulatorKey, globalSettingKey, conceptSettingKey);
+        const newEntry = thisClass.createConceptSettingData(conceptSettingKey, metadata);
         const model = qx.data.marshal.Json.createModel(newEntry, true);
         globalSetting.getChildren().push(model);
+        return model;
       }
+      return null;
     },
 
     __getGlobalSettingModel: function(settingsKey) {
