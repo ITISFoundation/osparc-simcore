@@ -18,7 +18,7 @@
 /**
  * Common functions for all elements that can be filtered
  */
-qx.Mixin.define("qxapp.component.filter.MFiltrable", {
+qx.Mixin.define("qxapp.component.filter.MFilterable", {
   members: {
     /**
      * Used to subscribe the element to a filter group.
@@ -36,7 +36,7 @@ qx.Mixin.define("qxapp.component.filter.MFiltrable", {
      */
     __subscriber: function(msg) {
       if (this._shouldReactToFilter(msg.getData(), msg) && this._shouldFilterOut(msg.getData(), msg)) {
-        this._filterOut(msg.getData(), msg);
+        this._filter(msg.getData(), msg);
       } else {
         this._unfilter(msg.getData(), msg);
       }

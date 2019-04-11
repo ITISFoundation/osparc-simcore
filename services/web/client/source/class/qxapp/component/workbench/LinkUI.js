@@ -67,7 +67,7 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
       return this.getLink().getLinkId();
     },
 
-    _filterOut: function() {
+    _filter: function() {
       this.getRepresentation().node.style.opacity = 0.15;
     },
 

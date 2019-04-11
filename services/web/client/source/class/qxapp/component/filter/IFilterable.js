@@ -18,16 +18,16 @@
 /**
  * Defines the methods all UI filterable elements should implement.
  */
-qx.Interface.define("qxapp.component.filter.IFiltrable", {
+qx.Interface.define("qxapp.component.filter.IFilterable", {
   members:{
     /**
-     * Function in charge of filtering the element out of the interface.
+     * Function in charge of setting the element to a filtered state.
      * It will usually hide it or decrease its opacity, but it could also trigger some other UI changes.
      *
      * @param {Object?} data The data contained in the message.
      * @param {qx.event.message.Message?} msg Incoming message containing the data.
      */
-    _filterOut: function(data, msg) {
+    _filter: function(data, msg) {
       this.assertArgumentsCount(arguments, 0, 2);
       if (msg) {
         this.assertInstance(msg, qx.event.message.Message);
@@ -35,7 +35,7 @@ qx.Interface.define("qxapp.component.filter.IFiltrable", {
     },
 
     /**
-     * Function in charge of taking the filter out of the element.
+     * Function in charge of removing the filtered state from the element.
      * It will usually make it visible again, but it could also trigger some other UI changes.
      *
      * @param {Object?} data The data contained in the message.

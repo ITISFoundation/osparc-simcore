@@ -256,7 +256,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       this.addAt(this.__thumbnail, 0);
     },
 
-    _filterOut: function() {
+    _filter: function() {
       this.setOpacity(0.4);
     },
 
