@@ -22,6 +22,7 @@ async def on_message(message: aio_pika.IncomingMessage):
             await sio.emit("logger", data = json.dumps(data))
         elif data["Channel"] == "Progress":
             await sio.emit("progress", data = json.dumps(data))
+        asyncio.sleep(2)
 
 async def subscribe(app: web.Application):
     # TODO: catch and deal with missing connections:

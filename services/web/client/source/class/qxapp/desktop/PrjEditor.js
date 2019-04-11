@@ -449,13 +449,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       socket.on(slotName, function(data) {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
-        const msg = d["Message"];
+        const msgs = d["Messages"];
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
-        this.getLogger().info(node.getLabel(), msg);
-        if (node) {
-          node.addLog(msg);
-        }
+        const node = workbench.getNode(nodeId);
+        const who = node.getLabel();
+        this.getLogger().infos(who, msgs);
       }, this);
       socket.emit(slotName);
 
@@ -467,7 +465,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const nodeId = d["Node"];
         const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
         const workbench = this.getProject().getWorkbench();
-        let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
         if (node) {
           node.setProgress(progress);
         }

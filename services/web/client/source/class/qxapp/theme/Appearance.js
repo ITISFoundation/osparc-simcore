@@ -189,6 +189,17 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         visible: false
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      NodePorts
+    ---------------------------------------------------------------------------
+    */
+    "node-ports": {
+      style: state => ({
+        backgroundColor: "background-main-lighter+"
+      })
     }
   }
 });
