@@ -56,7 +56,7 @@ qx.Interface.define("qxapp.component.filter.IFilterable", {
      *
      * @param {Object} data The data contained in the message.
      * @param {qx.event.message.Message?} msg Incoming message containing the data.
-     * @return {Boolean} True or false depending on whether the element should actually see if it should be filtered or not.
+     * @return {Boolean} True or false depending on whether the element should take any filter into account.
      */
     _shouldReactToFilter: function(data, msg) {
       this.assertArgumentsCount(arguments, 1, 2);
@@ -67,11 +67,11 @@ qx.Interface.define("qxapp.component.filter.IFilterable", {
 
     /**
      * Function deciding if the element should be filtered out or not from the interface.
-     * It should check the data for all filter ids and return true if it qualifies for any of them to filter it out.
+     * It should check the data for all filter ids of its group and return true if the element qualifies to be filtered out.
      *
      * @param {Object} data The data contained in the message.
      * @param {qx.event.message.Message?} msg Incoming message containing the data.
-     * @return {Boolean} True or false depending on whether the element should be filtered out of the interface.
+     * @return {Boolean} True or false depending on whether the element should be switched to a filtered state.
      */
     _shouldFilterOut: function(data, msg) {
       this.assertArgumentsCount(arguments, 1, 2);
