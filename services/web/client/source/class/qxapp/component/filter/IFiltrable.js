@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Defines the methods all UI filtrable element should implement.
+ * Defines the methods all UI filterable elements should implement.
  */
 qx.Interface.define("qxapp.component.filter.IFiltrable", {
   members:{
