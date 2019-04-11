@@ -31,8 +31,8 @@
 
 qx.Class.define("qxapp.component.workbench.LinkUI", {
   extend: qx.core.Object,
-  include: qxapp.component.filter.MFiltrable,
-  implement: qxapp.component.filter.IFiltrable,
+  include: qxapp.component.filter.MFilterable,
+  implement: qxapp.component.filter.IFilterable,
 
   /**
     * @param link {qxapp.data.model.Link} Link owning the object

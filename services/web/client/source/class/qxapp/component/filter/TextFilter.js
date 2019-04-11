@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Label and TextField bundled together to make a simple text filter.
+ * TextField to make a simple text filter.
  */
 qx.Class.define("qxapp.component.filter.TextFilter", {
   extend: qxapp.component.filter.UIFilter,
@@ -32,11 +32,9 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this._add(new qx.ui.basic.Label(this.tr(labelTr) + ":").set({
-      appearance: "toolbar-label"
-    }));
     const textField = this.__textField = new qx.ui.form.TextField().set({
-      appearance: "toolbar-textfield"
+      appearance: "toolbar-textfield",
+      placeholder: this.tr(labelTr)
     });
     this._add(textField);
 

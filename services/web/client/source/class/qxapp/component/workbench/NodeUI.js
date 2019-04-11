@@ -36,8 +36,8 @@ const portHeight = 16;
 
 qx.Class.define("qxapp.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
-  include: qxapp.component.filter.MFiltrable,
-  implement: qxapp.component.filter.IFiltrable,
+  include: qxapp.component.filter.MFilterable,
+  implement: qxapp.component.filter.IFilterable,
 
   /**
    * @param node {qxapp.data.model.Node} Node owning the widget
