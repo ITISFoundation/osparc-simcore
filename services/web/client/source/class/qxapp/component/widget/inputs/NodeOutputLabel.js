@@ -35,10 +35,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
-    * @param port {Object} Port owning the widget
-    * @param portKey {String} Port Key
-  */
+   * @param node {qxapp.data.model.Node} Node owning the widget
+   * @param port {Object} Port owning the widget
+   * @param portKey {String} Port Key
+   */
   construct: function(node, port, portKey) {
     this.base();
 
