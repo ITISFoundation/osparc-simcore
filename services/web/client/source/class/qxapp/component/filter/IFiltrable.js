@@ -50,7 +50,7 @@ qx.Interface.define("qxapp.component.filter.IFiltrable", {
 
     /**
      * Function deciding if the element should react to a filter.
-     * It serves as a pre-check before the actual decission of being filtered out or not is made.
+     * It serves as a pre-check before the actual decision of being filtered out or not is made.
      * For example, an element could decide not to react to a text search filter if the length of the text to search is shorter than n characters.
      * It should check the data for all filter ids and return true if it should react to any of them.
      *
