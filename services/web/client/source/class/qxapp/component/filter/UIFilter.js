@@ -40,10 +40,14 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
   members: {
     __filterId: null,
     __groupId: null,
-    __capitalizeFn: qxapp.utils.Utils.capitalize,
 
-    __getMessageName: function(suffix = "filter") {
-      return this.__capitalizeFn(this.__filterId, this.__groupId, suffix);
+    /**
+     * Function that returns the name of the dispatched message when a filter changes.
+     *
+     * @param {string} suffix Will be added at the end of the message name to decrease the probability of message name collision.
+     */
+    _getMessageName: function(suffix = "filter") {
+      return qxapp.utils.Utils.capitalize(this.__filterId, this.__groupId, suffix);
     },
 
     /**
@@ -57,7 +61,7 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
         filterId: this.__filterId,
         data
       };
-      qx.event.message.Bus.getInstance().dispatchByName(this.__getMessageName(), msgData);
+      qx.event.message.Bus.getInstance().dispatchByName(this._getMessageName(), msgData);
     }
   }
 });

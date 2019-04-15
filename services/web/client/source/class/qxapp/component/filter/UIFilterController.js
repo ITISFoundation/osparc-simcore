@@ -34,7 +34,6 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
 
   members: {
     __state: null,
-    __capitalizeFn: qxapp.utils.Utils.capitalize,
 
     /**
      * Function called by the base filter class to register a filter when created, to register it.
@@ -47,11 +46,11 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
     },
 
     __getInputMessageName: function(filterId, groupId, suffix = "filter") {
-      return this.__capitalizeFn(filterId, groupId, suffix);
+      return qxapp.utils.Utils.capitalize(filterId, groupId, suffix);
     },
 
     __getOutputMessageName: function(groupId, suffix = "filter") {
-      return this.__capitalizeFn(groupId, suffix);
+      return qxapp.utils.Utils.capitalize(groupId, suffix);
     },
 
     __subscriber: function(msg) {
