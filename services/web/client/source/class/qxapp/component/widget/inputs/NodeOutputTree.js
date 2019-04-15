@@ -64,7 +64,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         c.bindProperty("isDir", "isDir", null, item, id);
       },
       configureItem: item => {
-        self.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
+        item.setDraggable(true);
+        self.__attachEventHandlers(item); // eslint-disable-line no-underscore-dangle
       }
     });
   },
@@ -80,8 +81,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
   },
 
   members: {
-    __createDragMechanism: function(item) {
-      item.setDraggable(true);
+    __attachEventHandlers: function(item) {
       item.addListener("dragstart", e => {
         // Register supported actions
         e.addAction("copy");
@@ -90,6 +90,24 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         item.nodeId = this.getNode().getNodeId();
         item.portId = item.getPortKey();
       }, this);
+
+      const msgCb = decoratorName => msg => {
+        this.getSelection().remove(item.getModel());
+        const compareFn = msg.getData();
+        if (decoratorName && compareFn(this.getNode().getNodeId(), item.getPortKey())) {
+          item.setDecorator(decoratorName);
+        } else {
+          item.resetDecorator();
+        }
+      };
+      item.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("inputFocus", msgCb("outputPortHighlighted"), this);
+        qx.event.message.Bus.getInstance().subscribe("inputFocusout", msgCb(), this);
+      });
+      item.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocus", msgCb("outputPortHighlighted"), this);
+        qx.event.message.Bus.getInstance().unsubscribe("inputFocusout", msgCb(), this);
+      });
     },
 
     __generateModel: function(node, ports) {
