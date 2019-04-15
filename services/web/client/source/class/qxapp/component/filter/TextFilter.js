@@ -32,17 +32,33 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    const textField = this.__textField = new qx.ui.form.TextField().set({
-      appearance: "toolbar-textfield",
+    this.__textField = this.getChildControl("textfield").set({
       placeholder: this.tr(labelTr)
     });
-    this._add(textField);
 
     this.__attachEventHandlers();
   },
 
+  properties: {
+    appearance: {
+      refine: true,
+      init: "textfilter"
+    }
+  },
+
   members: {
     __textField: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "textfield":
+          control = new qx.ui.form.TextField();
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
