@@ -211,7 +211,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
             if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
-              this.__hightlightCompatibles(e.getRelatedTarget());
+              this.__highlightCompatibles(e.getRelatedTarget());
               e.stopPropagation();
             } else {
               e.preventDefault();
@@ -237,7 +237,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       return this._getChildren().filter(child => child.nodeId && this.__arePortsCompatible(output.nodeId, output.portId, child.nodeId, child.portId));
     },
 
-    __hightlightCompatibles: function(output) {
+    __highlightCompatibles: function(output) {
       const inputs = this.__getCompatibleInputs(output);
       for (let i in inputs) {
         const input = inputs[i];
@@ -245,7 +245,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       }
     },
 
-    __unhightlightAll: function() {
+    __unhighlightAll: function() {
       const inputs = this._getChildren().filter(child => child.nodeId);
       for (let i in inputs) {
         const input = inputs[i];
@@ -256,17 +256,17 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     __attachDragoverHighlighter: function() {
       this.addListener("dragover", e => {
         if (e.supportsType("osparc-port-link")) {
-          this.__hightlightCompatibles(e.getRelatedTarget());
+          this.__highlightCompatibles(e.getRelatedTarget());
           e.preventDefault();
         }
       }, this);
       this.addListener("dragleave", e => {
         if (e.supportsType("osparc-port-link")) {
-          this.__unhightlightAll();
+          this.__unhighlightAll();
         }
       }, this);
       this.addListener("mouseup", e => {
-        this.__unhightlightAll();
+        this.__unhighlightAll();
       });
     }
   }

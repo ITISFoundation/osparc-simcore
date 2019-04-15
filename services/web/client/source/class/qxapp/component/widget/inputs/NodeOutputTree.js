@@ -46,9 +46,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
     this.base(arguments, model, "label", "children", "open");
 
     this.set({
-      node: node,
-      hideRoot: true,
+      node,
+      ports,
       decorator: "service-tree",
+      hideRoot: true,
       contentPadding: 0
     });
 
@@ -72,6 +73,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
     node: {
       check: "qxapp.data.model.Node",
       nullable: false
+    },
+    ports: {
+      nullable: false
     }
   },
 
@@ -82,8 +86,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         // Register supported actions
         e.addAction("copy");
         // Register supported types
-        e.addType("osparc-mapping");
-      });
+        e.addType("osparc-port-link");
+        item.nodeId = this.getNode().getNodeId();
+        item.portId = item.getPortKey();
+      }, this);
     },
 
     __generateModel: function(node, ports) {
