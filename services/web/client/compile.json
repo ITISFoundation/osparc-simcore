@@ -4,7 +4,9 @@
       "type": "source",
       "outputPath": "source-output",
       "bundle": {
-        "include": [ "qx.*" ]
+        "include": [
+          "qx.*"
+        ]
       }
     },
     {
@@ -12,14 +14,6 @@
       "outputPath": "build-output"
     }
   ],
-
-  // disabled as the config seems not to be doing anything yet
-  //"babelOptions": {
-    // run `npx browserslist` to see what is on show
-    //"targets": "Chrome > 71, Firefox > 64",
-    // "debug": true,
-  //},
-
   "defaultTarget": "source",
   "locales": [
     "en"
@@ -43,14 +37,14 @@
       "name": "apiviewer",
       "title": "Qooxdoo API Viewer",
       "environment": {
+        "qx.icontheme": "Tango",
         "excludeFromAPIViewer": [
-          "qxl.*",
-          "q",
-          "qxWeb"
+          "qxl.apiviewer.*"
         ]
       },
       "include": [
-        "qx.*"
+        "qx.*",
+        "qxapp.*"
       ],
       "exclude": [
         "qx.test.*",
@@ -60,17 +54,19 @@
     },
     {
       "class": "qxl.testtapper.Application",
-      "theme": "qxapp.theme.Theme",
+      "theme": "qx.theme.Simple",
       "name": "testtapper",
       "title": "Qooxdoo TestTAPper",
+      "theme": "qx.theme.Simple",
       "include": [
         "qxapp.test.*"
       ],
       "exclude": [
-        "qx.test.*",
-        "qx.module.Blocker",
-        "qx.module.Placement"
-      ]
+        "qx.test.*"
+      ],
+      "environment": {
+        "qx.icontheme": "Tango"
+      }
     }
   ],
   "common": {
