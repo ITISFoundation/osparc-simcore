@@ -92,6 +92,9 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
+      const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
+      this.__nodeUIPorts.add(portTree);
+      /*
       for (const portKey in ports) {
         const port = ports[portKey];
         if (port.type.includes("api")) {
@@ -122,6 +125,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           label.ui.isInput = isInput;
         }
       }
+      */
     }
   }
 });

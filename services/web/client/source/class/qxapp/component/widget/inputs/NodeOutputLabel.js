@@ -65,7 +65,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     if (port.value) {
       if (typeof port.value === "object") {
         outputValue = qxapp.utils.Utils.pretifyObject(port.value, true);
-        toolTip = qxapp.utils.Utils.pretifyObject(port.value, false);
       } else {
         outputValue = JSON.stringify(port.value);
       }
