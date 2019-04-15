@@ -12,6 +12,14 @@
       "outputPath": "build-output"
     }
   ],
+
+  // disabled as the config seems not to be doing anything yet
+  //"babelOptions": {
+    // run `npx browserslist` to see what is on show
+    //"targets": "Chrome > 71, Firefox > 64",
+    // "debug": true,
+  //},
+
   "defaultTarget": "source",
   "locales": [
     "en"
