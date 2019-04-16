@@ -331,6 +331,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
+      if (this.__linkRepresetationExists(link)) {
+        return null;
+      }
 
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
@@ -366,6 +369,16 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return linkUI;
       }
       return null;
+    },
+
+    __linkRepresetationExists: function(link) {
+      for (let i=0; i<this.__linksUI.length; i++) {
+        const linkUI = this.__linksUI[i];
+        if (linkUI.getLink().getLinkId() === link.getLinkId()) {
+          return true;
+        }
+      }
+      return false;
     },
 
     __createDragDropMechanism: function(nodeUI) {
