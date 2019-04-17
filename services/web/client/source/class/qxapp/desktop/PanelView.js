@@ -116,12 +116,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
             flex: this.__layoutFlex
           });
         }
-
-        if (collapsed) {
-          this.__innerContainer.setDecorator("panelview-content-noborder");
-        } else {
-          this.__innerContainer.resetDecorator();
-        }
         this.__innerContainer.setHeight(collapsed ? 0 : this.__containerHeight);
       }
     },
