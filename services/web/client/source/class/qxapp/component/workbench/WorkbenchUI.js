@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
       this.setWorkbench(workbench);
-      this.fireDataEvent("nodeDoubleClicked", "root");
+      this.__nodeSelected("root");
     });
 
     this.__desktop.add(this.__svgWidget, {
@@ -106,17 +106,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.__desktop.addListener("click", e => {
+    this.__desktop.addListener("tap", e => {
       this.__selectedItemChanged(null);
-    }, this);
-
-    this.__desktop.addListener("changeActiveWindow", e => {
-      let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
-        this.__selectedItemChanged(winEmitting.getNodeId());
-      } else {
-        this.__selectedItemChanged(null);
-      }
     }, this);
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
@@ -311,12 +302,16 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         this.__updateLinks(nodeUI);
       }, this);
 
-      nodeUI.addListener("dbltap", e => {
-        this.fireDataEvent("nodeDoubleClicked", nodeUI.getNodeId());
+      nodeUI.addListener("tap", e => {
+        this.__selectedItemChanged(nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
-      // qx.ui.core.queue.Widget.flush();
+      nodeUI.addListener("dbltap", e => {
+        this.__nodeSelected(nodeUI.getNodeId());
+        e.stopPropagation();
+      }, this);
+
       qx.ui.core.queue.Layout.flush();
     },
 
@@ -326,6 +321,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
+
       return nodeUI;
     },
 
@@ -865,6 +861,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
+    },
+
+    __nodeSelected: function(nodeId) {
+      this.fireDataEvent("nodeDoubleClicked", nodeId);
     },
 
     __isSelectedItemALink: function() {
