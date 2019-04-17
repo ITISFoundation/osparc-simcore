@@ -20,6 +20,11 @@ start-notebook.sh \
     --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
     --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
     --NotebookApp.notebook_dir='/home/jovyan/notebooks' \
-    --NotebookApp.token='' \
+    --NotebookApp.token=""  \
+    --NotebookApp.disable_check_xsrf='True' \
+    --NotebookApp.quit_button='False' \
+    --NotebookApp.webbrowser_open_new='0' \
     --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_retriever':True}"
     # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
+    # --NotebookApp.token=""  \ this is BAD, maybe should be set to simcore
+    # --NotebookApp.disable_check_xsrf='True' \ this is very BAD, but prevent POSTing when token is ''
