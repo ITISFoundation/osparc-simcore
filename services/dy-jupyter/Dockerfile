@@ -73,7 +73,7 @@ COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
-COPY --chown=jovyan:users services/dy-jupyter/handlers/input_retriever.py /home/jovyan/handlers/input_retriever.py
+COPY --chown=jovyan:users services/dy-jupyter/handlers/* /home/jovyan/handlers/*
 USER root
 RUN chown -R jovyan:users /home/jovyan/packages && \
     chown -R jovyan:users /home/jovyan/services
@@ -82,8 +82,8 @@ USER $NB_USER
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/s3wrapper && \
     pip install /home/jovyan/services/storage/client-sdk/python && \
-    pip install /home/jovyan/packages/simcore-sdk    
-# cleanup    
+    pip install /home/jovyan/packages/simcore-sdk
+# cleanup
 RUN rm -rf /home/jovyan/packages && \
     rm -rf /home/jovyan/services
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
