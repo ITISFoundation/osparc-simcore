@@ -4,18 +4,20 @@ from pathlib import Path
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join
 
+import state_manager
+
 log = logging.getLogger(__name__)
 
 
-_INPUTS_FOLDER = "~/inputs"
-_OUTPUTS_FOLDER = "~/outputs"
+_NOTEBOOKS_FOLDER = Path("~/notebooks").expanduser()
 
-class StateRetrieverHandler(IPythonHandler):
+class StateHandler(IPythonHandler):
     def initialize(self): #pylint: disable=no-self-use
         pass
 
     async def post(self):
         log.info("started pushing current state to S3...")
+        await state_manager.push(_NOTEBOOKS_FOLDER)
         self.set_status(200)
         self.finish('completed pushing state')
 
@@ -36,4 +38,4 @@ def load_jupyter_server_extension(nb_server_app):
     host_pattern = '.*$'
     route_pattern = url_path_join(web_app.settings['base_url'], '/state')
 
-    web_app.add_handlers(host_pattern, [(route_pattern, StateRetrieverHandler)])
+    web_app.add_handlers(host_pattern, [(route_pattern, StateHandler)])
