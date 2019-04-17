@@ -12,6 +12,7 @@ then
     echo "Received result pipeline id of ${array[0]}";
     echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
+    export SIMCORE_PIPELINE_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
@@ -24,7 +25,7 @@ start-notebook.sh \
     --NotebookApp.disable_check_xsrf='True' \
     --NotebookApp.quit_button='False' \
     --NotebookApp.webbrowser_open_new='0' \
-    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_retriever':True}"
+    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_handler':True}"
     # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
     # --NotebookApp.token=""  \ this is BAD, maybe should be set to simcore
     # --NotebookApp.disable_check_xsrf='True' \ this is very BAD, but prevent POSTing when token is ''
