@@ -197,10 +197,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     __addLogs: function(who = "System", whats = [""], logLevel = 0) {
       const whoRich = this.__addWhoColorTag(who);
-      const whatRich = this.__addLevelColorTag(whats[0], logLevel);
 
       let msgLogs = [];
       for (let i=0; i<whats.length; i++) {
+        const whatRich = this.__addLevelColorTag(whats[i], logLevel);
         const msgLog = {
           whoRich: whoRich,
           whatRich: whatRich,
