@@ -55,6 +55,15 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       ---------------------------------------------------------------------------
       */
 
+      testDuplicatedNodeConnections: function() {
+        const linkId = null;
+        const node1 = this.createDummyNode();
+        const node2 = this.createDummyNode();
+        const link1 = this.__workbench.createLink(linkId, node1.getNodeId(), node2.getNodeId());
+        const link2 = this.__workbench.createLink(linkId, node1.getNodeId(), node2.getNodeId());
+        this.assertIdentical(link1.getLinkId(), link2.getLinkId(), "Both links must be the same");
+      },
+
       testUniqueName: function() {
         const node1 = this.createDummyNode();
         const node2 = this.createDummyNode();
