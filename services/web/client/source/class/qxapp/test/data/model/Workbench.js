@@ -52,8 +52,8 @@ qx.Class.define("qxapp.test.data.model.Workbench",
         const uuid = null;
         const parent = null;
         const populateNodeData = false;
-        const node1 = this.createNode(key, version, uuid, parent, populateNodeData);
-        const node2 = this.createNode(key, version, uuid, parent, populateNodeData);
+        const node1 = this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
+        const node2 = this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
         this.assertNotIdentical(node1.getLabel(), node2.getLabel(), "Labels must be different");
       }
     }
