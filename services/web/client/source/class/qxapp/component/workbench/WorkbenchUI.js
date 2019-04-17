@@ -246,6 +246,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
       let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
       node.populateNodeData();
+      node.giveUniqueName();
 
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
@@ -253,6 +254,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         for (const innerNodeMetaData of innerNodeMetaDatas) {
           let innerNode = this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, null, node);
           innerNode.populateNodeData();
+          innerNode.giveUniqueName();
         }
       }
 

@@ -192,6 +192,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const parentNode = this.getNode(nodeToClone.getParentNodeId());
       let node = this.createNode(key, version, uuid, null, parentNode);
       node.populateNodeData(null);
+      node.giveUniqueName();
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
@@ -240,6 +241,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
         this.getNode(nodeId).populateNodeData(nodeData);
+      }
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        this.getNode(nodeId).giveUniqueName();
       }
     },
 
