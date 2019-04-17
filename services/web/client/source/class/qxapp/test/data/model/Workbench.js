@@ -40,6 +40,15 @@ qx.Class.define("qxapp.test.data.model.Workbench",
         this.getSandbox().restore();
       },
 
+      createDummyNode() {
+        const key = null;
+        const version = null;
+        const uuid = null;
+        const parent = null;
+        const populateNodeData = true;
+        return this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
+      },
+
       /*
       ---------------------- -----------------------------------------------------
         TESTS
@@ -47,13 +56,8 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       */
 
       testUniqueName: function() {
-        const key = null;
-        const version = null;
-        const uuid = null;
-        const parent = null;
-        const populateNodeData = false;
-        const node1 = this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
-        const node2 = this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
+        const node1 = this.createDummyNode();
+        const node2 = this.createDummyNode();
         this.assertNotIdentical(node1.getLabel(), node2.getLabel(), "Labels must be different");
       }
     }
