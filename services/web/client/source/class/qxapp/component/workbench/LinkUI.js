@@ -75,15 +75,13 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
       this.getRepresentation().node.style.opacity = 1;
     },
 
-    _shouldFilterOut: function(data) {
-      return true;
+    _shouldApplyFilter: function(data) {
+      return data.text && data.text.length > 1
+        || data.tags && data.tags.length;
     },
 
     _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      return false;
+      return true;
     }
   }
 });

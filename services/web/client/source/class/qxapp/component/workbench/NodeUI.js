@@ -264,7 +264,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       this.setOpacity(1);
     },
 
-    _shouldFilterOut: function(data) {
+    _shouldApplyFilter: function(data) {
       if (data.text) {
         const label = this.getNode().getLabel()
           .trim()
@@ -273,14 +273,22 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
           return true;
         }
       }
+      if (data.tags && data.tags.length) {
+        const category = this.getMetaData().category || "";
+        const type = this.getMetaData().type || "";
+        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+          return true;
+        }
+      }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
+      let ret = true;
+      if (data.text != null && data.text.length < 2) {
+        ret = false;
       }
-      return false;
+      return ret;
     }
   }
 });

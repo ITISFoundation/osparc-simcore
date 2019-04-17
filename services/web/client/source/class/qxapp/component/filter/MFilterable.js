@@ -35,7 +35,7 @@ qx.Mixin.define("qxapp.component.filter.MFilterable", {
      * @param {qx.event.message.Message} msg Message dispatched.
      */
     __subscriber: function(msg) {
-      if (this._shouldReactToFilter(msg.getData(), msg) && this._shouldFilterOut(msg.getData(), msg)) {
+      if (this._shouldReactToFilter(msg.getData(), msg) && this._shouldApplyFilter(msg.getData(), msg)) {
         this._filter(msg.getData(), msg);
       } else {
         this._unfilter(msg.getData(), msg);

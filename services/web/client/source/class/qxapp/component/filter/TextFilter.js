@@ -61,10 +61,13 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
           this._add(control);
           break;
         case "clearbutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => this.__textField.setValue(""));
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => {
+            this.__textField.resetValue();
+            this.__textField.fireDataEvent("input", "");
+          });
           this._add(control, {
             right: 0,
-            bottom: 10
+            bottom: 12
           });
           break;
       }
@@ -73,10 +76,6 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
 
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
-        this._filterChange(evt.getData().trim()
-          .toLowerCase());
-      });
-      this.__textField.addListener("changeValue", evt => {
         this._filterChange(evt.getData().trim()
           .toLowerCase());
       });

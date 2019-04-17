@@ -73,7 +73,7 @@ qx.Interface.define("qxapp.component.filter.IFilterable", {
      * @param {qx.event.message.Message?} msg Incoming message containing the data.
      * @return {Boolean} True or false depending on whether the element should be switched to a filtered state.
      */
-    _shouldFilterOut: function(data, msg) {
+    _shouldApplyFilter: function(data, msg) {
       this.assertArgumentsCount(arguments, 1, 2);
       if (msg) {
         this.assertInstance(msg, qx.event.message.Message);
