@@ -21,5 +21,5 @@ start-notebook.sh \
     --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
     --NotebookApp.notebook_dir='/home/jovyan/notebooks' \
     --NotebookApp.token='' \
-    --NotebookApp.nbserver_extensions="{'input_retriever':True}"
+    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_retriever':True}"
     # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
