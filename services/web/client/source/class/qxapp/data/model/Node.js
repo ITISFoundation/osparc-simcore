@@ -111,6 +111,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     label: {
       check: "String",
+      init: "Node",
       nullable: true,
       event: "changeLabel"
     },
