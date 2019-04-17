@@ -1164,19 +1164,16 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/comp/itis/sleeper": {
           "category": "Solver"
         },
-        "simcore/services/comp/kember/cardiac": {
+        "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-2d-cardiac-model": {
           "category": "Solver"
         },
         "simcore/services/comp/kember-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-oned": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-singlecell": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-twod": {
           "category": "Solver"
         },
         "simcore/services/demodec/computational/itis/Solver-LF": {
