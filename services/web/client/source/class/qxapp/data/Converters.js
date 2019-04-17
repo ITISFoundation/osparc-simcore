@@ -171,25 +171,27 @@ qx.Class.define("qxapp.data.Converters", {
       let children = [];
       for (let i=0; i<treeItems.length; i++) {
         const treeItem = treeItems[i];
-        let splitted = treeItem["label"].split("/");
+        let splitted = treeItem.label.split("/");
         let newItem = {
-          "label": splitted[0]
+          label: splitted[0],
+          open: false
         };
         if (splitted.length === 1) {
           // leaf already
-          newItem["key"] = treeItem["key"];
+          newItem.key = treeItem.key;
           if (showLeavesAsDirs) {
-            newItem["children"] = [];
+            newItem.children = [];
           }
         } else {
           // branch
-          newItem["key"] = splitted[0];
-          newItem["children"] = [];
+          newItem.key = splitted[0];
+          newItem.children = [];
           let parent = newItem;
           for (let j=1; j<splitted.length-1; j++) {
             let branch = {
               label: splitted[j],
               key: parent.key +"/"+ splitted[j],
+              open: false,
               children: []
             };
             parent.children.push(branch);
@@ -197,10 +199,11 @@ qx.Class.define("qxapp.data.Converters", {
           }
           let leaf = {
             label: splitted[splitted.length-1],
+            open: false,
             key: parent.key +"/"+ splitted[splitted.length-1]
           };
           if (showLeavesAsDirs) {
-            leaf["children"] = [];
+            leaf.children = [];
           }
           parent.children.push(leaf);
         }
@@ -239,6 +242,20 @@ qx.Class.define("qxapp.data.Converters", {
         list.push(item);
       }
       return list;
+    },
+
+    fromTypeToIcon: function(type) {
+      // Introduce further mappings here
+      switch (type) {
+        case "integer":
+          return "@MaterialIcons/arrow_right_alt/15";
+        case "string":
+          return "@MaterialIcons/short_text/15";
+      }
+      if (type.indexOf("data:") === 0) {
+        return "@MaterialIcons/insert_drive_file/15";
+      }
+      return "@MaterialIcons/arrow_right_alt/15";
     }
   }
 });

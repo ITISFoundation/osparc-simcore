@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
 
     portKey: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     key: {

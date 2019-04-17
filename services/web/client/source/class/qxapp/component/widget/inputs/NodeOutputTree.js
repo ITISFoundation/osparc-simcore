@@ -62,6 +62,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
+        c.bindProperty("icon", "icon", null, item, id);
+        c.bindProperty("open", "open", null, item, id);
       },
       configureItem: item => {
         item.setDraggable(true);
@@ -94,7 +96,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       const msgCb = decoratorName => msg => {
         this.getSelection().remove(item.getModel());
         const compareFn = msg.getData();
-        if (decoratorName && compareFn(this.getNode().getNodeId(), item.getPortKey())) {
+        if (item.getPortKey() && decoratorName && compareFn(this.getNode().getNodeId(), item.getPortKey())) {
           item.setDecorator(decoratorName);
         } else {
           item.resetDecorator();
@@ -113,6 +115,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
     __generateModel: function(node, ports) {
       let data = {
         label: "root",
+        open: true,
         children: []
       };
 
@@ -121,7 +124,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
           label: ports[portKey].label,
           portKey: portKey,
           nodeKey: node.getKey(),
-          isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"))
+          isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
+          open: false
         };
         if (portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")) {
           const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
@@ -129,6 +133,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
           portData.children = children;
           portData.open = true;
         } else {
+          portData.icon = qxapp.data.Converters.fromTypeToIcon(ports[portKey].type),
           portData.value = ports[portKey].value || this.tr("no value");
         }
         data.children.push(portData);
