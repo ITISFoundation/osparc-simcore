@@ -20,7 +20,7 @@ jupyter trust ${NOTEBOOK_URL}
 start-notebook.sh \
     --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
     --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
-    --NotebookApp.notebook_dir='/home/jovyan/notebooks' \
+    --NotebookApp.notebook_dir=${SIMCORE_NODE_APP_STATE_PATH} \
     --NotebookApp.token=""  \
     --NotebookApp.disable_check_xsrf='True' \
     --NotebookApp.quit_button='False' \

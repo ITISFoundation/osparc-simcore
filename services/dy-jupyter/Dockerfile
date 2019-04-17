@@ -22,6 +22,7 @@ USER $NB_USER
 ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
     SIMCORE_NODE_BASEPATH="" \
+    SIMCORE_NODE_APP_STATE_PATH="/home/jovyan/notebooks" \
     STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
