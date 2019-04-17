@@ -30,11 +30,13 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
    */
   construct: function(filterId, groupId, labelTr = "Filter") {
     this.base(arguments, filterId, groupId);
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.Canvas());
 
     this.__textField = this.getChildControl("textfield").set({
       placeholder: this.tr(labelTr)
     });
+
+    this.getChildControl("clearbutton");
 
     this.__attachEventHandlers();
   },
@@ -53,8 +55,17 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
       let control;
       switch (id) {
         case "textfield":
-          control = new qx.ui.form.TextField();
+          control = new qx.ui.form.TextField().set({
+            paddingRight: 15
+          });
           this._add(control);
+          break;
+        case "clearbutton":
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => this.__textField.setValue(""));
+          this._add(control, {
+            right: 0,
+            bottom: 10
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -62,6 +73,10 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
 
     __attachEventHandlers: function() {
       this.__textField.addListener("input", evt => {
+        this._filterChange(evt.getData().trim()
+          .toLowerCase());
+      });
+      this.__textField.addListener("changeValue", evt => {
         this._filterChange(evt.getData().trim()
           .toLowerCase());
       });
