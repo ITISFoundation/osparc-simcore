@@ -92,8 +92,14 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
-      const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
-      this.__nodeUIPorts.add(portTree);
+      // Maintaining NodeOutputListIcon for Neuroman
+      if (ports.defaultNeuromanModels) {
+        const nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
+        this.__nodeUIPorts.add(nodeOutputList);
+      } else {
+        const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
+        this.__nodeUIPorts.add(portTree);
+      }
       /*
       for (const portKey in ports) {
         const port = ports[portKey];

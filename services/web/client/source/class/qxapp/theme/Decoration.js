@@ -46,7 +46,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "outputPortHighlighted": {
       style: {
-        backgroundColor: "background-selected"
+        backgroundColor: "background-main-lighter+"
       }
     },
 

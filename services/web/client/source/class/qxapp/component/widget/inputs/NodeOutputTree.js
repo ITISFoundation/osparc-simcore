@@ -89,8 +89,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         e.addAction("copy");
         // Register supported types
         e.addType("osparc-port-link");
+        e.addType("osparc-mapping");
         item.nodeId = this.getNode().getNodeId();
         item.portId = item.getPortKey();
+        item.setNodeKey(this.getNode().getKey());
       }, this);
 
       const msgCb = decoratorName => msg => {
@@ -127,14 +129,15 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
           open: false
         };
-        if (portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")) {
+        if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
           const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
-          const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList);
+          const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
+          const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs);
           portData.children = children;
           portData.open = true;
         } else {
           portData.icon = qxapp.data.Converters.fromTypeToIcon(ports[portKey].type),
-          portData.value = ports[portKey].value || this.tr("no value");
+          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
         }
         data.children.push(portData);
       }
