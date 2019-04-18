@@ -21,6 +21,7 @@ TEST_REQUIRE = [
     'pytest-aiohttp',
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
+    'pytest-mock',
     'requests~=2.19',
     'docker~=3.7'
 ]

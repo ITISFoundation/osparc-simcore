@@ -5,8 +5,8 @@ from pathlib import Path
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join
 
-import state_manager
 from simcore_sdk.node_ports import exceptions
+from simcore_sdk.node_data import data_manager
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class StateHandler(IPythonHandler):
     async def post(self):
         log.info("started pushing current state to S3...")
         try:
-            await state_manager.push(_state_path())
+            await data_manager.push(_state_path())
             self.set_status(200)
         except exceptions.NodeportsException as exc:
             log.exception("Unexpected error while pushing state")
@@ -35,7 +35,7 @@ class StateHandler(IPythonHandler):
     async def get(self):
         log.info("started pulling state to S3...")
         try:
-            await state_manager.pull(_state_path())
+            await data_manager.pull(_state_path())
             self.set_status(200)
         except exceptions.S3InvalidPathError as exc:
             log.exception("Invalid path to S3 while retrieving state")
