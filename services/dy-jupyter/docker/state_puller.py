@@ -32,6 +32,7 @@ def main(args = None) -> int:
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(data_manager.pull(options.path))
+        return ExitCode.SUCCESS
 
     except exceptions.S3InvalidPathError:
         if options.silent:
