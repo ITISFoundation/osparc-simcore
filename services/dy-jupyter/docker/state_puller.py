@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-""" Tries to pull the node data from S3. Will echo a warning message on failure by default.
+""" Tries to pull the node data from S3. Will return error code unless the --silent flag is on and only a warning will be output.
 
     Usage python state_puller.py PATH_OR_FILE --silent
 :return: error code
