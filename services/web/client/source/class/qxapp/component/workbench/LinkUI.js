@@ -76,8 +76,8 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
     },
 
     _shouldApplyFilter: function(data) {
-      return data.text && data.text.length > 1
-        || data.tags && data.tags.length;
+      return data.text && data.text.length > 1 ||
+        data.tags && data.tags.length;
     },
 
     _shouldReactToFilter: function(data) {

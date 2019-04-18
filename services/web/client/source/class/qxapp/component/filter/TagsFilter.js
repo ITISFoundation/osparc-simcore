@@ -40,7 +40,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceTypes().forEach(serviceType => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
-        button.addListener("tap", (e) => this.__addTag(serviceType, e.getTarget()));
+        button.addListener("tap", e => this.__addTag(serviceType, e.getTarget()));
         menu.add(button);
       });
 
@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceCategories().forEach(serviceCategory => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
-        button.addListener("tap", (e) => this.__addTag(serviceCategory, e.getTarget()));
+        button.addListener("tap", e => this.__addTag(serviceCategory, e.getTarget()));
         menu.add(button);
       });
       return menu;
@@ -75,7 +75,9 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
     __addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
-      if (!this.__activeTags.includes(tagName)) {
+      if (this.__activeTags.includes(tagName)) {
+        this.__removeTag(tagName, menuButton);
+      } else {
         // Add tick
         menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
@@ -86,8 +88,6 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
         this.__activeTags.push(tagName);
         this.__tagButtons = this.__tagButtons || {};
         this.__tagButtons[tagName] = tagButton;
-      } else {
-        this.__removeTag(tagName, menuButton);
       }
       // Dispatch
       this._filterChange(this.__activeTags);
