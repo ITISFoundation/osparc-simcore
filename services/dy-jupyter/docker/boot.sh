@@ -1,5 +1,13 @@
 #!/bin/bash
 
+set -e
+
+# BOOTING application ---------------------------------------------
+echo "Booting application ..."
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
+
+
 if test "${CREATE_DUMMY_TABLE}" = "1"
 then
     pip install -r /home/jovyan/devel/requirements.txt
@@ -15,6 +23,10 @@ then
     export SIMCORE_PIPELINE_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
+
+# try to pull data from S3
+python /docker/state_puller.py ${SIMCORE_NODE_APP_STATE_PATH} --silent
+
 
 jupyter trust ${NOTEBOOK_URL}
 start-notebook.sh \
