@@ -40,7 +40,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceTypes().forEach(serviceType => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
-        button.addListener("tap", () => this.__addTag(serviceType));
+        button.addListener("tap", (e) => this.__addTag(serviceType, e.getTarget()));
         menu.add(button);
       });
 
@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceCategories().forEach(serviceCategory => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
-        button.addListener("tap", () => this.__addTag(serviceCategory));
+        button.addListener("tap", (e) => this.__addTag(serviceCategory, e.getTarget()));
         menu.add(button);
       });
       return menu;
@@ -72,26 +72,30 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
       ];
     },
 
-    __addTag: function(tagName) {
+    __addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
       if (!this.__activeTags.includes(tagName)) {
+        // Add tick
+        menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
         const tagButton = new qx.ui.toolbar.Button(qxapp.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
         this._add(tagButton);
-        tagButton.addListener("tap", () => this.__removeTag(tagName));
+        tagButton.addListener("tap", () => this.__removeTag(tagName, menuButton));
         // Update state
         this.__activeTags.push(tagName);
         this.__tagButtons = this.__tagButtons || {};
         this.__tagButtons[tagName] = tagButton;
       } else {
-        this.__removeTag(tagName);
+        this.__removeTag(tagName, menuButton);
       }
       // Dispatch
       this._filterChange(this.__activeTags);
     },
 
-    __removeTag: function(tagName) {
+    __removeTag: function(tagName, menuButton) {
+      // Remove tick
+      menuButton.resetIcon();
       // Update state
       this.__activeTags.splice(this.__activeTags.indexOf(tagName), 1);
       this._remove(this.__tagButtons[tagName]);

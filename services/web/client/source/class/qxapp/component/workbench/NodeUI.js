@@ -284,11 +284,13 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     _shouldReactToFilter: function(data) {
-      let ret = true;
-      if (data.text != null && data.text.length < 2) {
-        ret = false;
+      if (data.text && data.text.length > 1) {
+        return true;
       }
-      return ret;
+      if (data.tags && data.tags.length) {
+        return true;
+      }
+      return false;
     }
   }
 });
