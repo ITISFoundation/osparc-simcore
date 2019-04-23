@@ -37,7 +37,9 @@ start-notebook.sh \
     --NotebookApp.disable_check_xsrf='True' \
     --NotebookApp.quit_button='False' \
     --NotebookApp.webbrowser_open_new='0' \
-    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_handler':True}"
+    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_handler':True}" \
+    --FileContentsManager.post_save_hook='post_save_hook.export_to_osparc_hook'
+    # --Session.debug='True'
     # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
     # --NotebookApp.token=""  \ this is BAD, maybe should be set to simcore
     # --NotebookApp.disable_check_xsrf='True' \ this is very BAD, but prevent POSTing when token is ''
