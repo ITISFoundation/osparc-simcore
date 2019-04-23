@@ -192,6 +192,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
+      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
+      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
+      menu.add(newIssueBtn);
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
       menu.add(helpBtn);
@@ -215,6 +218,28 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         win.center();
         win.open();
       }
+    },
+
+    __onOpenNewIssueV0: function() {
+      const issueDlg = new qxapp.component.widget.NewGHIssue();
+      const win = new qx.ui.window.Window("Open New GitHub Issue").set({
+        showMinimize: false,
+        showMaximize: false,
+        allowMaximize: false,
+        showStatusbar: false,
+        modal: true,
+        width: 550,
+        height: 300,
+        layout: new qx.ui.layout.Canvas()
+      });
+      win.add(issueDlg, {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+      win.center();
+      win.open();
     }
   }
 });
