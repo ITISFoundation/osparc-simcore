@@ -25,18 +25,18 @@ class StateHandler(IPythonHandler):
         log.info("started pushing current state to S3...")
         try:
             await data_manager.push(_state_path())
-            self.set_status(200)
+            self.set_status(204)
         except exceptions.NodeportsException as exc:
             log.exception("Unexpected error while pushing state")
             self.set_status(500, reason=str(exc))
         finally:
-            self.finish('completed pushing state')
+            self.finish()
 
     async def get(self):
         log.info("started pulling state to S3...")
         try:
             await data_manager.pull(_state_path())
-            self.set_status(200)
+            self.set_status(204)
         except exceptions.S3InvalidPathError as exc:
             log.exception("Invalid path to S3 while retrieving state")
             self.set_status(404, reason=str(exc))
