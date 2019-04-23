@@ -392,9 +392,9 @@ class UsersApi(object):
                 local_var_params['service_uuid'] is None):
             raise ValueError("Missing the required parameter `service_uuid` when calling `running_interactive_services_post`")  # noqa: E501
 
-        if 'service_key' in local_var_params and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
+        if 'service_key' in local_var_params and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_key` when calling `running_interactive_services_post`, must conform to the pattern `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
-        if 'service_tag' in local_var_params and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_tag']):  # noqa: E501
+        if 'service_tag' in local_var_params and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_tag']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_tag` when calling `running_interactive_services_post`, must conform to the pattern `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
         collection_formats = {}
 
@@ -508,9 +508,9 @@ class UsersApi(object):
                 local_var_params['service_version'] is None):
             raise ValueError("Missing the required parameter `service_version` when calling `services_by_key_version_get`")  # noqa: E501
 
-        if 'service_key' in local_var_params and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
+        if 'service_key' in local_var_params and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_key` when calling `services_by_key_version_get`, must conform to the pattern `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
-        if 'service_version' in local_var_params and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_version']):  # noqa: E501
+        if 'service_version' in local_var_params and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_version']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_version` when calling `services_by_key_version_get`, must conform to the pattern `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
         collection_formats = {}
 
@@ -561,7 +561,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
@@ -583,7 +583,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
