@@ -32,10 +32,10 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__createSteps();
-    this._add(new qx.ui.core.Spacer(null, 10));
-    this.__createCopyEnvButton();
+    // this.__createSteps();
+    // this._add(new qx.ui.core.Spacer(null, 10));
     this.__createGHLinkButton();
+    this.__createCopyEnvButton();
   },
 
   members: {
@@ -48,9 +48,8 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
         this.tr("Follow these steps to Open a New Issue:"),
         this.tr("1) Press the 'Copy environment information' button. This will copy some relevant environment information to the clipboard."),
         this.tr("2) Press the 'Open New Issue' button. This will open a 'Open New Issue' tab in GitHub."),
-        this.tr("3) In GitHub, paste the previosuly copied environment information to the '## Your environment' section."),
-        this.tr("4) Add 'tester bug' label to the 'labels' section."),
-        this.tr("5) Fill up the information about the issue.")
+        this.tr("3) In GitHub, in the '## Your environment' section, paste what have been automaticaly copied"),
+        this.tr("4) Fill up the information about the issue.")
       ].forEach(step => {
         const label = this.__createHelpLabel(step);
         this._add(label);
