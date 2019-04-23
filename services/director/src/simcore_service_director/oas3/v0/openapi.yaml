@@ -184,8 +184,6 @@ paths:
       - users
   /running_interactive_services:
     post:
-      description: Starts an interactive service in the oSparc platform and returns
-        its entrypoint
       operationId: running_interactive_services_post
       parameters:
       - description: The ID of the user that starts the service
@@ -1586,7 +1584,7 @@ servers:
     host:
       default: localhost
     port:
-      default: '8080'
+      default: '8001'
     version:
       default: v0
       enum:
@@ -1595,7 +1593,7 @@ servers:
   url: http://director:{port}/{version}
   variables:
     port:
-      default: '8080'
+      default: '8001'
     version:
       default: v0
       enum:

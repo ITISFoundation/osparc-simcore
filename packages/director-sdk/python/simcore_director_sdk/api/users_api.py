@@ -313,17 +313,17 @@ class UsersApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def running_interactive_services_post(self, user_id, service_key, service_uuid, **kwargs):  # noqa: E501
-        """Starts an interactive service in the oSparc platform and returns its entrypoint  # noqa: E501
+    def running_interactive_services_post(self, user_id, project_id, service_key, service_uuid, **kwargs):  # noqa: E501
+        """Starts an interactive service in the oSparc platform  # noqa: E501
 
-        Starts an interactive service in the oSparc platform and returns its entrypoint  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.running_interactive_services_post(user_id, service_key, service_uuid, async_req=True)
+        >>> thread = api.running_interactive_services_post(user_id, project_id, service_key, service_uuid, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
         :param str user_id: The ID of the user that starts the service (required)
+        :param str project_id: The ID of the project in which the service starts (required)
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
@@ -334,22 +334,22 @@ class UsersApi(object):
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.running_interactive_services_post_with_http_info(user_id, service_key, service_uuid, **kwargs)  # noqa: E501
+            return self.running_interactive_services_post_with_http_info(user_id, project_id, service_key, service_uuid, **kwargs)  # noqa: E501
         else:
-            (data) = self.running_interactive_services_post_with_http_info(user_id, service_key, service_uuid, **kwargs)  # noqa: E501
+            (data) = self.running_interactive_services_post_with_http_info(user_id, project_id, service_key, service_uuid, **kwargs)  # noqa: E501
             return data
 
-    def running_interactive_services_post_with_http_info(self, user_id, service_key, service_uuid, **kwargs):  # noqa: E501
-        """Starts an interactive service in the oSparc platform and returns its entrypoint  # noqa: E501
+    def running_interactive_services_post_with_http_info(self, user_id, project_id, service_key, service_uuid, **kwargs):  # noqa: E501
+        """Starts an interactive service in the oSparc platform  # noqa: E501
 
-        Starts an interactive service in the oSparc platform and returns its entrypoint  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.running_interactive_services_post_with_http_info(user_id, service_key, service_uuid, async_req=True)
+        >>> thread = api.running_interactive_services_post_with_http_info(user_id, project_id, service_key, service_uuid, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
         :param str user_id: The ID of the user that starts the service (required)
+        :param str project_id: The ID of the project in which the service starts (required)
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
@@ -361,7 +361,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['user_id', 'service_key', 'service_uuid', 'service_tag', 'service_basepath']  # noqa: E501
+        all_params = ['user_id', 'project_id', 'service_key', 'service_uuid', 'service_tag', 'service_basepath']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -379,6 +379,10 @@ class UsersApi(object):
         if ('user_id' not in local_var_params or
                 local_var_params['user_id'] is None):
             raise ValueError("Missing the required parameter `user_id` when calling `running_interactive_services_post`")  # noqa: E501
+        # verify the required parameter 'project_id' is set
+        if ('project_id' not in local_var_params or
+                local_var_params['project_id'] is None):
+            raise ValueError("Missing the required parameter `project_id` when calling `running_interactive_services_post`")  # noqa: E501
         # verify the required parameter 'service_key' is set
         if ('service_key' not in local_var_params or
                 local_var_params['service_key'] is None):
@@ -388,9 +392,9 @@ class UsersApi(object):
                 local_var_params['service_uuid'] is None):
             raise ValueError("Missing the required parameter `service_uuid` when calling `running_interactive_services_post`")  # noqa: E501
 
-        if 'service_key' in local_var_params and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
+        if 'service_key' in local_var_params and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_key` when calling `running_interactive_services_post`, must conform to the pattern `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
-        if 'service_tag' in local_var_params and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_tag']):  # noqa: E501
+        if 'service_tag' in local_var_params and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_tag']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_tag` when calling `running_interactive_services_post`, must conform to the pattern `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
         collection_formats = {}
 
@@ -399,6 +403,8 @@ class UsersApi(object):
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'project_id' in local_var_params:
+            query_params.append(('project_id', local_var_params['project_id']))  # noqa: E501
         if 'service_key' in local_var_params:
             query_params.append(('service_key', local_var_params['service_key']))  # noqa: E501
         if 'service_tag' in local_var_params:
@@ -502,9 +508,9 @@ class UsersApi(object):
                 local_var_params['service_version'] is None):
             raise ValueError("Missing the required parameter `service_version` when calling `services_by_key_version_get`")  # noqa: E501
 
-        if 'service_key' in local_var_params and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
+        if 'service_key' in local_var_params and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', local_var_params['service_key']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_key` when calling `services_by_key_version_get`, must conform to the pattern `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
-        if 'service_version' in local_var_params and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_version']):  # noqa: E501
+        if 'service_version' in local_var_params and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', local_var_params['service_version']):  # noqa: E501
             raise ValueError("Invalid value for parameter `service_version` when calling `services_by_key_version_get`, must conform to the pattern `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
         collection_formats = {}
 
