@@ -184,6 +184,7 @@ def __add_network_to_service_runtime_params(
 def __add_env_variables_to_service_runtime_params(
         docker_service_runtime_parameters: Dict,
         user_id: str,
+        project_id: str,
         node_uuid: str,
         node_base_path: str):
 
@@ -191,6 +192,7 @@ def __add_env_variables_to_service_runtime_params(
     # add specifics
     service_env_variables.append("=".join(["SIMCORE_USER_ID", user_id]))
     service_env_variables.append("=".join(["SIMCORE_NODE_UUID", node_uuid]))
+    service_env_variables.append("=".join(["SIMCORE_PROJECT_ID", project_id]))
     service_env_variables.append("=".join(["SIMCORE_NODE_BASEPATH", node_base_path or ""]))
 
     if "env" in docker_service_runtime_parameters:
@@ -386,6 +388,7 @@ def __find_service_tag(list_of_images: Dict,
 
 
 async def __prepare_runtime_parameters(user_id: str,
+                                       project_id: str,
                                        service_key: str,
                                        service_tag: str,
                                        main_service: bool,
@@ -401,7 +404,7 @@ async def __prepare_runtime_parameters(user_id: str,
     __add_to_swarm_network_if_ports_published(client, docker_service_runtime_parameters)
     __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, node_uuid)
     __add_main_service_label_to_service_runtime_params(docker_service_runtime_parameters, main_service)
-    __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, user_id, node_uuid, node_base_path)
+    __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, user_id, project_id, node_uuid, node_base_path)
     _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters)
     __set_service_name(docker_service_runtime_parameters,
                        registry_proxy.get_service_last_names(service_key),
@@ -411,6 +414,7 @@ async def __prepare_runtime_parameters(user_id: str,
 
 async def _start_docker_service(client: DockerClient,
                                 user_id: str,
+                                project_id: str,
                                 service_key: str,
                                 service_tag: str,
                                 main_service: bool,
@@ -420,6 +424,7 @@ async def _start_docker_service(client: DockerClient,
                                 ) -> Dict:  # pylint: disable=R0913
     # prepare runtime parameters
     docker_service_runtime_parameters = await __prepare_runtime_parameters(user_id,
+                                                                           project_id,
                                                                            service_key,
                                                                            service_tag,
                                                                            main_service,
@@ -483,6 +488,7 @@ async def _silent_service_cleanup(node_uuid):
 
 async def __create_node(client: DockerClient,
                         user_id: str,
+                        project_id: str,
                         list_of_services: List[Dict],
                         service_name: str,
                         node_uuid: str,
@@ -501,6 +507,7 @@ async def __create_node(client: DockerClient,
     containers_meta_data = list()
     for service in list_of_services:
         service_meta_data = await _start_docker_service(client, user_id,
+                                                        project_id,
                                                         service["key"],
                                                         service["tag"],
                                                         list_of_services.index(service) == 0,
@@ -512,7 +519,7 @@ async def __create_node(client: DockerClient,
     return containers_meta_data
 
 
-async def start_service(user_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
+async def start_service(user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
     # pylint: disable=C0103
     log.debug("starting service %s:%s using uuid %s, basepath %s", service_key, service_tag, node_uuid, node_base_path)
     # first check the uuid is available
@@ -533,7 +540,7 @@ async def start_service(user_id: str, service_key: str, service_tag: str, node_u
     # create services
     __login_docker_registry(client)
 
-    containers_meta_data = await __create_node(client, user_id,
+    containers_meta_data = await __create_node(client, user_id, project_id,
                                                list_of_services_to_start,
                                                service_name, node_uuid, node_base_path)
     node_details = containers_meta_data[0]
