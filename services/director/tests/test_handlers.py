@@ -3,6 +3,7 @@
 # pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
 # pylint: disable=R0915
+# pylint: disable=too-many-arguments
 
 import json
 import uuid
