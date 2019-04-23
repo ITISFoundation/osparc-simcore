@@ -41,7 +41,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
     * @param portKey {String} Port Key
   */
   construct: function(node, port, portKey) {
-    this.base();
+    this.base(arguments);
 
     this.setNode(node);
 
@@ -58,12 +58,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
         c.bindProperty("thumbnail", "icon", null, item, id);
-        c.bindProperty("label", "label", {
-          converter: function(data) {
-            // return "<b>" + data + "</b>";
-            return data;
-          }
-        }, item, id);
+        c.bindProperty("label", "label", null, item, id);
       },
       configureItem: item => {
         let icon = item.getChildControl("icon");

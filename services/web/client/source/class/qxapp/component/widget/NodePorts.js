@@ -37,8 +37,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
    * @param isInputModel {Boolean} false for representing defaultInputs
    */
   construct: function(node, isInputModel = true) {
-    let nodeInputLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeInputLayout);
+    this._setLayout(new qx.ui.layout.Grow());
 
     const label = new qx.ui.basic.Label();
     node.bind("label", label, "value");
