@@ -147,7 +147,7 @@
         }
       },
       "template-uuid-409d-998c-c1f04de67f8b": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-Single-Cell solver",
         "inputs": {
@@ -277,7 +277,7 @@
         }
       },
       "template-uuid-43f3-ab01-a58e7c49a946": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "Clancy 0D solver (1)",
         "inputs": {
@@ -329,7 +329,7 @@
         }
       },
       "template-uuid-42cf-aaff-8e2a4f9ddd90": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "Clancy 0D solver (2)",
         "inputs": {
@@ -381,7 +381,7 @@
         }
       },
       "template-uuid-48b1-bf46-00cb9b6e0db5": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "Clancy 0D solver (3)",
         "inputs": {
@@ -433,7 +433,7 @@
         }
       },
       "template-uuid-4053-8ff9-740af583dbdb": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "Clancy 0D solver (4)",
         "inputs": {
@@ -701,7 +701,7 @@
         }
       },
       "template-uuid-43f3-ab01-a58e7c49a946": {
-        "key": "simcore/services/comp/ucdavis/cardiac-oned",
+        "key": "simcore/services/comp/ucdavis-1d-cardiac-model",
         "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-1-D solver",
         "inputs": {
@@ -756,7 +756,7 @@
         }
       },
       "template-uuid-40ce-8d33-7d501a694550": {
-        "key": "simcore/services/comp/ucdavis/cardiac-twod",
+        "key": "simcore/services/comp/ucdavis-2d-cardiac-model",
         "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-2-D solver",
         "inputs": {
