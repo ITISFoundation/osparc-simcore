@@ -838,7 +838,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       this.addListener("appear", () => {
         qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
-      })
+      });
       this.addListener("disappear", () => {
         qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
