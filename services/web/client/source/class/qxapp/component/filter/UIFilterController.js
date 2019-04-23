@@ -79,7 +79,7 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
      */
     resetGroup: function(groupId) {
       if (this.__filters[groupId]) {
-        for (filterId in this.__filters[groupId]) {
+        for (let filterId in this.__filters[groupId]) {
           this.__filters[groupId][filterId].reset();
         }
       }

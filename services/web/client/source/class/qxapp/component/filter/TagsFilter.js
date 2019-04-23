@@ -38,14 +38,15 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
     reset: function() {
       // Remove ticks from menu
-      const menuButtons = this.__dropDown.getMenu().getChildren().filter(child => child instanceof qx.ui.menu.Button);
+      const menuButtons = this.__dropDown.getMenu().getChildren()
+        .filter(child => child instanceof qx.ui.menu.Button);
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
       if (this.__activeTags && this.__activeTags.length) {
         this.__activeTags.length = 0;
       }
       // Remove tag buttons
-      for (tagName in this.__tagButtons) {
+      for (let tagName in this.__tagButtons) {
         this._remove(this.__tagButtons[tagName]);
         delete this.__tagButtons[tagName];
       }
