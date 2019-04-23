@@ -32,6 +32,7 @@
  * <pre class='javascript'>
  *   let node = new qxapp.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
+ *   node.giveUniqueName();
  * </pre>
  */
 
@@ -110,6 +111,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     label: {
       check: "String",
+      init: "Node",
       nullable: true,
       event: "changeLabel"
     },
@@ -357,6 +359,24 @@ qx.Class.define("qxapp.data.model.Node", {
       }
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
+      }
+    },
+
+    giveUniqueName: function() {
+      const label = this.getLabel();
+      this.__giveUniqueName(label, 2);
+    },
+
+    __giveUniqueName: function(label, suffix) {
+      const newLabel = label + "_" + suffix;
+      const allModels = this.getWorkbench().getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        if (node.getNodeId() !== this.getNodeId() &&
+            node.getLabel().localeCompare(this.getLabel()) === 0) {
+          this.setLabel(newLabel);
+          this.__giveUniqueName(label, suffix+1);
+        }
       }
     },
 

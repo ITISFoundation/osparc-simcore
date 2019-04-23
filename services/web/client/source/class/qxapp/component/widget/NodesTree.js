@@ -254,11 +254,13 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       treeItemRenamer.open();
     },
 
-    nodeSelected: function(nodeId) {
+    nodeSelected: function(nodeId, openNodeAndParents = false) {
       const dataModel = this.__tree.getModel();
-      let nodeInTree = this.__getNodeInTree(dataModel, nodeId);
+      const nodeInTree = this.__getNodeInTree(dataModel, nodeId);
       if (nodeInTree) {
-        this.__tree.openNodeAndParents(nodeInTree);
+        if (openNodeAndParents) {
+          this.__tree.openNodeAndParents(nodeInTree);
+        }
         this.__tree.setSelection(new qx.data.Array([nodeInTree]));
       }
     },
