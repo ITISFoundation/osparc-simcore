@@ -47,7 +47,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
 
     let list = this.__list = new qx.ui.list.List().set({
       labelPath: "label",
-      iconPath: "icon"
+      iconPath: "icon",
+      decorator: "service-tree"
     });
 
     let that = this;

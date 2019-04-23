@@ -95,7 +95,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       // Maintaining NodeOutputListIcon for Neuroman
       if (ports.defaultNeuromanModels) {
         const nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
-        this.__nodeUIPorts.add(nodeOutputList);
+        this.__nodeUIPorts.add(nodeOutputList.getOutputWidget());
       } else {
         const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
         this.__nodeUIPorts.add(portTree);
