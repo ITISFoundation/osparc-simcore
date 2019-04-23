@@ -32,10 +32,52 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    // this.__createSteps();
-    // this._add(new qx.ui.core.Spacer(null, 10));
+    this.__createSteps();
+    this._add(new qx.ui.core.Spacer(null, 10));
     this.__createGHLinkButton();
     this.__createCopyEnvButton();
+  },
+
+  statics: {
+    getNewIssueUrl: function() {
+      const env = JSON.stringify(qxapp.component.widget.NewGHIssue.getEnv());
+      const temp = qxapp.component.widget.NewGHIssue.getTemplate();
+      const body = encodeURIComponent(temp+env);
+      const url = "https://github.com/ITISFoundation/osparc-simcore/issues/new?labels=tester_review&body=" + body;
+      return url;
+    },
+
+    getEnv: function() {
+      let libs = [];
+      [
+        qxapp.utils.LibVersions.getPlatformVersion,
+        qxapp.utils.LibVersions.getUIVersion,
+        qxapp.utils.LibVersions.getQxCompiler,
+        qxapp.utils.LibVersions.getQxLibraryInfoMap,
+        qxapp.utils.LibVersions.get3rdPartyLibs
+      ].forEach(lib => {
+        libs = libs.concat(lib.call(this));
+      }, this);
+
+      return libs;
+    },
+
+    getTemplate: function() {
+      return " \
+## Long story short\n \
+<!-- Please describe your review or bug you found. -->\n \
+\n \
+## Expected behaviour\n \
+<!-- What is the behaviour you expect? -->\n \
+\n \
+## Actual behaviour\n \
+<!-- What's actually happening? -->\n \
+\n \
+## Steps to reproduce\n \
+<!-- Please describe steps to reproduce the issue. -->\n \
+\n \
+## Your environment\n";
+    }
   },
 
   members: {
@@ -70,8 +112,8 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
         allowGrowX: false
       });
       copyEnvBtn.addListener("execute", () => {
-        const text = JSON.stringify(this.__getEnv());
-        if (qxapp.utils.Utils.copyTextToClipboard(text)) {
+        const env = JSON.stringify(qxapp.component.widget.NewGHIssue.getEnv());
+        if (qxapp.utils.Utils.copyTextToClipboard(env)) {
           copyEnvBtn.addState("hovered");
         }
       }, this);
@@ -79,24 +121,9 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
     },
 
     __createGHLinkButton: function() {
-      const url = "https://github.com/ITISFoundation/osparc-simcore/issues/new?template=bug_report.md";
+      const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
       const toNewIssue = new qxapp.component.widget.LinkButton(this.tr("Open New Issue"), url);
       this._add(toNewIssue);
-    },
-
-    __getEnv: function() {
-      let libs = [];
-      [
-        qxapp.utils.LibVersions.getPlatformVersion,
-        qxapp.utils.LibVersions.getUIVersion,
-        qxapp.utils.LibVersions.getQxCompiler,
-        qxapp.utils.LibVersions.getQxLibraryInfoMap,
-        qxapp.utils.LibVersions.get3rdPartyLibs
-      ].forEach(lib => {
-        libs = libs.concat(lib.call(this));
-      }, this);
-
-      return libs;
     }
   }
 });

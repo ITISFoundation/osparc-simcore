@@ -229,25 +229,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     },
 
     __onOpenNewIssueV0: function() {
-      const issueDlg = new qxapp.component.widget.NewGHIssue();
-      const win = new qx.ui.window.Window("Open New GitHub Issue").set({
-        showMinimize: false,
-        showMaximize: false,
-        allowMaximize: false,
-        showStatusbar: false,
-        modal: true,
-        width: 550,
-        height: 300,
-        layout: new qx.ui.layout.Canvas()
-      });
-      win.add(issueDlg, {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-      });
-      win.center();
-      win.open();
+      const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
+      window.open(url);
     }
   }
 });
