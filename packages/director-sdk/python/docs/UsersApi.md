@@ -1,6 +1,6 @@
 # simcore_director_sdk.UsersApi
 
-All URIs are relative to *http://localhost:8001/v0*
+All URIs are relative to *http://localhost:8080/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
