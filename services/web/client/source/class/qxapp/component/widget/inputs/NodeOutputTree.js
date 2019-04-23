@@ -136,8 +136,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
           portData.children = children;
           portData.open = true;
         } else {
-          portData.icon = qxapp.data.Converters.fromTypeToIcon(ports[portKey].type),
-          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
+          portData.icon = qxapp.data.Converters.fromTypeToIcon(ports[portKey].type);
+          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value; // eslint-disable-line no-eq-null
         }
         data.children.push(portData);
       }
