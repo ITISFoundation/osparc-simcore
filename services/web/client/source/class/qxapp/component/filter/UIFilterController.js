@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * GUI filter controller. Stores the state of all filters and dispatches it when it changes.
+ * GUI filter controller. Stores the state of all grouped filters and dispatches it when they trigger a change.
  */
 qx.Class.define("qxapp.component.filter.UIFilterController", {
   extend: qx.core.Object,
@@ -29,20 +29,72 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
   statics: {
     registerFilter: function(filterId) {
       this.getInstance().registerFilter(filterId);
+    },
+    registerContainer: function(containerId, container) {
+      this.getInstance().registerFilterContainer(containerId, container);
+    },
+    resetGroup: function(groupId) {
+      this.getInstance().resetFilterGroup(groupId);
+    },
+    setContainerVisibility: function(containerId, visibility) {
+      this.getInstance().setFilterContainerVisibility(containerId, visibility);
     }
   },
 
   members: {
     __state: null,
+    __filters: null,
+    __filterContainers: null,
 
     /**
-     * Function called by the base filter class to register a filter when created, to register it.
+     * Function called by the base filter class to register a filter when after creating it.
      *
-     * @param {string} filterId Group-unique id of the filter that will be registered.
-     * @param {*} groupId Group id for the filter to be registered to.
+     * @param {qxapp.component.filter.UIFilter} filter The filter to be registered.
      */
-    registerFilter: function(filterId, groupId) {
+    registerFilter: function(filter) {
+      const filterId = filter.getFilterId();
+      const groupId = filter.getGroupId();
       qx.event.message.Bus.getInstance().subscribe(this.__getInputMessageName(filterId, groupId), this.__subscriber, this);
+      // Store filter reference for managing
+      this.__filters = this.__filters || {};
+      this.__filters[groupId] = this.__filters[groupId] || {};
+      this.__filters[groupId][filterId] = filter;
+    },
+
+    /**
+     * Function that registers a filter container for changing its visibility when required.
+     *
+     * @param {string} containerId Given id for the container.
+     * @param {qx.ui.core.Widget} container Container widget for the filters.
+     */
+    registerContainer: function(containerId, container) {
+      this.__filterContainers = this.__filterContainers || {};
+      this.__filterContainers[containerId] = container;
+    },
+
+    /**
+     * Function that calls the reset functions for all filters in a group.
+     *
+     * @param {string} groupId Id of the filter group to be reset.
+     */
+    resetGroup: function(groupId) {
+      if (this.__filters[groupId]) {
+        for (filterId in this.__filters[groupId]) {
+          this.__filters[groupId][filterId].reset();
+        }
+      }
+    },
+
+    /**
+     * Function to set the visibility of a previously registered filter container.
+     *
+     * @param {string} containerId Id of the container to change the visiblity.
+     * @param {string} visibility New visibility setting for the container.
+     */
+    setContainerVisibility: function(containerId, visibility) {
+      if (this.__filterContainers[containerId]) {
+        this.__filterContainers[containerId].setVisibility(visibility);
+      }
     },
 
     __getInputMessageName: function(filterId, groupId, suffix = "filter") {

@@ -106,19 +106,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.__desktop.addListener("click", e => {
-      this.__selectedItemChanged(null);
-    }, this);
-
-    this.__desktop.addListener("changeActiveWindow", e => {
-      let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
-        this.__selectedItemChanged(winEmitting.getNodeId());
-      } else {
-        this.__selectedItemChanged(null);
-      }
-    }, this);
-
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.__desktopCanvas.add(buttonContainer, {
       bottom: 10,
@@ -128,18 +115,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     unlinkButton.setVisibility("excluded");
     buttonContainer.add(unlinkButton);
 
-    this.addListener("dbltap", e => {
-      // FIXME:
-      const navBarHeight = 50;
-      let x = e.getViewportLeft() - this.getBounds().left;
-      let y = e.getViewportTop() - navBarHeight;
-      const pos = {
-        x: x,
-        y: y
-      };
-      let srvCat = this.__createServicesCatalogue(pos);
-      srvCat.open();
-    }, this);
+    this.__addEventListeners();
   },
 
   events: {
@@ -856,6 +832,43 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __isSelectedItemALink: function() {
       return Boolean(this.__getLinkUI(this.__selectedItemId));
+    },
+
+    __addEventListeners: function() {
+      this.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
+      })
+      this.addListener("disappear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
+      });
+
+      this.__desktop.addListener("click", e => {
+        this.__selectedItemChanged(null);
+      }, this);
+
+      this.__desktop.addListener("changeActiveWindow", e => {
+        let winEmitting = e.getData();
+        if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
+          this.__selectedItemChanged(winEmitting.getNodeId());
+        } else {
+          this.__selectedItemChanged(null);
+        }
+      }, this);
+
+      this.addListener("dbltap", e => {
+        // FIXME:
+        const navBarHeight = 50;
+        let x = e.getViewportLeft() - this.getBounds().left;
+        let y = e.getViewportTop() - navBarHeight;
+        const pos = {
+          x: x,
+          y: y
+        };
+        let srvCat = this.__createServicesCatalogue(pos);
+        srvCat.open();
+      }, this);
     }
   }
 });

@@ -168,6 +168,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginRight: 3
       })
     },
+    "textfilter": {},
     "textfilter/textfield": "toolbar-textfield",
 
     /*

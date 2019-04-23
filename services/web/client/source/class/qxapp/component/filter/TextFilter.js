@@ -51,6 +51,11 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
   members: {
     __textField: null,
 
+    reset: function() {
+      this.__textField.resetValue();
+      this.__textField.fireDataEvent("input", "");
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -61,10 +66,7 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
           this._add(control);
           break;
         case "clearbutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => {
-            this.__textField.resetValue();
-            this.__textField.fireDataEvent("input", "");
-          });
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => this.reset());
           this._add(control, {
             right: 0,
             bottom: 12

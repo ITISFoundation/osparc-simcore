@@ -29,5 +29,7 @@ qx.Class.define("qxapp.desktop.WorkbenchFilters", {
     this._add(new qxapp.component.filter.TextFilter("text", "workbench"));
 
     this._add(new qxapp.component.filter.TagsFilter("tags", "workbench"));
+
+    qxapp.component.filter.UIFilterController.getInstance().registerContainer("workbench", this);
   }
 });

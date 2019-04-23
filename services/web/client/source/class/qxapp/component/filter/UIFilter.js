@@ -21,6 +21,7 @@
  */
 qx.Class.define("qxapp.component.filter.UIFilter", {
   extend: qx.ui.core.Widget,
+  implement: qxapp.component.filter.IFilter,
   type: "abstract",
 
   /**
@@ -31,23 +32,31 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
    */
   construct: function(filterId, groupId) {
     this.base(arguments);
-    this.__filterId = filterId;
-    this.__groupId = groupId;
+    this.setFilterId(filterId);
+    this.setGroupId(groupId);
 
-    qxapp.component.filter.UIFilterController.getInstance().registerFilter(this.__filterId, this.__groupId);
+    qxapp.component.filter.UIFilterController.getInstance().registerFilter(this);
+  },
+
+  properties: {
+    filterId: {
+      nullable: false,
+      check: "String"
+    },
+    groupId: {
+      nullable: false,
+      check: "String"
+    }
   },
 
   members: {
-    __filterId: null,
-    __groupId: null,
-
     /**
      * Function that returns the name of the dispatched message when a filter changes.
      *
      * @param {string} suffix Will be added at the end of the message name to decrease the probability of message name collision.
      */
     _getMessageName: function(suffix = "filter") {
-      return qxapp.utils.Utils.capitalize(this.__filterId, this.__groupId, suffix);
+      return qxapp.utils.Utils.capitalize(this.getFilterId(), this.getGroupId(), suffix);
     },
 
     /**
@@ -57,8 +66,8 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
      */
     _filterChange: function(data) {
       const msgData = {
-        groupId: this.__groupId,
-        filterId: this.__filterId,
+        groupId: this.getGroupId(),
+        filterId: this.getFilterId(),
         data
       };
       qx.event.message.Bus.getInstance().dispatchByName(this._getMessageName(), msgData);
