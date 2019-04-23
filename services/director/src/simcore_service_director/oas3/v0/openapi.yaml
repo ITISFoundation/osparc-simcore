@@ -1584,7 +1584,7 @@ servers:
     host:
       default: localhost
     port:
-      default: '8001'
+      default: '8080'
     version:
       default: v0
       enum:
@@ -1593,7 +1593,7 @@ servers:
   url: http://director:{port}/{version}
   variables:
     port:
-      default: '8001'
+      default: '8080'
     version:
       default: v0
       enum:
