@@ -67,7 +67,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceTypes().forEach(serviceType => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
-        button.addListener("tap", e => this.__addTag(serviceType, e.getTarget()));
+        button.addListener("execute", e => this.__addTag(serviceType, e.getTarget()));
         menu.add(button);
       });
 
@@ -75,7 +75,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       this.__getServiceCategories().forEach(serviceCategory => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
-        button.addListener("tap", e => this.__addTag(serviceCategory, e.getTarget()));
+        button.addListener("execute", e => this.__addTag(serviceCategory, e.getTarget()));
         menu.add(button);
       });
       return menu;
@@ -110,7 +110,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
         // Add tag
         const tagButton = new qx.ui.toolbar.Button(qxapp.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
         this._add(tagButton);
-        tagButton.addListener("tap", () => this.__removeTag(tagName, menuButton));
+        tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state
         this.__activeTags.push(tagName);
         this.__tagButtons = this.__tagButtons || {};
