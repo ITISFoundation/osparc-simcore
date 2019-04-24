@@ -24,22 +24,5 @@ then
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
-# try to pull data from S3
-python /docker/state_puller.py ${SIMCORE_NODE_APP_STATE_PATH} --silent
-
-
-jupyter trust ${NOTEBOOK_URL}
-start-notebook.sh \
-    --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
-    --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
-    --NotebookApp.notebook_dir=${SIMCORE_NODE_APP_STATE_PATH} \
-    --NotebookApp.token=""  \
-    --NotebookApp.disable_check_xsrf='True' \
-    --NotebookApp.quit_button='False' \
-    --NotebookApp.webbrowser_open_new='0' \
-    --NotebookApp.nbserver_extensions="{'input_retriever':True, 'state_handler':True}" \
-    --FileContentsManager.post_save_hook='post_save_hook.export_to_osparc_hook'
-    # --Session.debug='True'
-    # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
-    # --NotebookApp.token=""  \ this is BAD, maybe should be set to simcore
-    # --NotebookApp.disable_check_xsrf='True' \ this is very BAD, but prevent POSTing when token is ''
+# start the notebook now
+/docker/boot_notebook.sh
