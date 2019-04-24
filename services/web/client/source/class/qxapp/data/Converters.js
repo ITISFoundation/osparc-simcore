@@ -251,7 +251,7 @@ qx.Class.define("qxapp.data.Converters", {
         case "integer":
           return "@MaterialIcons/arrow_right_alt/15";
         case "string":
-          return "@MaterialIcons/short_text/15";
+          return "@MaterialIcons/format_quote/15";
       }
       if (type.indexOf("data:") === 0) {
         return "@MaterialIcons/insert_drive_file/15";
