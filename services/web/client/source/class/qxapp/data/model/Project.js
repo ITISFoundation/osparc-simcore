@@ -36,11 +36,12 @@ qx.Class.define("qxapp.data.model.Project", {
   extend: qx.core.Object,
 
   /**
-    * @param prjData {String} uuid if the link. If not provided, a random one will be assigned
-  */
+    * @param prjData {Object} Object containing the serialized Project Data
+    */
   construct: function(prjData) {
     this.base(arguments);
 
+    const wbData = prjData.workbench ? prjData.workbench : {};
     this.set({
       uuid: prjData.uuid || this.getUuid(),
       name: prjData.name || this.getName(),
@@ -50,14 +51,9 @@ qx.Class.define("qxapp.data.model.Project", {
       prjOwner: prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
       collaborators: prjData.collaborators || this.getCollaborators(),
       creationDate: prjData.creationDate ? new Date(prjData.creationDate) : this.getCreationDate(),
-      lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate()
+      lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate(),
+      workbench: new qxapp.data.model.Workbench(this, wbData)
     });
-
-    if (prjData && prjData.workbench) {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
-    } else {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), {}));
-    }
   },
 
   properties: {

@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   project.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
+ *   project.setWorkbench(new qxapp.data.model.Workbench(project, prjData.workbench));
  * </pre>
  */
 
@@ -37,21 +37,28 @@ qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 
   /**
-    * @param prjName {String} uuid if the link. If not provided, a random one will be assigned
-    * @param wbData {String} uuid of the node where the link comes from
-  */
-  construct: function(prjName, wbData) {
+    * @param project {qxapp.data.model.Project} Project owning the Workbench
+    * @param wbData {qx.core.Object} Object containing the workbench raw data
+    */
+  construct: function(project, wbData) {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
     this.__links = {};
 
-    this.setProjectName(prjName);
+    this.setProject(project);
+    this.setProjectName(project.getName());
+
     this.__createNodes(wbData);
     this.__createLinks(wbData);
   },
 
   properties: {
+    project: {
+      check: "qxapp.data.model.Project",
+      nullable: false
+    },
+
     projectName: {
       check: "String",
       nullable: false
