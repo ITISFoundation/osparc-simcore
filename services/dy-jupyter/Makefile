@@ -59,15 +59,15 @@ endif
 .PHONY: build rebuild
 # target: build, rebuild: – Builds all service images. Use `rebuild` to build w/o cache.
 build: .check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml build --parallel
 
 rebuild: .check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
+	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache --parallel
 
 .PHONY: build-devel
 # target: build-devel: – Builds images of core services for development.
 build-devel: .check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --parallel
 
 .PHONY: up up-devel down
 # target: up, down: – starts/stops service
