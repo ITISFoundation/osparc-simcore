@@ -104,6 +104,21 @@ qx.Class.define("qxapp.utils.LibVersions", {
         });
       });
       return libs;
+    },
+
+    getEnvLibs: function() {
+      let libs = [];
+      [
+        qxapp.utils.LibVersions.getPlatformVersion,
+        qxapp.utils.LibVersions.getUIVersion,
+        qxapp.utils.LibVersions.getQxCompiler,
+        qxapp.utils.LibVersions.getQxLibraryInfoMap,
+        qxapp.utils.LibVersions.get3rdPartyLibs
+      ].forEach(lib => {
+        libs = libs.concat(lib.call(this));
+      }, this);
+
+      return libs;
     }
   }
 });

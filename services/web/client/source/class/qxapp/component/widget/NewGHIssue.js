@@ -19,8 +19,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let newGHIssue = new qxapp.component.widget.NewGHIssue();
- *   this.getRoot().add(newGHIssue);
+ *   const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
+ *   window.open(url);
  * </pre>
  */
 
