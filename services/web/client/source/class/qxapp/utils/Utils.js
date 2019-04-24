@@ -188,6 +188,12 @@ qx.Class.define("qxapp.utils.Utils", {
       xhr.send();
     },
 
+    /**
+     * Copies the given text to the clipboard
+     *
+     * @param text {String} Text to be copied
+     * @return {boolean} True if it was successful
+     */
     copyTextToClipboard: function(text) {
       // from https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
       const textArea = document.createElement("textarea");
