@@ -63,20 +63,21 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
     },
 
     getTemplate: function() {
-      return " \
-## Long story short\n \
-<!-- Please describe your review or bug you found. -->\n \
-\n \
-## Expected behaviour\n \
-<!-- What is the behaviour you expect? -->\n \
-\n \
-## Actual behaviour\n \
-<!-- What's actually happening? -->\n \
-\n \
-## Steps to reproduce\n \
-<!-- Please describe steps to reproduce the issue. -->\n \
-\n \
-## Your environment\n";
+      return `
+## Long story short
+<!-- Please describe your review or bug you found. -->
+
+## Expected behaviour
+<!-- What is the behaviour you expect? -->
+
+## Actual behaviour
+<!-- What's actually happening? -->
+
+## Steps to reproduce
+<!-- Please describe steps to reproduce the issue. -->
+
+## Your environment
+`;
     }
   },
 
