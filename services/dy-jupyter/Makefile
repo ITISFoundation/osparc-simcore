@@ -130,7 +130,7 @@ PHONY: .check-env
 
 .PHONY: clean
 # target: clean – Cleans all unversioned files in project
-clean: remove-intermediate-file
+clean:
 	@git clean -dxf -e .vscode/
 
 
