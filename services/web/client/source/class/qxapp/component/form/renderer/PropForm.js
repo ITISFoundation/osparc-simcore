@@ -104,10 +104,14 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
 
         item.addListener("focus", () => {
-          qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
+          if (this.getNode()) {
+            qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
+          }
         }, this);
         item.addListener("focusout", () => {
-          qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
+          if (this.getNode()) {
+            qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
+          }
         }, this);
       }
     },
