@@ -18,15 +18,20 @@
 /**
  * Dropdown menu for tag filtering
  */
-
 qx.Class.define("qxapp.component.filter.TagsFilter", {
   extend: qxapp.component.filter.UIFilter,
 
-  construct: function(filterId, groupId, labelTr = "Tags") {
+  /**
+   * Constructor for TagsFilter creates a workbench TagsFilter.
+   *
+   * @param {string} filterId Group-unique id for the filter.
+   * @param {string} groupId Unique group id where the filter belongs.
+   */
+  construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__dropDown = new qx.ui.toolbar.MenuButton(this.tr(labelTr));
+    this.__dropDown = new qx.ui.toolbar.MenuButton(this.tr("Tags"));
     this.__dropDown.setMenu(this.__buildMenu());
     this._add(this.__dropDown);
   },
@@ -36,6 +41,9 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
     __activeTags: null,
     __tagButtons: null,
 
+    /**
+     * Implementing IFilter: Function in charge of resetting the filter.
+     */
     reset: function() {
       // Remove ticks from menu
       const menuButtons = this.__dropDown.getMenu().getChildren()
