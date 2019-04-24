@@ -86,9 +86,7 @@ down:
 # target: push_service_images – Pushes the the service images to ${DOCKER_REGISTRY}
 push_service_images: .check-env
 	${DOCKER} login ${DOCKER_REGISTRY}
-	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_SCIPY_PATH}:${SERVICES_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_R_PATH}:${SERVICES_VERSION}
+	${DOCKER_COMPOSE} -f docker-compose.yml push
 
 ## -------------------------------
 # Tools
