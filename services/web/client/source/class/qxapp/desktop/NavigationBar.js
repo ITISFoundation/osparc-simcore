@@ -179,7 +179,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     },
 
     __createUserBtn: function() {
-      var menu = new qx.ui.menu.Menu();
+      const menu = new qx.ui.menu.Menu();
 
       // Account Settings
       // ---
@@ -189,27 +189,30 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button(this.tr("Preferences"));
+      const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
-      let logout = new qx.ui.menu.Button(this.tr("Logout"));
+      const logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
-        let app = qx.core.Init.getApplication();
+        const app = qx.core.Init.getApplication();
         app.logout();
       });
 
       menu.add(preferences);
       menu.addSeparator();
-      let helpBtn = new qx.ui.menu.Button(this.tr("Help"));
+      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
+      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
+      menu.add(newIssueBtn);
+      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
       menu.add(helpBtn);
-      let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
+      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
       menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
 
-      let btn = new qx.ui.form.MenuButton(null, null, menu);
+      const btn = new qx.ui.form.MenuButton(null, null, menu);
       return btn;
     },
 
@@ -223,6 +226,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         win.center();
         win.open();
       }
+    },
+
+    __onOpenNewIssueV0: function() {
+      const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
+      window.open(url);
     }
   }
 });

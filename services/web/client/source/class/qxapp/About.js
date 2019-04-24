@@ -35,56 +35,34 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      let remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
+      const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
+      this.__createEntries([platformVersion]);
 
-      if (remoteUrl) {
-        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/");
-        remoteUrl = remoteUrl.replace(".git", "");
-      } else {
-        remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
-      }
-
-      let name = "osparc-simcore";
-      let commitId = qx.core.Environment.get("osparc.vcsRef");
-      let url = remoteUrl;
-
-      if (commitId) {
-        url = remoteUrl + "/tree/" + String(commitId) + "/";
-      }
-      this.add(this.__createEntry(name, commitId, url));
-
-      name = "osparc-simcore UI";
-      commitId = qx.core.Environment.get("osparc.vcsRefClient");
-      if (commitId) {
-        url = remoteUrl + "/tree/" + String(commitId) + "/services/web/client/";
-      }
-      let status = qx.core.Environment.get("osparc.vcsStatusClient");
-      if (status) {
-        name = name + " [" + status + "]";
-      }
-      this.add(this.__createEntry(name, commitId, url));
+      const uiVersion = qxapp.utils.LibVersions.getUIVersion();
+      this.__createEntries([uiVersion]);
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
+      const qxCompiler = qxapp.utils.LibVersions.getQxCompiler();
+      this.__createEntries([qxCompiler]);
 
-      let libInfo = qx.core.Environment.get("qx.libraryInfoMap");
-      if (libInfo) {
-        for (let key in libInfo) {
-          let lib = libInfo[key];
-          this.add(this.__createEntry(lib.name, lib.version, lib.homepage));
-        }
-      }
+      const libsInfo = qxapp.utils.LibVersions.getQxLibraryInfoMap();
+      this.__createEntries(libsInfo);
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      Object.keys(qxapp.wrapper).forEach(className => {
-        const wrapper = qxapp.wrapper[className];
-        this.add(this.__createEntry(wrapper.NAME, wrapper.VERSION, wrapper.URL));
-      });
+      const libs = qxapp.utils.LibVersions.get3rdPartyLibs();
+      this.__createEntries(libs);
     },
 
-    __createEntry: function(item = "unknown-library", version = "unknown-version", url) {
+    __createEntries: function(libs) {
+      for (let i=0; i<libs.length; i++) {
+        const lib = libs[i];
+        this.add(this.__createEntry(lib.name, lib.version, lib.url));
+      }
+    },
+
+    __createEntry: function(item = "unknown-library", vers = "unknown-version", url) {
       let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         marginBottom: 4
       });
@@ -95,15 +73,13 @@ qx.Class.define("qxapp.About", {
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }
-      const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
       entryLayout.set({
-        font: title14Font
+        font: qxapp.ui.basic.Label.getFont(14, true)
       });
       entryLayout.add(entryLabel);
 
-      const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
-      let entryVersion = new qx.ui.basic.Label(version).set({
-        font: text14Font
+      let entryVersion = new qxapp.ui.basic.Label(14).set({
+        value: vers
       });
       entryLayout.add(entryVersion);
 
