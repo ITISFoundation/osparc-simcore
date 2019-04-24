@@ -132,7 +132,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
         if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
           const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
           const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
-          const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs);
+          const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
           portData.children = children;
           portData.open = true;
         } else {

@@ -167,14 +167,15 @@ qx.Class.define("qxapp.data.Converters", {
       }
     },
 
-    fromAPITreeToVirtualTreeModel: function(treeItems, showLeavesAsDirs = false) {
+    fromAPITreeToVirtualTreeModel: function(treeItems, showLeavesAsDirs = false, portKey) {
       let children = [];
       for (let i=0; i<treeItems.length; i++) {
         const treeItem = treeItems[i];
         let splitted = treeItem.label.split("/");
         let newItem = {
           label: splitted[0],
-          open: false
+          open: false,
+          portKey
         };
         if (splitted.length === 1) {
           // leaf already
