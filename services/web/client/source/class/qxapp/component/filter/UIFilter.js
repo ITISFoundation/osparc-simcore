@@ -32,8 +32,10 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
    */
   construct: function(filterId, groupId) {
     this.base(arguments);
-    this.setFilterId(filterId);
-    this.setGroupId(groupId);
+    this.set({
+      filterId,
+      groupId
+    });
 
     qxapp.component.filter.UIFilterController.getInstance().registerFilter(this);
   },

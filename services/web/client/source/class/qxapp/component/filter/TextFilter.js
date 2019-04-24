@@ -25,15 +25,13 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
    * Constructor for the TextFilter takes UIFilters mandatory params plus an optional translation id for its label.
    *
    * @extends qxapp.component.filter.UIFilter
-   *
-   * @param {string} [labelTr=Filter] Translation id used for the filter label.
    */
-  construct: function(filterId, groupId, labelTr = "Filter") {
+  construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.__textField = this.getChildControl("textfield").set({
-      placeholder: this.tr(labelTr)
+      placeholder: this.tr("Filter")
     });
 
     this.getChildControl("clearbutton");

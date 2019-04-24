@@ -24,8 +24,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
   /**
    * Constructor for TagsFilter creates a workbench TagsFilter.
    *
-   * @param {string} filterId Group-unique id for the filter.
-   * @param {string} groupId Unique group id where the filter belongs.
+   * @extends qxapp.component.filter.UIFilter
    */
   construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
