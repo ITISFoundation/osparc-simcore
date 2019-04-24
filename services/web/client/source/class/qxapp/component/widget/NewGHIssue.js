@@ -29,8 +29,10 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
 
   statics: {
     getNewIssueUrl: function() {
-      const env = JSON.stringify(qxapp.utils.LibVersions.getEnvLibs());
       const temp = qxapp.component.widget.NewGHIssue.getTemplate();
+      let env = "```json\n";
+      env += JSON.stringify(qxapp.utils.LibVersions.getEnvLibs(), null, 2);
+      env += "\n```";
       const body = encodeURIComponent(temp+env);
       const url = "https://github.com/ITISFoundation/osparc-simcore/issues/new?labels=tester_review&body=" + body;
       return url;
