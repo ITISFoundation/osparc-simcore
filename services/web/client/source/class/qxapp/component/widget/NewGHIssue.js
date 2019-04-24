@@ -29,26 +29,11 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
 
   statics: {
     getNewIssueUrl: function() {
-      const env = JSON.stringify(qxapp.component.widget.NewGHIssue.getEnv());
+      const env = JSON.stringify(qxapp.utils.LibVersions.getEnvLibs());
       const temp = qxapp.component.widget.NewGHIssue.getTemplate();
       const body = encodeURIComponent(temp+env);
       const url = "https://github.com/ITISFoundation/osparc-simcore/issues/new?labels=tester_review&body=" + body;
       return url;
-    },
-
-    getEnv: function() {
-      let libs = [];
-      [
-        qxapp.utils.LibVersions.getPlatformVersion,
-        qxapp.utils.LibVersions.getUIVersion,
-        qxapp.utils.LibVersions.getQxCompiler,
-        qxapp.utils.LibVersions.getQxLibraryInfoMap,
-        qxapp.utils.LibVersions.get3rdPartyLibs
-      ].forEach(lib => {
-        libs = libs.concat(lib.call(this));
-      }, this);
-
-      return libs;
     },
 
     getTemplate: function() {
