@@ -52,10 +52,9 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
      *
      */
     _createHelpLabel: function(message=null) {
-      let label = new qx.ui.basic.Label().set({
+      let label = new qxapp.ui.basic.Label(12).set({
         value: message,
-        rich : true,
-        font : qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-12"])
+        rich: true
       });
       return label;
     }

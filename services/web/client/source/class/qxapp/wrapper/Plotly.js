@@ -88,13 +88,13 @@ qx.Class.define("qxapp.wrapper.Plotly", {
       this.__layout = {
         titlefont: {
           color: "#bfbfbf",
-          size: qxapp.theme.Font.fonts["text-14"]["size"],
-          family: qxapp.theme.Font.fonts["text-14"]["family"].toString()
+          size: qxapp.ui.basic.Label.getFont(14)["size"],
+          family: qxapp.ui.basic.Label.getFont(14)["family"].toString()
         },
         font: {
           color: "#bfbfbf",
-          size: qxapp.theme.Font.fonts["text-12"]["size"],
-          family: qxapp.theme.Font.fonts["text-12"]["family"].toString()
+          size: qxapp.ui.basic.Label.getFont(12)["size"],
+          family: qxapp.ui.basic.Label.getFont(12)["family"].toString()
         },
         margin: {
           l: margin,
