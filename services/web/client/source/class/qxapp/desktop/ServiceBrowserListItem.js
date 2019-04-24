@@ -131,9 +131,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       let control;
       switch (id) {
         case "title":
-          control = new qx.ui.basic.Label().set({
-            font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"])
-          });
+          control = new qxapp.ui.basic.Label(14, true);
           break;
         case "subtitle":
           control = new qx.ui.basic.Label();

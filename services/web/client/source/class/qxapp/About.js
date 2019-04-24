@@ -73,15 +73,13 @@ qx.Class.define("qxapp.About", {
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }
-      const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
       entryLayout.set({
-        font: title14Font
+        font: qxapp.ui.basic.Label.getFont(14, true)
       });
       entryLayout.add(entryLabel);
 
-      const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
-      let entryVersion = new qx.ui.basic.Label(vers).set({
-        font: text14Font
+      let entryVersion = new qxapp.ui.basic.Label(14).set({
+        value: vers
       });
       entryLayout.add(entryVersion);
 
