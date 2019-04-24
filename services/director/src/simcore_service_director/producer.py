@@ -348,7 +348,7 @@ async def __get_repos_from_key(service_key: str) -> List[Dict]:
     list_of_images = {
         service_key: await registry_proxy.retrieve_list_of_images_in_repo(service_key)
     }
-    log.info("entries %s", list_of_images)
+    log.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:
         raise exceptions.ServiceNotAvailableError(service_key)
 
