@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
       this.setWorkbench(workbench);
-      this.fireDataEvent("nodeDoubleClicked", "root");
+      this.__nodeSelected("root");
     });
 
     this.__desktop.add(this.__svgWidget, {
@@ -106,17 +106,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.__desktop.addListener("click", e => {
+    this.__desktop.addListener("tap", e => {
       this.__selectedItemChanged(null);
-    }, this);
-
-    this.__desktop.addListener("changeActiveWindow", e => {
-      let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
-        this.__selectedItemChanged(winEmitting.getNodeId());
-      } else {
-        this.__selectedItemChanged(null);
-      }
     }, this);
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
@@ -253,15 +244,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
-      node.populateNodeData();
+      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
 
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
         for (const innerNodeMetaData of innerNodeMetaDatas) {
-          let innerNode = this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, null, node);
-          innerNode.populateNodeData();
+          this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
         }
       }
 
@@ -311,12 +300,16 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         this.__updateLinks(nodeUI);
       }, this);
 
-      nodeUI.addListener("dbltap", e => {
-        this.fireDataEvent("nodeDoubleClicked", nodeUI.getNodeId());
+      nodeUI.addListener("tap", e => {
+        this.__selectedItemChanged(nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
-      // qx.ui.core.queue.Widget.flush();
+      nodeUI.addListener("dbltap", e => {
+        this.__nodeSelected(nodeUI.getNodeId());
+        e.stopPropagation();
+      }, this);
+
       qx.ui.core.queue.Layout.flush();
     },
 
@@ -326,11 +319,15 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
+
       return nodeUI;
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
+      if (this.__linkRepresetationExists(link)) {
+        return null;
+      }
 
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
@@ -366,6 +363,16 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return linkUI;
       }
       return null;
+    },
+
+    __linkRepresetationExists: function(link) {
+      for (let i=0; i<this.__linksUI.length; i++) {
+        const linkUI = this.__linksUI[i];
+        if (linkUI.getLink().getLinkId() === link.getLinkId()) {
+          return true;
+        }
+      }
+      return false;
     },
 
     __createDragDropMechanism: function(nodeUI) {
@@ -852,6 +859,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
+    },
+
+    __nodeSelected: function(nodeId) {
+      this.fireDataEvent("nodeDoubleClicked", nodeId);
     },
 
     __isSelectedItemALink: function() {

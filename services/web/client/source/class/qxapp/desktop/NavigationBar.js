@@ -64,11 +64,14 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this._add(logo);
     this._add(new qx.ui.toolbar.Separator());
 
-    let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
+    let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({
+      rich: true
+    });
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", () => {
       this.fireEvent("dashboardPressed");
     }, this);
+    this.__highlightDashboard();
     this._add(dashboardBtn);
 
     this._add(new qx.ui.toolbar.Separator());
@@ -114,13 +117,18 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   members: {
+    __dashboardBtn: null,
     __mainViewCaptionLayout: null,
 
     setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      if (nodeIds.length === 0) {
+        this.__highlightDashboard(true);
+      }
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
+          rich: true,
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
         const nodeId = nodeIds[i];
@@ -144,7 +152,16 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           });
           this.__mainViewCaptionLayout.add(mainViewCaption);
         }
+        if (i === nodeIds.length-1) {
+          this.__highlightDashboard(false);
+          btn.setLabel("<b>" + btn.getLabel() + "</b>");
+        }
       }
+    },
+
+    __highlightDashboard: function(highlight = true) {
+      const label = this.tr("Dashboard");
+      highlight ? this.__dashboardBtn.setLabel("<b>"+label+"</b>") : this.__dashboardBtn.setLabel(label);
     },
 
     projectSaved: function() {
@@ -159,15 +176,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           return;
         }
       }
-    },
-
-    __showMainViewCaptionAsText: function(newLabel) {
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      this.__mainViewCaptionLayout.add(mainViewCaption);
     },
 
     __createUserBtn: function() {

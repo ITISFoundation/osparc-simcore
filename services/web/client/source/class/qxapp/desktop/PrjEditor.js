@@ -190,7 +190,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       ].forEach(wb => {
         wb.addListener("nodeDoubleClicked", e => {
           let nodeId = e.getData();
-          this.nodeSelected(nodeId);
+          this.nodeSelected(nodeId, true);
         }, this);
       });
 
@@ -207,7 +207,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
     },
 
-    nodeSelected: function(nodeId) {
+    nodeSelected: function(nodeId, openNodeAndParents = false) {
       if (!nodeId) {
         return;
       }
@@ -229,7 +229,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       this.__switchExtraView(nodeId);
 
-      this.__treeView.nodeSelected(nodeId);
+      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
     },
 
     __getWidgetForNode: function(nodeId) {
