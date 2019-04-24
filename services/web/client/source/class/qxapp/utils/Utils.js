@@ -192,7 +192,7 @@ qx.Class.define("qxapp.utils.Utils", {
      * Copies the given text to the clipboard
      *
      * @param text {String} Text to be copied
-     * @return {boolean} True if it was successful
+     * @return {Boolean} True if it was successful
      */
     copyTextToClipboard: function(text) {
       // from https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
@@ -242,7 +242,7 @@ qx.Class.define("qxapp.utils.Utils", {
       try {
         copied = document.execCommand("copy");
       } catch (err) {
-        console.log("Oops, unable to copy");
+        console.error("Oops, unable to copy");
       }
 
       document.body.removeChild(textArea);
