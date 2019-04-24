@@ -19,9 +19,10 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./cc/cc-single-cell/notebook:/home/jovyan/notebook
+      - ./cc/cc-single-cell/notebooks:/home/jovyan/notebooks
       - ./cc/cc-single-cell/devel-config:/home/jovyan/devel-config
-      - ../../../packages:/packages
+      - ../../../packages:/home/jovyan/packages
+      - ../../../services:/home/jovyan/services
     depends_on:
       - postgres
       - minio
@@ -45,9 +46,10 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./cc/cc-oned/notebook:/home/jovyan/notebook
+      - ./cc/cc-oned/notebooks:/home/jovyan/notebooks
       - ./cc/cc-oned/devel-config:/home/jovyan/devel-config
-      - ../../../packages:/packages
+      - ../../../packages:/home/jovyan/packages
+      - ../../../services:/home/jovyan/services
     depends_on:
       - postgres
       - minio
@@ -71,9 +73,10 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./cc/cc-twod/notebook:/home/jovyan/notebook
+      - ./cc/cc-twod/notebooks:/home/jovyan/notebooks
       - ./cc/cc-twod/devel-config:/home/jovyan/devel-config
-      - ../../../packages:/packages
+      - ../../../packages:/home/jovyan/packages
+      - ../../../services:/home/jovyan/services
     depends_on:
       - postgres
       - minio
@@ -97,9 +100,10 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./kember/notebook:/home/jovyan/notebook
+      - ./kember/notebooks:/home/jovyan/notebooks
       - ./kember/devel-config:/home/jovyan/devel-config
-      - ../../../packages:/packages
+      - ../../../packages:/home/jovyan/packages
+      - ../../../services:/home/jovyan/services
     depends_on:
       - postgres
       - minio
@@ -123,11 +127,12 @@ services:
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     volumes:
       - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
-      - ./mattward/notebook:/home/jovyan/notebook
+      - ./mattward/notebooks:/home/jovyan/notebooks
       - ./mattward/input:/home/jovyan/input
       - ./mattward/output:/home/jovyan/output
       - ./mattward/devel-config:/home/jovyan/devel-config
-      - ../../../packages:/packages
+      - ../../../packages:/home/jovyan/packages
+      - ../../../services:/home/jovyan/services
     depends_on:
       - postgres
       - minio

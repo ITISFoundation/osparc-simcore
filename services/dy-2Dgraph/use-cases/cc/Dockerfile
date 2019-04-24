@@ -24,10 +24,11 @@ ARG NOTEBOOK_NAME
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # -----------------------------------------------------------------------------
 FROM common AS development
-VOLUME /packages
+VOLUME /home/jovyan/packages
+VOLUME /home/jovyan/services
 VOLUME /home/jovyan/scripts/dy_services_helpers
 VOLUME /home/jovyan/devel-config
-VOLUME /home/jovyan/notebook
+VOLUME /home/jovyan/notebooks
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"
 ENV INIT_OPTIONS="5000 200 20 tab"
 ENV CREATE_DUMMY_TABLE=1
