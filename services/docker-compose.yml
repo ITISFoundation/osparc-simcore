@@ -1,13 +1,13 @@
 version: '3.4'
 services:
   apihub:
-    image: ${DOCKER_IMAGE_PREFIX}/apihub:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
         - itisfoundation/apihub:cache
-        - ${DOCKER_IMAGE_PREFIX}/apihub:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -22,13 +22,13 @@ services:
           - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
-    image: ${DOCKER_IMAGE_PREFIX}/director:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
         - itisfoundation/director:cache
-        - ${DOCKER_IMAGE_PREFIX}/director:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -91,13 +91,13 @@ services:
       /bin/sh -c "ls -l build-output;cat build-output/version.txt"
 
   webserver:
-    image: ${DOCKER_IMAGE_PREFIX}/webserver:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
       cache_from:
         - itisfoundation/webserver:cache
-        - ${DOCKER_IMAGE_PREFIX}/webserver:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -144,7 +144,7 @@ services:
           - node.role == manager
   #--------------------------------------------------------------------
   sidecar:
-    image: ${DOCKER_IMAGE_PREFIX}/sidecar:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -152,7 +152,7 @@ services:
       dockerfile: services/sidecar/Dockerfile
       cache_from:
         - itisfoundation/sidecar:cache
-        - ${DOCKER_IMAGE_PREFIX}/sidecar:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -191,7 +191,7 @@ services:
       - minio
   #--------------------------------------------------------------------
   storage:
-    image: ${DOCKER_IMAGE_PREFIX}/storage:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -199,7 +199,7 @@ services:
       dockerfile: services/storage/Dockerfile
       cache_from:
         - itisfoundation/storage:cache        
-        - ${DOCKER_IMAGE_PREFIX}/storage:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"

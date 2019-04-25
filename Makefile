@@ -85,9 +85,10 @@ export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
 endif
 endif
 
-DEFAULT_DOCKER_IMAGE_PREFIX := itisfoundation
-ifndef DOCKER_IMAGE_PREFIX
-$(warning DOCKER_IMAGE_PREFIX variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_PREFIX})
+ifdef DOCKER_IMAGE_PREFIX
+# check it ends with /
+export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
+$(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
 export DOCKER_IMAGE_PREFIX=${DEFAULT_DOCKER_IMAGE_PREFIX}
 endif
 
@@ -230,8 +231,8 @@ push: .check-ci-env
 	export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_PREFIX}-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
-		${DOCKER} push ${DOCKER_IMAGE_PREFIX}/$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
 	done
 
 # target: pull-ci – pulls images tagged as '${IMAGE_TYPE}-latest' from registry
