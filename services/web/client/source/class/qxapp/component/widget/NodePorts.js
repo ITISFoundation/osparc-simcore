@@ -37,8 +37,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
    * @param isInputModel {Boolean} false for representing defaultInputs
    */
   construct: function(node, isInputModel = true) {
-    let nodeInputLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeInputLayout);
+    this._setLayout(new qx.ui.layout.Grow());
 
     const label = new qx.ui.basic.Label();
     node.bind("label", label, "value");
@@ -92,35 +91,13 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
-      for (const portKey in ports) {
-        const port = ports[portKey];
-        if (port.type.includes("api")) {
-          let widget = null;
-          switch (port.type) {
-            case "node-output-list-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), port, portKey);
-              widget = nodeOutputList.getOutputWidget();
-              break;
-            }
-            case "node-output-tree-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), port, portKey);
-              widget = nodeOutputList.getOutputWidget();
-              break;
-            }
-          }
-          if (widget !== null) {
-            this.__nodeUIPorts.add(widget);
-          }
-        } else {
-          let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNode(), port, portKey);
-          let widget = nodeOutputLabel.getOutputWidget();
-          this.__nodeUIPorts.add(widget);
-          let label = {
-            isInput: isInput,
-            ui: widget
-          };
-          label.ui.isInput = isInput;
-        }
+      if (ports.defaultNeuromanModels) {
+        // Maintaining NodeOutputListIcon for Neuroman
+        const nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
+        this.__nodeUIPorts.add(nodeOutputList.getOutputWidget());
+      } else {
+        const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
+        this.__nodeUIPorts.add(portTree);
       }
     }
   }

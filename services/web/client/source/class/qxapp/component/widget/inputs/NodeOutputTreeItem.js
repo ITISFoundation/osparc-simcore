@@ -68,16 +68,22 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
 
     portKey: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     key: {
       check: "String",
       nullable: false
+    },
+
+    value: {
+      nullable: true,
+      apply: "_applyValue"
     }
   },
 
   members : {
+    __value: null,
     _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -88,6 +94,19 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
 
       // The label
       this.addLabel();
+
+      // All else should be right justified
+      this.addWidget(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      // Add the port value
+      this.__valueLabel = new qx.ui.basic.Label();
+      this.addWidget(this.__valueLabel);
+    },
+
+    _applyValue: function(value) {
+      this.__valueLabel.setValue(value);
     }
   }
 });
