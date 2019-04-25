@@ -104,13 +104,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       toolbar.add(clearButton);
 
       toolbar.add(new qx.ui.toolbar.Separator());
-
-      toolbar.add(new qx.ui.basic.Label("Filter:").set({
-        appearance: "toolbar-label"
-      }));
       this.__textfield = new qx.ui.form.TextField().set({
         appearance: "toolbar-textfield",
-        liveUpdate: true
+        liveUpdate: true,
+        placeholder: this.tr("Filter")
       });
       toolbar.add(this.__textfield, {
         flex: 1
