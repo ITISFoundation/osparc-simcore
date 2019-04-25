@@ -304,7 +304,7 @@ components:
       in: path
       name: project_id
       required: true
-      description: starts the pipeline
+      description: the uuid of the project
       schema:
         type: string
         # format: uuid
@@ -314,7 +314,7 @@ components:
       in: query
       name: project_id
       required: true
-      description: starts the pipeline
+      description: the uuid of the project
       schema:
         type: string
         # format: uuid
