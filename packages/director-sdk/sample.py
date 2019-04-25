@@ -1,9 +1,12 @@
-# install package like so:
-# pip install -v  git+https://github.com/sanderegg/osparc-simcore.git@director-sdk#subdirectory=packages/director-sdk/python
+""" JUST FOR DEVELOPMENT PURPOSES. DO NOT USE IN PRODUCTION
 
+Usage
+    pip install -v  git+https://github.com/sanderegg/osparc-simcore.git@director-sdk#subdirectory=packages/director-sdk/python
+
+"""
 import asyncio
-import simcore_director_sdk
 
+import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 
 USER_ID = "testing123"
@@ -64,19 +67,13 @@ async def stop_service():
         print("Exception when calling UserApi->root_get: %s\n" % e)
 
 async def test_api():
-    # await get_root()
-    # await get_services_details()
-    # await get_service_details()
-    import pdb; pdb.set_trace()
     await start_service()
     await get_service()
     await stop_service()
     print("do work")
 
 loop = asyncio.get_event_loop()
-# asyncio.ensure_future(test_api())
 try:
     loop.run_until_complete(test_api())
 finally:
-    # loop.close()
     pass
