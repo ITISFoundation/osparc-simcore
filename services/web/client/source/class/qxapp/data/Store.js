@@ -82,8 +82,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     arePortsCompatible: function(port1, port2) {
-      const arePortsCompatible = this.__matchPortType(port1.type, port2.type);
-      return arePortsCompatible;
+      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
     },
 
     getNodeMetaData: function(key, version) {

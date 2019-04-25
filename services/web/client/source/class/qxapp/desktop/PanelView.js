@@ -108,9 +108,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
               flex: 0
             });
           }
-          if (this.__innerContainer.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
-            this.__innerContainer.exclude();
-          }
         } else if (this.__layoutFlex) {
           this.setLayoutProperties({
             flex: this.__layoutFlex
@@ -124,7 +121,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (this.__innerContainer === null) {
         this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
           appearance: "panelview-content",
-          visibility: this.getCollapsed() ? "excluded" : "visible",
           padding: 0
         });
         this._addAt(this.__innerContainer, 1, {

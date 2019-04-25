@@ -50,7 +50,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     inputNodesLayout.add(inputLabel);
 
     const scroll = new qx.ui.container.Scroll().set({
-      minWidth: 0
+      minWidth: 300
     });
     scroll.add(inputNodesLayout);
     this.add(scroll, 0);
