@@ -45,13 +45,8 @@ qx.Theme.define("qxapp.theme.Decoration", {
     },
 
     "outputPortHighlighted": {
-      decorator: qx.ui.decoration.MBoxShadow,
       style: {
-        shadowColor: "button-border-hovered",
-        shadowBlurRadius: 3,
-        shadowSpreadRadius: 2,
-        shadowLength: [0, 0],
-        inset: true
+        backgroundColor: "background-main-lighter+"
       }
     },
 
