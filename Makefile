@@ -41,7 +41,7 @@ SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
-
+TRAVIS_PLATFORM_STAGE_VERSION := $(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
 export VCS_REF:=$(shell git rev-parse --short HEAD)
@@ -75,23 +75,32 @@ endif
 
 ## -------------------------------
 # Docker build and composition
+DEFAULT_DOCKER_IMAGE_TAG := latest
+ifndef DOCKER_IMAGE_TAG
+ifdef DOCKER_IMAGE_TAG_PREFIX
+export DOCKER_IMAGE_TAG := ${DOCKER_IMAGE_TAG_PREFIX}-${DEFAULT_DOCKER_IMAGE_TAG}
+else
+$(warning DOCKER_IMAGE_TAG variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_TAG})
+export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
+endif
+endif
 
-.PHONY: build rebuild
-# target: build, rebuild: – Builds all core service images. Use `rebuild` to build w/o cache.
-build: .env pull-cache
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build
+DEFAULT_DOCKER_IMAGE_PREFIX := itisfoundation
+ifndef DOCKER_IMAGE_PREFIX
+$(warning DOCKER_IMAGE_PREFIX variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_PREFIX})
+export DOCKER_IMAGE_PREFIX=${DEFAULT_DOCKER_IMAGE_PREFIX}
+endif
 
-rebuild:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
-
-
-.PHONY: build-devel rebuild-devel .tmp-webclient-build
-# target: build-devel, rebuild-devel: – Builds images of core services for development. Use `rebuild` to build w/o cache.
+.PHONY: build
+# target: build: – Builds all core service images.
+build: .env pull-cache .tmp-webclient-build
+	@echo "building using ${DOCKER_IMAGE_PREFIX} and ${DOCKER_IMAGE_TAG}"
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
+	
+.PHONY: build-devel .tmp-webclient-build
+# target: build-devel, rebuild-devel: – Builds images of core services for development.
 build-devel: .env pull-cache .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
-
-rebuild-devel: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
 # targeting services_webserver:development and
@@ -212,39 +221,38 @@ push-cache:
 
 
 ## -------------------------------
-# Staging
-# TODO: PC->SAN: see ops/travis/system-testing/build_and_run. Could move images FREFIX and TAG there
+# ci
 
-.PHONY: build-staging push-staging pull-staging create-staging-stack-file
-# target: build-staging – Builds service images and tags them as 'staging'
-build-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${MAKE} build
+.PHONY: push pull-ci create-stack-file
 
-TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
-# target: push-staging – Tags service images with version and 'latest'; and pushes them into registry
-push-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
+# target: push – Tags service images with version and 'latest'; and pushes them into registry
+push: .check-ci-env
+	export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_PREFIX}-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag itisfoundation/$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
-		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} push ${DOCKER_IMAGE_PREFIX}/$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
 	done
 
-# target: pull-staging – pulls images tagged as 'staging' from registry
-pull-staging:
+# target: pull-ci – pulls images tagged as '${IMAGE_TYPE}-latest' from registry
+pull-ci:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
+	export DOCKER_IMAGE_TAG=${IMAGE_TYPE}-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
-# target: create-staging-stack-file – use as 'make creat-staging-stack-file output_file=stack.yaml'
-create-staging-stack-file:
+# target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
+create-stack-file: .check-ci-env
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
+	export DOCKER_IMAGE_TAG=${IMAGE_TYPE}-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
 
+.check-ci-env:
+ifndef DOCKER_IMAGE_PREFIX
+	$(error DOCKER_IMAGE_PREFIX variable is undefined)
+endif
+ifndef DOCKER_IMAGE_TAG_PREFIX
+	$(error DOCKER_IMAGE_TAG_PREFIX variable is undefined)
+endif
 
 ## -------------------------------
 # Tools
