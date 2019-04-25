@@ -55,6 +55,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
   members: {
     __savedWidth: null,
+    __savedMinWidth: null,
     /**
      * Add a widget at the specified index. If the index already has a child, then replace it.
      *
@@ -82,9 +83,14 @@ qx.Class.define("qxapp.desktop.SidePanel", {
       this.__setDecorators("sidepanel");
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
       if (collapsed) {
+        // Save widths
         this.__savedWidth = this.__getCssWidth();
+        this.__savedMinWidth = this.__getSplitpaneContainer().getMinWidth();
+        this.__getSplitpaneContainer().setMinWidth(0);
         this.__getSplitpaneContainer().setWidth(20);
       } else {
+        // Restore widths
+        this.__getSplitpaneContainer().setMinWidth(this.__savedMinWidth);
         this.__getSplitpaneContainer().setWidth(this.__savedWidth);
       }
       // Workaround: have to update splitpane's prop

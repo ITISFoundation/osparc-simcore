@@ -111,7 +111,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
+        collapsed: true
+      }), 1);
 
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
@@ -365,7 +367,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget).set({
+        collapsed: true
+      }), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -378,7 +382,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         height: 300
       });
       container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container).set({
+        collapsed: true
+      }), 1);
     },
 
     getLogger: function() {
