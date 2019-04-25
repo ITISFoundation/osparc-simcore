@@ -28,7 +28,6 @@ before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip freeze
-        make build
         docker images
     fi
 }
