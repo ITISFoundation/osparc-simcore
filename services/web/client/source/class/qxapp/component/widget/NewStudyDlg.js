@@ -16,9 +16,9 @@
 ************************************************************************ */
 
 /**
- * Widget that provides the form for creating a new project
+ * Widget that provides the form for creating a new study
  *
- * After doing some Project title validation the following data event is fired:
+ * After doing some Study title validation the following data event is fired:
  * <pre class='javascript'>
  *   {
  *     prjTitle: title,
@@ -32,12 +32,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
- *   this.getRoot().add(newProjectDlg);
+ *   let newStudyDlg = new qxapp.component.widget.NewStudyDlg();
+ *   this.getRoot().add(newStudyDlg);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NewProjectDlg", {
+qx.Class.define("qxapp.component.widget.NewStudyDlg", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -50,27 +50,27 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
   },
 
   events: {
-    "createPrj": "qx.event.type.Data"
+    "createStudy": "qx.event.type.Data"
   },
 
   members: {
     __createForm: function() {
       let prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      let projectTitle = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Project Title")
+      let studyTitle = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Study Title")
       });
       this.addListener("appear", () => {
-        projectTitle.activate();
-        projectTitle.focus();
+        studyTitle.activate();
+        studyTitle.focus();
       });
-      prjFormLayout.add(projectTitle);
+      prjFormLayout.add(studyTitle);
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
       let description = new qx.ui.form.TextArea().set({
         minHeight: 150,
-        placeholder: this.tr("Describe your project...")
+        placeholder: this.tr("Describe your study...")
       });
       prjFormLayout.add(description, {
         flex: 1
@@ -81,7 +81,7 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
       let templatesList = new qx.ui.form.List().set({
         minHeight: 200
       });
-      let blankItem = new qx.ui.form.ListItem(this.tr("Blank Project"));
+      let blankItem = new qx.ui.form.ListItem(this.tr("Blank Study"));
       templatesList.add(blankItem);
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
@@ -140,22 +140,22 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
       // create the form manager
       let manager = new qx.ui.form.validation.Manager();
       // create a async validator function
-      let projectTitleValidator = new qx.ui.form.validation.AsyncValidator(
+      let studyTitleValidator = new qx.ui.form.validation.AsyncValidator(
         function(validator, value) {
           if (value === null || value.length === 0) {
-            validator.setValid(false, "Project title is required");
+            validator.setValid(false, "Study title is required");
           } else {
             validator.setValid(true);
           }
         }
       );
-      manager.add(projectTitle, projectTitleValidator);
+      manager.add(studyTitle, studyTitleValidator);
 
       manager.addListener("complete", function() {
         if (!manager.getValid()) {
           return;
         }
-        const title = projectTitle.getValue();
+        const title = studyTitle.getValue();
         const desc = description.getValue();
         const sele = templatesList.getSelection();
         let templ = "";
@@ -167,7 +167,7 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
           prjDescription: desc,
           prjTemplate: templ
         };
-        this.fireDataEvent("createPrj", data);
+        this.fireDataEvent("createStudy", data);
       }, this);
 
       let createBtn = new qx.ui.form.Button(this.tr("Create"));

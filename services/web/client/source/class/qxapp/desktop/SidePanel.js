@@ -17,7 +17,7 @@
 
 /**
  * Widget containing a Vertical Box with widgets.
- * Used for the side panel in the project editor.
+ * Used for the side panel in the study editor.
  *
  * *Example*
  *

@@ -22,10 +22,10 @@
  * - NavigationBar
  * - Main View (Stack).
  *   - Dashboard (Stack):
- *     - PrjBrowser
+ *     - StudyBrowser
  *     - ServiceBrowser
  *     - DataManager
- *   - PrjEditor
+ *   - StudyEditor
  *
  * <pre class='javascript'>
  *   let layoutManager = new qxapp.desktop.LayoutManager();
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __navBar: null,
     __prjStack: null,
     __dashboard: null,
-    __prjEditor: null,
+    __studyEditor: null,
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar().set({
@@ -66,16 +66,16 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       });
 
       navBar.addListener("dashboardPressed", () => {
-        if (this.__prjEditor) {
-          this.__prjEditor.updateProjectDocument();
+        if (this.__studyEditor) {
+          this.__studyEditor.updateStudyDocument();
         }
         this.__showDashboard();
       }, this);
 
       navBar.addListener("nodeDoubleClicked", e => {
-        if (this.__prjEditor) {
+        if (this.__studyEditor) {
           let nodeId = e.getData();
-          this.__prjEditor.nodeSelected(nodeId, true);
+          this.__studyEditor.nodeSelected(nodeId, true);
         }
       }, this);
       return navBar;
@@ -85,9 +85,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       let prjStack = new qx.ui.container.Stack();
 
       let dashboard = this.__dashboard = new qxapp.desktop.Dashboard();
-      dashboard.getPrjBrowser().addListener("startProject", e => {
-        const projectEditor = e.getData();
-        this.__showProjectEditor(projectEditor);
+      dashboard.getStudyBrowser().addListener("startStudy", e => {
+        const studyEditor = e.getData();
+        this.__showStudyEditor(studyEditor);
       }, this);
       prjStack.add(dashboard);
 
@@ -96,34 +96,34 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     __showDashboard: function() {
       this.__prjStack.setSelection([this.__dashboard]);
-      this.__dashboard.getPrjBrowser().reloadUserProjects();
+      this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setPathButtons([]);
-      if (this.__prjEditor) {
-        this.__prjEditor.destruct();
+      if (this.__studyEditor) {
+        this.__studyEditor.destruct();
       }
     },
 
-    __showProjectEditor: function(projectEditor) {
-      if (this.__prjEditor) {
-        this.__prjStack.remove(this.__prjEditor);
+    __showStudyEditor: function(studyEditor) {
+      if (this.__studyEditor) {
+        this.__prjStack.remove(this.__studyEditor);
       }
 
-      this.__prjEditor = projectEditor;
-      let project = projectEditor.getProject();
-      this.__prjStack.add(this.__prjEditor);
-      this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setProject(project);
-      this.__navBar.setPathButtons(project.getWorkbench().getPathIds("root"));
+      this.__studyEditor = studyEditor;
+      let study = studyEditor.getStudy();
+      this.__prjStack.add(this.__studyEditor);
+      this.__prjStack.setSelection([this.__studyEditor]);
+      this.__navBar.setStudy(study);
+      this.__navBar.setPathButtons(study.getWorkbench().getPathIds("root"));
 
-      this.__prjEditor.addListener("changeMainViewCaption", ev => {
+      this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();
         this.__navBar.setPathButtons(elements);
       }, this);
 
-      this.__prjEditor.addListener("projectSaved", ev => {
+      this.__studyEditor.addListener("studySaved", ev => {
         const wasSaved = ev.getData();
         if (wasSaved) {
-          this.__navBar.projectSaved();
+          this.__navBar.studySaved();
         }
       }, this);
     }

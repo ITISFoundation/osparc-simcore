@@ -21,7 +21,7 @@
  * It takes care of creating, storing and managing nodes and links.
  *
  *                                    -> {NODES}
- * PROJECT -> METADATA + WORKBENCH ->|
+ * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
  * *Example*
@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   project.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
+ *   study.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
  * </pre>
  */
 
@@ -37,22 +37,22 @@ qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 
   /**
-    * @param prjName {String} uuid if the link. If not provided, a random one will be assigned
+    * @param studyName {String} uuid if the link. If not provided, a random one will be assigned
     * @param wbData {String} uuid of the node where the link comes from
   */
-  construct: function(prjName, wbData) {
+  construct: function(studyName, wbData) {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
     this.__links = {};
 
-    this.setProjectName(prjName);
+    this.setStudyName(studyName);
     this.__createNodes(wbData);
     this.__createLinks(wbData);
   },
 
   properties: {
-    projectName: {
+    studyName: {
       check: "String",
       nullable: false
     }

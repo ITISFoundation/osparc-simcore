@@ -19,7 +19,7 @@
 
 /**
  * Widget containing a Vertical Box with a MainView and ControlsBar.
- * Used as Main View in the project editor.
+ * Used as Main View in the study editor.
  *
  * *Example*
  *

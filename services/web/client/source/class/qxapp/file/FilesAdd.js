@@ -27,7 +27,7 @@
  * and start the file transimision via XMLHttpRequest. If the uplaod is successful, "fileAdded" data event will
  * be fired.
  *
- *   This class also accepts a Node and ProjectID that are used for putting the file in the correct folder strucutre.
+ *   This class also accepts a Node and StudyID that are used for putting the file in the correct folder strucutre.
  * If are not provided, random uuids will be used.
  *
  * *Example*
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
       nullable: true
     },
 
-    projectId: {
+    studyId: {
       check: "String",
       init: "",
       nullable: true
@@ -124,10 +124,10 @@ qx.Class.define("qxapp.file.FilesAdd", {
       }, this);
       const download = false;
       const locationId = 0;
-      const projectId = this.getProjectId() || qxapp.utils.Utils.uuidv4();
+      const studyId = this.getStudyId() || qxapp.utils.Utils.uuidv4();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : qxapp.utils.Utils.uuidv4();
       const fileId = file.name;
-      const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
+      const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
     },
 

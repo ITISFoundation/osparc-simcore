@@ -19,7 +19,7 @@
  * Class that stores Link data.
  *
  *                                    -> {NODES}
- * PROJECT -> METADATA + WORKBENCH ->|
+ * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
  * *Example*

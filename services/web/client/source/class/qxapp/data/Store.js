@@ -49,19 +49,6 @@ qx.Class.define("qxapp.data.Store", {
     "deleteFile": "qx.event.type.Event"
   },
 
-  statics: {
-    /**
-     * Represents an empty project descriptor
-    */
-    NEW_PROJECT_DESCRIPTOR: qx.data.marshal.Json.createModel({
-      name: "New Project",
-      description: "Empty",
-      thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
-      lastChangeDate: new Date(),
-      projectId: qxapp.utils.Utils.uuidv4()
-    })
-  },
-
   members: {
     __reloadingServices: null,
     __servicesCached: null,

@@ -22,7 +22,7 @@
  * fill in all the information.
  *
  *                                    -> {NODES}
- * PROJECT -> METADATA + WORKBENCH ->|
+ * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
  * *Example*
