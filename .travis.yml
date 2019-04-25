@@ -183,7 +183,7 @@ jobs:
           branch: master
 
 
-    # integrate webserver in swarm -------------------------------------------------------------
+    # integrate webserver in swarm -------------------------------------------------------------      
     - stage: integration testing
       name: webserver in swarm
       language: python
@@ -201,6 +201,24 @@ jobs:
         - bash ops/travis/integration-testing/webserver script
       after_success:
         - bash ops/travis/integration-testing/webserver after_success
+    # integrate webserver in swarm -------------------------------------------------------------      
+    - stage: integration testing
+      name: simcore-sdk in swarm
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/integration-testing/simcore-sdk.sh before_install
+      install:
+        - bash ops/travis/integration-testing/simcore-sdk.sh install
+      before_script:
+        - bash ops/travis/integration-testing/simcore-sdk.sh before_script
+      script:
+        - bash ops/travis/integration-testing/simcore-sdk.sh script
+      after_success:
+        - bash ops/travis/integration-testing/simcore-sdk.sh after_success
 
     - stage: system testing, staging
       sudo: required

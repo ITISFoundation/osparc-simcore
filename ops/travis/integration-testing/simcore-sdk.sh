@@ -1,9 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
 
-# die on non 0 exit code
-set -e
 
-FOLDER_CHECKS=(packages/ simcore-sdk)
+FOLDER_CHECKS=(packages/ simcore-sdk storage/)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
@@ -36,11 +36,9 @@ before_script() {
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=pytest_docker --cov-append -v packages/pytest_docker/tests
-        pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
-        pytest --cov=servicelib --cov-append -v packages/service-library/tests
+        pytest --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
     else
-        echo "No changes detected. Skipping unit-testing of simcore-sdk."
+        echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi
 }
 
