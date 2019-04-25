@@ -64,11 +64,14 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this._add(logo);
     this._add(new qx.ui.toolbar.Separator());
 
-    let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
+    let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({
+      rich: true
+    });
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", () => {
       this.fireEvent("dashboardPressed");
     }, this);
+    this.__highlightDashboard();
     this._add(dashboardBtn);
 
     this._add(new qx.ui.toolbar.Separator());
@@ -114,13 +117,18 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   members: {
+    __dashboardBtn: null,
     __mainViewCaptionLayout: null,
 
     setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      if (nodeIds.length === 0) {
+        this.__highlightDashboard(true);
+      }
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
+          rich: true,
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
         const nodeId = nodeIds[i];
@@ -144,7 +152,16 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           });
           this.__mainViewCaptionLayout.add(mainViewCaption);
         }
+        if (i === nodeIds.length-1) {
+          this.__highlightDashboard(false);
+          btn.setLabel("<b>" + btn.getLabel() + "</b>");
+        }
       }
+    },
+
+    __highlightDashboard: function(highlight = true) {
+      const label = this.tr("Dashboard");
+      highlight ? this.__dashboardBtn.setLabel("<b>"+label+"</b>") : this.__dashboardBtn.setLabel(label);
     },
 
     projectSaved: function() {
@@ -161,17 +178,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       }
     },
 
-    __showMainViewCaptionAsText: function(newLabel) {
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      this.__mainViewCaptionLayout.add(mainViewCaption);
-    },
-
     __createUserBtn: function() {
-      var menu = new qx.ui.menu.Menu();
+      const menu = new qx.ui.menu.Menu();
 
       // Account Settings
       // ---
@@ -181,27 +189,30 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button(this.tr("Preferences"));
+      const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
-      let logout = new qx.ui.menu.Button(this.tr("Logout"));
+      const logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
-        let app = qx.core.Init.getApplication();
+        const app = qx.core.Init.getApplication();
         app.logout();
       });
 
       menu.add(preferences);
       menu.addSeparator();
-      let helpBtn = new qx.ui.menu.Button(this.tr("Help"));
+      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
+      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
+      menu.add(newIssueBtn);
+      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
       menu.add(helpBtn);
-      let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
+      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
       menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
 
-      let btn = new qx.ui.form.MenuButton(null, null, menu);
+      const btn = new qx.ui.form.MenuButton(null, null, menu);
       return btn;
     },
 
@@ -215,6 +226,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         win.center();
         win.open();
       }
+    },
+
+    __onOpenNewIssueV0: function() {
+      const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
+      window.open(url);
     }
   }
 });

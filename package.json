@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "linter": "./node_modules/.bin/eslint ./services/*/client/source/class/*/"
+    "linter": "npx eslint ./services/*/client/source/class/*/"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

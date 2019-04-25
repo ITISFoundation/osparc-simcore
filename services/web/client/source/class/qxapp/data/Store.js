@@ -82,8 +82,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     arePortsCompatible: function(port1, port2) {
-      const arePortsCompatible = this.__matchPortType(port1.type, port2.type);
-      return arePortsCompatible;
+      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
     },
 
     getNodeMetaData: function(key, version) {
@@ -1164,19 +1163,16 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/comp/itis/sleeper": {
           "category": "Solver"
         },
-        "simcore/services/comp/kember/cardiac": {
+        "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-2d-cardiac-model": {
           "category": "Solver"
         },
         "simcore/services/comp/kember-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-oned": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-singlecell": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis/cardiac-twod": {
           "category": "Solver"
         },
         "simcore/services/demodec/computational/itis/Solver-LF": {
