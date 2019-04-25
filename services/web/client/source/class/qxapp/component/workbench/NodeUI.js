@@ -36,10 +36,12 @@ const portHeight = 16;
 
 qx.Class.define("qxapp.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
+  include: qxapp.component.filter.MFilterable,
+  implement: qxapp.component.filter.IFilterable,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
-  */
+   * @param node {qxapp.data.model.Node} Node owning the widget
+   */
   construct: function(node) {
     this.base();
 
@@ -60,6 +62,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     this.setNode(node);
 
     this.__createNodeLayout();
+
+    this._subscribeToFilterGroup("workbench");
   },
 
   properties: {
@@ -250,6 +254,43 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         height: 100
       });
       this.addAt(this.__thumbnail, 0);
+    },
+
+    _filter: function() {
+      this.setOpacity(0.4);
+    },
+
+    _unfilter: function() {
+      this.setOpacity(1);
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        const label = this.getNode().getLabel()
+          .trim()
+          .toLowerCase();
+        if (label.indexOf(data.text) === -1) {
+          return true;
+        }
+      }
+      if (data.tags && data.tags.length) {
+        const category = this.getMetaData().category || "";
+        const type = this.getMetaData().type || "";
+        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      if (data.tags && data.tags.length) {
+        return true;
+      }
+      return false;
     }
   }
 });
