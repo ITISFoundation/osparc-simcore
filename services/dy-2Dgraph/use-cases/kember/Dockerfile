@@ -19,10 +19,11 @@ ARG NOTEBOOK_NAME
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # -----------------------------------------------------------------------------
 FROM common AS development
-VOLUME /packages
+VOLUME /home/jovyan/packages
+VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
 VOLUME /home/jovyan/devel-config
-VOLUME /home/jovyan/notebook
+VOLUME /home/jovyan/notebooks
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"
 ENV INIT_OPTIONS="100 6000 20 space"
 ENV CREATE_DUMMY_TABLE=1
@@ -34,5 +35,5 @@ FROM common AS production
 # set of arguments to copy the right notebook
 ARG NOTEBOOK_NAME
 # copy the notebook in the image
-COPY --chown=jovyan:users kember/${NOTEBOOK_NAME} ${NOTEBOOK_NAME}
+COPY --chown=jovyan:users kember/notebooks/${NOTEBOOK_NAME} ${NOTEBOOK_NAME}
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

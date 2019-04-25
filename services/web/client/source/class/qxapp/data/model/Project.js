@@ -36,28 +36,25 @@ qx.Class.define("qxapp.data.model.Project", {
   extend: qx.core.Object,
 
   /**
-    * @param prjData {String} uuid if the link. If not provided, a random one will be assigned
-  */
+    * @param prjData {Object} Object containing the serialized Project Data
+    */
   construct: function(prjData) {
     this.base(arguments);
 
     this.set({
-      uuid: prjData.uuid || this.getUuid(),
-      name: prjData.name || this.getName(),
-      description: prjData.description || this.getDescription(),
-      notes: prjData.notes || this.getNotes(),
-      thumbnail: prjData.thumbnail || this.getThumbnail(),
-      prjOwner: prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
-      collaborators: prjData.collaborators || this.getCollaborators(),
-      creationDate: prjData.creationDate ? new Date(prjData.creationDate) : this.getCreationDate(),
-      lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate()
+      uuid: prjData.uuid === undefined ? this.getUuid() : prjData.uuid,
+      name: prjData.name === undefined ? this.getName() : prjData.name,
+      description: prjData.description === undefined ? this.getDescription() : prjData.description,
+      notes: prjData.notes === undefined ? this.getNotes() : prjData.notes,
+      thumbnail: prjData.thumbnail === undefined ? this.getThumbnail() : prjData.thumbnail,
+      prjOwner: prjData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : prjData.prjOwner,
+      collaborators: prjData.collaborators === undefined ? this.getCollaborators() : prjData.collaborators,
+      creationDate: prjData.creationDate === undefined ? this.getCreationDate() : new Date(prjData.creationDate),
+      lastChangeDate: prjData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(prjData.lastChangeDate)
     });
 
-    if (prjData && prjData.workbench) {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
-    } else {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), {}));
-    }
+    const wbData = prjData.workbench === undefined ? {} : prjData.workbench;
+    this.setWorkbench(new qxapp.data.model.Workbench(this, wbData));
   },
 
   properties: {
