@@ -43,17 +43,11 @@ DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-case
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
 
 
-VCS_URL:=$(shell git config --get remote.origin.url)
-VCS_REF:=$(shell git rev-parse --short HEAD)
-VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
-export VCS_URL
-export VCS_REF
-export VCS_REF_CLIENT
-export VCS_STATUS_CLIENT
-
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export BUILD_DATE
+export VCS_URL:=$(shell git config --get remote.origin.url)
+export VCS_REF:=$(shell git rev-parse --short HEAD)
+export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
+export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 
 ## Tools ------------------------------------------------------------------------------------------------------
