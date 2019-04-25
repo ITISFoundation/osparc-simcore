@@ -1,4 +1,5 @@
 #!/bin/bash
+# as of http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -euo pipefail
 IFS=$'\n\t'
 # these variable must be available securely from travis

@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+IFS=$'\n\t'
+
 uname -a
 lsb_release -a
 
