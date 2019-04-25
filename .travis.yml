@@ -153,10 +153,10 @@ jobs:
         apt:
           packages:
             - libgconf-2-4
-      cache:
-        directories:
-          - .npm
-          - "node_modules"
+#      cache:
+#        directories:
+#          - .npm
+#          - services/web/client/node_modules
       before_install:
         - bash ops/travis/unit-testing/frontend before_install
       install:
