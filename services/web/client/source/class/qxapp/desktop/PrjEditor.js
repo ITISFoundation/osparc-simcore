@@ -312,6 +312,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __removeNode: function(nodeId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+        return;
+      }
+
       if (nodeId === this.__currentNodeId) {
         return;
       }

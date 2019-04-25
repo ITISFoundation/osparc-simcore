@@ -146,6 +146,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __newPrjBtnClkd: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create")) {
+        return;
+      }
+
       if (this.__creatingNewStudy) {
         return;
       }

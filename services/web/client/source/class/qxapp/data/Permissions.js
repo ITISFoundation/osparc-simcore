@@ -87,7 +87,7 @@ qx.Class.define("qxapp.data.Permissions", {
       return {
         "anonymous": [
           "studies.templates.read",
-          "services.read",
+          "services.filtered.read",
           "study.node.data.pull",
           "study.start",
           "study.stop",
@@ -108,7 +108,9 @@ qx.Class.define("qxapp.data.Permissions", {
           "study.edge.create",
           "study.edge.delete"
         ],
-        "tester": [],
+        "tester": [
+          "services.all.read"
+        ],
         "moderator": [],
         "admin": []
       };

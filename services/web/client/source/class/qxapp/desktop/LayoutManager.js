@@ -66,6 +66,10 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       });
 
       navBar.addListener("dashboardPressed", () => {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.user.create", true)) {
+          return;
+        }
+
         if (this.__prjEditor) {
           this.__prjEditor.updateProjectDocument();
         }

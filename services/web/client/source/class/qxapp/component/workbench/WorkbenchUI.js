@@ -202,6 +202,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         height: BUTTON_SIZE
       });
       unlinkBtn.addListener("execute", function() {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
+          return;
+        }
+
         if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
           this.__removeLink(this.__getLinkUI(this.__selectedItemId));
           this.__selectedItemId = null;
@@ -235,6 +239,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return;
+      }
+
       const data = e.getData();
       const service = data.service;
       let nodeAId = data.contextNodeId;
@@ -324,6 +332,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
+        return null;
+      }
+
       let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
       if (this.__linkRepresetationExists(link)) {
         return null;
