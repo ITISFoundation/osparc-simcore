@@ -111,7 +111,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
+        collapsed: true
+      }), 1);
 
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
@@ -190,7 +192,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       ].forEach(wb => {
         wb.addListener("nodeDoubleClicked", e => {
           let nodeId = e.getData();
-          this.nodeSelected(nodeId);
+          this.nodeSelected(nodeId, true);
         }, this);
       });
 
@@ -207,7 +209,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
     },
 
-    nodeSelected: function(nodeId) {
+    nodeSelected: function(nodeId, openNodeAndParents = false) {
       if (!nodeId) {
         return;
       }
@@ -229,7 +231,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       this.__switchExtraView(nodeId);
 
-      this.__treeView.nodeSelected(nodeId);
+      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
     },
 
     __getWidgetForNode: function(nodeId) {
@@ -365,7 +367,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget).set({
+        collapsed: true
+      }), 1);
     },
 
     showScreenshotInExtraView: function(name) {
@@ -378,7 +382,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         height: 300
       });
       container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container), 1);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container).set({
+        collapsed: true
+      }), 1);
     },
 
     getLogger: function() {

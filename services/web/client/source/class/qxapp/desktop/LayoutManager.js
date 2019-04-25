@@ -75,7 +75,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       navBar.addListener("nodeDoubleClicked", e => {
         if (this.__prjEditor) {
           let nodeId = e.getData();
-          this.__prjEditor.nodeSelected(nodeId);
+          this.__prjEditor.nodeSelected(nodeId, true);
         }
       }, this);
       return navBar;

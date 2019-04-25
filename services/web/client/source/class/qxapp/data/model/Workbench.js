@@ -165,7 +165,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
     },
 
-    createNode: function(key, version, uuid, nodeData, parent) {
+    createNode: function(key, version, uuid, parent, populateNodeData) {
       let existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
@@ -177,8 +177,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
       node.addListener("updatePipeline", e => {
         this.fireDataEvent("updatePipeline", e.getData());
       }, this);
-      if (nodeData) {
-        node.populateNodeData(nodeData);
+      if (populateNodeData) {
+        node.populateNodeData();
+        node.giveUniqueName();
       }
       this.addNode(node, parent);
 
@@ -188,10 +189,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
     cloneNode: function(nodeToClone) {
       const key = nodeToClone.getKey();
       const version = nodeToClone.getVersion();
-      const uuid = null;
       const parentNode = this.getNode(nodeToClone.getParentNodeId());
-      let node = this.createNode(key, version, uuid, null, parentNode);
-      node.populateNodeData(null);
+      let node = this.createNode(key, version, null, parentNode, true);
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
@@ -228,10 +227,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
         }
         if (nodeData.key) {
           // not container
-          this.createNode(nodeData.key, nodeData.version, nodeId, null, parentNode);
+          this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
         } else {
           // container
-          this.createNode(null, null, nodeId, nodeData, parentNode);
+          this.createNode(null, null, nodeId, parentNode, false);
         }
       }
 
@@ -240,6 +239,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
         this.getNode(nodeId).populateNodeData(nodeData);
+      }
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        this.getNode(nodeId).giveUniqueName();
       }
     },
 
