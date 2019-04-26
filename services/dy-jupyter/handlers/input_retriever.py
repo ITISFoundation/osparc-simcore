@@ -32,7 +32,7 @@ def _compress_files_in_folder(folder: Path, one_file_not_compress: bool = True) 
     for _file in list_files:
         with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
             for file_path in list_files:
-                tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
+                tar_ptr.add(str(file_path), arcname=file_path.name, recursive=False)
     return Path(temp_file.name)
 
 def _no_relative_path_tar(members: tarfile.TarFile):
@@ -55,7 +55,7 @@ def _no_relative_path_zip(members: zipfile.ZipFile):
         if path.match("/../"):
             # relative paths are not allowed
             continue
-        yield zipinfo
+        yield zipinfo.filename
 
 async def download_data():
     logger.info("retrieving data from simcore...")
@@ -83,7 +83,7 @@ async def download_data():
             # check if value is a compressed file
             if tarfile.is_tarfile(value):
                 with tarfile.open(value) as tar_file:
-                    tar_file.extractall(dest_path, members=_no_relative_path_tar(tar_file))
+                    tar_file.extractall(dest_path, members=list(_no_relative_path_tar(tar_file)))
             elif zipfile.is_zipfile(value):
                 with zipfile.ZipFile(value) as zip_file:
                     zip_file.extractall(dest_path, members=_no_relative_path_zip(zip_file))
@@ -115,7 +115,7 @@ async def upload_data():
                 for _file in list_files:
                     with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
                         for file_path in list_files:
-                            tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
+                            tar_ptr.add(str(file_path), arcname=file_path.name, recursive=False)
                 try:
                     await port.set(temp_file.name)
                 finally:

@@ -1,5 +1,13 @@
 #!/bin/bash
 
+set -e
+
+# BOOTING application ---------------------------------------------
+echo "Booting application ..."
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
+
+
 if test "${CREATE_DUMMY_TABLE}" = "1"
 then
     pip install -r /home/jovyan/devel/requirements.txt
@@ -12,14 +20,9 @@ then
     echo "Received result pipeline id of ${array[0]}";
     echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
+    export SIMCORE_PROJECT_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
-jupyter trust ${NOTEBOOK_URL}
-start-notebook.sh \
-    --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
-    --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
-    --NotebookApp.notebook_dir='/home/jovyan/notebooks' \
-    --NotebookApp.token='' \
-    --NotebookApp.nbserver_extensions="{'input_retriever':True}"
-    # --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL} #uncomment this to start the notebook right away in that notebook
+# start the notebook now
+/docker/boot_notebook.sh

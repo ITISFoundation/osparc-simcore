@@ -24,23 +24,27 @@ async def get_service_details(service_key: str, service_version: str) -> List[Di
 
 async def retrieve_list_of_images_in_repo(repository_name: str):
     request_result = await __registry_request(repository_name + '/tags/list')
-    _logger.info("retrieved list of images in %s: %s",repository_name, request_result)
+    _logger.debug("retrieved list of images in %s: %s",repository_name, request_result)
     return request_result
 
 async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
     image_labels = await retrieve_labels_of_image(service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
-        dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
-        for dependency in dependencies:
-            dependency_keys.append({"key":dependency['key'], "tag":dependency['tag']})
+        try:
+            dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
+            for dependency in dependencies:
+                dependency_keys.append({"key":dependency['key'], "tag":dependency['tag']})
+        except json.decoder.JSONDecodeError:
+            logging.exception("Incorrect json formatting in %s, skipping...", image_labels[DEPENDENCIES_LABEL_KEY])
+
     return dependency_keys
 
 async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
     request_result = await __registry_request(image + '/manifests/' + tag)
     labels = json.loads(request_result["history"][0]["v1Compatibility"])[
         "container_config"]["Labels"]
-    _logger.info("retrieved labels of image %s:%s: %s", image, tag, request_result)
+    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
 def get_service_first_name(repository_name: str) -> str:
@@ -51,7 +55,7 @@ def get_service_first_name(repository_name: str) -> str:
     else:
         return "invalid service"
 
-    _logger.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
+    _logger.debug("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
     return service_name_suffixes.split('/')[0]
 
 def get_service_last_names(repository_name: str) -> str:
@@ -62,7 +66,7 @@ def get_service_last_names(repository_name: str) -> str:
     else:
         return "invalid service"
     service_last_name = str(service_name_suffixes).replace("/", "_")
-    _logger.info("retrieved service last name from repo %s : %s", repository_name, service_last_name)
+    _logger.debug("retrieved service last name from repo %s : %s", repository_name, service_last_name)
     return service_last_name
 
 async def __registry_request(path: str, method: str ="GET") -> str:
@@ -97,7 +101,7 @@ async def __registry_request(path: str, method: str ="GET") -> str:
 async def __retrieve_list_of_repositories() -> List[str]:
     result_json = await __registry_request('_catalog')
     result_json = result_json['repositories']
-    _logger.info("retrieved list of repos: %s", result_json)
+    _logger.debug("retrieved list of repos: %s", result_json)
     return result_json
 
 async def __get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
@@ -107,9 +111,15 @@ async def __get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
     if labels:
         for key in labels.keys():
             if key.startswith("io.simcore."):
-                label_data = json.loads(labels[key])
-                for label_key in label_data.keys():
-                    image_tags[label_key] = label_data[label_key]
+                try:
+                    label_data = json.loads(labels[key])
+                    for label_key in label_data.keys():
+                        image_tags[label_key] = label_data[label_key]
+                except json.decoder.JSONDecodeError:
+                    logging.exception("Error while decoding json formatted data from %s:%s", repo_key, repo_tag)
+                    # silently skip this repo
+                    return {}
+
     return image_tags
 
 async def __get_repo_details(repo: str) -> List[Dict]:
@@ -128,11 +138,11 @@ async def __get_repo_details(repo: str) -> List[Dict]:
     return current_repo
 
 async def __list_services(service_prefix: str) -> List[List[Dict]]:
-    _logger.info("getting list of computational services")
+    _logger.debug("getting list of computational services")
     list_all_repos = await __retrieve_list_of_repositories()
     # get the services repos
     list_of_specific_repos = [repo for repo in list_all_repos if str(repo).startswith(service_prefix)]
-    _logger.info("retrieved list of computational repos : %s", list_of_specific_repos)
+    _logger.debug("retrieved list of computational repos : %s", list_of_specific_repos)
     repositories = []
     # or each repo get all tags details
     for repo in list_of_specific_repos:

@@ -11,6 +11,17 @@ async def test_list_no_services_available(docker_registry, configure_registry_ac
     interactive_services = await registry_proxy.list_interactive_services()
     assert (not interactive_services)
 
+async def test_list_services_with_bad_json_formatting(docker_registry, configure_registry_access, configure_schemas_location, push_services):
+    # some services
+    created_services = push_services(number_of_computational_services=3,
+                                    number_of_interactive_services=2,
+                                    bad_json_format=True)
+    assert len(created_services) == 5
+    computational_services = await registry_proxy.list_computational_services()
+    assert (not computational_services) # it's empty
+    interactive_services = await registry_proxy.list_interactive_services()
+    assert (not interactive_services)
+
 
 async def test_list_computational_services(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     push_services( number_of_computational_services=6,

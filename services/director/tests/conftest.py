@@ -66,3 +66,7 @@ def configure_registry_access(docker_registry):
 @pytest.fixture
 def user_id():
     yield "some_user_id"
+
+@pytest.fixture
+def project_id():
+    yield "some_project_id"

@@ -4,12 +4,12 @@
 # also cgi scripts are run as www-data user in Ubuntu (from apache2 specs), meaning the env
 # variables must be available to all users.
 
-# to this end one needs to modify /etc/environment to define system wide variables using the 
+# to this end one needs to modify /etc/environment to define system wide variables using the
 # docker defined variables (which are user variables)
 
 echo "setting up system-variables..."
 echo "export SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}" >> /etc/environment
-echo "export SIMCORE_PIPELINE_ID=${SIMCORE_PIPELINE_ID}" >> /etc/environment
+echo "export SIMCORE_PROJECT_ID=${SIMCORE_PROJECT_ID}" >> /etc/environment
 echo "export SIMCORE_USER_ID=${SIMCORE_USER_ID}" >> /etc/environment
 echo "export STORAGE_ENDPOINT=${STORAGE_ENDPOINT}" >> /etc/environment
 echo "export S3_ENDPOINT=${S3_ENDPOINT}" >> /etc/environment

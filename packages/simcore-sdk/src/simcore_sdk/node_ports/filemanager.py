@@ -27,7 +27,8 @@ def api_client():
         yield client
     except ApiException:
         log.exception(msg="connection to storage service failed")
-    del client.rest_client
+    finally:
+        del client.rest_client
 
 def _handle_api_exception(store_id:str, err: ApiException):
     if err.status > 399 and err.status < 500:
