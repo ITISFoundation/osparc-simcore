@@ -189,6 +189,21 @@ qx.Class.define("qxapp.utils.Utils", {
     },
 
     /**
+     * Function that takes an indefinite number of strings, and concatenates them capitalizing the first letter.
+     */
+    capitalize: function() {
+      let res = "";
+      for (let i=0; i<arguments.length; i++) {
+        if (typeof arguments[i] !== "string" && arguments[i] instanceof String === false) {
+          continue;
+        }
+        const capitalized = arguments[i].charAt(0).toUpperCase() + arguments[i].slice(1);
+        res = res.concat(capitalized);
+      }
+      return res;
+    },
+
+    /**
      * Copies the given text to the clipboard
      *
      * @param text {String} Text to be copied

@@ -22,6 +22,7 @@ USER $NB_USER
 ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
     SIMCORE_NODE_BASEPATH="" \
+    SIMCORE_NODE_APP_STATE_PATH="/home/jovyan/notebooks" \
     STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
@@ -31,6 +32,8 @@ ENV SIMCORE_NODE_UUID="-1" \
     POSTGRES_USER="-1" \
     POSTGRES_PASSWORD="-1" \
     POSTGRES_DB="-1"
+# specific notebook env
+ENV NOTEBOOK_TOKEN="simcore"
 # ----------------------------------------------------------------
 COPY --chown=jovyan:users scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
 # will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
@@ -73,7 +76,7 @@ COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
-COPY --chown=jovyan:users services/dy-jupyter/handlers/input_retriever.py /home/jovyan/handlers/input_retriever.py
+COPY --chown=jovyan:users services/dy-jupyter/handlers/* /home/jovyan/handlers/
 USER root
 RUN chown -R jovyan:users /home/jovyan/packages && \
     chown -R jovyan:users /home/jovyan/services
@@ -82,8 +85,8 @@ USER $NB_USER
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/s3wrapper && \
     pip install /home/jovyan/services/storage/client-sdk/python && \
-    pip install /home/jovyan/packages/simcore-sdk    
-# cleanup    
+    pip install /home/jovyan/packages/simcore-sdk
+# cleanup
 RUN rm -rf /home/jovyan/packages && \
     rm -rf /home/jovyan/services
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

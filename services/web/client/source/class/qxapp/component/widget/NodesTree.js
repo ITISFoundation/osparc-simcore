@@ -136,7 +136,8 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         decorator: "service-tree",
         openMode: "none",
-        contentPadding: 0
+        contentPadding: 0,
+        padding: 0
       });
       tree.addListener("dbltap", e => {
         const currentSelection = this.__getOneSelectedRow();

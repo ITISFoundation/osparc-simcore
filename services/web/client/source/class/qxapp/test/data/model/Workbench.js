@@ -29,9 +29,13 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       setUp: function() {
         console.debug("Setting up .. ");
         this.debug("Setting up ...");
-        const prjName = "testStudy";
+        const studyData = {
+          name: "Test Study",
+          description: ""
+        };
+        const prj = new qxapp.data.model.Project(studyData);
         const wbData = {};
-        this.__workbench = new qxapp.data.model.Workbench(prjName, wbData);
+        this.__workbench = new qxapp.data.model.Workbench(prj, wbData);
       },
 
       tearDown: function() {
