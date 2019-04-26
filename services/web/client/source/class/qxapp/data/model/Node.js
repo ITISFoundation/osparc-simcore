@@ -496,10 +496,10 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    // post link creation routine
-    edgeAdded: function(link) {
+    // post edge creation routine
+    edgeAdded: function(edge) {
       if (this.isInKey("dash-plot")) {
-        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];

@@ -18,7 +18,7 @@
 /**
  * Class that stores Workbench data.
  *
- * It takes care of creating, storing and managing nodes and links.
+ * It takes care of creating, storing and managing nodes and edges.
  *
  *                                    -> {EDGES}
  * STUDY -> METADATA + WORKBENCH ->|
@@ -104,7 +104,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (nodeId === "root" || nodeId === undefined) {
         return ["root"];
       }
-      let nodePath = [];
+      const nodePath = [];
       nodePath.unshift(nodeId);
       const node = this.getNode(nodeId);
       let parentNodeId = node.getParentNodeId();
@@ -120,14 +120,14 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     getConnectedEdges: function(nodeId) {
-      let connectedEdges = [];
-      const links = Object.values(this.__edges);
-      for (const link of links) {
-        if (link.getInputNodeId() === nodeId) {
-          connectedEdges.push(link.getEdgeId());
+      const connectedEdges = [];
+      const edges = Object.values(this.__edges);
+      for (const edge of edges) {
+        if (edge.getInputNodeId() === nodeId) {
+          connectedEdges.push(edge.getEdgeId());
         }
-        if (link.getOutputNodeId() === nodeId) {
-          connectedEdges.push(link.getEdgeId());
+        if (edge.getOutputNodeId() === nodeId) {
+          connectedEdges.push(edge.getEdgeId());
         }
       }
       return connectedEdges;
@@ -138,25 +138,25 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (exists) {
         return this.__edges[edgeId];
       }
-      const links = Object.values(this.__edges);
-      for (const link of links) {
-        if (link.getInputNodeId() === node1Id &&
-          link.getOutputNodeId() === node2Id) {
-          return link;
+      const edges = Object.values(this.__edges);
+      for (const edge of edges) {
+        if (edge.getInputNodeId() === node1Id &&
+          edge.getOutputNodeId() === node2Id) {
+          return edge;
         }
       }
       return null;
     },
 
-    createEdge: function(linkId, node1Id, node2Id) {
-      let existingEdge = this.getEdge(linkId, node1Id, node2Id);
+    createEdge: function(edgeId, node1Id, node2Id) {
+      const existingEdge = this.getEdge(edgeId, node1Id, node2Id);
       if (existingEdge) {
         return existingEdge;
       }
+      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
       if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
         return null;
       }
-      const edge = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation
@@ -176,7 +176,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     createNode: function(key, version, uuid, parent, populateNodeData) {
-      let existingNode = this.getNode(uuid);
+      const existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
       }
@@ -309,15 +309,15 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
     },
 
-    removeEdge: function(linkId) {
-      let link = this.getEdge(linkId);
-      if (link) {
-        const inputNodeId = link.getInputNodeId();
-        const outputNodeId = link.getOutputNodeId();
+    removeEdge: function(edgeId) {
+      const edge = this.getEdge(edgeId);
+      if (edge) {
+        const inputNodeId = edge.getInputNodeId();
+        const outputNodeId = edge.getOutputNodeId();
         let node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
-          delete this.__edges[linkId];
+          delete this.__edges[edgeId];
           return true;
         }
       }
