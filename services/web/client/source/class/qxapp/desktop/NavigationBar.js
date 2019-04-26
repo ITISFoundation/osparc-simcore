@@ -110,8 +110,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   properties: {
-    project: {
-      check: "qxapp.data.model.Project",
+    study: {
+      check: "qxapp.data.model.Study",
       nullable: true
     }
   },
@@ -133,9 +133,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         });
         const nodeId = nodeIds[i];
         if (nodeId === "root") {
-          this.getProject().bind("name", btn, "label");
+          this.getStudy().bind("name", btn, "label");
         } else {
-          const node = this.getProject().getWorkbench()
+          const node = this.getStudy().getWorkbench()
             .getNode(nodeId);
           if (node) {
             node.bind("label", btn, "label");
@@ -164,7 +164,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       highlight ? this.__dashboardBtn.setLabel("<b>"+label+"</b>") : this.__dashboardBtn.setLabel(label);
     },
 
-    projectSaved: function() {
+    studySaved: function() {
       for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
         let widget = this.__mainViewCaptionLayout.getChildren()[i];
         if (widget instanceof qx.ui.form.Button) {

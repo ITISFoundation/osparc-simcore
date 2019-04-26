@@ -97,7 +97,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       this.setOutputPort(null);
     },
 
-    getLinkPoint: function(port) {
+    getEdgePoint: function(port) {
       const nodeBounds = this.getCurrentBounds();
       if (nodeBounds === null) {
         // not rendered yet

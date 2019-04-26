@@ -63,7 +63,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
       dataManagerMainLayout.add(label);
 
-      let toDatCore = new qxapp.component.widget.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      let toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       dataManagerMainLayout.add(toDatCore);
 
       let dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
