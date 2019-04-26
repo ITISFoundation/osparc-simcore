@@ -308,9 +308,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
-    __createEdgeUI: function(node1Id, node2Id, linkId) {
-      let link = this.getWorkbench().createEdge(linkId, node1Id, node2Id);
-      if (this.__linkRepresetationExists(link)) {
+    __createEdgeUI: function(node1Id, node2Id, edgeId) {
+      const edge = this.getWorkbench().createEdge(edgeId, node1Id, node2Id);
+      if (this.__edgeRepresetationExists(edge)) {
         return null;
       }
 
@@ -330,27 +330,27 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+        const edgeRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-        let linkUI = new qxapp.component.workbench.EdgeUI(link, linkRepresentation);
-        this.__edgesUI.push(linkUI);
+        const edgeUI = new qxapp.component.workbench.EdgeUI(edge, edgeRepresentation);
+        this.__edgesUI.push(edgeUI);
 
-        linkUI.getRepresentation().node.addEventListener("click", e => {
+        edgeUI.getRepresentation().node.addEventListener("click", e => {
           // this is needed to get out of the context of svg
-          linkUI.fireDataEvent("linkSelected", linkUI.getEdgeId());
+          edgeUI.fireDataEvent("edgeSelected", edgeUI.getEdgeId());
           e.stopPropagation();
         }, this);
 
-        linkUI.addListener("linkSelected", e => {
-          this.__selectedItemChanged(linkUI.getEdgeId());
+        edgeUI.addListener("edgeSelected", e => {
+          this.__selectedItemChanged(edgeUI.getEdgeId());
         }, this);
 
-        return linkUI;
+        return edgeUI;
       }
       return null;
     },
 
-    __linkRepresetationExists: function(edge) {
+    __edgeRepresetationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];
         if (edgeUI.getEdge().getEdgeId() === edge.getEdgeId()) {
@@ -362,7 +362,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createDragDropMechanism: function(nodeUI) {
       const evType = "pointermove";
-      nodeUI.addListener("linkDragStart", e => {
+      nodeUI.addListener("edgeDragStart", e => {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
@@ -389,7 +389,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         );
       }, this);
 
-      nodeUI.addListener("linkDragOver", e => {
+      nodeUI.addListener("edgeDragOver", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -411,7 +411,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         }
       }, this);
 
-      nodeUI.addListener("linkDrop", e => {
+      nodeUI.addListener("edgeDrop", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -439,7 +439,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         }
       }, this);
 
-      nodeUI.addListener("linkDragEnd", e => {
+      nodeUI.addListener("edgeDragEnd", e => {
         let data = e.getData();
         let dragNodeId = data.nodeId;
 
