@@ -146,6 +146,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __newStudyBtnClkd: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create")) {
+        return;
+      }
       if (this.__creatingNewStudy) {
         return;
       }

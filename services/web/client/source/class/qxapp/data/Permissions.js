@@ -40,7 +40,14 @@ qx.Class.define("qxapp.data.Permissions", {
   type : "singleton",
 
   construct() {
-    this.addAction("tester", "test");
+    const initPermissions = this.__getInitPermissions();
+    for (const role in initPermissions) {
+      if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
+        initPermissions[role].forEach(action => {
+          this.addAction(role, action);
+        }, this);
+      }
+    }
   },
 
   events: {
@@ -75,6 +82,39 @@ qx.Class.define("qxapp.data.Permissions", {
 
   members: {
     __userRole: null,
+
+    __getInitPermissions: function() {
+      return {
+        "anonymous": [
+          "studies.templates.read",
+          "services.filtered.read",
+          "study.node.data.pull",
+          "study.start",
+          "study.stop",
+          "study.update"
+        ],
+        "user": [
+          "studies.user.read",
+          "studies.user.create",
+          "storage.datcore.read",
+          "preferences.token.create",
+          "preferences.token.delete",
+          "study.node.create",
+          "study.node.delete",
+          "study.node.rename",
+          "study.node.start",
+          "study.node.data.push",
+          "study.node.data.delete",
+          "study.edge.create",
+          "study.edge.delete"
+        ],
+        "tester": [
+          "services.all.read"
+        ],
+        "moderator": [],
+        "admin": []
+      };
+    },
 
     __nextAction: function() {
       let highestAction = 0.5;
@@ -116,11 +156,15 @@ qx.Class.define("qxapp.data.Permissions", {
       return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
     },
 
-    canDo: function(action) {
+    canDo: function(action, showMsg) {
+      let canDo = false;
       if (this.__userRole) {
-        return this.__canRoleDo(this.__userRole, action);
+        canDo = this.__canRoleDo(this.__userRole, action);
       }
-      return false;
+      if (showMsg && !canDo) {
+        qxapp.component.widget.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+      }
+      return canDo;
     },
 
     loadUserRoleFromBackend: function() {
