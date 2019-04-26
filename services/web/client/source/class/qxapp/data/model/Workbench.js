@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   study.setWorkbench(new qxapp.data.model.Workbench(study, prjData.workbench));
+ *   study.setWorkbench(new qxapp.data.model.Workbench(study, study.workbench));
  * </pre>
  */
 
