@@ -153,10 +153,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (existingEdge) {
         return existingEdge;
       }
-      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
-        return null;
-      }
-      const edge = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
+      let edge = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation
@@ -180,17 +177,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (existingNode) {
         return existingNode;
       }
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        return null;
-      }
-      const node = new qxapp.data.model.Node(this, key, version, uuid);
-      const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
-        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
-        for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
-        }
-      }
+      let node = new qxapp.data.model.Node(this, key, version, uuid);
       node.addListener("showInLogger", e => {
         this.fireDataEvent("showInLogger", e.getData());
       }, this);

@@ -125,7 +125,30 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
-        this.__removeEdge(edgeId);
+        const workbench = this.getStudy().getWorkbench();
+        const currentNode = workbench.getNode(this.__currentNodeId);
+        const edge = workbench.getEdge(edgeId);
+        let removed = false;
+        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+          let inputNode = workbench.getNode(edge.getInputNodeId());
+          inputNode.setIsOutputNode(false);
+
+          // Remove also dependencies from outter nodes
+          const cNodeId = inputNode.getNodeId();
+          const allNodes = workbench.getNodes(true);
+          for (const nodeId in allNodes) {
+            let node = allNodes[nodeId];
+            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+              workbench.removeEdge(edgeId);
+            }
+          }
+          removed = true;
+        } else {
+          removed = workbench.removeEdge(edgeId);
+        }
+        if (removed) {
+          this.__workbenchUI.clearEdge(edgeId);
+        }
       }, this);
       this.showInMainView(workbenchUI, "root");
 
@@ -289,10 +312,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __removeNode: function(nodeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
-        return;
-      }
-
       if (nodeId === this.__currentNodeId) {
         return;
       }
@@ -307,37 +326,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
       if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
-      }
-    },
-
-    __removeEdge: function(edgeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
-        return;
-      }
-
-      const workbench = this.getStudy().getWorkbench();
-      const currentNode = workbench.getNode(this.__currentNodeId);
-      const edge = workbench.getEdge(edgeId);
-      let removed = false;
-      if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-        let inputNode = workbench.getNode(edge.getInputNodeId());
-        inputNode.setIsOutputNode(false);
-
-        // Remove also dependencies from outter nodes
-        const cNodeId = inputNode.getNodeId();
-        const allNodes = workbench.getNodes(true);
-        for (const nodeId in allNodes) {
-          let node = allNodes[nodeId];
-          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-            workbench.removeEdge(edgeId);
-          }
-        }
-        removed = true;
-      } else {
-        removed = workbench.removeEdge(edgeId);
-      }
-      if (removed) {
-        this.__workbenchUI.clearEdge(edgeId);
       }
     },
 
