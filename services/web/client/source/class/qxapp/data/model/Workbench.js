@@ -328,7 +328,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        node.setProgress(0);
+        if (!node.isDynamic()) {
+          node.setProgress(0);
+        }
       }
     },
 
