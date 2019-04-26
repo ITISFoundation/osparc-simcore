@@ -149,11 +149,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     createEdge: function(edgeId, node1Id, node2Id) {
-      let existingEdge = this.getEdge(edgeId, node1Id, node2Id);
+      const existingEdge = this.getEdge(edgeId, node1Id, node2Id);
       if (existingEdge) {
         return existingEdge;
       }
-      let edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
+      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation

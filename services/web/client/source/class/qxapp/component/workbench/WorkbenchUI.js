@@ -543,8 +543,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createEdgeBetweenNodes: function(from, to, edgeId) {
-      let node1Id = from.nodeUuid;
-      let node2Id = to.nodeUuid;
+      const node1Id = from.nodeUuid;
+      const node2Id = to.nodeUuid;
       this.__createEdgeUI(node1Id, node2Id, edgeId);
     },
 
@@ -561,15 +561,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
     },
 
-    __createEdgeToExposedOutputs: function(from, to, edgeId) {
-      let node1Id = from.nodeUuid;
-      let node2Id = to.nodeUuid;
-      this.__createEdgeUI(node1Id, node2Id, edgeId);
-    },
-
     __updatePosition: function(nodeUI) {
       const cBounds = nodeUI.getCurrentBounds();
-      let node = this.getWorkbench().getNode(nodeUI.getNodeId());
+      const node = this.getWorkbench().getNode(nodeUI.getNodeId());
       node.setPosition(cBounds.left, cBounds.top);
     },
 
@@ -805,7 +799,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         for (const innerNodeId in innerNodes) {
           const innerNode = innerNodes[innerNodeId];
           if (innerNode.getIsOutputNode()) {
-            this.__createEdgeToExposedOutputs({
+            this.__createEdgeBetweenNodes({
               nodeUuid: innerNode.getNodeId()
             }, {
               nodeUuid: model.getNodeId()
