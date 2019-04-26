@@ -83,13 +83,13 @@ else
 $(warning DOCKER_IMAGE_TAG variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_TAG})
 export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
 endif
+$(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 endif
 
 ifdef DOCKER_IMAGE_PREFIX
 # check it ends with /
 export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
 $(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
-export DOCKER_IMAGE_PREFIX=${DEFAULT_DOCKER_IMAGE_PREFIX}
 endif
 
 .PHONY: build
@@ -236,10 +236,8 @@ push: .check-ci-env
 	done
 
 # target: pull-ci – pulls images tagged as '${IMAGE_TYPE}-latest' from registry
-pull-ci:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=${IMAGE_TYPE}-latest; \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
+pull:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file: .check-ci-env
