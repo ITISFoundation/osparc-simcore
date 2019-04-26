@@ -29,13 +29,17 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       setUp: function() {
         console.debug("Setting up .. ");
         this.debug("Setting up ...");
+
+        // ToDo OM: Tobi is this correct?
+        qxapp.data.Permissions.getInstance().setDefaultRole();
+
         const studyData = {
           name: "Test Study",
           description: ""
         };
-        const prj = new qxapp.data.model.Study(studyData);
+        const study = new qxapp.data.model.Study(studyData);
         const wbData = {};
-        this.__workbench = new qxapp.data.model.Workbench(prj, wbData);
+        this.__workbench = new qxapp.data.model.Workbench(study, wbData);
       },
 
       tearDown: function() {

@@ -136,17 +136,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", () => {
-        if (this.getCanStart()) {
-          this.__startPipeline();
-        } else {
-          this.__workbenchUI.getLogger().info("Can not start pipeline");
-        }
-      }, this);
+      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
-        this.__updatePipeline();
-      }, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -457,6 +449,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __startPipeline: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
+        return;
+      }
+      if (!this.getCanStart()) {
+        this.__workbenchUI.getLogger().info("Can not start pipeline");
+        return;
+      }
+
       this.getStudy().getWorkbench().clearProgressData();
 
       let socket = qxapp.wrapper.WebSocket.getInstance();
@@ -517,6 +517,10 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __stopPipeline: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
+        return;
+      }
+
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
       data["project_id"] = this.getStudy().getUuid();

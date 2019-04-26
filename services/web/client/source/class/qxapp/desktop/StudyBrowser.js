@@ -146,7 +146,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __newStudyBtnClkd: function() {
-      if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create")) {
+      if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create", true)) {
         return;
       }
       if (this.__creatingNewStudy) {
@@ -271,7 +271,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       // resources
       this.__userStudyList.removeAll();
 
-      let resources = this.__studyResources.projects;
+      const resources = this.__studyResources.projects;
 
       resources.addListenerOnce("getSuccess", e => {
         let userStudyList = e.getRequest().getResponse().data;
@@ -294,7 +294,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         console.error(e);
       }, this);
 
-      resources.get();
+      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
+        resources.get();
+      }
 
       this.__itemSelected(null);
     },
@@ -327,7 +329,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         for (let i=0; i<tempStudyList.length; i++) {
           // FIXME: Backend should do the filtering
           if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("test")) {
+          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
             continue;
           }
           tempFilteredStudyList.push(tempStudyList[i]);
@@ -345,7 +347,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         console.error(e);
       }, this);
 
-      resources.get();
+      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
+        resources.get();
+      }
 
       this.__itemSelected(null);
     },
