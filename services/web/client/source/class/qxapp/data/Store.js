@@ -1376,6 +1376,13 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getPresginedLink: function(download = true, locationId, fileUuid) {
+      if (download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
+        return;
+      }
+      if (!download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+        return;
+      }
+
       // GET: Returns download link for requested file
       // POST: Returns upload link or performs copy operation to datcore
       let res = encodeURIComponent(fileUuid);
@@ -1408,6 +1415,10 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
+      if (qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+        return;
+      }
+
       // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
       let fileName = fileUuid.split("/");
       fileName = fileName[fileName.length-1];
@@ -1439,6 +1450,10 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     deleteFile: function(locationId, fileUuid) {
+      if (qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+        return;
+      }
+
       // Deletes File
       let parameters = encodeURIComponent(fileUuid);
       const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
