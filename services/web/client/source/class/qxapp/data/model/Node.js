@@ -672,7 +672,7 @@ qx.Class.define("qxapp.data.model.Node", {
       }, this);
       progressTimer.start();
 
-      const prjId = this.getWorkbench().getProject()
+      const prjId = this.getWorkbench().getStudy()
         .getUuid();
       // start the service
       const url = "/running_interactive_services";
