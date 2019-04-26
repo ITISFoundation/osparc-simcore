@@ -83,8 +83,11 @@ qx.Class.define("qxapp.data.Permissions", {
   members: {
     __userRole: null,
 
-    setDefaultRole() {
-      this.__userRole = "user";
+    setRole(role) {
+      if (!this.self().ROLES[role]) {
+        return;
+      }
+      this.__userRole = role;
     },
 
     __getInitPermissions: function() {

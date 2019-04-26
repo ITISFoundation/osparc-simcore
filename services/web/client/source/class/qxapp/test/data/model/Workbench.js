@@ -31,7 +31,7 @@ qx.Class.define("qxapp.test.data.model.Workbench",
         this.debug("Setting up ...");
 
         // ToDo OM: Tobi is this correct?
-        qxapp.data.Permissions.getInstance().setDefaultRole();
+        qxapp.data.Permissions.getInstance().setRole("user");
 
         const studyData = {
           name: "Test Study",

@@ -607,6 +607,9 @@ qx.Class.define("qxapp.data.model.Node", {
 
     retrieveInputs: function() {
       if (this.isDynamic()) {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
+          return;
+        }
         let urlUpdate = this.getServiceUrl() + "/retrieve";
         urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
         let updReq = new qx.io.request.Xhr();
