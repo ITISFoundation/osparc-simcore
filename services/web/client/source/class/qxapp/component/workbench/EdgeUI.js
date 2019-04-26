@@ -16,32 +16,32 @@
 ************************************************************************ */
 
 /**
- * Object that owns the Link data model and it's representation
+ * Object that owns the Edge data model and it's representation
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ *   let link = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
  *   let linkRepresentation = svgWidget.drawCurve(x1, y1, x2, y2);
- *   let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
+ *   let linkUI = new qxapp.component.workbench.EdgeUI(link, linkRepresentation);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.workbench.LinkUI", {
+qx.Class.define("qxapp.component.workbench.EdgeUI", {
   extend: qx.core.Object,
   include: qxapp.component.filter.MFilterable,
   implement: qxapp.component.filter.IFilterable,
 
   /**
-    * @param link {qxapp.data.model.Link} Link owning the object
+    * @param link {qxapp.data.model.Edge} Edge owning the object
     * @param representation {SVG Object} UI representation of the link
   */
-  construct: function(link, representation) {
+  construct: function(edge, representation) {
     this.base();
 
-    this.setLink(link);
+    this.setEdge(edge);
     this.setRepresentation(representation);
 
     this._subscribeToFilterGroup("workbench");
@@ -52,8 +52,8 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
   },
 
   properties: {
-    link: {
-      check: "qxapp.data.model.Link",
+    edge: {
+      check: "qxapp.data.model.Edge",
       nullable: false
     },
 
@@ -63,8 +63,8 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
   },
 
   members: {
-    getLinkId: function() {
-      return this.getLink().getLinkId();
+    getEdgeId: function() {
+      return this.getEdge().getEdgeId();
     },
 
     _filter: function() {

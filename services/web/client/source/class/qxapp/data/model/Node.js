@@ -21,7 +21,7 @@
  *   For the given version-key, this class will take care of pulling the metadata, store it and
  * fill in all the information.
  *
- *                                    -> {NODES}
+ *                                    -> {EDGES}
  * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
@@ -443,7 +443,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("RemoveLink", e => {
+      propsWidget.addListener("removeLink", e => {
         let changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
       }, this);
@@ -497,7 +497,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     // post link creation routine
-    linkAdded: function(link) {
+    edgeAdded: function(link) {
       if (this.isInKey("dash-plot")) {
         const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());

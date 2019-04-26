@@ -213,7 +213,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       }, this);
     },
 
-    getLinkPoint: function(port) {
+    getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
       const captionHeight = qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;

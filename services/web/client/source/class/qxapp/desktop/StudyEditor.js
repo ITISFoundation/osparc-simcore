@@ -123,14 +123,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      workbenchUI.addListener("removeLink", e => {
-        const linkId = e.getData();
-        let workbench = this.getStudy().getWorkbench();
+      workbenchUI.addListener("removeEdge", e => {
+        const edgeId = e.getData();
+        const workbench = this.getStudy().getWorkbench();
         const currentNode = workbench.getNode(this.__currentNodeId);
-        const link = workbench.getLink(linkId);
+        const edge = workbench.getEdge(edgeId);
         let removed = false;
-        if (currentNode && currentNode.isContainer() && link.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(link.getInputNodeId());
+        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+          let inputNode = workbench.getNode(edge.getInputNodeId());
           inputNode.setIsOutputNode(false);
 
           // Remove also dependencies from outter nodes
@@ -139,15 +139,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           for (const nodeId in allNodes) {
             let node = allNodes[nodeId];
             if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbench.removeLink(linkId);
+              workbench.removeEdge(edgeId);
             }
           }
           removed = true;
         } else {
-          removed = workbench.removeLink(linkId);
+          removed = workbench.removeEdge(edgeId);
         }
         if (removed) {
-          this.__workbenchUI.clearLink(linkId);
+          this.__workbenchUI.clearEdge(edgeId);
         }
       }, this);
       this.showInMainView(workbenchUI, "root");
@@ -315,13 +315,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       if (nodeId === this.__currentNodeId) {
         return;
       }
-      // remove first the connected links
-      let workbench = this.getStudy().getWorkbench();
-      let connectedLinks = workbench.getConnectedLinks(nodeId);
-      for (let i=0; i<connectedLinks.length; i++) {
-        const linkId = connectedLinks[i];
-        if (workbench.removeLink(linkId)) {
-          this.__workbenchUI.clearLink(linkId);
+      // remove first the connected edges
+      const workbench = this.getStudy().getWorkbench();
+      const connectedEdges = workbench.getConnectedEdges(nodeId);
+      for (let i=0; i<connectedEdges.length; i++) {
+        const edgeId = connectedEdges[i];
+        if (workbench.removeEdge(edgeId)) {
+          this.__workbenchUI.clearEdge(edgeId);
         }
       }
       if (workbench.removeNode(nodeId)) {

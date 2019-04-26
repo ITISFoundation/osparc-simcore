@@ -20,7 +20,7 @@
  *
  * It takes care of creating, storing and managing nodes and links.
  *
- *                                    -> {NODES}
+ *                                    -> {EDGES}
  * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
@@ -44,13 +44,13 @@ qx.Class.define("qxapp.data.model.Workbench", {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
-    this.__links = {};
+    this.__edges = {};
 
     this.setStudy(study);
     this.setStudyName(study.getName());
 
     this.__createNodes(wbData);
-    this.__createLinks(wbData);
+    this.__createEdges(wbData);
   },
 
   properties: {
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
   members: {
     __nodesTopLevel: null,
-    __links: null,
+    __edges: null,
 
     isContainer: function() {
       return false;
@@ -119,26 +119,26 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return nodePath;
     },
 
-    getConnectedLinks: function(nodeId) {
-      let connectedLinks = [];
-      const links = Object.values(this.__links);
+    getConnectedEdges: function(nodeId) {
+      let connectedEdges = [];
+      const links = Object.values(this.__edges);
       for (const link of links) {
         if (link.getInputNodeId() === nodeId) {
-          connectedLinks.push(link.getLinkId());
+          connectedEdges.push(link.getEdgeId());
         }
         if (link.getOutputNodeId() === nodeId) {
-          connectedLinks.push(link.getLinkId());
+          connectedEdges.push(link.getEdgeId());
         }
       }
-      return connectedLinks;
+      return connectedEdges;
     },
 
-    getLink: function(linkId, node1Id, node2Id) {
-      const exists = Object.prototype.hasOwnProperty.call(this.__links, linkId);
+    getEdge: function(edgeId, node1Id, node2Id) {
+      const exists = Object.prototype.hasOwnProperty.call(this.__edges, edgeId);
       if (exists) {
-        return this.__links[linkId];
+        return this.__edges[edgeId];
       }
-      const links = Object.values(this.__links);
+      const links = Object.values(this.__edges);
       for (const link of links) {
         if (link.getInputNodeId() === node1Id &&
           link.getOutputNodeId() === node2Id) {
@@ -148,27 +148,27 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return null;
     },
 
-    createLink: function(linkId, node1Id, node2Id) {
-      let existingLink = this.getLink(linkId, node1Id, node2Id);
-      if (existingLink) {
-        return existingLink;
+    createEdge: function(linkId, node1Id, node2Id) {
+      let existingEdge = this.getEdge(linkId, node1Id, node2Id);
+      if (existingEdge) {
+        return existingEdge;
       }
-      let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
-      this.addLink(link);
+      let edge = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
+      this.addEdge(edge);
 
-      // post link creation
-      this.getNode(node2Id).linkAdded(link);
+      // post edge creation
+      this.getNode(node2Id).edgeAdded(edge);
 
-      return link;
+      return edge;
     },
 
-    addLink: function(link) {
-      const linkId = link.getLinkId();
-      const node1Id = link.getInputNodeId();
-      const node2Id = link.getOutputNodeId();
-      let exists = this.getLink(linkId, node1Id, node2Id);
+    addEdge: function(edge) {
+      const edgeId = edge.getEdgeId();
+      const node1Id = edge.getInputNodeId();
+      const node2Id = edge.getOutputNodeId();
+      let exists = this.getEdge(edgeId, node1Id, node2Id);
       if (!exists) {
-        this.__links[linkId] = link;
+        this.__edges[edgeId] = edge;
       }
     },
 
@@ -277,34 +277,34 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return false;
     },
 
-    __createLink: function(outputNodeId, inputNodeId) {
+    __createEdge: function(outputNodeId, inputNodeId) {
       let node = this.getNode(inputNodeId);
       if (node) {
         node.addInputNode(outputNodeId);
       }
     },
 
-    __createLinks: function(workbenchData) {
+    __createEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
             const outputNodeId = nodeData.inputNodes[i];
-            this.__createLink(outputNodeId, nodeId);
+            this.__createEdge(outputNodeId, nodeId);
           }
         }
       }
     },
 
-    removeLink: function(linkId) {
-      let link = this.getLink(linkId);
+    removeEdge: function(linkId) {
+      let link = this.getEdge(linkId);
       if (link) {
         const inputNodeId = link.getInputNodeId();
         const outputNodeId = link.getOutputNodeId();
         let node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
-          delete this.__links[linkId];
+          delete this.__edges[linkId];
           return true;
         }
       }

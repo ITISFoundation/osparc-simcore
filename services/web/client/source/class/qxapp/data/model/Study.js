@@ -18,7 +18,7 @@
 /**
  * Class that stores Study data. It is also able to serialize itself.
  *
- *                                    -> {NODES}
+ *                                    -> {EDGES}
  * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *

@@ -46,7 +46,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   events: {
-    "RemoveLink" : "qx.event.type.Data"
+    "removeLink" : "qx.event.type.Data"
   },
 
   properties: {
@@ -158,7 +158,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
-            this.fireDataEvent("RemoveLink", portId);
+            this.fireDataEvent("removeLink", portId);
           }, this);
           hBox.add(unlinkBtn);
           hBox.key = portId;
