@@ -309,9 +309,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return null;
       }
 
-      if (this.__linkRepresetationExists(link)) {
-        return null;
-      }
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
