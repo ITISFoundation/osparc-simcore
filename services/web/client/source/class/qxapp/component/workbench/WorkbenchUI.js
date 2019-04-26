@@ -229,17 +229,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
-
-      const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
-        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
-        for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
-        }
+      const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
+      if (!node) {
+        return;
       }
 
-      let nodeUI = this.__createNodeUI(node.getNodeId());
+      const nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -314,6 +309,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         return null;
       }
 
+      if (this.__linkRepresetationExists(link)) {
+        return null;
+      }
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
