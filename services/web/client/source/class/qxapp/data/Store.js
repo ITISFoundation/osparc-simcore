@@ -1334,9 +1334,12 @@ qx.Class.define("qxapp.data.Store", {
           .data;
         for (let i=0; i<locations.length; i++) {
           const locationId = locations[i]["id"];
+          if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+            continue;
+          }
           // Get list of file meta data
           const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-          let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+          const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
           reqFiles.addListener("success", eFiles => {
             const files = eFiles.getTarget().getResponse()
