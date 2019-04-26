@@ -125,30 +125,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
       workbenchUI.addListener("removeLink", e => {
         const linkId = e.getData();
-        let workbench = this.getProject().getWorkbench();
-        const currentNode = workbench.getNode(this.__currentNodeId);
-        const link = workbench.getLink(linkId);
-        let removed = false;
-        if (currentNode && currentNode.isContainer() && link.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(link.getInputNodeId());
-          inputNode.setIsOutputNode(false);
-
-          // Remove also dependencies from outter nodes
-          const cNodeId = inputNode.getNodeId();
-          const allNodes = workbench.getNodes(true);
-          for (const nodeId in allNodes) {
-            let node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbench.removeLink(linkId);
-            }
-          }
-          removed = true;
-        } else {
-          removed = workbench.removeLink(linkId);
-        }
-        if (removed) {
-          this.__workbenchUI.clearLink(linkId);
-        }
+        this.__removeLink(linkId);
       }, this);
       this.showInMainView(workbenchUI, "root");
 
@@ -330,6 +307,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
       if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
+      }
+    },
+
+    __removeLink: function(linkId) {
+      let workbench = this.getProject().getWorkbench();
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      const link = workbench.getLink(linkId);
+      let removed = false;
+      if (currentNode && currentNode.isContainer() && link.getOutputNodeId() === currentNode.getNodeId()) {
+        let inputNode = workbench.getNode(link.getInputNodeId());
+        inputNode.setIsOutputNode(false);
+  
+        // Remove also dependencies from outter nodes
+        const cNodeId = inputNode.getNodeId();
+        const allNodes = workbench.getNodes(true);
+        for (const nodeId in allNodes) {
+          let node = allNodes[nodeId];
+          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+            workbench.removeLink(linkId);
+          }
+        }
+        removed = true;
+      } else {
+        removed = workbench.removeLink(linkId);
+      }
+      if (removed) {
+        this.__workbenchUI.clearLink(linkId);
       }
     },
 
