@@ -85,16 +85,18 @@ qx.Class.define("qxapp.wrapper.Plotly", {
     createEmptyPlot: function(id) {
       this.__plotId = id;
       const margin = 25;
+      const bigFont = qxapp.ui.basic.Label.getFont(14);
+      const smallFont = qxapp.ui.basic.Label.getFont(12);
       this.__layout = {
         titlefont: {
           color: "#bfbfbf",
-          size: qxapp.ui.basic.Label.getFont(14)["size"],
-          family: qxapp.ui.basic.Label.getFont(14)["family"].toString()
+          size: bigFont.getSize(),
+          family: bigFont.getFamily()
         },
         font: {
           color: "#bfbfbf",
-          size: qxapp.ui.basic.Label.getFont(12)["size"],
-          family: qxapp.ui.basic.Label.getFont(12)["family"].toString()
+          size: smallFont.getSize(),
+          family: smallFont.getFamily()
         },
         margin: {
           l: margin,
