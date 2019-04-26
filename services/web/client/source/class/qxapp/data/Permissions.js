@@ -30,7 +30,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   qxapp.data.Permissions.getInstance().canDo("study.start")
+ *   qxapp.data.Permissions.getInstance().canDo("study.start", true)
  * </pre>
  */
 
@@ -82,6 +82,10 @@ qx.Class.define("qxapp.data.Permissions", {
 
   members: {
     __userRole: null,
+
+    setDefaultRole() {
+      this.__userRole = "user";
+    },
 
     __getInitPermissions: function() {
       return {
