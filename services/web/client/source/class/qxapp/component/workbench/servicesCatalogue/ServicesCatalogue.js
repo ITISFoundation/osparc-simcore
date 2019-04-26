@@ -105,7 +105,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         this.__updateList();
       }, this);
       // FIXME: Backend should do the filtering
-      if (qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
+      if (qxapp.data.Permissions.getInstance().canDo("test")) {
         filterLayout.add(showAll);
       }
       // buttons for reloading services
