@@ -30,7 +30,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   qxapp.data.Permissions.getInstance().canDo("test")
+ *   qxapp.data.Permissions.getInstance().canDo("study.start")
  * </pre>
  */
 
