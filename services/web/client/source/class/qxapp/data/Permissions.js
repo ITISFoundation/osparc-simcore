@@ -94,7 +94,6 @@ qx.Class.define("qxapp.data.Permissions", {
       return {
         "anonymous": [
           "studies.templates.read",
-          "services.filtered.read",
           "study.node.data.pull",
           "study.start",
           "study.stop",

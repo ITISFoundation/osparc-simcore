@@ -1099,10 +1099,6 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getServices: function(reload) {
-      if (!qxapp.data.Permissions.getInstance().canDo("services.filtered.read")) {
-        return {};
-      }
-
       if (!this.__reloadingServices && reload || Object.keys(this.__servicesCached).length === 0) {
         this.__reloadingServices = true;
         let req = new qxapp.io.request.ApiRequest("/services", "GET");
