@@ -33,7 +33,7 @@ qx.Class.define("qxapp.test.data.model.Workbench",
           name: "Test Study",
           description: ""
         };
-        const prj = new qxapp.data.model.Project(studyData);
+        const prj = new qxapp.data.model.Study(studyData);
         const wbData = {};
         this.__workbench = new qxapp.data.model.Workbench(prj, wbData);
       },
