@@ -8,8 +8,6 @@
 [![github.io]](https://itisfoundation.github.io/)
 
 
-[![waffle.io]](https://waffle.io/ITISFoundation/osparc-simcore "Scrum wall")
-
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
 [![webserver]](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
 [![director]](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
@@ -17,7 +15,6 @@
 [![storage]](https://microbadger.com/images/itisfoundation/storage "More on itisfoundation/storage:staging-latest image")
 
 <!-- ADD HERE ALL BADGE URLS -->
-[waffle.io]:https://badge.waffle.io/ITISFoundation/osparc-simcore.svg?columns=Backlog,In%20Progress,Review,Done
 [Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg
 [travis-ci]:https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
 [coverals.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master

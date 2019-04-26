@@ -6,20 +6,22 @@ from setuptools import (
 INSTALL_REQUIRES = [
     'networkx==2.1',
     'psycopg2-binary==2.7.5',
-    'sqlalchemy==1.2.9',
+    'sqlalchemy~=1.3.0',
     'tenacity==4.12.0',
     'trafaret-config==2.0.1',
     'aiofiles~=0.4',
     'aiohttp~=3.3'
 ]
 
-TEST_REQUIRE = [
+TEST_REQUIRE = [    
     'coveralls~=1.3',
     'mock~=2.0',
     'pylint~=2.0',
     'pytest~=3.6',
+    'pytest-aiohttp',
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
+    'pytest-mock',
     'requests~=2.19',
     'docker~=3.7'
 ]

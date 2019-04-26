@@ -21,8 +21,8 @@
  *   For the given version-key, this class will take care of pulling the metadata, store it and
  * fill in all the information.
  *
- *                                    -> {NODES}
- * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {EDGES}
+ * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
  * *Example*
@@ -443,7 +443,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("RemoveLink", e => {
+      propsWidget.addListener("removeLink", e => {
         let changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
       }, this);
@@ -497,7 +497,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     // post link creation routine
-    linkAdded: function(link) {
+    edgeAdded: function(link) {
       if (this.isInKey("dash-plot")) {
         const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
@@ -672,12 +672,19 @@ qx.Class.define("qxapp.data.model.Node", {
       }, this);
       progressTimer.start();
 
+      const prjId = this.getWorkbench().getStudy()
+        .getUuid();
       // start the service
       const url = "/running_interactive_services";
-      let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+      let query = "?project_id=" + encodeURIComponent(prjId);
+      query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
       if (metaData.key.includes("/neuroman")) {
         // HACK: Only Neuroman should enter here
-        query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        query += "&service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver");
+        query += "&service_tag=" + encodeURIComponent("2.8.0");
+      } else {
+        query += "&service_key=" + encodeURIComponent(metaData.key);
+        query += "&service_tag=" + encodeURIComponent(metaData.version);
       }
       let request = new qxapp.io.request.ApiRequest(url+query, "POST");
       request.addListener("success", this.__onInteractiveNodeStarted, this);

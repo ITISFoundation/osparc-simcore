@@ -54,7 +54,10 @@ qx.Theme.define("qxapp.theme.Decoration", {
       include: "window",
       style: {
         width: 0,
-        radius: 3
+        radius: 3,
+        transitionProperty: "opacity",
+        transitionDuration: "0.05s",
+        transitionTimingFunction: "ease-in"
       }
     },
 

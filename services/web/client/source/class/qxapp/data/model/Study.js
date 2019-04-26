@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 /**
- * Class that stores Project/Study data. It is also able to serialize itself.
+ * Class that stores Study data. It is also able to serialize itself.
  *
- *                                    -> {NODES}
- * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {EDGES}
+ * STUDY -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
  *
  * *Example*
@@ -27,37 +27,34 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let project = new qxapp.data.model.Project(projectData);
- *   let prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
+ *   let study = new qxapp.data.model.Study(studyData);
+ *   let prjEditor = new qxapp.desktop.StudyEditor(study, isNew);
  * </pre>
  */
 
-qx.Class.define("qxapp.data.model.Project", {
+qx.Class.define("qxapp.data.model.Study", {
   extend: qx.core.Object,
 
   /**
-    * @param prjData {String} uuid if the link. If not provided, a random one will be assigned
-  */
-  construct: function(prjData) {
+    * @param studyData {Object} Object containing the serialized Project Data
+    */
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
-      uuid: prjData.uuid || this.getUuid(),
-      name: prjData.name || this.getName(),
-      description: prjData.description || this.getDescription(),
-      notes: prjData.notes || this.getNotes(),
-      thumbnail: prjData.thumbnail || this.getThumbnail(),
-      prjOwner: prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
-      collaborators: prjData.collaborators || this.getCollaborators(),
-      creationDate: prjData.creationDate ? new Date(prjData.creationDate) : this.getCreationDate(),
-      lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate()
+      uuid: studyData.uuid === undefined ? this.getUuid() : studyData.uuid,
+      name: studyData.name === undefined ? this.getName() : studyData.name,
+      description: studyData.description === undefined ? this.getDescription() : studyData.description,
+      notes: studyData.notes === undefined ? this.getNotes() : studyData.notes,
+      thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
+      prjOwner: studyData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : studyData.prjOwner,
+      collaborators: studyData.collaborators === undefined ? this.getCollaborators() : studyData.collaborators,
+      creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
+      lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
 
-    if (prjData && prjData.workbench) {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
-    } else {
-      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), {}));
-    }
+    const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
+    this.setWorkbench(new qxapp.data.model.Workbench(this, wbData));
   },
 
   properties: {
@@ -70,7 +67,7 @@ qx.Class.define("qxapp.data.model.Project", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Project",
+      init: "New Study",
       event: "changeName",
       apply : "__applyName"
     },
@@ -126,11 +123,11 @@ qx.Class.define("qxapp.data.model.Project", {
   members: {
     __applyName: function(newName) {
       if (this.isPropertyInitialized("workbench")) {
-        this.getWorkbench().setProjectName(newName);
+        this.getWorkbench().setStudyName(newName);
       }
     },
 
-    serializeProject: function() {
+    serializeStudy: function() {
       this.setLastChangeDate(new Date());
 
       let jsonObject = {};

@@ -8,8 +8,8 @@ services:
       target: production
       args:
         BASE_IMAGE: ${BASE_IMAGE}
-        NOTEBOOK_NAME: notebook/cc_single_cell.ipynb
-        NOTEBOOK_FOLDER_NAME: cc-single-cell
+        NOTEBOOK_NAME: cc_single_cell.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-single-cell/notebooks
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-0d-viewer"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -41,7 +41,11 @@ services:
           "out_17": {"label": "JRyR", "displayOrder": 16, "description": "JRyR csv", "type": "data:text/csv" },
           "out_18": {"label": "Passive Leak", "displayOrder": 17, "description": "Passive Leak csv", "type": "data:text/csv" },
           "out_19": {"label": "SR Ca release", "displayOrder": 18, "description": "SR Ca release csv", "type": "data:text/csv"}}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -57,8 +61,8 @@ services:
       target: production
       args:
         BASE_IMAGE: ${BASE_IMAGE}
-        NOTEBOOK_NAME: notebook/cc_oned.ipynb
-        NOTEBOOK_FOLDER_NAME: cc-oned
+        NOTEBOOK_NAME: cc_oned.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-oned/notebooks
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-1d-viewer"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -72,7 +76,11 @@ services:
           "y_1D":{"label": "action potentials", "displayOrder":1, "description": "Action potentials out of solver", "type": "data:*/*"}}}'
         io.simcore.outputs: '{"outputs": {
           "out_1":{"label": "ECG", "displayOrder":0, "description": "ECG csv", "type": "data:text/csv"}}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -88,8 +96,8 @@ services:
       target: production
       args:
         BASE_IMAGE: ${BASE_IMAGE}
-        NOTEBOOK_NAME: notebook/cc_2d.ipynb
-        NOTEBOOK_FOLDER_NAME: cc-twod
+        NOTEBOOK_NAME: cc_2d.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-twod/notebooks
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-2d-viewer"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -101,7 +109,11 @@ services:
         io.simcore.inputs: '{"inputs": {
           "ap":{"label": "ap", "displayOrder":0, "description": "these are computed data out of a 2d solver", "type": "data:*/*"}}}'
         io.simcore.outputs: '{"outputs": {}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -117,7 +129,7 @@ services:
       target: production
       args:
         BASE_IMAGE: ${BASE_IMAGE}
-        NOTEBOOK_NAME: notebook/kember.ipynb
+        NOTEBOOK_NAME: kember.ipynb
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/kember-viewer"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -132,14 +144,18 @@ services:
           "out_1": {"label": "Table Data", "displayOrder": 0, "description": "Table Data csv", "type": "data:text/csv"},
           "out_2": {"label": "Heart rate (r)", "displayOrder": 1, "description": "Heart rate (r) csv", "type": "data:text/csv"},
           "out_3": {"label": "Parasympathetic Cell Activity", "displayOrder": 2, "description": "Parasympathetic Cell Activity: Cardiac Level csv", "type": "data:text/csv"}}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '1237:8888'
-  #--------------------------------------------------------------------
+  # #--------------------------------------------------------------------
   mattward:
     image: masu.speag.com/simcore/services/dynamic/mattward-viewer:${SERVICES_VERSION}
     build:
@@ -148,7 +164,7 @@ services:
       target: production
       args:
         BASE_IMAGE: ${BASE_IMAGE}
-        NOTEBOOK_NAME: notebook/mattward.ipynb
+        NOTEBOOK_NAME: mattward.ipynb
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/mattward-viewer"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -168,7 +184,11 @@ services:
           "Vpred_plot": {"label": "Output V pred", "displayOrder": 6, "description": "Output V pred data csv", "type": "data:text/csv", "fileToKeyMap": {"V_pred_plot.csv": "Vpred_plot"}},
           "Lpred_plot": {"label": "Output L pred", "displayOrder": 7, "description": "Output L pred data csv", "type": "data:text/csv", "fileToKeyMap": {"Lpred_plot.csv": "Lpred_plot"}}
           }}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        simcore.service.settings: '[
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"

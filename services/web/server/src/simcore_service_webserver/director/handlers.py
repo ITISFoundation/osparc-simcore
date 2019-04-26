@@ -72,6 +72,8 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
     registry = get_registry(request.app)
     service_uuid = query['service_uuid']
 
+    project_id = query['project_id']
+
     # get first if already running
     url = (endpoint / service_uuid)
     async with session.get(url, ssl=False) as resp:
@@ -81,6 +83,7 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
         else:
             url = endpoint.with_query(request.query).update_query(
                 user_id=userid,
+                project_id=project_id,
                 # TODO: mountpoint should be setup!!
                 service_basepath='/x/' + service_uuid
             )

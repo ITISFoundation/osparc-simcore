@@ -5,7 +5,7 @@ import logging
 import os
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.DEBUG if (os.environ.get("DEBUG", False) in ["true", "True", True]) else logging.INFO,
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 

@@ -34,7 +34,7 @@ services:
       - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
       - ./docker:/docker
-  #--------------------------------------------------------------------
+  # --------------------------------------------------------------------
   jupyter-scipy-notebook:
     image: jupyter-scipy-notebook-dev
     build:
@@ -106,11 +106,11 @@ services:
       - ./docker:/docker
   #--------------------------------------------------------------------
   apihub:
-    image: services_apihub:latest
+    image: itisfoundation/apihub:staging-latest
     ports:
       - '8043:8043'
   storage:
-    image: services_storage:latest
+    image: itisfoundation/storage:staging-latest
     ports:
       - 11111:8080
     environment:
@@ -134,7 +134,7 @@ services:
     depends_on:
       - apihub
       - postgres
-      - minio      
+      - minio
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

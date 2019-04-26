@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir --upgrade \
       setuptools
 
 RUN pip install prance && \
+      pip install click &&\
     pip install openapi_spec_validator
 
 ENTRYPOINT [ "prance", "compile" , "--backend=openapi-spec-validator"]
