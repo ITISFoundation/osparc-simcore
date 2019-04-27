@@ -2,6 +2,8 @@
 set -e
 # these variable must be available securely from travis
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+docker images
+docker inspect itisfoundation/director:staging-latest
 make push-staging
 
 # TODO: PC->SAN: why not moving `push-staging` makefile command directly here?
