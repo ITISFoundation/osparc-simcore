@@ -17,7 +17,7 @@
 
 /**
  * Widget containing a TabView including:
- * - PrjBrowser
+ * - StudyBrowser
  * - ServiceBrowser
  * - DataManager
  *
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     __serviceBrowser: null,
     __dataManager: null,
 
-    getPrjBrowser: function() {
+    getStudyBrowser: function() {
       return this.__prjBrowser;
     },
 
@@ -95,7 +95,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createStudiesView: function() {
-      let studiesView = this.__prjBrowser = new qxapp.desktop.PrjBrowser();
+      let studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser();
       return studiesView;
     },
 

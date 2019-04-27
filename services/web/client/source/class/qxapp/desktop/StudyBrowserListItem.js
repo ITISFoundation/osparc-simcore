@@ -19,12 +19,12 @@
 /* eslint "qx-rules/no-refs-in-members": "warn" */
 
 /**
- * Widget used mainly by PrjBrowser for displaying Studies
+ * Widget used mainly by StudyBrowser for displaying Studies
  *
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
+qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel],
   include : [qx.ui.form.MModelProperty],
@@ -67,7 +67,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
 
     prjTitle: {
       check: "String",
-      apply : "_applyPrjTitle",
+      apply : "_applyStudyTitle",
       nullable : true
     },
 
@@ -145,7 +145,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       });
     },
 
-    _applyPrjTitle: function(value, old) {
+    _applyStudyTitle: function(value, old) {
       let label = this.getChildControl("prjTitle");
       label.setValue(value);
     },

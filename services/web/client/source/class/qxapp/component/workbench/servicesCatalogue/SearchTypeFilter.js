@@ -37,8 +37,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
   extend : qx.core.Object,
 
   /**
-    * @param projectName {controller} Controller
-    * @param workbench {Array} propKeys where to check the typeFilter
+    * @param controller {controller} Controller
+    * @param props {Array} propKeys where to check the typeFilter
   */
   construct: function(controller, props = ["key"]) {
     this.base(arguments);

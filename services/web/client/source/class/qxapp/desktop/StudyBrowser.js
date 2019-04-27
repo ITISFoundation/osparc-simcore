@@ -17,8 +17,8 @@
 
 /**
  * Widget that shows two lists of studies and study editor form:
- * - List1: User's studies (PrjBrowserListItem)
- * - List2: Template studies to start from (PrjBrowserListItem)
+ * - List1: User's studies (StudyBrowserListItem)
+ * - List2: Template studies to start from (StudyBrowserListItem)
  * - Form: Extra editable information of the selected study
  *
  * It is the entry point to start editing or creatina new study.
@@ -30,24 +30,24 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let prjBrowser = this.__serviceBrowser = new qxapp.desktop.PrjBrowser();
+ *   let prjBrowser = this.__serviceBrowser = new qxapp.desktop.StudyBrowser();
  *   this.getRoot().add(prjBrowser);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.PrjBrowser", {
+qx.Class.define("qxapp.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
 
-    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
+    this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
     // this._projectResources.projects
     // this._projectResources.project
     // this._projectResources.templates
 
-    let prjBrowserLayout = new qx.ui.layout.VBox(20);
-    this._setLayout(prjBrowserLayout);
+    let studyBrowserLayout = new qx.ui.layout.VBox(20);
+    this._setLayout(studyBrowserLayout);
 
     let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this._add(iframe, {
@@ -71,16 +71,16 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   events: {
-    "startProject": "qx.event.type.Data"
+    "startStudy": "qx.event.type.Data"
   },
 
   members: {
     __userReady: null,
     __servicesReady: null,
-    __projectResources: null,
-    __userProjectList: null,
-    __publicProjectList: null,
-    __editPrjLayout: null,
+    __studyResources: null,
+    __userStudyList: null,
+    __templateStudyList: null,
+    __editStudyLayout: null,
     __creatingNewStudy: null,
 
     __initResources: function() {
@@ -106,36 +106,36 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let myPrjsLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
+      let myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
         font: navBarLabelFont,
         minWidth: 150
       });
-      let userProjectList = this.__createUserProjectList();
-      let userProjectsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      userProjectsLayout.add(myPrjsLabel);
-      userProjectsLayout.add(userProjectList);
+      let userStudyList = this.__createUserStudyList();
+      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      userStudyLayout.add(myStudyLabel);
+      userStudyLayout.add(userStudyList);
 
-      let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
+      let tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
         font: navBarLabelFont,
         minWidth: 150
       });
-      let publicProjectList = this.__createPublicProjectList();
-      let publicProjectsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      publicProjectsLayout.add(pubPrjsLabel);
-      publicProjectsLayout.add(publicProjectList);
+      let tempStudyList = this.__createTemplateStudyList();
+      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      tempStudyLayout.add(tempStudyLabel);
+      tempStudyLayout.add(tempStudyList);
 
-      let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      editPrjLayout.setMaxWidth(800);
-      let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Study")).set({
+      let editStudyLayout = this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      editStudyLayout.setMaxWidth(800);
+      let editStudyLabel = new qx.ui.basic.Label(this.tr("Edit Study")).set({
         font: navBarLabelFont,
         minWidth: 150
       });
-      editPrjLayout.add(editPrjLabel);
-      editPrjLayout.setVisibility("excluded");
+      editStudyLayout.add(editStudyLabel);
+      editStudyLayout.setVisibility("excluded");
 
-      this._add(userProjectsLayout);
-      this._add(publicProjectsLayout);
-      this._add(this.__editPrjLayout);
+      this._add(userStudyLayout);
+      this._add(tempStudyLayout);
+      this._add(this.__editStudyLayout);
     },
 
     __createCommandEvents: function() {
@@ -145,7 +145,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
     },
 
-    __newPrjBtnClkd: function() {
+    __newStudyBtnClkd: function() {
       if (this.__creatingNewStudy) {
         return;
       }
@@ -161,24 +161,24 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         autoDestroy: true
       });
 
-      let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
-      newProjectDlg.addListenerOnce("createPrj", e => {
+      let newStudyDlg = new qxapp.component.widget.NewStudyDlg();
+      newStudyDlg.addListenerOnce("createStudy", e => {
         const data = e.getData();
-        const newPrj = {
+        const newStudy = {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startProject(newPrj, true);
+        this.__startStudy(newStudy, true);
         win.close();
       }, this);
-      win.add(newProjectDlg);
+      win.add(newStudyDlg);
       win.open();
       win.addListener("close", () => {
         this.__creatingNewStudy = false;
       }, this);
     },
 
-    __startProject: function(prjData, isNew = false) {
+    __startStudy: function(studyData, isNew = false) {
       if (this.__servicesReady === null) {
         this.__showChildren(false);
         let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
@@ -194,12 +194,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             this._remove(iframe);
             iframe.dispose();
             this.__showChildren(true);
-            this.__loadProject(prjData, isNew);
+            this.__loadStudy(studyData, isNew);
           }
         }, this);
         servicesTimer.start();
       } else {
-        this.__loadProject(prjData, isNew);
+        this.__loadStudy(studyData, isNew);
       }
     },
 
@@ -214,24 +214,24 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }
     },
 
-    __loadProject: function(projectData, isNew) {
-      let project = new qxapp.data.model.Project(projectData);
-      let prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
-      this.fireDataEvent("startProject", prjEditor);
+    __loadStudy: function(studyData, isNew) {
+      let study = new qxapp.data.model.Study(studyData);
+      let studyEditor = new qxapp.desktop.StudyEditor(study, isNew);
+      this.fireDataEvent("startStudy", studyEditor);
     },
 
-    __createProject: function(projectId, fromTemplate = false) {
-      let resource = this.__projectResources.project;
+    __createStudy: function(studyId, fromTemplate = false) {
+      let resource = this.__studyResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
-        // but it needs to be here to implemenet startProject
-        let projectData = e.getRequest().getResponse().data;
+        // but it needs to be here to implemenet startStudy
+        let studyData = e.getRequest().getResponse().data;
         if (fromTemplate) {
-          projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
-          projectData["prjOwner"] = qxapp.auth.Data.getInstance().getUserName();
+          studyData = qxapp.utils.Utils.replaceTemplateUUIDs(studyData);
+          studyData["prjOwner"] = qxapp.auth.Data.getInstance().getUserName();
         }
-        this.__startProject(projectData, fromTemplate);
+        this.__startStudy(studyData, fromTemplate);
       }, this);
 
       resource.addListener("getError", e => {
@@ -239,41 +239,41 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       resource.get({
-        "project_id": projectId
+        "project_id": studyId
       });
     },
 
-    __createUserProjectList: function() {
+    __createUserStudyList: function() {
       // layout
-      let usrLst = this.__userProjectList = this.__cretePrjListLayout();
+      let usrLst = this.__userStudyList = this.__creteStudyListLayout();
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
-          this.__publicProjectList.resetSelection();
+          this.__templateStudyList.resetSelection();
           const selectedId = e.getData()[0].getModel();
           if (selectedId) {
             this.__itemSelected(selectedId, false);
           } else {
-            // "New Project" selected
+            // "New Study" selected
             this.__itemSelected(null);
           }
         }
       }, this);
 
-      this.reloadUserProjects();
+      this.reloadUserStudies();
 
       return usrLst;
     },
 
-    reloadUserProjects: function() {
+    reloadUserStudies: function() {
       // resources
-      this.__userProjectList.removeAll();
+      this.__userStudyList.removeAll();
 
-      let resources = this.__projectResources.projects;
+      let resources = this.__studyResources.projects;
 
       resources.addListenerOnce("getSuccess", e => {
-        let userPrjList = e.getRequest().getResponse().data;
-        let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
-        userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
+        let userStudyList = e.getRequest().getResponse().data;
+        let userStudyArrayModel = this.__getStudyArrayModel(userStudyList);
+        userStudyArrayModel.unshift(qx.data.marshal.Json.createModel({
           name: this.tr("New Study"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
           uuid: null,
@@ -281,10 +281,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           prjOwner: null
         }));
         // controller
-        let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
+        let studyCtr = new qx.data.controller.List(userStudyArrayModel, this.__userStudyList, "name");
         const fromTemplate = false;
-        let delegate = this.__getDelegate(fromTemplate, this.__userProjectList);
-        prjCtr.setDelegate(delegate);
+        let delegate = this.__getDelegate(fromTemplate, this.__userStudyList);
+        studyCtr.setDelegate(delegate);
       }, this);
 
       resources.addListener("getError", e => {
@@ -296,46 +296,46 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.__itemSelected(null);
     },
 
-    __createPublicProjectList: function() {
+    __createTemplateStudyList: function() {
       // layout
-      let pblLst = this.__publicProjectList = this.__cretePrjListLayout();
-      pblLst.addListener("changeSelection", e => {
+      let tempList = this.__templateStudyList = this.__creteStudyListLayout();
+      tempList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
-          this.__userProjectList.resetSelection();
+          this.__userStudyList.resetSelection();
           const selectedId = e.getData()[0].getModel();
           this.__itemSelected(selectedId, true);
         }
       }, this);
 
-      this.reloadPublicProjects();
+      this.reloadTemplateStudies();
 
-      return pblLst;
+      return tempList;
     },
 
-    reloadPublicProjects: function() {
+    reloadTemplateStudies: function() {
       // resources
-      this.__publicProjectList.removeAll();
+      this.__templateStudyList.removeAll();
 
-      let resources = this.__projectResources.templates;
+      let resources = this.__studyResources.templates;
 
       resources.addListenerOnce("getSuccess", e => {
-        let publicPrjList = e.getRequest().getResponse().data;
-        let publicFilteredPrjList = [];
-        for (let i=0; i<publicPrjList.length; i++) {
+        let tempStudyList = e.getRequest().getResponse().data;
+        let tempFilteredStudyList = [];
+        for (let i=0; i<tempStudyList.length; i++) {
           // FIXME: Backend should do the filtering
-          if (publicPrjList[i].uuid.includes("DemoDecember") &&
+          if (tempStudyList[i].uuid.includes("DemoDecember") &&
           !qxapp.data.Permissions.getInstance().canDo("test")) {
             continue;
           }
-          publicFilteredPrjList.push(publicPrjList[i]);
+          tempFilteredStudyList.push(tempStudyList[i]);
         }
 
-        let publicPrjArrayModel = this.__getProjectArrayModel(publicFilteredPrjList);
+        let tempStudyArrayModel = this.__getStudyArrayModel(tempFilteredStudyList);
         // controller
-        let prjCtr = new qx.data.controller.List(publicPrjArrayModel, this.__publicProjectList, "name");
+        let studyCtr = new qx.data.controller.List(tempStudyArrayModel, this.__templateStudyList, "name");
         const fromTemplate = true;
-        let delegate = this.__getDelegate(fromTemplate, this.__publicProjectList);
-        prjCtr.setDelegate(delegate);
+        let delegate = this.__getDelegate(fromTemplate, this.__templateStudyList);
+        studyCtr.setDelegate(delegate);
       }, this);
 
       resources.addListener("getError", e => {
@@ -347,7 +347,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.__itemSelected(null);
     },
 
-    __cretePrjListLayout: function() {
+    __creteStudyListLayout: function() {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
@@ -359,7 +359,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     /**
-     * Delegates appearance and binding of each project item
+     * Delegates appearance and binding of each study item
      */
     __getDelegate: function(fromTemplate, list) {
       const thumbnailWidth = 200;
@@ -370,19 +370,19 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let delegate = {
         // Item's Layout
         createItem: function() {
-          let item = new qxapp.desktop.PrjBrowserListItem();
+          let item = new qxapp.desktop.StudyBrowserListItem();
           item.addListener("dbltap", e => {
-            const prjUuid = item.getModel();
-            if (prjUuid) {
-              that.__createProject(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+            const studyUuid = item.getModel();
+            if (studyUuid) {
+              that.__createStudy(studyUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             }
           });
           item.addListener("tap", e => {
-            const prjUuid = item.getModel();
-            if (prjUuid) {
+            const studyUuid = item.getModel();
+            if (studyUuid) {
               list.setSelection([item]); // eslint-disable-line no-underscore-dangle
             } else {
-              that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
+              that.__newStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
           return item;
@@ -433,27 +433,27 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       return delegate;
     },
 
-    __itemSelected: function(projectId, fromTemplate = false) {
-      if (projectId === null) {
-        if (this.__userProjectList) {
-          this.__userProjectList.resetSelection();
+    __itemSelected: function(studyId, fromTemplate = false) {
+      if (studyId === null) {
+        if (this.__userStudyList) {
+          this.__userStudyList.resetSelection();
         }
-        if (this.__publicProjectList) {
-          this.__publicProjectList.resetSelection();
+        if (this.__templateStudyList) {
+          this.__templateStudyList.resetSelection();
         }
-        if (this.__editPrjLayout) {
-          this.__editPrjLayout.setVisibility("excluded");
+        if (this.__editStudyLayout) {
+          this.__editStudyLayout.setVisibility("excluded");
         }
         return;
       }
 
-      let resource = this.__projectResources.project;
+      let resource = this.__studyResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
-        this.__editPrjLayout.setVisibility("visible");
-        let projectData = e.getRequest().getResponse().data;
-        this.__createForm(projectData, fromTemplate);
-        console.log(projectData);
+        this.__editStudyLayout.setVisibility("visible");
+        let studyData = e.getRequest().getResponse().data;
+        this.__createForm(studyData, fromTemplate);
+        console.log(studyData);
       }, this);
 
       resource.addListener("getError", e => {
@@ -461,20 +461,20 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       resource.get({
-        "project_id": projectId
+        "project_id": studyId
       });
     },
 
-    __createForm: function(projectData, fromTemplate) {
-      while (this.__editPrjLayout.getChildren().length > 1) {
-        this.__editPrjLayout.removeAt(1);
+    __createForm: function(studyData, fromTemplate) {
+      while (this.__editStudyLayout.getChildren().length > 1) {
+        this.__editStudyLayout.removeAt(1);
       }
 
       const itemsToBeDisplayed = ["name", "description", "notes", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
       const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
       let form = new qx.ui.form.Form();
       let control;
-      for (const dataId in projectData) {
+      for (const dataId in studyData) {
         if (itemsToBeDisplayed.includes(dataId)) {
           switch (dataId) {
             case "name":
@@ -508,7 +508,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               form.add(control, this.tr("Last Change Date"));
               break;
           }
-          let value = projectData[dataId];
+          let value = studyData[dataId];
           if (typeof value === "object") {
             if (value === null) {
               value = "";
@@ -535,17 +535,17 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           const key = itemsToBeModified[i];
           let getter = "get" + qx.lang.String.firstUp(key);
           let newVal = model[getter]();
-          projectData[key] = newVal;
+          studyData[key] = newVal;
         }
-        let resource = this.__projectResources.project;
+        let resource = this.__studyResources.project;
 
         resource.addListenerOnce("putSuccess", ev => {
-          this.reloadUserProjects();
+          this.reloadUserStudies();
         }, this);
 
         resource.put({
-          "project_id": projectData["uuid"]
-        }, projectData);
+          "project_id": studyData["uuid"]
+        }, studyData);
 
         this.__itemSelected(null);
       }, this);
@@ -567,14 +567,14 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            let resource = this.__projectResources.project;
+            let resource = this.__studyResources.project;
 
             resource.addListenerOnce("delSuccess", ev => {
-              this.reloadUserProjects();
+              this.reloadUserStudies();
             }, this);
 
             resource.del({
-              "project_id": projectData["uuid"]
+              "project_id": studyData["uuid"]
             });
 
             this.__itemSelected(null);
@@ -583,7 +583,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
       form.addButton(deleteButton);
 
-      this.__editPrjLayout.add(new qx.ui.form.renderer.Single(form));
+      this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
     },
 
     __createConfirmWindow: function() {
@@ -598,7 +598,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         autoDestroy: false
       });
 
-      let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the project?"));
+      let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the study?"));
       win.add(text);
 
       let buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
@@ -619,7 +619,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       return win;
     },
 
-    __getProjectArrayModel: function(prjList) {
+    __getStudyArrayModel: function(studyList) {
       let sortByProperty = function(prop) {
         return function(a, b) {
           if (prop === "lastChangeDate") {
@@ -636,10 +636,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           return 0;
         };
       };
-      prjList.sort(sortByProperty("lastChangeDate"));
+      studyList.sort(sortByProperty("lastChangeDate"));
 
-      let prjArray = new qx.data.Array(
-        prjList
+      let studyArray = new qx.data.Array(
+        studyList
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
@@ -650,7 +650,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             })
           )
       );
-      return prjArray;
+      return studyArray;
     }
   }
 });

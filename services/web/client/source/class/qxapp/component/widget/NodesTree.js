@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodesTree = new qxapp.component.widget.NodesTree(project.getName(), project.getWorkbench());
+ *   let nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
  *   this.getRoot().add(nodesTree);
  * </pre>
  */
@@ -39,15 +39,15 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param projectName {String} Project Name for displaying as root of the tree
+    * @param studyName {String} Study Name for displaying as root of the tree
     * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
   */
-  construct: function(projectName, workbench) {
+  construct: function(studyName, workbench) {
     this.base(arguments);
 
     this.set({
-      projectName: projectName,
-      workbench: workbench
+      studyName,
+      workbench
     });
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -72,7 +72,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       nullable: false
     },
 
-    projectName: {
+    studyName: {
       check: "String"
     }
   },
@@ -136,7 +136,8 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         decorator: "service-tree",
         openMode: "none",
-        contentPadding: 0
+        contentPadding: 0,
+        padding: 0
       });
       tree.addListener("dbltap", e => {
         const currentSelection = this.__getOneSelectedRow();
@@ -156,7 +157,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     populateTree: function() {
       const topLevelNodes = this.getWorkbench().getNodes();
       let data = {
-        label: this.getProjectName(),
+        label: this.getStudyName(),
         children: this.__convertModel(topLevelNodes),
         nodeId: "root",
         isContainer: true

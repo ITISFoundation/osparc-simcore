@@ -18,7 +18,7 @@ servers:
       host:
         default: 'localhost'
       port:
-        default: '8001'
+        default: '8080'
       version:
         default: 'v0'
         enum:
@@ -27,7 +27,7 @@ servers:
     url: http://director:{port}/{version}
     variables:
       port:
-        default: '8001'
+        default: '8080'
       version:
         default: 'v0'
         enum:
@@ -138,6 +138,7 @@ paths:
       operationId: running_interactive_services_post
       parameters:
         - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/ProjectId'
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/AssignmentUuid'
@@ -258,7 +259,14 @@ components:
       schema:
         type: string
         example: asdfgj233
-
+    ProjectId:
+      in: query
+      name: project_id
+      description: The ID of the project in which the service starts
+      required: true
+      schema:
+        type: string
+        example: asdfgj233
     AssignmentUuid:
       in: query
       name: service_uuid

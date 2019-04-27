@@ -17,9 +17,20 @@ services:
         io.simcore.description: '{"description": "Jupyter notebook"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
-        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
-        io.simcore.outputs: '{"outputs": {"output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"}, "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}}}'
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        io.simcore.inputs: '{"inputs": {
+          "input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"},
+          "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}
+          }}'
+        io.simcore.outputs: '{"outputs": {
+          "output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"},
+          "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}
+          }}'
+        simcore.service.settings: '[
+          {"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}},
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=simcore"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -43,9 +54,20 @@ services:
         io.simcore.description: '{"description": "Jupyter scipy notebook"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
-        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
-        io.simcore.outputs: '{"outputs": {"output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"}, "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}}}'
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        io.simcore.inputs: '{"inputs": {
+          "input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"},
+          "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}
+          }}'
+        io.simcore.outputs: '{"outputs": {
+          "output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"},
+          "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}
+          }}'
+        simcore.service.settings: '[
+          {"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}},
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=${NOTEBOOK_TOKEN}"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -70,9 +92,20 @@ services:
         io.simcore.description: '{"description": "Jupyter R notebook"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
-        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
-        io.simcore.outputs: '{"outputs": {"output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"}, "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}}}'
-        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        io.simcore.inputs: '{"inputs": {
+          "input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"},
+          "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}
+          }}'
+        io.simcore.outputs: '{"outputs": {
+          "output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"},
+          "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}
+          }}'
+        simcore.service.settings: '[
+          {"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}},
+          {"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        # simcore.service.bootsettings: '[
+        #   {"name": "entry_point", "type": "string", "value": "?token=${NOTEBOOK_TOKEN}"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"

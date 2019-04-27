@@ -53,14 +53,22 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     __stopButton: null,
 
     __initDefault: function() {
+      const filterCtrls = new qx.ui.toolbar.Part();
+      filterCtrls.add(new qxapp.desktop.WorkbenchFilters());
+      this.add(filterCtrls);
+
       this.addSpacer();
+
+      const serviceCtrls = new qx.ui.toolbar.Part();
+      const retrieveBtn = this.__createRetrieveButton();
+      serviceCtrls.add(retrieveBtn);
+      this.add(serviceCtrls);
+
       const simCtrls = new qx.ui.toolbar.Part();
       this.__startButton = this.__createStartButton();
       this.__stopButton = this.__createStopButton();
-      const retrieveBtn = this.__createRetrieveButton();
       simCtrls.add(this.__startButton);
       simCtrls.add(this.__stopButton);
-      simCtrls.add(retrieveBtn);
       this.add(simCtrls);
     },
 

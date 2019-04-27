@@ -14,7 +14,7 @@ from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
-async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id):
+async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn):
         pushed_services = push_services(number_comp, number_dyn, 60)
@@ -29,7 +29,7 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             with pytest.raises(exceptions.ServiceUUIDNotFoundError, message="expecting service uuid not found error"):
                 await producer.get_service_details(service_uuid)
             # start the service
-            started_service = await producer.start_service(user_id, service_key, service_version, service_uuid, service_basepath)
+            started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
             assert "entry_point" in started_service
             assert "service_uuid" in started_service
@@ -65,7 +65,7 @@ async def test_start_stop_service(run_services):
     await run_services(number_comp=1, number_dyn=1)
 
 
-async def test_service_assigned_env_variables(run_services, user_id):
+async def test_service_assigned_env_variables(run_services, user_id, project_id):
     started_services = await run_services(number_comp=1, number_dyn=1)
     client = docker.from_env()
     for service in started_services:
@@ -87,6 +87,8 @@ async def test_service_assigned_env_variables(run_services, user_id):
         assert "STORAGE_ENDPOINT" in envs_dict
         assert "SIMCORE_NODE_UUID" in envs_dict
         assert envs_dict["SIMCORE_NODE_UUID"] == service_uuid
+        assert "SIMCORE_PROJECT_ID" in envs_dict
+        assert envs_dict["SIMCORE_PROJECT_ID"] == project_id
         assert "SIMCORE_USER_ID" in envs_dict
         assert envs_dict["SIMCORE_USER_ID"] == user_id
         assert "SIMCORE_NODE_BASEPATH" in envs_dict

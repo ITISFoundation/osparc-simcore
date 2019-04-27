@@ -32,16 +32,16 @@ qx.Class.define("qxapp.utils.UuidToName", {
   type: "singleton",
 
   properties: {
-    project: {
-      check: "qxapp.data.model.Project",
+    study: {
+      check: "qxapp.data.model.Study",
       nullable: true
     }
   },
 
   members: {
     convertToName: function(itemUuid) {
-      if (this.isPropertyInitialized("project")) {
-        const prj = this.getProject();
+      if (this.isPropertyInitialized("study")) {
+        const prj = this.getStudy();
         if (itemUuid === prj.getUuid()) {
           return prj.getName();
         }

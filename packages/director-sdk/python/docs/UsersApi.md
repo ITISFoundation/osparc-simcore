@@ -1,13 +1,13 @@
 # simcore_director_sdk.UsersApi
 
-All URIs are relative to *http://localhost:8001/v0*
+All URIs are relative to *http://localhost:8080/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**root_get**](UsersApi.md#root_get) | **GET** / | Service health-check endpoint
 [**running_interactive_services_delete**](UsersApi.md#running_interactive_services_delete) | **DELETE** /running_interactive_services/{service_uuid} | Stops and removes an interactive service from the oSparc platform
 [**running_interactive_services_get**](UsersApi.md#running_interactive_services_get) | **GET** /running_interactive_services/{service_uuid} | Succesfully returns if a service with the defined uuid is up and running
-[**running_interactive_services_post**](UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform and returns its entrypoint
+[**running_interactive_services_post**](UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform
 [**services_by_key_version_get**](UsersApi.md#services_by_key_version_get) | **GET** /services/{service_key}/{service_version} | Returns details of the selected service if available in the oSparc platform
 [**services_get**](UsersApi.md#services_get) | **GET** /services | Lists available services in the oSparc platform
 
@@ -153,11 +153,9 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_post**
-> InlineResponse201 running_interactive_services_post(user_id, service_key, service_uuid, service_tag=service_tag, service_basepath=service_basepath)
+> InlineResponse201 running_interactive_services_post(user_id, project_id, service_key, service_uuid, service_tag=service_tag, service_basepath=service_basepath)
 
-Starts an interactive service in the oSparc platform and returns its entrypoint
-
-Starts an interactive service in the oSparc platform and returns its entrypoint
+Starts an interactive service in the oSparc platform
 
 ### Example
 ```python
@@ -170,14 +168,15 @@ from pprint import pprint
 # create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
 user_id = asdfgj233 # str | The ID of the user that starts the service
+project_id = asdfgj233 # str | The ID of the project in which the service starts
 service_key = ["simcore/services/comp/itis/sleeper","simcore/services/dynamic/3dviewer"] # str | The key (url) of the service
 service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid to assign the service with
 service_tag = ["1.0.0","0.0.1"] # str | The tag/version of the service (optional)
 service_basepath = /x/EycCXbU0H/ # str | predefined basepath for the backend service otherwise uses root (optional)
 
 try:
-    # Starts an interactive service in the oSparc platform and returns its entrypoint
-    api_response = api_instance.running_interactive_services_post(user_id, service_key, service_uuid, service_tag=service_tag, service_basepath=service_basepath)
+    # Starts an interactive service in the oSparc platform
+    api_response = api_instance.running_interactive_services_post(user_id, project_id, service_key, service_uuid, service_tag=service_tag, service_basepath=service_basepath)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->running_interactive_services_post: %s\n" % e)
@@ -188,6 +187,7 @@ except ApiException as e:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **user_id** | **str**| The ID of the user that starts the service | 
+ **project_id** | **str**| The ID of the project in which the service starts | 
  **service_key** | **str**| The key (url) of the service | 
  **service_uuid** | **str**| The uuid to assign the service with | 
  **service_tag** | **str**| The tag/version of the service | [optional] 
