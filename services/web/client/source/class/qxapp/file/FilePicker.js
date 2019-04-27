@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new qxapp.file.FilePicker(node, projectId);
+ *   let filePicker = new qxapp.file.FilePicker(node, studyId);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
@@ -39,13 +39,13 @@ qx.Class.define("qxapp.file.FilePicker", {
 
   /**
     * @param node {qxapp.data.model.Node} Node owning the widget
-    * @param projectId {String} ProjectID of the project that node belongs to
+    * @param studyId {String} StudyId of the study that node belongs to
   */
-  construct: function(node, projectId) {
+  construct: function(node, studyId) {
     this.base(arguments);
 
     this.setNode(node);
-    this.setProjectId(projectId);
+    this.setStudyId(studyId);
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       check: "qxapp.data.model.Node"
     },
 
-    projectId: {
+    studyId: {
       check: "String",
       init: ""
     }
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.file.FilePicker", {
         case "addButton":
           control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
             node: this.getNode(),
-            projectId: this.getProjectId()
+            studyId: this.getStudyId()
           });
           this._add(control);
           break;
