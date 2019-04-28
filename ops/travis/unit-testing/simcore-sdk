@@ -38,7 +38,6 @@ before_script() {
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=pytest_docker --cov-append -v packages/pytest_docker/tests
         pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
         pytest --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
         pytest --cov=servicelib --cov-append -v packages/service-library/tests
