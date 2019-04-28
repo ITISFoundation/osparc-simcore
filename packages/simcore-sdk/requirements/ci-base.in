@@ -1,0 +1,7 @@
+# frozen specs
+-r base.txt
+-r ../../s3wrapper/requirements/base.txt
+
+# tests requirements
+-r test.in
+-r ../../s3wrapper/requirements/test.in

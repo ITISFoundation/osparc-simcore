@@ -1,0 +1,11 @@
+
+# Dependencies for contiguous integratin of simcore-sdk
+#
+# See ops/travis/unit-testing/simcore-sdk
+-r ci-base.txt
+
+# dependencies
+../s3wrapper/
+
+# testing
+../../services/storage/client-sdk/python/

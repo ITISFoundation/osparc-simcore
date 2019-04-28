@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO: rename as simcore-packages
-
 # die on non 0 exit code
 set -e
 
@@ -19,10 +17,12 @@ install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
-        pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
+
+        pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd
+
+        # actual packages (adds test just to check)
         pip3 install packages/s3wrapper[test]
         pip3 install packages/simcore-sdk[test]
-        pip3 install services/storage/client-sdk/python
     fi
 }
 
@@ -40,7 +40,6 @@ script() {
     then
         pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
         pytest --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
-        pytest --cov=servicelib --cov-append -v packages/service-library/tests
     else
         echo "No changes detected. Skipping unit-testing of simcore-sdk."
     fi
