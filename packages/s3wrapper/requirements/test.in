@@ -1,0 +1,16 @@
+# Specifies dependencies required for s3wrapper/tests
+#
+# NOTE: order defines priority
+
+# testing
+pytest
+pytest-cov
+pytest-docker
+pytest-runner
+coveralls
+
+# linting
+pylint~=2.2
+
+# mockups/fixtures
+requests

@@ -1,0 +1,7 @@
+# Specifies dependencies for contiguous integration
+
+# frozen specs
+-r base.txt
+
+# tests requirements
+-r test.in
