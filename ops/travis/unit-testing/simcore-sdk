@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: rename as simcore-packages
+
 # die on non 0 exit code
 set -e
 

@@ -1,0 +1,7 @@
+# Specifies third-party dependencies for s3wrapper/src
+#
+# NOTE: order defines priority
+
+urllib3<1.25 # constraint by requests==2.21.0
+
+minio
