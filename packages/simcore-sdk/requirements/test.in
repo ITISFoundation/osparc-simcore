@@ -1,0 +1,21 @@
+# Specifies dependencies required for simcore-sdk/tests
+#
+# NOTE: order defines priority
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+coveralls
+
+
+# linting
+pylint~=2.2
+
+# mockups/fixtures
+mock
+requests
+docker
