@@ -4,7 +4,7 @@
 # die on non 0 exit code
 set -e
 
-FOLDER_CHECKS=(service-library)
+FOLDER_CHECKS=(packages/ service-library)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
