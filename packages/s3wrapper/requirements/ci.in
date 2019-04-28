@@ -1,7 +1,0 @@
-# Specifies dependencies for contiguous integration of s3wrapper/src
-
-# frozen specs
--r base.txt
-
-# tests requirements
--r test.in
