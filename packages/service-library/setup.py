@@ -11,7 +11,7 @@ def read_reqs( reqs_path: Path):
     return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
 
 
-install_requirements = read_reqs( here / "requirements" / "base.in" )
+install_requirements = read_reqs( here / "requirements" / "base.txt" )
 
 test_requirements = read_reqs( here / "requirements" / "test.txt" )
 
