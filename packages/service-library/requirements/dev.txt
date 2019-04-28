@@ -1,6 +1,15 @@
+# Installs in *develop mode* simcore-sdk and other packages in this repository
+#
+#  $ pip install -r requirements/dev.txt
+#
+# NOTE: there is no dev.in counterpart since it is not used to specify
+#       third-party dependencies but as a shortcut
+
 -e .
 
-bumpversion
-coverage
+# tests
+-r test.txt
 
--r ../tests/requirements.txt
+
+# tools
+bumpversion
