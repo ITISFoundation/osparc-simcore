@@ -17,9 +17,6 @@ install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version;
-        pip3 install packages/s3wrapper[test];
-        pip3 install packages/simcore-sdk[test];
-        pip3 install packages/director-sdk/python;
         pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
     fi
 }

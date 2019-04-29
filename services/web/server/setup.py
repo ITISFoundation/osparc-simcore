@@ -1,12 +1,10 @@
-import pathlib
-import sys
-import re
-from os.path import join
 import io
-from setuptools import (
-    find_packages,
-    setup
-)
+import pathlib
+import re
+import sys
+from os.path import join
+
+from setuptools import find_packages, setup
 
 _CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
 
@@ -20,7 +18,7 @@ def list_packages(*parts):
 #-----------------------------------------------------------------
 
 INSTALL_REQUIRES = list_packages("requirements", "base.txt")
-TESTS_REQUIRE = list_packages("tests", "requirements.txt")
+TESTS_REQUIRE = list_packages("requirements", "test.txt")
 
 
 setup(
