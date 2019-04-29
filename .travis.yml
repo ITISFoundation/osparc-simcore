@@ -31,6 +31,8 @@ jobs:
         - provider: script
           skip_cleanup: true
           script: bash ops/travis/deploy/test-images.sh
+          on:
+            all_branches: true
     # build cache images ----------------------------------------------------------------------
     - if: branch = master
       stage: build
