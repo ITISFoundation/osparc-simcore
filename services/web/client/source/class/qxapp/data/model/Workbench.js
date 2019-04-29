@@ -221,53 +221,6 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return node;
     },
 
-    __createNodes: function(workbenchData) {
-      let keys = Object.keys(workbenchData);
-      // Create first all the nodes
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        const nodeData = workbenchData[nodeId];
-        if (nodeData.parent && nodeData.parent !== null) {
-          let parentNode = this.getNode(nodeData.parent);
-          if (parentNode === null) {
-            // If parent was not yet created, delay the creation of its' children
-            keys.push(nodeId);
-            // check if there is an inconsitency
-            const nKeys = keys.length;
-            if (nKeys > 1) {
-              if (keys[nKeys-1] === keys[nKeys-2]) {
-                console.log(nodeId, "will never be created, parent missing", nodeData.parent);
-                return;
-              }
-            }
-            continue;
-          }
-        }
-        let parentNode = null;
-        if (nodeData.parent) {
-          parentNode = this.getNode(nodeData.parent);
-        }
-        if (nodeData.key) {
-          // not container
-          this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
-        } else {
-          // container
-          this.createNode(null, null, nodeId, parentNode, false);
-        }
-      }
-
-      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        const nodeData = workbenchData[nodeId];
-        this.getNode(nodeId).populateNodeData(nodeData);
-      }
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        this.getNode(nodeId).giveUniqueName();
-      }
-    },
-
     addNode: function(node, parentNode) {
       const uuid = node.getNodeId();
       if (parentNode) {
@@ -301,25 +254,6 @@ qx.Class.define("qxapp.data.model.Workbench", {
         return true;
       }
       return false;
-    },
-
-    __createEdge: function(outputNodeId, inputNodeId) {
-      let node = this.getNode(inputNodeId);
-      if (node) {
-        node.addInputNode(outputNodeId);
-      }
-    },
-
-    __createEdges: function(workbenchData) {
-      for (const nodeId in workbenchData) {
-        const nodeData = workbenchData[nodeId];
-        if (nodeData.inputNodes) {
-          for (let i=0; i < nodeData.inputNodes.length; i++) {
-            const outputNodeId = nodeData.inputNodes[i];
-            this.__createEdge(outputNodeId, nodeId);
-          }
-        }
-      }
     },
 
     removeEdge: function(edgeId, currentNodeId) {
@@ -373,8 +307,80 @@ qx.Class.define("qxapp.data.model.Workbench", {
       this.__nodesTopLevel = {};
       this.__edges = {};
 
-      this.__createNodes(workbenchData);
-      this.__createEdges(workbenchData);
+      this.__deserializeNodes(workbenchData);
+      this.__deserializeEdges(workbenchData);
+    },
+
+    __deserializeNodes: function(workbenchData) {
+      let keys = Object.keys(workbenchData);
+      // Create first all the nodes
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        const nodeData = workbenchData[nodeId];
+        if (nodeData.parent && nodeData.parent !== null) {
+          let parentNode = this.getNode(nodeData.parent);
+          if (parentNode === null) {
+            // If parent was not yet created, delay the creation of its' children
+            keys.push(nodeId);
+            // check if there is an inconsitency
+            const nKeys = keys.length;
+            if (nKeys > 1) {
+              if (keys[nKeys-1] === keys[nKeys-2]) {
+                console.log(nodeId, "will never be created, parent missing", nodeData.parent);
+                return;
+              }
+            }
+            continue;
+          }
+        }
+        let parentNode = null;
+        if (nodeData.parent) {
+          parentNode = this.getNode(nodeData.parent);
+        }
+        let node = null;
+        if (nodeData.key) {
+          // not container
+          // this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
+          node = new qxapp.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
+        } else {
+          // container
+          // this.createNode(null, null, nodeId, parentNode, false);
+          node = new qxapp.data.model.Node(this, null, null, nodeId);
+        }
+        if (node) {
+          this.__initNodeSignals(node);
+          this.addNode(node, parentNode);
+        }
+      }
+
+      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        const nodeData = workbenchData[nodeId];
+        this.getNode(nodeId).populateNodeData(nodeData);
+      }
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        this.getNode(nodeId).giveUniqueName();
+      }
+    },
+
+    __deserializeEdges: function(workbenchData) {
+      for (const nodeId in workbenchData) {
+        const nodeData = workbenchData[nodeId];
+        if (nodeData.inputNodes) {
+          for (let i=0; i < nodeData.inputNodes.length; i++) {
+            const outputNodeId = nodeData.inputNodes[i];
+            const node = this.getNode(nodeId);
+            if (node) {
+              const edge = new qxapp.data.model.Edge(null, outputNodeId, nodeId);
+              this.addEdge(edge);
+
+              node.addInputNode(outputNodeId);
+            }
+          }
+        }
+      }
     },
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
