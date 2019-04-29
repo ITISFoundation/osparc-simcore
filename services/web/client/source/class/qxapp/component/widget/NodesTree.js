@@ -244,7 +244,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
 
       let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
       treeItemRenamer.addListener("labelChanged", e => {
-        if (qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
           return;
         }
         const data = e.getData();
