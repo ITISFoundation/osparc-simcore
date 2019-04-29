@@ -187,12 +187,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
           this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
         }
       }
-      node.addListener("showInLogger", e => {
-        this.fireDataEvent("showInLogger", e.getData());
-      }, this);
-      node.addListener("updatePipeline", e => {
-        this.fireDataEvent("updatePipeline", e.getData());
-      }, this);
+      this.__initNodeSignals(node);
       if (populateNodeData) {
         node.populateNodeData();
         node.giveUniqueName();
@@ -200,6 +195,17 @@ qx.Class.define("qxapp.data.model.Workbench", {
       this.addNode(node, parent);
 
       return node;
+    },
+
+    __initNodeSignals: function(node) {
+      if (node) {
+        node.addListener("showInLogger", e => {
+          this.fireDataEvent("showInLogger", e.getData());
+        }, this);
+        node.addListener("updatePipeline", e => {
+          this.fireDataEvent("updatePipeline", e.getData());
+        }, this);
+      }
     },
 
     cloneNode: function(nodeToClone) {
