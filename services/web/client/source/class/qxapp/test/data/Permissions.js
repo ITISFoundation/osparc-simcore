@@ -24,7 +24,6 @@ qx.Class.define("qxapp.test.data.Permissions", {
   include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
 
   members: {
-    __studyEditor: null,
     __workbench: null,
 
     setUp: function() {
@@ -43,7 +42,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
         name: "Test Study",
         description: ""
       };
-      const study = this.__studyEditor = new qxapp.data.model.Study(studyData);
+      const study = new qxapp.data.model.Study(studyData);
       const wbData = {};
       this.__workbench = new qxapp.data.model.Workbench(study, wbData);
     },
@@ -83,12 +82,45 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertNotNull(dummyNode, "user is allowed to create nodes");
 
       qxapp.data.Permissions.getInstance().setRole("anonymous");
-      let removed = this.__workbench.removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
+      let removed = this.__workbench.removeNode(dummyNode.getNodeId());
       this.assertFalse(removed, "anonymous is not allowed to delete nodes");
 
       qxapp.data.Permissions.getInstance().setRole("user");
-      removed = this.__workbench.removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
+      removed = this.__workbench.removeNode(dummyNode.getNodeId());
       this.assertTrue(removed, "user is allowed to delete nodes");
+    },
+
+    testStudyEdgeCreate: function() {
+      this.createEmptyWorkbench();
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      const node1 = this.createDummyNode();
+      const node2 = this.createDummyNode();
+
+      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      const anonEdge = this.__workbench.createEdge(null, node1, node2);
+      this.assertNull(anonEdge, "anonymous is not allowed to create edges");
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      const userEdge = this.__workbench.createEdge(null, node1, node2);
+      this.assertNotNull(userEdge, "user is allowed to create edges");
+    },
+
+    testStudyEdgeDelete: function() {
+      this.createEmptyWorkbench();
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      const node1 = this.createDummyNode();
+      const node2 = this.createDummyNode();
+      const edge = this.__workbench.createEdge(null, node1, node2);
+
+      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      let removed = this.__workbench.removeEdge(edge.getEdgeId());
+      this.assertFalse(removed, "anonymous is not allowed to delete edges");
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      removed = this.__workbench.removeEdge(edge.getEdgeId());
+      this.assertTrue(removed, "user is allowed to delete edges");
     }
   }
 });
