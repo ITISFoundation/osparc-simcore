@@ -11,9 +11,9 @@ addons:
 
 jobs:
   include:
-    # build cache images ----------------------------------------------------------------------
+    # build images ----------------------------------------------------------------------
     - stage: build
-      name: build simcore images / simcore cache
+      name: build simcore images
       sudo: required
       before_install:
         - sudo bash ops/travis/build/test-images.sh before_install
@@ -30,7 +30,30 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: bash ops/travis/deploy/test-images.sh          
+          script: bash ops/travis/deploy/test-images.sh
+    # build cache images ----------------------------------------------------------------------
+    - if: branch = master
+      stage: build
+      name: build simcore cache images
+      sudo: required
+      before_install:
+        - sudo bash ops/travis/build/cache.sh before_install
+      install:
+        - bash ops/travis/build/cache.sh install
+      before_script:
+        - bash ops/travis/build/cache.sh before_script
+      script:
+        - bash ops/travis/build/cache.sh script
+      after_success:
+        - bash ops/travis/build/cache.sh after_success
+      after_failure:
+        - bash ops/travis/build/cache.sh after_failure
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: bash ops/travis/deploy/cache.sh
+          on:
+            branch: master
 
 #     # test python, webserver ----------------------------------------------------------------------
 #     - stage: unit testing
