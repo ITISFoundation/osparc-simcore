@@ -55,11 +55,11 @@ RUN $SC_PIP install --upgrade \
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/director/requirements/*.txt \
-      services/director/requirements/
+COPY  --chown=scu:scu services/director/requirements/*.txt \
+      tmp/director/requirements/
 
 RUN $SC_PIP install \
-      -r services/director/requirements/base.txt
+      -r tmp/director/requirements/base.txt
 
 #--------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
