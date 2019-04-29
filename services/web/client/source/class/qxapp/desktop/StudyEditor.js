@@ -129,16 +129,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
+      this.__mainPanel.getControls().addListener("startPipeline", this.startPipeline, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", this.updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
-        this.__updatePipeline(node);
+        this.updatePipeline(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -379,7 +379,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
+    updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -416,8 +416,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     startPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
-        return;
-      }
         return false;
       }
 
@@ -476,11 +474,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       req.send();
 
       this.getLogger().info("Workbench", "Starting pipeline");
+      return true;
     },
 
-    __stopPipeline: function() {
+    stopPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
-        return;
+        return false;
       }
 
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
@@ -499,6 +498,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       // req.send();
 
       this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+      return true;
     },
 
     __onPipelinesubmitted: function(e) {
