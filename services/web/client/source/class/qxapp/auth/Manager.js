@@ -195,10 +195,6 @@ qx.Class.define("qxapp.auth.Manager", {
         // FIXME: Data is an object
         failCbk.call(context, msg);
       }, this);
-    },
-
-    __getToken: function() {
-      return qxapp.auth.Data.getInstance().getToken();
     }
   }
 });
