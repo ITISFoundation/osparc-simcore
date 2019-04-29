@@ -153,10 +153,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (existingEdge) {
         return existingEdge;
       }
-      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
       if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
         return null;
       }
+      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation
@@ -325,7 +325,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (edge) {
         const inputNodeId = edge.getInputNodeId();
         const outputNodeId = edge.getOutputNodeId();
-        let node = this.getNode(outputNodeId);
+        const node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
           delete this.__edges[edgeId];
@@ -336,8 +336,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     clearProgressData: function() {
-      const allModels = this.getNodes(true);
-      const nodes = Object.values(allModels);
+      const allNodes = this.getNodes(true);
+      const nodes = Object.values(allNodes);
       for (const node of nodes) {
         if (!node.isDynamic()) {
           node.setProgress(0);
