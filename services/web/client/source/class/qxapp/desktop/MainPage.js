@@ -28,12 +28,12 @@
  *   - StudyEditor
  *
  * <pre class='javascript'>
- *   let layoutManager = new qxapp.desktop.LayoutManager();
+ *   let layoutManager = new qxapp.desktop.MainPage();
  *   this.getRoot().add(layoutManager);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.LayoutManager", {
+qx.Class.define("qxapp.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

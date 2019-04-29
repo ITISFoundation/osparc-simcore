@@ -80,7 +80,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       r.on("/study/{id}", data => {
-        this.__loadProjectBrowserView();
+        this.__loadMainPage();
       });
 
       r.init();
@@ -95,13 +95,13 @@ qx.Class.define("qxapp.Application", {
       }
 
       if (isLogged) {
-        this.__loadProjectBrowserView();
+        this.__loadMainPage();
       } else {
-        qxapp.auth.Manager.getInstance().validateToken(this.__loadProjectBrowserView, this.__loadLoginView, this);
+        qxapp.auth.Manager.getInstance().validateToken(this.__loadMainPage, this.__loadLoginPage, this);
       }
     },
 
-    __loadLoginView: function() {
+    __loadLoginPage: function() {
       this.__disconnectWebSocket();
       const view = new qxapp.auth.LoginPage();
       view.addListener("done", function(msg) {
@@ -115,9 +115,9 @@ qx.Class.define("qxapp.Application", {
       });
     },
 
-    __loadProjectBrowserView: function() {
+    __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new qxapp.desktop.LayoutManager(), {
+      this.__loadView(new qxapp.desktop.MainPage(), {
         top: 0,
         bottom: 0,
         left: 0,
