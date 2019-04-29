@@ -311,13 +311,13 @@ setup-check: .env .vscode/settings.json
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
 	.venv/bin/pip3 install pylint autopep8 virtualenv
-	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
 
 .venv27: .venv
 # target: .venv27 – Creates a python2.7 virtual environment with dev tools
 	@python2 --version
 	.venv/bin/virtualenv --python=python2 .venv27
-	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
+	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
 
 
 
