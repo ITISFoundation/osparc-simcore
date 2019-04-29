@@ -237,7 +237,7 @@ push:
 
 # target: pull – Pulls images from a registry
 pull:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull --ignore-pull-failures
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file: .check-ci-env
