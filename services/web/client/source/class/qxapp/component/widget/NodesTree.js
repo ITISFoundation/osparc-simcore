@@ -237,12 +237,12 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     },
 
     __renameNode: function() {
-      let selectedItem = this.__getSelection();
+      const selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;
       }
 
-      let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+      const treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
       treeItemRenamer.addListener("labelChanged", e => {
         if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
           return;
