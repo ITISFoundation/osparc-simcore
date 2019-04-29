@@ -39,13 +39,15 @@ qx.Class.define("qxapp.ui.form.LinkButton", {
     this.base(arguments, label);
 
     this.set({
-      icon: "@FontAwesome5Solid/external-link-alt/"+height,
       iconPosition: "right",
       allowGrowX: false
     });
 
-    this.addListener("execute", () => {
-      window.open(url);
-    }, this);
+    if (url) {
+      this.setIcon("@FontAwesome5Solid/external-link-alt/" + height);
+      this.addListener("execute", () => {
+        window.open(url);
+      }, this);
+    }
   }
 });

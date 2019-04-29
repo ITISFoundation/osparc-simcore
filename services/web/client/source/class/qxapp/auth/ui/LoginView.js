@@ -97,9 +97,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
 
 
       //  create account | forgot password? links
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        separator: "main"
-      }));
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
         this.fireEvent("toRegister");
@@ -113,7 +111,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         grp.add(btn.set({
           center: true
         }), {
-          flex: 1
+          width: "50%"
         });
       });
 
