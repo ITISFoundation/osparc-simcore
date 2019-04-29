@@ -1,8 +1,5 @@
 #!/bin/bash
 set -e
-export DOCKER_IMAGE_PREFIX=itisfoundation/
-export DOCKER_IMAGE_TAG=staging-latest
-
 
 before_install() {
     bash ops/travis/helpers/install_docker_compose
@@ -13,7 +10,6 @@ install() {
     pip3 install --upgrade pip wheel setuptools && pip3 --version
     pip3 install -r ops/travis/system-testing/requirements.txt
     cp .env-devel .env
-    #make build-staging
     make build
 }
 
