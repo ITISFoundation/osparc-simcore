@@ -221,13 +221,7 @@ push-cache:
 # Staging
 # TODO: PC->SAN: see ops/travis/system-testing/build_and_run. Could move images FREFIX and TAG there
 
-.PHONY: build-staging push-staging pull-staging create-staging-stack-file
-# target: build-staging – Builds service images and tags them as 'staging'
-build-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${MAKE} build
-
+.PHONY: push-staging pull-staging create-staging-stack-file
 TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
 # target: push-staging – Tags service images with version and 'latest'; and pushes them into registry
 push-staging:
