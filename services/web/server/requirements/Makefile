@@ -10,9 +10,6 @@ all: $(outputs)
 
 ci-base.txt: base.txt
 
-# avoids test.txt since it is NOT used
-test.txt: test.in
-
 
 .PHONY: check
 # target: check – Checks whether pip-compile is installed
