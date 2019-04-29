@@ -13,7 +13,7 @@ def read_reqs( reqs_path: Path):
 
 install_requirements = read_reqs( here / "requirements" / "base.in" )
 
-test_requirements = read_reqs( here / "requirements" / "test.txt" )
+test_requirements = read_reqs( here / "requirements" / "ci.txt" )
 
 readme = Path( here / "README.rst" ).read_text()
 
@@ -37,5 +37,8 @@ setup(
     include_package_data=True,
     test_suite='tests',
     tests_require=test_requirements,
+    extras_require= {
+        'test': test_requirements
+    },
     zip_safe=False
 )
