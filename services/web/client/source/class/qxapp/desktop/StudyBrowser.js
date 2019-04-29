@@ -245,7 +245,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createUserStudyList: function() {
       // layout
-      let usrLst = this.__userStudyList = this.__creteStudyListLayout();
+      let usrLst = this.__userStudyList = this.__createStudyListLayout();
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__templateStudyList.resetSelection();
@@ -298,7 +298,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createTemplateStudyList: function() {
       // layout
-      let tempList = this.__templateStudyList = this.__creteStudyListLayout();
+      let tempList = this.__templateStudyList = this.__createStudyListLayout();
       tempList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__userStudyList.resetSelection();
@@ -347,7 +347,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       this.__itemSelected(null);
     },
 
-    __creteStudyListLayout: function() {
+    __createStudyListLayout: function() {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
