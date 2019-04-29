@@ -38,19 +38,15 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
   /**
     * @param study {qxapp.data.model.Study} Study owning the Workbench
-    * @param wbData {qx.core.Object} Object containing the workbench raw data
+    * @param workbenchData {qx.core.Object} Object containing the workbench raw data
     */
-  construct: function(study, wbData) {
+  construct: function(study, workbenchData) {
     this.base(arguments);
-
-    this.__nodesTopLevel = {};
-    this.__edges = {};
 
     this.setStudy(study);
     this.setStudyName(study.getName());
 
-    this.__createNodes(wbData);
-    this.__createEdges(wbData);
+    this.__deserializeWorkbench(workbenchData);
   },
 
   properties: {
@@ -343,6 +339,14 @@ qx.Class.define("qxapp.data.model.Workbench", {
           node.setProgress(0);
         }
       }
+    },
+
+    __deserializeWorkbench: function(workbenchData) {
+      this.__nodesTopLevel = {};
+      this.__edges = {};
+
+      this.__createNodes(workbenchData);
+      this.__createEdges(workbenchData);
     },
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
