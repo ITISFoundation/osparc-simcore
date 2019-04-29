@@ -300,32 +300,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __removeEdge: function(edgeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
-        return;
-      }
-
       const workbench = this.getStudy().getWorkbench();
-      const currentNode = workbench.getNode(this.__currentNodeId);
-      const edge = workbench.getEdge(edgeId);
-      let removed = false;
-      if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-        const inputNode = workbench.getNode(edge.getInputNodeId());
-        inputNode.setIsOutputNode(false);
-
-        // Remove also dependencies from outter nodes
-        const cNodeId = inputNode.getNodeId();
-        const allNodes = workbench.getNodes(true);
-        for (const nodeId in allNodes) {
-          const node = allNodes[nodeId];
-          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-            workbench.removeEdge(edgeId);
-          }
-        }
-        removed = true;
-      } else {
-        removed = workbench.removeEdge(edgeId);
-      }
-      if (removed) {
+      if (workbench.removeEdge(edgeId, this.__currentNodeId)) {
         this.__workbenchUI.clearEdge(edgeId);
       }
     },
