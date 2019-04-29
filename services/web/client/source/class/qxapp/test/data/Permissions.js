@@ -118,11 +118,11 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const node2 = this.createDummyNode();
 
       qxapp.data.Permissions.getInstance().setRole("anonymous");
-      const anonEdge = this.__workbench.createEdge(null, node1, node2);
+      const anonEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
       this.assertNull(anonEdge, "anonymous is not allowed to create edges");
 
       qxapp.data.Permissions.getInstance().setRole("user");
-      const userEdge = this.__workbench.createEdge(null, node1, node2);
+      const userEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
       this.assertNotNull(userEdge, "user is allowed to create edges");
     },
 
@@ -133,7 +133,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
       qxapp.data.Permissions.getInstance().setRole("user");
       const node1 = this.createDummyNode();
       const node2 = this.createDummyNode();
-      const edge = this.__workbench.createEdge(null, node1, node2);
+      const edge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
 
       qxapp.data.Permissions.getInstance().setRole("anonymous");
       let removed = this.__workbench.removeEdge(edge.getEdgeId());
