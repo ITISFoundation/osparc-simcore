@@ -83,11 +83,11 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertNotNull(dummyNode, "user is allowed to create nodes");
 
       qxapp.data.Permissions.getInstance().setRole("anonymous");
-      let removed = this.__studyEditor.__removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
+      let removed = this.__workbench.removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
       this.assertFalse(removed, "anonymous is not allowed to delete nodes");
 
       qxapp.data.Permissions.getInstance().setRole("user");
-      removed = this.__studyEditor.__removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
+      removed = this.__workbench.removeNode(dummyNode.getNodeId()); // eslint-disable-line no-underscore-dangle
       this.assertTrue(removed, "user is allowed to delete nodes");
     }
   }
