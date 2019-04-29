@@ -21,5 +21,4 @@ export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 export DOCKER_IMAGE_TAG_PREFIX=$(slugify "$current_branch")
 
-make tag
 make push
