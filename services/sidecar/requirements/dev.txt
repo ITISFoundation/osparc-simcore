@@ -1,7 +1,6 @@
 #
+# as ci.txt but current modules and all repos in editable mode
 #
-#
-
 -r base.txt
 
 # installs repo packages

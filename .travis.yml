@@ -65,6 +65,25 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/director after_success
 
+    # test python, sidecar ----------------------------------------------------------------------
+    - stage: unit testing
+      name: sidecar
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/sidecar before_install
+      install:
+        - bash ops/travis/unit-testing/sidecar install
+      before_script:
+        - bash ops/travis/unit-testing/sidecar before_script
+      script:
+        - bash ops/travis/unit-testing/sidecar script
+      after_success:
+        - bash ops/travis/unit-testing/sidecar after_success
+
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
       name: simcore-sdk
