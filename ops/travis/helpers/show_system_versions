@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
 uname -a
 lsb_release -a
 

@@ -1,7 +1,7 @@
 #!/bin/bash
-
-# die on non 0 exit code
-set -e
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
 
 FOLDER_CHECKS=(.py .pylintrc)
 
