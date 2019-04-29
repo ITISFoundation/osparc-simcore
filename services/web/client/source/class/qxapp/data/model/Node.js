@@ -572,6 +572,14 @@ qx.Class.define("qxapp.data.model.Node", {
       return (index > -1);
     },
 
+    renameNode: function(newLabel) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
+        return false;
+      }
+      this.setLabel(newLabel);
+      return true;
+    },
+
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         this.setIFrame(new qxapp.component.widget.PersistentIframe());

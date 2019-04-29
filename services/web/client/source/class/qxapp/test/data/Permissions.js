@@ -90,6 +90,22 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertTrue(removed, "user is allowed to delete nodes");
     },
 
+    testStudyNodeRename: function() {
+      this.createEmptyWorkbench();
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      const node = this.createDummyNode();
+      const newLabel = "my new label";
+
+      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      node.renameNode(newLabel);
+      this.assertNotIdentical(node.getLabel(), newLabel, "anonymous is not allowed to rename nodes");
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      node.renameNode(newLabel);
+      this.assertIdentical(node.getLabel(), newLabel, "anonymous is not allowed to rename nodes");
+    },
+
     testStudyEdgeCreate: function() {
       this.createEmptyWorkbench();
 
