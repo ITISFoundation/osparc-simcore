@@ -1,1 +1,13 @@
+#
+# do NOT update py27.txt by hand instead update py27.in and use pip-compile to produce py27.txt
+#
+#  cd osparc-simcore
+#  make .venv27
+#  source .venv27/bin/activate
+#  pip install pip-tools
+#  pip-compile --output-file services/storage/requirements/py27.txt services/storage/requirements/py27.in
+#
+#
+
 blackfynn==2.5.0
+urllib3~=1.24.2  # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
