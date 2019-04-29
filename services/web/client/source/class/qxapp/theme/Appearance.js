@@ -215,10 +215,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
         const ret = Object.assign({}, style);
         ret.decorator = "link-button";
         ret.backgroundColor = "transparent";
+        ret.textColor = "text-darker";
         if (state.hovered) {
-          ret.font = "underlined";
-        } else {
-          ret.font = "default";
+          ret.textColor = "text";
         }
         return ret;
       }

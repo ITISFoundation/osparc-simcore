@@ -75,12 +75,10 @@ qx.Class.define("qxapp.Application", {
     __initRouting: function() {
       const r = new qx.application.Routing();
 
-      r.on("/", () => {
-        this.__restart();
-      }, this);
+      r.on("/", this.__restart, this);
 
       r.on("/study/{id}", data => {
-        this.__loadMainPage();
+        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(data.id), this.__loadLoginPage, this);
       });
 
       r.init();
@@ -115,9 +113,9 @@ qx.Class.define("qxapp.Application", {
       });
     },
 
-    __loadMainPage: function() {
+    __loadMainPage: function(studyId) {
       this.__connectWebSocket();
-      this.__loadView(new qxapp.desktop.MainPage(), {
+      this.__loadView(new qxapp.desktop.MainPage(studyId), {
         top: 0,
         bottom: 0,
         left: 0,
