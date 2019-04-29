@@ -14,8 +14,7 @@ codecov
 
 # fixtures
 Faker
-openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
-openapi-spec-validator
+openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
 
 # linter
 pylint~=2.0

@@ -1,25 +1,20 @@
-import io
-import pathlib
 import re
 import sys
-from os.path import join
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
-_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
+here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-def list_packages(*parts):
-    pkg_names = []
-    COMMENT = re.compile(r'^\s*#')
-    with io.open(join(_CDIR, *parts)) as f:
-        pkg_names = [line.strip() for line in f.readlines() if not COMMENT.match(line)]
-    return pkg_names
+
+def read_reqs( reqs_path: Path):
+    return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
+
 
 #-----------------------------------------------------------------
 
-INSTALL_REQUIRES = list_packages("requirements", "base.txt")
-TESTS_REQUIRE = list_packages("requirements", "test.txt")
-
+install_requirements = read_reqs( here / "requirements" / "base.txt" )
+test_requirements = read_reqs( here / "requirements" / "test.in" )
 
 setup(
     name='simcore-service-webserver',
@@ -41,10 +36,10 @@ setup(
             'simcore-service-webserver=simcore_service_webserver.__main__:main', ]
         },
     python_requires='>=3.6',
-    install_requires=INSTALL_REQUIRES,
-    tests_require=TESTS_REQUIRE,
+    install_requires=install_requirements,
+    tests_require=test_requirements,
     extras_require= {
-        'test': TESTS_REQUIRE
+        'test': test_requirements
     },
     setup_requires=['pytest-runner']
 )

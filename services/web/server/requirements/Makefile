@@ -18,7 +18,7 @@ check:
 .PHONY: clean
 # target: clean – Cleans all requirements/*.txt having a *.in counterpart
 clean: check
-	@find . -type f -name 'base.txt' -name 'test.txt' -print0 | xargs -0 rm --
+	@find . -type f -name '*.txt' -not -name 'dev.txt' -not -name 'ci.txt' -print0 | xargs -0 rm --
 
 .PHONY: help
 # target: help – Display all callable targets

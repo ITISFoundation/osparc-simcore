@@ -3,15 +3,14 @@
 #   $ bash ops/travis/unit-testing/webserver install
 #
 
--r base.txt
+# compiles base.txt + tests.in
+-r ci-base.txt
 
 # installs repo packages
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/
 ../../../packages/service-library/
 ../../../packages/director-sdk/python
-
--r test.txt
 
 # current module
 .
