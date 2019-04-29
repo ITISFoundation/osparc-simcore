@@ -16,19 +16,21 @@ jobs:
       name: build simcore images / simcore cache
       sudo: required
       before_install:
-        - sudo bash ops/travis/build-cache/scripts before_install
+        - sudo bash ops/travis/build/test-images.sh before_install
       install:
-        - bash ops/travis/build-cache/scripts install
+        - bash ops/travis/build/test-images.sh install
       before_script:
-        - bash ops/travis/build-cache/scripts before_script
+        - bash ops/travis/build/test-images.sh before_script
       script:
-        - bash ops/travis/build-cache/scripts script
+        - bash ops/travis/build/test-images.sh script
       after_success:
-        - bash ops/travis/build-cache/scripts after_success
+        - bash ops/travis/build/test-images.sh after_success
+      after_failure:
+        - bash ops/travis/build/test-images.sh after_failure
       deploy:
         - provider: script
           skip_cleanup: true
-          script: bash ops/travis/deploy/build.sh          
+          script: bash ops/travis/deploy/test-images.sh          
 
 #     # test python, webserver ----------------------------------------------------------------------
 #     - stage: unit testing
