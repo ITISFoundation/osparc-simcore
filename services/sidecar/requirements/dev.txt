@@ -1,5 +1,13 @@
-# paths relative to location of setup.py
--e .
+#
+#
+#
+
+-r base.txt
+
+# installs repo packages
 -e ../../services/storage/client-sdk/python/
 -e ../../packages/s3wrapper/
 -e ../../packages/simcore-sdk/
+
+# current module
+-e .[test]

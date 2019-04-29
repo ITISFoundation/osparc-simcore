@@ -1,8 +1,10 @@
 #
-# As ci.txt but w/o tests
+# Usage:
+#   $ bash ops/travis/unit-testing/sidecar install
 #
 
--r base.txt
+# compiles base.txt + tests.in
+-r ci-base.txt
 
 # installs repo packages
 ../../services/storage/client-sdk/python/

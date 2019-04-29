@@ -1,0 +1,13 @@
+# Specifies dependencies required for services/web/server/tests
+#
+# NOTE: order defines priority
+
+# testing
+pytest
+pytest-docker
+
+# fixtures
+aiopg
+
+# linter
+pylint~=2.0
