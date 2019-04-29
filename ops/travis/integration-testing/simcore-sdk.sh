@@ -2,6 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+current_branch=$(exec ops/travis/helpers/slugify_branch.sh)
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
+export DOCKER_IMAGE_TAG_PREFIX=$current_branch
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/)
 
@@ -27,8 +30,8 @@ install() {
 before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
-        make build
+        pip freeze        
+        make pull || make build
         docker images
     fi
 }
