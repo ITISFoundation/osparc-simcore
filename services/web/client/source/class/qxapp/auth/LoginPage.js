@@ -16,11 +16,11 @@
 ************************************************************************ */
 
 /**
- *  Main Authentication View:
+ *  Main Authentication Page:
  *    A multi-page view that fills all page
  */
 
-qx.Class.define("qxapp.auth.MainView", {
+qx.Class.define("qxapp.auth.LoginPage", {
   extend : qx.ui.core.Widget,
 
   /*
@@ -44,10 +44,10 @@ qx.Class.define("qxapp.auth.MainView", {
       alignX: "center"
     });
 
-    let login = new qxapp.auth.ui.LoginPage();
-    let register = new qxapp.auth.ui.RegistrationPage();
-    let resetRequest = new qxapp.auth.ui.ResetPassRequestPage();
-    let reset = new qxapp.auth.ui.ResetPassPage();
+    let login = new qxapp.auth.ui.LoginView();
+    let register = new qxapp.auth.ui.RegistrationView();
+    let resetRequest = new qxapp.auth.ui.ResetPassRequestView();
+    let reset = new qxapp.auth.ui.ResetPassView();
 
     pages.add(login);
     pages.add(register);

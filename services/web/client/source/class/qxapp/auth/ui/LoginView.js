@@ -24,7 +24,7 @@
  * - Minimal layout and apperance is delegated to the selected theme
  */
 
-qx.Class.define("qxapp.auth.ui.LoginPage", {
+qx.Class.define("qxapp.auth.ui.LoginView", {
   extend: qxapp.auth.core.BaseAuthPage,
   include: [
     qxapp.auth.core.MAuth

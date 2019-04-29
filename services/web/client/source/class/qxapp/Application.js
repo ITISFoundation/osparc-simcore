@@ -80,7 +80,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       r.on("/study/{id}", data => {
-        console.log("Go to study");
+        this.__loadProjectBrowserView();
       });
 
       r.init();
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.Application", {
 
     __loadLoginView: function() {
       this.__disconnectWebSocket();
-      const view = new qxapp.auth.MainView();
+      const view = new qxapp.auth.LoginPage();
       view.addListener("done", function(msg) {
         this.__restart();
       }, this);
