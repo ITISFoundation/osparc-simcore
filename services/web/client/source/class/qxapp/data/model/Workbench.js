@@ -277,6 +277,17 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     removeNode: function(nodeId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+        return false;
+      }
+
+      // remove first the connected edges
+      const connectedEdges = this.getConnectedEdges(nodeId);
+      for (let i=0; i<connectedEdges.length; i++) {
+        const edgeId = connectedEdges[i];
+        this.removeEdge(edgeId);
+      }
+
       let node = this.getNode(nodeId);
       if (node) {
         node.removeNode();

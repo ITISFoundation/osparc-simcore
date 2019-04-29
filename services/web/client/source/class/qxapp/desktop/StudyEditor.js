@@ -281,23 +281,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __removeNode: function(nodeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
-        return false;
-      }
-
       if (nodeId === this.__currentNodeId) {
         return false;
       }
-      // remove first the connected edges
+
       const workbench = this.getStudy().getWorkbench();
       const connectedEdges = workbench.getConnectedEdges(nodeId);
-      for (let i=0; i<connectedEdges.length; i++) {
-        const edgeId = connectedEdges[i];
-        if (workbench.removeEdge(edgeId)) {
+      if (workbench.removeNode(nodeId)) {
+        // remove first the connected edges
+        for (let i=0; i<connectedEdges.length; i++) {
+          const edgeId = connectedEdges[i];
           this.__workbenchUI.clearEdge(edgeId);
         }
-      }
-      if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
         return true;
       }
