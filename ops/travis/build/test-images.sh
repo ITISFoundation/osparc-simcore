@@ -24,7 +24,7 @@ before_script() {
 
 script() {
     export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
-    export DOCKER_IMAGE_TAG=$(slugify "${TRAVIS_BRANCH}-latest")
+    export DOCKER_IMAGE_TAG_PREFIX=$(slugify "${TRAVIS_BRANCH}")
     # try to pull if possible
     make pull || true
     # build anyway

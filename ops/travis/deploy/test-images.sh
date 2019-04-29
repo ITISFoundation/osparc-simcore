@@ -18,7 +18,7 @@ echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # TRAVIS_PLATFORM_STAGE_VERSION=staging-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
-export DOCKER_IMAGE_TAG=$(slugify "${TRAVIS_BRANCH}-latest")
+export DOCKER_IMAGE_TAG_PREFIX=$(slugify "${TRAVIS_BRANCH}")
 
 make tag
 make push
