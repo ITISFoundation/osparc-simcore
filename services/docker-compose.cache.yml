@@ -1,26 +1,26 @@
 version: '3.4'
 services:
   apihub:
-    image: itisfoundation/apihub:cache
+    image: ${DOCKER_IMAGE_PREFIX}apihub:cache
     build:
       target: production
   director:
-    image: itisfoundation/director:cache
+    image: ${DOCKER_IMAGE_PREFIX}director:cache
     build:
       target: cache
   sidecar:
-    image: itisfoundation/sidecar:cache
+    image: ${DOCKER_IMAGE_PREFIX}sidecar:cache
     build:
       target: cache
   storage:
-    image: itisfoundation/storage:cache
+    image: ${DOCKER_IMAGE_PREFIX}storage:cache
     build:
       target: cache
   webclient:
-    image: itisfoundation/webclient:cache
+    image: ${DOCKER_IMAGE_PREFIX}webclient:cache
     build:
       target: build
   webserver:
-    image: itisfoundation/webserver:cache
+    image: ${DOCKER_IMAGE_PREFIX}webserver:cache
     build:
       target: cache

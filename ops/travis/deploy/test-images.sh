@@ -3,22 +3,17 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-slugify () {
-    echo "$1" | iconv -t ascii//TRANSLIT | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
-}
+current_branch=$(exec ops/travis/helpers/slugify_branch.sh)
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
+export DOCKER_IMAGE_TAG_PREFIX=$current_branch
 
 # show current images on system
 docker images
 
-# show environment
-env
-
 # these variable must be available securely from travis
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-# TRAVIS_PLATFORM_STAGE_VERSION=staging-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
-export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-export DOCKER_IMAGE_TAG_PREFIX=$(slugify "$current_branch")
-
+# push the local cache
+make push-cache
+# push the local images
 make push
