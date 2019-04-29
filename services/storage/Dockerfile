@@ -56,14 +56,14 @@ RUN apk add --no-cache python2 python2-dev  && \
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/storage/requirements/*.txt \
-      services/storage/requirements/
+COPY  --chown=scu:scu services/storage/requirements/*.txt \
+      tmp/storage/requirements/
 
 RUN $SC_PIP install \
-      -r services/storage/requirements/base.txt
+      -r tmp/storage/requirements/base.txt
 
 RUN $SC_PIP2 install numpy==1.16.0 &&\
-    $SC_PIP2 install -r services/storage/requirements/py27.txt
+    $SC_PIP2 install -r tmp/storage/requirements/py27.txt
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
