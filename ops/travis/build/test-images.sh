@@ -24,7 +24,8 @@ before_script() {
 
 script() {
     export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
-    export DOCKER_IMAGE_TAG_PREFIX=$(slugify "${TRAVIS_BRANCH}")
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    export DOCKER_IMAGE_TAG_PREFIX=$(slugify "$current_branch")
     # try to pull if possible
     make pull || true
     # build anyway
