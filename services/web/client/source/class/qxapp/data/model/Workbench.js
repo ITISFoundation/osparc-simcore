@@ -368,17 +368,21 @@ qx.Class.define("qxapp.data.model.Workbench", {
     __deserializeEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          continue;
+        }
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
             const outputNodeId = nodeData.inputNodes[i];
-            const node = this.getNode(nodeId);
-            if (node) {
-              const edge = new qxapp.data.model.Edge(null, outputNodeId, nodeId);
-              this.addEdge(edge);
-
-              node.addInputNode(outputNodeId);
-            }
+            const edge = new qxapp.data.model.Edge(null, outputNodeId, nodeId);
+            this.addEdge(edge);
+            node.addInputNode(outputNodeId);
           }
+        }
+        if (nodeData.outputNode) {
+          const edge = new qxapp.data.model.Edge(null, nodeId, nodeData.parent);
+          this.addEdge(edge);
         }
       }
     },
