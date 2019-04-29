@@ -309,14 +309,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const edge = workbench.getEdge(edgeId);
       let removed = false;
       if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-        let inputNode = workbench.getNode(edge.getInputNodeId());
+        const inputNode = workbench.getNode(edge.getInputNodeId());
         inputNode.setIsOutputNode(false);
 
         // Remove also dependencies from outter nodes
         const cNodeId = inputNode.getNodeId();
         const allNodes = workbench.getNodes(true);
         for (const nodeId in allNodes) {
-          let node = allNodes[nodeId];
+          const node = allNodes[nodeId];
           if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
             workbench.removeEdge(edgeId);
           }
