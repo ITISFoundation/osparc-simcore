@@ -62,6 +62,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
     ---------------------------------------------------------------------------
     */
 
+    // test study.node.create
     testStudyNodeCreate: function() {
       this.createEmptyWorkbench();
 
@@ -74,6 +75,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertNotNull(userNode, "user is allowed to create nodes");
     },
 
+    // test study.node.delete
     testStudyNodeDelete: function() {
       this.createEmptyWorkbench();
 
@@ -90,6 +92,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertTrue(removed, "user is allowed to delete nodes");
     },
 
+    // test study.node.rename
     testStudyNodeRename: function() {
       this.createEmptyWorkbench();
 
@@ -106,6 +109,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertIdentical(node.getLabel(), newLabel, "anonymous is not allowed to rename nodes");
     },
 
+    // test study.edge.create
     testStudyEdgeCreate: function() {
       this.createEmptyWorkbench();
 
@@ -122,6 +126,7 @@ qx.Class.define("qxapp.test.data.Permissions", {
       this.assertNotNull(userEdge, "user is allowed to create edges");
     },
 
+    // test study.edge.delete
     testStudyEdgeDelete: function() {
       this.createEmptyWorkbench();
 
