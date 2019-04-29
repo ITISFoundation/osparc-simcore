@@ -62,13 +62,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     study: {
       check: "qxapp.data.model.Study",
       nullable: false
-    },
-
-    canStart: {
-      nullable: false,
-      init: true,
-      check: "Boolean",
-      apply: "__applyCanStart"
     }
   },
 
@@ -421,13 +414,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getLogger().debug("Workbench", "Updating pipeline");
     },
 
-    __startPipeline: function() {
+    startPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
-      if (!this.getCanStart()) {
-        this.__workbenchUI.getLogger().info("Can not start pipeline");
-        return;
+        return false;
       }
 
       this.getStudy().getWorkbench().clearProgressData();
@@ -477,11 +468,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.setCanStart(true);
         this.getLogger().error("Workbench", "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.setCanStart(true);
         this.getLogger().error("Workbench", "Failed submitting pipeline");
       }, this);
       req.send();
@@ -502,17 +491,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.setCanStart(false);
         this.getLogger().error("Workbench", "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.setCanStart(false);
         this.getLogger().error("Workbench", "Failed stopping pipeline");
       }, this);
       // req.send();
-
-      // temporary solution
-      this.setCanStart(true);
 
       this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
     },
@@ -523,11 +507,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.setCanStart(true);
         this.__pipelineId = null;
         this.getLogger().error("Workbench", "Submition failed");
       } else {
-        // this.setCanStart(false);
         this.__pipelineId = pipelineId;
         this.getLogger().info("Workbench", "Pipeline started");
       }
@@ -535,12 +517,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __onPipelineStopped: function(e) {
       this.getStudy().getWorkbench().clearProgressData();
-
-      this.setCanStart(true);
-    },
-
-    __applyCanStart: function(value, old) {
-      this.__mainPanel.getControls().setCanStart(value);
     },
 
     __startAutoSaveTimer: function() {
