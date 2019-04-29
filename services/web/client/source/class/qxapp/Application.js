@@ -80,7 +80,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       r.on("/study/{id}", data => {
-        console.log("more");
+        console.log("Go to study");
       });
 
       r.init();
@@ -95,36 +95,34 @@ qx.Class.define("qxapp.Application", {
       }
 
       if (isLogged) {
-        this.__connectWebSocket();
-        this.__loadView(new qxapp.desktop.LayoutManager(), {
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0
-        });
+        this.__loadProjectBrowserView();
       } else {
-        qxapp.auth.Manager.getInstance().validateToken(() => {
-          this.__connectWebSocket();
-          this.__loadView(new qxapp.desktop.LayoutManager(), {
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0
-          });
-        }, () => {
-          this.__disconnectWebSocket();
-          const view = new qxapp.auth.MainView();
-          view.addListener("done", function(msg) {
-            this.__restart();
-          }, this);
-          this.__loadView(view, {
-            top: "10%",
-            bottom: 0,
-            left: 0,
-            right: 0
-          });
-        }, this);
+        qxapp.auth.Manager.getInstance().validateToken(this.__loadProjectBrowserView, this.__loadLoginView, this);
       }
+    },
+
+    __loadLoginView: function() {
+      this.__disconnectWebSocket();
+      const view = new qxapp.auth.MainView();
+      view.addListener("done", function(msg) {
+        this.__restart();
+      }, this);
+      this.__loadView(view, {
+        top: "10%",
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+    },
+
+    __loadProjectBrowserView: function() {
+      this.__connectWebSocket();
+      this.__loadView(new qxapp.desktop.LayoutManager(), {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
     },
 
     __loadView: function(view, options) {
