@@ -22,12 +22,11 @@ script() {
 }
 
 after_success() {
-    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    make push
+    echo "build succeeded"
 }
 
 after_failure() {
-    echo "..."
+    echo "build failed"
 }
 
 # Check if the function exists (bash specific)
