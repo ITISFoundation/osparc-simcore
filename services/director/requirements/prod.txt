@@ -1,3 +1,11 @@
-.
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+#
+# As ci.txt but w/o tests
+#
+
+-r base.txt
+
+# installs repo packages
 ../../packages/service-library/
+
+# current module
+.

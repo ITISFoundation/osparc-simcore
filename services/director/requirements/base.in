@@ -1,0 +1,8 @@
+# Common third party packages
+aiohttp
+docker
+requests
+tenacity
+jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 requires jsonschema<3
+
+-e git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset # TODO: constaints aiohttp >=1.2,<3.4

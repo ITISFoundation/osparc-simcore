@@ -1,3 +1,13 @@
-.[test]
-../../packages/service-library/
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+#
+# Usage:
+#   $ bash ops/travis/unit-testing/director install
+#
+
+# compiles base.txt + tests.in
+-r ci-base.txt
+
+# installs repo packages
+../../../packages/service-library/
+
+# current module
+.
