@@ -80,43 +80,35 @@ qx.Class.define("qxapp.Application", {
         isLogged = true;
       }
 
-      let view = null;
-      let options = null;
-
       if (isLogged) {
         this.__connectWebSocket();
-        view = new qxapp.desktop.LayoutManager();
-        options = {
+        this.__loadView(new qxapp.desktop.LayoutManager(), {
           top: 0,
           bottom: 0,
           left: 0,
           right: 0
-        };
-        this.__loadView(view, options);
+        });
       } else {
         qxapp.auth.Manager.getInstance().validateToken(() => {
           this.__connectWebSocket();
-          view = new qxapp.desktop.LayoutManager();
-          options = {
+          this.__loadView(new qxapp.desktop.LayoutManager(), {
             top: 0,
             bottom: 0,
             left: 0,
             right: 0
-          };
-          this.__loadView(view, options);
+          });
         }, () => {
           this.__disconnectWebSocket();
-          view = new qxapp.auth.MainView();
+          const view = new qxapp.auth.MainView();
           view.addListener("done", function(msg) {
             this.__restart();
           }, this);
-          options = {
+          this.__loadView(view, {
             top: "10%",
             bottom: 0,
             left: 0,
             right: 0
-          };
-          this.__loadView(view, options);
+          });
         }, this);
       }
     },

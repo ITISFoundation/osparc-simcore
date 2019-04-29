@@ -53,6 +53,13 @@ qx.Class.define("qxapp.auth.Manager", {
       return auth !== null && auth instanceof qxapp.io.request.authentication.Token;
     },
 
+    /**
+     * Function that checks if there is a token and validates it aginst the server. It executes a callback depending on the result.
+     *
+     * @param {Function} successCb Callback function to be called if the token validation succeeds.
+     * @param {Function} errorCb Callback function to be called if the token validation fails or some other error occurs.
+     * @param {Object} ctx Context that will be used inside the callback functions (this).
+     */
     validateToken: function(successCb, errorCb, ctx) {
       if (qxapp.auth.Data.getInstance().hasToken()) {
         const request = new qxapp.io.request.ApiRequest("/me", "GET");
