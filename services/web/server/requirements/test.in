@@ -1,0 +1,21 @@
+# Specifies dependencies required for services/web/server/tests
+#
+# NOTE: order defines priority
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+coveralls
+codecov
+
+# fixtures
+Faker
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
+openapi-spec-validator
+
+# linter
+pylint~=2.0
