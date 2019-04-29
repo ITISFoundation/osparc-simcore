@@ -25,8 +25,6 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export DOCKER_REGISTRY=masu.speag.com
-export SERVICES_VERSION=2.8.0
 
 PY_FILES := $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
