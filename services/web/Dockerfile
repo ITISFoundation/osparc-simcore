@@ -56,11 +56,11 @@ RUN $SC_PIP install --upgrade \
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/web/server/requirements/*.txt \
-      services/web/server/requirements/
+COPY  --chown=scu:scu services/web/server/requirements/*.txt \
+      tmp/web/server/requirements/
 
 RUN $SC_PIP install \
-      -r services/web/server/requirements/base.txt
+      -r tmp/web/server/requirements/base.txt
 
 
 # --------------------------Cache stage -------------------

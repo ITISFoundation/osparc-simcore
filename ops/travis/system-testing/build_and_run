@@ -1,10 +1,7 @@
 #!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -euo pipefail
 IFS=$'\n\t'
-
-export DOCKER_IMAGE_PREFIX=itisfoundation
-export DOCKER_IMAGE_TAG_PREFIX=staging
-
 
 before_install() {
     bash ops/travis/helpers/install_docker_compose

@@ -224,20 +224,22 @@ push-cache:
 ## -------------------------------
 # ci
 
-.PHONY: push pull-ci create-stack-file
-
-# target: push – Tags service images with version and 'latest'; and pushes them into registry
-push: .check-ci-env
-	export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_PREFIX}-latest; \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
+.PHONY: tag push pull create-staging-stack-file
+#target: tag – Tags service images
+tag:
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
-		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG_PREFIX}-${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} tag services_$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
 	done
 
-# target: pull-ci – pulls images tagged as '${IMAGE_TYPE}-latest' from registry
+# target: push – Pushes images into a registry
+push:
+	for i in $(SERVICES_LIST); do \
+		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
+	done
+
+# target: pull – Pulls images from a registry
 pull:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file: .check-ci-env
