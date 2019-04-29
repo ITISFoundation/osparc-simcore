@@ -282,11 +282,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __removeNode: function(nodeId) {
       if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
-        return;
+        return false;
       }
 
       if (nodeId === this.__currentNodeId) {
-        return;
+        return false;
       }
       // remove first the connected edges
       const workbench = this.getStudy().getWorkbench();
@@ -299,7 +299,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
       if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
+        return true;
       }
+      return false;
     },
 
     __removeEdge: function(edgeId) {

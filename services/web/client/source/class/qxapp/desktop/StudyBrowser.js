@@ -398,7 +398,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           item.addListener("tap", e => {
             const studyUuid = item.getModel();
             if (studyUuid) {
-              list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+              list.setSelection([item]);
             } else {
               that.__newStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
