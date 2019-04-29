@@ -18,8 +18,7 @@
 /**
  *  Main Authentication View:
  *    A multi-page view that fills all page
- *
-*/
+ */
 
 qx.Class.define("qxapp.auth.MainView", {
   extend : qx.ui.core.Widget,

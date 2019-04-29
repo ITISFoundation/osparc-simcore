@@ -24,5 +24,8 @@
       }
     ],
     "no-warning-comments": "off"
+  },
+  "env": {
+    "browser": true
   }
 }
