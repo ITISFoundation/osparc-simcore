@@ -5,11 +5,12 @@
 #    pip-compile --output-file ci-base.txt ci-base.in
 #
 aadict==0.2.3
-aio-pika==2.9.0
-aiohttp-jinja2==1.1.0
-aiohttp-security==0.2.0
-aiohttp==3.3.2
+aio-pika==5.5.2
+aiohttp-jinja2==1.1.1
+aiohttp-security==0.4.0
+aiohttp==3.5.4
 aiopg[sa]==0.16.0
+aiormq==2.5.1
 aiosmtplib==1.0.5
 amqp==2.4.2
 asset==0.6.12
@@ -17,9 +18,9 @@ astroid==2.2.5            # via pylint
 async-timeout==3.0.1
 asyncpg==0.18.3
 atomicwrites==1.3.0       # via pytest
-attrs==18.2.0
-billiard==3.5.0.5
-celery==4.1.0
+attrs==19.1.0
+billiard==3.6.0.0
+celery==4.3.0
 certifi==2019.3.9         # via requests
 change-case==0.5.2
 chardet==3.0.4
@@ -35,7 +36,7 @@ isort==4.3.17             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
 jsonschema==2.6.0
-kombu==4.1.0
+kombu==4.5.0
 lazy-object-proxy==1.3.1
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
@@ -43,10 +44,10 @@ more-itertools==7.0.0     # via pytest
 multidict==4.5.2
 openapi-core==0.8.0
 openapi-spec-validator==0.2.6
+pamqp==2.3.0
 passlib==1.7.1
 passwordmeter==0.1.8
 pathlib==1.0.1
-pika==0.10.0
 pluggy==0.9.0             # via pytest
 psycopg2-binary==2.8.2
 py==1.8.0                 # via pytest
@@ -58,19 +59,21 @@ pytest-mock==1.10.4
 pytest-runner==4.4
 pytest==4.4.1
 python-dateutil==2.8.0    # via faker
+python-engineio==3.5.1
+python-socketio==4.0.1
 pytz==2019.1
 pyyaml==5.1
 requests==2.21.0          # via codecov, coveralls
 semantic-version==2.6.0
-shortuuid==0.5.0
 six==1.12.0
 sqlalchemy[postgresql_psycopg2binary]==1.3.3
 strict-rfc3339==0.7
-tenacity==4.12.0
+tenacity==5.0.4
 text-unidecode==1.2       # via faker
-trafaret-config==2.0.1
+trafaret-config==2.0.2
 trafaret==1.2.0
 typed-ast==1.3.5          # via astroid
+typing-extensions==3.7.2
 urllib3==1.24.2
 vine==1.3.0
 wrapt==1.11.1             # via astroid
