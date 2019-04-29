@@ -69,7 +69,21 @@ qx.Class.define("qxapp.Application", {
         this.__restart();
       }, this);
 
-      this.__restart();
+      this.__initRouting();
+    },
+
+    __initRouting: function() {
+      const r = new qx.application.Routing();
+
+      r.on("/", () => {
+        this.__restart();
+      }, this);
+
+      r.on("/study/{id}", data => {
+        console.log("more");
+      });
+
+      r.init();
     },
 
     __restart: function() {
