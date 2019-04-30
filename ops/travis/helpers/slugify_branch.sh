@@ -8,10 +8,11 @@ slugify () {
 }
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)
-if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-    current_branch=${TRAVIS_BRANCH}
-else
-    current_branch=${TRAVIS_PULL_REQUEST_BRANCH}
+if [ -v TRAVIS_PULL_REQUEST ]; then
+    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        current_branch=${TRAVIS_BRANCH}
+    else
+        current_branch=${TRAVIS_PULL_REQUEST_BRANCH}
+    fi
 fi
-
 echo $(slugify $current_branch)
