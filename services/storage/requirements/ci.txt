@@ -1,0 +1,13 @@
+#
+# Usage:
+#   $ bash ops/travis/unit-testing/storage install
+#
+
+# compiles base.txt + tests.in
+-r ci-base.txt
+
+# installs repo packages
+../../packages/service-library/
+
+# current module
+.

@@ -1,7 +1,11 @@
+#
+# As ci.txt but w/o tests
+#
 
-# paths relative to location of setup.py
+-r base.txt
+
+# installs repo packages
+../../packages/service-library/
+
+# current module
 .
-
-../../packages/service-library
-../../packages/s3wrapper
-../../packages/simcore-sdk

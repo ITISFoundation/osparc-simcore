@@ -1,0 +1,21 @@
+# Specifies dependencies required for services/director/tests
+#
+# NOTE: order defines priority
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+coveralls
+codecov
+
+# fixtures
+virtualenv
+pyyaml>=4.2b1
+
+
+# linter
+pylint~=2.0

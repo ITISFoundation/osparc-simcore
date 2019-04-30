@@ -1,13 +1,16 @@
+#
+# as ci.txt but current modules and all repos in editable mode
+#
+-r base.txt
 
-# development mode
-# paths relative to location of setup.py
--e ".[test]"
-
-# Please uncomment if you need these dependencies
-# simcore-service-storage client sdk
--e ./client-sdk/python
 
 # osparc-simcore packages
 -e ../../packages/service-library
--e ../../packages/s3wrapper/
--e ../../packages/simcore-sdk/
+
+
+#-e ./client-sdk/python
+#-e ../../packages/s3wrapper/
+#-e ../../packages/simcore-sdk/
+
+# current module
+-e .[test]
