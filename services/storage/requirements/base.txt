@@ -14,6 +14,7 @@ chardet==3.0.4            # via aiohttp
 execnet==1.6.0
 idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, yarl
+jsonschema==2.6.0
 marshmallow==2.19.2
 multidict==4.5.2          # via aiohttp, yarl
 psycopg2-binary==2.7.5
