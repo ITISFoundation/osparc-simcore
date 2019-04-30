@@ -18,7 +18,8 @@ install() {
 }
 
 before_script() {
-    make pull-cache
+    make pull-cache || true
+    make pull || true
 }
 
 script() {
