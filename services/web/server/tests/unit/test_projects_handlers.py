@@ -140,13 +140,20 @@ def fake_template_projects(package_dir: Path) -> Dict:
         return json.load(fp)
 
 @pytest.fixture(scope="session")
+def fake_template_projects_isan(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
 def fake_template_projects_osparc(package_dir: Path) -> Dict:
     projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
     assert projects_file.exists()
     with projects_file.open() as fp:
         return json.load(fp)
 
-async def test_list_template_projects(client, fake_db, mocker, fake_project: Dict, fake_template_projects: Dict, fake_template_projects_osparc: Dict):
+async def test_list_template_projects(client, fake_db, mocker, fake_project: Dict, fake_template_projects: Dict, fake_template_projects_isan: Dict, fake_template_projects_osparc: Dict):
     fake_db.load_template_projects()
 
     url = client.app.router["list_projects"].url_for()
@@ -161,9 +168,9 @@ async def test_list_template_projects(client, fake_db, mocker, fake_project: Dic
     projects, error = unwrap_envelope(payload)
     assert not error
     mock.assert_called_with(db_engine=None)
-    # fake-template-projects.json + fake-template-projects.osparc.json + fake project
+    # fake-template-projects.json + fake-template-projects.isan.json + fake-template-projects.osparc.json + fake project
 
-    assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_osparc) + 1)
+    assert len(projects) == (len(fake_template_projects) + len(fake_template_projects_isan) + len(fake_template_projects_osparc) + 1)
 
 async def test_get(client, fake_project, mocker):
     pid = fake_project["uuid"]
@@ -187,9 +194,10 @@ async def test_get(client, fake_project, mocker):
 
     assert project == fake_project
 
-async def test_get_project_template(client, fake_db, fake_template_projects: Dict, fake_template_projects_osparc: Dict):
+async def test_get_project_template(client, fake_db, fake_template_projects: Dict, fake_template_projects_isan: Dict, fake_template_projects_osparc: Dict):
     fake_db.load_template_projects()
     template_projects = fake_template_projects
+    template_projects.extend(fake_template_projects_isan)
     template_projects.extend(fake_template_projects_osparc)
 
     for template in template_projects:
