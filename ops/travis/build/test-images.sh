@@ -32,6 +32,8 @@ after_success() {
 
 after_failure() {
     echo "build failed"
+    env
+    docker images
 }
 
 # Check if the function exists (bash specific)

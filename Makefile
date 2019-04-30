@@ -208,7 +208,7 @@ pull-cache:
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER} tag itisfoundation/webclient:cache services_webclient:build
+	${DOCKER} tag ${DOCKER_IMAGE_PREFIX}webclient:cache ${DOCKER_IMAGE_PREFIX}webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
@@ -226,7 +226,7 @@ push-cache:
 #target: tag – Tags service images
 tag:
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag services_$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
+		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
 	done
 
 # target: push – Pushes images into a registry
