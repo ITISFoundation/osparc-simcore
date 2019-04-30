@@ -121,7 +121,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
         }
         const data = {
           prjTitle: title,
-          prjDescription: desc,
+          prjDescription: desc ? desc : "",
           prjTemplate: templ
         };
         this.fireDataEvent("createStudy", data);
