@@ -5,6 +5,7 @@
 # testing
 pytest
 pytest-docker
+pytest-cov
 
 # fixtures
 aiopg
