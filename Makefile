@@ -208,7 +208,7 @@ pull-cache:
 
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
-build-cache: pull-cache
+build-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
 	${DOCKER} tag ${DOCKER_IMAGE_PREFIX}webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
