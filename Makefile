@@ -47,6 +47,25 @@ export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/cl
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+DEFAULT_DOCKER_IMAGE_TAG := latest
+ifndef DOCKER_IMAGE_TAG
+ifdef DOCKER_IMAGE_TAG_PREFIX
+export DOCKER_IMAGE_TAG := ${DOCKER_IMAGE_TAG_PREFIX}-${DEFAULT_DOCKER_IMAGE_TAG}
+else
+$(warning DOCKER_IMAGE_TAG variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_TAG})
+export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
+endif # DOCKER_IMAGE_TAG_PREFIX
+endif # DOCKER_IMAGE_TAG
+$(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
+
+DEFAULT_DOCKER_IMAGE_PREFIX := services_
+ifdef DOCKER_IMAGE_PREFIX
+# check it ends with /
+export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
+else
+export DOCKER_IMAGE_PREFIX := ${DEFAULT_DOCKER_IMAGE_PREFIX}
+endif # DOCKER_IMAGE_PREFIX
+$(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
 
 ## Tools ------------------------------------------------------------------------------------------------------
 #
@@ -73,23 +92,6 @@ endif
 
 ## -------------------------------
 # Docker build and composition
-DEFAULT_DOCKER_IMAGE_TAG := latest
-ifndef DOCKER_IMAGE_TAG
-ifdef DOCKER_IMAGE_TAG_PREFIX
-export DOCKER_IMAGE_TAG := ${DOCKER_IMAGE_TAG_PREFIX}-${DEFAULT_DOCKER_IMAGE_TAG}
-else
-$(warning DOCKER_IMAGE_TAG variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_TAG})
-export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
-endif
-$(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
-endif
-
-ifdef DOCKER_IMAGE_PREFIX
-# check it ends with /
-export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
-$(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
-endif
-
 .PHONY: build
 # target: build: – Builds all core service images.
 build: .env pull-cache .tmp-webclient-build
