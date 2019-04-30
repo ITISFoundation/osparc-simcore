@@ -6,14 +6,14 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(js eslintrc json)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/show_system_versions
     fi
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         cd services/web/client
         npm install
@@ -22,14 +22,14 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         npx eslint --version
     fi
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
 	npm install
         npm run linter

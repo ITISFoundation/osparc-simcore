@@ -9,7 +9,7 @@ export DOCKER_IMAGE_TAG=$current_branch-latest
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/install_docker_compose
         bash ops/travis/helpers/show_system_versions
@@ -17,7 +17,7 @@ before_install() {
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
         pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
@@ -28,7 +28,7 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip freeze
         # pull the test images if registry is set up, else build the images
@@ -38,16 +38,16 @@ before_script() {
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
+        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
     else
         echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         coveralls
         codecov

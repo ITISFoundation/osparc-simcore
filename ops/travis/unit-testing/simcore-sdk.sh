@@ -6,7 +6,7 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(packages/ simcore-sdk)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/install_docker_compose
         bash ops/travis/helpers/show_system_versions
@@ -14,7 +14,7 @@ before_install() {
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
         pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
@@ -25,7 +25,7 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip freeze
         docker images
@@ -33,7 +33,7 @@ before_script() {
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=pytest_docker --cov-append -v packages/pytest_docker/tests
         pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
@@ -44,7 +44,7 @@ script() {
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         coveralls
         codecov

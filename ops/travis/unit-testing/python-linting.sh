@@ -6,14 +6,14 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(.py .pylintrc)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/show_system_versions
     fi
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
         pip3 install packages/s3wrapper[test]
@@ -28,7 +28,7 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         pip freeze
         pylint --version
@@ -36,7 +36,7 @@ before_script() {
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         make pylint
     else
@@ -45,7 +45,7 @@ script() {
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
         echo "linting successful"
     fi
