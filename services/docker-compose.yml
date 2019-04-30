@@ -6,7 +6,7 @@ services:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
-        - itisfoundation/apihub:cache
+        - ${DOCKER_IMAGE_PREFIX}apihub:cache
         - ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
       target: production
       labels:
@@ -27,7 +27,7 @@ services:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
-        - itisfoundation/director:cache
+        - ${DOCKER_IMAGE_PREFIX}director:cache
         - ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
       target: production
       labels:
@@ -74,7 +74,7 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - itisfoundation/webclient:cache
+        - ${DOCKER_IMAGE_PREFIX}webclient:cache
         - services_webclient:latest
       target: build
       labels:
@@ -96,7 +96,7 @@ services:
       context: ../
       dockerfile: services/web/Dockerfile
       cache_from:
-        - itisfoundation/webserver:cache
+        - ${DOCKER_IMAGE_PREFIX}webserver:cache
         - ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
       target: production
       labels:
@@ -151,7 +151,7 @@ services:
       context: ../
       dockerfile: services/sidecar/Dockerfile
       cache_from:
-        - itisfoundation/sidecar:cache
+        - ${DOCKER_IMAGE_PREFIX}sidecar:cache
         - ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
       target: production
       labels:
@@ -198,7 +198,7 @@ services:
       context: ../
       dockerfile: services/storage/Dockerfile
       cache_from:
-        - itisfoundation/storage:cache        
+        - ${DOCKER_IMAGE_PREFIX}storage:cache
         - ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
       target: production
       labels:
