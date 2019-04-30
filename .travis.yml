@@ -17,7 +17,7 @@ jobs:
       name: build simcore images
       sudo: required
       before_install:
-        - unbuffer sudo bash ops/travis/build/test-images.sh before_install
+        - sudo bash ops/travis/build/test-images.sh before_install
       install:
         - unbuffer bash ops/travis/build/test-images.sh install
       before_script:
@@ -44,7 +44,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/webserver.sh before_install
+        - sudo bash ops/travis/unit-testing/webserver.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/webserver.sh install
       before_script:
@@ -65,7 +65,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/director.sh before_install
+        - sudo bash ops/travis/unit-testing/director.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/director.sh install
       before_script:
@@ -86,7 +86,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/simcore-sdk.sh before_install
+        - sudo bash ops/travis/unit-testing/simcore-sdk.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/simcore-sdk.sh install
       before_script:
@@ -109,7 +109,7 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/storage.sh before_install
+        - sudo bash ops/travis/unit-testing/storage.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/storage.sh install
       before_script:
@@ -131,7 +131,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/apihub.sh before_install
+        - sudo bash ops/travis/unit-testing/apihub.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/apihub.sh install
       before_script:
@@ -151,7 +151,7 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/unit-testing/python-linting.sh before_install
+        - sudo bash ops/travis/unit-testing/python-linting.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/python-linting.sh install
       before_script:
@@ -178,7 +178,7 @@ jobs:
 #          - .npm
 #          - services/web/client/node_modules
       before_install:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh before_install
+        - bash ops/travis/unit-testing/frontend.sh before_install
       install:
         - unbuffer bash ops/travis/unit-testing/frontend.sh install
       before_script:
@@ -214,7 +214,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/integration-testing/webserver.sh before_install
+        - sudo bash ops/travis/integration-testing/webserver.sh before_install
       install:
         - unbuffer bash ops/travis/integration-testing/webserver.sh install
       before_script:
@@ -235,7 +235,7 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/integration-testing/simcore-sdk.sh before_install
+        - sudo bash ops/travis/integration-testing/simcore-sdk.sh before_install
       install:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk.sh install
       before_script:
@@ -254,7 +254,7 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - unbuffer sudo bash ops/travis/system-testing/build_and_run.sh before_install
+        - sudo bash ops/travis/system-testing/build_and_run.sh before_install
       install:
         - unbuffer bash ops/travis/system-testing/build_and_run.sh install
       before_script:
