@@ -209,7 +209,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "in_7": {
+          "initFile": {
             "nodeUuid": "template-uuid-4997-a192-10b0f519cf12",
             "output": "outFile"
           }
@@ -261,7 +261,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "in_7": {
+          "initFile": {
             "nodeUuid": "template-uuid-4997-a192-10b0f519cf12",
             "output": "outFile"
           }
@@ -313,7 +313,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "in_7": {
+          "initFile": {
             "nodeUuid": "template-uuid-4997-a192-10b0f519cf12",
             "output": "outFile"
           }
@@ -365,7 +365,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "in_7": {
+          "initFile": {
             "nodeUuid": "template-uuid-4997-a192-10b0f519cf12",
             "output": "outFile"
           }

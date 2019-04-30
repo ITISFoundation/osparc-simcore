@@ -35,7 +35,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "in_7": {
+          "initFile": {
             "nodeUuid": "template-uuid-4674-b758-946151cae351",
             "output": "outFile"
           }
