@@ -8,6 +8,7 @@ addons:
   apt:
     packages:
       - docker-ce
+      - expect-dev # for unbuffer
 
 jobs:
   include:
@@ -213,7 +214,7 @@ jobs:
 #           branch: master
 
 
-#     # integrate webserver in swarm -------------------------------------------------------------      
+#     # integrate webserver in swarm -------------------------------------------------------------
 #     - stage: integration testing
 #       name: webserver in swarm
 #       language: python
@@ -231,7 +232,7 @@ jobs:
 #         - bash ops/travis/integration-testing/webserver script
 #       after_success:
 #         - bash ops/travis/integration-testing/webserver after_success
-    # integrate webserver in swarm -------------------------------------------------------------      
+    # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration testing
       name: simcore-sdk in swarm
       language: python
@@ -246,7 +247,7 @@ jobs:
       before_script:
         - bash ops/travis/integration-testing/simcore-sdk.sh before_script
       script:
-        - bash ops/travis/integration-testing/simcore-sdk.sh script
+        - unbuffer julia --color=yes bash ops/travis/integration-testing/simcore-sdk.sh script
       after_success:
         - bash ops/travis/integration-testing/simcore-sdk.sh after_success
 
@@ -283,7 +284,7 @@ jobs:
 #           skip_cleanup: true
 #           script: ops/travis/deploy/production.sh
 #           on:
-#             branch: production            
+#             branch: production
 notifications:
   email:
     on_success: never
