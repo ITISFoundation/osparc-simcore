@@ -6,7 +6,9 @@
     "files.associations": {
         ".*rc": "ini",
         ".env*": "ini",
-        "Dockerfile*": "dockerfile"
+        "Dockerfile*": "dockerfile",
+        "**/requirements/*.txt": "pip-requirements",
+        "**/requirements/*.in": "pip-requirements"
     },
     "files.eol": "\n",
     "files.insertFinalNewline": true,
@@ -23,5 +25,6 @@
     },
     "[makefile]": {
       "editor.insertSpaces": false
-    }
+    },
+    "autoDocstring.docstringFormat": "sphinx"
 }
