@@ -96,143 +96,143 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/director.sh after_success
 
-#     # test python, simcore-sdk ----------------------------------------------------------------------
-#     - stage: unit testing
-#       name: simcore-sdk
-#       language: python
-#       python:
-#         - "3.6"
-#       sudo: required
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/unit-testing/simcore-sdk.sh before_install
-#       install:
-#         - bash ops/travis/unit-testing/simcore-sdk.sh install
-#       before_script:
-#         - bash ops/travis/unit-testing/simcore-sdk.sh before_script
-#       script:
-#         - bash ops/travis/unit-testing/simcore-sdk.sh script
-#       after_success:
-#         - bash ops/travis/unit-testing/simcore-sdk.sh after_success
+    # test python, simcore-sdk ----------------------------------------------------------------------
+    - stage: unit testing
+      name: simcore-sdk
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/simcore-sdk.sh before_install
+      install:
+        - bash ops/travis/unit-testing/simcore-sdk.sh install
+      before_script:
+        - bash ops/travis/unit-testing/simcore-sdk.sh before_script
+      script:
+        - bash ops/travis/unit-testing/simcore-sdk.sh script
+      after_success:
+        - bash ops/travis/unit-testing/simcore-sdk.sh after_success
 
-#     # test python, storage ----------------------------------------------------------------------
-#     - stage: unit testing
-#       name: storage
-#       language: python
-#       python:
-#         - "3.6"
-#       sudo: required
-#       services:
-#         - docker
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/unit-testing/storage.sh before_install
-#       install:
-#         - bash ops/travis/unit-testing/storage.sh install
-#       before_script:
-#         - bash ops/travis/unit-testing/storage.sh before_script
-#       script:
-#         - bash ops/travis/unit-testing/storage.sh script
-#       after_success:
-#         - bash ops/travis/unit-testing/storage.sh after_success
-
-
-#     # test python, apihub ----------------------------------------------------------------------
-#     - stage: unit testing
-#       name: apihub
-#       language: python
-#       python:
-#         - "3.6"
-#       sudo: required
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/unit-testing/apihub.sh before_install
-#       install:
-#         - bash ops/travis/unit-testing/apihub.sh install
-#       before_script:
-#         - bash ops/travis/unit-testing/apihub.sh before_script
-#       script:
-#         - bash ops/travis/unit-testing/apihub.sh script
-#       after_success:
-#         - bash ops/travis/unit-testing/apihub.sh after_success
-
-#     # test python, linting ----------------------------------------------------------------------
-#     - stage: unit testing
-#       name: python linting
-#       language: python
-#       python:
-#         - "3.6"
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/unit-testing/python-linting.sh before_install
-#       install:
-#         - bash ops/travis/unit-testing/python-linting.sh install
-#       before_script:
-#         - bash ops/travis/unit-testing/python-linting.sh before_script
-#       script:
-#         - bash ops/travis/unit-testing/python-linting.sh script
-#       after_success:
-#         - bash ops/travis/unit-testing/python-linting.sh after_success
-
-#     # frontend testing ----------------------------------------------------------------------
-#     - stage: unit testing
-#       name: front end testing
-#       language: node_js
-#       node_js:
-#         - "10"
-#       addons:
-#         apt:
-#           packages:
-#             - libgconf-2-4
-# #      cache:
-# #        directories:
-# #          - .npm
-# #          - services/web/client/node_modules
-#       before_install:
-#         - bash ops/travis/unit-testing/frontend.sh before_install
-#       install:
-#         - bash ops/travis/unit-testing/frontend.sh install
-#       before_script:
-#         - bash ops/travis/unit-testing/frontend.sh before_script
-#       script:
-#         - bash ops/travis/unit-testing/frontend.sh script
-#       after_success:
-#         - bash ops/travis/unit-testing/frontend.sh after_success
-
-#       deploy:
-#         # https://docs.travis-ci.com/user/deployment/pages/
-#         provider: pages
-#         target-branch: master
-#         # Set in travis-ci.org dashboard, marked secure
-#         github-token: $GH_PAGES_TOKEN
-#         skip-cleanup: true
-#         keep-history: false
-#         local-dir: itisfoundation.github.io
-#         repo: ITISFoundation/itisfoundation.github.io
-#         verbose: true
-#         on:
-#           branch: master
+    # test python, storage ----------------------------------------------------------------------
+    - stage: unit testing
+      name: storage
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/storage.sh before_install
+      install:
+        - bash ops/travis/unit-testing/storage.sh install
+      before_script:
+        - bash ops/travis/unit-testing/storage.sh before_script
+      script:
+        - bash ops/travis/unit-testing/storage.sh script
+      after_success:
+        - bash ops/travis/unit-testing/storage.sh after_success
 
 
-#     # integrate webserver in swarm -------------------------------------------------------------
-#     - stage: integration testing
-#       name: webserver in swarm
-#       language: python
-#       python:
-#         - "3.6"
-#       sudo: required
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/integration-testing/webserver.sh before_install
-#       install:
-#         - bash ops/travis/integration-testing/webserver.sh install
-#       before_script:
-#         - bash ops/travis/integration-testing/webserver.sh before_script
-#       script:
-#         - bash ops/travis/integration-testing/webserver.sh script
-#       after_success:
-#         - bash ops/travis/integration-testing/webserver.sh after_success
+    # test python, apihub ----------------------------------------------------------------------
+    - stage: unit testing
+      name: apihub
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/apihub.sh before_install
+      install:
+        - bash ops/travis/unit-testing/apihub.sh install
+      before_script:
+        - bash ops/travis/unit-testing/apihub.sh before_script
+      script:
+        - bash ops/travis/unit-testing/apihub.sh script
+      after_success:
+        - bash ops/travis/unit-testing/apihub.sh after_success
+
+    # test python, linting ----------------------------------------------------------------------
+    - stage: unit testing
+      name: python linting
+      language: python
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/python-linting.sh before_install
+      install:
+        - bash ops/travis/unit-testing/python-linting.sh install
+      before_script:
+        - bash ops/travis/unit-testing/python-linting.sh before_script
+      script:
+        - bash ops/travis/unit-testing/python-linting.sh script
+      after_success:
+        - bash ops/travis/unit-testing/python-linting.sh after_success
+
+    # frontend testing ----------------------------------------------------------------------
+    - stage: unit testing
+      name: front end testing
+      language: node_js
+      node_js:
+        - "10"
+      addons:
+        apt:
+          packages:
+            - libgconf-2-4
+#      cache:
+#        directories:
+#          - .npm
+#          - services/web/client/node_modules
+      before_install:
+        - bash ops/travis/unit-testing/frontend.sh before_install
+      install:
+        - bash ops/travis/unit-testing/frontend.sh install
+      before_script:
+        - bash ops/travis/unit-testing/frontend.sh before_script
+      script:
+        - bash ops/travis/unit-testing/frontend.sh script
+      after_success:
+        - bash ops/travis/unit-testing/frontend.sh after_success
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment/pages/
+        provider: pages
+        target-branch: master
+        # Set in travis-ci.org dashboard, marked secure
+        github-token: $GH_PAGES_TOKEN
+        skip-cleanup: true
+        keep-history: false
+        local-dir: itisfoundation.github.io
+        repo: ITISFoundation/itisfoundation.github.io
+        verbose: true
+        on:
+          branch: master
+
+
     # integrate webserver in swarm -------------------------------------------------------------
+    - stage: integration testing
+      name: webserver in swarm
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/integration-testing/webserver.sh before_install
+      install:
+        - bash ops/travis/integration-testing/webserver.sh install
+      before_script:
+        - bash ops/travis/integration-testing/webserver.sh before_script
+      script:
+        - bash ops/travis/integration-testing/webserver.sh script
+      after_success:
+        - bash ops/travis/integration-testing/webserver.sh after_success
+    # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration testing
       name: simcore-sdk in swarm
       language: python
