@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(js eslintrc json)
+FOLDER_CHECKS=(js eslintrc json .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
@@ -71,6 +71,10 @@ after_success() {
       rm -rf itisfoundation.github.io/frontend
       cp -rp services/web/client/build-output itisfoundation.github.io/frontend
     fi
+}
+
+after_failure() {
+    echo "failure... you can always write something more interesting here..."
 }
 
 # Check if the function exists (bash specific)

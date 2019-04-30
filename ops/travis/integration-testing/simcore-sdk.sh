@@ -6,7 +6,7 @@ current_branch=$(exec ops/travis/helpers/slugify_branch.sh)
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
 export DOCKER_IMAGE_TAG=$current_branch-latest
 
-FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh)
+FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
@@ -52,6 +52,11 @@ after_success() {
         coveralls
         codecov
     fi
+}
+
+after_failure() {
+    docker images
+    make down
 }
 
 # Check if the function exists (bash specific)

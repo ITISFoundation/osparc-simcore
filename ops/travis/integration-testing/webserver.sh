@@ -3,6 +3,10 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+current_branch=$(exec ops/travis/helpers/slugify_branch.sh)
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
+export DOCKER_IMAGE_TAG=$current_branch-latest
+
 before_install() {
     bash ops/travis/helpers/install_docker_compose.sh
     bash ops/travis/helpers/show_system_versions.sh
@@ -16,18 +20,24 @@ install() {
 
 before_script() {
     pip freeze
-    make build
+    make pull || make build
     docker images
 }
 
 script() {
-    pytest --cov=simcore_service_webserver -v services/web/server/tests/integration
+    pytest --cov=simcore_service_webserver --cov-append -v services/web/server/tests/integration
     # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
     #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }
 
 after_success() {
     coveralls
+    codecov
+}
+
+after_failure() {
+    docker images
+    make down
 }
 
 # Check if the function exists (bash specific)

@@ -34,29 +34,6 @@ jobs:
           script: bash ops/travis/deploy/test-images.sh
           on:
             all_branches: true
-    # build cache images ----------------------------------------------------------------------
-    - if: branch = master
-      stage: build
-      name: build simcore cache images
-      sudo: required
-      before_install:
-        - sudo bash ops/travis/build/cache.sh before_install
-      install:
-        - bash ops/travis/build/cache.sh install
-      before_script:
-        - bash ops/travis/build/cache.sh before_script
-      script:
-        - bash ops/travis/build/cache.sh script
-      after_success:
-        - bash ops/travis/build/cache.sh after_success
-      after_failure:
-        - bash ops/travis/build/cache.sh after_failure
-      deploy:
-        - provider: script
-          skip_cleanup: true
-          script: bash ops/travis/deploy/cache.sh
-          on:
-            branch: master
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: unit testing
@@ -76,6 +53,8 @@ jobs:
         - bash ops/travis/unit-testing/webserver.sh script
       after_success:
         - bash ops/travis/unit-testing/webserver.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/webserver.sh after_failure
 
     # test python, director ----------------------------------------------------------------------
     - stage: unit testing
@@ -95,6 +74,8 @@ jobs:
         - bash ops/travis/unit-testing/director.sh script
       after_success:
         - bash ops/travis/unit-testing/director.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/director.sh after_failure
 
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
@@ -114,6 +95,8 @@ jobs:
         - bash ops/travis/unit-testing/simcore-sdk.sh script
       after_success:
         - bash ops/travis/unit-testing/simcore-sdk.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/simcore-sdk.sh after_failure
 
     # test python, storage ----------------------------------------------------------------------
     - stage: unit testing
@@ -135,6 +118,8 @@ jobs:
         - bash ops/travis/unit-testing/storage.sh script
       after_success:
         - bash ops/travis/unit-testing/storage.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/storage.sh after_failure
 
 
     # test python, apihub ----------------------------------------------------------------------
@@ -155,6 +140,8 @@ jobs:
         - bash ops/travis/unit-testing/apihub.sh script
       after_success:
         - bash ops/travis/unit-testing/apihub.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/apihub.sh after_failure
 
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
@@ -173,6 +160,8 @@ jobs:
         - bash ops/travis/unit-testing/python-linting.sh script
       after_success:
         - bash ops/travis/unit-testing/python-linting.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/python-linting.sh after_failure
 
     # frontend testing ----------------------------------------------------------------------
     - stage: unit testing
@@ -198,6 +187,8 @@ jobs:
         - bash ops/travis/unit-testing/frontend.sh script
       after_success:
         - bash ops/travis/unit-testing/frontend.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/frontend.sh after_failure
 
       deploy:
         # https://docs.travis-ci.com/user/deployment/pages/
@@ -232,6 +223,9 @@ jobs:
         - bash ops/travis/integration-testing/webserver.sh script
       after_success:
         - bash ops/travis/integration-testing/webserver.sh after_success
+      after_failure:
+        - bash ops/travis/integration-testing/webserver.sh after_failure
+
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration testing
       name: simcore-sdk in swarm
@@ -250,41 +244,43 @@ jobs:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk.sh script
       after_success:
         - bash ops/travis/integration-testing/simcore-sdk.sh after_success
+      after_failure:
+        - bash ops/travis/integration-testing/simcore-sdk.sh after_failure
 
-#     - stage: system testing, staging
-#       sudo: required
-#       language: python
-#       python:
-#         - "3.6"
-#       cache: pip
-#       before_install:
-#         - sudo bash ops/travis/system-testing/build_and_run.sh before_install
-#       install:
-#         - bash ops/travis/system-testing/build_and_run.sh install
-#       before_script:
-#         - bash ops/travis/system-testing/build_and_run.sh before_script
-#       script:
-#         - bash ops/travis/system-testing/build_and_run.sh script
-#       after_success:
-#         - bash ops/travis/system-testing/build_and_run.sh after_success
-#       after_failure:
-#         - bash ops/travis/system-testing/build_and_run.sh after_failure
-#       deploy:
-#         - provider: script
-#           skip_cleanup: true
-#           script: bash ops/travis/deploy/master.sh
-#           on:
-#             branch: master
-#         - provider: script
-#           skip_cleanup: true
-#           script: bash ops/travis/deploy/staging.sh
-#           on:
-#             branch: staging
-#         - provider: script
-#           skip_cleanup: true
-#           script: ops/travis/deploy/production.sh
-#           on:
-#             branch: production
+    - stage: system testing, staging
+      sudo: required
+      language: python
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/system-testing/build_and_run.sh before_install
+      install:
+        - bash ops/travis/system-testing/build_and_run.sh install
+      before_script:
+        - bash ops/travis/system-testing/build_and_run.sh before_script
+      script:
+        - bash ops/travis/system-testing/build_and_run.sh script
+      after_success:
+        - bash ops/travis/system-testing/build_and_run.sh after_success
+      after_failure:
+        - bash ops/travis/system-testing/build_and_run.sh after_failure
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: bash ops/travis/deploy/master.sh
+          on:
+            branch: master
+        - provider: script
+          skip_cleanup: true
+          script: bash ops/travis/deploy/staging.sh
+          on:
+            branch: staging
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/deploy/production.sh
+          on:
+            branch: production
 notifications:
   email:
     on_success: never

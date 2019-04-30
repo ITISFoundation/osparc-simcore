@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(packages/ simcore-sdk)
+FOLDER_CHECKS=(packages/ simcore-sdk .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
@@ -49,6 +49,10 @@ after_success() {
         coveralls
         codecov
     fi
+}
+
+after_failure() {
+    echo "failure... you can always write something more interesting here..."
 }
 
 # Check if the function exists (bash specific)
