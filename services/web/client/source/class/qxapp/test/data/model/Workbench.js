@@ -29,9 +29,13 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       setUp: function() {
         console.debug("Setting up .. ");
         this.debug("Setting up ...");
-        const prjName = "testStudy";
+        const studyData = {
+          name: "Test Study",
+          description: ""
+        };
+        const prj = new qxapp.data.model.Study(studyData);
         const wbData = {};
-        this.__workbench = new qxapp.data.model.Workbench(prjName, wbData);
+        this.__workbench = new qxapp.data.model.Workbench(prj, wbData);
       },
 
       tearDown: function() {
@@ -59,9 +63,9 @@ qx.Class.define("qxapp.test.data.model.Workbench",
         const linkId = null;
         const node1 = this.createDummyNode();
         const node2 = this.createDummyNode();
-        const link1 = this.__workbench.createLink(linkId, node1.getNodeId(), node2.getNodeId());
-        const link2 = this.__workbench.createLink(linkId, node1.getNodeId(), node2.getNodeId());
-        this.assertIdentical(link1.getLinkId(), link2.getLinkId(), "Both links must be the same");
+        const link1 = this.__workbench.createEdge(linkId, node1.getNodeId(), node2.getNodeId());
+        const link2 = this.__workbench.createEdge(linkId, node1.getNodeId(), node2.getNodeId());
+        this.assertIdentical(link1.getEdgeId(), link2.getEdgeId(), "Both links must be the same");
       },
 
       testUniqueName: function() {

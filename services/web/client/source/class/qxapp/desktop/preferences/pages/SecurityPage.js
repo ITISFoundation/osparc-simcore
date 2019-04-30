@@ -52,7 +52,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       ));
       box.add(label);
 
-      let linkBtn = new qxapp.component.widget.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      let linkBtn = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       box.add(linkBtn);
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));

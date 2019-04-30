@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
 
 before_install() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then

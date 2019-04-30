@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
 # shutdown postgres because sometimes is is already up ???
 sudo service postgresql stop
 

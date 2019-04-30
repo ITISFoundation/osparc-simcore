@@ -22,12 +22,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   var link = new qxapp.component.widget.LinkButton(this.tr("oSparc"),"https://osparc.io");
+ *   var link = new qxapp.ui.basic.LinkLabel(this.tr("oSparc"),"https://osparc.io");
  *   this.getRoot().add(link);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.LinkButton", {
+qx.Class.define("qxapp.ui.form.LinkButton", {
   extend: qx.ui.form.Button,
 
   /**

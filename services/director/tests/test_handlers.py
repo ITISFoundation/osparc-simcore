@@ -3,6 +3,7 @@
 # pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
 # pylint: disable=R0915
+# pylint: disable=too-many-arguments
 
 import json
 import uuid
@@ -152,26 +153,29 @@ async def test_services_by_key_version_get(configure_registry_access, configure_
         retrieved_services.append(services[0])
     _check_services(created_services, retrieved_services)
 
-async def _start_get_stop_services(push_services, user_id):
+async def _start_get_stop_services(push_services, user_id, project_id):
     fake_request = "fake request"
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None, None)
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None")
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", "None")
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
@@ -194,7 +198,7 @@ async def _start_get_stop_services(push_services, user_id):
         service_basepath = ""
         service_uuid = str(uuid.uuid4())
         # start the service
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag, service_basepath)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, project_id, service_key, service_uuid, service_tag, service_basepath)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
         running_service_enveloped = json.loads(web_response.text)
@@ -235,10 +239,10 @@ async def _start_get_stop_services(push_services, user_id):
         assert web_response.text is None
 
 
-async def test_running_services_post_and_delete_no_swarm(configure_registry_access, configure_schemas_location, push_services, user_id): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete_no_swarm(configure_registry_access, configure_schemas_location, push_services, user_id, project_id): #pylint: disable=W0613, W0621
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal error as there is no docker swarm"):
-        await _start_get_stop_services(push_services, user_id)
+        await _start_get_stop_services(push_services, user_id, project_id)
 
 
-async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id): #pylint: disable=W0613, W0621
-    await _start_get_stop_services(push_services, user_id)
+async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
+    await _start_get_stop_services(push_services, user_id, project_id)

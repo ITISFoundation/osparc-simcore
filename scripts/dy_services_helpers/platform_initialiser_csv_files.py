@@ -41,7 +41,7 @@ def main():
         separator = " "
     else:
         separator = options.separator
-    
+
 
     def _file_generator(file_index: int, file_type: str): # pylint: disable=W0613
         if "zip" in file_type:

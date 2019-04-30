@@ -36,7 +36,7 @@ class S3Settings:
 
 @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(20))
 def init_db():
-    db = DbSettings()    
+    db = DbSettings()
     _metadata = sa.MetaData()
     _tokens = sa.Table("tokens", _metadata,
     sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
@@ -54,11 +54,11 @@ def init_s3():
     return s3
 
 async def _initialise_platform(port_configuration_path: Path, file_generator, delete_file):
-    
-    
+
+
     with port_configuration_path.open() as file_pointer:
         configuration = json.load(file_pointer)
-    
+
     if not all(k in configuration for k in ("schema", "inputs", "outputs")):
         raise Exception("invalid port configuration in {}, {}!".format(str(port_configuration_path), configuration))
 
@@ -68,21 +68,21 @@ async def _initialise_platform(port_configuration_path: Path, file_generator, de
     db = init_db()
 
     # create a new pipeline
-    new_Pipeline = ComputationalPipeline()
+    new_Pipeline = ComputationalPipeline(project_id=str(uuid.uuid4()))
     db.session.add(new_Pipeline)
     db.session.commit()
 
     # create a new node
     node_uuid = str(uuid.uuid4())
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, 
-                                node_id=node_uuid, 
-                                schema=configuration["schema"], 
-                                inputs=configuration["inputs"], 
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id,
+                                node_id=node_uuid,
+                                schema=configuration["schema"],
+                                inputs=configuration["inputs"],
                                 outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
-    
+
     # set up node_ports
     node_ports.node_config.NODE_UUID = node_uuid
     PORTS = node_ports.ports()
@@ -98,19 +98,19 @@ async def _initialise_platform(port_configuration_path: Path, file_generator, de
                 if delete_file:
                     Path(file_to_upload).unlink()
 
-    
+
     # print the node uuid so that it can be set as env variable from outside
     print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
 def main(port_configuration_path: Path, file_generator, delete_file=False):
-    
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_initialise_platform(port_configuration_path, file_generator, delete_file))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with user data for development.")
     parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
-    group = parser.add_mutually_exclusive_group()    
+    group = parser.add_mutually_exclusive_group()
     group.add_argument("--files", help="any number of files to upload", type=Path, nargs="*")
     group.add_argument("--folder", help="a path to upload files from", type=Path)
     args = sys.argv[1:]
@@ -129,6 +129,6 @@ if __name__ == "__main__":
             if file_index < len(files):
                 return files[file_index]
             return None
-        main(port_configuration_path=options.portconfig, file_generator=_file_generator)    
+        main(port_configuration_path=options.portconfig, file_generator=_file_generator)
 
-    
+

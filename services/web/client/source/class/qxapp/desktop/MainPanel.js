@@ -19,7 +19,7 @@
 
 /**
  * Widget containing a Vertical Box with a MainView and ControlsBar.
- * Used as Main View in the project editor.
+ * Used as Main View in the study editor.
  *
  * *Example*
  *
@@ -48,10 +48,6 @@ qx.Class.define("qxapp.desktop.MainPanel", {
     });
 
     let controlsBar = this.__controlsBar = new qxapp.desktop.ControlsBar();
-    controlsBar.set({
-      height: 60,
-      allowGrowY: false
-    });
     this._add(controlsBar);
   },
 
