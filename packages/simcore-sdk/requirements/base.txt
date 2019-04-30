@@ -14,6 +14,7 @@ idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, yarl
 multidict==4.5.2          # via aiohttp, yarl
 networkx==2.3
+pika==1.0.1
 psycopg2-binary==2.8.2
 pyyaml==5.1               # via trafaret-config
 six==1.12.0               # via tenacity
