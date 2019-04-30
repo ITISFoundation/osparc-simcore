@@ -18,7 +18,7 @@ install_requirements = read_reqs( here / "requirements" / "base.txt" ) + [
     "simcore-service-library==0.1.0"
 ]
 
-test_requirements = read_reqs( here / "requirements" / "test.in" )
+test_requirements = read_reqs( here / "requirements" / "ci.txt" )
 
 
 
