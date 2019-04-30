@@ -108,7 +108,10 @@ RUN mkdir -p services/web/server &&\
 
 RUN apk del --no-cache\
       gcc \
-      git
+      git \
+      postgresql-dev \
+      libc-dev \
+      libffi-dev
 
 HEALTHCHECK --interval=30s \
             --timeout=120s \
