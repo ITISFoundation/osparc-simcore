@@ -94,13 +94,13 @@ endif
 # Docker build and composition
 .PHONY: build
 # target: build: – Builds all core service images.
-build: .env pull-cache .tmp-webclient-build
+build: .env .tmp-webclient-build
 	@echo "building using ${DOCKER_IMAGE_PREFIX} and ${DOCKER_IMAGE_TAG}"
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
 
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
-build-devel: .env pull-cache .tmp-webclient-build
+build-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
@@ -119,7 +119,7 @@ endif
 
 .PHONY: build-client rebuild-client
 # target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-build-client: .env pull-cache
+build-client: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
