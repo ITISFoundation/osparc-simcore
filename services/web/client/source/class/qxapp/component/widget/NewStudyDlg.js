@@ -55,9 +55,9 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
 
   members: {
     __createForm: function() {
-      let prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      let studyTitle = new qx.ui.form.TextField().set({
+      const studyTitle = new qx.ui.form.TextField().set({
         placeholder: this.tr("Study Title")
       });
       this.addListener("appear", () => {
@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
-      let description = new qx.ui.form.TextArea().set({
+      const description = new qx.ui.form.TextArea().set({
         minHeight: 150,
         placeholder: this.tr("Describe your study...")
       });
@@ -78,10 +78,10 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
-      let templatesList = new qx.ui.form.List().set({
+      const templatesList = new qx.ui.form.List().set({
         minHeight: 200
       });
-      let blankItem = new qx.ui.form.ListItem(this.tr("Blank Study"));
+      const blankItem = new qx.ui.form.ListItem(this.tr("Blank Study"));
       templatesList.add(blankItem);
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
@@ -95,9 +95,9 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
       // create the form manager
-      let manager = new qx.ui.form.validation.Manager();
+      const manager = new qx.ui.form.validation.Manager();
       // create a async validator function
-      let studyTitleValidator = new qx.ui.form.validation.AsyncValidator(
+      const studyTitleValidator = new qx.ui.form.validation.AsyncValidator(
         function(validator, value) {
           if (value === null || value.length === 0) {
             validator.setValid(false, "Study title is required");
@@ -127,7 +127,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
         this.fireDataEvent("createStudy", data);
       }, this);
 
-      let createBtn = new qx.ui.form.Button(this.tr("Create"));
+      const createBtn = new qx.ui.form.Button(this.tr("Create"));
       createBtn.addListener("execute", function() {
         manager.validate();
       }, this);
