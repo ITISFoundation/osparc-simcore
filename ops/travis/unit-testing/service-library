@@ -25,7 +25,7 @@ install() {
 before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
+        pip list
     fi
 }
 

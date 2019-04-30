@@ -16,7 +16,7 @@ install() {
 }
 
 before_script() {
-    pip freeze
+    pip list
     docker images
     make up
 }
