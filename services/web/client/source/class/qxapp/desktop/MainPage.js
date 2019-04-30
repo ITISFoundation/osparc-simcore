@@ -36,7 +36,7 @@
 qx.Class.define("qxapp.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.desktop.MainPage", {
     let navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    let prjStack = this.__prjStack = this.__createMainView();
+    let prjStack = this.__prjStack = this.__createMainView(studyId);
     this._add(prjStack, {
       flex: 1
     });
@@ -81,10 +81,10 @@ qx.Class.define("qxapp.desktop.MainPage", {
       return navBar;
     },
 
-    __createMainView: function() {
+    __createMainView: function(studyId) {
       let prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new qxapp.desktop.Dashboard();
+      let dashboard = this.__dashboard = new qxapp.desktop.Dashboard(studyId);
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
         this.__showStudyEditor(studyEditor);

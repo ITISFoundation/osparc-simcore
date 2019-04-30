@@ -38,7 +38,7 @@
 qx.Class.define("qxapp.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base(arguments);
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
@@ -63,6 +63,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         iframe.dispose();
         this.__createStudiesLayout();
         this.__createCommandEvents();
+        if (studyId) {
+          this.__createStudy(studyId);
+        }
       }
     }, this);
     userTimer.start();
