@@ -1,7 +1,7 @@
 [
   {
     "uuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
-    "name": "Colleen Clancy use case: 0D",
+    "name": "ISAN: Colleen Clancy use case: 0D",
     "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
     "notes": "",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
@@ -79,7 +79,7 @@
     }
   }, {
     "uuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
-    "name": "Colleen Clancy use cases: 1D, 2D",
+    "name": "ISAN: Colleen Clancy use cases: 1D, 2D",
     "description": "Colleen Clancy 1D and 2D use cases with a file picker and PostPro viewers",
     "notes": "",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
@@ -290,7 +290,7 @@
     }
   }, {
     "uuid": "template-uuid-4a0d-b88d-e80bfa272ebd",
-    "name": "MattWard use case",
+    "name": "ISAN: MattWard use case",
     "description": "MattWard Solver/PostPro viewer",
     "notes": "",
     "thumbnail": "",
@@ -316,15 +316,15 @@
       }
     }
   }, {
-    "uuid": "template-uuid-40e1-bb95-c68f6358bfe2",
-    "name": "4x CC 0D",
+    "uuid": "b9f00712-0088-40e1-bb95-c68f6358bfe2",
+    "name": "ISAN: 4x CC 0D",
     "description": "4 Colleen Clancy solvers with different configuration and the same input file",
     "notes": "",
     "thumbnail": "",
-    "prjOwner": "Maiz",
+    "prjOwner": "maiz",
     "collaborators": {},
     "creationDate": "2019-04-30T09:06:48.253Z",
-    "lastChangeDate": "2019-04-30T09:16:25.742Z",
+    "lastChangeDate": "2019-04-30T09:56:43.191Z",
     "workbench": {
       "template-uuid-4552-ad8d-e4699176f397": {
         "key": "simcore/services/dynamic/itis/file-picker",
@@ -337,8 +337,8 @@
         "progress": 0,
         "thumbnail": "",
         "position": {
-          "x":50,
-          "y":200
+          "x": 50,
+          "y": 250
         }
       },
       "template-uuid-4f8b-85c8-0c25419a0100": {
@@ -365,8 +365,8 @@
         "progress": 0,
         "thumbnail": "",
         "position": {
-            "x": 350,
-            "y": 50
+          "x": 350,
+          "y": 50
         }
       },
       "template-uuid-4f33-a261-9e614d018226": {
@@ -374,11 +374,11 @@
         "version": "1.0.0",
         "label": "CC 0D Gkr: 0.75",
         "inputs": {
-          "Na": 0,
-          "Kr": 0.75,
-          "BCL": 1000,
-          "NBeats": 10,
-          "Ligand": 0,
+          "Na":0,
+          "Kr":0.75,
+          "BCL":1000,
+          "NBeats":10,
+          "Ligand":0,
           "cAMKII": "WT",
           "initfile": {
             "nodeUuid": "template-uuid-4552-ad8d-e4699176f397",
@@ -386,15 +386,15 @@
           }
         },
         "inputNodes": [
-          "template-uuid-4552-ad8d-e4699176f397"
+            "template-uuid-4552-ad8d-e4699176f397"
         ],
         "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
         "position": {
-          "x":350,
-          "y":150
+          "x": 350,
+          "y": 200
         }
       },
       "template-uuid-4977-b066-5c7a769672d5": {
@@ -421,8 +421,8 @@
         "progress": 0,
         "thumbnail": "",
         "position": {
-          "x":350,
-          "y":250
+          "x": 350,
+          "y": 350
         }
       },
       "template-uuid-45b3-9fb2-ca70f4a182ec": {
@@ -449,99 +449,223 @@
         "progress": 0,
         "thumbnail": "",
         "position": {
-          "x":350,
-          "y":350
+            "x":350,
+            "y":500
         }
       },
-      "template-uuid-4a9a-8cca-9961ed2801b6": {
+      "template-uuid-4083-a798-8fe114647ca5": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.9.0",
+        "label": "Viewer GKr 1.00",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4f8b-85c8-0c25419a0100"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x":600,
+          "y":50
+        }
+      },
+       "template-uuid-4a9c-a26f-c5e7c7efa233": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.9.0",
+        "label": "Viewer GKr 0.75",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4f33-a261-9e614d018226"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 600,
+          "y": 200
+        }
+      },
+      "template-uuid-4587-9988-284adf1c0c72": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.9.0",
+        "label": "Viewer GKr 0.50",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+            "template-uuid-4977-b066-5c7a769672d5"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 600,
+          "y": 350
+        }
+      },
+      "template-uuid-43d3-974c-7fd88df4592d": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.9.0",
+        "label": "Viewer GKr 0.25",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-45b3-9fb2-ca70f4a182ec"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 600,
+          "y": 500
+        }
+      },
+      "template-uuid-4265-9a51-a1c2212798ae": {
         "key": "simcore/services/dynamic/itis/dash-plot",
         "version": "1.0.0",
-        "label": "2D plot - Multi",
+        "label": "Membrane Potentials",
         "inputs": {},
         "inputNodes": [
-          "template-uuid-4f8b-85c8-0c25419a0100",
-          "template-uuid-4f33-a261-9e614d018226",
-          "template-uuid-4977-b066-5c7a769672d5",
-          "template-uuid-45b3-9fb2-ca70f4a182ec"
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
         ],
         "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
         "position": {
-          "x":650,
-          "y":200
+          "x": 900,
+          "y": 100
         }
       },
-      "template-uuid-4130-ac0d-edc0ccace318": {
-        "key": "simcore/services/dynamic/raw-graphs",
-        "version": "2.8.0",
-        "label": "GKr: 1.00",
-        "inputs": {
-          "input_1": {
-            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
-            "output": "out_1"
-          },
-          "input_2": {
-            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
-            "output": "out_1"
-          },
-          "input_3": {
-            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
-            "output": "out_1"
-          },
-          "input_4": {
-            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
-            "output": "out_1"
-          }
-        },
+      "template-uuid-41a1-808a-5ce21f5eff0f": {
+        "key": "simcore/services/dynamic/itis/dash-plot",
+        "version": "1.0.0",
+        "label": "LCC Currents",
+        "inputs": {},
         "inputNodes": [
-          "template-uuid-4f8b-85c8-0c25419a0100",
-          "template-uuid-4f33-a261-9e614d018226",
-          "template-uuid-4977-b066-5c7a769672d5",
-          "template-uuid-45b3-9fb2-ca70f4a182ec"
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-4a9a-8cca-9961ed2801b6",
         "progress": 0,
         "thumbnail": "",
         "position": {
-            "x": 150,
-            "y": 50
+          "x": 900,
+          "y": 350
         }
       },
-      "template-uuid-49df-b7cd-e2f2db50e8d9": {
+      "template-uuid-47c3-a39b-36e4bedadca5": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr: 0.75",
+        "label": "GKr 1.00",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
             "output": "out_1"
           },
           "input_2": {
-            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
             "output": "out_1"
           },
           "input_3": {
-            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
             "output": "out_1"
           },
           "input_4": {
-            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
             "output": "out_1"
           }
         },
         "inputNodes": [
-          "template-uuid-4f8b-85c8-0c25419a0100",
-          "template-uuid-4f33-a261-9e614d018226",
-          "template-uuid-4977-b066-5c7a769672d5",
-          "template-uuid-45b3-9fb2-ca70f4a182ec"
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-4a9a-8cca-9961ed2801b6",
+        "parent": "template-uuid-4265-9a51-a1c2212798ae",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 150,
+          "y": 50
+        }
+      },
+      "template-uuid-4e79-9670-46d38e433234": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "GKr 0.75",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
+            "output": "out_1"
+          },
+          "input_2": {
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
+            "output": "out_1"
+          },
+          "input_3": {
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
+            "output": "out_1"
+          },
+          "input_4": {
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-4265-9a51-a1c2212798ae",
         "progress": 0,
         "thumbnail": "",
         "position": {
@@ -549,37 +673,37 @@
           "y": 200
         }
       },
-      "template-uuid-437d-a70d-3cb169b8ba7e": {
+      "template-uuid-4979-81e9-35cfdbefcc85": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr: 0.50",
+        "label": "GKr 0.50",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
             "output": "out_1"
           },
           "input_2": {
-            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
             "output": "out_1"
           },
           "input_3": {
-            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
             "output": "out_1"
           },
           "input_4": {
-            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
             "output": "out_1"
           }
         },
         "inputNodes": [
-          "template-uuid-4f8b-85c8-0c25419a0100",
-          "template-uuid-4f33-a261-9e614d018226",
-          "template-uuid-4977-b066-5c7a769672d5",
-          "template-uuid-45b3-9fb2-ca70f4a182ec"
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-4a9a-8cca-9961ed2801b6",
+        "parent": "template-uuid-4265-9a51-a1c2212798ae",
         "progress": 0,
         "thumbnail": "",
         "position": {
@@ -587,37 +711,189 @@
           "y": 350
         }
       },
-      "template-uuid-4aeb-b095-dea6ca69e23b": {
+      "template-uuid-42da-ae03-1bb50a4c2728": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr: 0.25",
+        "label": "GKr 0.25",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-4f8b-85c8-0c25419a0100",
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
             "output": "out_1"
           },
           "input_2": {
-            "nodeUuid": "template-uuid-4f33-a261-9e614d018226",
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
             "output": "out_1"
           },
           "input_3": {
-            "nodeUuid": "template-uuid-4977-b066-5c7a769672d5",
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
             "output": "out_1"
           },
           "input_4": {
-            "nodeUuid": "template-uuid-45b3-9fb2-ca70f4a182ec",
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
             "output": "out_1"
           }
         },
         "inputNodes": [
-          "template-uuid-4f8b-85c8-0c25419a0100",
-          "template-uuid-4f33-a261-9e614d018226",
-          "template-uuid-4977-b066-5c7a769672d5",
-          "template-uuid-45b3-9fb2-ca70f4a182ec"
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-4a9a-8cca-9961ed2801b6",
+        "parent": "template-uuid-4265-9a51-a1c2212798ae",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 150,
+          "y": 500
+        }
+      },
+      "template-uuid-4c8a-8f8d-7d8baf6a3604": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "GKr 1.00",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
+            "output": "out_2"
+          },
+          "input_2": {
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
+            "output": "out_2"
+          },
+          "input_3": {
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
+            "output": "out_2"
+          },
+          "input_4": {
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-41a1-808a-5ce21f5eff0f",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 150,
+          "y": 50
+        }
+      },
+      "template-uuid-456b-b5fc-bc3ee7c257a2": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "GKr 0.75",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
+            "output": "out_2"
+          },
+          "input_2": {
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
+            "output": "out_2"
+          },
+          "input_3": {
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
+            "output": "out_2"
+          },
+          "input_4": {
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-41a1-808a-5ce21f5eff0f",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 150,
+          "y": 200
+        }
+      },
+      "template-uuid-4d66-b9af-f8a3153f8d24": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "GKr 0.50",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
+            "output": "out_2"
+          },
+          "input_2": {
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
+            "output": "out_2"
+          },
+          "input_3": {
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
+            "output": "out_2"
+          },
+          "input_4": {
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-41a1-808a-5ce21f5eff0f",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 150,
+          "y": 350
+        }
+      },
+      "template-uuid-49f1-9ecf-eff08693074a": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "GKr 0.25",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
+            "output": "out_2"
+          },
+          "input_2": {
+            "nodeUuid": "template-uuid-4a9c-a26f-c5e7c7efa233",
+            "output": "out_2"
+          },
+          "input_3": {
+            "nodeUuid": "template-uuid-4587-9988-284adf1c0c72",
+            "output": "out_2"
+          },
+          "input_4": {
+            "nodeUuid": "template-uuid-43d3-974c-7fd88df4592d",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4083-a798-8fe114647ca5",
+          "template-uuid-4a9c-a26f-c5e7c7efa233",
+          "template-uuid-4587-9988-284adf1c0c72",
+          "template-uuid-43d3-974c-7fd88df4592d"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-41a1-808a-5ce21f5eff0f",
         "progress": 0,
         "thumbnail": "",
         "position": {
