@@ -240,5 +240,53 @@
         }
       }
     }
+  }, {
+    "uuid": "template-uuid-4a0d-b88d-e80bfa272ebd",
+    "name": "Kember use case",
+    "description": "Kember Cordiac Model with PostPro Viewer",
+    "notes": "",
+    "thumbnail": "",
+    "prjOwner": "maiz",
+    "collaborators": {},
+    "creationDate": "2019-04-30T08:52:20.937Z",
+    "lastChangeDate": "2019-04-30T08:53:11.561Z",
+    "workbench": {
+       "template-uuid-43dd-8d87-9969d380df53": {
+          "key": "simcore/services/comp/kember-cardiac-model",
+          "version": "1.0.0",
+          "label": "Kember cardiac model",
+          "inputs": {
+             "dt": 0.01,
+             "T": 1000,
+             "forcing_factor": 0
+          },
+          "inputNodes": [],
+          "outputNode": false,
+          "outputs": {},
+          "progress": 0,
+          "thumbnail": "",
+          "position": {
+             "x":100,
+             "y":200
+          }
+       },
+       "16482538-ad50-46ad-9899-5deb044a6442":{
+          "key": "simcore/services/dynamic/kember-viewer",
+          "version": "2.9.0",
+          "label": "kember-viewer",
+          "inputs": {},
+          "inputNodes": [
+             "template-uuid-43dd-8d87-9969d380df53"
+          ],
+          "outputNode": false,
+          "outputs": {},
+          "progress": 100,
+          "thumbnail": "",
+          "position": {
+             "x":40,
+             "y":200
+          }
+       }
+    }
   }
 ]
