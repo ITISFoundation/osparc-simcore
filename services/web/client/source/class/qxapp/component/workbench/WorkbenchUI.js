@@ -856,10 +856,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __addEventListeners: function() {
       this.addListener("appear", () => {
+        // Reset filters and sidebars
         qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
+
+        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
       });
       this.addListener("disappear", () => {
+        // Reset filters
         qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
       });

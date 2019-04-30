@@ -75,6 +75,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       actionButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
+        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
       }, this);
       appRoot.add(actionButton);
       standin.addListener("appear", e => {

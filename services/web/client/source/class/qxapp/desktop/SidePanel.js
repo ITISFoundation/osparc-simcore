@@ -82,16 +82,17 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     _applyCollapsed: function(collapsed) {
       this.__setDecorators("sidepanel");
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
+      const splitpaneContainer = this.__getSplitpaneContainer();
       if (collapsed) {
         // Save widths
         this.__savedWidth = this.__getCssWidth();
-        this.__savedMinWidth = this.__getSplitpaneContainer().getMinWidth();
-        this.__getSplitpaneContainer().setMinWidth(0);
-        this.__getSplitpaneContainer().setWidth(20);
+        this.__savedMinWidth = splitpaneContainer.getMinWidth();
+        splitpaneContainer.setMinWidth(0);
+        splitpaneContainer.setWidth(20);
       } else {
         // Restore widths
-        this.__getSplitpaneContainer().setMinWidth(this.__savedMinWidth);
-        this.__getSplitpaneContainer().setWidth(this.__savedWidth);
+        splitpaneContainer.setMinWidth(this.__savedMinWidth);
+        splitpaneContainer.setWidth(this.__savedWidth);
       }
       // Workaround: have to update splitpane's prop
       const splitpane = this.__getParentSplitpane();
