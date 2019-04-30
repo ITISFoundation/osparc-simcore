@@ -4,8 +4,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 before_install() {
-    bash ops/travis/helpers/install_docker_compose
-    bash ops/travis/helpers/show_system_versions
+    bash ops/travis/helpers/install_docker_compose.sh
+    bash ops/travis/helpers/show_system_versions.sh
 }
 
 install() {

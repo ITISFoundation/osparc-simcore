@@ -8,8 +8,8 @@ FOLDER_CHECKS=(api/ apihub)
 before_install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        bash ops/travis/helpers/install_docker_compose
-        bash ops/travis/helpers/show_system_versions
+        bash ops/travis/helpers/install_docker_compose.sh
+        bash ops/travis/helpers/show_system_versions.sh
     fi
 }
 

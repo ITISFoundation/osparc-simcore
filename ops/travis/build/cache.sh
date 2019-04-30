@@ -5,8 +5,8 @@ IFS=$'\n\t'
 
 before_install() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        bash ops/travis/helpers/install_docker_compose;
-        bash ops/travis/helpers/show_system_versions;
+        bash ops/travis/helpers/install_docker_compose.sh;
+        bash ops/travis/helpers/show_system_versions.sh;
     fi
 }
 
@@ -26,7 +26,7 @@ script() {
 
 after_success() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        echo "cache building was successful"        
+        echo "cache building was successful"
     fi
 }
 

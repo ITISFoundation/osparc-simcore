@@ -8,8 +8,8 @@ export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}
 export DOCKER_IMAGE_TAG_PREFIX=$current_branch
 
 before_install() {
-    bash ops/travis/helpers/install_docker_compose;
-    bash ops/travis/helpers/show_system_versions;
+    bash ops/travis/helpers/install_docker_compose.sh;
+    bash ops/travis/helpers/show_system_versions.sh;
     env
 }
 
