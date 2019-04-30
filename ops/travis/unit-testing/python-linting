@@ -17,6 +17,8 @@ install() {
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
         pip3 install pylint~=2.0
+        # Minimal packages to pass linter
+        pip install celery docker
     fi
 }
 
