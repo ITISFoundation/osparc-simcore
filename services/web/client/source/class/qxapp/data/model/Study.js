@@ -74,13 +74,13 @@ qx.Class.define("qxapp.data.model.Study", {
 
     description: {
       check: "String",
-      nullable: true,
+      nullable: false,
       init: ""
     },
 
     notes: {
       check: "String",
-      nullable: true,
+      nullable: false,
       init: ""
     },
 
@@ -92,25 +92,25 @@ qx.Class.define("qxapp.data.model.Study", {
 
     prjOwner: {
       check: "String",
-      nullable: true,
+      nullable: false,
       init: ""
     },
 
     collaborators: {
       check: "Object",
-      nullable: true,
+      nullable: false,
       init: {}
     },
 
     creationDate: {
       check: "Date",
-      nullable: true,
+      nullable: false,
       init: new Date()
     },
 
     lastChangeDate: {
       check: "Date",
-      nullable: true,
+      nullable: false,
       init: new Date()
     },
 
@@ -131,9 +131,9 @@ qx.Class.define("qxapp.data.model.Study", {
       this.setLastChangeDate(new Date());
 
       let jsonObject = {};
-      let properties = this.constructor.$$properties;
+      const properties = this.constructor.$$properties;
       for (let key in properties) {
-        let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        const value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;

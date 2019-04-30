@@ -52,6 +52,9 @@ class Fake:
         template_file = "data/fake-template-projects.json"
         with resources.stream(template_file) as f:
             projects = json.load(f)
+        template_osparc_file = "data/fake-template-projects.isan.json"
+        with resources.stream(template_osparc_file) as f:
+            projects = projects + json.load(f)
         template_osparc_file = "data/fake-template-projects.osparc.json"
         with resources.stream(template_osparc_file) as f:
             projects = projects + json.load(f)
