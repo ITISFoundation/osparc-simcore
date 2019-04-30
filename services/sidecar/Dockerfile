@@ -51,11 +51,11 @@ RUN $SC_PIP install --upgrade \
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/sidecar/requirements/*.txt \
-      services/sidecar/requirements/
+COPY  --chown=scu:scu services/sidecar/requirements/*.txt \
+      tmp/sidecar/requirements/
 
 RUN $SC_PIP install \
-      -r services/sidecar/requirements/base.txt
+      -r tmp/sidecar/requirements/base.txt
 
 
 # --------------------------Cache stage -------------------

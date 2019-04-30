@@ -221,28 +221,21 @@ push-cache:
 # Staging
 # TODO: PC->SAN: see ops/travis/system-testing/build_and_run. Could move images FREFIX and TAG there
 
-.PHONY: build-staging push-staging pull-staging create-staging-stack-file
-# target: build-staging – Builds service images and tags them as 'staging'
-build-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${MAKE} build
-
-TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
-# target: push-staging – Tags service images with version and 'latest'; and pushes them into registry
-push-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
+.PHONY: tag push pull create-staging-stack-file
+#target: tag – Tags service images
+tag:
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag itisfoundation/$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
-		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} tag services_$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
 	done
 
-# target: pull-staging – pulls images tagged as 'staging' from registry
-pull-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
+# target: push – Pushes images into a registry
+push:
+	for i in $(SERVICES_LIST); do \
+		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
+	done
+
+# target: pull – Pulls images from a registry
+pull:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
 # target: create-staging-stack-file – use as 'make creat-staging-stack-file output_file=stack.yaml'
@@ -311,13 +304,13 @@ setup-check: .env .vscode/settings.json
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
 	.venv/bin/pip3 install pylint autopep8 virtualenv
-	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
 
 .venv27: .venv
 # target: .venv27 – Creates a python2.7 virtual environment with dev tools
 	@python2 --version
 	.venv/bin/virtualenv --python=python2 .venv27
-	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
+	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
 
 
 
