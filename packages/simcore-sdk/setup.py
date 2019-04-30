@@ -13,8 +13,8 @@ def read_reqs( reqs_path: Path):
 
 install_requirements = read_reqs( here / "requirements" / "base.in" )
 test_requirements = read_reqs( here / "requirements" / "test.in" ) + [
-    "s3wrapper",
-    "simcore-service-storage-sdk"
+    "s3wrapper==0.1.0",
+    "simcore-service-storage-sdk==0.1.0"
 ]
 
 setup(
