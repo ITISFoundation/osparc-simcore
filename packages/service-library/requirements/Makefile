@@ -8,7 +8,7 @@ all: $(outputs)
 %.txt: %.in
 	pip-compile --output-file $@ $<
 
-ci.txt: base.txt
+ci-base.txt: base.txt
 
 .PHONY: check
 # target: check – Checks whether pip-compile is installed
@@ -18,7 +18,7 @@ check:
 .PHONY: clean
 # target: clean – Cleans all requirements/*.txt (except dev.txt)
 clean: check
-	@find . -type f -name '*.txt' -not -name 'dev.txt' -print0 | xargs -0 rm --
+	rm $(outputs)
 
 .PHONY: help
 # target: help – Display all callable targets

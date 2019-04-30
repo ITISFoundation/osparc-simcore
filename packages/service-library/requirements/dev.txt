@@ -5,9 +5,13 @@
 # NOTE: there is no dev.in counterpart since it is not used to specify
 #       third-party dependencies but as a shortcut
 
+# direct dependencies
 -r base.txt
 
+# installs repo packages
+
+# current module
 -e .[test]
 
-# tools
+# other tools
 bumpversion
