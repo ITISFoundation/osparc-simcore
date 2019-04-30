@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import simcore_service_storage_sdk
-from simcore_service_storage_sdk import ApiClient, UsersApi
+from simcore_service_storage_sdk import UsersApi, Configuration
 from simcore_service_storage_sdk.rest import ApiException
 
 temporary_file = tempfile.NamedTemporaryFile(delete=False)
