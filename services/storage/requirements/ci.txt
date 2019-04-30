@@ -8,6 +8,7 @@
 
 # installs repo packages
 ../../packages/s3wrapper/
+../../packages/simcore-sdk/
 ../../packages/service-library/
 
 # current module

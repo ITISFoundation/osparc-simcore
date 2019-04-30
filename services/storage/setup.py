@@ -16,6 +16,7 @@ def read_reqs( reqs_path: Path):
 
 install_requirements = read_reqs( here / "requirements" / "base.txt" ) + [
     "s3wrapper==0.1.0",
+    "simcore-sdk==0.1.0",
     "simcore-service-library==0.1.0"
 ]
 
