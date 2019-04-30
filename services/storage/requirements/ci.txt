@@ -7,6 +7,7 @@
 -r ci-base.txt
 
 # installs repo packages
+../../packages/s3wrapper/
 ../../packages/service-library/
 
 # current module
