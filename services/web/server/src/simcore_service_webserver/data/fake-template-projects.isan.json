@@ -288,5 +288,32 @@
           }
        }
     }
+  }, {
+    "uuid": "template-uuid-4a0d-b88d-e80bfa272ebd",
+    "name": "MattWard use case",
+    "description": "",
+    "notes": "",
+    "thumbnail": "",
+    "prjOwner": "Maiz",
+    "collaborators": {},
+    "creationDate": "2019-04-30T08:52:20.937Z",
+    "lastChangeDate": "2019-04-30T08:59:26.090Z",
+    "workbench": {
+       "template-uuid-4021-b2ef-b2e163bfbd16": {
+          "key": "simcore/services/dynamic/mattward-viewer",
+          "version": "2.9.0",
+          "label": "MattWard",
+          "inputs": {},
+          "inputNodes": [],
+          "outputNode": false,
+          "outputs": {},
+          "progress": 0,
+          "thumbnail": "",
+          "position": {
+             "x":100,
+             "y":100
+          }
+       }
+    }
   }
 ]
