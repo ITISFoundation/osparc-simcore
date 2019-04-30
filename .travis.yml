@@ -180,15 +180,15 @@ jobs:
       before_install:
         - bash ops/travis/unit-testing/frontend.sh before_install
       install:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh install
+        - bash ops/travis/unit-testing/frontend.sh install
       before_script:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh before_script
+        - bash ops/travis/unit-testing/frontend.sh before_script
       script:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh script
+        - bash ops/travis/unit-testing/frontend.sh script
       after_success:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh after_success
+        - bash ops/travis/unit-testing/frontend.sh after_success
       after_failure:
-        - unbuffer bash ops/travis/unit-testing/frontend.sh after_failure
+        - bash ops/travis/unit-testing/frontend.sh after_failure
 
       deploy:
         # https://docs.travis-ci.com/user/deployment/pages/
