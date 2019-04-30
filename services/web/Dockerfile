@@ -78,7 +78,7 @@ COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/web/server /build/services/web/server
 
 # front-end client
-COPY --from=${DOCKER_IMAGE_PREFIX}_webclient:build --chown=scu:scu \
+COPY --from=services_webclient:build --chown=scu:scu \
       /home/scu/client/build-output \
       /build/services/web/client
 

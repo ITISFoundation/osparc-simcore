@@ -95,7 +95,7 @@ endif
 build: .env pull-cache .tmp-webclient-build
 	@echo "building using ${DOCKER_IMAGE_PREFIX} and ${DOCKER_IMAGE_TAG}"
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
-	
+
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
 build-devel: .env pull-cache .tmp-webclient-build
@@ -208,7 +208,7 @@ pull-cache:
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER} tag ${DOCKER_IMAGE_PREFIX}webclient:cache ${DOCKER_IMAGE_PREFIX}webclient:build
+	${DOCKER} tag ${DOCKER_IMAGE_PREFIX}webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
