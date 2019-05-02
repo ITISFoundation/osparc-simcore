@@ -90,34 +90,35 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __versionsBox: null,
 
     __createFilterLayout: function() {
-      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
-      filterLayout.add(searchLabel);
-      let textfield = this.__textfield = new qx.ui.form.TextField();
-      textfield.setLiveUpdate(true);
-      filterLayout.add(textfield, {
-        flex: 1
+      const toolbar = new qx.ui.toolbar.ToolBar();
+
+      const filterPart = new qx.ui.toolbar.Part().set({
+        spacing: 10
       });
-      // check box for filtering
-      let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
-      showAll.setValue(false);
-      showAll.addListener("changeValue", e => {
+      const filter = new qxapp.component.filter.TextFilter("text", "services");
+      this.__textfield = filter.getChildControl("textfield", true);
+      filterPart.add(filter);
+      const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
+      showAllCheckbox.set({
+        value: false,
+        // FIXME: Backend should do the filtering
+        visibility: qxapp.data.Permissions.getInstance().canDo("test") ? "visible" : "excluded"
+      });
+      showAllCheckbox.addListener("changeValue", e => {
         this.__updateList();
       }, this);
-      // FIXME: Backend should do the filtering
-      if (qxapp.data.Permissions.getInstance().canDo("test")) {
-        filterLayout.add(showAll);
-      }
-      // buttons for reloading services
-      let reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__populateList(true);
-      }, this);
-      filterLayout.add(reloadBtn);
+      filterPart.add(showAllCheckbox);
+      toolbar.add(filterPart);
 
-      return filterLayout;
+      toolbar.addSpacer();
+
+      const controlsPart = new qx.ui.toolbar.Part();
+      // buttons for reloading services (is this necessary?)
+      const reloadBtn = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/16");
+      reloadBtn.addListener("execute", () => this.__populateList(true), this);
+      controlsPart.add(reloadBtn);
+      toolbar.add(controlsPart);
+      return toolbar;
     },
 
     __createListLayout: function() {
@@ -167,7 +168,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__controller.setDelegate(filterObj);
 
       // make every input in the textfield update the controller
-      this.__textfield.bind("changeValue", filterObj, "searchString");
+      this.__textfield.bind("input", filterObj, "searchString");
 
       return list;
     },
