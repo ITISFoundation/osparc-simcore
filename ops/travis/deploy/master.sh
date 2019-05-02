@@ -3,18 +3,27 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# pull the current tested build
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
+make pull
+
 # show current images on system
 docker images
 
 # these variable must be available securely from travis
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-TRAVIS_PLATFORM_STAGE_VERSION=staging-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
-export DOCKER_IMAGE_PREFIX=itisfoundation
-export DOCKER_IMAGE_TAG=master
+# re-tag build to master-latest
+export DOCKER_IMAGE_PREFIX_NEW=${DOCKER_IMAGE_PREFIX}
+export DOCKER_IMAGE_TAG_NEW=master-latest
 make tag
+export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
 make push
 
-export DOCKER_IMAGE_TAG=$TRAVIS_PLATFORM_STAGE_VERSION
+# re-tag build to master-DATE.BUILD_NUMBER.GIT_SHA
+TRAVIS_PLATFORM_STAGE_VERSION=master-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
+export DOCKER_IMAGE_TAG_NEW=$TRAVIS_PLATFORM_STAGE_VERSION
 make tag
+export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
 make push

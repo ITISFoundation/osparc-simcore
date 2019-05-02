@@ -228,7 +228,7 @@ push-cache:
 #target: tag – Tags service images
 tag:
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
+		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX_NEW}$$i:${DOCKER_IMAGE_TAG_NEW}; \
 	done
 
 # target: push – Pushes images into a registry
