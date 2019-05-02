@@ -116,7 +116,7 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_en
         # remove builds
         if "build" in service:
             service.pop("build", None)
-            service['image'] = "services_{}:latest".format(name)
+            service['image'] = "${DOCKER_IMAGE_PREFIX}{}:${DOCKER_IMAGE_TAG}".format(name)
         # replaces environs
         if "environment" in service:
             _environs = {}
