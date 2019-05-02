@@ -19,6 +19,7 @@ install() {
 
 before_script() {
     pip freeze
+    make pull-cache || true
     make pull || make build
     docker images
 }
