@@ -11,8 +11,7 @@ addons:
       - expect-dev # for unbuffer: brings color back into travis logs
 
 stages:
-  - build
-  - unit-testing
+  - build / unit-testing
   - integration-testing
   - system-testing
   - deployment
@@ -20,7 +19,7 @@ stages:
 jobs:
   include:
     # build images ----------------------------------------------------------------------
-    - stage: build
+    - stage: build / unit-testing
       # in pull request we do not have credentials to push, so this is useless
       if: NOT type = pull_request
       name: build simcore images
@@ -45,7 +44,7 @@ jobs:
             all_branches: true
 
     # test python, webserver ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: webserver
       language: python
       python:
@@ -66,7 +65,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/webserver.sh after_failure
 
     # test python, director ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: director
       language: python
       python:
@@ -87,7 +86,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/director.sh after_failure
 
     # test python, simcore-sdk ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: simcore-sdk
       language: python
       python:
@@ -108,7 +107,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/simcore-sdk.sh after_failure
 
     # test python, storage ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: storage
       language: python
       python:
@@ -130,9 +129,8 @@ jobs:
       after_failure:
         - unbuffer bash ops/travis/unit-testing/storage.sh after_failure
 
-
     # test python, apihub ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: apihub
       language: python
       python:
@@ -153,7 +151,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/apihub.sh after_failure
 
     # test python, linting ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: python linting
       language: python
       python:
@@ -173,7 +171,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/python-linting.sh after_failure
 
     # frontend testing ----------------------------------------------------------------------
-    - stage: unit-testing
+    - stage: build / unit-testing
       name: front end testing
       language: node_js
       node_js:
@@ -182,10 +180,7 @@ jobs:
         apt:
           packages:
             - libgconf-2-4
-#      cache:
-#        directories:
-#          - .npm
-#          - services/web/client/node_modules
+
       before_install:
         - bash ops/travis/unit-testing/frontend.sh before_install
       install:
