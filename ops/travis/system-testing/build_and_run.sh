@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY:-itisfoundation}/
 export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 before_install() {
@@ -14,6 +14,7 @@ before_install() {
 install() {
     pip3 install --upgrade pip wheel setuptools && pip3 --version
     pip3 install -r ops/travis/system-testing/requirements.txt
+    make pull-cache || true
     make pull || make build
 }
 
