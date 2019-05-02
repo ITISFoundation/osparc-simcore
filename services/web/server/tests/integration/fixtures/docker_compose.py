@@ -70,7 +70,7 @@ def docker_compose_file(request, temp_folder, services_docker_compose, devel_env
     docker_compose_path = temp_folder / 'docker-compose.yml'
     # docker_compose_path = tmp_path / 'docker-compose.yml'
     _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
-
+    import pdb; pdb.set_trace()
     yield Path(docker_compose_path)
     # cleanup
     # docker_compose_path.unlink()
@@ -116,7 +116,6 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_en
         # remove builds
         if "build" in service:
             service.pop("build", None)
-            service['image'] = "${DOCKER_IMAGE_PREFIX}{}:${DOCKER_IMAGE_TAG}".format(name)
         # replaces environs
         if "environment" in service:
             _environs = {}
