@@ -21,6 +21,8 @@ jobs:
   include:
     # build images ----------------------------------------------------------------------
     - stage: build
+      # in pull request we do not have credentials to push, so this is useless
+      if: NOT type = pull_request
       name: build simcore images
       sudo: required
       before_install:
