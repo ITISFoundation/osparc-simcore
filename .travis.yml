@@ -10,6 +10,13 @@ addons:
       - docker-ce
       - expect-dev # for unbuffer: brings color back into travis logs
 
+stages:
+  - build
+  - unit-testing
+  - integration-testing
+  - system-testing
+  - deployment
+
 jobs:
   include:
     # build images ----------------------------------------------------------------------
@@ -36,7 +43,7 @@ jobs:
             all_branches: true
 
     # test python, webserver ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: webserver
       language: python
       python:
@@ -57,7 +64,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/webserver.sh after_failure
 
     # test python, director ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: director
       language: python
       python:
@@ -78,7 +85,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/director.sh after_failure
 
     # test python, simcore-sdk ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: simcore-sdk
       language: python
       python:
@@ -99,7 +106,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/simcore-sdk.sh after_failure
 
     # test python, storage ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: storage
       language: python
       python:
@@ -123,7 +130,7 @@ jobs:
 
 
     # test python, apihub ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: apihub
       language: python
       python:
@@ -144,7 +151,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/apihub.sh after_failure
 
     # test python, linting ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: python linting
       language: python
       python:
@@ -164,7 +171,7 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/python-linting.sh after_failure
 
     # frontend testing ----------------------------------------------------------------------
-    - stage: unit testing
+    - stage: unit-testing
       name: front end testing
       language: node_js
       node_js:
@@ -206,7 +213,7 @@ jobs:
 
 
     # integrate webserver in swarm -------------------------------------------------------------
-    - stage: integration testing
+    - stage: integration-testing
       name: webserver in swarm
       language: python
       python:
@@ -227,7 +234,7 @@ jobs:
         - unbuffer bash ops/travis/integration-testing/webserver.sh after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
-    - stage: integration testing
+    - stage: integration-testing
       name: simcore-sdk in swarm
       language: python
       python:
@@ -247,7 +254,7 @@ jobs:
       after_failure:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk.sh after_failure
 
-    - stage: system testing, staging
+    - stage: system-testing
       sudo: required
       language: python
       python:
@@ -265,17 +272,32 @@ jobs:
         - unbuffer bash ops/travis/system-testing/build_and_run.sh after_success
       after_failure:
         - unbuffer bash ops/travis/system-testing/build_and_run.sh after_failure
+
+    - stage: deployment
+      name: master
+      if: branch = master
+      script: echo "Deploy master"
       deploy:
         - provider: script
           skip_cleanup: true
           script: unbuffer bash ops/travis/deploy/master.sh
           on:
             branch: master
+    - stage: deployment
+      name: staging
+      if: branch = staging
+      script: echo "Deploy staging"
+      deploy:
         - provider: script
           skip_cleanup: true
           script: unbuffer bash ops/travis/deploy/staging.sh
           on:
             branch: staging
+    - stage: deployment
+      name: production
+      if: branch = production
+      script: echo "Deploy production"
+      deploy:
         - provider: script
           skip_cleanup: true
           script: unbuffer ops/travis/deploy/production.sh
