@@ -59,7 +59,8 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
       switch (id) {
         case "textfield":
           control = new qx.ui.form.TextField().set({
-            paddingRight: 15
+            paddingRight: 15,
+            liveUpdate: true
           });
           this._add(control);
           break;
@@ -75,7 +76,7 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
     },
 
     __attachEventHandlers: function() {
-      this.__textField.addListener("input", evt => {
+      this.__textField.addListener("changeValue", evt => {
         this._filterChange(evt.getData().trim()
           .toLowerCase());
       });

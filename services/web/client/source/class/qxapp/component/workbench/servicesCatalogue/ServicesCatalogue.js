@@ -45,10 +45,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      caption: "Services Catalogue"
+      caption: this.tr("Services Catalogue"),
+      appearance: "window-small-cap",
+      contentPadding: 0
     });
 
-    let catalogueLayout = new qx.ui.layout.VBox(10);
+    let catalogueLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogueLayout);
 
     let filterLayout = this.__createFilterLayout();
@@ -58,9 +60,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     this.add(list, {
       flex: 1
     });
-
-    let versionLayout = this.__createVersionsLayout();
-    this.add(versionLayout);
 
     let btnLayout = this.__createButtonsLayout();
     this.add(btnLayout);
@@ -168,43 +167,44 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__controller.setDelegate(filterObj);
 
       // make every input in the textfield update the controller
-      this.__textfield.bind("input", filterObj, "searchString");
+      this.__textfield.bind("changeValue", filterObj, "searchString");
 
       return list;
     },
 
-    __createVersionsLayout: function() {
-      let versionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let versionLabel = new qx.ui.basic.Label(this.tr("Version"));
-      versionLayout.add(versionLabel);
-      let selectBox = this.__versionsBox = new qx.ui.form.SelectBox();
+    __createButtonsLayout: function() {
+      const toolbar = new qx.ui.toolbar.ToolBar();
+
+      const infoPart = new qx.ui.toolbar.Part();
+      const infoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
+      infoContainer.add(versionLabel);
+      const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox();
       selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
       selectBox.setValue(selectBox.getChildrenContainer().getSelectables()[0].getLabel());
-      versionLayout.add(selectBox);
-      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/16");
+      infoContainer.add(selectBox);
+      const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16");
       infoBtn.addListener("execute", function() {
         this.__showServiceInfo();
       }, this);
-      versionLayout.add(infoBtn);
-      return versionLayout;
-    },
+      infoContainer.add(infoBtn);
+      infoPart.add(infoContainer);
+      toolbar.add(infoPart);
 
-    __createButtonsLayout: function() {
-      let btnBox = new qx.ui.layout.HBox(10);
-      btnBox.setAlignX("right");
-      let btnLayout = new qx.ui.container.Composite(btnBox);
+      toolbar.addSpacer();
 
-      let addBtn = new qx.ui.form.Button("Add");
+      const buttonsPart = new qx.ui.toolbar.Part();
+      const addBtn = new qx.ui.toolbar.Button("Add");
       addBtn.addListener("execute", this.__onAddService, this);
       addBtn.setAllowGrowX(false);
-      btnLayout.add(addBtn);
-
-      let cancelBtn = new qx.ui.form.Button("Cancel");
+      buttonsPart.add(addBtn);
+      const cancelBtn = new qx.ui.toolbar.Button("Cancel");
       cancelBtn.addListener("execute", this.__onCancel, this);
       cancelBtn.setAllowGrowX(false);
-      btnLayout.add(cancelBtn);
+      buttonsPart.add(cancelBtn);
+      toolbar.add(buttonsPart);
 
-      return btnLayout;
+      return toolbar;
     },
 
     __createEvents: function() {
