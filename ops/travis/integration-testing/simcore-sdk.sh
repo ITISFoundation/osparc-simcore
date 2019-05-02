@@ -31,7 +31,7 @@ before_script() {
     then
         pip freeze
         # pull the test images if registry is set up, else build the images
-        make pull-cache
+        make pull-cache || true
         make pull || make build
         docker images
     fi
