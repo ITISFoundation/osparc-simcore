@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
+export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY:-itisfoundation}/
 export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh .travis.yml)
@@ -31,6 +31,7 @@ before_script() {
     then
         pip freeze
         # pull the test images if registry is set up, else build the images
+        make pull-cache
         make pull || make build
         docker images
     fi
