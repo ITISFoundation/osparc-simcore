@@ -4,7 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG_PREFIX=$(exec ops/travis/helpers/build_docker_image_tag.sh)
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 before_install() {
     bash ops/travis/helpers/install_docker_compose.sh
