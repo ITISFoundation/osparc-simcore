@@ -2,9 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-current_branch=$(exec ops/travis/helpers/slugify_branch.sh)
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG=$current_branch-latest
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh .travis.yml)
 
