@@ -79,42 +79,61 @@ def _convert_to_schema_names(project_db_data) -> Dict:
 class ProjectDB:
     @classmethod
     async def add_projects(cls, projects_list: List[Dict], user_id: str, db_engine):
-        """ adds all projects and assigns to a user
+        """
+            adds all projects and assigns to a user
+
+        If user_id is None, then project is added as Template
 
         """
         log.info("adding projects to database for user %s", user_id)
         for prj in projects_list:
-            async with db_engine.acquire() as conn:
-                #FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
-                query = projects.insert().values(
-                    type = ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
-                    **_convert_to_db_names(prj)
-                )
+            await cls.add_project(prj, user_id, db_engine)
 
-                result = await conn.execute(query)
-                row = await result.fetchone()
-                project_id = row["id"]
-                try:
-                    query = user_to_projects.insert().values(
-                        user_id=user_id,
-                        project_id=project_id)
-                    await conn.execute(query)
-                except IntegrityError as exc:
-                    log.exception("Unregistered user trying to add project")
-                    # rollback projects database
-                    query = projects.delete().\
-                        where(projects.c.id == project_id)
-                    await conn.execute(query)
-                    raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
+    @classmethod
+    async def add_project(cls, prj: Dict, user_id: str, db_engine):
+        """ Add project to user.
 
+        If user is None, then project is added as template
+
+        :param prj: [description]
+        :type prj: Dict
+        :param user_id: [description]
+        :type user_id: str
+        :param db_engine: [description]
+        :type db_engine: [type]
+        :raises ProjectInvalidRightsError: [description]
+        """
+        async with db_engine.acquire() as conn:
+            #FIXME: E1120:No value for argument 'dml' in method call
+            # pylint: disable=E1120
+            query = projects.insert().values(
+                type = ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
+                **_convert_to_db_names(prj)
+            )
+
+            result = await conn.execute(query)
+            row = await result.fetchone()
+            project_id = row["id"]
+            try:
+                query = user_to_projects.insert().values(
+                    user_id=user_id,
+                    project_id=project_id)
+                await conn.execute(query)
+            except IntegrityError as exc:
+                log.exception("Unregistered user trying to add project")
+
+                # rollback projects database
+                query = projects.delete().\
+                    where(projects.c.id == project_id)
+                await conn.execute(query)
+
+                raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
     @classmethod
     async def load_user_projects(cls, user_id: str, db_engine) -> List[Dict]:
         """ loads a project for a user
 
         """
-
         log.info("Loading projects for user %s", user_id)
         projects_list = []
         async with db_engine.acquire() as conn:
@@ -147,8 +166,17 @@ class ProjectDB:
 
     @classmethod
     async def get_user_project(cls, user_id: str, project_uuid: str, db_engine) -> Dict:
-        """ gets a project from a user
+        """[summary]
 
+        :param user_id: [description]
+        :type user_id: str
+        :param project_uuid: [description]
+        :type project_uuid: str
+        :param db_engine: [description]
+        :type db_engine: [type]
+        :raises ProjectNotFoundError: project is not assigned to user
+        :return: project
+        :rtype: Dict
         """
         log.info("Getting project %s for user %s", project_uuid, user_id)
         async with db_engine.acquire() as conn:
@@ -226,6 +254,7 @@ class ProjectDB:
                     query = projects.delete().\
                         where(projects.c.id == row[projects.c.id])
                     await conn.execute(query)
+
 __all__ = (
     "ProjectDB"
 )
