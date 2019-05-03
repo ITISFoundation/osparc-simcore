@@ -2,12 +2,7 @@
   "targets": [
     {
       "type": "source",
-      "outputPath": "source-output",
-      "bundle": {
-        "include": [
-          "qx.*"
-        ]
-      }
+      "outputPath": "source-output"
     },
     {
       "type": "build",
@@ -23,7 +18,7 @@
     {
       "class": "qxapp.Application",
       "theme": "qxapp.theme.Theme",
-      "name": "qxapp",
+      "name": "/qxapp",
       "title": "oSPARC",
       "default": true,
       "include": [
