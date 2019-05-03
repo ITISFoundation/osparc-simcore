@@ -71,7 +71,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
-    # routes
+    # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     routes = _create_routes("/projects", projects_handlers, specs, disable_login)
