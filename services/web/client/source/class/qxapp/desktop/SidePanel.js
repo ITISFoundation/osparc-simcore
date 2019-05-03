@@ -87,12 +87,16 @@ qx.Class.define("qxapp.desktop.SidePanel", {
         // Save widths
         this.__savedWidth = this.__getCssWidth();
         this.__savedMinWidth = splitpaneContainer.getMinWidth();
-        splitpaneContainer.setMinWidth(0);
-        splitpaneContainer.setWidth(20);
+        splitpaneContainer.set({
+          minWidth: 0,
+          width: 20
+        });
       } else {
         // Restore widths
-        splitpaneContainer.setMinWidth(this.__savedMinWidth);
-        splitpaneContainer.setWidth(this.__savedWidth);
+        splitpaneContainer.set({
+          minWidth: this.__savedMinWidth,
+          width: this.__savedWidth
+        });
       }
       // Workaround: have to update splitpane's prop
       const splitpane = this.__getParentSplitpane();
