@@ -31,7 +31,7 @@ qx.Class.define("qxapp.auth.Data", {
     auth: {
       init: null,
       nullable: true,
-      check: "qx.io.request.authentication.Basic"
+      check: "qxapp.io.request.authentication.Token"
     },
 
     /**
@@ -48,12 +48,18 @@ qx.Class.define("qxapp.auth.Data", {
 
     setToken: function(token) {
       if (token) {
-        this.setAuth(new qx.io.request.authentication.Basic(token, null));
+        document.cookie = `user=${token}`;
+        this.setAuth(new qxapp.io.request.authentication.Token(token));
       }
     },
 
     resetToken: function() {
+      document.cookie = "user=;expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       this.resetAuth();
+    },
+
+    hasToken: function() {
+      return document.cookie.includes("user=");
     },
 
     getUserName: function() {
