@@ -13,6 +13,7 @@ TODO: THIS IS A PROTOTYPE!!!
 
 """
 import logging
+import uuid
 from typing import Dict
 
 from aiohttp import web
@@ -25,16 +26,16 @@ log = logging.getLogger(__name__)
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
-    from .projects_fakes import Fake
-    from .projects_models import ProjectDB
+    # TODO: remove projects_ prefix from name
+    from .projects.projects_fakes import Fake
+    from .projects.projects_models import ProjectDB
     from servicelib.application_keys import APP_DB_ENGINE_KEY
 
     # TODO: user search queries in DB instead
-    projects_list  = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
+    projects_list = await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
 
     for prj in projects_list:
-        if prj.uuid == project_uuid:
+        if prj.get('uuid') == project_uuid:
             return prj
     return None
 
@@ -53,7 +54,7 @@ async def create_temporary_user(request: web.Request):
 
     # TODO: avatar is an icon of the hero!
     username = generate_passphrase(number_of_words=2).replace(" ", "_")
-    email = username + "@anonymous-osparc.io"
+    email = username + "@guest-at-osparc.io"
     password = generate_password()
 
     user = await db.create_user({
@@ -77,6 +78,7 @@ async def get_authorized_user(request: web.Request) -> Dict:
     user = await db.get_user({'id': userid})
     return user
 
+
 # TODO: from .projects import ...?
 async def ensure_study_in_account(request: web.Request, project: Dict, user_id: str):
     """ Ensures there is a copy of a given project in user's account
@@ -90,10 +92,19 @@ async def ensure_study_in_account(request: web.Request, project: Dict, user_id: 
     db_engine = request.app[APP_DB_ENGINE_KEY]
 
     try:
+        # BUG: will ALWAYS create a new copy!
         await db.get_user_project(user_id, project["uuid"], db_engine)
+
     except ProjectNotFoundError:
+        # renew UUID
+        # BUG: will ALWAYS create a new copy!
+        cur_uuid = uuid.UUID(project["uuid"])
+        new_uuid = uuid.uuid5(cur_uuid, project["name"] + str(user_id))
+
         copied_project = deepcopy(project)
         copied_project["type"] = ProjectType.STANDARD
+        copied_project["uuid"] = str(new_uuid)
+
         await db.add_project(copied_project, user_id, db_engine)
 
 
@@ -147,14 +158,15 @@ def setup(app: web.Application):
     :type app: web.Application
     """
 
+    # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
-        web.get(r"/study/{id:\d+}", access_study, name="study"),
+        web.get(r"/study/{id}", access_study, name="study"),
     ])
 
 
 # alias
-setup_studies = setup
+setup_studies_access = setup
 
 __all__ = (
-    'setup_studies'
+    'setup_studies_access'
 )

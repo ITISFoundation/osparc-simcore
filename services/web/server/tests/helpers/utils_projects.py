@@ -1,15 +1,20 @@
+""" helpers to manage the projects's database and produce fixtures/mockup data for testing
+
+
+SEE services/web/server/src/simcore_service_webserver/projects/projects_models.py
+
+"""
 import json
-import random
 import re
 from typing import Dict
 
-from sqlalchemy.sql import and_, select
+from sqlalchemy.sql import select
 
 from aiohttp import web
-# SEE services/web/server/src/simcore_service_webserver/projects/projects_models.py
+
 from simcore_service_webserver.projects.projects_models import \
     ProjectDB as storage
-from simcore_service_webserver.projects.projects_models import ProjectType
+#from simcore_service_webserver.projects.projects_models import ProjectType
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 
@@ -42,7 +47,6 @@ async def delete_project(engine, project_uuid):
     """
     #pylint: disable=no-value-for-parameter
     from simcore_service_webserver.projects.projects_models import projects
-
     # TODO: cleanup first user_to_projects
     async with engine.acquire() as conn:
         query = projects.delete().\
