@@ -27,7 +27,6 @@ log = logging.getLogger(__name__)
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
-    from .projects.projects_fakes import Fake
     from .projects.projects_models import ProjectDB
     from servicelib.application_keys import APP_DB_ENGINE_KEY
 
@@ -53,7 +52,7 @@ async def create_temporary_user(request: web.Request):
     db = get_storage(request.app)
 
     # TODO: avatar is an icon of the hero!
-    username = generate_passphrase(number_of_words=2).replace(" ", "_")
+    username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
     email = username + "@guest-at-osparc.io"
     password = generate_password()
 

@@ -4,17 +4,16 @@
 SEE services/web/server/src/simcore_service_webserver/projects/projects_models.py
 
 """
+# pylint: disable=no-value-for-parameter
+
 import json
 import re
 from typing import Dict
-
-from sqlalchemy.sql import select
 
 from aiohttp import web
 
 from simcore_service_webserver.projects.projects_models import \
     ProjectDB as storage
-#from simcore_service_webserver.projects.projects_models import ProjectType
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 
@@ -45,21 +44,42 @@ async def delete_project(engine, project_uuid):
     """ WARNING: does not delete entries from user_to_projects
 
     """
-    #pylint: disable=no-value-for-parameter
     from simcore_service_webserver.projects.projects_models import projects
-    # TODO: cleanup first user_to_projects
+    # from sqlalchemy.sql import select
+
     async with engine.acquire() as conn:
+        # find ids for project_uuid
+        #joint_table = user_to_projects.join(projects)
+        #query = select([projects.c.id, user_to_projects.c.id], use_labels=True).\
+        #        select_from(joint_table).\
+        #            where(projects.c.uuid == project_uuid)
+        #result = await conn.execute(query)
+        #rows = await result.fetchall()
+
+        # TODO: delete entries in user_to_projects table!
+
+        # cleanup now projects table
         query = projects.delete().\
             where(projects.c.uuid == project_uuid)
         await conn.execute(query)
 
+async def delete_all_projects(engine):
+    from simcore_service_webserver.projects.projects_models import projects, user_to_projects
+
+    async with engine.acquire() as conn:
+        query = user_to_projects.delete()
+        await conn.execute(query)
+
+        query = projects.delete()
+        await conn.execute(query)
 
 
 class NewProject:
-    def __init__(self, params: Dict=None, app: web.Application=None):
+    def __init__(self, params: Dict=None, app: web.Application=None, clear_all=True):
         self.params = params
         self.engine = app[APP_DB_ENGINE_KEY]
         self.prj = {}
+        self.clear_all = clear_all
 
     async def __aenter__(self):
         self.prj = await create_project(self.engine, self.params)
@@ -67,5 +87,7 @@ class NewProject:
 
     async def __aexit__(self, *args):
         project_uuid = self.prj["uuid"]
-        if project_uuid:
+        if self.clear_all:
+            await delete_all_projects(self.engine)
+        elif project_uuid:
             await delete_project(self.engine, project_uuid)

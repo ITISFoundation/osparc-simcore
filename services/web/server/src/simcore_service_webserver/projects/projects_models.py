@@ -232,9 +232,11 @@ class ProjectDB:
             result = await conn.execute(query)
             # ensure we have found one
             rows = await result.fetchall()
+
             if not rows:
                 # no project found
                 raise ProjectNotFoundError(project_uuid)
+
             if len(rows) == 1:
                 row = rows[0]
                 # now let's delete the link to the user

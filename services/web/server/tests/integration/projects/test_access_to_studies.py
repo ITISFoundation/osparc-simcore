@@ -10,6 +10,7 @@
 import textwrap
 from pathlib import Path
 from pprint import pprint
+from typing import Dict
 
 import pytest
 
@@ -27,11 +28,9 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.studies_access import (get_template_project,
                                                       setup_studies_access)
 from simcore_service_webserver.users import setup_users
-
 from utils_assert import assert_status
+from utils_login import LoggedUser, UserRole
 from utils_projects import NewProject
-from utils_login import UserRole
-
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
@@ -49,7 +48,7 @@ STUDY_UUID = "5461c746-4ef4-4c96-b4c4-77af8d08a82f"
 
 @pytest.fixture
 def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
-#def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+# DEVEL *do not delete* # def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
     port = app_config["main"]["port"] = aiohttp_unused_port()
     app_config['main']['host'] = '127.0.0.1'
 
@@ -126,6 +125,21 @@ async def test_access_to_forbidden_study(client):
             "STANDARD studies are NOT sharable: %s" % content
 
 
+async def _get_user_projects(client):
+    url = client.app.router["list_projects"].url_for()
+    resp = await client.get(url.with_query(start=0, count=3))
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    projects, error = unwrap_envelope(payload)
+    assert not error, pprint(error)
+
+    return projects
+
+def _assert_same_projects(got: Dict, expected: Dict):
+    for key in [k for k in expected.keys() if k!="uuid"]:
+        assert got[key] == expected[key]
+
 
 async def test_access_study_by_anonymous(client, qx_client_outdir):
     app = client.app
@@ -136,10 +150,13 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
 
     async with NewProject(params, app) as expected_prj:
 
-        resp = await client.get("/study/%s" % STUDY_UUID)
+        url_path = "/study/%s" % STUDY_UUID
+        resp = await client.get(url_path)
         content = await resp.text()
 
+        # index
         assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
+        assert str(resp.url.path) == url_path
         assert "OSPARC-SIMCORE" in content, \
             "Expected front-end rendering workbench's study, got %s" % str(content)
 
@@ -150,20 +167,41 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
         assert data['gravatar_id']
         assert data['role'].upper() == UserRole.ANONYMOUS.name
 
-        # retrieve user's project
-        url = client.app.router["list_projects"].url_for()
-        resp = await client.get(url.with_query(start=0, count=3))
-        payload = await resp.json()
-        assert resp.status == 200, payload
-
-        projects, error = unwrap_envelope(payload)
-        assert not error, pprint(error)
-
+        # anonymous user only a copy of the template project
+        projects = await _get_user_projects(client)
         assert len(projects) == 1
         got_prj = projects[0]
 
-        for key in [k for k in expected_prj.keys() if k!="uuid"]:
-            assert got_prj[key] == expected_prj[key]
+        _assert_same_projects(got_prj, expected_prj)
+
+
+
+async def test_access_study_by_logged_user(client, qx_client_outdir):
+    app = client.app
+    params = {
+        "uuid":STUDY_UUID,
+        "name":"some-template"
+    }
+
+    async with LoggedUser(client):
+        async with NewProject(params, app, clear_all=True) as expected_prj:
+
+            url_path = "/study/%s" % STUDY_UUID
+            resp = await client.get(url_path)
+            content = await resp.text()
+
+            # returns index
+            assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
+            assert str(resp.url.path) == url_path
+            assert "OSPARC-SIMCORE" in content, \
+                "Expected front-end rendering workbench's study, got %s" % str(content)
+
+            # user has a copy of the template project
+            projects = await _get_user_projects(client)
+            assert len(projects) == 1
+            got_prj = projects[0]
+
+            _assert_same_projects(got_prj, expected_prj)
 
 
 
