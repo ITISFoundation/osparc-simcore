@@ -77,6 +77,8 @@ def _convert_to_schema_names(project_db_data) -> Dict:
     return converted_args
 
 class ProjectDB:
+    # TODO: should implement similar model as services/web/server/src/simcore_service_webserver/login/storage.py
+
     @classmethod
     async def add_projects(cls, projects_list: List[Dict], user_id: str, db_engine):
         """
@@ -93,41 +95,40 @@ class ProjectDB:
     async def add_project(cls, prj: Dict, user_id: str, db_engine):
         """ Add project to user.
 
-        If user is None, then project is added as template
+        If user_id is None, then project is added as template
 
-        :param prj: [description]
-        :type prj: Dict
-        :param user_id: [description]
-        :type user_id: str
-        :param db_engine: [description]
-        :type db_engine: [type]
-        :raises ProjectInvalidRightsError: [description]
+        :raises ProjectInvalidRightsError: User has no permission to access project
         """
+        #FIXME: E1120:No value for argument 'dml' in method call
+        # pylint: disable=E1120
+
         async with db_engine.acquire() as conn:
-            #FIXME: E1120:No value for argument 'dml' in method call
-            # pylint: disable=E1120
-            query = projects.insert().values(
-                type = ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
-                **_convert_to_db_names(prj)
-            )
+            # TODO: check security of this query
+            kargs = {
+                "type": ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
+            }
+            kargs.update(_convert_to_db_names(prj))
+            query = projects.insert().values(**kargs)
 
             result = await conn.execute(query)
             row = await result.fetchone()
             project_id = row["id"]
-            try:
-                query = user_to_projects.insert().values(
-                    user_id=user_id,
-                    project_id=project_id)
-                await conn.execute(query)
-            except IntegrityError as exc:
-                log.exception("Unregistered user trying to add project")
 
-                # rollback projects database
-                query = projects.delete().\
-                    where(projects.c.id == project_id)
-                await conn.execute(query)
+            if user_id is not None:
+                try:
+                    query = user_to_projects.insert().values(
+                        user_id=user_id,
+                        project_id=project_id)
+                    await conn.execute(query)
+                except IntegrityError as exc:
+                    log.exception("Unregistered user trying to add project")
 
-                raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
+                    # rollback projects database
+                    query = projects.delete().\
+                        where(projects.c.id == project_id)
+                    await conn.execute(query)
+
+                    raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
     @classmethod
     async def load_user_projects(cls, user_id: str, db_engine) -> List[Dict]:
