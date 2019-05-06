@@ -60,7 +60,7 @@ COPY  --chown=scu:scu services/storage/requirements/*.txt \
       tmp/storage/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/storage/requirements/base.txt
+      -r tmp/storage/requirements/_base.txt
 
 
 COPY  --chown=scu:scu services/storage/requirements/py27/*.txt \

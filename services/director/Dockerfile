@@ -73,7 +73,7 @@ COPY  --chown=scu:scu services/director/requirements/*.txt \
       tmp/director/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/director/requirements/base.txt
+      -r tmp/director/requirements/_base.txt
 
 #--------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
