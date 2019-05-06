@@ -14,13 +14,13 @@ def read_reqs( reqs_path: Path):
     return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
 
 
-install_requirements = read_reqs( here / "requirements" / "base.txt" ) + [
+install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
     "s3wrapper==0.1.0",
     "simcore-sdk==0.1.0",
     "simcore-service-library==0.1.0"
 ]
 
-test_requirements = read_reqs( here / "requirements" / "ci.txt" )
+test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 
 setup_config = dict(
@@ -34,9 +34,6 @@ setup_config = dict(
     include_package_data=True,
     install_requires= install_requirements,
     tests_require=test_requirements,
-    extras_require= {
-        'test': test_requirements
-    },
     package_data={
         '': [
             'data/*.json',

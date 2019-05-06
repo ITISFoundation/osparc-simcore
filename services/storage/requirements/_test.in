@@ -1,6 +1,9 @@
-# Specifies dependencies required for services/director/tests
 #
-# NOTE: order defines priority
+# Specifies dependencies required to run 'storage'
+#
+
+# frozen specs
+-r _base.txt
 
 # testing
 pytest
