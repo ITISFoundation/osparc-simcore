@@ -76,6 +76,21 @@ qx.Class.define("qxapp.data.Permissions", {
   members: {
     __userRole: null,
 
+    __getInitPermissions: function() {
+      return {
+        "anonymous": [
+        ],
+        "user": [
+        ],
+        "tester": [
+          "storage.reload"
+        ],
+        "moderator": [],
+        "admin": []
+      };
+      }
+    },
+
     __nextAction: function() {
       let highestAction = 0.5;
       for (const key in this.self().ACTIONS) {
