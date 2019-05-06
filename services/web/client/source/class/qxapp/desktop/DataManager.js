@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
   construct: function() {
     this.base(arguments);
 
-    let prjBrowserLayout = new qx.ui.layout.VBox(10);
+    const prjBrowserLayout = new qx.ui.layout.VBox(10);
     this._setLayout(prjBrowserLayout);
 
     this.__createDataManagerLayout();
@@ -55,37 +55,55 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __createDataManagerLayout: function() {
-      let dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
 
-      let label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
+      const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       dataManagerMainLayout.add(label);
 
-      let toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
-      dataManagerMainLayout.add(toDatCore);
+      const dataManagerControl = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      dataManagerMainLayout.add(dataManagerControl, {
+        flex: 1
+      });
 
-      let dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      const toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      dataManagerControl.add(toDatCore);
+
+      if (qxapp.data.Permissions.getInstance().canDo("storage.reload")) {
+        // buttons for refetching data
+        const reloadBtn = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/sync-alt/16"
+        });
+        reloadBtn.addListener("execute", function() {
+          this.__initResources();
+        }, this);
+        dataManagerControl.add(reloadBtn);
+      }
+
+      dataManagerMainLayout.add(dataManagerControl);
+
+      const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
         flex: 1
       });
 
-      let treeLayout = this.__createTreeLayout();
+      const treeLayout = this.__createTreeLayout();
       dataManagerLayout.add(treeLayout, {
         flex: 1
       });
 
-      let chartLayout = this.__createChartLayout();
+      const chartLayout = this.__createChartLayout();
       dataManagerLayout.add(chartLayout);
 
       this._add(dataManagerMainLayout);
     },
 
     __createTreeLayout: function() {
-      let treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      let filesTree = this.__tree = new qxapp.file.FilesTree().set({
+      const filesTree = this.__tree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true,
         minHeight: 600
@@ -103,13 +121,13 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      let addBtn = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
+      const addBtn = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
       addBtn.addListener("fileAdded", e => {
         this.__initResources();
       }, this);
       treeLayout.add(addBtn);
 
-      let selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
+      const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", () => {
         this.__initResources();
       }, this);
@@ -121,18 +139,18 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createChartLayout: function() {
       let chartLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      let label = new qx.ui.basic.Label(this.tr("Data Resources")).set({
+      const label = new qx.ui.basic.Label(this.tr("Data Resources")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
         minWidth: 500
       });
       chartLayout.add(label);
 
       const plotlyDivId = "DataResources";
-      let plotly = new qxapp.component.widget.PlotlyWidget(plotlyDivId);
+      const plotly = new qxapp.component.widget.PlotlyWidget(plotlyDivId);
       plotly.addListener("plotlyWidgetReady", e => {
         if (e.getData()) {
           this.__pieChart = plotly;
-          let myPlot = document.getElementById(plotlyDivId);
+          const myPlot = document.getElementById(plotlyDivId);
           myPlot.on("plotly_click", data => {
             this.__reloadChartData(data["points"][0]["id"][0]);
           }, this);
@@ -148,7 +166,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
     __selectionChanged: function() {
       this.__tree.resetSelection();
-      let selectionData = this.__tree.getSelectedFile();
+      const selectionData = this.__tree.getSelectedFile();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
