@@ -15,8 +15,6 @@ pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
-coveralls
-codecov
 
 # fixtures
 Faker
@@ -24,6 +22,7 @@ openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.i
 tenacity
 docker          # for integration tests
 
-
-# linter
+# tools
 pylint
+coveralls
+codecov

@@ -13,5 +13,6 @@ pytest-cov
 # fixtures
 aiopg
 
-# linter
-pylint~=2.0
+# tools for CI
+pylint
+coveralls

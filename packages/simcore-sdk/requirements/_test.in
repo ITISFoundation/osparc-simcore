@@ -12,13 +12,12 @@ pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
-coveralls
-
-
-# linting
-pylint~=2.2
 
 # mockups/fixtures
 mock
 requests
 docker
+
+# tools for CI
+pylint
+coveralls

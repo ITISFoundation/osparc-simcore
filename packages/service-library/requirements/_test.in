@@ -11,5 +11,6 @@ pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytes
 pytest-cov
 pytest-runner
 
-# linting
-pylint~=2.2
+# tools
+pylint
+coveralls

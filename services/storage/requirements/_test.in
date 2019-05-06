@@ -12,13 +12,14 @@ pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
-coveralls
-codecov
+
 
 # fixtures
 virtualenv
 pyyaml>=4.2b1
 
 
-# linter
-pylint~=2.0
+# tools for CI
+pylint
+coveralls
+codecov
