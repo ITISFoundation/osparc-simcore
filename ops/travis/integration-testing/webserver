@@ -9,13 +9,13 @@ before_install() {
 }
 
 install() {
-    pip install --upgrade pip wheel setuptools && pip3 --version
+    bash ops/travis/helpers/ensure_python_pip
     pushd services/web/server/tests; pip3 install -r requirements.txt; popd
     pushd services/web/server/tests/integration; pip3 install -r requirements.txt; popd
 }
 
 before_script() {
-    pip list
+    pip list -v
     make build
     docker images
 }

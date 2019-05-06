@@ -9,14 +9,14 @@ before_install() {
 }
 
 install() {
-    pip3 install --upgrade pip wheel setuptools && pip3 --version
+    bash ops/travis/helpers/ensure_python_pip
     pip3 install -r ops/travis/system-testing/requirements.txt
     cp .env-devel .env
     make build
 }
 
 before_script() {
-    pip list
+    pip list -v
     docker images
     make up
 }
