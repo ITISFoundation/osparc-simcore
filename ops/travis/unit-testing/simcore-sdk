@@ -35,6 +35,7 @@ script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
+        # TODO: split unit/integration tsts in simcore-sdk!!!
         pytest --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
     else
         echo "No changes detected. Skipping unit-testing of simcore-sdk."
