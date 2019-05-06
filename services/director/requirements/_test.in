@@ -1,6 +1,10 @@
-# Specifies dependencies required for services/director/tests
 #
-# NOTE: order defines priority
+# Specifies dependencies required to run 'director'
+#
+
+# frozen specs
+-r _base.txt
+
 
 # testing
 pytest

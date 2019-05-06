@@ -1,11 +1,16 @@
+# Shortcut to install 'director' for production
 #
-# As ci.txt but w/o tests
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
 #
 
--r base.txt
+# installs base requirements
+-r _base.txt
 
-# installs repo packages
+# installs this repo's packages
 ../../packages/service-library/
 
-# current module
+# installs current package
 .

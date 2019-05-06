@@ -1,4 +1,7 @@
-# Common third party packages
+#
+# Specifies third-party dependencies for 'director'
+#
+
 aiohttp
 docker
 requests
