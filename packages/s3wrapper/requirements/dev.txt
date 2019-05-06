@@ -1,10 +1,13 @@
-# Installs in *develop mode* s3wrapper and other packages in this repository
+# Shortcut to install all packages needed to develop 's3wrapper'
 #
-#  $ pip install -r requirements/dev.txt
+# - As ci.txt but with current and repo packages in develop (edit) mode
 #
-# NOTE: there is no dev.in counterpart since it is not used to specify
-#       third-party dependencies but as a shortcut
+# Usage:
+#   pip install -r requirements/dev.txt
+#
 
+# installs base + tests requirements
+-r _test.txt
+
+# installs current package
 -e .
-
--r test.in

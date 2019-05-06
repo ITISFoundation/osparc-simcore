@@ -11,8 +11,8 @@ def read_reqs( reqs_path: Path):
     return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
 
 
-install_requirements = read_reqs( here / "requirements" / "base.in" )
-test_requirements = read_reqs( here / "requirements" / "test.in" )
+install_requirements = read_reqs( here / "requirements" / "_base.in" ) # WEAK requirements
+test_requirements = read_reqs( here / "requirements" / "_test.txt" ) # STRONG requirements
 
 setup(
     name='s3wrapper',

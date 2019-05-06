@@ -1,6 +1,9 @@
-# Specifies dependencies required for s3wrapper/tests
 #
-# NOTE: order defines priority
+# Specifies dependencies required to run 's3wrapper'
+#
+
+# frozen specs
+-r _base.txt
 
 # testing
 pytest
