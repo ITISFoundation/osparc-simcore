@@ -15,7 +15,7 @@
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
   "python.formatting.autopep8Args": [
-    "-max-line-length", "140"
+    "--max-line-length 140"
   ],
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
@@ -26,5 +26,6 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
+  "python.testing.pyTestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx"
 }
