@@ -1,4 +1,5 @@
 # author: Sylvain Anderegg
+SHELL = /bin/bash
 
 VERSION := $(shell uname -a)
 
@@ -312,6 +313,17 @@ setup-check: .env .vscode/settings.json
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
 
+
+.PHONY: requirements
+# target: requirements – Compiles ALL PiP requirements (.in->.txt) WARNING: UNDER DEVELOPMENT!!
+requirements:
+	pushd packages/s3wrapper/requirements && $(MAKE) -f Makefile all && popd
+	pushd packages/service-library/requirements && $(MAKE) -f Makefile all && popd
+	pushd packages/simcore-sdk/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/web/server/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/storage/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/sidecar/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/director/requirements && $(MAKE) -f Makefile all && popd
 
 
 ## -------------------------------
