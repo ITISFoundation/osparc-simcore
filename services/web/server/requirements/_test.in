@@ -1,6 +1,11 @@
-# Specifies dependencies required for services/web/server/tests
 #
-# NOTE: order defines priority
+# Specifies dependencies required to run 'services/web/server/test'
+#
+
+# frozen specs
+-r _base.txt
+
+# 'services/web/server/tests/unit' dependencies
 
 # testing
 pytest
@@ -17,4 +22,4 @@ Faker
 openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
 
 # linter
-pylint~=2.0
+pylint

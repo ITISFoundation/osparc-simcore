@@ -13,13 +13,13 @@ def read_reqs( reqs_path: Path):
 
 #-----------------------------------------------------------------
 
-install_requirements = read_reqs( here / "requirements" / "base.txt" ) + [
+install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
     "s3wrapper==0.1.0",
     "simcore-sdk==0.1.0",
     "simcore-service-library==0.1.0",
     "simcore-director-sdk==1.0.0"  # FIXME: notice that this is version 1 while the others are 0!
 ]
-test_requirements = read_reqs( here / "requirements" / "test.in" )
+test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 setup(
     name='simcore-service-webserver',
