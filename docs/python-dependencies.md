@@ -5,7 +5,7 @@ Since [issue 234](https://github.com/ITISFoundation/osparc-simcore/issues/234) t
 
 - All dependency specifications are under ``requirements`` folder
 - There are two type of files there with extensions ``*.in`` and ``*.txt``
-- All ``*.in`` files contain third-party dependenices
+- All ``*.in`` files contain third-party dependencies
   - created by the developer
   - should not be very restrictive with versions. Add only contraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
   - used as input to [pip-tools] which will determine the final version used
