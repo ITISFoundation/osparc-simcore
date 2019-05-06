@@ -34,7 +34,7 @@ RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/py
     xz-utils tk-dev libffi-dev liblzma-dev && \
     pyenv install 3.6.7 && \
     pyenv global 3.6.7 && \
-    pip install --upgrade pip wheel setuptools
+    pip install --upgrade pip==19.0.3 wheel setuptools
 
 # get the patched visualizer
 COPY --from=visualizer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
@@ -47,7 +47,7 @@ COPY scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
-    STORAGE_ENDPOINT="=1" \    
+    STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -61,7 +61,7 @@ ENV SIMCORE_NODE_UUID="-1" \
 ENV SERVER_PORT="-1"  \
     HOST_NAME="-1"
 # update pip
-RUN pip3 install --upgrade pip wheel setuptools
+RUN pip3 install --upgrade pip==19.0.3 wheel setuptools
 
 # copy scripts
 COPY services/dy-3dvis/simcoreparaviewweb/docker /home/root/docker

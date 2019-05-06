@@ -35,7 +35,7 @@ RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/py
     eval "$(pyenv virtualenv-init -)" && \
     pyenv install 3.6.7 && \
     pyenv global 3.6.7 && \
-    pip install --upgrade pip wheel setuptools
+    pip install --upgrade pip==19.0.3 wheel setuptools
 
 # ----------------------------------------------------------------
 # set up oSparc env variables
