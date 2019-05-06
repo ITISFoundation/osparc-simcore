@@ -1,5 +1,6 @@
 #
 # Specifies dependencies required to run 'services/web/server/test'
+#  both for unit and integration tests!!
 #
 
 # frozen specs
@@ -20,6 +21,9 @@ codecov
 # fixtures
 Faker
 openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
+tenacity
+docker          # for integration tests
+
 
 # linter
 pylint

@@ -10,8 +10,7 @@ before_install() {
 
 install() {
     bash ops/travis/helpers/ensure_python_pip
-    pushd services/web/server/tests; pip3 install -r requirements.txt; popd
-    pushd services/web/server/tests/integration; pip3 install -r requirements.txt; popd
+    pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
 }
 
 before_script() {
