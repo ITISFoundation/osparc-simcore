@@ -128,6 +128,7 @@ def load_words():
     :return: a list of words
     :rtype: list of str
     """
+    # BUG: alpine does not have this file. Get from https://users.cs.duke.edu/~ola/ap/linuxwords in container
     assert ('linux' in sys.platform), "Function can only run on Linux systems."
     with open('/usr/share/dict/words') as f:
         words = [word.strip() for word in f]

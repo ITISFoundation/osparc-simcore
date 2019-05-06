@@ -12,26 +12,43 @@ FIXME: reduce modules coupling!
 TODO: THIS IS A PROTOTYPE!!!
 
 """
+import json
 import logging
 import uuid
 from typing import Dict
 
 from aiohttp import web
 
+from .resources import resources
 from .security import is_anonymous, remember
 from .statics import index as app_index
 
 log = logging.getLogger(__name__)
 
+BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+
+
+def load_isan_template_uuids():
+    with resources.stream('data/fake-template-projects.isan.json') as fp:
+        data = json.load(fp)
+    return [prj['uuid'] for prj in data]
+
+ALLOWED_TEMPLATE_IDS = load_isan_template_uuids()
+
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
-    from .projects.projects_models import ProjectDB
     from servicelib.application_keys import APP_DB_ENGINE_KEY
 
+    from .projects.projects_models import ProjectDB
+    from .projects.projects_fakes import Fake
+
+
     # TODO: user search queries in DB instead
-    projects_list = await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
+    # BUG: ensure items in project_list have unique UUIDs
+    projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
+    projects_list += await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
@@ -45,23 +62,26 @@ async def create_temporary_user(request: web.Request):
     """
     from .login.cfg import get_storage
     from .login.handlers import ACTIVE, ANONYMOUS
-    from .login.utils import get_client_ip
+    from .login.utils import get_client_ip, get_random_string
     from .security import encrypt_password
-    from .utils import generate_passphrase, generate_password
+    # from .utils import generate_passphrase
+    # from .utils import generate_password
 
     db = get_storage(request.app)
 
     # TODO: avatar is an icon of the hero!
-    username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
+    # FIXME: # username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
+    username = get_random_string(min_len=5)
     email = username + "@guest-at-osparc.io"
-    password = generate_password()
+    # TODO: temporarily while developing, a fixed password
+    password = "guest" #generate_password()
 
     user = await db.create_user({
         'name': username,
         'email': email,
         'password_hash': encrypt_password(password),
         'status': ACTIVE,
-        'role':  ANONYMOUS,
+        'role':  ANONYMOUS, # TODO: THIS has to be a temporary user!
         'created_ip': get_client_ip(request),
     })
 
@@ -79,8 +99,12 @@ async def get_authorized_user(request: web.Request) -> Dict:
 
 
 # TODO: from .projects import ...?
-async def ensure_study_in_account(request: web.Request, project: Dict, user_id: str):
-    """ Ensures there is a copy of a given project in user's account
+async def copy_study_to_account(request: web.Request, project: Dict, user_id: str):
+    """
+        Creates a copy of the study to a given project in user's account
+
+        Contrains of this method:
+            - Avoids multiple copies of the same template on each account
     """
     from servicelib.application_keys import APP_DB_ENGINE_KEY
     from .projects.projects_models import ProjectDB as db
@@ -89,20 +113,17 @@ async def ensure_study_in_account(request: web.Request, project: Dict, user_id: 
     from copy import deepcopy
 
     db_engine = request.app[APP_DB_ENGINE_KEY]
+    new_uuid = str( uuid.uuid5(BASE_UUID, project["uuid"] + str(user_id)) )
 
     try:
-        # BUG: will ALWAYS create a new copy!
-        await db.get_user_project(user_id, project["uuid"], db_engine)
+        # Avoids multiple copies of the same template on each account
+        await db.get_user_project(user_id, new_uuid, db_engine)
 
     except ProjectNotFoundError:
-        # renew UUID
-        # BUG: will ALWAYS create a new copy!
-        cur_uuid = uuid.UUID(project["uuid"])
-        new_uuid = uuid.uuid5(cur_uuid, project["name"] + str(user_id))
 
         copied_project = deepcopy(project)
         copied_project["type"] = ProjectType.STANDARD
-        copied_project["uuid"] = str(new_uuid)
+        copied_project["uuid"] = new_uuid
 
         await db.add_project(copied_project, user_id, db_engine)
 
@@ -123,10 +144,11 @@ async def access_study(request: web.Request) -> web.Response:
     # FIXME: if identified user, then he can access not only to template but also his own projects!
 
     user = None
-    # only template projects are currently sharable
-    project = await get_template_project(request.app, study_id)
-    if project is None:
+    if study_id not in ALLOWED_TEMPLATE_IDS:
         raise web.HTTPNotFound(reason="Could not find sharable study '%s'" % study_id)
+
+    project = await get_template_project(request.app, study_id)
+    assert (project is not None), "Failed to load project"
 
     is_anonymous_user = await is_anonymous(request)
     if is_anonymous_user:
@@ -137,7 +159,7 @@ async def access_study(request: web.Request) -> web.Response:
 
     log.info("Ensuring study %s in account owned by %s", project['name'], user["email"])
     user_id = user["id"]
-    await ensure_study_in_account(request, project, user_id)
+    await copy_study_to_account(request, project, user_id)
 
     response = await app_index(request)
     if is_anonymous_user:
