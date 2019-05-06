@@ -274,7 +274,12 @@
         "key": "simcore/services/dynamic/kember-viewer",
         "version": "2.9.0",
         "label": "kember-viewer",
-        "inputs": {},
+        "inputs": {
+          "outputController": {
+            "nodeUuid": "template-uuid-43dd-8d87-9969d380df53",
+            "output": "out_1"
+          }
+        },
         "inputNodes": [
           "template-uuid-43dd-8d87-9969d380df53"
         ],
