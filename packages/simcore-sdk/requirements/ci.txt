@@ -1,11 +1,18 @@
-
-# Dependencies for contiguous integratin of simcore-sdk
+# Shortcut to install all packages for the contigous integration (CI) of 'simcore-sdk'
 #
-# See ops/travis/unit-testing/simcore-sdk
--r ci-base.txt
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
 
-# dependencies
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
 ../s3wrapper/
+../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
-# testing
-../../services/storage/client-sdk/python/
+
+# installs current package
+.

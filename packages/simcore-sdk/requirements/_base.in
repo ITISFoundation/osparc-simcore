@@ -1,6 +1,6 @@
-# Specifies third-party dependencies for simcore-sdk/src
 #
-# NOTE: order defines priority
+# Specifies third-party dependencies for 'simcore-sdk'
+#
 
 aiohttp
 networkx
