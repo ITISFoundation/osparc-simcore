@@ -204,7 +204,7 @@ endif
 
 .PHONY: pull-cache
 pull-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
