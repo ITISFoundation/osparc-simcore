@@ -1,26 +1,24 @@
+.PHONY: all check clean help
+
 objects = $(wildcard *.in)
 outputs := $(objects:.in=.txt)
 
-.PHONY: all
 # target: all – pip-compiles all requirements/*.in -> requirements/*.txt
 all: $(outputs)
 
 %.txt: %.in
 	pip-compile --output-file $@ $<
 
-ci-base.txt: base.txt
+_test.txt: _base.txt
 
-.PHONY: check
 # target: check – Checks whether pip-compile is installed
 check:
 	@which pip-compile > /dev/null
 
-.PHONY: clean
-# target: clean – Cleans all requirements/*.txt (except dev.txt)
+# target: clean – Cleans all requirements/*.txt
 clean: check
-	rm $(outputs)
+	- rm $(outputs)
 
-.PHONY: help
 # target: help – Display all callable targets
 help:
 	@echo

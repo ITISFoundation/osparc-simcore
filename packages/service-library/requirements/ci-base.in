@@ -1,9 +1,0 @@
-# Dependencies for contiguous integratin of service-library
-#
-# See ops/travis/unit-testing/service-library
-
-# frozen specs
--r base.txt
-
-# tests requirements
--r test.in

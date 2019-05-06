@@ -1,6 +1,9 @@
-# Specifies dependencies required for simcore-sdk/tests
 #
-# NOTE: order defines priority
+# Specifies dependencies required to run 'service-library'
+#
+
+# frozen specs
+-r _base.txt
 
 # testing
 pytest

@@ -1,17 +1,13 @@
-# Installs in *develop mode* simcore-sdk and other packages in this repository
+# Shortcut to install all packages needed to develop 'service-library'
 #
-#  $ pip install -r requirements/dev.txt
+# - As ci.txt but with current and repo packages in develop (edit) mode
 #
-# NOTE: there is no dev.in counterpart since it is not used to specify
-#       third-party dependencies but as a shortcut
+# Usage:
+#   pip install -r requirements/dev.txt
+#
 
-# direct dependencies
--r base.txt
-
-# installs repo packages
+# installs base + tests requirements
+-r _test.txt
 
 # current module
--e .[test]
-
-# other tools
-bumpversion
+-e .
