@@ -1,15 +1,18 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'sidecar'
+#
+# - As ci.txt but w/ tests
 #
 # Usage:
-#   $ bash ops/travis/unit-testing/sidecar install
+#   pip install -r requirements/ci.txt
 #
 
-# compiles base.txt + tests.in
--r ci-base.txt
+# installs base + tests requirements
+-r _test.txt
 
-# installs repo packages
+# installs this repo's packages
 ../../services/storage/client-sdk/python/
 ../../packages/s3wrapper/
 ../../packages/simcore-sdk/
 
-# current module
+# installs current package
 .
