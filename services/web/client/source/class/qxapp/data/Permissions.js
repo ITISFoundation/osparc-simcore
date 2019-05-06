@@ -88,7 +88,6 @@ qx.Class.define("qxapp.data.Permissions", {
         "moderator": [],
         "admin": []
       };
-      }
     },
 
     __nextAction: function() {
