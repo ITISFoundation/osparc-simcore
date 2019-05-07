@@ -73,15 +73,14 @@ qx.Class.define("qxapp.Application", {
     },
 
     __initRouting: function() {
-      const r = new qx.application.Routing();
-
-      r.on("/", this.__restart, this);
-
-      r.on("/study/{id}", data => {
-        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(data.id), this.__loadLoginPage, this);
-      });
-
-      r.init();
+      // Route: /study/{id}
+      let result = /study\/(.*)/.exec(window.location.pathname);
+      if (result && result[result.index].length) {
+        qxapp.utils.Utils.cookie.deleteCookie("user");
+        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[result.index]), this.__loadLoginPage, this);
+      } else {
+        this.__restart();
+      }
     },
 
     __restart: function() {

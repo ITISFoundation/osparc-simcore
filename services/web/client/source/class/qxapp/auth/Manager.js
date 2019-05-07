@@ -61,7 +61,9 @@ qx.Class.define("qxapp.auth.Manager", {
      * @param {Object} ctx Context that will be used inside the callback functions (this).
      */
     validateToken: function(successCb, errorCb, ctx) {
-      if (qxapp.auth.Data.getInstance().hasToken()) {
+      if (qxapp.auth.Data.getInstance().isLogout()) {
+        errorCb.call(ctx);
+      } else {
         const request = new qxapp.io.request.ApiRequest("/me", "GET");
         request.addListener("success", e => {
           if (e.getTarget().getResponse().error) {
@@ -75,8 +77,6 @@ qx.Class.define("qxapp.auth.Manager", {
           errorCb.call(ctx);
         });
         request.send();
-      } else {
-        errorCb.call(ctx);
       }
     },
 
@@ -106,6 +106,8 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     logout: function() {
+      const request = new qxapp.io.request.ApiRequest("/auth/logout", "GET");
+      request.send();
       this.__logoutUser();
       this.fireEvent("logout");
     },

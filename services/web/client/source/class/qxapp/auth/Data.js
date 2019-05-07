@@ -48,18 +48,18 @@ qx.Class.define("qxapp.auth.Data", {
 
     setToken: function(token) {
       if (token) {
-        document.cookie = `user=${token}`;
+        qxapp.utils.Utils.cookie.setCookie("user", token);
         this.setAuth(new qxapp.io.request.authentication.Token(token));
       }
     },
 
     resetToken: function() {
-      document.cookie = "user=;expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      qxapp.utils.Utils.cookie.setCookie("user", "logout");
       this.resetAuth();
     },
 
-    hasToken: function() {
-      return document.cookie.includes("user=");
+    isLogout: function() {
+      return qxapp.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
     getUserName: function() {
