@@ -89,6 +89,25 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     }
   },
 
+  statics: {
+    addLevelColorTag: function(msg, logLevel) {
+      const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
+      const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
+      return ("<font color=" + logColor +">" + msg + "</font>");
+    },
+
+    getNewColor: function() {
+      const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
+      let luminanceText = null;
+      let color = null;
+      do {
+        color = qxapp.utils.Utils.getRandomColor();
+        luminanceText = qxapp.utils.Utils.getColorLuminance(color);
+      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
+      return color;
+    }
+  },
+
   members: {
     __textfield: null,
     __logModel: null,
@@ -184,7 +203,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       const msgLogs = [];
       for (let i=0; i<msgs.length; i++) {
-        const msgRich = this.__addLevelColorTag(msgs[i], logLevel);
+        const msgRich = qxapp.component.widget.logger.LoggerView.addLevelColorTag(msgs[i], logLevel);
         const msgLog = {
           whoRich: whoRich,
           msgRich: msgRich,
@@ -216,23 +235,11 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         }
       }
       if (whoColor === null) {
-        const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
-        let luminanceText = null;
-        do {
-          whoColor = qxapp.utils.Utils.getRandomColor();
-          luminanceText = qxapp.utils.Utils.getColorLuminance(whoColor);
-        } while (Math.abs(luminanceBG-luminanceText) < 0.4);
-
+        whoColor = qxapp.component.widget.logger.LoggerView.getNewColor();
         this.__messengerColors.add([who, whoColor]);
       }
 
       return ("<font color=" + whoColor +">" + who + "</font>");
-    },
-
-    __addLevelColorTag: function(msg, logLevel) {
-      const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
-      const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
-      return ("<font color=" + logColor +">" + msg + "</font>");
     },
 
     __applyFilters: function() {
