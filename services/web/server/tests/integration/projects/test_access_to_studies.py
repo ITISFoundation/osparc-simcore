@@ -13,8 +13,8 @@ from pprint import pprint
 from typing import Dict
 
 import pytest
-
 import simcore_service_webserver.statics
+import simcore_service_webserver.studies_access
 from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -43,12 +43,26 @@ tool_services = [
 ]
 
 
-STUDY_UUID = "5461c746-4ef4-4c96-b4c4-77af8d08a82f"
+STUDY_UUID = "template-uuid-THIS_IS_A_FAKE_STUDY_UUID"
+simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS = [STUDY_UUID, ]
 
+# TODO: create a mock instead!!!
+# @pytest.fixture
+# def mock_template_studies(mocker):
+#     # patches ALLOWED_TEMPLATE_IDS
+#     import pdb; pdb.set_trace()
+#     print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
+#     with mocker.patch("simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS", [STUDY_UUID, ]):
+
+#         import pdb; pdb.set_trace()
+#         print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
+#         yield
+#     print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
+#     import pdb; pdb.set_trace()
 
 @pytest.fixture
-def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
-# DEVEL *do not delete* # def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+#def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
     port = app_config["main"]["port"] = aiohttp_unused_port()
     app_config['main']['host'] = '127.0.0.1'
 
@@ -111,14 +125,15 @@ async def test_access_to_invalid_study(client):
 
 async def test_access_to_forbidden_study(client):
     app = client.app
+
+    VALID_BUT_NON_SHARABLE_STUDY_UUID = "8402b4e0-3659-4e36-bc26-c4312f02f05f"
     params = {
-        "uuid": STUDY_UUID,
-        "type": ProjectType.STANDARD
+        "uuid": VALID_BUT_NON_SHARABLE_STUDY_UUID
     }
 
     async with NewProject(params, app) as expected_prj:
 
-        resp = await client.get("/study/%s" % STUDY_UUID)
+        resp = await client.get("/study/%s" % VALID_BUT_NON_SHARABLE_STUDY_UUID)
         content = await resp.text()
 
         assert resp.status == web.HTTPNotFound.status_code, \
