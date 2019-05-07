@@ -57,10 +57,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    let filterToolbar = this.__createFilterToolbar();
+    const filterToolbar = this.__createFilterToolbar();
     this._add(filterToolbar);
 
-    let table = this.__createTableLayout();
+    const table = this.__createTableLayout();
     this._add(table, {
       flex: 1
     });
@@ -81,6 +81,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       check : "Number",
       init: LOG_LEVEL.debug
     },
+
     caseSensitive: {
       nullable: false,
       check : "Boolean",
@@ -134,79 +135,62 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     __createTableLayout: function() {
       // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
-      let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
-      tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
+      const tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
+      tableModel.setColumns(["Origin", "Message"], ["whoRich", "msgRich"]);
 
-      let custom = {
+      const custom = {
         tableColumnModel : function(obj) {
           return new qx.ui.table.columnmodel.Resize(obj);
         }
       };
 
       // table
-      let table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
+      const table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
         selectable: true,
         statusBarVisible: false
       });
-      var colModel = table.getTableColumnModel();
+      const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Html());
-      let resizeBehavior = colModel.getBehavior();
+      const resizeBehavior = colModel.getBehavior();
       resizeBehavior.setWidth(0, "15%");
       resizeBehavior.setWidth(1, "85%");
 
       return table;
     },
 
-    debug: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.debug);
+    debug: function(who = "System", msg = "") {
+      this.__addLogs(who, [msg], LOG_LEVEL.debug);
     },
 
-    info: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.info);
+    info: function(who = "System", msg = "") {
+      this.__addLogs(who, [msg], LOG_LEVEL.info);
     },
 
-    infos: function(who = "System", whats = [""]) {
-      this.__addLogs(who, whats, LOG_LEVEL.info);
+    infos: function(who = "System", msgs = [""]) {
+      this.__addLogs(who, msgs, LOG_LEVEL.info);
     },
 
-    warn: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.warning);
+    warn: function(who = "System", msg = "") {
+      this.__addLogs(who, [msg], LOG_LEVEL.warning);
     },
 
-    error: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.error);
+    error: function(who = "System", msg = "") {
+      this.__addLogs(who, [msg], LOG_LEVEL.error);
     },
 
-    __addLog: function(who = "System", what = "", logLevel = 0) {
-      const whoRich = this.__addWhoColorTag(who);
-      const whatRich = this.__addLevelColorTag(what, logLevel);
-      let msgLog = {
-        whoRich: whoRich,
-        whatRich: whatRich,
-        msg: {
-          who: who,
-          what: what,
-          logLevel: logLevel
-        }
-      };
-      this.__logModel.addRows([msgLog]);
-
-      this.__updateTable();
-    },
-
-    __addLogs: function(who = "System", whats = [""], logLevel = 0) {
+    __addLogs: function(who = "System", msgs = [""], logLevel = 0) {
       const whoRich = this.__addWhoColorTag(who);
 
-      let msgLogs = [];
-      for (let i=0; i<whats.length; i++) {
-        const whatRich = this.__addLevelColorTag(whats[i], logLevel);
+      const msgLogs = [];
+      for (let i=0; i<msgs.length; i++) {
+        const msgRich = this.__addLevelColorTag(msgs[i], logLevel);
         const msgLog = {
           whoRich: whoRich,
-          whatRich: whatRich,
+          msgRich: msgRich,
           msg: {
             who: who,
-            what: whats[i],
+            msg: msgs[i],
             logLevel: logLevel
           }
         };
@@ -245,10 +229,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return ("<font color=" + whoColor +">" + who + "</font>");
     },
 
-    __addLevelColorTag: function(what, logLevel) {
+    __addLevelColorTag: function(msg, logLevel) {
       const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
       const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
-      return ("<font color=" + logColor +">" + what + "</font>");
+      return ("<font color=" + logColor +">" + msg + "</font>");
     },
 
     __applyFilters: function() {
@@ -263,8 +247,8 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     __createInitMsg: function() {
       const who = "System";
-      const what = "Logger initialized";
-      this.debug(who, what);
+      const msg = "Logger initialized";
+      this.debug(who, msg);
     },
 
     clearLogger: function() {
