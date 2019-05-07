@@ -61,7 +61,7 @@ qx.Class.define("qxapp.auth.Data", {
       if (email) {
         return email.split("@")[0];
       }
-      return null;
+      return "user";
     }
   }
 });
