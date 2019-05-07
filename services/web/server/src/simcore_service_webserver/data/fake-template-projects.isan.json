@@ -321,7 +321,7 @@
       }
     }
   }, {
-    "uuid": "b9f00712-0088-40e1-bb95-c68f6358bfe2",
+    "uuid": "template-uuid-40e1-bb95-c68f6358bfe2",
     "name": "ISAN: 4x CC 0D",
     "description": "4 Colleen Clancy solvers with different configuration and the same input file",
     "notes": "",
