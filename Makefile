@@ -1,5 +1,4 @@
 # author: Sylvain Anderegg
-SHELL = /bin/bash
 
 VERSION := $(shell uname -a)
 
@@ -18,10 +17,12 @@ export DOCKER=docker.exe
 WINDOWS_MODE=ON
 else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 else
 $(info    detected native linux)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
