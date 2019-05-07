@@ -48,7 +48,7 @@ RUN apk add --no-cache \
     git
 
 RUN $SC_PIP install --upgrade \
-      pip==19.0.3  \
+      pip~=19.1.1  \
       wheel \
       setuptools
 
