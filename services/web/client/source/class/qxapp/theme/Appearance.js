@@ -180,6 +180,20 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return styles;
       }
     },
+    "toolbar-selectbox/arrow": {
+      include: "selectbox/arrow",
+      style: (state, style) => {
+        style.cursor = "pointer";
+        return style;
+      }
+    },
+    "toolbar-selectbox/list": {
+      include: "selectbox/list",
+      style: (state, style) => {
+        style.padding = 0;
+        return style;
+      }
+    },
 
     /*
     ---------------------------------------------------------------------------
