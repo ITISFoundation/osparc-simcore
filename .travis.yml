@@ -39,10 +39,11 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: unbuffer bash ops/travis/deploy/test-images.sh
+          script: bash ops/travis/deploy/test-images.sh
           on:
             all_branches: true
             condition: $TRAVIS_BRANCH != ^staging|production$
+            tags: false
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
