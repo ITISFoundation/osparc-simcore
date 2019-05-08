@@ -27,22 +27,21 @@ jobs:
       before_install:
         - sudo bash ops/travis/build/test-images.sh before_install
       install:
-        - bash ops/travis/build/test-images.sh install
+        - unbuffer bash ops/travis/build/test-images.sh install
       before_script:
-        - bash ops/travis/build/test-images.sh before_script
+        - unbuffer bash ops/travis/build/test-images.sh before_script
       script:
-        - bash ops/travis/build/test-images.sh script
+        - unbuffer bash ops/travis/build/test-images.sh script
       after_success:
-        - bash ops/travis/build/test-images.sh after_success
+        - unbuffer bash ops/travis/build/test-images.sh after_success
       after_failure:
-        - bash ops/travis/build/test-images.sh after_failure
+        - unbuffer bash ops/travis/build/test-images.sh after_failure
       deploy:
         - provider: script
           skip_cleanup: true
           script: bash ops/travis/deploy/test-images.sh
           on:
             all_branches: true
-            # condition: $TRAVIS_BRANCH != ^staging|production$
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -293,8 +292,7 @@ jobs:
           skip_cleanup: true
           script: bash ops/travis/deploy/master.sh
           on:
-            branch: master
-            # tags: false
+            branch: master            
     - stage: deployment
       name: staging
       if: branch = staging
@@ -307,7 +305,7 @@ jobs:
           script: bash ops/travis/deploy/staging.sh
           on:
             branch: staging
-            # tags: true
+            tags: true
     - stage: deployment
       name: production
       if: branch = production
@@ -320,7 +318,7 @@ jobs:
           script: ops/travis/deploy/production.sh
           on:
             branch: production
-            # tags: true
+            tags: true
 notifications:
   email:
     on_success: never
