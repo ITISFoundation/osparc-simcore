@@ -103,6 +103,7 @@ qx.Class.define("qxapp.data.Permissions", {
           "studies.user.read",
           "studies.user.create",
           "storage.datcore.read",
+          "preferences.user.update",
           "preferences.token.create",
           "preferences.token.delete",
           "study.node.create",

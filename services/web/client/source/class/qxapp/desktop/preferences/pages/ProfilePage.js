@@ -118,6 +118,10 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
       // update trigger
       updateBtn.addListener("execute", () => {
+        if (!qxapp.data.Permissions.getInstance().canDo("preferences.user.update", true)) {
+          return;
+        }
+
         if (manager.validate()) {
           let emailReq = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
           emailReq.setRequestData({
