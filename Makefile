@@ -63,6 +63,7 @@ ifdef DOCKER_IMAGE_PREFIX
 # check it ends with /
 export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
 else
+$(warning DOCKER_IMAGE_PREFIX variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_PREFIX})
 export DOCKER_IMAGE_PREFIX := ${DEFAULT_DOCKER_IMAGE_PREFIX}
 endif # DOCKER_IMAGE_PREFIX
 $(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
@@ -242,18 +243,8 @@ pull:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
-create-stack-file: .check-ci-env
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=${IMAGE_TYPE}-latest; \
+create-stack-file:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
-
-.check-ci-env:
-ifndef DOCKER_IMAGE_PREFIX
-	$(error DOCKER_IMAGE_PREFIX variable is undefined)
-endif
-ifndef DOCKER_IMAGE_TAG_PREFIX
-	$(error DOCKER_IMAGE_TAG_PREFIX variable is undefined)
-endif
 
 ## -------------------------------
 # Tools
