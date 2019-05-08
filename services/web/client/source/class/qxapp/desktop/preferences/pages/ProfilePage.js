@@ -30,32 +30,37 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
     const title = this.tr("Profile");
     this.base(arguments, title, iconSrc);
 
+    this.__userProfileData = null;
+    this.__userProfileModel = null;
+
     this.add(this.__createProfileUser());
   },
 
   members: {
+    __userProfileData: null,
+    __userProfileModel: null,
 
     __createProfileUser: function() {
       // layout
-      let box = this._createSectionBox("User");
+      const box = this._createSectionBox("User");
 
-      let email = new qx.ui.form.TextField().set({
+      const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Email")
       });
 
-      let firstName = new qx.ui.form.TextField().set({
+      const firstName = new qx.ui.form.TextField().set({
         placeholder: this.tr("First Name")
       });
 
-      let lastName = new qx.ui.form.TextField().set({
+      const lastName = new qx.ui.form.TextField().set({
         placeholder: this.tr("Last Name")
       });
 
-      let role = new qx.ui.form.TextField().set({
+      const role = new qx.ui.form.TextField().set({
         readOnly: true
       });
 
-      let form = new qx.ui.form.Form();
+      const form = new qx.ui.form.Form();
       form.add(email, "", null, "email");
       form.add(firstName, "", null, "firstName");
       form.add(lastName, "", null, "lastName");
@@ -63,18 +68,13 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
-      let img = new qx.ui.basic.Image().set({
+      const img = new qx.ui.basic.Image().set({
         decorator: new qx.ui.decoration.Decorator().set({
           radius: 50
         }),
         alignX: "center"
       });
       box.add(img);
-
-      let updateBtn = new qx.ui.form.Button("Update Profile").set({
-        allowGrowX: false
-      });
-      box.add(updateBtn);
 
       // binding to a model
       let raw = {
@@ -92,8 +92,8 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
           "role": "Tester"
         };
       }
-      let model = qx.data.marshal.Json.createModel(raw);
-      let controller = new qx.data.controller.Object(model);
+      const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
+      const controller = new qx.data.controller.Object(model);
 
       controller.addTarget(email, "value", "email", true);
       controller.addTarget(firstName, "value", "firstName", true, null, {
@@ -110,25 +110,31 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       });
 
       // validation
-      let manager = new qx.ui.form.validation.Manager();
+      const manager = new qx.ui.form.validation.Manager();
       manager.add(email, qx.util.Validate.email());
       [firstName, lastName].forEach(field => {
         manager.add(field, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
       });
 
+      const updateBtn = new qx.ui.form.Button("Update Profile").set({
+        allowGrowX: false
+      });
+      box.add(updateBtn);
+
       // update trigger
       updateBtn.addListener("execute", () => {
         if (!qxapp.data.Permissions.getInstance().canDo("preferences.user.update", true)) {
+          this.__resetDataToModel();
           return;
         }
 
         if (manager.validate()) {
-          let emailReq = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
+          const emailReq = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
           emailReq.setRequestData({
             "email": model.getEmail()
           });
 
-          let profileReq = new qxapp.io.request.ApiRequest("/me", "PUT");
+          const profileReq = new qxapp.io.request.ApiRequest("/me", "PUT");
           profileReq.setRequestData({
             "first_name": model.getFirstName(),
             "last_name": model.getLastName()
@@ -145,6 +151,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
             req.addListenerOnce("fail", e => {
               // FIXME: should revert to old?? or GET? Store might resolve this??
+              this.__resetDataToModel();
               const error = e.getTarget().getResponse().error;
               const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
               qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
@@ -155,26 +162,42 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
         }
       }, this);
 
-      // get values from server
-      let request = new qxapp.io.request.ApiRequest("/me", "GET");
-      request.addListenerOnce("success", function(e) {
-        const data = e.getTarget().getResponse()["data"];
-        model.set({
-          "firstName": data["first_name"] || "",
-          "lastName": data["last_name"] || "",
-          "email": data["login"],
-          "role": data["role"] || ""
-        });
-      });
+      this.__getValuesFromServer();
 
-      request.addListenerOnce("fail", function(e) {
+      return box;
+    },
+
+    __getValuesFromServer: function() {
+      // get values from server
+      const request = new qxapp.io.request.ApiRequest("/me", "GET");
+      request.addListenerOnce("success", e => {
+        const data = e.getTarget().getResponse()["data"];
+        this.__setDataToModel(data);
+      }, this);
+
+      request.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse().error;
         const msg = error ? error["errors"][0].message : this.tr("Failed to get profile");
         qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       });
 
       request.send();
-      return box;
+    },
+
+    __setDataToModel: function(data) {
+      if (data) {
+        this.__userProfileData = data;
+        this.__userProfileModel.set({
+          "firstName": data["first_name"] || "",
+          "lastName": data["last_name"] || "",
+          "email": data["login"],
+          "role": data["role"] || ""
+        });
+      }
+    },
+
+    __resetDataToModel: function() {
+      this.__setDataToModel(this.__userProfileData);
     }
   }
 });
