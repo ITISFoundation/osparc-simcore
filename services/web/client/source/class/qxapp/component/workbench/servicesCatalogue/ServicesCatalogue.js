@@ -167,7 +167,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__controller.setDelegate(filterObj);
 
       // make every input in the textfield update the controller
-      this.__textfield.bind("changeValue", filterObj, "searchString");
+      this.__textfield.bind("input", filterObj, "searchString");
 
       return list;
     },
@@ -176,19 +176,17 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const toolbar = new qx.ui.toolbar.ToolBar();
 
       const infoPart = new qx.ui.toolbar.Part();
-      const infoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
-      infoContainer.add(versionLabel);
+      infoPart.add(versionLabel);
       const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox();
       selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
       selectBox.setValue(selectBox.getChildrenContainer().getSelectables()[0].getLabel());
-      infoContainer.add(selectBox);
+      infoPart.add(selectBox);
       const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16");
       infoBtn.addListener("execute", function() {
         this.__showServiceInfo();
       }, this);
-      infoContainer.add(infoBtn);
-      infoPart.add(infoContainer);
+      infoPart.add(infoBtn);
       toolbar.add(infoPart);
 
       toolbar.addSpacer();

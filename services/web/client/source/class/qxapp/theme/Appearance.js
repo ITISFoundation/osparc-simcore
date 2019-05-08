@@ -171,6 +171,16 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "textfilter": {},
     "textfilter/textfield": "toolbar-textfield",
 
+    "toolbar-selectbox": {
+      include: "textfield",
+      alias: "selectbox",
+      style: (state, styles) => {
+        styles.margin = [7, 10];
+        styles.paddingLeft = 5;
+        return styles;
+      }
+    },
+
     /*
     ---------------------------------------------------------------------------
       SidePanel
