@@ -98,9 +98,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     initDefault: function() {
-      let study = this.getStudy();
+      const study = this.getStudy();
 
-      let treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -110,7 +110,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
         collapsed: true
       }), 1);
@@ -118,7 +118,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
-      let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
+      const workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -152,7 +152,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
+      const nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
       nodeView.setWorkbench(study.getWorkbench());
@@ -163,7 +163,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
-          this.__workbenchUI.getLogger().info("Can not start pipeline");
+          this.getLogger().info(null, "Can not start pipeline");
         }
       }, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
