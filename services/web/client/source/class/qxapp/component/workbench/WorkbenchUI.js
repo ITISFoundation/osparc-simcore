@@ -305,6 +305,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createEdgeUI: function(node1Id, node2Id, edgeId) {
       const edge = this.getWorkbench().createEdge(edgeId, node1Id, node2Id);
+      if (!edge) {
+        return null;
+      }
       if (this.__edgeRepresetationExists(edge)) {
         return null;
       }
