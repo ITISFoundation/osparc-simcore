@@ -34,7 +34,10 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
       env += JSON.stringify(qxapp.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
-      const url = "https://github.com/ITISFoundation/osparc-simcore/issues/new?labels=tester_review&body=" + body;
+      let url = "https://github.com/ITISFoundation/osparc-simcore/issues/new";
+      url += "?labels=tester_review,UX_improvemnts";
+      url += "&projects=ITISFoundation/3";
+      url += "&body=" + body;
       return url;
     },
 
