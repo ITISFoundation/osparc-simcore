@@ -44,7 +44,7 @@ qx.Class.define("qxapp.data.Store", {
     // "fakeFiles": "qx.event.type.Event",
     "myDocuments": "qx.event.type.Event",
     "nodeFiles": "qx.event.type.Event",
-    "presginedLink": "qx.event.type.Event",
+    "presignedLink": "qx.event.type.Event",
     "fileCopied": "qx.event.type.Event",
     "deleteFile": "qx.event.type.Event"
   },
@@ -1375,7 +1375,7 @@ qx.Class.define("qxapp.data.Store", {
       reqLoc.send();
     },
 
-    getPresginedLink: function(download = true, locationId, fileUuid) {
+    getPresignedLink: function(download = true, locationId, fileUuid) {
       if (download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
         return;
       }
@@ -1395,20 +1395,20 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        const presginedLinkData = {
-          presginedLink: data,
+        const presignedLinkData = {
+          presignedLink: data,
           locationId: locationId,
           fileUuid: fileUuid
         };
-        console.log("presginedLink", presginedLinkData);
-        this.fireDataEvent("presginedLink", presginedLinkData);
+        console.log("presignedLink", presignedLinkData);
+        this.fireDataEvent("presignedLink", presignedLinkData);
       }, this);
 
       req.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
-        console.error("Failed getting Presgined Link", error);
+        console.error("Failed getting Presigned Link", error);
       });
 
       req.send();
