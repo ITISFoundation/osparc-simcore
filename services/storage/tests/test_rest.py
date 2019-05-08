@@ -11,6 +11,7 @@ from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
+from utils import has_datcore_tokens
 
 
 def parse_db(dsm_mockup_db):
@@ -80,6 +81,9 @@ async def test_health_check(client):
 
 @pytest.mark.travis
 async def test_locations(client):
+    if not has_datcore_tokens():
+        return
+
     user_id = "0"
 
     resp = await client.get("/v0/locations?user_id={}".format(user_id))
@@ -155,6 +159,8 @@ async def test_upload_link(client, dsm_mockup_db):
 
 @pytest.mark.travis
 async def test_copy(client, dsm_mockup_db, datcore_testbucket):
+    if not has_datcore_tokens():
+        return
     # copy N files
     N = 2
     counter = 0

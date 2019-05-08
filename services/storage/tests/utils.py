@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 
 import requests
@@ -14,7 +15,11 @@ ACCESS_KEY = '12345678'
 SECRET_KEY = '12345678'
 
 BUCKET_NAME ="simcore-testing"
+NO_BUCKET_NAME ="NONE"
 
+def has_datcore_tokens()->bool:
+    token = os.environ.get("BF_API_KEY", "none")
+    return token != "none"
 
 def is_responsive(url, code=200):
     """Check if something responds to ``url`` syncronously"""
