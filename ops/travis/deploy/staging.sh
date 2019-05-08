@@ -3,9 +3,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# pull the current master build
+# pull the tagged master build
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG="master-latest"
+export DOCKER_IMAGE_TAG="${TRAVIS_TAG}"
 make pull
 
 # show current images on system

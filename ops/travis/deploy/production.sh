@@ -3,9 +3,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# pull the current staging build
+# pull the tagged staging build
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG="staging-latest"
+export DOCKER_IMAGE_TAG="${TRAVIS_TAG}"
 make pull
 
 # show current images on system

@@ -301,6 +301,7 @@ jobs:
           script: unbuffer bash ops/travis/deploy/staging.sh
           on:
             branch: staging
+            tags: true
     - stage: deployment
       name: production
       if: branch = production
@@ -311,6 +312,7 @@ jobs:
           script: unbuffer ops/travis/deploy/production.sh
           on:
             branch: production
+            tags: true
 notifications:
   email:
     on_success: never
