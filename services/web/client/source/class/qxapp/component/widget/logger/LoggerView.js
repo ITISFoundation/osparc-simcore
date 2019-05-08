@@ -135,7 +135,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       const part = new qx.ui.toolbar.Part();
       const group = new qx.ui.form.RadioGroup();
-      for (let level in LOG_LEVEL) {
+      for (const level in LOG_LEVEL) {
         const label = level.charAt(0).toUpperCase() + level.slice(1);
         const button = new qx.ui.form.ToggleButton(label).set({
           appearance: "toolbar-button"
