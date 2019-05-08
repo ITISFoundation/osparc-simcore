@@ -25,6 +25,7 @@ from .statics import index as app_index
 
 log = logging.getLogger(__name__)
 
+TEMPLATE_PREFIX = "template-uuid"
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
@@ -34,7 +35,6 @@ def load_isan_template_uuids():
     return [prj['uuid'] for prj in data]
 
 ALLOWED_TEMPLATE_IDS = load_isan_template_uuids()
-
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
@@ -97,9 +97,60 @@ async def get_authorized_user(request: web.Request) -> Dict:
     user = await db.get_user({'id': userid})
     return user
 
+# Creation of projects from templates ---
+def compose_uuid(template_uuid, user_id) -> str:
+    """ Creates a new uuid composing a project's and user ids such that
+        any template pre-assigned to a user
+
+        LIMITATION: a user cannot have multiple copies of the same template
+        TODO: cache results
+    """
+    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
+    return new_uuid
+
+def create_project_from_template(template_project, user):
+    """ Creates a copy of the template and prepares it
+        to be owned by a given user
+    """
+    from copy import deepcopy
+    from .projects.projects_models import ProjectType
+
+    user_id = user["id"]
+
+    def _replace_uuids(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if isinstance(key, str):
+                    if key.startswith(TEMPLATE_PREFIX):
+                        new_key = compose_uuid(key, user_id)
+                        node[new_key] = node.pop(key)
+                        key = new_key
+                if isinstance(value, str):
+                    if value.startswith(TEMPLATE_PREFIX):
+                        node[key] = compose_uuid(value, user_id)
+                elif isinstance(value, dict):
+                    node[key] = _replace_uuids(value)
+            return node
+        elif isinstance(node, list):
+            for item in node:
+                _replace_uuids(item)
+        elif isinstance(node, str):
+            if key.startswith(TEMPLATE_PREFIX):
+                node = compose_uuid(node, user_id)
+
+    project = deepcopy(template_project)
+    import pdb; pdb.set_trace()
+    _replace_uuids(project)
+
+    project["type"] = ProjectType.STANDARD
+    project["prj_owner"] = user["name"]
+
+    return project
+
+
 
 # TODO: from .projects import ...?
-async def copy_study_to_account(request: web.Request, project: Dict, user_id: str):
+async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
     """
         Creates a copy of the study to a given project in user's account
 
@@ -107,25 +158,25 @@ async def copy_study_to_account(request: web.Request, project: Dict, user_id: st
             - Avoids multiple copies of the same template on each account
     """
     from servicelib.application_keys import APP_DB_ENGINE_KEY
+
     from .projects.projects_models import ProjectDB as db
-    from .projects.projects_models import ProjectType
     from .projects.projects_exceptions import ProjectNotFoundError
-    from copy import deepcopy
 
     db_engine = request.app[APP_DB_ENGINE_KEY]
-    new_uuid = str( uuid.uuid5(BASE_UUID, project["uuid"] + str(user_id)) )
+
+    project_uuid = compose_uuid(template_project["uuid"], user["id"])
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user_id, new_uuid, db_engine)
+        await db.get_user_project(project_uuid, project_uuid, db_engine)
 
     except ProjectNotFoundError:
+        # new project from template
+        project = create_project_from_template(template_project, user)
 
-        copied_project = deepcopy(project)
-        copied_project["type"] = ProjectType.STANDARD
-        copied_project["uuid"] = new_uuid
+        await db.add_project(project, user["id"], db_engine)
 
-        await db.add_project(copied_project, user_id, db_engine)
+    return project_uuid
 
 
 # -----------------------------------------------
