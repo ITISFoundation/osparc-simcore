@@ -214,6 +214,7 @@ jobs:
         repo: ITISFoundation/itisfoundation.github.io
         verbose: true
         on:
+          repo: ITISFoundation/osparc-simcore
           branch: master
 
 
