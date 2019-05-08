@@ -649,7 +649,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
       const msgData = {
-        nodeLabel: this.getLabel(),
+        nodeId: this.getNodeId(),
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);
@@ -691,7 +691,7 @@ qx.Class.define("qxapp.data.model.Node", {
       request.addListener("error", e => {
         const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
         const errorMsgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
@@ -700,7 +700,7 @@ qx.Class.define("qxapp.data.model.Node", {
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
         const failMsgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
@@ -718,7 +718,7 @@ qx.Class.define("qxapp.data.model.Node", {
       if (error) {
         const msg = "Error received: " + error;
         const msgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: msg
         };
         this.fireDataEvent("showInLogger", msgData);
@@ -749,7 +749,7 @@ qx.Class.define("qxapp.data.model.Node", {
       this.setServiceUrl(srvUrl);
       const msg = "Service ready on " + srvUrl;
       const msgData = {
-        nodeLabel: this.getLabel(),
+        nodeId: this.getNodeId(),
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);

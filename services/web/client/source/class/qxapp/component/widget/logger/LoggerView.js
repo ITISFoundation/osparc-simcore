@@ -35,7 +35,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let loggerView = new qxapp.component.widget.logger.LoggerView();
+ *   let loggerView = new qxapp.component.widget.logger.LoggerView(workbench);
  *   this.getRoot().add(loggerView);
  *   loggerView.info("Workbench", "Hello world");
  * </pre>
@@ -52,8 +52,12 @@ Object.freeze(LOG_LEVEL);
 qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(workbench) {
     this.base();
+
+    this.set({
+      workbench
+    });
 
     this._setLayout(new qx.ui.layout.VBox());
 
@@ -86,6 +90,11 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       nullable: false,
       check : "Boolean",
       init: false
+    },
+
+    workbench: {
+      check: "qxapp.data.model.Workbench",
+      nullable: false
     }
   },
 
@@ -153,7 +162,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
       const tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
       tableModel.setColumns(["Origin", "Message"], ["whoRich", "msgRich"]);
 
@@ -178,28 +186,28 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return table;
     },
 
-    debug: function(who = "System", msg = "") {
-      this.__addLogs(who, [msg], LOG_LEVEL.debug);
+    debug: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.debug);
     },
 
-    info: function(who = "System", msg = "") {
-      this.__addLogs(who, [msg], LOG_LEVEL.info);
+    info: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.info);
     },
 
-    infos: function(who = "System", msgs = [""]) {
-      this.__addLogs(who, msgs, LOG_LEVEL.info);
+    infos: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, LOG_LEVEL.info);
     },
 
-    warn: function(who = "System", msg = "") {
-      this.__addLogs(who, [msg], LOG_LEVEL.warning);
+    warn: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.warning);
     },
 
-    error: function(who = "System", msg = "") {
-      this.__addLogs(who, [msg], LOG_LEVEL.error);
+    error: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.error);
     },
 
-    __addLogs: function(who = "System", msgs = [""], logLevel = 0) {
-      const whoRich = this.__addWhoColorTag(who);
+    __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
+      const whoRich = this.__addWhoColorTag(nodeId);
 
       const msgLogs = [];
       for (let i=0; i<msgs.length; i++) {
@@ -208,7 +216,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
           whoRich: whoRich,
           msgRich: msgRich,
           msg: {
-            who: who,
+            nodeId: nodeId,
             msg: msgs[i],
             logLevel: logLevel
           }
@@ -220,26 +228,36 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       this.__updateTable();
     },
 
-    __updateTable: function(who) {
+    __updateTable: function() {
       this.__logModel.reloadData();
       const nFilteredRows = this.__logModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
     },
 
-    __addWhoColorTag: function(who) {
-      let whoColor = null;
-      for (let item of this.__messengerColors) {
-        if (item[0] === who) {
-          whoColor = item[1];
-          break;
+    __getNodesColor: function(nodeId) {
+      for (const item of this.__messengerColors) {
+        if (item[0] === nodeId) {
+          return item[1];
         }
       }
-      if (whoColor === null) {
-        whoColor = qxapp.component.widget.logger.LoggerView.getNewColor();
-        this.__messengerColors.add([who, whoColor]);
-      }
+      const color = qxapp.component.widget.logger.LoggerView.getNewColor();
+      this.__messengerColors.add([nodeId, color]);
+      return color;
+    },
 
-      return ("<font color=" + whoColor +">" + who + "</font>");
+    __addWhoColorTag: function(nodeId) {
+      const whoColor = this.__getNodesColor(nodeId);
+      let nodeLabel = "";
+      if (nodeId === null) {
+        nodeLabel = "Workbench";
+      } else {
+        const workbench = this.getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          nodeLabel = node.getLabel();
+        }
+      }
+      return ("<font color=" + whoColor +">" + nodeLabel + "</font>");
     },
 
     __applyFilters: function() {
@@ -253,9 +271,9 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __createInitMsg: function() {
-      const who = "System";
+      const nodeId = null;
       const msg = "Logger initialized";
-      this.debug(who, msg);
+      this.debug(nodeId, msg);
     },
 
     clearLogger: function() {

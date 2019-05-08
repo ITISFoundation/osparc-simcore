@@ -115,7 +115,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         collapsed: true
       }), 1);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       const workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
@@ -181,9 +181,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
-        const nodeLabel = data.nodeLabel;
+        const nodeId = data.nodeId;
         const msg = data.msg;
-        this.getLogger().info(nodeLabel, msg);
+        this.getLogger().info(nodeId, msg);
       }, this);
 
       [
@@ -422,7 +422,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       console.log(data);
 
       req.addListener("success", e => {
-        this.getLogger().debug("Workbench", "Pipeline successfully updated");
+        this.getLogger().debug(null, "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
         } else {
@@ -434,14 +434,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }, this);
       req.addListener("error", e => {
-        this.getLogger().error("Workbench", "Error updating pipeline");
+        this.getLogger().error(null, "Error updating pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("Workbench", "Failed updating pipeline");
+        this.getLogger().error(null, "Failed updating pipeline");
       }, this);
       req.send();
 
-      this.getLogger().debug("Workbench", "Updating pipeline");
+      this.getLogger().debug(null, "Updating pipeline");
     },
 
     __startPipeline: function() {
@@ -456,10 +456,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
         const msgs = d["Messages"];
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        const who = node.getLabel();
-        this.getLogger().infos(who, msgs);
+        this.getLogger().infos(nodeId, msgs);
       }, this);
       socket.emit(slotName);
 
@@ -493,15 +490,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.setCanStart(true);
-        this.getLogger().error("Workbench", "Error submitting pipeline");
+        this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
         this.setCanStart(true);
-        this.getLogger().error("Workbench", "Failed submitting pipeline");
+        this.getLogger().error(null, "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info("Workbench", "Starting pipeline");
+      this.getLogger().info(null, "Starting pipeline");
     },
 
     __stopPipeline: function() {
@@ -514,33 +511,33 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
         this.setCanStart(false);
-        this.getLogger().error("Workbench", "Error stopping pipeline");
+        this.getLogger().error(null, "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
         this.setCanStart(false);
-        this.getLogger().error("Workbench", "Failed stopping pipeline");
+        this.getLogger().error(null, "Failed stopping pipeline");
       }, this);
       // req.send();
 
       // temporary solution
       this.setCanStart(true);
 
-      this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.setCanStart(true);
         this.__pipelineId = null;
-        this.getLogger().error("Workbench", "Submition failed");
+        this.getLogger().error(null, "Submition failed");
       } else {
         // this.setCanStart(false);
         this.__pipelineId = pipelineId;
-        this.getLogger().info("Workbench", "Pipeline started");
+        this.getLogger().info(null, "Pipeline started");
       }
     },
 

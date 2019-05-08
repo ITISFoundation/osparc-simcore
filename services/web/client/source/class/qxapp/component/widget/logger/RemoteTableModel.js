@@ -115,17 +115,19 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
 
     __filterByString: function(msg) {
       let searchString = this.getFilterString();
-      if (searchString === null) {
+      if (searchString === null || searchString === "") {
         return true;
       }
       if (searchString && !this.isCaseSensitive()) {
         searchString = searchString.toUpperCase();
       }
-      if (!this.isCaseSensitive()) {
-        msg = msg.toUpperCase();
+      if (msg !== null && msg !== undefined) {
+        if (!this.isCaseSensitive()) {
+          msg = msg.toUpperCase();
+        }
+        return msg.includes(searchString);
       }
-      const show = msg.includes(searchString);
-      return show;
+      return false;
     },
 
     __filterByLogLevel: function(logLevel) {
@@ -134,7 +136,7 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
     },
 
     __checkFilters: function(rowData) {
-      const showStrWho = this.__filterByString(rowData.who);
+      const showStrWho = this.__filterByString(rowData.nodeId);
       const showStrWhat = this.__filterByString(rowData.what);
       const showLog = this.__filterByLogLevel(rowData.logLevel);
 
