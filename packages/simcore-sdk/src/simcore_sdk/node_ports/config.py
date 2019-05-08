@@ -1,6 +1,5 @@
 """Takes care of the configurations.
 """
-import logging
 import os
 
 
