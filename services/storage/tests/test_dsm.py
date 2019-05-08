@@ -180,13 +180,11 @@ async def test_copy_s3_s3(postgres_service_url, s3_client, mock_files_factory, d
     assert len(data) == 2
 
 #NOTE: Below tests directly access the datcore platform, use with care!
-@pytest.mark.travis
 def test_datcore_fixture(datcore_testbucket):
     if not has_datcore_tokens():
         return
     print(datcore_testbucket)
 
-@pytest.mark.travis
 async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_testbucket):
     if not has_datcore_tokens():
         return
@@ -205,7 +203,6 @@ async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_testbucket
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
     assert len(data) == 1
 
-@pytest.mark.travis
 async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_factory, dsm_fixture, datcore_testbucket):
     if not has_datcore_tokens():
         return
@@ -237,7 +234,6 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
     # there should now be 3 files
     assert len(data) == 3
 
-@pytest.mark.travis
 async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
     if not has_datcore_tokens():
         return
@@ -257,7 +253,6 @@ async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_file
 
     assert filecmp.cmp(tmp_file2, tmp_file)
 
-@pytest.mark.travis
 async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     if not has_datcore_tokens():
         return
@@ -294,7 +289,6 @@ async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, m
 
     assert filecmp.cmp(tmp_file1, tmp_file2)
 
-@pytest.mark.travis
 async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     if not has_datcore_tokens():
         return

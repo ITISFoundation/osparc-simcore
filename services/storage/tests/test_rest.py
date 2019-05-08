@@ -79,7 +79,6 @@ async def test_health_check(client):
     assert data['name'] == 'simcore_service_storage'
     assert data['status'] == 'SERVICE_RUNNING'
 
-@pytest.mark.travis
 async def test_locations(client):
     if not has_datcore_tokens():
         return
@@ -157,7 +156,6 @@ async def test_upload_link(client, dsm_mockup_db):
         assert not error
         assert data
 
-@pytest.mark.travis
 async def test_copy(client, dsm_mockup_db, datcore_testbucket):
     if not has_datcore_tokens():
         return
