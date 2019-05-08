@@ -1,6 +1,5 @@
 """Takes care of the configurations.
 """
-import logging
 import os
 
 
@@ -50,7 +49,3 @@ TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
                             "string":{"type":str, "converter":str}
                             }
 FILE_TYPE_PREFIX = "data:"
-
-# nodeports is a library for accessing data linked to the node
-# in that sense it should not log stuff unless the application code wants it to be so.
-logging.getLogger(__name__).addHandler(logging.NullHandler())
