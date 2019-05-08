@@ -176,7 +176,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const toolbar = new qx.ui.toolbar.ToolBar();
 
       const infoPart = new qx.ui.toolbar.Part();
-      const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
+      const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));
       infoPart.add(versionLabel);
       const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox();
       selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
