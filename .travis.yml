@@ -284,6 +284,8 @@ jobs:
     - stage: deployment
       name: master
       if: branch = master
+      git:
+        depth: false
       script: echo "Deploy master"
       deploy:
         - provider: script
@@ -294,6 +296,8 @@ jobs:
     - stage: deployment
       name: staging
       if: branch = staging
+      git:
+        depth: false
       script: echo "Deploy staging"
       deploy:
         - provider: script
@@ -305,6 +309,8 @@ jobs:
     - stage: deployment
       name: production
       if: branch = production
+      git:
+        depth: false
       script: echo "Deploy production"
       deploy:
         - provider: script
