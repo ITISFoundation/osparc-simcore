@@ -113,7 +113,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       let addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
       addTokenBtn.setWidth(100);
       addTokenBtn.addListener("execute", e => {
-        if (qxapp.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
+        if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
           return;
         }
 
@@ -164,7 +164,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       let delTokenBtn = new qx.ui.form.Button(this.tr("Delete"));
       delTokenBtn.setWidth(100);
       delTokenBtn.addListener("execute", e => {
-        if (qxapp.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
+        if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
           return;
         }
 
