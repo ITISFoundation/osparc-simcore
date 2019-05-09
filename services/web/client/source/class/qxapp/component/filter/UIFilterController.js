@@ -107,7 +107,11 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
 
     __subscriber: function(msg) {
       // Update state
-      const {groupId, filterId, data} = msg.getData();
+      const {
+        groupId,
+        filterId,
+        data
+      } = msg.getData();
       this.__state = this.__state || {};
       this.__state[groupId] = this.__state[groupId] || {};
       this.__state[groupId][filterId] = data;
