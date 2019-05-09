@@ -14,6 +14,7 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
 from simcore_sdk import node_ports
+from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
@@ -24,6 +25,7 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
 
 log = get_task_logger(__name__)
 log.setLevel(logging.DEBUG) # FIXME: set level via config
+node_port_log.setLevel(logging.DEBUG)
 
 @contextmanager
 def session_scope(session_factory):
