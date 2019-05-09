@@ -34,7 +34,8 @@ def main():
         print("This pages is for testing purposes for issue [#{1}]({0}{1})\n".format(ISSUE, 715), file=fh)
 
         write_list('localhost', r'http://127.0.0.1:9081', data, fh)
-        write_list('staging', r'http://osparc01.itis.ethz.ch:9081', data, fh)
+        write_list('master', r'http://osparc01.itis.ethz.ch:9081', data, fh)
+        write_list('staging', r'https://staging.io:9081', data, fh)
         write_list('osparc.io', r'https://osparc.io', data, fh)
 
 
