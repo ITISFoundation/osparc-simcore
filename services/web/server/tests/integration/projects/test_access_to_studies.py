@@ -27,6 +27,7 @@ from simcore_service_webserver.projects.projects_models import ProjectType
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.statics import setup_statics
 from simcore_service_webserver.studies_access import (TEMPLATE_PREFIX,
                                                       get_template_project,
                                                       setup_studies_access)
@@ -48,40 +49,6 @@ tool_services = [
 
 STUDY_UUID = TEMPLATE_PREFIX + "THIS_IS_A_FAKE_STUDY_FOR_TESTING_UUID"
 
-@pytest.fixture
-def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
-## def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<=======OFFLINE DEV
-    port = app_config["main"]["port"] = aiohttp_unused_port()
-    app_config['main']['host'] = '127.0.0.1'
-
-    app_config['storage']['enabled'] = False
-    app_config['rabbit']['enabled'] = False
-
-    app = web.Application()
-    app[APP_CONFIG_KEY] = app_config
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app, debug=True)
-    setup_login(app)
-    setup_users(app)
-    setup_projects(app,
-        enable_fake_data=False, # no fake data
-        disable_login=False
-    )
-    setup_studies_access(app)
-
-    yield loop.run_until_complete( aiohttp_server(app, port=port) )
-
-
-@pytest.fixture
-def client(loop, webserver_service, aiohttp_client, monkeypatch):
-    client = loop.run_until_complete(aiohttp_client(webserver_service))
-
-    assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
-    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [STUDY_UUID, ])
-
-    yield client
 
 @pytest.fixture
 def qx_client_outdir(tmpdir, mocker):
@@ -103,7 +70,46 @@ def qx_client_outdir(tmpdir, mocker):
 
     # patch get_client_outdir
     mocker.patch.object(simcore_service_webserver.statics, "get_client_outdir")
-    simcore_service_webserver.statics.get_client_outdir.return_value = basedir
+    simcore_service_webserver.statics.get_client_outdir.return_value = Path(basedir)
+
+
+@pytest.fixture
+## def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir):
+def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir): # <<=======OFFLINE DEV
+    port = app_config["main"]["port"] = aiohttp_unused_port()
+    app_config['main']['host'] = '127.0.0.1'
+
+    app_config['storage']['enabled'] = False
+    app_config['rabbit']['enabled'] = False
+
+    app = web.Application()
+    app[APP_CONFIG_KEY] = app_config
+    setup_statics(app)
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app, debug=True) # TODO: why should we need this??
+    setup_login(app)
+    setup_users(app)
+    setup_projects(app,
+        enable_fake_data=False, # no fake data
+        disable_login=False
+    )
+    setup_studies_access(app)
+
+    yield loop.run_until_complete( aiohttp_server(app, port=port) )
+
+
+@pytest.fixture
+def client(loop, webserver_service, aiohttp_client, monkeypatch):
+    client = loop.run_until_complete(aiohttp_client(webserver_service))
+
+    assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
+    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [STUDY_UUID, ])
+
+    yield client
+
+
 
 
 
@@ -175,9 +181,11 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
 
         # index
         assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
-        assert str(resp.url.path) == url_path
+        assert str(resp.url.path) == "/"
         assert "OSPARC-SIMCORE" in content, \
             "Expected front-end rendering workbench's study, got %s" % str(content)
+
+        real_url = str(resp.real_url)
 
         # has auto logged in as guest?
         resp = await client.get("/v0/me")
@@ -191,6 +199,7 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
         assert len(projects) == 1
         got_prj = projects[0]
 
+        assert real_url.endswith("#/study/%s" % got_prj["uuid"])
         _assert_same_projects(got_prj, expected_prj)
 
 
@@ -211,7 +220,9 @@ async def test_access_study_by_logged_user(client, qx_client_outdir):
 
             # returns index
             assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
-            assert str(resp.url.path) == url_path
+            assert str(resp.url.path) == "/"
+            real_url = str(resp.real_url)
+
             assert "OSPARC-SIMCORE" in content, \
                 "Expected front-end rendering workbench's study, got %s" % str(content)
 
@@ -219,6 +230,9 @@ async def test_access_study_by_logged_user(client, qx_client_outdir):
             projects = await _get_user_projects(client)
             assert len(projects) == 1
             got_prj = projects[0]
+
+            # TODO: check redirects to /#/study/{uuid}
+            assert real_url.endswith("#/study/%s" % got_prj["uuid"])
 
             _assert_same_projects(got_prj, expected_prj)
 

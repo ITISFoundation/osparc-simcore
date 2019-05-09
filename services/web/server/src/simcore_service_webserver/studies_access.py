@@ -21,7 +21,7 @@ from aiohttp import web
 
 from .resources import resources
 from .security import is_anonymous, remember
-from .statics import index as app_index
+from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
 
@@ -215,15 +215,18 @@ async def access_study(request: web.Request) -> web.Response:
         template_project['name'], user["email"], copied_project_id)
 
 
-    # redirect to new project's
-    # FIXME: add
-    response = await app_index(request)
+    try:
+        loc = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
+    except KeyError:
+        raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
+
+    response = web.HTTPFound(location=loc)
     if is_anonymous_user:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user['email']
         await remember(request, response, identity)
 
-    return response
+    raise response
 
 
 
