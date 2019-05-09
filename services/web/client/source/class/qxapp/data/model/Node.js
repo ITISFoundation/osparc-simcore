@@ -496,10 +496,10 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    // post link creation routine
-    edgeAdded: function(link) {
+    // post edge creation routine
+    edgeAdded: function(edge) {
       if (this.isInKey("dash-plot")) {
-        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
@@ -572,6 +572,14 @@ qx.Class.define("qxapp.data.model.Node", {
       return (index > -1);
     },
 
+    renameNode: function(newLabel) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
+        return false;
+      }
+      this.setLabel(newLabel);
+      return true;
+    },
+
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         this.setIFrame(new qxapp.component.widget.PersistentIframe());
@@ -607,6 +615,9 @@ qx.Class.define("qxapp.data.model.Node", {
 
     retrieveInputs: function() {
       if (this.isDynamic()) {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
+          return;
+        }
         let urlUpdate = this.getServiceUrl() + "/retrieve";
         urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
         let updReq = new qx.io.request.Xhr();
