@@ -116,7 +116,9 @@ qx.Class.define("qxapp.data.Permissions", {
           "study.edge.delete"
         ],
         "tester": [
-          "services.all.read"
+          "services.all.read",
+          "study.nodestree.uuid.read",
+          "study.logger.debug.read"
         ],
         "moderator": [],
         "admin": []
