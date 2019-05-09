@@ -35,7 +35,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "initFile": {
+          "initfile": {
             "nodeUuid": "template-uuid-4674-b758-946151cae351",
             "output": "outFile"
           }
@@ -274,7 +274,12 @@
         "key": "simcore/services/dynamic/kember-viewer",
         "version": "2.9.0",
         "label": "kember-viewer",
-        "inputs": {},
+        "inputs": {
+          "outputController": {
+            "nodeUuid": "template-uuid-43dd-8d87-9969d380df53",
+            "output": "out_1"
+          }
+        },
         "inputNodes": [
           "template-uuid-43dd-8d87-9969d380df53"
         ],
@@ -316,7 +321,7 @@
       }
     }
   }, {
-    "uuid": "b9f00712-0088-40e1-bb95-c68f6358bfe2",
+    "uuid": "template-uuid-40e1-bb95-c68f6358bfe2",
     "name": "ISAN: 4x CC 0D",
     "description": "4 Colleen Clancy solvers with different configuration and the same input file",
     "notes": "",
@@ -600,7 +605,7 @@
       "template-uuid-47c3-a39b-36e4bedadca5": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 1.00",
+        "label": "MP GKr 1.00",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -638,7 +643,7 @@
       "template-uuid-4e79-9670-46d38e433234": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.75",
+        "label": "MP GKr 0.75",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -676,7 +681,7 @@
       "template-uuid-4979-81e9-35cfdbefcc85": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.50",
+        "label": "MP GKr 0.50",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -714,7 +719,7 @@
       "template-uuid-42da-ae03-1bb50a4c2728": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.25",
+        "label": "MP GKr 0.25",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -752,7 +757,7 @@
       "template-uuid-4c8a-8f8d-7d8baf6a3604": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 1.00",
+        "label": "LCC GKr 1.00",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -790,7 +795,7 @@
       "template-uuid-456b-b5fc-bc3ee7c257a2": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.75",
+        "label": "LCC GKr 0.75",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -828,7 +833,7 @@
       "template-uuid-4d66-b9af-f8a3153f8d24": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.50",
+        "label": "LCC GKr 0.50",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
@@ -866,7 +871,7 @@
       "template-uuid-49f1-9ecf-eff08693074a": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
-        "label": "GKr 0.25",
+        "label": "LCC GKr 0.25",
         "inputs": {
           "input_1": {
             "nodeUuid": "template-uuid-4083-a798-8fe114647ca5",
