@@ -29,13 +29,17 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       setUp: function() {
         console.debug("Setting up .. ");
         this.debug("Setting up ...");
+
+        // ToDo OM: Tobi is this correct?
+        qxapp.data.Permissions.getInstance().setRole("user");
+
         const studyData = {
           name: "Test Study",
           description: ""
         };
-        const prj = new qxapp.data.model.Study(studyData);
+        const study = new qxapp.data.model.Study(studyData);
         const wbData = {};
-        this.__workbench = new qxapp.data.model.Workbench(prj, wbData);
+        this.__workbench = new qxapp.data.model.Workbench(study, wbData);
       },
 
       tearDown: function() {
@@ -60,12 +64,12 @@ qx.Class.define("qxapp.test.data.model.Workbench",
       */
 
       testDuplicatedNodeConnections: function() {
-        const linkId = null;
+        const edgeId = null;
         const node1 = this.createDummyNode();
         const node2 = this.createDummyNode();
-        const link1 = this.__workbench.createEdge(linkId, node1.getNodeId(), node2.getNodeId());
-        const link2 = this.__workbench.createEdge(linkId, node1.getNodeId(), node2.getNodeId());
-        this.assertIdentical(link1.getEdgeId(), link2.getEdgeId(), "Both links must be the same");
+        const edge1 = this.__workbench.createEdge(edgeId, node1.getNodeId(), node2.getNodeId());
+        const edge2 = this.__workbench.createEdge(edgeId, node1.getNodeId(), node2.getNodeId());
+        this.assertIdentical(edge1.getEdgeId(), edge2.getEdgeId(), "Both edges must be the same");
       },
 
       testUniqueName: function() {

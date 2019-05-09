@@ -45,7 +45,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
       this.__svgWrapper = new qxapp.wrapper.Svg();
       this.__svgWrapper.addListener(("svgLibReady"), () => {
-        this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
+        this.__edgesCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);
       });
       this.__svgWrapper.init();
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
 
   members: {
     __svgWrapper: null,
-    __linksCanvas: null,
+    __edgesCanvas: null,
 
     __getControls: function(x1, y1, x2, y2, offset = 60) {
       return [{
@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
 
     drawCurve: function(x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      return this.__svgWrapper.drawCurve(this.__linksCanvas, controls);
+      return this.__svgWrapper.drawCurve(this.__edgesCanvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {

@@ -23,9 +23,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let link = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
- *   let linkRepresentation = svgWidget.drawCurve(x1, y1, x2, y2);
- *   let linkUI = new qxapp.component.workbench.EdgeUI(link, linkRepresentation);
+ *   let edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
+ *   let edgeRepresentation = svgWidget.drawCurve(x1, y1, x2, y2);
+ *   let edgeUI = new qxapp.component.workbench.EdgeUI(edge, edgeRepresentation);
  * </pre>
  */
 
@@ -35,8 +35,8 @@ qx.Class.define("qxapp.component.workbench.EdgeUI", {
   implement: qxapp.component.filter.IFilterable,
 
   /**
-    * @param link {qxapp.data.model.Edge} Edge owning the object
-    * @param representation {SVG Object} UI representation of the link
+    * @param edge {qxapp.data.model.Edge} Edge owning the object
+    * @param representation {SVG Object} UI representation of the edge
   */
   construct: function(edge, representation) {
     this.base();
@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.workbench.EdgeUI", {
   },
 
   events: {
-    "linkSelected": "qx.event.type.Data"
+    "edgeSelected": "qx.event.type.Data"
   },
 
   properties: {
