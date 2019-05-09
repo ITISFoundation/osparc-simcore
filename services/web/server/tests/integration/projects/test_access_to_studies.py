@@ -74,8 +74,8 @@ def qx_client_outdir(tmpdir, mocker):
 
 
 @pytest.fixture
-## def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir):
-def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir): # <<=======OFFLINE DEV
+def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir):
+##def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config, qx_client_outdir): # <<=======OFFLINE DEV
     port = app_config["main"]["port"] = aiohttp_unused_port()
     app_config['main']['host'] = '127.0.0.1'
 
