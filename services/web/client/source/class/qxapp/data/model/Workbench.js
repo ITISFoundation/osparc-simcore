@@ -18,7 +18,7 @@
 /**
  * Class that stores Workbench data.
  *
- * It takes care of creating, storing and managing nodes and links.
+ * It takes care of creating, storing and managing nodes and edges.
  *
  *                                    -> {EDGES}
  * STUDY -> METADATA + WORKBENCH ->|
@@ -38,19 +38,15 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
   /**
     * @param study {qxapp.data.model.Study} Study owning the Workbench
-    * @param wbData {qx.core.Object} Object containing the workbench raw data
+    * @param workbenchData {qx.core.Object} Object containing the workbench raw data
     */
-  construct: function(study, wbData) {
+  construct: function(study, workbenchData) {
     this.base(arguments);
-
-    this.__nodesTopLevel = {};
-    this.__edges = {};
 
     this.setStudy(study);
     this.setStudyName(study.getName());
 
-    this.__createNodes(wbData);
-    this.__createEdges(wbData);
+    this.__deserializeWorkbench(workbenchData);
   },
 
   properties: {
@@ -104,7 +100,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (nodeId === "root" || nodeId === undefined) {
         return ["root"];
       }
-      let nodePath = [];
+      const nodePath = [];
       nodePath.unshift(nodeId);
       const node = this.getNode(nodeId);
       let parentNodeId = node.getParentNodeId();
@@ -120,14 +116,14 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     getConnectedEdges: function(nodeId) {
-      let connectedEdges = [];
-      const links = Object.values(this.__edges);
-      for (const link of links) {
-        if (link.getInputNodeId() === nodeId) {
-          connectedEdges.push(link.getEdgeId());
+      const connectedEdges = [];
+      const edges = Object.values(this.__edges);
+      for (const edge of edges) {
+        if (edge.getInputNodeId() === nodeId) {
+          connectedEdges.push(edge.getEdgeId());
         }
-        if (link.getOutputNodeId() === nodeId) {
-          connectedEdges.push(link.getEdgeId());
+        if (edge.getOutputNodeId() === nodeId) {
+          connectedEdges.push(edge.getEdgeId());
         }
       }
       return connectedEdges;
@@ -138,22 +134,25 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (exists) {
         return this.__edges[edgeId];
       }
-      const links = Object.values(this.__edges);
-      for (const link of links) {
-        if (link.getInputNodeId() === node1Id &&
-          link.getOutputNodeId() === node2Id) {
-          return link;
+      const edges = Object.values(this.__edges);
+      for (const edge of edges) {
+        if (edge.getInputNodeId() === node1Id &&
+          edge.getOutputNodeId() === node2Id) {
+          return edge;
         }
       }
       return null;
     },
 
-    createEdge: function(linkId, node1Id, node2Id) {
-      let existingEdge = this.getEdge(linkId, node1Id, node2Id);
+    createEdge: function(edgeId, node1Id, node2Id) {
+      const existingEdge = this.getEdge(edgeId, node1Id, node2Id);
       if (existingEdge) {
         return existingEdge;
       }
-      let edge = new qxapp.data.model.Edge(linkId, node1Id, node2Id);
+      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
+        return null;
+      }
+      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation
@@ -173,17 +172,22 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     createNode: function(key, version, uuid, parent, populateNodeData) {
-      let existingNode = this.getNode(uuid);
+      const existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
       }
-      let node = new qxapp.data.model.Node(this, key, version, uuid);
-      node.addListener("showInLogger", e => {
-        this.fireDataEvent("showInLogger", e.getData());
-      }, this);
-      node.addListener("updatePipeline", e => {
-        this.fireDataEvent("updatePipeline", e.getData());
-      }, this);
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return null;
+      }
+      const node = new qxapp.data.model.Node(this, key, version, uuid);
+      const metaData = node.getMetaData();
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
+        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
+        for (const innerNodeMetaData of innerNodeMetaDatas) {
+          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
+        }
+      }
+      this.__initNodeSignals(node);
       if (populateNodeData) {
         node.populateNodeData();
         node.giveUniqueName();
@@ -191,6 +195,17 @@ qx.Class.define("qxapp.data.model.Workbench", {
       this.addNode(node, parent);
 
       return node;
+    },
+
+    __initNodeSignals: function(node) {
+      if (node) {
+        node.addListener("showInLogger", e => {
+          this.fireDataEvent("showInLogger", e.getData());
+        }, this);
+        node.addListener("updatePipeline", e => {
+          this.fireDataEvent("updatePipeline", e.getData());
+        }, this);
+      }
     },
 
     cloneNode: function(nodeToClone) {
@@ -206,7 +221,97 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return node;
     },
 
-    __createNodes: function(workbenchData) {
+    addNode: function(node, parentNode) {
+      const uuid = node.getNodeId();
+      if (parentNode) {
+        parentNode.addInnerNode(uuid, node);
+      } else {
+        this.__nodesTopLevel[uuid] = node;
+      }
+      this.fireEvent("workbenchChanged");
+    },
+
+    removeNode: function(nodeId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+        return false;
+      }
+
+      // remove first the connected edges
+      const connectedEdges = this.getConnectedEdges(nodeId);
+      for (let i=0; i<connectedEdges.length; i++) {
+        const edgeId = connectedEdges[i];
+        this.removeEdge(edgeId);
+      }
+
+      let node = this.getNode(nodeId);
+      if (node) {
+        node.removeNode();
+        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
+        if (isTopLevel) {
+          delete this.__nodesTopLevel[nodeId];
+        }
+        this.fireEvent("workbenchChanged");
+        return true;
+      }
+      return false;
+    },
+
+    removeEdge: function(edgeId, currentNodeId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
+        return false;
+      }
+
+      const edge = this.getEdge(edgeId);
+      if (currentNodeId !== undefined) {
+        const currentNode = this.getNode(currentNodeId);
+        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+          const inputNode = this.getNode(edge.getInputNodeId());
+          inputNode.setIsOutputNode(false);
+
+          // Remove also dependencies from outter nodes
+          const cNodeId = inputNode.getNodeId();
+          const allNodes = this.getNodes(true);
+          for (const nodeId in allNodes) {
+            const node = allNodes[nodeId];
+            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+              this.removeEdge(edgeId);
+            }
+          }
+        }
+      }
+
+      if (edge) {
+        const inputNodeId = edge.getInputNodeId();
+        const outputNodeId = edge.getOutputNodeId();
+        const node = this.getNode(outputNodeId);
+        if (node) {
+          node.removeInputNode(inputNodeId);
+          delete this.__edges[edgeId];
+          return true;
+        }
+      }
+      return false;
+    },
+
+    clearProgressData: function() {
+      const allNodes = this.getNodes(true);
+      const nodes = Object.values(allNodes);
+      for (const node of nodes) {
+        if (!node.isDynamic()) {
+          node.setProgress(0);
+        }
+      }
+    },
+
+    __deserializeWorkbench: function(workbenchData) {
+      this.__nodesTopLevel = {};
+      this.__edges = {};
+
+      this.__deserializeNodes(workbenchData);
+      this.__deserializeEdges(workbenchData);
+    },
+
+    __deserializeNodes: function(workbenchData) {
       let keys = Object.keys(workbenchData);
       // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
@@ -232,12 +337,19 @@ qx.Class.define("qxapp.data.model.Workbench", {
         if (nodeData.parent) {
           parentNode = this.getNode(nodeData.parent);
         }
+        let node = null;
         if (nodeData.key) {
           // not container
-          this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
+          // this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
+          node = new qxapp.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
         } else {
           // container
-          this.createNode(null, null, nodeId, parentNode, false);
+          // this.createNode(null, null, nodeId, parentNode, false);
+          node = new qxapp.data.model.Node(this, null, null, nodeId);
+        }
+        if (node) {
+          this.__initNodeSignals(node);
+          this.addNode(node, parentNode);
         }
       }
 
@@ -253,69 +365,25 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
     },
 
-    addNode: function(node, parentNode) {
-      const uuid = node.getNodeId();
-      if (parentNode) {
-        parentNode.addInnerNode(uuid, node);
-      } else {
-        this.__nodesTopLevel[uuid] = node;
-      }
-      this.fireEvent("workbenchChanged");
-    },
-
-    removeNode: function(nodeId) {
-      let node = this.getNode(nodeId);
-      if (node) {
-        node.removeNode();
-        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
-        if (isTopLevel) {
-          delete this.__nodesTopLevel[nodeId];
-        }
-        this.fireEvent("workbenchChanged");
-        return true;
-      }
-      return false;
-    },
-
-    __createEdge: function(outputNodeId, inputNodeId) {
-      let node = this.getNode(inputNodeId);
-      if (node) {
-        node.addInputNode(outputNodeId);
-      }
-    },
-
-    __createEdges: function(workbenchData) {
+    __deserializeEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          continue;
+        }
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
             const outputNodeId = nodeData.inputNodes[i];
-            this.__createEdge(outputNodeId, nodeId);
+            const edge = new qxapp.data.model.Edge(null, outputNodeId, nodeId);
+            this.addEdge(edge);
+            node.addInputNode(outputNodeId);
           }
         }
-      }
-    },
-
-    removeEdge: function(linkId) {
-      let link = this.getEdge(linkId);
-      if (link) {
-        const inputNodeId = link.getInputNodeId();
-        const outputNodeId = link.getOutputNodeId();
-        let node = this.getNode(outputNodeId);
-        if (node) {
-          node.removeInputNode(inputNodeId);
-          delete this.__edges[linkId];
-          return true;
+        if (nodeData.outputNode) {
+          const edge = new qxapp.data.model.Edge(null, nodeId, nodeData.parent);
+          this.addEdge(edge);
         }
-      }
-      return false;
-    },
-
-    clearProgressData: function() {
-      const allModels = this.getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        node.setProgress(0);
       }
     },
 

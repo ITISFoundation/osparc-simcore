@@ -71,10 +71,10 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
   },
 
   events: {
-    "linkDragStart": "qx.event.type.Data",
-    "linkDragOver": "qx.event.type.Data",
-    "linkDrop": "qx.event.type.Data",
-    "linkDragEnd": "qx.event.type.Data"
+    "edgeDragStart": "qx.event.type.Data",
+    "edgeDragOver": "qx.event.type.Data",
+    "edgeDrop": "qx.event.type.Data",
+    "edgeDragEnd": "qx.event.type.Data"
   },
 
   members: {
@@ -137,10 +137,10 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
 
     __createUIPortConnections: function(uiPort, isInput) {
       [
-        ["dragstart", "linkDragStart"],
-        ["dragover", "linkDragOver"],
-        ["drop", "linkDrop"],
-        ["dragend", "linkDragEnd"]
+        ["dragstart", "edgeDragStart"],
+        ["dragover", "edgeDragOver"],
+        ["drop", "edgeDrop"],
+        ["dragend", "edgeDragEnd"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
           const eData = {
