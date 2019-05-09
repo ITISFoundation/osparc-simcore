@@ -13,11 +13,13 @@ from pprint import pprint
 from typing import Dict
 
 import pytest
+
 import simcore_service_webserver.statics
 import simcore_service_webserver.studies_access
 from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver import studies_access
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
@@ -25,7 +27,8 @@ from simcore_service_webserver.projects.projects_models import ProjectType
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.studies_access import (get_template_project,
+from simcore_service_webserver.studies_access import (TEMPLATE_PREFIX,
+                                                      get_template_project,
                                                       setup_studies_access)
 from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
@@ -43,26 +46,11 @@ tool_services = [
 ]
 
 
-STUDY_UUID = "template-uuid-THIS_IS_A_FAKE_STUDY_UUID"
-simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS = [STUDY_UUID, ]
-
-# TODO: create a mock instead!!!
-# @pytest.fixture
-# def mock_template_studies(mocker):
-#     # patches ALLOWED_TEMPLATE_IDS
-#     import pdb; pdb.set_trace()
-#     print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
-#     with mocker.patch("simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS", [STUDY_UUID, ]):
-
-#         import pdb; pdb.set_trace()
-#         print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
-#         yield
-#     print(simcore_service_webserver.studies_access.ALLOWED_TEMPLATE_IDS)
-#     import pdb; pdb.set_trace()
+STUDY_UUID = TEMPLATE_PREFIX + "THIS_IS_A_FAKE_STUDY_FOR_TESTING_UUID"
 
 @pytest.fixture
-#def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
-def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+## def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<=======OFFLINE DEV
     port = app_config["main"]["port"] = aiohttp_unused_port()
     app_config['main']['host'] = '127.0.0.1'
 
@@ -85,9 +73,14 @@ def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, 
 
     yield loop.run_until_complete( aiohttp_server(app, port=port) )
 
+
 @pytest.fixture
-def client(loop, webserver_service, aiohttp_client):
+def client(loop, webserver_service, aiohttp_client, monkeypatch):
     client = loop.run_until_complete(aiohttp_client(webserver_service))
+
+    assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
+    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [STUDY_UUID, ])
+
     yield client
 
 @pytest.fixture
@@ -152,7 +145,18 @@ async def _get_user_projects(client):
     return projects
 
 def _assert_same_projects(got: Dict, expected: Dict):
-    for key in [k for k in expected.keys() if k!="uuid"]:
+    # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+    # TODO: validate workbench!
+    PROPERTIES_TO_CHECK =  [
+        "name",
+        "description",
+        "notes",
+        "collaborators",
+        "creationDate",
+        "lastChangeDate",
+        "thumbnail"
+    ]
+    for key in PROPERTIES_TO_CHECK:
         assert got[key] == expected[key]
 
 

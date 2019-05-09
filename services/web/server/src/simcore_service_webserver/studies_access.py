@@ -34,7 +34,7 @@ def load_isan_template_uuids():
         data = json.load(fp)
     return [prj['uuid'] for prj in data]
 
-ALLOWED_TEMPLATE_IDS = load_isan_template_uuids()
+SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
@@ -118,36 +118,29 @@ def create_project_from_template(template_project, user):
     user_id = user["id"]
 
     def _replace_uuids(node):
-        if isinstance(node, dict):
-            for key, value in node.items():
+        if isinstance(node, str):
+            if node.startswith(TEMPLATE_PREFIX):
+                node = compose_uuid(node, user_id)
+        elif isinstance(node, list):
+            node = [_replace_uuids(item) for item in node]
+        elif isinstance(node, dict):
+            _frozen_items = tuple(node.items())
+            for key, value in _frozen_items:
                 if isinstance(key, str):
                     if key.startswith(TEMPLATE_PREFIX):
                         new_key = compose_uuid(key, user_id)
                         node[new_key] = node.pop(key)
                         key = new_key
-                if isinstance(value, str):
-                    if value.startswith(TEMPLATE_PREFIX):
-                        node[key] = compose_uuid(value, user_id)
-                elif isinstance(value, dict):
-                    node[key] = _replace_uuids(value)
-            return node
-        elif isinstance(node, list):
-            for item in node:
-                _replace_uuids(item)
-        elif isinstance(node, str):
-            if key.startswith(TEMPLATE_PREFIX):
-                node = compose_uuid(node, user_id)
+                node[key] = _replace_uuids(value)
+        return node
 
     project = deepcopy(template_project)
-    import pdb; pdb.set_trace()
-    _replace_uuids(project)
+    project = _replace_uuids(project)
 
     project["type"] = ProjectType.STANDARD
     project["prj_owner"] = user["name"]
 
     return project
-
-
 
 # TODO: from .projects import ...?
 async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
@@ -164,11 +157,12 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     db_engine = request.app[APP_DB_ENGINE_KEY]
 
+    # assign id to copy
     project_uuid = compose_uuid(template_project["uuid"], user["id"])
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(project_uuid, project_uuid, db_engine)
+        await db.get_user_project(user["id"], project_uuid, db_engine)
 
     except ProjectNotFoundError:
         # new project from template
@@ -190,17 +184,19 @@ async def access_study(request: web.Request) -> web.Response:
         -
     """
     study_id = request.match_info["id"]
-    log.debug("Requested access to study '%s' ...", study_id)
+
+    log.debug("Requested a copy of study '%s' ...", study_id)
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
+    if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
+        raise web.HTTPNotFound(reason="Requested study is not shared ['%s']" % study_id)
+
+    # TODO: should copy **any** type of project is sharable -> get_sharable_project
+    template_project = await get_template_project(request.app, study_id)
+    if not template_project:
+        raise RuntimeError("Unable to load study %s" % study_id)
 
     user = None
-    if study_id not in ALLOWED_TEMPLATE_IDS:
-        raise web.HTTPNotFound(reason="Could not find sharable study '%s'" % study_id)
-
-    project = await get_template_project(request.app, study_id)
-    assert (project is not None), "Failed to load project"
-
     is_anonymous_user = await is_anonymous(request)
     if is_anonymous_user:
         log.debug("Creating temporary user ...")
@@ -208,13 +204,22 @@ async def access_study(request: web.Request) -> web.Response:
     else:
         user = await get_authorized_user(request)
 
-    log.info("Ensuring study %s in account owned by %s", project['name'], user["email"])
-    user_id = user["id"]
-    await copy_study_to_account(request, project, user_id)
+    if not user:
+        raise RuntimeError("Unable to start user session")
 
+
+    log.debug("Copying study %s to %s account ...", template_project['name'], user["email"])
+    copied_project_id = await copy_study_to_account(request, template_project, user)
+
+    log.debug("Coped study %s to %s account as %s",
+        template_project['name'], user["email"], copied_project_id)
+
+
+    # redirect to new project's
+    # FIXME: add
     response = await app_index(request)
     if is_anonymous_user:
-        log.info("Auto login for anonymous users")
+        log.debug("Auto login for anonymous user %s", user["name"])
         identity = user['email']
         await remember(request, response, identity)
 
