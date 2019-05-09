@@ -73,12 +73,11 @@ qx.Class.define("qxapp.Application", {
     },
 
     __initRouting: function() {
-      // Route: /{id}
-      // let result = /study\/(.*)/.exec(window.location.pathname); FIXME: PC->IP
+      // Route: /#/study/{id}
       let result = /#\/study\/(.*)/.exec(window.location.hash);
-      if (result && result[result.index].length) {
+      if (result && result[1].length) {
         qxapp.utils.Utils.cookie.deleteCookie("user");
-        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[result.index]), this.__loadLoginPage, this);
+        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[1]), this.__loadLoginPage, this);
       } else {
         this.__restart();
       }
