@@ -30,7 +30,7 @@ RUN apk add --no-cache \
     libffi-dev \
     python3-dev
 
-RUN pip3 install --upgrade pip~=19.1.1 wheel setuptools
+RUN pip3 install --upgrade pip wheel setuptools
 
 RUN npm install express
 

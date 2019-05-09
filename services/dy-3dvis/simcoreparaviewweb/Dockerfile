@@ -34,7 +34,7 @@ RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/py
     xz-utils tk-dev libffi-dev liblzma-dev && \
     pyenv install 3.6.7 && \
     pyenv global 3.6.7 && \
-    pip install --upgrade pip~=19.1.1 wheel setuptools
+    pip install --upgrade pip wheel setuptools
 
 # get the patched visualizer
 COPY --from=visualizer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
@@ -61,7 +61,7 @@ ENV SIMCORE_NODE_UUID="-1" \
 ENV SERVER_PORT="-1"  \
     HOST_NAME="-1"
 # update pip
-RUN pip3 install --upgrade pip~=19.1.1 wheel setuptools
+RUN pip3 install --upgrade pip wheel setuptools
 
 # copy scripts
 COPY services/dy-3dvis/simcoreparaviewweb/docker /home/root/docker

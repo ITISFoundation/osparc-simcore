@@ -9,7 +9,7 @@ before_install() {
 }
 
 install() {
-    pip3 install --upgrade pip~=19.1.1 wheel setuptools && pip3 --version
+    pip3 install --upgrade pip wheel setuptools && pip3 --version
     pip3 install -r ops/travis/system-testing/requirements.txt
     cp .env-devel .env
     make build

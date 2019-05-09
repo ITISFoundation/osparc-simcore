@@ -16,7 +16,7 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip~=19.1.1 wheel setuptools && pip3 --version;
+        pip install --upgrade pip wheel setuptools && pip3 --version;
         pip3 install packages/s3wrapper[test];
         pip3 install packages/simcore-sdk[test];
         pip3 install packages/director-sdk/python;
