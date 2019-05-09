@@ -127,6 +127,23 @@ qx.Theme.define("qxapp.theme.Appearance", {
         };
       }
     },
+
+    "service-window": {
+      include: "window",
+      alias: "window",
+      style: (state, styles) => {
+        styles.decorator = "window-small-cap";
+        return styles;
+      }
+    },
+    "service-window/captionbar": {
+      include: "window/captionbar",
+      style: (state, styles) => {
+        styles.backgroundColor = "material-button-background";
+        styles.decorator = "workbench-small-cap-captionbar";
+        return styles;
+      }
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView

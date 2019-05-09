@@ -46,7 +46,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       minHeight: 400,
       modal: true,
       caption: this.tr("Services Catalogue"),
-      appearance: "window-small-cap",
+      appearance: "service-window",
       contentPadding: 0
     });
 
