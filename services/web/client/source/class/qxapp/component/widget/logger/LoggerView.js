@@ -37,7 +37,7 @@
  * <pre class='javascript'>
  *   let loggerView = new qxapp.component.widget.logger.LoggerView(workbench);
  *   this.getRoot().add(loggerView);
- *   loggerView.info("Workbench", "Hello world");
+ *   loggerView.info(null, "Hello world");
  * </pre>
  */
 
@@ -216,9 +216,9 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
           whoRich: whoRich,
           msgRich: msgRich,
           msg: {
-            nodeId: nodeId,
+            nodeId,
             msg: msgs[i],
-            logLevel: logLevel
+            logLevel
           }
         };
         msgLogs.push(msgLog);
