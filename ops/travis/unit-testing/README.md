@@ -8,8 +8,8 @@ pip install -r requirements/[dev|ci].txt
 pytest -v test/unit
 ```
 
-- **Smallest** testing units
-- **Specific** to every package
+- **Small**est testing units
+- **Isolated**: specific to every package
   - checks functionality of the package under test
   - should run only if changes in code package or requirements are detected
 - **Minimal coupling** to other package/services in this repository
@@ -18,9 +18,10 @@ pytest -v test/unit
   - *Ocassionaly* could use [pytest-docker] for medium size tests but only to deploy services as fixtures ONLY if **external** and **versioned** images are deployed (e.g. [postgres](https://hub.docker.com/_/postgres) or [adminer](https://hub.docker.com/_/adminer) can help to test a part of the package that interacts with a database )
     - Therefore **no need to build** images
   - [pytest-mock] (a pytest plugin on top of [unittest.mock]) is highly encouraged for fixtures
-- Using a data-driven criteria to classify tests in [Test Sizes], our unit-tests include **small** and **medium** sizes.
+- Using a data-driven criteria to classify tests in [Test Sizes], our unit-tests SHALL include **small** and **medium** sizes:
 
-![](https://cdn-images-1.medium.com/max/800/1*XPhOBPDzVgSn-n8DhW7D8A.png)
+![tests table](https://cdn-images-1.medium.com/max/800/1*XPhOBPDzVgSn-n8DhW7D8A.png)
+
 
 ## Limitations [by May 2019]
 

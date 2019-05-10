@@ -11,4 +11,5 @@
 /services/web/server       @pcrespov
 /services/storage          @mguidon
 
+requirements/*             @pcrespov
 /.travis.yml     @sanderegg
