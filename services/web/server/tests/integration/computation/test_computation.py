@@ -58,7 +58,6 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
-
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     final_config_path = here / "config.app.yaml"
@@ -74,7 +73,9 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     setup_computation(app, disable_login=True)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
+
     yield server
+
     # cleanup
     final_config_path.unlink()
 
@@ -151,7 +152,7 @@ def _check_sleeper_services_completed(project_id, postgres_session):
             assert task_db.state == SUCCESS
 
 async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
-    # import pdb; pdb.set_trace()
+
     resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )
