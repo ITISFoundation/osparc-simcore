@@ -10,7 +10,7 @@ urllib3~=1.24.2     # https://nvd.nist.gov/vuln/detail/CVE-2019-11324
 openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
 jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 (used in tests) requires jsonschema<3
 
-aio_pika
+aio-pika==2.9.0     # TODO: upgrade code before !!
 aiohttp
 aiohttp_jinja2
 aiohttp_security
