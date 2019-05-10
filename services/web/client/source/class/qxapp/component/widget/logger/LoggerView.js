@@ -41,12 +41,17 @@
  * </pre>
  */
 
-const LOG_LEVEL = {
-  debug: -1,
-  info: 0,
-  warning: 1,
-  error: 2
-};
+const LOG_LEVEL = [
+  {
+    debug: -1
+  }, {
+    info: 0
+  }, {
+    warning: 1
+  }, {
+    error: 2
+  }
+];
 Object.freeze(LOG_LEVEL);
 
 qx.Class.define("qxapp.component.widget.logger.LoggerView", {
@@ -83,7 +88,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       apply : "__applyFilters",
       nullable: false,
       check : "Number",
-      init: LOG_LEVEL.debug
+      init: LOG_LEVEL[0].debug
     },
 
     caseSensitive: {
@@ -144,14 +149,24 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       const part = new qx.ui.toolbar.Part();
       const group = new qx.ui.form.RadioGroup();
-      for (const level in LOG_LEVEL) {
+      let logLevelSet = false;
+      for (let i=0; i<LOG_LEVEL.length; i++) {
+        const level = Object.keys(LOG_LEVEL[i])[0];
+        const logLevel = LOG_LEVEL[i][level];
+        if (level === "debug" && !qxapp.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+          continue;
+        }
         const label = level.charAt(0).toUpperCase() + level.slice(1);
         const button = new qx.ui.form.ToggleButton(label).set({
           appearance: "toolbar-button"
         });
-        button.logLevel = LOG_LEVEL[level];
+        button.logLevel = logLevel;
         group.add(button);
         part.add(button);
+        if (!logLevelSet) {
+          this.setLogLevel(logLevel);
+          logLevelSet = true;
+        }
       }
       group.addListener("changeValue", e => {
         this.setLogLevel(e.getData().logLevel);
@@ -182,6 +197,8 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       const resizeBehavior = colModel.getBehavior();
       resizeBehavior.setWidth(0, "15%");
       resizeBehavior.setWidth(1, "85%");
+
+      this.__applyFilters();
 
       return table;
     },
