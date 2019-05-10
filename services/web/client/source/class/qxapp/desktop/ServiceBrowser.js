@@ -155,7 +155,15 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       );
       const servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
       servCtrl.setDelegate({
-        createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
+        createItem: () => {
+          const item = new qxapp.desktop.ServiceBrowserListItem();
+          item.addListener("tap", e => {
+            // const serviceKey = item.getModel();
+            // this.__serviceSelected(serviceKey);
+            servicesList.setSelection([item]);
+          });
+          return item;
+        },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "title", null, item, id);
