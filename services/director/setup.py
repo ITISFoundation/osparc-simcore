@@ -11,10 +11,14 @@ if sys.version_info<(3, 6):
 
 
 def read_reqs( reqs_path: Path):
-    return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
+    reqs =  re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
+    # TODO: temporary excluding requirements using git
+    # https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support
+    return [r for r in reqs if not r.startswith('git')]
 
 
 install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
+    "aiohttp-apiset==0.0.0.dev0",
     "simcore-service-library==0.1.0"
 ]
 
