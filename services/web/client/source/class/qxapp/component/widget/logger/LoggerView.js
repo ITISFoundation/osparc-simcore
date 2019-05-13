@@ -212,6 +212,16 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return table;
     },
 
+    nodeSelected: function(nodeId) {
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        this.__textfield.setValue(node.getLabel());
+      } else {
+        this.__textfield.setValue("");
+      }
+    },
+
     debug: function(nodeId, msg = "") {
       this.__addLogs(nodeId, [msg], LOG_LEVEL.debug);
     },
@@ -251,7 +261,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         label = "Workbench";
       }
 
-      const nodeColor = this.__getNodesColor();
+      const nodeColor = this.__getNodesColor(nodeId);
       const msgColor = qxapp.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
       const msgLogs = [];
       for (let i=0; i<msgs.length; i++) {
