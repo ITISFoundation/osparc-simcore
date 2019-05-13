@@ -83,11 +83,27 @@ qx.Class.define("qxapp.data.Permissions", {
   members: {
     __userRole: null,
 
+    getRole() {
+      return this.__userRole;
+    },
+
     setRole(role) {
       if (!this.self().ROLES[role]) {
         return;
       }
       this.__userRole = role;
+    },
+
+    getLowerRoles(role) {
+      const lowerRoles = [];
+      for (const r in this.self().ROLES) {
+        if (r === role) {
+          break;
+        } else {
+          lowerRoles.push(r);
+        }
+      }
+      return lowerRoles;
     },
 
     __getInitPermissions: function() {
@@ -116,7 +132,10 @@ qx.Class.define("qxapp.data.Permissions", {
           "study.edge.delete"
         ],
         "tester": [
-          "services.all.read"
+          "services.all.read",
+          "preferences.role.update",
+          "study.nodestree.uuid.read",
+          "study.logger.debug.read"
         ],
         "moderator": [],
         "admin": []

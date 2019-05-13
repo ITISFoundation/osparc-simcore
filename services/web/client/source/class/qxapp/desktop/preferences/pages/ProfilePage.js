@@ -56,9 +56,24 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
-      const role = new qx.ui.form.TextField().set({
-        readOnly: true
-      });
+      let role = null;
+      if (qxapp.data.Permissions.getInstance().canDo("preferences.role.update")) {
+        role = new qx.ui.form.SelectBox();
+        const roles = qxapp.data.Permissions.getInstance().getLowerRoles();
+        for (let i=0; i<roles.length; i++) {
+          const roleItem = new qx.ui.form.ListItem(roles[i]);
+          role.add(roleItem);
+          role.setSelection([roleItem]);
+        }
+        role.addListener("changeSelection", function(e) {
+          const newRole = e.getData()[0].getLabel();
+          qxapp.data.Permissions.getInstance().setRole(newRole);
+        }, this);
+      } else {
+        role = new qx.ui.form.TextField().set({
+          readOnly: true
+        });
+      }
 
       const form = new qx.ui.form.Form();
       form.add(email, "", null, "email");
