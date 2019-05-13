@@ -21,10 +21,11 @@ from aiohttp import web
 
 from .resources import resources
 from .security import is_anonymous, remember
-from .statics import index as app_index
+from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
 
+TEMPLATE_PREFIX = "template-uuid"
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
@@ -33,8 +34,7 @@ def load_isan_template_uuids():
         data = json.load(fp)
     return [prj['uuid'] for prj in data]
 
-ALLOWED_TEMPLATE_IDS = load_isan_template_uuids()
-
+SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
@@ -97,9 +97,53 @@ async def get_authorized_user(request: web.Request) -> Dict:
     user = await db.get_user({'id': userid})
     return user
 
+# Creation of projects from templates ---
+def compose_uuid(template_uuid, user_id) -> str:
+    """ Creates a new uuid composing a project's and user ids such that
+        any template pre-assigned to a user
+
+        LIMITATION: a user cannot have multiple copies of the same template
+        TODO: cache results
+    """
+    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
+    return new_uuid
+
+def create_project_from_template(template_project, user):
+    """ Creates a copy of the template and prepares it
+        to be owned by a given user
+    """
+    from copy import deepcopy
+    from .projects.projects_models import ProjectType
+
+    user_id = user["id"]
+
+    def _replace_uuids(node):
+        if isinstance(node, str):
+            if node.startswith(TEMPLATE_PREFIX):
+                node = compose_uuid(node, user_id)
+        elif isinstance(node, list):
+            node = [_replace_uuids(item) for item in node]
+        elif isinstance(node, dict):
+            _frozen_items = tuple(node.items())
+            for key, value in _frozen_items:
+                if isinstance(key, str):
+                    if key.startswith(TEMPLATE_PREFIX):
+                        new_key = compose_uuid(key, user_id)
+                        node[new_key] = node.pop(key)
+                        key = new_key
+                node[key] = _replace_uuids(value)
+        return node
+
+    project = deepcopy(template_project)
+    project = _replace_uuids(project)
+
+    project["type"] = ProjectType.STANDARD
+    project["prj_owner"] = user["name"]
+
+    return project
 
 # TODO: from .projects import ...?
-async def copy_study_to_account(request: web.Request, project: Dict, user_id: str):
+async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
     """
         Creates a copy of the study to a given project in user's account
 
@@ -107,25 +151,26 @@ async def copy_study_to_account(request: web.Request, project: Dict, user_id: st
             - Avoids multiple copies of the same template on each account
     """
     from servicelib.application_keys import APP_DB_ENGINE_KEY
+
     from .projects.projects_models import ProjectDB as db
-    from .projects.projects_models import ProjectType
     from .projects.projects_exceptions import ProjectNotFoundError
-    from copy import deepcopy
 
     db_engine = request.app[APP_DB_ENGINE_KEY]
-    new_uuid = str( uuid.uuid5(BASE_UUID, project["uuid"] + str(user_id)) )
+
+    # assign id to copy
+    project_uuid = compose_uuid(template_project["uuid"], user["id"])
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user_id, new_uuid, db_engine)
+        await db.get_user_project(user["id"], project_uuid, db_engine)
 
     except ProjectNotFoundError:
+        # new project from template
+        project = create_project_from_template(template_project, user)
 
-        copied_project = deepcopy(project)
-        copied_project["type"] = ProjectType.STANDARD
-        copied_project["uuid"] = new_uuid
+        await db.add_project(project, user["id"], db_engine)
 
-        await db.add_project(copied_project, user_id, db_engine)
+    return project_uuid
 
 
 # -----------------------------------------------
@@ -139,17 +184,19 @@ async def access_study(request: web.Request) -> web.Response:
         -
     """
     study_id = request.match_info["id"]
-    log.debug("Requested access to study '%s' ...", study_id)
+
+    log.debug("Requested a copy of study '%s' ...", study_id)
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
+    if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
+        raise web.HTTPNotFound(reason="Requested study is not shared ['%s']" % study_id)
+
+    # TODO: should copy **any** type of project is sharable -> get_sharable_project
+    template_project = await get_template_project(request.app, study_id)
+    if not template_project:
+        raise RuntimeError("Unable to load study %s" % study_id)
 
     user = None
-    if study_id not in ALLOWED_TEMPLATE_IDS:
-        raise web.HTTPNotFound(reason="Could not find sharable study '%s'" % study_id)
-
-    project = await get_template_project(request.app, study_id)
-    assert (project is not None), "Failed to load project"
-
     is_anonymous_user = await is_anonymous(request)
     if is_anonymous_user:
         log.debug("Creating temporary user ...")
@@ -157,17 +204,29 @@ async def access_study(request: web.Request) -> web.Response:
     else:
         user = await get_authorized_user(request)
 
-    log.info("Ensuring study %s in account owned by %s", project['name'], user["email"])
-    user_id = user["id"]
-    await copy_study_to_account(request, project, user_id)
+    if not user:
+        raise RuntimeError("Unable to start user session")
 
-    response = await app_index(request)
+
+    log.debug("Copying study %s to %s account ...", template_project['name'], user["email"])
+    copied_project_id = await copy_study_to_account(request, template_project, user)
+
+    log.debug("Coped study %s to %s account as %s",
+        template_project['name'], user["email"], copied_project_id)
+
+
+    try:
+        loc = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
+    except KeyError:
+        raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
+
+    response = web.HTTPFound(location=loc)
     if is_anonymous_user:
-        log.info("Auto login for anonymous users")
+        log.debug("Auto login for anonymous user %s", user["name"])
         identity = user['email']
         await remember(request, response, identity)
 
-    return response
+    raise response
 
 
 

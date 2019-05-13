@@ -16,7 +16,7 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip==19.0.3 wheel setuptools && pip3 --version
+        pip install --upgrade pip~=19.1.1 wheel setuptools && pip3 --version
         pushd services/director; pip3 install -r requirements/ci.txt; popd
     fi
 }

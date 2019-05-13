@@ -92,7 +92,9 @@ qx.Class.define("qxapp.auth.Manager", {
       });
 
       request.addListener("success", function(e) {
-        const {data} = e.getTarget().getResponse();
+        const {
+          data
+        } = e.getTarget().getResponse();
 
         // TODO: validate data against specs???
         // TODO: activate tokens!?
