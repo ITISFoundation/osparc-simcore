@@ -370,7 +370,7 @@ class Sidecar:
 
     def inspect(self, celery_task, user_id, project_id, node_id):
         log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
-        # import pdb; pdb.set_trace()
+
         next_task_nodes = []
         do_run = False
 

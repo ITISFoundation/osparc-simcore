@@ -2,16 +2,16 @@
   "targets": [
     {
       "type": "source",
-      "outputPath": "source-output",
+      "outputPath": "source-output"
+    },
+    {
+      "type": "build",
+      "outputPath": "build-output",
       "bundle": {
         "include": [
           "qx.*"
         ]
       }
-    },
-    {
-      "type": "build",
-      "outputPath": "build-output"
     }
   ],
   "defaultTarget": "source",

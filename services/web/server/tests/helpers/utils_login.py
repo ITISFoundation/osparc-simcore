@@ -1,3 +1,5 @@
+import re
+
 from aiohttp import web
 from yarl import URL
 
@@ -6,8 +8,6 @@ from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 from utils_assert import assert_status
-
-import re
 
 TEST_MARKS = re.compile(r'TEST (\w+):(.*)')
 
