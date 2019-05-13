@@ -1,11 +1,16 @@
+import logging
 import os
 from contextlib import contextmanager
 
+import pytest
 import requests
 import sqlalchemy as sa
 
 import simcore_service_storage_sdk
 from simcore_service_storage.models import FileMetaData, file_meta_data
+
+log = logging.getLogger(__name__)
+
 
 DATABASE = 'aio_login_tests'
 USER = 'admin'
@@ -15,11 +20,14 @@ ACCESS_KEY = '12345678'
 SECRET_KEY = '12345678'
 
 BUCKET_NAME ="simcore-testing"
-NO_BUCKET_NAME ="NONE"
+USER_ID = '0'
 
 def has_datcore_tokens()->bool:
     token = os.environ.get("BF_API_KEY", "none")
-    return token != "none"
+    if token == "none":
+        pytest.skip("Datcore access tokens not available, skipping test")
+        return False
+    return True
 
 def is_responsive(url, code=200):
     """Check if something responds to ``url`` syncronously"""

@@ -7,14 +7,29 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+import utils
 
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 
 
 async def test_datcore_list_files(loop, python27_exec):
+    if not utils.has_datcore_tokens():
+        return
+
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
     f = await dcw.list_files()
+    print(f)
+
+async def test_datcore_ping(loop, python27_exec):
+    if not utils.has_datcore_tokens():
+        return
+
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+    pool = ThreadPoolExecutor(2)
+    dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
+    f = await dcw.ping()
     print(f)

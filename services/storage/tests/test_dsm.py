@@ -23,7 +23,7 @@ from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
-from utils import BUCKET_NAME, has_datcore_tokens
+from utils import BUCKET_NAME, has_datcore_tokens, USER_ID
 
 
 def test_mockup(dsm_mockup_db):
@@ -112,7 +112,7 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_name)),
             'bucket_name' : bucket_name,
             'file_name' : filename,
-            'user_id' : "42",
+            'user_id' : USER_ID,
             'user_name' : "starbucks",
             'location' : SIMCORE_S3_STR,
             'project_id' : project_id,
@@ -188,10 +188,12 @@ def test_datcore_fixture(datcore_testbucket):
 async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_testbucket):
     if not has_datcore_tokens():
         return
+
     utils.create_tables(url=postgres_service_url)
     dsm = dsm_fixture
     user_id = "0"
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     # the fixture creates two files
     assert len(data) == 2
 
@@ -200,7 +202,7 @@ async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_testbucket
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
     await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_uuid)
 
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     assert len(data) == 1
 
 async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_factory, dsm_fixture, datcore_testbucket):
@@ -222,14 +224,14 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 
     # given the fmd, upload to datcore
     tmp_file2 = tmp_file + ".fordatcore"
-    user_id = "0"
+    user_id = USER_ID
     down_url = await dsm.download_link(user_id, SIMCORE_S3_STR, fmd.file_uuid)
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
     await dsm.upload_file_to_datcore(user_id, tmp_file2, datcore_testbucket, fmd)
 
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
 
     # there should now be 3 files
     assert len(data) == 3
@@ -239,8 +241,8 @@ async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_file
         return
     utils.create_tables(url=postgres_service_url)
     dsm = dsm_fixture
-    user_id = "0"
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    user_id = USER_ID
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     assert len(data)
 
     fmd_to_get = data[0]
@@ -268,7 +270,7 @@ async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, m
     s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(s3_data) == 0
 
-    dc_data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    dc_data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     assert len(dc_data) == 2
     src_fmd = dc_data[0]
 
@@ -296,8 +298,8 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
 
     # the fixture should provide 2 files
     dsm = dsm_fixture
-    user_id = "0"
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    user_id = USER_ID
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     assert len(data) == 2
 
     # create temporary file and upload to s3
@@ -317,7 +319,7 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
     await dsm.copy_file(user_id=user_id, dest_location=DATCORE_STR, dest_uuid=dat_core_uuid, source_location=SIMCORE_S3_STR,
         source_uuid=fmd.file_uuid)
 
-    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
 
     # there should now be 3 files
     assert len(data) == 3
