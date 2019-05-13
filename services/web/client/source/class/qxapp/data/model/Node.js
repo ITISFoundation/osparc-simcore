@@ -33,6 +33,7 @@
  *   let node = new qxapp.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
+ *   node.startInteractiveNode();
  * </pre>
  */
 
@@ -323,8 +324,6 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     populateNodeData: function(nodeData) {
-      this.__startInteractiveNode();
-
       if (nodeData) {
         if (nodeData.label) {
           this.setLabel(nodeData.label);
@@ -629,7 +628,7 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __startInteractiveNode: function() {
+    startInteractiveNode: function() {
       if (this.isDynamic()) {
         let retrieveBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/spinner/32"
