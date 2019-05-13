@@ -62,7 +62,7 @@ RUN apk add --virtual .build-deps \
 
 
 RUN $SC_PIP install --upgrade \
-      pip \
+      pip~=19.1.1  \
       wheel \
       setuptools
 

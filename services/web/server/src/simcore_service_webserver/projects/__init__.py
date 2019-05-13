@@ -1,25 +1,25 @@
 """ projects management subsystem
 
-
+TODO: now they are called 'studies'
 """
 import asyncio
 import logging
 from pprint import pformat
 
-from aiohttp import web
-from tenacity import retry, wait_fixed, stop_after_attempt, before_sleep_log
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from servicelib.application_keys import APP_CONFIG_KEY, APP_JSONSCHEMA_SPECS_KEY
+from aiohttp import web
+from servicelib.application_keys import (APP_CONFIG_KEY,
+                                         APP_JSONSCHEMA_SPECS_KEY)
 from servicelib.jsonschema_specs import create_jsonschema_specs
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
 
-from .config import CONFIG_SECTION_NAME
-from . import nodes_handlers, projects_handlers
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+from . import nodes_handlers, projects_handlers
+from .config import CONFIG_SECTION_NAME
 from .projects_fakes import Fake
-
 
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
@@ -47,9 +47,11 @@ def _create_routes(prefix, handlers_module, specs, disable_login):
 @retry( wait=wait_fixed(RETRY_WAIT_SECS),
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(logger, logging.INFO) )
-async def get_specs(location):
+async def _get_specs(location):
     specs = await create_jsonschema_specs(location)
     return specs
+
+
 
 def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
     """
@@ -71,7 +73,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
-    # routes
+    # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     routes = _create_routes("/projects", projects_handlers, specs, disable_login)
@@ -83,7 +85,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
     # get project jsonschema definition
     project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
-    specs = loop.run_until_complete( get_specs(project_schema_location) )
+    specs = loop.run_until_complete( _get_specs(project_schema_location) )
     if APP_JSONSCHEMA_SPECS_KEY in app:
         app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = specs
     else:

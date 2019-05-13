@@ -26,6 +26,7 @@ from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .users import setup_users
+from .studies_access import setup_studies_access
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ def create_application(config: dict):
     setup_storage(app)
     setup_users(app)
     setup_projects(app, enable_fake_data=True) # TODO: deactivate fakes i.e. debug=testing
+    setup_studies_access(app)
 
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
