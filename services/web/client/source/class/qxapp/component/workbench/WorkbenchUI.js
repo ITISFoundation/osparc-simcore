@@ -229,17 +229,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
-
-      const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
-        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
-        for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
-        }
+      const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
+      if (!node) {
+        return;
       }
 
-      let nodeUI = this.__createNodeUI(node.getNodeId());
+      const nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -308,9 +303,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
-    __createEdgeUI: function(node1Id, node2Id, linkId) {
-      let link = this.getWorkbench().createEdge(linkId, node1Id, node2Id);
-      if (this.__linkRepresetationExists(link)) {
+    __createEdgeUI: function(node1Id, node2Id, edgeId) {
+      const edge = this.getWorkbench().createEdge(edgeId, node1Id, node2Id);
+      if (!edge) {
+        return null;
+      }
+      if (this.__edgeRepresetationExists(edge)) {
         return null;
       }
 
@@ -330,27 +328,27 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+        const edgeRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-        let linkUI = new qxapp.component.workbench.EdgeUI(link, linkRepresentation);
-        this.__edgesUI.push(linkUI);
+        const edgeUI = new qxapp.component.workbench.EdgeUI(edge, edgeRepresentation);
+        this.__edgesUI.push(edgeUI);
 
-        linkUI.getRepresentation().node.addEventListener("click", e => {
+        edgeUI.getRepresentation().node.addEventListener("click", e => {
           // this is needed to get out of the context of svg
-          linkUI.fireDataEvent("linkSelected", linkUI.getEdgeId());
+          edgeUI.fireDataEvent("edgeSelected", edgeUI.getEdgeId());
           e.stopPropagation();
         }, this);
 
-        linkUI.addListener("linkSelected", e => {
-          this.__selectedItemChanged(linkUI.getEdgeId());
+        edgeUI.addListener("edgeSelected", e => {
+          this.__selectedItemChanged(edgeUI.getEdgeId());
         }, this);
 
-        return linkUI;
+        return edgeUI;
       }
       return null;
     },
 
-    __linkRepresetationExists: function(edge) {
+    __edgeRepresetationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];
         if (edgeUI.getEdge().getEdgeId() === edge.getEdgeId()) {
@@ -362,7 +360,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __createDragDropMechanism: function(nodeUI) {
       const evType = "pointermove";
-      nodeUI.addListener("linkDragStart", e => {
+      nodeUI.addListener("edgeDragStart", e => {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
@@ -389,7 +387,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         );
       }, this);
 
-      nodeUI.addListener("linkDragOver", e => {
+      nodeUI.addListener("edgeDragOver", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -411,7 +409,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         }
       }, this);
 
-      nodeUI.addListener("linkDrop", e => {
+      nodeUI.addListener("edgeDrop", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -439,7 +437,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         }
       }, this);
 
-      nodeUI.addListener("linkDragEnd", e => {
+      nodeUI.addListener("edgeDragEnd", e => {
         let data = e.getData();
         let dragNodeId = data.nodeId;
 
@@ -542,13 +540,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return null;
     },
 
-    __createEdgeBetweenNodes: function(from, to, linkId) {
-      let node1Id = from.nodeUuid;
-      let node2Id = to.nodeUuid;
-      this.__createEdgeUI(node1Id, node2Id, linkId);
+    __createEdgeBetweenNodes: function(from, to, edgeId) {
+      const node1Id = from.nodeUuid;
+      const node2Id = to.nodeUuid;
+      this.__createEdgeUI(node1Id, node2Id, edgeId);
     },
 
-    __createEdgeBetweenNodesAndInputNodes: function(from, to, linkId) {
+    __createEdgeBetweenNodesAndInputNodes: function(from, to, edgeId) {
       const inputNodes = this.__inputNodesLayout.getChildren();
       // Children[0] is the title
       for (let i = 1; i < inputNodes.length; i++) {
@@ -556,20 +554,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         if (inputNodeId === from.nodeUuid) {
           let node1Id = from.nodeUuid;
           let node2Id = to.nodeUuid;
-          this.__createEdgeUI(node1Id, node2Id, linkId);
+          this.__createEdgeUI(node1Id, node2Id, edgeId);
         }
       }
     },
 
-    __createEdgeToExposedOutputs: function(from, to, linkId) {
-      let node1Id = from.nodeUuid;
-      let node2Id = to.nodeUuid;
-      this.__createEdgeUI(node1Id, node2Id, linkId);
-    },
-
     __updatePosition: function(nodeUI) {
       const cBounds = nodeUI.getCurrentBounds();
-      let node = this.getWorkbench().getNode(nodeUI.getNodeId());
+      const node = this.getWorkbench().getNode(nodeUI.getNodeId());
       node.setPosition(cBounds.left, cBounds.top);
     },
 
@@ -676,9 +668,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return null;
     },
 
-    __getEdgeUI: function(linkId) {
+    __getEdgeUI: function(edgeId) {
       for (let i = 0; i < this.__edgesUI.length; i++) {
-        if (this.__edgesUI[i].getEdgeId() === linkId) {
+        if (this.__edgesUI[i].getEdgeId() === edgeId) {
           return this.__edgesUI[i];
         }
       }
@@ -699,12 +691,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
     },
 
-    clearEdge: function(linkId) {
-      this.__clearEdge(this.__getEdgeUI(linkId));
+    clearEdge: function(edgeId) {
+      this.__clearEdge(this.__getEdgeUI(edgeId));
     },
 
-    __removeEdge: function(link) {
-      this.fireDataEvent("removeEdge", link.getEdgeId());
+    __removeEdge: function(edge) {
+      this.fireDataEvent("removeEdge", edge.getEdgeId());
     },
 
     __removeAllEdges: function() {
@@ -735,9 +727,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
     },
 
-    __clearEdge: function(link) {
-      this.__svgWidget.removeCurve(link.getRepresentation());
-      let index = this.__edgesUI.indexOf(link);
+    __clearEdge: function(edge) {
+      this.__svgWidget.removeCurve(edge.getRepresentation());
+      let index = this.__edgesUI.indexOf(edge);
       if (index > -1) {
         this.__edgesUI.splice(index, 1);
       }
@@ -805,7 +797,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         for (const innerNodeId in innerNodes) {
           const innerNode = innerNodes[innerNodeId];
           if (innerNode.getIsOutputNode()) {
-            this.__createEdgeToExposedOutputs({
+            this.__createEdgeBetweenNodes({
               nodeUuid: innerNode.getNodeId()
             }, {
               nodeUuid: model.getNodeId()
@@ -829,7 +821,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (oldId) {
         if (this.__isSelectedItemAnEdge(oldId)) {
           const unselectedEdge = this.__getEdgeUI(oldId);
-          const unselectedColor = qxapp.theme.Color.colors["workbench-link-comp-active"];
+          const unselectedColor = qxapp.theme.Color.colors["workbench-edge-comp-active"];
           this.__svgWidget.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
@@ -837,7 +829,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge(newID)) {
         const selectedEdge = this.__getEdgeUI(newID);
-        const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
+        const selectedColor = qxapp.theme.Color.colors["workbench-edge-selected"];
         this.__svgWidget.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
