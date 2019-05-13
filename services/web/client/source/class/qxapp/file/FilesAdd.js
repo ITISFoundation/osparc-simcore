@@ -113,13 +113,13 @@ qx.Class.define("qxapp.file.FilesAdd", {
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("presginedLink", e => {
-        const presginedLinkData = e.getData();
-        // presginedLinkData.locationId;
-        // presginedLinkData.fileUuid;
+      store.addListenerOnce("presignedLink", e => {
+        const presignedLinkData = e.getData();
+        // presignedLinkData.locationId;
+        // presignedLinkData.fileUuid;
         console.log(file);
-        if (presginedLinkData.presginedLink) {
-          this.__uploadFile(file, presginedLinkData.presginedLink.link);
+        if (presignedLinkData.presignedLink) {
+          this.__uploadFile(file, presignedLinkData.presignedLink.link);
         }
       }, this);
       const download = false;
@@ -128,7 +128,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
       const nodeId = this.getNode() ? this.getNode().getNodeId() : qxapp.utils.Utils.uuidv4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
-      store.getPresginedLink(download, locationId, fileUuid);
+      store.getPresignedLink(download, locationId, fileUuid);
     },
 
     // Use XMLHttpRequest to upload the file to S3.

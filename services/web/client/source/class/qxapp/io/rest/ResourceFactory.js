@@ -32,7 +32,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
 
       // Singular resource
       let healthCheck = new qxapp.io.rest.Resource({
-        // Get token
+        // Get health check
         get: {
           method: "GET",
           url: basePath+"/"

@@ -73,6 +73,8 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
-    }
+    },
+
+    "link-button": {}
   }
 });

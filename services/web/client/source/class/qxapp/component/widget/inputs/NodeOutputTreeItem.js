@@ -78,12 +78,13 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
 
     value: {
       nullable: true,
-      apply: "_applyValue"
+      apply: "_applyValue",
+      transform: "_transformValue"
     }
   },
 
   members : {
-    __value: null,
+    __valueLabel: null,
     _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -107,6 +108,15 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
 
     _applyValue: function(value) {
       this.__valueLabel.setValue(value);
+    },
+    _transformValue: function(value) {
+      if (value.getPath) {
+        const fileName = value.getPath().split("/");
+        if (fileName.length) {
+          return fileName[fileName.length-1];
+        }
+      }
+      return value;
     }
   }
 });

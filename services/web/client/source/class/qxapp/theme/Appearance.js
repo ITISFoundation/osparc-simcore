@@ -202,6 +202,25 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         backgroundColor: "background-main-lighter+"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Buttons
+    ---------------------------------------------------------------------------
+    */
+    "link-button": {
+      include: "material-button",
+      style: (state, style) => {
+        const ret = Object.assign({}, style);
+        ret.decorator = "link-button";
+        ret.backgroundColor = "transparent";
+        ret.textColor = "text-darker";
+        if (state.hovered) {
+          ret.textColor = "text";
+        }
+        return ret;
+      }
     }
   }
 });
