@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       width: 500
     });
 
-    const scroll = new qx.ui.container.Scroll().set({
+    const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
     });
     scroll.add(sidePanel);
@@ -75,6 +75,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
+    __scrollContainer: null,
     __workbenchUI: null,
     __treeView: null,
     __extraView: null,
@@ -602,6 +603,21 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+
+      const maximizeIframeCb = msg => {
+        this.__blocker.setStyles({
+          display: msg.getData() ? "none" : "block"
+        });
+        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+      };
+
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
     }
   }
 });
