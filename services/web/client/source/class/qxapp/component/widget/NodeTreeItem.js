@@ -64,11 +64,13 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      // Add a NodeId
-      var nodeIdWidget = new qx.ui.basic.Label();
-      this.bind("nodeId", nodeIdWidget, "value");
-      nodeIdWidget.setMaxWidth(250);
-      this.addWidget(nodeIdWidget);
+      if (qxapp.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
+        // Add a NodeId
+        const nodeIdWidget = new qx.ui.basic.Label();
+        this.bind("nodeId", nodeIdWidget, "value");
+        nodeIdWidget.setMaxWidth(250);
+        this.addWidget(nodeIdWidget);
+      }
     }
   }
 });
