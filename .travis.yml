@@ -43,6 +43,46 @@ jobs:
           on:
             all_branches: true
 
+    # frontend testing ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      if: tag IS blank
+      name: front end testing
+      language: node_js
+      node_js:
+        - "10"
+      addons:
+        apt:
+          packages:
+            - libgconf-2-4
+
+      before_install:
+        - bash ops/travis/unit-testing/frontend.sh before_install
+      install:
+        - bash ops/travis/unit-testing/frontend.sh install
+      before_script:
+        - bash ops/travis/unit-testing/frontend.sh before_script
+      script:
+        - bash ops/travis/unit-testing/frontend.sh script
+      after_success:
+        - bash ops/travis/unit-testing/frontend.sh after_success
+      after_failure:
+        - bash ops/travis/unit-testing/frontend.sh after_failure
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment/pages/
+        provider: pages
+        target-branch: master
+        # Set in travis-ci.org dashboard, marked secure
+        github-token: $GH_PAGES_TOKEN
+        skip-cleanup: true
+        keep-history: false
+        local-dir: itisfoundation.github.io
+        repo: ITISFoundation/itisfoundation.github.io
+        verbose: true
+        on:
+          repo: ITISFoundation/osparc-simcore
+          branch: master
+
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
       if: tag IS blank
@@ -175,47 +215,6 @@ jobs:
         - unbuffer bash ops/travis/unit-testing/python-linting.sh after_success
       after_failure:
         - unbuffer bash ops/travis/unit-testing/python-linting.sh after_failure
-
-    # frontend testing ----------------------------------------------------------------------
-    - stage: build / unit-testing
-      if: tag IS blank
-      name: front end testing
-      language: node_js
-      node_js:
-        - "10"
-      addons:
-        apt:
-          packages:
-            - libgconf-2-4
-
-      before_install:
-        - bash ops/travis/unit-testing/frontend.sh before_install
-      install:
-        - bash ops/travis/unit-testing/frontend.sh install
-      before_script:
-        - bash ops/travis/unit-testing/frontend.sh before_script
-      script:
-        - bash ops/travis/unit-testing/frontend.sh script
-      after_success:
-        - bash ops/travis/unit-testing/frontend.sh after_success
-      after_failure:
-        - bash ops/travis/unit-testing/frontend.sh after_failure
-
-      deploy:
-        # https://docs.travis-ci.com/user/deployment/pages/
-        provider: pages
-        target-branch: master
-        # Set in travis-ci.org dashboard, marked secure
-        github-token: $GH_PAGES_TOKEN
-        skip-cleanup: true
-        keep-history: false
-        local-dir: itisfoundation.github.io
-        repo: ITISFoundation/itisfoundation.github.io
-        verbose: true
-        on:
-          repo: ITISFoundation/osparc-simcore
-          branch: master
-
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing
