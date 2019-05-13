@@ -20,9 +20,9 @@ qx.Theme.define("qxapp.theme.Color", {
   extend: osparc.theme.osparcdark.Color,
 
   colors: {
-    "workbench-link-comp-active": "#777",
-    "workbench-link-api-active": "#BBB",
-    "workbench-link-selected": "#00F",
+    "workbench-edge-comp-active": "#777",
+    "workbench-edge-api-active": "#BBB",
+    "workbench-edge-selected": "#00F",
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",
     "logger-warning-message": "#FF0",

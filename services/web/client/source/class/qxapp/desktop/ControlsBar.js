@@ -38,8 +38,6 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     this.setAppearance("sidepanel");
 
     this.__initDefault();
-
-    this.setCanStart(true);
   },
 
   events: {
@@ -98,11 +96,6 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
         this.fireEvent("retrieveInputs");
       }, this);
       return retrieveBtn;
-    },
-
-    setCanStart: function(canStart) {
-      this.__startButton.setVisibility(canStart ? "visible" : "excluded");
-      this.__stopButton.setVisibility(canStart ? "excluded" : "visible");
     }
   }
 });
