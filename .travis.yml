@@ -315,7 +315,7 @@ jobs:
           skip_cleanup: true
           script: ops/travis/deploy/production.sh
           on:
-            branch: production
+            branch: staging
             tags: true
 notifications:
   email:
