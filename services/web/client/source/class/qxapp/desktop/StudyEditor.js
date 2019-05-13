@@ -604,11 +604,19 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
-      qx.event.message.Bus.getInstance().subscribe("maximizeIframe", msg => {
+      const maximizeIframeCb = msg => {
         this.__blocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
         this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+      };
+
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
     }
   }
