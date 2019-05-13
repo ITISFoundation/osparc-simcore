@@ -50,18 +50,44 @@ qx.Class.define("qxapp.auth.Manager", {
       // TODO: check if expired??
       // TODO: request server if token is still valid (e.g. expired, etc)
       const auth = qxapp.auth.Data.getInstance().getAuth();
-      return auth !== null && auth instanceof qx.io.request.authentication.Basic;
+      return auth !== null && auth instanceof qxapp.io.request.authentication.Token;
     },
 
-    login: function(email, pass, successCbk, failCbk, context) {
-      // TODO: consider qx.promise instead of having two callbacks and a context might be nicer to work with
+    /**
+     * Function that checks if there is a token and validates it aginst the server. It executes a callback depending on the result.
+     *
+     * @param {Function} successCb Callback function to be called if the token validation succeeds.
+     * @param {Function} errorCb Callback function to be called if the token validation fails or some other error occurs.
+     * @param {Object} ctx Context that will be used inside the callback functions (this).
+     */
+    validateToken: function(successCb, errorCb, ctx) {
+      if (qxapp.auth.Data.getInstance().isLogout()) {
+        errorCb.call(ctx);
+      } else {
+        const request = new qxapp.io.request.ApiRequest("/me", "GET");
+        request.addListener("success", e => {
+          if (e.getTarget().getResponse().error) {
+            errorCb.call(ctx);
+          } else {
+            this.__loginUser(e.getTarget().getResponse().data.login);
+            successCb.call(ctx);
+          }
+        });
+        request.addListener("statusError", e => {
+          errorCb.call(ctx);
+        });
+        request.send();
+      }
+    },
+
+    login: function(email, password, successCbk, failCbk, context) {
+      // TODO: consider qx.promise instead of having two callbacks an d a context might be nicer to work with
 
       let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
       request.set({
-        authentication: new qx.io.request.authentication.Basic(email, pass),
         requestData: {
-          "email": email,
-          "password": pass
+          email,
+          password
         }
       });
 
@@ -72,7 +98,7 @@ qx.Class.define("qxapp.auth.Manager", {
 
         // TODO: validate data against specs???
         // TODO: activate tokens!?
-        this.__loginUser(email, data.token || "fake token");
+        this.__loginUser(email);
         successCbk.call(context, data);
       }, this);
 
@@ -82,6 +108,8 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     logout: function() {
+      const request = new qxapp.io.request.ApiRequest("/auth/logout", "GET");
+      request.send();
       this.__logoutUser();
       this.fireEvent("logout");
     },
@@ -141,14 +169,14 @@ qx.Class.define("qxapp.auth.Manager", {
       request.send();
     },
 
-    __loginUser: function(email, token) {
-      qxapp.auth.Data.getInstance().setToken(token);
+    __loginUser: function(email) {
       qxapp.auth.Data.getInstance().setEmail(email);
+      qxapp.auth.Data.getInstance().setToken(email);
     },
 
     __logoutUser: function() {
-      qxapp.auth.Data.getInstance().resetToken();
       qxapp.auth.Data.getInstance().resetEmail();
+      qxapp.auth.Data.getInstance().resetToken();
     },
 
     __bindDefaultSuccessCallback: function(request, successCbk, context) {
