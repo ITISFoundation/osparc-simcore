@@ -34,7 +34,7 @@
 qx.Class.define("qxapp.desktop.Dashboard", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox());
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     qxapp.wrapper.JsonTreeViewer.getInstance().init();
 
     let leftSpacer = new qx.ui.core.Spacer(60);
-    let mainView = this.__createMainViewLayout();
+    let mainView = this.__createMainViewLayout(studyId);
     let rightSpacer = new qx.ui.core.Spacer(60);
 
     this._add(leftSpacer);
@@ -70,7 +70,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       return this.__dataManager;
     },
 
-    __createMainViewLayout: function() {
+    __createMainViewLayout: function(studyId) {
       let tabView = new qx.ui.tabview.TabView();
 
       [
@@ -81,7 +81,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
         let tabPage = new qx.ui.tabview.Page(tuple[0]);
         tabPage.setLayout(new qx.ui.layout.VBox());
 
-        let viewLayout = tuple[1].call(this);
+        let viewLayout = tuple[1].call(this, studyId);
         let scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView, {
@@ -94,8 +94,8 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       return tabView;
     },
 
-    __createStudiesView: function() {
-      let studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser();
+    __createStudiesView: function(studyId) {
+      let studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser(studyId);
       return studiesView;
     },
 

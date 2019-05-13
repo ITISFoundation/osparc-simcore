@@ -194,8 +194,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       const logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
-        const app = qx.core.Init.getApplication();
-        app.logout();
+        qx.core.Init.getApplication().logout();
       });
 
       menu.add(preferences);

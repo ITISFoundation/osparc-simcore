@@ -24,7 +24,7 @@
  * - Minimal layout and apperance is delegated to the selected theme
  */
 
-qx.Class.define("qxapp.auth.ui.LoginPage", {
+qx.Class.define("qxapp.auth.ui.LoginView", {
   extend: qxapp.auth.core.BaseAuthPage,
   include: [
     qxapp.auth.core.MAuth
@@ -97,9 +97,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
 
       //  create account | forgot password? links
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        separator: "main"
-      }));
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
         this.fireEvent("toRegister");
@@ -113,7 +111,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         grp.add(btn.set({
           center: true
         }), {
-          flex: 1
+          width: "50%"
         });
       });
 
