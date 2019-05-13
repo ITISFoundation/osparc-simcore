@@ -50,9 +50,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
     __actionButton: null,
     // override
     _createContentElement : function() {
-      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource()).set({
-        zIndex: 1000
-      });
+      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
       iframe.addListener("load", e => {
         this.fireEvent("load");
       });
@@ -66,7 +64,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
         top:-10000
       });
       let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20").set({
-        zIndex: 1001,
+        zIndex: 20,
         backgroundColor: "transparent",
         decorator: null
       });
@@ -75,6 +73,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       actionButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
+        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
       }, this);
       appRoot.add(actionButton);
       standin.addListener("appear", e => {

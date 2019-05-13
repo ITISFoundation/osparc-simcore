@@ -3,8 +3,10 @@
 """
 import hashlib
 import os
+import string
 import sys
 from pathlib import Path
+from secrets import choice
 from typing import Iterable, List
 
 from yarl import URL
@@ -83,3 +85,51 @@ def gravatar_hash(email):
 def gravatar_url(gravatarhash, size=100, default='identicon', rating='g') -> URL:
     url = URL('https://secure.gravatar.com/avatar/%s' % gravatarhash)
     return url.with_query(s=size, d=default, r=rating)
+
+
+def generate_password(length: int=8, more_secure: bool=False) -> str:
+    """ generate random passord
+
+    :param length: password length, defaults to 8
+    :type length: int, optional
+    :param more_secure: if True it adds at least one lowercase, one uppercase and three digits, defaults to False
+    :type more_secure: bool, optional
+    :return: password
+    :rtype: str
+    """
+    # Adapted from https://docs.python.org/3/library/secrets.html#recipes-and-best-practices
+    alphabet = string.ascii_letters + string.digits
+
+    if more_secure:
+        # At least one lowercase, one uppercase and three digits
+        while True:
+            password = ''.join(choice(alphabet) for i in range(length))
+            if (any(c.islower() for c in password)
+                and any(c.isupper() for c in password)
+                and sum(c.isdigit() for c in password) >= 3):
+                break
+    else:
+        password = ''.join(choice(alphabet) for i in range(length))
+
+    return password
+
+
+def generate_passphrase(number_of_words=4):
+    # Adapted from https://docs.python.org/3/library/secrets.html#recipes-and-best-practices
+    words = load_words()
+    passphrase = ' '.join(choice(words) for i in range(number_of_words))
+    return passphrase
+
+
+def load_words():
+    """
+        ONLY in linux systems
+
+    :return: a list of words
+    :rtype: list of str
+    """
+    # BUG: alpine does not have this file. Get from https://users.cs.duke.edu/~ola/ap/linuxwords in container
+    assert ('linux' in sys.platform), "Function can only run on Linux systems."
+    with open('/usr/share/dict/words') as f:
+        words = [word.strip() for word in f]
+    return words

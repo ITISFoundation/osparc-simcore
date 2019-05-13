@@ -67,7 +67,19 @@ qx.Class.define("qxapp.Application", {
         this.__restart();
       }, this);
 
-      this.__restart();
+      this.__initRouting();
+    },
+
+    __initRouting: function() {
+      // Route: /#/study/{id}
+      // TODO: PC -> IP consider regex for uuid, i.e. /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/ ???
+      let result = /#\/study\/([0-9a-zA-Z\-]+)/.exec(window.location.hash);
+      if (result) {
+        qxapp.utils.Utils.cookie.deleteCookie("user");
+        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[1]), this.__loadLoginPage, this);
+      } else {
+        this.__restart();
+      }
     },
 
     __restart: function() {
@@ -78,33 +90,35 @@ qx.Class.define("qxapp.Application", {
         isLogged = true;
       }
 
-      let view = null;
-      let options = null;
-
       if (isLogged) {
-        this.__connectWebSocket();
-        view = new qxapp.desktop.LayoutManager();
-        options = {
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0
-        };
-        this.__loadView(view, options);
+        this.__loadMainPage();
       } else {
-        this.__disconnectWebSocket();
-        view = new qxapp.auth.MainView();
-        view.addListener("done", function(msg) {
-          this.__restart();
-        }, this);
-        options = {
-          top: "10%",
-          bottom: 0,
-          left: 0,
-          right: 0
-        };
-        this.__loadView(view, options);
+        qxapp.auth.Manager.getInstance().validateToken(this.__loadMainPage, this.__loadLoginPage, this);
       }
+    },
+
+    __loadLoginPage: function() {
+      this.__disconnectWebSocket();
+      const view = new qxapp.auth.LoginPage();
+      view.addListener("done", function(msg) {
+        this.__restart();
+      }, this);
+      this.__loadView(view, {
+        top: "10%",
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+    },
+
+    __loadMainPage: function(studyId) {
+      this.__connectWebSocket();
+      this.__loadView(new qxapp.desktop.MainPage(studyId), {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
     },
 
     __loadView: function(view, options) {

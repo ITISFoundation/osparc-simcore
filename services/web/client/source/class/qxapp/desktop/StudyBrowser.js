@@ -38,7 +38,7 @@
 qx.Class.define("qxapp.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base(arguments);
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
@@ -63,6 +63,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         iframe.dispose();
         this.__createStudiesLayout();
         this.__createCommandEvents();
+        if (studyId) {
+          this.__createStudy(studyId);
+        }
       }
     }, this);
     userTimer.start();
@@ -146,9 +149,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __newStudyBtnClkd: function() {
-      if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create", true)) {
-        return;
-      }
       if (this.__creatingNewStudy) {
         return;
       }
@@ -248,7 +248,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createUserStudyList: function() {
       // layout
-      let usrLst = this.__userStudyList = this.__creteStudyListLayout();
+      let usrLst = this.__userStudyList = this.__createStudyListLayout();
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__templateStudyList.resetSelection();
@@ -293,7 +293,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createTemplateStudyList: function() {
       // layout
-      let tempList = this.__templateStudyList = this.__creteStudyListLayout();
+      let tempList = this.__templateStudyList = this.__createStudyListLayout();
       tempList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__userStudyList.resetSelection();
@@ -365,7 +365,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       studyCtr.setDelegate(delegate);
     },
 
-    __creteStudyListLayout: function() {
+    __createStudyListLayout: function() {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,

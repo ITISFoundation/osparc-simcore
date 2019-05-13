@@ -195,12 +195,15 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       // table
       const table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
         selectable: true,
-        statusBarVisible: false
+        statusBarVisible: false,
+        showCellFocusIndicator: false
       });
       const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Html());
-      const resizeBehavior = colModel.getBehavior();
+      colModel.setDataCellRenderer(1, new qxapp.ui.table.cellrenderer.Html().set({
+        defaultCellStyle: "user-select: text"
+      }));
+      let resizeBehavior = colModel.getBehavior();
       resizeBehavior.setWidth(0, "15%");
       resizeBehavior.setWidth(1, "85%");
 
