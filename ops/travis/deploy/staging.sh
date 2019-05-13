@@ -5,7 +5,7 @@ IFS=$'\n\t'
 
 # pull the tagged master build
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG="${TRAVIS_TAG}"
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 make pull
 
 # show current images on system

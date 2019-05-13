@@ -19,7 +19,11 @@ else
         if [ "${TRAVIS_BRANCH}" = "master" ]; then
             # this is master branch and here we use a specific name to prevent naming colision
             # with the master-latest build
-            image_tag="build"
+            image_tag="${TRAVIS_BRANCH}-testbuild"
+        elif [ "${TRAVIS_BRANCH}" = "staging" ]; then
+            # this is staging branch and here we use a specific name to prevent naming colision
+            # with the staging-latest build
+            image_tag="${TRAVIS_BRANCH}-testbuild"
         else
             image_tag=${TRAVIS_BRANCH}
         fi

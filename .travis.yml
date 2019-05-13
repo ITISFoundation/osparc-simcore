@@ -21,7 +21,7 @@ jobs:
     # build images ----------------------------------------------------------------------
     - stage: build / unit-testing
       # in pull request we do not have credentials to push, so this is useless
-      if: NOT type = pull_request AND NOT branch =~ /^(staging|production)$/
+      if: NOT type = pull_request AND tag IS blank
       name: build simcore images
       sudo: required
       before_install:
@@ -45,7 +45,7 @@ jobs:
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: webserver
       language: python
       python:
@@ -67,7 +67,7 @@ jobs:
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: director
       language: python
       python:
@@ -89,7 +89,7 @@ jobs:
 
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: simcore-sdk
       language: python
       python:
@@ -111,7 +111,7 @@ jobs:
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: storage
       language: python
       python:
@@ -135,7 +135,7 @@ jobs:
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: apihub
       language: python
       python:
@@ -157,7 +157,7 @@ jobs:
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: python linting
       language: python
       python:
@@ -178,7 +178,7 @@ jobs:
 
     # frontend testing ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: front end testing
       language: node_js
       node_js:
@@ -219,7 +219,7 @@ jobs:
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: webserver in swarm
       language: python
       python:
@@ -241,7 +241,7 @@ jobs:
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       name: simcore-sdk in swarm
       language: python
       python:
@@ -262,7 +262,7 @@ jobs:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk.sh after_failure
 
     - stage: system-testing
-      if: NOT branch =~ /^(staging|production)$/
+      if: tag IS blank
       sudo: required
       language: python
       python:
@@ -292,7 +292,7 @@ jobs:
           skip_cleanup: true
           script: bash ops/travis/deploy/master.sh
           on:
-            branch: master            
+            branch: master
     - stage: deployment
       name: staging
       if: branch = staging
@@ -305,10 +305,9 @@ jobs:
           script: bash ops/travis/deploy/staging.sh
           on:
             branch: staging
-            tags: true
     - stage: deployment
       name: production
-      if: branch = production
+      if: branch = staging
       git:
         depth: false
       script: echo "Deploy production"
