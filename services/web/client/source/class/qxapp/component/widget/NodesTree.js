@@ -115,7 +115,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       }, this);
       let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
-        this.__renameNode();
+        this.__openItemRenamer();
       }, this);
       part2.add(deleteButton);
       part2.add(renameButton);
@@ -236,19 +236,21 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
-    __renameNode: function() {
-      let selectedItem = this.__getSelection();
+    __openItemRenamer: function() {
+      const selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;
       }
 
-      let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+      const treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
       treeItemRenamer.addListener("labelChanged", e => {
         const data = e.getData();
         const newLabel = data.newLabel;
         const nodeId = selectedItem.getNodeId();
-        let node = this.getWorkbench().getNode(nodeId);
-        node.setLabel(newLabel);
+        const node = this.getWorkbench().getNode(nodeId);
+        if (node) {
+          node.renameNode(newLabel);
+        }
       }, this);
       const bounds = this.getLayoutParent().getContentLocation();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
@@ -274,7 +276,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       }, this);
       this.addListener("keypress", function(keyEvent) {
         if (keyEvent.getKeyIdentifier() === "F2") {
-          this.__renameNode();
+          this.__openItemRenamer();
         }
       }, this);
     }

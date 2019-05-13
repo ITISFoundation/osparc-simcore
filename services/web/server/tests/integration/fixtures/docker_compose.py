@@ -66,12 +66,13 @@ def docker_compose_file(request, temp_folder, services_docker_compose, devel_env
     """ Overrides pytest-docker fixture
 
     """
-    core_services = getattr(request.module, 'core_services', [])
+    core_services = getattr(request.module, 'core_services', []) # TODO: PC->SAN could also be defined as a fixture (as with docker_compose)
     docker_compose_path = temp_folder / 'docker-compose.yml'
-    # docker_compose_path = tmp_path / 'docker-compose.yml'
+
     _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
 
     yield Path(docker_compose_path)
+
     # cleanup
     # docker_compose_path.unlink()
 
@@ -86,6 +87,7 @@ def tools_docker_compose_file(request, temp_folder, tools_docker_compose, devel_
     _recreate_compose_file(tool_services, tools_docker_compose, docker_compose_path, devel_environ)
 
     yield Path(docker_compose_path)
+
     # cleanup
     # Path(docker_compose_path).unlink()
 

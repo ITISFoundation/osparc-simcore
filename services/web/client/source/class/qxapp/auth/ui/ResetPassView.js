@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("qxapp.auth.ui.ResetPassPage", {
+qx.Class.define("qxapp.auth.ui.ResetPassView", {
   extend: qxapp.auth.core.BaseAuthPage,
 
   /*

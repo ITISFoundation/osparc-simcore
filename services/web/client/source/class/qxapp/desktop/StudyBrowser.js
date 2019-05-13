@@ -38,7 +38,7 @@
 qx.Class.define("qxapp.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base(arguments);
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
@@ -63,6 +63,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         iframe.dispose();
         this.__createStudiesLayout();
         this.__createCommandEvents();
+        if (studyId) {
+          this.__createStudy(studyId);
+        }
       }
     }, this);
     userTimer.start();
@@ -245,7 +248,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createUserStudyList: function() {
       // layout
-      let usrLst = this.__userStudyList = this.__creteStudyListLayout();
+      let usrLst = this.__userStudyList = this.__createStudyListLayout();
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__templateStudyList.resetSelection();
@@ -268,37 +271,29 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       // resources
       this.__userStudyList.removeAll();
 
-      let resources = this.__studyResources.projects;
+      const resources = this.__studyResources.projects;
 
       resources.addListenerOnce("getSuccess", e => {
         let userStudyList = e.getRequest().getResponse().data;
-        let userStudyArrayModel = this.__getStudyArrayModel(userStudyList);
-        userStudyArrayModel.unshift(qx.data.marshal.Json.createModel({
-          name: this.tr("New Study"),
-          thumbnail: "@FontAwesome5Solid/plus-circle/80",
-          uuid: null,
-          lastChangeDate: null,
-          prjOwner: null
-        }));
-        // controller
-        let studyCtr = new qx.data.controller.List(userStudyArrayModel, this.__userStudyList, "name");
-        const fromTemplate = false;
-        let delegate = this.__getDelegate(fromTemplate, this.__userStudyList);
-        studyCtr.setDelegate(delegate);
+        this.__setStudyList(userStudyList);
       }, this);
 
       resources.addListener("getError", e => {
         console.error(e);
       }, this);
 
-      resources.get();
+      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
+        resources.get();
+      } else {
+        this.__setStudyList([]);
+      }
 
       this.__itemSelected(null);
     },
 
     __createTemplateStudyList: function() {
       // layout
-      let tempList = this.__templateStudyList = this.__creteStudyListLayout();
+      let tempList = this.__templateStudyList = this.__createStudyListLayout();
       tempList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__userStudyList.resetSelection();
@@ -316,38 +311,61 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       // resources
       this.__templateStudyList.removeAll();
 
-      let resources = this.__studyResources.templates;
+      const resources = this.__studyResources.templates;
 
       resources.addListenerOnce("getSuccess", e => {
-        let tempStudyList = e.getRequest().getResponse().data;
-        let tempFilteredStudyList = [];
+        const tempStudyList = e.getRequest().getResponse().data;
+        const tempFilteredStudyList = [];
         for (let i=0; i<tempStudyList.length; i++) {
           // FIXME: Backend should do the filtering
           if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("test")) {
+          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
             continue;
           }
           tempFilteredStudyList.push(tempStudyList[i]);
         }
-
-        let tempStudyArrayModel = this.__getStudyArrayModel(tempFilteredStudyList);
-        // controller
-        let studyCtr = new qx.data.controller.List(tempStudyArrayModel, this.__templateStudyList, "name");
-        const fromTemplate = true;
-        let delegate = this.__getDelegate(fromTemplate, this.__templateStudyList);
-        studyCtr.setDelegate(delegate);
+        this.__setTemplateList(tempFilteredStudyList);
       }, this);
 
       resources.addListener("getError", e => {
         console.error(e);
       }, this);
 
-      resources.get();
+      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
+        resources.get();
+      } else {
+        this.__setTemplateList([]);
+      }
 
       this.__itemSelected(null);
     },
 
-    __creteStudyListLayout: function() {
+    __setStudyList: function(userStudyList) {
+      const userStudyArrayModel = this.__getStudyArrayModel(userStudyList);
+      userStudyArrayModel.unshift(qx.data.marshal.Json.createModel({
+        name: this.tr("New Study"),
+        thumbnail: "@FontAwesome5Solid/plus-circle/80",
+        uuid: null,
+        lastChangeDate: null,
+        prjOwner: null
+      }));
+      // controller
+      const studyCtr = new qx.data.controller.List(userStudyArrayModel, this.__userStudyList, "name");
+      const fromTemplate = false;
+      const delegate = this.__getDelegate(fromTemplate, this.__userStudyList);
+      studyCtr.setDelegate(delegate);
+    },
+
+    __setTemplateList: function(tempStudyList) {
+      const tempStudyArrayModel = this.__getStudyArrayModel(tempStudyList);
+      // controller
+      const studyCtr = new qx.data.controller.List(tempStudyArrayModel, this.__templateStudyList, "name");
+      const fromTemplate = true;
+      const delegate = this.__getDelegate(fromTemplate, this.__templateStudyList);
+      studyCtr.setDelegate(delegate);
+    },
+
+    __createStudyListLayout: function() {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
@@ -380,7 +398,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           item.addListener("tap", e => {
             const studyUuid = item.getModel();
             if (studyUuid) {
-              list.setSelection([item]); // eslint-disable-line no-underscore-dangle
+              list.setSelection([item]);
             } else {
               that.__newStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
