@@ -316,7 +316,7 @@ jobs:
           on:
             all_branches: true
             tags: true
-            condition: $TRAVIS_TAG =~ ^v[1-9][0-9]*.[0-9]+.[0-9]+$
+            condition: $TRAVIS_TAG =~ ^staging-\d{4}-[01][1-9]-[0123]\d.\d+.\b[0-9a-f]{5,40}\b$
 notifications:
   email:
     on_success: never
