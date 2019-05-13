@@ -58,6 +58,13 @@ qx.Theme.define("qxapp.theme.Font", {
       size: 12,
       family: ["Roboto"],
       color: "text"
+    },
+
+    "text-12-italic": {
+      size: 12,
+      family: ["Roboto"],
+      color: "text",
+      italic: true
     }
   }
 });

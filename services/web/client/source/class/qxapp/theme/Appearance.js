@@ -243,6 +243,32 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         backgroundColor: "background-main-lighter+"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Jumbo
+    ---------------------------------------------------------------------------
+    */
+    "jumbo": {
+      include: "material-button",
+      alias: "material-button",
+      style: (state, styles) => {
+        styles.padding = 8;
+        return styles;
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      ServiceBrowser
+    ---------------------------------------------------------------------------
+    */
+    "service-browser": {
+      style: state => ({
+        padding: 8,
+        decorator: "service-browser"
+      })
     }
   }
 });

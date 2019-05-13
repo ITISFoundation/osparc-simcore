@@ -73,6 +73,13 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
+    },
+
+    "service-browser": {
+      style: {
+        width: 1,
+        color: "material-button-background"
+      }
     }
   }
 });

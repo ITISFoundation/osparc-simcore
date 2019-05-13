@@ -87,6 +87,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __contextNodeId: null,
     __contextPort: null,
     __versionsBox: null,
+    __serviceBrowser: null,
 
     __createFilterLayout: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
@@ -168,6 +169,15 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
       // make every input in the textfield update the controller
       this.__textfield.bind("input", filterObj, "searchString");
+
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser().set({
+        width: 568
+      });
+      const scrolledServices = new qx.ui.container.Scroll().set({
+        height: 260
+      });
+      scrolledServices.add(services);
+      return scrolledServices;
 
       return list;
     },
@@ -266,6 +276,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       let newModel = new qx.data.Array(groupedServicesList);
       this.__controller.setModel(newModel);
       this.__controller.update();
+
+      this.__serviceBrowser.setModel(newModel);
     },
 
     __changedSelection: function(serviceKey) {
