@@ -104,10 +104,17 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   },
 
   statics: {
-    addLevelColorTag: function(msg, logLevel) {
-      const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
-      const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
-      return ("<font color=" + logColor +">" + msg + "</font>");
+    getLevelColorTag: function(logLevel) {
+      for (let i=0; i<LOG_LEVEL.length; i++) {
+        const logString = Object.keys(LOG_LEVEL[i])[0];
+        const logNumber = LOG_LEVEL[i][logString];
+        if (logNumber === logLevel) {
+          const logColor = qxapp.theme.Color.colors["logger-"+logString+"-message"];
+          return logColor;
+        }
+      }
+      const logColorDef = qxapp.theme.Color.colors["logger-info-message"];
+      return logColorDef;
     },
 
     getNewColor: function() {
@@ -178,7 +185,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     __createTableLayout: function() {
       const tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
-      tableModel.setColumns(["Origin", "Message"], ["whoRich", "msgRich"]);
 
       const custom = {
         tableColumnModel : function(obj) {
@@ -223,20 +229,36 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       this.__addLogs(nodeId, [msg], LOG_LEVEL.error);
     },
 
-    __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
-      const whoRich = this.__addWhoColorTag(nodeId);
+    clearLogger: function() {
+      this.__logModel.clearTable();
+    },
 
+    __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      let label = null;
+      if (node) {
+        label = node.getLabel();
+        node.addListener("changeLabel", e => {
+          const newLabel = e.getData();
+          this.__logModel.nodeLabelChanged(nodeId, newLabel);
+          this.__updateTable();
+        }, this);
+      } else {
+        label = "Workbench";
+      }
+
+      const nodeColor = this.__getNodesColor();
+      const msgColor = qxapp.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
       const msgLogs = [];
       for (let i=0; i<msgs.length; i++) {
-        const msgRich = qxapp.component.widget.logger.LoggerView.addLevelColorTag(msgs[i], logLevel);
         const msgLog = {
-          whoRich: whoRich,
-          msgRich: msgRich,
-          msg: {
-            nodeId,
-            msg: msgs[i],
-            logLevel
-          }
+          nodeId,
+          label,
+          msg: msgs[i],
+          logLevel,
+          nodeColor,
+          msgColor
         };
         msgLogs.push(msgLog);
       }
@@ -262,21 +284,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return color;
     },
 
-    __addWhoColorTag: function(nodeId) {
-      const whoColor = this.__getNodesColor(nodeId);
-      let nodeLabel = "";
-      if (nodeId === null) {
-        nodeLabel = "Workbench";
-      } else {
-        const workbench = this.getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          nodeLabel = node.getLabel();
-        }
-      }
-      return ("<font color=" + whoColor +">" + nodeLabel + "</font>");
-    },
-
     __applyFilters: function() {
       if (this.__logModel === null) {
         return;
@@ -291,10 +298,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       const nodeId = null;
       const msg = "Logger initialized";
       this.debug(nodeId, msg);
-    },
-
-    clearLogger: function() {
-      this.__logModel.clearTable();
     }
   }
 });
