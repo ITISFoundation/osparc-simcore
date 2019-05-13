@@ -151,7 +151,7 @@ def _check_sleeper_services_completed(project_id, postgres_session):
             assert task_db.state == SUCCESS
 
 async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
-    # import pdb; pdb.set_trace()
+
     resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )

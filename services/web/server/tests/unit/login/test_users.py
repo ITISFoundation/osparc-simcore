@@ -115,7 +115,7 @@ async def test_get_profile(logged_user, client):
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    resp = await client.get(url)    
+    resp = await client.get(url)
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data['login'] == logged_user["email"]

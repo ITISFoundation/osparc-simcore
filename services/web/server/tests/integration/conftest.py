@@ -26,10 +26,16 @@ pytest_plugins = [
     "fixtures.postgres_service"
 ]
 
+log = logging.getLogger(__name__)
+
 sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
 
-log = logging.getLogger(__name__)
 API_VERSION = "v0"
+
+
+@pytest.fixture(scope='session')
+def here():
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope="module")
 def webserver_environ(request, devel_environ, services_docker_compose) -> Dict[str, str]:

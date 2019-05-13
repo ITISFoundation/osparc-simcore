@@ -80,6 +80,8 @@ qx.Theme.define("qxapp.theme.Decoration", {
         width: 1,
         color: "material-button-background"
       }
-    }
+    },
+
+    "link-button": {}
   }
 });

@@ -17,8 +17,7 @@
 
 /**
  * HTTP requests to simcore's rest API
- *
-*/
+ */
 qx.Class.define("qxapp.io.request.ApiRequest", {
   extend: qx.io.request.Xhr,
 
