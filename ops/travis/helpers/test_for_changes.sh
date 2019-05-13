@@ -12,8 +12,9 @@ IFS=$'\n\t'
 if [ ! -v TRAVIS ] || [ $TRAVIS = "false" ]; then
     CHANGES=$(git --no-pager diff --name-only FETCH_HEAD $(git merge-base FETCH_HEAD master))
 else
-    if [  "$TRAVIS_PULL_REQUEST" = "false"  ] && [ "$TRAVIS_BRANCH" = "master" ]; then
-        echo "master branch detected, it's the same as if changes were done"
+    if [  "$TRAVIS_PULL_REQUEST" = "false"  ] && \
+    ([ "$TRAVIS_BRANCH" = "master" ] || [ "$TRAVIS_BRANCH" = "staging" ]); then
+        echo "$TRAVIS_BRANCH branch detected, it's the same as if changes were done"
         exit 0
     fi
     CHANGES=$(git --no-pager diff --name-only $TRAVIS_COMMIT_RANGE)
