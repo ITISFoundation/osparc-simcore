@@ -203,7 +203,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
       menu.add(newIssueBtn);
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
+      helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
       menu.add(helpBtn);
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());

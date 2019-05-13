@@ -41,12 +41,17 @@
  * </pre>
  */
 
-const LOG_LEVEL = {
-  debug: -1,
-  info: 0,
-  warning: 1,
-  error: 2
-};
+const LOG_LEVEL = [
+  {
+    debug: -1
+  }, {
+    info: 0
+  }, {
+    warning: 1
+  }, {
+    error: 2
+  }
+];
 Object.freeze(LOG_LEVEL);
 
 qx.Class.define("qxapp.component.widget.logger.LoggerView", {
@@ -79,8 +84,9 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       apply : "__applyFilters",
       nullable: false,
       check : "Number",
-      init: LOG_LEVEL.debug
+      init: LOG_LEVEL[0].debug
     },
+
     caseSensitive: {
       nullable: false,
       check : "Boolean",
@@ -115,14 +121,24 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       const part = new qx.ui.toolbar.Part();
       const group = new qx.ui.form.RadioGroup();
-      for (let level in LOG_LEVEL) {
+      let logLevelSet = false;
+      for (let i=0; i<LOG_LEVEL.length; i++) {
+        const level = Object.keys(LOG_LEVEL[i])[0];
+        const logLevel = LOG_LEVEL[i][level];
+        if (level === "debug" && !qxapp.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+          continue;
+        }
         const label = level.charAt(0).toUpperCase() + level.slice(1);
         const button = new qx.ui.form.ToggleButton(label).set({
           appearance: "toolbar-button"
         });
-        button.logLevel = LOG_LEVEL[level];
+        button.logLevel = logLevel;
         group.add(button);
         part.add(button);
+        if (!logLevelSet) {
+          this.setLogLevel(logLevel);
+          logLevelSet = true;
+        }
       }
       group.addListener("changeValue", e => {
         this.setLogLevel(e.getData().logLevel);
@@ -155,27 +171,29 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       resizeBehavior.setWidth(0, "15%");
       resizeBehavior.setWidth(1, "85%");
 
+      this.__applyFilters();
+
       return table;
     },
 
     debug: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.debug);
+      this.__addLog(who, what, LOG_LEVEL[0].debug);
     },
 
     info: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.info);
+      this.__addLog(who, what, LOG_LEVEL[1].info);
     },
 
     infos: function(who = "System", whats = [""]) {
-      this.__addLogs(who, whats, LOG_LEVEL.info);
+      this.__addLogs(who, whats, LOG_LEVEL[1].info);
     },
 
     warn: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.warning);
+      this.__addLog(who, what, LOG_LEVEL[2].warning);
     },
 
     error: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL.error);
+      this.__addLog(who, what, LOG_LEVEL[3].error);
     },
 
     __addLog: function(who = "System", what = "", logLevel = 0) {
@@ -246,7 +264,14 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __addLevelColorTag: function(what, logLevel) {
-      const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
+      let keyStr = "info";
+      for (let i=0; i<LOG_LEVEL.length; i++) {
+        const level = Object.keys(LOG_LEVEL[i])[0];
+        if (LOG_LEVEL[i][level] === logLevel) {
+          keyStr = level;
+          break;
+        }
+      }
       const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
       return ("<font color=" + logColor +">" + what + "</font>");
     },
