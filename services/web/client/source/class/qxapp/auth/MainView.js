@@ -88,6 +88,8 @@ qx.Class.define("qxapp.auth.MainView", {
         srcPage.resetValues();
       }, this);
     });
+
+    this.__addVersionLink();
   },
 
   /*
@@ -98,5 +100,21 @@ qx.Class.define("qxapp.auth.MainView", {
 
   events: {
     "done": "qx.event.type.Data"
+  },
+
+  members: {
+    __addVersionLink: function() {
+      const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
+      if (platformVersion) {
+        const text = platformVersion.name + " v" + platformVersion.version;
+        const versionBtn = new qxapp.ui.basic.LinkLabel(text, platformVersion.url).set({
+          alignX: "center"
+        });
+        this._add(versionBtn, {
+          row: 1,
+          column: 0
+        });
+      }
+    }
   }
 });
