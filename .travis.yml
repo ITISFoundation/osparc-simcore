@@ -306,17 +306,17 @@ jobs:
             branch: staging
     - stage: deployment
       name: production
-      if: branch = staging
       git:
         depth: false
-      script: echo "Deploy production"
+      script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
           skip_cleanup: true
           script: ops/travis/deploy/production.sh
           on:
-            branch: staging
+            all_branches: true
             tags: true
+            condition: $TRAVIS_TAG =~ ^v[1-9][0-9]*.[0-9]+.[0-9]+$
 notifications:
   email:
     on_success: never
