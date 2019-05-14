@@ -17,7 +17,7 @@ Master->Master: autodeploys to master.dev
 
 Master-->>Staging: Pull Request staging1
 Staging->Staging: autodeploys to staging.io
-Note over Staging: ready for realease?
+Note over Staging: ready for release?
 
 Master->>Feature: create feature3 branch
 Note over Feature: develop feature3...
