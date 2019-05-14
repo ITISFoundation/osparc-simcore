@@ -35,9 +35,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let loggerView = new qxapp.component.widget.logger.LoggerView();
+ *   let loggerView = new qxapp.component.widget.logger.LoggerView(workbench);
  *   this.getRoot().add(loggerView);
- *   loggerView.info("Workbench", "Hello world");
+ *   loggerView.info(null, "Hello world");
  * </pre>
  */
 
@@ -57,15 +57,19 @@ Object.freeze(LOG_LEVEL);
 qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(workbench) {
     this.base();
+
+    this.set({
+      workbench
+    });
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    let filterToolbar = this.__createFilterToolbar();
+    const filterToolbar = this.__createFilterToolbar();
     this._add(filterToolbar);
 
-    let table = this.__createTableLayout();
+    const table = this.__createTableLayout();
     this._add(table, {
       flex: 1
     });
@@ -91,6 +95,37 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       nullable: false,
       check : "Boolean",
       init: false
+    },
+
+    workbench: {
+      check: "qxapp.data.model.Workbench",
+      nullable: false
+    }
+  },
+
+  statics: {
+    getLevelColorTag: function(logLevel) {
+      for (let i=0; i<LOG_LEVEL.length; i++) {
+        const logString = Object.keys(LOG_LEVEL[i])[0];
+        const logNumber = LOG_LEVEL[i][logString];
+        if (logNumber === logLevel) {
+          const logColor = qxapp.theme.Color.colors["logger-"+logString+"-message"];
+          return logColor;
+        }
+      }
+      const logColorDef = qxapp.theme.Color.colors["logger-info-message"];
+      return logColorDef;
+    },
+
+    getNewColor: function() {
+      const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
+      let luminanceText = null;
+      let color = null;
+      do {
+        color = qxapp.utils.Utils.getRandomColor();
+        luminanceText = qxapp.utils.Utils.getColorLuminance(color);
+      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
+      return color;
     }
   },
 
@@ -149,23 +184,21 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
-      let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
-      tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
+      const tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
 
-      let custom = {
+      const custom = {
         tableColumnModel : function(obj) {
           return new qx.ui.table.columnmodel.Resize(obj);
         }
       };
 
       // table
-      let table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
+      const table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false
       });
-      var colModel = table.getTableColumnModel();
+      const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(1, new qxapp.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
@@ -179,57 +212,66 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return table;
     },
 
-    debug: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL[0].debug);
+    nodeSelected: function(nodeId) {
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        this.__textfield.setValue(node.getLabel());
+      } else {
+        this.__textfield.setValue("");
+      }
     },
 
-    info: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL[1].info);
+    debug: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.debug);
     },
 
-    infos: function(who = "System", whats = [""]) {
-      this.__addLogs(who, whats, LOG_LEVEL[1].info);
+    info: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.info);
     },
 
-    warn: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL[2].warning);
+    infos: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, LOG_LEVEL.info);
     },
 
-    error: function(who = "System", what = "") {
-      this.__addLog(who, what, LOG_LEVEL[3].error);
+    warn: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.warning);
     },
 
-    __addLog: function(who = "System", what = "", logLevel = 0) {
-      const whoRich = this.__addWhoColorTag(who);
-      const whatRich = this.__addLevelColorTag(what, logLevel);
-      let msgLog = {
-        whoRich: whoRich,
-        whatRich: whatRich,
-        msg: {
-          who: who,
-          what: what,
-          logLevel: logLevel
-        }
-      };
-      this.__logModel.addRows([msgLog]);
-
-      this.__updateTable();
+    error: function(nodeId, msg = "") {
+      this.__addLogs(nodeId, [msg], LOG_LEVEL.error);
     },
 
-    __addLogs: function(who = "System", whats = [""], logLevel = 0) {
-      const whoRich = this.__addWhoColorTag(who);
+    clearLogger: function() {
+      this.__logModel.clearTable();
+    },
 
-      let msgLogs = [];
-      for (let i=0; i<whats.length; i++) {
-        const whatRich = this.__addLevelColorTag(whats[i], logLevel);
+    __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      let label = null;
+      if (node) {
+        label = node.getLabel();
+        node.addListener("changeLabel", e => {
+          const newLabel = e.getData();
+          this.__logModel.nodeLabelChanged(nodeId, newLabel);
+          this.__updateTable();
+        }, this);
+      } else {
+        label = "Workbench";
+      }
+
+      const nodeColor = this.__getNodesColor(nodeId);
+      const msgColor = qxapp.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
+      const msgLogs = [];
+      for (let i=0; i<msgs.length; i++) {
         const msgLog = {
-          whoRich: whoRich,
-          whatRich: whatRich,
-          msg: {
-            who: who,
-            what: whats[i],
-            logLevel: logLevel
-          }
+          nodeId,
+          label,
+          msg: msgs[i],
+          logLevel,
+          nodeColor,
+          msgColor
         };
         msgLogs.push(msgLog);
       }
@@ -238,45 +280,21 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       this.__updateTable();
     },
 
-    __updateTable: function(who) {
+    __updateTable: function() {
       this.__logModel.reloadData();
       const nFilteredRows = this.__logModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
     },
 
-    __addWhoColorTag: function(who) {
-      let whoColor = null;
-      for (let item of this.__messengerColors) {
-        if (item[0] === who) {
-          whoColor = item[1];
-          break;
+    __getNodesColor: function(nodeId) {
+      for (const item of this.__messengerColors) {
+        if (item[0] === nodeId) {
+          return item[1];
         }
       }
-      if (whoColor === null) {
-        const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
-        let luminanceText = null;
-        do {
-          whoColor = qxapp.utils.Utils.getRandomColor();
-          luminanceText = qxapp.utils.Utils.getColorLuminance(whoColor);
-        } while (Math.abs(luminanceBG-luminanceText) < 0.4);
-
-        this.__messengerColors.add([who, whoColor]);
-      }
-
-      return ("<font color=" + whoColor +">" + who + "</font>");
-    },
-
-    __addLevelColorTag: function(what, logLevel) {
-      let keyStr = "info";
-      for (let i=0; i<LOG_LEVEL.length; i++) {
-        const level = Object.keys(LOG_LEVEL[i])[0];
-        if (LOG_LEVEL[i][level] === logLevel) {
-          keyStr = level;
-          break;
-        }
-      }
-      const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
-      return ("<font color=" + logColor +">" + what + "</font>");
+      const color = qxapp.component.widget.logger.LoggerView.getNewColor();
+      this.__messengerColors.add([nodeId, color]);
+      return color;
     },
 
     __applyFilters: function() {
@@ -290,13 +308,9 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __createInitMsg: function() {
-      const who = "System";
-      const what = "Logger initialized";
-      this.debug(who, what);
-    },
-
-    clearLogger: function() {
-      this.__logModel.clearTable();
+      const nodeId = null;
+      const msg = "Logger initialized";
+      this.debug(nodeId, msg);
     }
   }
 });
