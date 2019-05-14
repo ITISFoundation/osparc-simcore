@@ -48,7 +48,9 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
 
   construct : function() {
     this.base(arguments);
-    // this.setColumns(["Id", "Text"], ["id", "text"]);
+
+    this.setColumns(["Origin", "Message"], ["whoRich", "msgRich"]);
+
     this.__rawData = [];
   },
 
@@ -70,13 +72,32 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
     }
   },
 
+  statics: {
+    addColorTag: function(msg, color) {
+      return ("<font color=" + color +">" + msg + "</font>");
+    }
+  },
+
   members : {
     __rawData: null,
     __filteredData: null,
 
     addRows: function(newRows) {
       for (let i=0; i<newRows.length; i++) {
-        this.__rawData.push(newRows[i]);
+        const newRow = newRows[i];
+        newRow["whoRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(newRow.label, newRow.nodeColor);
+        newRow["msgRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(newRow.msg, newRow.msgColor);
+        this.__rawData.push(newRow);
+      }
+    },
+
+    nodeLabelChanged: function(nodeId, newLabel) {
+      for (let i=0; i<this.__rawData.length; i++) {
+        const row = this.__rawData[i];
+        if (row.nodeId === nodeId) {
+          row.label = newLabel;
+          row["whoRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(row.label, row.nodeColor);
+        }
       }
     },
 
@@ -102,7 +123,7 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
       this.__filteredData = [];
       for (let i=0; i<this.__rawData.length; i++) {
         const rowData = this.__rawData[i];
-        if (this.__checkFilters(rowData.msg)) {
+        if (this.__checkFilters(rowData)) {
           this.__filteredData.push(rowData);
         }
       }
@@ -115,17 +136,19 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
 
     __filterByString: function(msg) {
       let searchString = this.getFilterString();
-      if (searchString === null) {
+      if (searchString === null || searchString === "") {
         return true;
       }
       if (searchString && !this.isCaseSensitive()) {
         searchString = searchString.toUpperCase();
       }
-      if (!this.isCaseSensitive()) {
-        msg = msg.toUpperCase();
+      if (msg !== null && msg !== undefined) {
+        if (!this.isCaseSensitive()) {
+          msg = msg.toUpperCase();
+        }
+        return msg.includes(searchString);
       }
-      const show = msg.includes(searchString);
-      return show;
+      return false;
     },
 
     __filterByLogLevel: function(logLevel) {
@@ -134,8 +157,8 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
     },
 
     __checkFilters: function(rowData) {
-      const showStrWho = this.__filterByString(rowData.who);
-      const showStrWhat = this.__filterByString(rowData.what);
+      const showStrWho = this.__filterByString(rowData.label);
+      const showStrWhat = this.__filterByString(rowData.msg);
       const showLog = this.__filterByLogLevel(rowData.logLevel);
 
       return ((showStrWho || showStrWhat) && showLog);
