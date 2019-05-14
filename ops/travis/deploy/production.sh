@@ -5,7 +5,11 @@ IFS=$'\n\t'
 
 # pull the tagged staging build
 export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
-export DOCKER_IMAGE_TAG="${TRAVIS_TAG}"
+# find the docker image tag
+export TAG="${TRAVIS_TAG}"
+export ORG=${DOCKER_REGISTRY}
+export REPO="webserver"
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/find_staging_version.sh)
 make pull
 
 # show current images on system
