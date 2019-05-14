@@ -11,9 +11,12 @@ addons:
       - expect-dev # for unbuffer: brings color back into travis logs
 
 stages:
-  - build / unit-testing
-  - integration-testing
-  - system-testing
+  - name: build / unit-testing
+    if: tag IS blank
+  - name: integration-testing
+    if: tag IS blank
+  - name: system-testing
+    if: tag IS blank
   - deployment
 
 jobs:
@@ -45,7 +48,6 @@ jobs:
 
     # frontend testing ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: front end testing
       language: node_js
       node_js:
@@ -85,7 +87,6 @@ jobs:
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: webserver
       language: python
       python:
@@ -107,7 +108,6 @@ jobs:
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: director
       language: python
       python:
@@ -130,7 +130,6 @@ jobs:
     # test python, sidecar ----------------------------------------------------------------------
     # TODO: activate when sidecar tests are READY!
     # - stage: unit testing
-    #   if: tag IS blank
     #   name: sidecar
     #   language: python
     #   python:
@@ -152,7 +151,6 @@ jobs:
 
     # test python, service-library ----------------------------------------------------------------------
     - stage: unit testing
-      if: tag IS blank
       name: service-library
       language: python
       python:
@@ -174,7 +172,6 @@ jobs:
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: storage
       language: python
       python:
@@ -198,7 +195,6 @@ jobs:
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: apihub
       language: python
       python:
@@ -220,7 +216,6 @@ jobs:
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: tag IS blank
       name: python linting
       language: python
       python:
@@ -241,7 +236,6 @@ jobs:
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: tag IS blank
       name: webserver in swarm
       language: python
       python:
@@ -263,7 +257,6 @@ jobs:
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: tag IS blank
       name: simcore-sdk in swarm
       language: python
       python:
@@ -284,7 +277,6 @@ jobs:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk.sh after_failure
 
     - stage: system-testing
-      if: tag IS blank
       sudo: required
       language: python
       python:
