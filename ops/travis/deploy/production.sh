@@ -21,15 +21,15 @@ echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # re-tag master build to staging-latest
 export DOCKER_IMAGE_PREFIX_NEW=${DOCKER_IMAGE_PREFIX}
-export DOCKER_IMAGE_TAG_NEW=production-latest
+export DOCKER_IMAGE_TAG_NEW=latest
 make tag
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
 make push
 
 # re-tag master to staging-DATE.BUILD_NUMBER.GIT_SHA
-TRAVIS_PLATFORM_STAGE_VERSION=production-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
-export DOCKER_IMAGE_TAG_NEW=$TRAVIS_PLATFORM_STAGE_VERSION
+TRAVIS_PLATFORM_PROD_VERSION=${TRAVIS_TAG}-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
+export DOCKER_IMAGE_TAG_NEW=$TRAVIS_PLATFORM_PROD_VERSION
 make tag
 export DOCKER_IMAGE_PREFIX=${DOCKER_IMAGE_PREFIX_NEW}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
