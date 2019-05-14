@@ -18,10 +18,8 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip wheel setuptools && pip3 --version
-        pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
-        pip3 install packages/s3wrapper[test]
-        pip3 install packages/simcore-sdk[test]
+        bash ops/travis/helpers/ensure_python_pip
+        pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
         pip3 install services/storage/client-sdk/python
     fi
 }
