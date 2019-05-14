@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from servicelib.utils import is_osparc_repo_dir, search_osparc_repo_dir
 
 
 @pytest.fixture
@@ -17,12 +18,14 @@ def pylintrc(osparc_simcore_root_dir):
     assert pylintrc.exists()
     return pylintrc
 
+
 def test_run_pylint(pylintrc, package_dir):
     cmd = 'pylint -j 2 --rcfile {} -v {}'.format(pylintrc, package_dir)
     try:
         assert subprocess.check_call(cmd.split()) == 0
     except subprocess.CalledProcessError as err:
         pytest.fail("Linting error. Linter existed with code %d" % err.returncode)
+
 
 def test_no_pdbs_in_place(package_dir):
     # TODO: add also test_dir excluding this function!?
@@ -41,14 +44,12 @@ def test_no_pdbs_in_place(package_dir):
         dirs[:] = [d for d in dirs if d not in EXCLUDE]
 
 
-
-from servicelib.utils import is_osparc_repo_dir, search_osparc_repo_dir
-
 def test_utils(osparc_simcore_root_dir, package_dir):
-
     assert is_osparc_repo_dir(osparc_simcore_root_dir)
 
-    assert search_osparc_repo_dir(package_dir) == osparc_simcore_root_dir
     assert search_osparc_repo_dir(osparc_simcore_root_dir) == osparc_simcore_root_dir
+
+    # assert not search_osparc_repo_dir(package_dir), "package is installed, should not be in osparc-repo"
+    # assert search_osparc_repo_dir(package_dir) == osparc_simcore_root_dir, "in develop mode"
 
     assert not search_osparc_repo_dir(osparc_simcore_root_dir.parent)

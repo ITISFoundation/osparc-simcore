@@ -18,8 +18,9 @@ from utils_login import LoggedUser
 
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(loop, aiohttp_server, app_cfg):
+def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
     cfg = app_cfg["storage"]
+    cfg['port']= aiohttp_unused_port()
 
     app = web.Application()
     async def _get_locs(request: web.Request):
@@ -68,6 +69,7 @@ def storage_server(loop, aiohttp_server, app_cfg):
     app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
 
     assert cfg['host']=='localhost'
+
 
     server = loop.run_until_complete(aiohttp_server(app, port= cfg['port']))
     return server

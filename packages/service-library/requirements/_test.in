@@ -1,0 +1,16 @@
+#
+# Specifies dependencies required to run 'service-library'
+#
+
+# frozen specs
+-r _base.txt
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-runner
+
+# tools
+pylint
+coveralls

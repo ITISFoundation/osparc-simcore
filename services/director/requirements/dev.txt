@@ -1,5 +1,16 @@
-# paths relative to location of setup.py
--e ".[test]"
--e ../../packages/service-library/
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+# Shortcut to install all packages needed to develop 'director'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
 
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
+-e ../../packages/service-library/
+
+# installs current package
+-e .

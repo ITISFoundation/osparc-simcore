@@ -1,0 +1,10 @@
+
+# testing
+pytest
+pytest-aiohttp
+
+# fixtures
+aiohttp
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
+jsonschema>=2.5.1,<3.0.0 # otherwise openapi_spec_validator reports  AttributeError: module 'jsonschema._validators' has no attribute 'properties_draft4'
+pyyaml>=4.2b1

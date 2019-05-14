@@ -55,7 +55,7 @@ COPY  --chown=scu:scu services/sidecar/requirements/*.txt \
       tmp/sidecar/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/sidecar/requirements/base.txt
+      -r tmp/sidecar/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------

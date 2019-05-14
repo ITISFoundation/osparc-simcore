@@ -1,6 +1,20 @@
-# paths relative to location of setup.py
-.
+# Shortcut to install 'services/web/server' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+
+# installs base requirements
+-r _base.txt
+
+# installs this repo's packages
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/
-../../../packages/director-sdk/python
 ../../../packages/service-library/
+../../../packages/director-sdk/python
+
+# installs current package
+.
