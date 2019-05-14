@@ -42,10 +42,24 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apk add --no-cache \
-    gcc \
-    libc-dev \
-    git
+# Installing client libraries and any other package you need
+#
+# - client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
+#
+RUN apk update && \
+    apk add --no-cache \
+      libpq
+
+# Installing build dependencies (will be deleted in production)
+RUN apk add --virtual .build-deps \
+      git \
+      gcc \
+      libc-dev \
+      python-dev \
+      musl-dev \
+      libffi-dev \
+      postgresql-dev
+
 
 RUN $SC_PIP install --upgrade \
       pip~=19.1.1  \
@@ -59,7 +73,7 @@ COPY  --chown=scu:scu services/director/requirements/*.txt \
       tmp/director/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/director/requirements/base.txt
+      -r tmp/director/requirements/_base.txt
 
 #--------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
@@ -107,9 +121,7 @@ RUN mkdir -p services/director &&\
     mv /build/services/director/docker services/director/docker &&\
     rm -rf /build
 
-RUN apk del --no-cache\
-      gcc \
-      git
+RUN apk del --no-cache .build-deps
 
 HEALTHCHECK --interval=30s \
             --timeout=120s \

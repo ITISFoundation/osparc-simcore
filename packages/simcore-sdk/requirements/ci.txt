@@ -1,0 +1,18 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'simcore-sdk'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
+../s3wrapper/
+../../services/storage/client-sdk/python/ # Needed ONLY for testing
+
+
+# installs current package
+.

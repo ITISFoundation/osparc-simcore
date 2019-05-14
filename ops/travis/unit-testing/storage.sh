@@ -16,18 +16,15 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip wheel setuptools && pip3 --version
-        pushd services/storage; pip3 install -r requirements/prod.txt; popd
-        pushd services/storage; pip3 install -r tests/requirements.txt; popd
-        pip3 install services/storage/client-sdk/python
+        bash ops/travis/helpers/ensure_python_pip
+        pushd services/storage; pip3 install -r requirements/ci.txt; popd
     fi
 }
 
 before_script() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
-        docker images
+        pip list -v
     fi
 }
 

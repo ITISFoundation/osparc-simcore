@@ -12,14 +12,14 @@ before_install() {
 }
 
 install() {
-    pip3 install --upgrade pip wheel setuptools && pip3 --version
+    bash ops/travis/helpers/ensure_python_pip
     pip3 install -r ops/travis/system-testing/requirements.txt
     make pull-cache || true
     make pull || make build
 }
 
 before_script() {
-    pip freeze
+    pip list -v
     docker images
     make up
 }

@@ -12,13 +12,12 @@ before_install() {
 }
 
 install() {
-    pip install --upgrade pip wheel setuptools && pip3 --version
-    pushd services/web/server/tests; pip3 install -r requirements.txt; popd
-    pushd services/web/server/tests/integration; pip3 install -r requirements.txt; popd
+    bash ops/travis/helpers/ensure_python_pip
+    pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
 }
 
 before_script() {
-    pip freeze
+    pip list -v
     make pull-cache || true
     make pull || make build
     docker images

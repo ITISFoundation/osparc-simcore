@@ -1,0 +1,23 @@
+#
+# Specifies dependencies required to run 'director'
+#
+
+# frozen specs
+-r _base.txt
+
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+
+# fixtures
+openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
+
+# tools for CI
+pylint
+coveralls
+codecov

@@ -16,28 +16,23 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip wheel setuptools && pip3 --version
-        pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
-        pip3 install packages/s3wrapper[test]
-        pip3 install packages/simcore-sdk[test]
-        pip3 install services/storage/client-sdk/python
+        bash ops/travis/helpers/ensure_python_pip
+        pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd
     fi
 }
 
 before_script() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
-        docker images
+        pip list -v
     fi
 }
 
 script() {
     if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=pytest_docker --cov-append -v packages/pytest_docker/tests
         pytest --cov=s3wrapper --cov-append -v packages/s3wrapper/tests
-        pytest --cov=servicelib --cov-append -v packages/service-library/tests
+        # pytest --cov=servicelib --cov-append -v packages/service-library/tests
     else
         echo "No changes detected. Skipping unit-testing of simcore-sdk."
     fi

@@ -1,9 +1,5 @@
-from contextlib import contextmanager
-
 import requests
 import sqlalchemy as sa
-
-import simcore_service_storage_sdk
 from simcore_service_storage.models import FileMetaData, file_meta_data
 
 DATABASE = 'aio_login_tests'
@@ -45,19 +41,6 @@ def create_tables(url, engine=None):
     meta.drop_all(bind=engine, tables=[file_meta_data])
     meta.create_all(bind=engine, tables=[file_meta_data])
 
-@contextmanager
-def api_client(cfg: simcore_service_storage_sdk.Configuration) -> simcore_service_storage_sdk.ApiClient:
-    from simcore_service_storage_sdk.rest import ApiException
-
-    client = simcore_service_storage_sdk.ApiClient(cfg)
-    try:
-        yield client
-    except ApiException as err:
-        print("%s\n" % err)
-    finally:
-        #NOTE: enforces to closing client session and connector.
-        # this is a defect of the sdk
-        del client.rest_client
 
 def drop_tables(url, engine=None):
     meta = sa.MetaData()
