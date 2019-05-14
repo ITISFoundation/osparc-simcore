@@ -84,12 +84,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __allServicesObj: null,
     __textfield: null,
     __showAll: null,
-    __list: null,
-    __controller: null,
     __contextNodeId: null,
     __contextPort: null,
     __versionsBox: null,
     __serviceBrowser: null,
+    __addBtn: null,
 
     __createFilterLayout: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
@@ -128,50 +127,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      let list = this.__list = new qx.ui.form.List();
-      list.setSelectionMode("one");
-      /*
-      list.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData()[0].getModel();
-          this.__changedSelection(selectedService.getKey());
-        } else {
-          this.__changedSelection(null);
-        }
-      }, this);
-      */
-
-      // create the controller
-      let controller = this.__controller = new qx.data.controller.List(new qx.data.Array([]), list);
-      // set the name for the label property
-      controller.setLabelPath("name");
-      // convert for the label
-      controller.setLabelOptions({
-        converter: function(data, model) {
-          return model.getName();
-        }
-      });
-      // Workaround to the list.changeSelection
-      controller.addListener("changeValue", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData().toArray()[0];
-          this.__changedSelection(selectedService.getKey());
-        } else {
-          this.__changedSelection(null);
-        }
-      }, this);
-
-      // create the filter
-      let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(this.__controller, ["name"]);
-      // set the filter
-      filterObj.bindItem = (ctrl, item, id) => {
-        controller.bindDefaultProperties(item, id);
-      };
-      this.__controller.setDelegate(filterObj);
-
-      // make every input in the textfield update the controller
-      this.__textfield.bind("input", filterObj, "searchString");
-
       const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser().set({
         width: 568
       });
@@ -179,6 +134,16 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         height: 260
       });
       scrolledServices.add(services);
+
+      this.__serviceBrowser.addListener("changeValue", e => {
+        if (e.getData() && e.getData().getServiceModel()) {
+          const selectedService = e.getData().getServiceModel();
+          this.__changedSelection(selectedService.getKey());
+        } else {
+          this.__changedSelection(null);
+        }
+      }, this);
+
       return scrolledServices;
     },
 
@@ -202,7 +167,9 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       toolbar.addSpacer();
 
       const buttonsPart = new qx.ui.toolbar.Part();
-      const addBtn = new qx.ui.toolbar.Button("Add");
+      const addBtn = this.__addBtn = new qx.ui.toolbar.Button("Add").set({
+        enabled: false
+      });
       addBtn.addListener("execute", this.__onAddService, this);
       addBtn.setAllowGrowX(false);
       buttonsPart.add(addBtn);
@@ -224,8 +191,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }, this);
 
       // Listen to "Double Click" key
-      this.__list.addListener("dbltap", e => {
-        this.__onAddService();
+      this.__serviceBrowser.addListener("servicedbltap", e => {
+        this.__onAddService(e.getData());
       }, this);
     },
 
@@ -274,8 +241,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
 
       let newModel = new qx.data.Array(groupedServicesList);
-      this.__controller.setModel(newModel);
-      this.__controller.update();
 
       this.__serviceBrowser.setModel(newModel);
     },
@@ -294,16 +259,19 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
           selectBox.setSelection([latest]);
         }
       }
+      if (this.__addBtn) {
+        this.__addBtn.setEnabled(serviceKey !== null);
+      }
     },
 
-    __onAddService: function() {
-      if (this.__list.isSelectionEmpty()) {
+    __onAddService: function(model) {
+      if (model == null && this.__serviceBrowser.isSelectionEmpty()) { // eslint-disable-line no-eq-null
         return;
       }
 
-      const service = this.__getSelectedService();
+      const service = model || this.__getSelectedService();
       if (service) {
-        let serviceModel = qx.data.marshal.Json.createModel(service);
+        const serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
           service: serviceModel,
           contextNodeId: this.__contextNodeId,
@@ -315,8 +283,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     },
 
     __getSelectedService: function() {
-      const selection = this.__list.getSelection()[0];
-      const serviceKey = selection.getModel().getKey();
+      const selected = this.__serviceBrowser.getSelected();
+      const serviceKey = selected.getKey();
       let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();

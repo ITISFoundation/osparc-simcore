@@ -28,12 +28,16 @@ qx.Class.define("qxapp.component.service.ServiceJumbo", {
    */
   construct: function(serviceModel, icon, command) {
     this.base(arguments, serviceModel.getName(), serviceModel.getDescription(), icon, command);
-    this.__serviceModel = serviceModel;
+    if (serviceModel != null) { // eslint-disable-line no-eq-null
+      this.setServiceModel(serviceModel);
+    }
+  },
+
+  properties: {
+    serviceModel: {}
   },
 
   members: {
-    __serviceModel: null,
-
     _filter: function() {
       this.exclude();
     },
@@ -44,7 +48,7 @@ qx.Class.define("qxapp.component.service.ServiceJumbo", {
 
     _shouldApplyFilter: function(data) {
       if (data.text) {
-        const label = this.__serviceModel.getName()
+        const label = this.getServiceModel().getName()
           .trim()
           .toLowerCase();
         if (label.indexOf(data.text) === -1) {
@@ -52,8 +56,8 @@ qx.Class.define("qxapp.component.service.ServiceJumbo", {
         }
       }
       if (data.tags && data.tags.length) {
-        const category = this.__serviceModel.getCategory() || "";
-        const type = this.__serviceModel.getType() || "";
+        const category = this.getServiceModel().getCategory() || "";
+        const type = this.getServiceModel().getType() || "";
         if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
           return true;
         }

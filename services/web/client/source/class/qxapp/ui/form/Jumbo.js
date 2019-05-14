@@ -19,10 +19,10 @@
  * Big button with a title, a text and an icon.
  */
 qx.Class.define("qxapp.ui.form.Jumbo", {
-  extend: qx.ui.form.Button,
+  extend: qx.ui.form.ToggleButton,
 
-  construct: function(label, text, icon, command) {
-    this.base(arguments, label, icon, command);
+  construct: function(label, text, icon) {
+    this.base(arguments, label, icon);
 
     this.set({
       width: 180,
@@ -89,7 +89,7 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
     },
 
     _applyText: function(value) {
-      const text = this.getChildControl("text", false);
+      const text = this.getChildControl("text");
       if (text) {
         text.setValue(value);
       }
