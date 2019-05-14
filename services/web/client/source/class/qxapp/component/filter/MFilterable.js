@@ -25,7 +25,7 @@ qx.Mixin.define("qxapp.component.filter.MFilterable", {
      *
      * @param {String} groupId Id of the filter group to subscribe to.
      */
-    _subscribeToFilterGroup: function(groupId) {
+    subscribeToFilterGroup: function(groupId) {
       const msgName = qxapp.utils.Utils.capitalize(groupId, "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, this.__subscriber, this);
     },

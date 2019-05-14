@@ -97,9 +97,9 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const filterPart = new qx.ui.toolbar.Part().set({
         spacing: 10
       });
-      const filter = new qxapp.component.filter.TextFilter("text", "services");
-      this.__textfield = filter.getChildControl("textfield", true);
-      filterPart.add(filter);
+      const filters = new qxapp.desktop.ServiceFilters("service-catalogue");
+      this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
+      filterPart.add(filters);
       const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
       showAllCheckbox.set({
         value: false,
@@ -180,8 +180,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       });
       scrolledServices.add(services);
       return scrolledServices;
-
-      return list;
     },
 
     __createButtonsLayout: function() {

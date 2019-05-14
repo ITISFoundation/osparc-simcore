@@ -19,17 +19,24 @@
  * Widget that contains the workbench filters
  */
 
-qx.Class.define("qxapp.desktop.WorkbenchFilters", {
+qx.Class.define("qxapp.desktop.ServiceFilters", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(groupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this._add(new qxapp.component.filter.TextFilter("text", "workbench"));
+    const textFilter = this.__textFilter = new qxapp.component.filter.TextFilter("text", groupId);
+    const tagsFilter = this.__tagsFilter = new qxapp.component.filter.TagsFilter("tags", groupId);
+    this._add(textFilter);
+    this._add(tagsFilter);
+  },
 
-    this._add(new qxapp.component.filter.TagsFilter("tags", "workbench"));
+  members: {
+    __textFilter: null,
 
-    qxapp.component.filter.UIFilterController.getInstance().registerContainer("workbench", this);
+    getTextFilter: function() {
+      return this.__textFilter;
+    }
   }
 });

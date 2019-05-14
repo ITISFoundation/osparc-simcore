@@ -52,7 +52,9 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
 
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
-      filterCtrls.add(new qxapp.desktop.WorkbenchFilters());
+      const serviceFilters = new qxapp.desktop.ServiceFilters("workbench");
+      qxapp.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
+      filterCtrls.add(serviceFilters);
       this.add(filterCtrls);
 
       this.addSpacer();

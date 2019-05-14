@@ -46,7 +46,8 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
     _applyModel: function(model) {
       this._removeAll();
       model.toArray().forEach((service, index) => {
-        const button = new qxapp.ui.form.Jumbo(service.getName(), service.getDescription(), "@FontAwesome5Solid/info-circle/16");
+        const button = new qxapp.component.service.ServiceJumbo(service, "@FontAwesome5Solid/info-circle/16");
+        button.subscribeToFilterGroup("service-catalogue");
         this.__buttons = [];
         this.__buttons.push(button);
         this._add(button);
