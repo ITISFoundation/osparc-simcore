@@ -313,7 +313,7 @@ jobs:
           on:
             all_branches: true
             tags: true
-            condition: $TRAVIS_TAG =~ ^v\d+.\d+.\d+$
+            condition: $TRAVIS_TAG =~ ^v[0-9]+.[0-9]+.[0-9]+$
 notifications:
   email:
     on_success: never
