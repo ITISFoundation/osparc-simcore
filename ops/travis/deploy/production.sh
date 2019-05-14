@@ -9,7 +9,8 @@ export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
 export TAG="${TRAVIS_TAG}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
-export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/find_staging_version.sh)
+DOCKER_IMAGE_TAG=$(./ops/travis/helpers/find_staging_version.sh | awk 'END{print}') || exit $?
+export DOCKER_IMAGE_TAG
 make pull
 
 # show current images on system
