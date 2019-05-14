@@ -1,3 +1,0 @@
-# Adminer
-
-Database management tool

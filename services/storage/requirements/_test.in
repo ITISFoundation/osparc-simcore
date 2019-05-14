@@ -1,0 +1,25 @@
+#
+# Specifies dependencies required to run 'storage'
+#
+
+# frozen specs
+-r _base.txt
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+
+
+# fixtures
+virtualenv
+pyyaml>=4.2b1
+
+
+# tools for CI
+pylint
+coveralls
+codecov

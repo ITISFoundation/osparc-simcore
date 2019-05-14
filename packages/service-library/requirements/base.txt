@@ -1,6 +1,0 @@
-aiohttp
-jsonschema~=2.6
-openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
-pyyaml>=4.2b1
-ujson
-werkzeug

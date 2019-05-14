@@ -1,5 +1,18 @@
-# paths relative to location of setup.py
--e .
+# Shortcut to install all packages needed to develop 'sidecar'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
+
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
 -e ../../services/storage/client-sdk/python/
 -e ../../packages/s3wrapper/
 -e ../../packages/simcore-sdk/
+
+# installs current package
+-e .

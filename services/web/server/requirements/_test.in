@@ -1,0 +1,28 @@
+#
+# Specifies dependencies required to run 'services/web/server/test'
+#  both for unit and integration tests!!
+#
+
+# frozen specs
+-r _base.txt
+
+# 'services/web/server/tests/unit' dependencies
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+
+# fixtures
+Faker
+openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
+tenacity
+docker          # for integration tests
+
+# tools
+pylint
+coveralls
+codecov

@@ -1,18 +1,18 @@
+import re
+import sys
+from pathlib import Path
+
 from setuptools import setup
 
-install_requires = [
-    'minio==4.0.0',
-]
+here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-tests_require = [
-    'coveralls~=1.3',
-    'mock~=2.0',
-    'pylint~=2.0',
-    'pytest~=3.6',
-    'pytest-cov~=2.5',
-    'pytest-docker~=0.6',
-    'requests~=2.19'
-]
+
+def read_reqs( reqs_path: Path):
+    return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
+
+
+install_requirements = read_reqs( here / "requirements" / "_base.in" ) # WEAK requirements
+test_requirements = read_reqs( here / "requirements" / "_test.txt" ) # STRONG requirements
 
 setup(
     name='s3wrapper',
@@ -20,10 +20,10 @@ setup(
     package_dir={'': 'src'},
     packages=['s3wrapper'],
     python_requires='>=3.6',
-    install_requires=install_requires,
-    tests_require=tests_require,
+    install_requires=install_requirements,
+    tests_require=test_requirements,
     extras_require= {
-        'test': tests_require
+        'test': test_requirements
     },
-    setup_requires=['pytest-runner']
+    test_suite='tests'
 )

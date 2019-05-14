@@ -71,7 +71,7 @@ async def create_openapi_specs(location) -> OpenApiSpec:
     if URL(str(location)).host:
         spec_dict, spec_url = await _load_from_url(URL(location))
     else:
-        path = Path(location).expanduser().resolve()
+        path = Path(location).expanduser().resolve() #pylint: disable=no-member
         spec_dict, spec_url = _load_from_path(path)
 
     return openapi_core.create_spec(spec_dict, spec_url)
