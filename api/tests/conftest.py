@@ -18,14 +18,19 @@ SHARED = 'shared'
 OPENAPI_MAIN_FILENAME = 'openapi.yaml'
 
 
-
-@pytest.fixture(scope='session')
-def here():
+def current_dir():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
+def here():
+    return current_dir()
+
+@pytest.fixture(scope='session')
 def api_specs_dir(here):
+    return _api_specs_dir_impl(here)
+
+def _api_specs_dir_impl(here):
     specs_dir = here.parent / "specs"
     return specs_dir
 
@@ -60,6 +65,9 @@ def all_api_specs_tails(api_specs_dir):
     """ Returns openapi/jsonschema spec files path relative to specs_dir
 
     """
+    return _all_api_specs_tails_impl(api_specs_dir)
+
+def _all_api_specs_tails_impl(api_specs_dir):
     tails = []
     for fpath in chain(*[api_specs_dir.rglob(wildcard) for wildcard in ("*.json", "*.y*ml")]):
         tail = relpath(fpath, api_specs_dir)
@@ -74,8 +82,8 @@ def list_openapi_tails():
         SEE api_specs_tail to get one at a time
     """
     tails = []
-    specs_dir = api_specs_dir(here())
-    for tail in all_api_specs_tails(specs_dir):
+    specs_dir = _api_specs_dir_impl(current_dir())
+    for tail in _all_api_specs_tails_impl(specs_dir):
         specs = load_specs( specs_dir / tail)
         if not is_json_schema(specs):
             tails.append( str(tail) )

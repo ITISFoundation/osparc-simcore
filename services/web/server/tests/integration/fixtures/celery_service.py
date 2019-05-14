@@ -21,6 +21,7 @@ def celery_service(app_config, docker_stack):
     password = cfg["password"]
     url = "amqp://{}:{}@{}:{}".format(user, password, host, port)
     wait_till_celery_responsive(url)
+    yield url
 
 @tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
 def wait_till_celery_responsive(url):
@@ -29,4 +30,3 @@ def wait_till_celery_responsive(url):
     status = celery.bin.celery.CeleryCommand.commands['status']()
     status.app = status.get_app()
     status.run()
-    return True

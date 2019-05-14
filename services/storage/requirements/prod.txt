@@ -1,7 +1,18 @@
+# Shortcut to install 'storage' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
 
-# paths relative to location of setup.py
-.
+# installs base requirements
+-r _base.txt
 
+# installs this repo's packages
+../../packages/s3wrapper/
+../../packages/simcore-sdk/
 ../../packages/service-library
-../../packages/s3wrapper
-../../packages/simcore-sdk
+
+# installs current package
+.

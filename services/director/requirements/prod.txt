@@ -1,3 +1,16 @@
-.
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+# Shortcut to install 'director' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs base requirements
+-r _base.txt
+
+# installs this repo's packages
 ../../packages/service-library/
+
+# installs current package
+.
