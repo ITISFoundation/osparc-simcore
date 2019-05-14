@@ -1,0 +1,29 @@
+#
+# Specifies third-party dependencies for 'services/web/server/src'
+#
+
+psycopg2-binary     # enforces binary version
+pyyaml>=4.2b1       # https://nvd.nist.gov/vuln/detail/CVE-2017-18342
+sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
+urllib3~=1.24.2     # https://nvd.nist.gov/vuln/detail/CVE-2019-11324
+
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
+jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 (used in tests) requires jsonschema<3
+
+aio-pika==2.9.0     # TODO: upgrade code before !!
+aiohttp
+aiohttp_jinja2
+aiohttp_security
+aiopg[sa]
+aiosmtplib
+asyncpg
+celery
+change_case
+jinja_app_loader
+passlib
+passwordmeter
+semantic_version
+tenacity
+trafaret
+trafaret_config
+python-socketio
