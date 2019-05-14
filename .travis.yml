@@ -288,7 +288,6 @@ jobs:
       script: echo "Deploy master"
       deploy:
         - provider: script
-          skip_cleanup: true
           script: bash ops/travis/deploy/master.sh
           on:
             branch: master
@@ -300,18 +299,16 @@ jobs:
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          skip_cleanup: true
           script: bash ops/travis/deploy/staging.sh
           on:
             branch: staging
     - stage: deployment
-      name: production
+      name: production/release
       git:
         depth: false
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          skip_cleanup: true
           script: ops/travis/deploy/production.sh
           on:
             all_branches: true
