@@ -3,6 +3,8 @@
 
 This pages is for testing purposes for issue [#715](https://github.com/ITISFoundation/osparc-simcore/issues/715)
 
+Emulator of the actual [NIH/Sparc Portal](https://data.sparc.science)
+
 ## studies available @localhost
 
 - [ISAN: UCDavis use case: 0D](http://127.0.0.1:9081/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
