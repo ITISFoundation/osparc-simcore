@@ -7,19 +7,12 @@ import pytest
 from aiohttp import web
 
 from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import setup_dsm, DatCoreApiToken
+from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
-from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID, APP_DSM_KEY
+from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
 from utils import has_datcore_tokens, USER_ID, BUCKET_NAME
 
-async def _inject_tokens(app: web.Application):
-    dsm = app[APP_DSM_KEY]
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
-    dsm.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
-
-    yield
 
 def parse_db(dsm_mockup_db):
     id_name_map = {}
@@ -70,8 +63,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
     setup_rest(app)
     setup_dsm(app)
     setup_s3(app)
-
-    app.cleanup_ctx.append(_inject_tokens)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=main_cfg) )
     return cli
