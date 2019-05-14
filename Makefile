@@ -54,7 +54,7 @@ endif # DOCKER_IMAGE_TAG
 $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 
 # default to local (no registry)
-DEFAULT_DOCKER_REGISTRY := ""
+DEFAULT_DOCKER_REGISTRY := "itisfoundation"
 ifdef DOCKER_REGISTRY
 # check it ends with /
 export DOCKER_REGISTRY := $(shell echo ${DOCKER_REGISTRY} | sed -r "s/^(\w+)(\/?)$$/\1\//g")

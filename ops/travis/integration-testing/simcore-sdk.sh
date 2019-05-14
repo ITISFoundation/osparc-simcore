@@ -3,7 +3,6 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_REGISTRY=${DOCKER_REGISTRY:-itisfoundation}/
 export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk.sh .travis.yml)
