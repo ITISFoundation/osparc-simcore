@@ -67,6 +67,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     this.__createEvents();
 
     this.__populateList();
+
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -349,6 +351,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __onCancel: function() {
       this.close();
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("appear", () => {
+        this.__textfield.focus();
+      }, this);
     }
   }
 });
