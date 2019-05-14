@@ -4,7 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # pull the tagged master build
-export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
 make pull
 
 # show current images on system

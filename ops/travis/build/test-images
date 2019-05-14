@@ -3,11 +3,11 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
 
 before_install() {
-    bash ops/travis/helpers/install_docker_compose.sh;
-    bash ops/travis/helpers/show_system_versions.sh;
+    bash ops/travis/helpers/install_docker_compose;
+    bash ops/travis/helpers/show_system_versions;
     env
 }
 

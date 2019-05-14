@@ -8,7 +8,7 @@ IFS=$'\n\t'
 export TAG="${TRAVIS_TAG}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
-DOCKER_IMAGE_TAG=$(./ops/travis/helpers/find_staging_version.sh | awk 'END{print}') || exit $?
+DOCKER_IMAGE_TAG=$(./ops/travis/helpers/find_staging_version | awk 'END{print}') || exit $?
 export DOCKER_IMAGE_TAG
 make pull
 

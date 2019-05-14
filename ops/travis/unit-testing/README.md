@@ -27,7 +27,6 @@ pytest -v test/unit
 
   - not time-bounded (e.g. can use time limits in the table above)
   - poor coverage [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
-  - some unittest (e.g. ``simcore-sdk``) build all services (contains a test that uses storage!)
 
 
 ## References

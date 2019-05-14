@@ -6,15 +6,15 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(api/ webserver packages/ services/web .travis.yml)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ops/travis/helpers/install_docker_compose.sh
-        bash ops/travis/helpers/show_system_versions.sh
+        bash ops/travis/helpers/install_docker_compose
+        bash ops/travis/helpers/show_system_versions
     fi
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/ensure_python_pip
         pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
@@ -22,14 +22,14 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip list -v
     fi
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_service_webserver --cov-append -v -m "not travis" services/web/server/tests/unit
     else
@@ -38,7 +38,7 @@ script() {
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes.sh "${FOLDER_CHECKS[@]}";
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         coveralls
         codecov

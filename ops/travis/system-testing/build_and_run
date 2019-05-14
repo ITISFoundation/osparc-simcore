@@ -4,11 +4,11 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
 
 before_install() {
-    bash ops/travis/helpers/install_docker_compose.sh
-    bash ops/travis/helpers/show_system_versions.sh
+    bash ops/travis/helpers/install_docker_compose
+    bash ops/travis/helpers/show_system_versions
 }
 
 install() {
