@@ -22,12 +22,10 @@ pytest -v test/unit
 
 ![tests table](https://cdn-images-1.medium.com/max/800/1*XPhOBPDzVgSn-n8DhW7D8A.png)
 
-
 ## Limitations [by May 2019]
 
-  - not time-bounded (e.g. can use time limits in the table above)
-  - poor coverage [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
-
+- not time-bounded (e.g. can use time limits in the table above)
+- poor coverage [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 
 ## References
 
@@ -35,7 +33,6 @@ pytest -v test/unit
 - [What the mock? — A cheatsheet for mocking in Python](https://medium.com/@yeraydiazdiaz/what-the-mock-cheatsheet-mocking-in-python-6a71db997832) by Y. Diaz
 - [Python unit testing with Pytest and Mock](https://medium.com/@bfortuner/python-unit-testing-with-pytest-and-mock-197499c4623c) by B. Fortuner
 - [Test Sizes] by S.Stewards
-
 
 [unittest.mock]:https://docs.python.org/3/library/unittest.mock.html#module-unittest.mock
 [pytest-mock]:https://github.com/pytest-dev/pytest-mock
