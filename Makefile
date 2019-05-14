@@ -39,7 +39,6 @@ SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
-TRAVIS_PLATFORM_STAGE_VERSION := $(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
 export VCS_REF:=$(shell git rev-parse --short HEAD)
@@ -54,15 +53,16 @@ export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
 endif # DOCKER_IMAGE_TAG
 $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 
-DEFAULT_DOCKER_IMAGE_PREFIX := services_
-ifdef DOCKER_IMAGE_PREFIX
+# default to local (no registry)
+DEFAULT_DOCKER_REGISTRY := ""
+ifdef DOCKER_REGISTRY
 # check it ends with /
-export DOCKER_IMAGE_PREFIX := $(shell echo ${DOCKER_IMAGE_PREFIX} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
+export DOCKER_REGISTRY := $(shell echo ${DOCKER_REGISTRY} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
 else
-$(warning DOCKER_IMAGE_PREFIX variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_PREFIX})
-export DOCKER_IMAGE_PREFIX := ${DEFAULT_DOCKER_IMAGE_PREFIX}
-endif # DOCKER_IMAGE_PREFIX
-$(info DOCKER_IMAGE_PREFIX set to ${DOCKER_IMAGE_PREFIX})
+$(warning DOCKER_REGISTRY variable is undefined, using default ${DEFAULT_DOCKER_REGISTRY})
+export DOCKER_REGISTRY := ${DEFAULT_DOCKER_REGISTRY}
+endif # DOCKER_REGISTRY
+$(info DOCKER_REGISTRY set to ${DOCKER_REGISTRY})
 
 ## Tools ------------------------------------------------------------------------------------------------------
 #
@@ -92,7 +92,6 @@ endif
 .PHONY: build
 # target: build: – Builds all core service images.
 build: .env .tmp-webclient-build
-	@echo "building using ${DOCKER_IMAGE_PREFIX} and ${DOCKER_IMAGE_TAG}"
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
 
 .PHONY: build-devel .tmp-webclient-build
@@ -207,7 +206,7 @@ pull-cache:
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER} tag ${DOCKER_IMAGE_PREFIX}webclient:cache services_webclient:build
+	${DOCKER} tag ${DOCKER_REGISTRY}webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
@@ -225,14 +224,12 @@ push-cache:
 #target: tag – Tags service images
 tag:
 	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_PREFIX_NEW}$$i:${DOCKER_IMAGE_TAG_NEW}; \
+		${DOCKER} tag ${DOCKER_REGISTRY}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}$$i:${DOCKER_IMAGE_TAG_NEW}; \
 	done
 
 # target: push – Pushes images into a registry
 push:
-	for i in $(SERVICES_LIST); do \
-		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
-	done
+	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
 pull:

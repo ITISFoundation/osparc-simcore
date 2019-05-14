@@ -1,26 +1,26 @@
 version: '3.4'
 services:
   apihub:
-    image: ${DOCKER_IMAGE_PREFIX}apihub:cache
+    image: ${DOCKER_REGISTRY}apihub:cache
     build:
       target: production
   director:
-    image: ${DOCKER_IMAGE_PREFIX}director:cache
+    image: ${DOCKER_REGISTRY}director:cache
     build:
       target: cache
   sidecar:
-    image: ${DOCKER_IMAGE_PREFIX}sidecar:cache
+    image: ${DOCKER_REGISTRY}sidecar:cache
     build:
       target: cache
   storage:
-    image: ${DOCKER_IMAGE_PREFIX}storage:cache
+    image: ${DOCKER_REGISTRY}storage:cache
     build:
       target: cache
   webclient:
-    image: ${DOCKER_IMAGE_PREFIX}webclient:cache
+    image: ${DOCKER_REGISTRY}webclient:cache
     build:
       target: build
   webserver:
-    image: ${DOCKER_IMAGE_PREFIX}webserver:cache
+    image: ${DOCKER_REGISTRY}webserver:cache
     build:
       target: cache

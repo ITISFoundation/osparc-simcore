@@ -3,7 +3,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY:-itisfoundation}/
+# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
+export DOCKER_REGISTRY=${DOCKER_REGISTRY:-itisfoundation}/
 export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag.sh)
 
 before_install() {

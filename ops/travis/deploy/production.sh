@@ -4,7 +4,6 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # pull the tagged staging build
-export DOCKER_IMAGE_PREFIX=${DOCKER_REGISTRY}/
 # find the docker image tag
 export TAG="${TRAVIS_TAG}"
 export ORG=${DOCKER_REGISTRY}
@@ -20,7 +19,7 @@ docker images
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # re-tag master build to staging-latest
-export DOCKER_IMAGE_PREFIX_NEW=${DOCKER_IMAGE_PREFIX}
+export DOCKER_REGISTRY_NEW=${DOCKER_REGISTRY}
 export DOCKER_IMAGE_TAG_NEW=latest
 make tag
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
@@ -31,6 +30,6 @@ make push
 TRAVIS_PLATFORM_PROD_VERSION=${TRAVIS_TAG}-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
 export DOCKER_IMAGE_TAG_NEW=$TRAVIS_PLATFORM_PROD_VERSION
 make tag
-export DOCKER_IMAGE_PREFIX=${DOCKER_IMAGE_PREFIX_NEW}
+export DOCKER_REGISTRY=${DOCKER_REGISTRY_NEW}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG_NEW}
 make push

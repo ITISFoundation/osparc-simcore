@@ -1,13 +1,13 @@
 version: '3.4'
 services:
   apihub:
-    image: ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}apihub:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}apihub:cache
-        - ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_REGISTRY}apihub:cache
+        - ${DOCKER_REGISTRY}apihub:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -22,13 +22,13 @@ services:
           - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
-    image: ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}director:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}director:cache
-        - ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_REGISTRY}director:cache
+        - ${DOCKER_REGISTRY}director:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -74,7 +74,7 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}webclient:cache
+        - ${DOCKER_REGISTRY}webclient:cache
         - services_webclient:latest
       target: build
       labels:
@@ -91,13 +91,13 @@ services:
       /bin/sh -c "ls -l build-output;cat build-output/version.txt"
 
   webserver:
-    image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}webserver:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}webserver:cache
-        - ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_REGISTRY}webserver:cache
+        - ${DOCKER_REGISTRY}webserver:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -144,15 +144,15 @@ services:
           - node.role == manager
   #--------------------------------------------------------------------
   sidecar:
-    image: ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}sidecar:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}sidecar:cache
-        - ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_REGISTRY}sidecar:cache
+        - ${DOCKER_REGISTRY}sidecar:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -191,15 +191,15 @@ services:
       - minio
   #--------------------------------------------------------------------
   storage:
-    image: ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}storage:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/storage/Dockerfile
       cache_from:
-        - ${DOCKER_IMAGE_PREFIX}storage:cache
-        - ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
+        - ${DOCKER_REGISTRY}storage:cache
+        - ${DOCKER_REGISTRY}storage:${DOCKER_IMAGE_TAG}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
