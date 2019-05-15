@@ -47,7 +47,6 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
   },
 
   members: {
-    __buttons: null,
     __buttonGroup: null,
 
     _applyModel: function(model) {
@@ -59,8 +58,6 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
         const button = new qxapp.component.service.ServiceJumbo(service, "@FontAwesome5Solid/info-circle/16");
         button.subscribeToFilterGroup("service-catalogue");
         group.add(button);
-        this.__buttons = [];
-        this.__buttons.push(button);
         this._add(button);
         button.addListener("dbltap", e => {
           this.fireDataEvent("servicedbltap", button.getServiceModel());
@@ -81,6 +78,20 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
         return true;
       }
       return this.__buttonGroup.getSelection().length === 0;
+    },
+
+    selectFirstVisible: function() {
+      if (this._hasChildren()) {
+        const buttons = this._getChildren();
+        let current = buttons[0];
+        let i = 1;
+        while (i<buttons.length && !current.isVisible()) {
+          current = buttons[i++];
+        }
+        if (current.isVisible()) {
+          this.__buttonGroup.setSelection([this._getChildren()[i-1]]);
+        }
+      }
     }
   }
 });

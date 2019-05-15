@@ -323,6 +323,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.addListener("appear", () => {
         this.__textfield.focus();
       }, this);
+      this.__textfield.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          this.__serviceBrowser.selectFirstVisible();
+        }
+      }, this);
     }
   }
 });
