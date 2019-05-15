@@ -124,21 +124,28 @@ def __get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
             return param['value']
     return ''
 
+def _get_network_name(client: DockerClient) -> str:
+    networks = [x for x in client.networks.list(filters={"driver":["overlay"]}) if "default" in x.name]
+    if not networks || len(networks)>1:
+        # fall back to default
+        return "services_default"
+    return networks[0].name
+
 
 def __add_to_swarm_network_if_ports_published(
         client: DockerClient,
         docker_service_runtime_parameters: Dict):
     # TODO: SAN this is a brain killer... change services to something better...
     if "endpoint_spec" in docker_service_runtime_parameters:
-        network_id = "services_default"
+        network_name = _get_network_name(client)
         log.debug(
-            "Adding swarm network with id: %s to docker runtime parameters", network_id)
+            "Adding swarm network with id: %s to docker runtime parameters", network_name)
         list_of_networks = client.networks.list(
-            names=[network_id], filters={"scope": "swarm"})
+            names=[network_name], filters={"scope": "swarm"})
         for network in list_of_networks:
             __add_network_to_service_runtime_params(
                 docker_service_runtime_parameters, network)
-        log.debug("Added swarm network %s to docker runtime parameters", network_id)
+        log.debug("Added swarm network %s to docker runtime parameters", network_name)
 
 
 def __add_uuid_label_to_service_runtime_params(
