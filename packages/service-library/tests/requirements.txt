@@ -1,5 +1,0 @@
-pyyaml>=4.2b1
-pytest
-pytest-runner
-pytest-aiohttp
-pytest-cov

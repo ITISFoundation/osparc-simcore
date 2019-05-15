@@ -40,7 +40,7 @@ async def create_jsonschema_specs(location: Path) -> Dict:
     if URL(str(location)).host:
         spec_dict = await _load_from_url(URL(location))
     else:
-        path = Path(location).expanduser().resolve()
+        path = Path(location).expanduser().resolve() #pylint: disable=no-member
         spec_dict = _load_from_path(path)
 
     try:

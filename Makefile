@@ -17,10 +17,12 @@ export DOCKER=docker.exe
 WINDOWS_MODE=ON
 else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 else
 $(info    detected native linux)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
@@ -303,7 +305,7 @@ setup-check: .env .vscode/settings.json
 # target: .venv – Creates a python virtual environment with dev tools (pip, pylint, ...)
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8 virtualenv
+	.venv/bin/pip3 install pylint autopep8 virtualenv pip-tools
 	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
 
 .venv27: .venv
@@ -312,6 +314,17 @@ setup-check: .env .vscode/settings.json
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
 
+
+.PHONY: requirements
+# target: requirements – Compiles ALL PiP requirements (.in->.txt) WARNING: UNDER DEVELOPMENT!!
+requirements:
+	pushd packages/s3wrapper/requirements && $(MAKE) -f Makefile all && popd
+	pushd packages/service-library/requirements && $(MAKE) -f Makefile all && popd
+	pushd packages/simcore-sdk/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/web/server/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/storage/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/sidecar/requirements && $(MAKE) -f Makefile all && popd
+	pushd services/director/requirements && $(MAKE) -f Makefile all && popd
 
 
 ## -------------------------------

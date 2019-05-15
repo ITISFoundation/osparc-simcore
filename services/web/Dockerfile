@@ -60,7 +60,7 @@ COPY  --chown=scu:scu services/web/server/requirements/*.txt \
       tmp/web/server/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/web/server/requirements/base.txt
+      -r tmp/web/server/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------

@@ -18,8 +18,9 @@ Every folder contains a python package with the following properties:
   # for development
   pip install -r requirements/dev.txt
 
-  # or for production
-  pip install .
+  # for CI, we freeze dependencies and install tests
+  pip install -r requirements/base.txt
+  pip install .[test]
 ```
 
 - it can be a package with or without with *entrypoints*.

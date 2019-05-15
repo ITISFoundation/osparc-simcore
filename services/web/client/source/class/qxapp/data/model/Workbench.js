@@ -193,6 +193,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
         node.giveUniqueName();
       }
       this.addNode(node, parent);
+      if (populateNodeData) {
+        node.startInteractiveNode();
+      }
 
       return node;
     },
@@ -362,6 +365,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         this.getNode(nodeId).giveUniqueName();
+        this.getNode(nodeId).startInteractiveNode();
       }
     },
 

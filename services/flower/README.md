@@ -1,3 +1,0 @@
-# Flower
-
-Celery management tool
