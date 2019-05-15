@@ -42,7 +42,7 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: bash ops/travis/deploy/test-images
+          script: unbuffer bash ops/travis/deploy/test-images
           on:
             all_branches: true
 
@@ -303,7 +303,7 @@ jobs:
       script: echo "Deploy master"
       deploy:
         - provider: script
-          script: bash ops/travis/deploy/master
+          script: unbuffer bash ops/travis/deploy/master
           on:
             branch: master
     - stage: deployment
@@ -314,7 +314,7 @@ jobs:
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: bash ops/travis/deploy/staging
+          script: unbuffer bash ops/travis/deploy/staging
           on:
             branch: staging
     - stage: deployment
@@ -324,7 +324,7 @@ jobs:
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: ops/travis/deploy/production
+          script: unbuffer bash ops/travis/deploy/production
           on:
             all_branches: true
             tags: true
