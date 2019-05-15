@@ -55,14 +55,14 @@ def here()->Path:
 
 @pytest.fixture("session")
 def image_environ():
-    docker_registry = os.environ.get("DOCKER_REGISTRY")
-    if docker_registry:
-        if not str(docker_registry).endswith("/"):
-            docker_registry = docker_registry + "/"
-            os.environ["DOCKER_REGISTRY"] = docker_registry
-    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG")
-    if not docker_image_tag:
-        os.environ["DOCKER_IMAGE_TAG"] = "latest"
+    # ensure we have a docker registry
+    docker_registry = os.environ.get("DOCKER_REGISTRY", default="itisfoundation")
+    if not str(docker_registry).endswith("/"):
+        docker_registry = docker_registry + "/"
+    os.environ["DOCKER_REGISTRY"] = docker_registry
+    # ensure we have a docker image tag
+    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG", default="latest")
+    os.environ["DOCKER_IMAGE_TAG"] = docker_image_tag
 
 @pytest.fixture(scope='session')
 def docker_compose_file(bucket, pytestconfig, here, image_environ): # pylint:disable=unused-argument
