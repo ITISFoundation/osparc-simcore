@@ -1,8 +1,19 @@
-# development mode
-# paths relative to location of setup.py
-.[test]
+# Shortcut to install all packages for the contigous integration (CI) of 'services/web/server'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
 
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/
 ../../../packages/service-library/
 ../../../packages/director-sdk/python
+
+# installs current package
+.

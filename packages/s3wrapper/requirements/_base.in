@@ -1,0 +1,7 @@
+#
+# Specifies third-party dependencies for 's3wrapper'
+#
+
+urllib3<1.25 # FIXME: constraint by requests==2.21.0
+
+minio

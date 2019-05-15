@@ -21,20 +21,11 @@ source .venv/bin/activate
 
 # installs all dependencies as well as web/server package in edit-mode
 cd services/web/server
-pip3 install -r requirements-dev.txt
+pip3 install -r requirements/dev.txt
 
 # runs server.__main__.py e.g.
 
 simcore-service-webserver --help
-```
-
-Init database service by hand and fill it with fake data
-```bash
-# init test db
-cd services/web/server/tests/mock
-docker-compose up
-cd ../../config
-python init_db.py
 ```
 
 Run server passing a configuration file (see example under ``services/web/server/src/simcore_service_webserver/config``)

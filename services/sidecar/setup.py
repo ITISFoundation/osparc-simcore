@@ -1,37 +1,32 @@
-# -*- coding: utf-8 -*-
+import re
 import sys
-import pathlib
+from pathlib import Path
 
-from setuptools import (
-    find_packages,
-    setup,
-)
+from setuptools import find_packages, setup
 
-_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
-_PACKAGES_DIR = _CDIR.absolute().parent.parent / "packages"
-
-def list_requirements_in(filename):
-    requires = []
-    with (_CDIR / "requirements" / filename).open() as fh:
-        requires = [line.strip() for line in fh.readlines() if not line.lstrip().startswith("#")]
-    return requires
+here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-INSTALL_REQUIRES = list_requirements_in("base.txt")
+def read_reqs( reqs_path: Path):
+    return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
 
-# FIXME: not sure how to add these dependencies *here* and *only* in production. Now using requirements/prod.txt
-SC_PACKAGES = [
-    "s3wrapper",
-    "simcore-sdk"
+
+install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
+    "s3wrapper==0.1.0",
+    "simcore-sdk==0.1.0",
+    "simcore-service-storage-sdk==0.1.0"
 ]
+
+test_requirements = read_reqs( here / "requirements" / "_test.txt" )
+
 
 setup(
     name='simcore-service-sidecar',
     version='0.0.1',
     packages=find_packages(where='src'),
-    package_dir={
-        '': 'src',
-    },
-    install_requires=INSTALL_REQUIRES,
+    package_dir={'': 'src'},
+    install_requires=install_requirements,
     python_requires='>=3.6',
+    test_suite='tests',
+    tests_require=test_requirements
 )

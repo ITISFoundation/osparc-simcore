@@ -1,0 +1,18 @@
+#
+# Specifies third-party dependencies for 'storage'
+#
+
+urllib3~=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
+psycopg2-binary~=2.7.5  # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
+sqlalchemy~=1.3.3       # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
+jsonschema<3            # openapi-spec-validator from service-libs has requirement jsonschema<3
+
+aiohttp
+aiofiles
+aiopg[sa]~=0.15.0     # Fixes 0.16.0 https://github.com/aio-libs/aiopg/issues/535
+execnet
+marshmallow
+trafaret
+trafaret_config
+tenacity
+semantic_version

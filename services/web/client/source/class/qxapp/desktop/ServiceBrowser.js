@@ -42,16 +42,16 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
   construct: function() {
     this.base(arguments);
 
-    let prjBrowserLayout = new qx.ui.layout.VBox(10);
+    const prjBrowserLayout = new qx.ui.layout.VBox(10);
     this._setLayout(prjBrowserLayout);
 
-    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
+    const iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
     this._add(iframe, {
       flex: 1
     });
 
     const interval = 1000;
-    let userTimer = new qx.event.Timer(interval);
+    const userTimer = new qx.event.Timer(interval);
     userTimer.addListener("interval", () => {
       if (this.__servicesReady) {
         userTimer.stop();
@@ -77,7 +77,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __getServicesPreload: function() {
-      let store = qxapp.data.Store.getInstance();
+      const store = qxapp.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         // Do not validate if are not taking actions
         // this.__nodeCheck(e.getData());
@@ -87,15 +87,15 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      let servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      const servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
-      let servicesList = this.__createServicesList();
+      const servicesList = this.__createServicesList();
       servicesLayout.add(servicesList);
 
-      let versionsList = this.__createVersionsList();
+      const versionsList = this.__createVersionsList();
       servicesLayout.add(versionsList);
 
-      let serviceDescription = this.__createServiceDescription();
+      const serviceDescription = this.__createServiceDescription();
       servicesLayout.add(serviceDescription, {
         flex: 1
       });
@@ -104,17 +104,17 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesList: function() {
-      let servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
+      const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      let filterStrLayout = this.__createFilterStringLayout();
+      const filterStrLayout = this.__createFilterStringLayout();
       servicesLayout.add(filterStrLayout);
 
       const typeBtns = [
         "Computational",
         "Dynamic"
       ];
-      let typeResp = this.__createFilterByLayout(this.tr("Type"), typeBtns);
-      let filterTypeLayout = typeResp["layout"];
+      const typeResp = this.__createFilterByLayout(this.tr("Type"), typeBtns);
+      const filterTypeLayout = typeResp["layout"];
       this.__filterByType = typeResp["radioGroup"];
       servicesLayout.add(filterTypeLayout);
 
@@ -126,12 +126,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         "PostPro",
         "Notebook"
       ];
-      let catResp = this.__createFilterByLayout(this.tr("Category"), catBtns);
-      let filterCatLayout = catResp["layout"];
+      const catResp = this.__createFilterByLayout(this.tr("Category"), catBtns);
+      const filterCatLayout = catResp["layout"];
       this.__filterByCategory = catResp["radioGroup"];
       servicesLayout.add(filterCatLayout);
 
-      let servicesList = this.__servicesList = new qx.ui.form.List().set({
+      const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
         spacing: 10,
         minWidth: 500,
@@ -141,21 +141,29 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       servicesList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           const selectedKey = e.getData()[0].getModel();
-          this.__serviceSelected(selectedKey, true);
+          this.__serviceSelected(selectedKey);
         }
       }, this);
-      let store = qxapp.data.Store.getInstance();
-      let latestServices = [];
-      let services = this.__allServices = store.getServices();
+      const store = qxapp.data.Store.getInstance();
+      const latestServices = [];
+      const services = this.__allServices = store.getServices();
       for (const serviceKey in services) {
         latestServices.push(qxapp.utils.Services.getLatest(services, serviceKey));
       }
-      let latestServicesModel = new qx.data.Array(
+      const latestServicesModel = new qx.data.Array(
         latestServices.map(s => qx.data.marshal.Json.createModel(s))
       );
-      let servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
+      const servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
       servCtrl.setDelegate({
-        createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
+        createItem: () => {
+          const item = new qxapp.desktop.ServiceBrowserListItem();
+          item.addListener("tap", e => {
+            // const serviceKey = item.getModel();
+            // this.__serviceSelected(serviceKey);
+            servicesList.setSelection([item]);
+          });
+          return item;
+        },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "title", null, item, id);

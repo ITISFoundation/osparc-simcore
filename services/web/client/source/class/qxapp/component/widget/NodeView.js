@@ -49,7 +49,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     });
     inputNodesLayout.add(inputLabel);
 
-    const scroll = new qx.ui.container.Scroll().set({
+    const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 300
     });
     scroll.add(inputNodesLayout);
@@ -82,6 +82,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
   members: {
     __mainLayout: null,
+    __scrollContainer: null,
     __inputNodesLayout: null,
     __settingsLayout: null,
     __mapperLayout: null,
@@ -273,6 +274,21 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__inputNodesLayout.toggleCollapsed.bind(this.__inputNodesLayout));
+
+      const maximizeIframeCb = msg => {
+        this.__blocker.setStyles({
+          display: msg.getData() ? "none" : "block"
+        });
+        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+      };
+
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
     }
   }
 });

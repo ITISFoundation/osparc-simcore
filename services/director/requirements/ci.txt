@@ -1,3 +1,16 @@
-.[test]
+# Shortcut to install all packages for the contigous integration (CI) of 'director'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
 ../../packages/service-library/
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+
+# installs current package
+.

@@ -66,7 +66,7 @@ def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
     pip_exec = venv27 / "bin" / "pip"
     assert pip_exec.exists()
 
-    requirements_py2 = here.parent / "requirements/py27.txt"
+    requirements_py2 = here.parent / "requirements/py27/base.txt"
     cmd = "{} install -r {}".format(pip_exec, requirements_py2)
     assert subprocess.check_call(
         cmd.split()) == 0, "Unable to run %s" % cmd
