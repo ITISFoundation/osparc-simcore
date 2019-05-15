@@ -48,22 +48,14 @@ export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/cl
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-DEFAULT_DOCKER_IMAGE_TAG := latest
-ifndef DOCKER_IMAGE_TAG
-$(warning DOCKER_IMAGE_TAG variable is undefined, using default ${DEFAULT_DOCKER_IMAGE_TAG})
-export DOCKER_IMAGE_TAG := ${DEFAULT_DOCKER_IMAGE_TAG}
-endif # DOCKER_IMAGE_TAG
+# using ?= will only set if absent
+export DOCKER_IMAGE_TAG ?= latest
 $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 
 # default to local (no registry)
-DEFAULT_DOCKER_REGISTRY := itisfoundation
-ifdef DOCKER_REGISTRY
-# check it ends with /
+export DOCKER_REGISTRY ?= itisfoundation
+# ensure it finishes with /
 export DOCKER_REGISTRY := $(shell echo ${DOCKER_REGISTRY} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
-else
-$(warning DOCKER_REGISTRY variable is undefined, using default ${DEFAULT_DOCKER_REGISTRY})
-export DOCKER_REGISTRY := ${DEFAULT_DOCKER_REGISTRY}
-endif # DOCKER_REGISTRY
 $(info DOCKER_REGISTRY set to ${DOCKER_REGISTRY})
 
 ## Tools ------------------------------------------------------------------------------------------------------
@@ -220,12 +212,24 @@ push-cache:
 
 
 ## -------------------------------
-# ci
+# registry operations
+ifdef DOCKER_REGISTRY_NEW
+# check it ends with /
+export DOCKER_REGISTRY_NEW := $(shell echo ${DOCKER_REGISTRY_NEW} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
+$(info DOCKER_REGISTRY_NEW set to ${DOCKER_REGISTRY_NEW})
+endif # DOCKER_REGISTRY_NEW
 
-.PHONY: tag push pull create-staging-stack-file
+.PHONY: tag push pull create-stack-file
 #target: tag – Tags service images
 tag:
-	for i in $(SERVICES_LIST); do \
+ifndef DOCKER_REGISTRY_NEW
+	$(error DOCKER_REGISTRY_NEW variable is undefined)
+endif
+ifndef DOCKER_IMAGE_TAG_NEW
+	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
+endif
+	@echo "Tagging from ${DOCKER_REGISTRY}, ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
+	@for i in $(SERVICES_LIST); do \
 		${DOCKER} tag ${DOCKER_REGISTRY}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}$$i:${DOCKER_IMAGE_TAG_NEW}; \
 	done
 
