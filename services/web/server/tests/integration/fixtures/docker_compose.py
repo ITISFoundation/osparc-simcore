@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import socket
 from copy import deepcopy
 from pathlib import Path
@@ -34,7 +35,18 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return content
 
 @pytest.fixture("session")
-def devel_environ(env_devel_file) -> Dict[str, str]:
+def image_environ():
+    docker_registry = os.environ.get("DOCKER_REGISTRY")
+    if docker_registry:
+        if not str(docker_registry).endswith("/"):
+            docker_registry = docker_registry + "/"
+            os.environ["DOCKER_REGISTRY"] = docker_registry
+    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG")
+    if not docker_image_tag:
+        os.environ["DOCKER_IMAGE_TAG"] = "latest"
+
+@pytest.fixture("session")
+def devel_environ(env_devel_file, image_environ) -> Dict[str, str]:
     """ Environ dict from .env-devel """
     env_devel = {}
     with env_devel_file.open() as f:
