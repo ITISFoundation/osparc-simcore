@@ -13,8 +13,8 @@ from servicelib.application_keys import (APP_DB_ENGINE_KEY,
 from servicelib.jsonschema_validation import \
     validate_instance as validate_project
 
-from ..security import check_permission
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..security import check_permission
 from .config import CONFIG_SECTION_NAME
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
@@ -47,12 +47,18 @@ async def create_projects(request: web.Request):
 
 @login_required
 async def list_projects(request: web.Request):
-    # BUG: anonymous user will not be able to retrieve templates
-    await check_permission(request, "studies.user.read")
+    # TODO: implement all query parameters as
+    # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
-    # TODO: implement all query parameters as in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     ptype = request.query.get('type', 'user')
+
+    # permissions for template and user studie are separated by design (see definitions in )
+    if ptype == "template":
+        await check_permission(request, "studies.template.read")
+    else:
+        await check_permission(request, "studies.user.read")
+
     projects_list = []
     if ptype in ("template", "all"):
         projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
@@ -61,11 +67,13 @@ async def list_projects(request: web.Request):
     if ptype in ("user", "all"):
         projects_list += await ProjectDB.load_user_projects(user_id=uid, db_engine=request.app[APP_DB_ENGINE_KEY])
 
+
     start = int(request.query.get('start', 0))
     count = int(request.query.get('count',len(projects_list)))
 
     stop = min(start+count, len(projects_list))
     projects_list = projects_list[start:stop]
+
     # validate response
     validated_projects = []
     for project in projects_list:
