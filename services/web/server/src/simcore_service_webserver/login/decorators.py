@@ -2,12 +2,10 @@ import asyncio
 from functools import wraps
 
 from aiohttp import web
-from aiohttp_security.api import authorized_userid, permits
+from aiohttp_security.api import authorized_userid
 
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.requests_utils import get_request
-
-from ..db_models import UserRole
 
 
 @asyncio.coroutine

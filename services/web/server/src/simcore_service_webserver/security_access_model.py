@@ -63,6 +63,8 @@ class RoleBasedAccessModel:
     # TODO: operations to ADD/REMOVE/EDIT permissions in a role
 
     async def can(self, role: UserRole, operation: str, context: Dict=None) -> bool:
+        # pylint: disable=too-many-return-statements
+
         # undefined operation  TODO: check if such a name is defined??
         if not operation:
             log.debug("Checking undefined operation %s in access model", operation)
