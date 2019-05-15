@@ -1,3 +1,7 @@
+# create SVG out of this schema
+
+[mermaid live editor](https://mermaidjs.github.io/mermaid-live-editor)
+
 ```mermaid
 sequenceDiagram
 participant Feature
