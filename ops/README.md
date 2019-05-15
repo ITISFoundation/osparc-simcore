@@ -11,8 +11,13 @@ Configuring your travis settings will speed up the travis CI process by making u
 ### Travis configuration
 
 Define the following secure environment variables in your fork:
+
 ```bash
 DOCKER_REGISTRY # this shall be set to your own dockerhub repository account for example: itisfoundation
 DOCKER_USERNAME # the docker username (!beware this should be a [secure env variable](https://docs.travis-ci.com/user/environment-variables/#defining-encrypted-variables-in-travisyml))
 DOCKER_PASSWORD # the docker password (!beware this should be a [secure env variable](https://docs.travis-ci.com/user/environment-variables/#defining-encrypted-variables-in-travisyml))
 ```
+
+### Release workflow
+
+![Git release workflow](docs/img/git-release-workflow.svg)

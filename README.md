@@ -55,4 +55,4 @@
 
 ## Release workflow
 
-![Git release workflow](docs/img/git-release-workflow.svg)
+[Git release workflow](ops/README.md)
