@@ -55,7 +55,7 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
       const group = this.__buttonGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
-      model.toArray().forEach((service, index) => {
+      model.toArray().forEach(service => {
         const button = new qxapp.component.service.ServiceJumbo(service, "@FontAwesome5Solid/info-circle/16");
         button.subscribeToFilterGroup("service-catalogue");
         group.add(button);
