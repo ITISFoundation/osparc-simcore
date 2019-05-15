@@ -1,6 +1,5 @@
  #pylint: disable=W0621, unused-argument, too-many-arguments, no-name-in-module
 import json
-import os
 import uuid
 from pathlib import Path
 from typing import Any, List, Tuple
