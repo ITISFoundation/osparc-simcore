@@ -35,18 +35,7 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return content
 
 @pytest.fixture("session")
-def image_environ():
-    # ensure we have a docker registry
-    docker_registry = os.environ.get("DOCKER_REGISTRY", default="itisfoundation")
-    if not str(docker_registry).endswith("/"):
-        docker_registry = docker_registry + "/"
-    os.environ["DOCKER_REGISTRY"] = docker_registry
-    # ensure we have a docker image tag
-    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG", default="latest")
-    os.environ["DOCKER_IMAGE_TAG"] = docker_image_tag
-
-@pytest.fixture("session")
-def devel_environ(env_devel_file, image_environ) -> Dict[str, str]:
+def devel_environ(env_devel_file) -> Dict[str, str]:
     """ Environ dict from .env-devel """
     env_devel = {}
     with env_devel_file.open() as f:

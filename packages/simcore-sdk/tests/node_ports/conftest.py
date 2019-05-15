@@ -53,19 +53,8 @@ def file_uuid(project_id, node_uuid)->str:
 def here()->Path:
     yield Path(__file__).parent
 
-@pytest.fixture("session")
-def image_environ():
-    # ensure we have a docker registry
-    docker_registry = os.environ.get("DOCKER_REGISTRY", default="itisfoundation")
-    if not str(docker_registry).endswith("/"):
-        docker_registry = docker_registry + "/"
-    os.environ["DOCKER_REGISTRY"] = docker_registry
-    # ensure we have a docker image tag
-    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG", default="latest")
-    os.environ["DOCKER_IMAGE_TAG"] = docker_image_tag
-
 @pytest.fixture(scope='session')
-def docker_compose_file(bucket, pytestconfig, here, image_environ): # pylint:disable=unused-argument
+def docker_compose_file(bucket, pytestconfig, here): # pylint:disable=unused-argument
     my_path = here /'docker-compose.yml'
 
     yield my_path
