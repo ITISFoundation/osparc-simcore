@@ -254,7 +254,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "material-button",
       alias: "material-button",
       style: (state, styles) => {
-        styles.padding = 8;
+        styles.padding = [7, 8, 5, 8];
         return styles;
       }
     },

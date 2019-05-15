@@ -26,8 +26,8 @@ qx.Class.define("qxapp.component.service.ServiceJumbo", {
   /**
    * Constructor
    */
-  construct: function(serviceModel, icon, command) {
-    this.base(arguments, serviceModel.getName(), serviceModel.getDescription(), icon, command);
+  construct: function(serviceModel, icon) {
+    this.base(arguments, serviceModel.getName(), serviceModel.getDescription(), icon, serviceModel.getContact());
     if (serviceModel != null) { // eslint-disable-line no-eq-null
       this.setServiceModel(serviceModel);
     }

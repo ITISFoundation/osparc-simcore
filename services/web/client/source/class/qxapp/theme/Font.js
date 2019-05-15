@@ -65,6 +65,25 @@ qx.Theme.define("qxapp.theme.Font", {
       family: ["Roboto"],
       color: "text",
       italic: true
+    },
+
+    "text-11": {
+      size: 11,
+      family: ["Roboto"],
+      color: "text"
+    },
+
+    "text-10": {
+      size: 10,
+      family: ["Roboto"],
+      color: "text"
+    },
+
+    "text-8-italic": {
+      size: 8,
+      family: ["Roboto"],
+      color: "text",
+      italic: true
     }
   }
 });

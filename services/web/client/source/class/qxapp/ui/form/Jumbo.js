@@ -21,7 +21,7 @@
 qx.Class.define("qxapp.ui.form.Jumbo", {
   extend: qx.ui.form.ToggleButton,
 
-  construct: function(label, text, icon) {
+  construct: function(label, text, icon, footer) {
     this.base(arguments, label, icon);
 
     this.set({
@@ -31,6 +31,9 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
 
     if (text != null) { // eslint-disable-line no-eq-null
       this.setText(text);
+    }
+    if (footer != null) { // eslint-disable-line no-eq-null
+      this.setFooter(footer);
     }
   },
 
@@ -43,6 +46,11 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
       nullable: true,
       check: "String",
       apply: "_applyText"
+    },
+    footer: {
+      nullable: true,
+      check: "String",
+      apply: "_applyFooter"
     }
   },
 
@@ -59,7 +67,8 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
       switch (id) {
         case "label":
           control = new qx.ui.basic.Label(this.getLabel()).set({
-            font: "title-14"
+            font: "title-14",
+            rich: true
           });
           this._add(control, {
             row: 0,
@@ -84,6 +93,16 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
             colSpan: 2
           });
           break;
+        case "footer":
+          control = new qx.ui.basic.Label(this.getFooter()).set({
+            font: "text-10"
+          });
+          this._add(control, {
+            row: 2,
+            column: 0,
+            colSpan: 2
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -92,6 +111,13 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
       const text = this.getChildControl("text");
       if (text) {
         text.setValue(value);
+      }
+    },
+
+    _applyFooter: function(value) {
+      const footer = this.getChildControl("footer");
+      if (footer) {
+        footer.setValue(value);
       }
     }
   }

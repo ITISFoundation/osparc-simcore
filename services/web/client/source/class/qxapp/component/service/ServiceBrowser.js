@@ -55,7 +55,7 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
         allowEmptySelection: true
       });
       model.toArray().forEach(service => {
-        const button = new qxapp.component.service.ServiceJumbo(service, "@FontAwesome5Solid/info-circle/16");
+        const button = new qxapp.component.service.ServiceJumbo(service);
         button.subscribeToFilterGroup("service-catalogue");
         group.add(button);
         this._add(button);
