@@ -12,9 +12,6 @@ from servicelib.rest_utils import extract_and_validate
 from utils_assert import assert_status
 from utils_login import LoggedUser
 
-# from simcore_service_webserver.application_keys import APP_CONFIG_KEY
-# from simcore_service_webserver.storage import setup_storage
-# from simcore_service_webserver.rest import setup_rest
 
 # TODO: create a fake storage service here
 @pytest.fixture()

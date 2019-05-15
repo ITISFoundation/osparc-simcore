@@ -53,25 +53,31 @@ async def _get_specs(location):
 
 
 
-def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
-    """
+def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) -> bool:
+    """[summary]
+
     :param app: main web application
     :type app: web.Application
     :param enable_fake_data: will inject some fake projects, defaults to False
     :param enable_fake_data: bool, optional
     :param disable_login: will disable user login for testing, defaults to False
     :param disable_login: bool, optional
+    :return: False if subystem setup was skipped (e.g. explicitly disabled in config), otherwise True
+    :rtype: bool
     """
+
     logger.debug("Setting up %s %s...", __name__,
             "[debug]" if enable_fake_data or disable_login
                       else ""
     )
 
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], "{} is missing from configuration".format(CONFIG_SECTION_NAME)
+    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], \
+        "{} is missing from configuration".format(CONFIG_SECTION_NAME)
+
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     if "enabled" in cfg and not cfg["enabled"]:
         logger.warning("'%s' explicitly disabled in config", __name__)
-        return
+        return False
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -96,6 +102,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         # Fake.load_user_projects(user_id=1)
         Fake.load_template_projects()
 
+    return True
 
 
 # alias

@@ -22,13 +22,20 @@ from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
 log = logging.getLogger(__name__)
 
 
-# FIXME: with asyncpg need to user NAMES
-CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name
-                                for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
-ANONYMOUS, USER, TESTER, MODERATOR, ADMIN = [getattr(UserRole, att).name
-                                for att in 'ANONYMOUS USER TESTER MODERATOR ADMIN'.split()]
-REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = [getattr(ConfirmationAction, att).name
-                                for att in 'REGISTRATION RESET_PASSWORD CHANGE_EMAIL'.split()]
+def to_names(enum_cls, names):
+    """ ensures names are in enum be retrieving each of them """
+    # FIXME: with asyncpg need to user NAMES
+    return [getattr(enum_cls, att).name for att in names.split()]
+
+
+CONFIRMATION_PENDING, ACTIVE, BANNED = to_names(UserStatus, \
+    'CONFIRMATION_PENDING ACTIVE BANNED')
+
+ANONYMOUS, GUEST, USER, ADMIN = to_names(UserRole, \
+    'ANONYMOUS GUEST USER ADMIN')
+
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(ConfirmationAction, \
+    'REGISTRATION RESET_PASSWORD CHANGE_EMAIL')
 
 # Handlers & tails ------------------------------------------------------
 

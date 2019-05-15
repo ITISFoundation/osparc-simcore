@@ -13,6 +13,7 @@ from servicelib.application_keys import (APP_DB_ENGINE_KEY,
 from servicelib.jsonschema_validation import \
     validate_instance as validate_project
 
+from ..security import check_permission
 from ..login.decorators import RQT_USERID_KEY, login_required
 from .config import CONFIG_SECTION_NAME
 from .projects_exceptions import (ProjectInvalidRightsError,
@@ -27,6 +28,8 @@ ANONYMOUS_UID = -1 # For testing purposes
 
 @login_required
 async def create_projects(request: web.Request):
+    await check_permission(request, "studies.user.create")
+
     project = await request.json()
     try:
         _validate(request.app, project)
@@ -44,6 +47,9 @@ async def create_projects(request: web.Request):
 
 @login_required
 async def list_projects(request: web.Request):
+    # BUG: anonymous user will not be able to retrieve templates
+    await check_permission(request, "studies.user.read")
+
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
     # TODO: implement all query parameters as in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     ptype = request.query.get('type', 'user')
@@ -74,6 +80,8 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
+    await check_permission(request, "studies.user.read")
+
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     if project_uuid in Fake.projects:
@@ -102,6 +110,8 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
+    await check_permission(request, "studies.user.edit")
+
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     new_values = await request.json()
@@ -117,6 +127,9 @@ async def replace_project(request: web.Request):
 
 @login_required
 async def delete_project(request: web.Request):
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "studies.user.delete")
+
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     try:
