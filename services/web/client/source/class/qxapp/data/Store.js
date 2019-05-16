@@ -1454,7 +1454,7 @@ qx.Class.define("qxapp.data.Store", {
 
     deleteFile: function(locationId, fileUuid) {
       if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
-        return;
+        return false;
       }
 
       // Deletes File
@@ -1474,9 +1474,12 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.error("Failed deleting file", error);
+        this.fireDataEvent("deleteFile", null);
       });
 
       req.send();
+
+      return true;
     }
   }
 });

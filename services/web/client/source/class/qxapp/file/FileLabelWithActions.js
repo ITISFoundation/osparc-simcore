@@ -139,10 +139,13 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         const locationId = selection.getLocation();
         let store = qxapp.data.Store.getInstance();
         store.addListenerOnce("deleteFile", e => {
-          this.fireDataEvent("fileDeleted", e.getData());
+          if (e) {
+            this.fireDataEvent("fileDeleted", e.getData());
+          }
         }, this);
-        store.deleteFile(locationId, fileId);
+        return store.deleteFile(locationId, fileId);
       }
+      return false;
     }
   }
 });

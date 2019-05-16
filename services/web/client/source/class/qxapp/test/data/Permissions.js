@@ -159,6 +159,21 @@ qx.Class.define("qxapp.test.data.Permissions", {
       qxapp.data.Permissions.getInstance().setRole("user");
       const req1sent = store.copyFile(loc0, file0, loc1, file1);
       this.assertTrue(req1sent, "user is allowed to push files");
+    },
+
+    // test study.node.data.delete
+    testStudyNodeDataDelete: function() {
+      const loc0 = "loc0";
+      const file0 = "file0";
+      const store = qxapp.data.Store.getInstance();
+
+      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      const req0sent = store.deleteFile(loc0, file0);
+      this.assertFalse(req0sent, "anonymous is not allowed to delete files");
+
+      qxapp.data.Permissions.getInstance().setRole("user");
+      const req1sent = store.deleteFile(loc0, file0);
+      this.assertTrue(req1sent, "user is allowed to delete files");
     }
   }
 });
