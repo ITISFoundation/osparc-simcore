@@ -26,7 +26,7 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             service_port = pushed_service["internal_port"]
             service_uuid = str(uuid.uuid1())
             service_basepath = "/my/base/path"
-            with pytest.raises(exceptions.ServiceUUIDNotFoundError, message="expecting service uuid not found error"):
+            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
                 await producer.get_service_details(service_uuid)
             # start the service
             started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
@@ -56,7 +56,7 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
     for service in started_services:
         service_uuid = service["service_uuid"]
         await producer.stop_service(service_uuid)
-        with pytest.raises(exceptions.ServiceUUIDNotFoundError, message="expecting service uuid not found error"):
+        with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(service_uuid)
 
 

@@ -77,18 +77,15 @@ ENV SC_BUILD_TARGET cache
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/web/server /build/services/web/server
 
-# front-end client
-COPY --from=services_webclient:build --chown=scu:scu \
-      /home/scu/client/build-output \
-      /build/services/web/client
-
-
 WORKDIR /build/services/web/server
 
 RUN $SC_PIP install -r requirements/prod.txt &&\
     $SC_PIP list -v
 
-
+# front-end client last
+COPY --from=services_webclient:build --chown=scu:scu \
+      /home/scu/client/build-output \
+      /build/services/web/client
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
 # Runs as scu (non-root user)

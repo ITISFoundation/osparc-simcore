@@ -3,6 +3,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
+
 before_install() {
     bash ops/travis/helpers/install_docker_compose
     bash ops/travis/helpers/show_system_versions
@@ -11,8 +14,8 @@ before_install() {
 install() {
     bash ops/travis/helpers/ensure_python_pip
     pip3 install -r ops/travis/system-testing/requirements.txt
-    cp .env-devel .env
-    make build
+    make pull-cache || true
+    make pull || make build
 }
 
 before_script() {
@@ -31,6 +34,7 @@ after_success() {
 }
 
 after_failure() {
+    docker images
     make down
 }
 

@@ -15,13 +15,13 @@ from simcore_sdk.node_ports._data_item import DataItem
     ({"store":"z43", "path":"/simcore/asdlkjf/dsfskr.tmt"}),
     (None)
 ])
-def test_default_item(item_value):	
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
+def test_default_item(item_value):
+    with pytest.raises(exceptions.InvalidProtocolError):
         DataItem()
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        DataItem(key="a key") 
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        DataItem(value="a value") 
+    with pytest.raises(exceptions.InvalidProtocolError):
+        DataItem(key="a key")
+    with pytest.raises(exceptions.InvalidProtocolError):
+        DataItem(value="a value")
     item = DataItem(key="one key", value=item_value)
     assert item.key == "one key"
     assert item.value == item_value

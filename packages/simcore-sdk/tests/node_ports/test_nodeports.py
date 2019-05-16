@@ -72,10 +72,10 @@ def test_invalid_ports(special_configuration):
     assert not PORTS.inputs
     assert not PORTS.outputs
 
-    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
+    with pytest.raises(exceptions.UnboundPortError):
         PORTS.inputs[0]
 
-    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
+    with pytest.raises(exceptions.UnboundPortError):
         PORTS.outputs[0]
 
 
@@ -120,7 +120,7 @@ async def test_port_file_accessors(special_configuration, storage, filemanager_c
     PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
     assert await PORTS.outputs["out_34"].get() is None # check emptyness
-    # with pytest.raises(exceptions.S3InvalidPathError, message="Expecting S3InvalidPathError"):
+    # with pytest.raises(exceptions.S3InvalidPathError):
     #     await PORTS.inputs["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
@@ -249,7 +249,7 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
 
     invalid_alias = Path("invalid_alias.fjfj")
-    with pytest.raises(exceptions.PortNotFound, message="Expecting PortNotFound"):
+    with pytest.raises(exceptions.PortNotFound):
         await PORTS.set_file_by_keymap(invalid_alias)
 
     await PORTS.set_file_by_keymap(file_path)
