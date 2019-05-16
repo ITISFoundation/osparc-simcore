@@ -94,7 +94,7 @@ qx.Class.define("qxapp.data.Permissions", {
       this.__userRole = role;
     },
 
-    getLowerRoles(role) {
+    getChildrenRoles(role) {
       const lowerRoles = [];
       for (const r in this.self().ROLES) {
         if (r.toLowerCase() === role.toLowerCase()) {

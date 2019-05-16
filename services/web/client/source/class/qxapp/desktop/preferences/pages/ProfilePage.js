@@ -60,7 +60,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       const permissions = qxapp.data.Permissions.getInstance();
       if (permissions.canDo("preferences.role.update")) {
         role = new qx.ui.form.SelectBox();
-        const roles = permissions.getLowerRoles(permissions.getRole());
+        const roles = permissions.getChildrenRoles(permissions.getRole());
         for (let i=0; i<roles.length; i++) {
           const roleItem = new qx.ui.form.ListItem(roles[i]);
           role.add(roleItem);
