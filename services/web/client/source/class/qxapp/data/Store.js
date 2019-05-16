@@ -1416,7 +1416,7 @@ qx.Class.define("qxapp.data.Store", {
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
       if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
-        return;
+        return false;
       }
 
       // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
@@ -1444,9 +1444,12 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.error(error);
         console.error("Failed copying file", fileUuid, "to", pathId);
+        this.fireDataEvent("fileCopied", null);
       });
 
       req.send();
+
+      return true;
     },
 
     deleteFile: function(locationId, fileUuid) {
