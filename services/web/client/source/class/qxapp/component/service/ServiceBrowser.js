@@ -61,17 +61,19 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
       const group = this.__buttonGroup = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
-      model.toArray().forEach(service => {
-        const button = new qxapp.component.service.ServiceJumbo(service);
-        if (this.__filterGroup !== null) {
-          button.subscribeToFilterGroup(this.__filterGroup);
-        }
-        group.add(button);
-        this._add(button);
-        button.addListener("dbltap", e => {
-          this.fireDataEvent("servicedbltap", button.getServiceModel());
-        }, this);
-      });
+      model.toArray()
+        .sort((a, b) => a.getName().localeCompare(b.getName()))
+        .forEach(service => {
+          const button = new qxapp.component.service.ServiceJumbo(service);
+          if (this.__filterGroup !== null) {
+            button.subscribeToFilterGroup(this.__filterGroup);
+          }
+          group.add(button);
+          this._add(button);
+          button.addListener("dbltap", e => {
+            this.fireDataEvent("servicedbltap", button.getServiceModel());
+          }, this);
+        });
       group.addListener("changeValue", e => this.dispatchEvent(e.clone()), this);
     },
 
