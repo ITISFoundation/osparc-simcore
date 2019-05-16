@@ -106,7 +106,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '9081:8080'
+      - ${SIMCORE_PORT:-9081}:8080
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
