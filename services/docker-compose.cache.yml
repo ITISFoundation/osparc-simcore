@@ -1,26 +1,26 @@
 version: '3.4'
 services:
   apihub:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}apihub:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:cache
     build:
       target: production
   director:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}director:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director:cache
     build:
       target: cache
   sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}sidecar:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:cache
     build:
       target: cache
   storage:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}storage:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:cache
     build:
       target: cache
   webclient:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}webclient:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webclient:cache
     build:
       target: build
   webserver:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}webserver:cache
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
     build:
       target: cache

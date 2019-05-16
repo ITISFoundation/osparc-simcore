@@ -54,10 +54,7 @@ $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 
 # default to local (no registry)
 export DOCKER_REGISTRY ?= itisfoundation
-# ensure it finishes with /
-export DOCKER_REGISTRY := $(shell echo ${DOCKER_REGISTRY} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
 $(info DOCKER_REGISTRY set to ${DOCKER_REGISTRY})
-
 ## Tools ------------------------------------------------------------------------------------------------------
 #
 tools =
@@ -200,7 +197,7 @@ pull-cache:
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER} tag ${DOCKER_REGISTRY}webclient:cache services_webclient:build
+	${DOCKER} tag ${DOCKER_REGISTRY}/webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
@@ -214,8 +211,6 @@ push-cache:
 ## -------------------------------
 # registry operations
 ifdef DOCKER_REGISTRY_NEW
-# check it ends with /
-export DOCKER_REGISTRY_NEW := $(shell echo ${DOCKER_REGISTRY_NEW} | sed -r "s/^(\w+)(\/?)$$/\1\//g")
 $(info DOCKER_REGISTRY_NEW set to ${DOCKER_REGISTRY_NEW})
 endif # DOCKER_REGISTRY_NEW
 
@@ -230,7 +225,7 @@ ifndef DOCKER_IMAGE_TAG_NEW
 endif
 	@echo "Tagging from ${DOCKER_REGISTRY}, ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
 	@for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_REGISTRY}$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}$$i:${DOCKER_IMAGE_TAG_NEW}; \
+		${DOCKER} tag ${DOCKER_REGISTRY}/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$$i:${DOCKER_IMAGE_TAG_NEW}; \
 	done
 
 # target: push – Pushes images into a registry
@@ -259,6 +254,7 @@ info:
 	@echo '+ VERSION              : ${VERSION}'
 	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
 	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
+	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
 	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 

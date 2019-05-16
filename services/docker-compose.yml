@@ -1,13 +1,13 @@
 version: '3.4'
 services:
   apihub:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}apihub:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}apihub:cache
-        - ${DOCKER_REGISTRY:-itisfoundation/}apihub:${DOCKER_IMAGE_TAG:-latest}
+        - ${DOCKER_REGISTRY:-itisfoundation}/apihub:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -22,13 +22,13 @@ services:
           - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}director:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     build:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}director:cache
-        - ${DOCKER_REGISTRY:-itisfoundation/}director:${DOCKER_IMAGE_TAG:-latest}
+        - ${DOCKER_REGISTRY:-itisfoundation}/director:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -74,7 +74,7 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}webclient:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/webclient:cache
         - services_webclient:latest
       target: build
       labels:
@@ -91,13 +91,13 @@ services:
       /bin/sh -c "ls -l build-output;cat build-output/version.txt"
 
   webserver:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}webserver:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}webserver:cache
-        - ${DOCKER_REGISTRY:-itisfoundation/}webserver:${DOCKER_IMAGE_TAG:-latest}
+        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -144,15 +144,15 @@ services:
           - node.role == manager
   #--------------------------------------------------------------------
   sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}sidecar:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}sidecar:cache
-        - ${DOCKER_REGISTRY:-itisfoundation/}sidecar:${DOCKER_IMAGE_TAG:-latest}
+        - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -191,15 +191,15 @@ services:
       - minio
   #--------------------------------------------------------------------
   storage:
-    image: ${DOCKER_REGISTRY:-itisfoundation/}storage:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/storage/Dockerfile
       cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation/}storage:cache
-        - ${DOCKER_REGISTRY:-itisfoundation/}storage:${DOCKER_IMAGE_TAG:-latest}
+        - ${DOCKER_REGISTRY:-itisfoundation}/storage:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
