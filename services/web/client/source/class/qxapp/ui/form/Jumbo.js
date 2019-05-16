@@ -16,11 +16,19 @@
 ************************************************************************ */
 
 /**
- * Big button with a title, a text and an icon.
+ * Big button with a title, a text, an icon, and a footer text.
  */
 qx.Class.define("qxapp.ui.form.Jumbo", {
   extend: qx.ui.form.ToggleButton,
 
+  /**
+   * Constructor of the Jumbo button.
+   *
+   * @param {String} label This is the title of the button, shown on top with bigger font.
+   * @param {String} text This is the middle text. It adds more information.
+   * @param {String} icon Id of the icon that will show to the right of the title (label).
+   * @param {String} footer Text that shows on the bottom left of the button, in small font.
+   */
   construct: function(label, text, icon, footer) {
     this.base(arguments, label, icon);
 

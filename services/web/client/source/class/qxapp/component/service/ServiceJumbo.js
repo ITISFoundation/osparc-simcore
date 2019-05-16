@@ -16,7 +16,8 @@
 ************************************************************************ */
 
 /**
- * Big button representing a service.
+ * Big button representing a service. It shows it name, description and contact information. It also adds
+ * filtering capabilities.
  */
 qx.Class.define("qxapp.component.service.ServiceJumbo", {
   extend: qxapp.ui.form.Jumbo,

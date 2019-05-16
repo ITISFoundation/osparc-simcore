@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * SelectBox adapted to be shown inside a toolbar.
+ * SelectBox with its padding and margins adapted to be show inside a qx.ui.toolbar.ToolBar.
  */
 qx.Class.define("qxapp.ui.toolbar.SelectBox", {
   extend: qx.ui.form.SelectBox,

@@ -16,9 +16,8 @@
 ************************************************************************ */
 
 /**
- * Widget that contains the workbench filters
+ * Widget that contains the service filters.
  */
-
 qx.Class.define("qxapp.desktop.ServiceFilters", {
   extend: qx.ui.core.Widget,
 
