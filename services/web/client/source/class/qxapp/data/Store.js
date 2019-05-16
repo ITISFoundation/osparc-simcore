@@ -1415,7 +1415,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
-      if (qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
         return;
       }
 
@@ -1450,7 +1450,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     deleteFile: function(locationId, fileUuid) {
-      if (qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return;
       }
 
