@@ -87,6 +87,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __contextNodeId: null,
     __contextPort: null,
     __versionsBox: null,
+    __infoBtn: null,
     __serviceBrowser: null,
     __addBtn: null,
 
@@ -153,11 +154,13 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const infoPart = new qx.ui.toolbar.Part();
       const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));
       infoPart.add(versionLabel);
-      const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox();
-      selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
-      selectBox.setValue(selectBox.getChildrenContainer().getSelectables()[0].getLabel());
+      const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox().set({
+        enabled: false
+      });
       infoPart.add(selectBox);
-      const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16");
+      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16").set({
+        enabled: false
+      });
       infoBtn.addListener("execute", function() {
         this.__showServiceInfo();
       }, this);
@@ -261,6 +264,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
       if (this.__addBtn) {
         this.__addBtn.setEnabled(serviceKey !== null);
+      }
+      if (this.__infoBtn) {
+        this.__infoBtn.setEnabled(serviceKey !== null);
+      }
+      if (this.__versionsBox) {
+        this.__versionsBox.setEnabled(serviceKey !== null);
       }
     },
 
