@@ -131,13 +131,14 @@ up-devel: up-swarm-devel
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
+	export SWARM_NETWORK_NAME="simcore"; \
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml simcore
 
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-
+	export SWARM_NETWORK_NAME="simcore"; \
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml simcore
 
 .PHONY: up-webclient-devel
 # target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.

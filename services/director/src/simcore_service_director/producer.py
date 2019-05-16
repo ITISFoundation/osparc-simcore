@@ -125,10 +125,12 @@ def __get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
     return ''
 
 def _get_network_name(client: DockerClient) -> str:
+    if config.SWARM_NETWORK_NAME:
+        return config.SWARM_NETWORK_NAME
+    # try to find the network name (usually named STACKNAME_default)
     networks = [x for x in client.networks.list(filters={"driver":["overlay"]}) if "default" in x.name]
-    if not networks || len(networks)>1:
-        # fall back to default
-        return "services_default"
+    if not networks or len(networks)>1:
+        raise exceptions.DirectorException(msg="Swarm network name is not configured")
     return networks[0].name
 
 
