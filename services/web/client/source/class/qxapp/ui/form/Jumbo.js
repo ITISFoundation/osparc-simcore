@@ -76,7 +76,8 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
         case "label":
           control = new qx.ui.basic.Label(this.getLabel()).set({
             font: "title-14",
-            rich: true
+            rich: true,
+            anonymous: true
           });
           this._add(control, {
             row: 0,
@@ -84,7 +85,9 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
           });
           break;
         case "icon":
-          control = new qx.ui.basic.Image(this.getIcon());
+          control = new qx.ui.basic.Image(this.getIcon()).set({
+            anonymous: true
+          });
           this._add(control, {
             row: 0,
             column: 1
@@ -93,7 +96,8 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
         case "text":
           control = new qx.ui.basic.Label(this.getText()).set({
             rich: true,
-            font: "text-12-italic"
+            font: "text-12-italic",
+            anonymous: true
           });
           this._add(control, {
             row: 1,
@@ -103,7 +107,8 @@ qx.Class.define("qxapp.ui.form.Jumbo", {
           break;
         case "footer":
           control = new qx.ui.basic.Label(this.getFooter()).set({
-            font: "text-10"
+            font: "text-10",
+            anonymous: true
           });
           this._add(control, {
             row: 2,
