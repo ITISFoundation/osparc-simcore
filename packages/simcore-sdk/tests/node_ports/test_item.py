@@ -20,7 +20,7 @@ def create_item(item_type, item_value):
                     value=item_value))
 
 def test_default_item():
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
+    with pytest.raises(exceptions.InvalidProtocolError):
         Item(None, None)
 
 
@@ -54,14 +54,14 @@ async def test_valid_type():
 
 async def test_invalid_type():
     item = create_item("some wrong type", None)
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
+    with pytest.raises(exceptions.InvalidProtocolError) as excinfo:
         await item.get()
     assert "Invalid protocol used" in str(excinfo.value)
 
 
 async def test_invalid_value_type():
     #pylint: disable=W0612
-    with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
+    with pytest.raises(exceptions.InvalidItemTypeError) as excinfo:
         create_item("integer", "not an integer")
 
 @pytest.mark.parametrize("item_type, item_value_to_set, expected_value", [
@@ -91,6 +91,6 @@ async def test_set_new_value(bucket, item_type, item_value_to_set, expected_valu
 async def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: disable=W0613
     item = create_item(item_type, None)
     assert await item.get() is None
-    with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
+    with pytest.raises(exceptions.InvalidItemTypeError) as excinfo:
         await item.set(item_value_to_set)
     assert "Invalid item type" in str(excinfo.value)

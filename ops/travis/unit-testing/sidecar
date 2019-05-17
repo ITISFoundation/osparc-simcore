@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ sidecar packages/)
+FOLDER_CHECKS=(api/ sidecar packages/ .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";

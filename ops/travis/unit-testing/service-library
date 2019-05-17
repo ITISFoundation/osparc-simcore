@@ -1,10 +1,9 @@
 #!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
 
-
-# die on non 0 exit code
-set -e
-
-FOLDER_CHECKS=(packages/ service-library)
+FOLDER_CHECKS=(packages/ service-library .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
@@ -44,6 +43,10 @@ after_success() {
         coveralls
         codecov
     fi
+}
+
+after_failure() {
+    echo "failure..."
 }
 
 # Check if the function exists (bash specific)
