@@ -191,25 +191,22 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "toolbar-selectbox": {
       include: "textfield",
       alias: "selectbox",
-      style: (state, styles) => {
-        styles.margin = [7, 10];
-        styles.paddingLeft = 5;
-        return styles;
-      }
+      style: () => ({
+        margin: [7, 10],
+        paddingLeft: 5
+      })
     },
     "toolbar-selectbox/arrow": {
       include: "selectbox/arrow",
-      style: (state, styles) => {
-        styles.cursor = "pointer";
-        return styles;
-      }
+      style: style => ({
+        cursor: style.disabled ? "auto" : "pointer"
+      })
     },
     "toolbar-selectbox/list": {
       include: "selectbox/list",
-      style: (state, styles) => {
-        styles.padding = 0;
-        return styles;
-      }
+      style: () => ({
+        padding: 0
+      })
     },
 
     /*
