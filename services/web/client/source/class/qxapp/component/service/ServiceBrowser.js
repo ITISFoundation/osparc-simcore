@@ -37,7 +37,7 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
 
   events: {
     "changeValue": "qx.event.type.Data",
-    "servicedbltap": "qx.event.type.Data"
+    "serviceadd": "qx.event.type.Data"
   },
 
   properties: {
@@ -71,7 +71,12 @@ qx.Class.define("qxapp.component.service.ServiceBrowser", {
           group.add(button);
           this._add(button);
           button.addListener("dbltap", e => {
-            this.fireDataEvent("servicedbltap", button.getServiceModel());
+            this.fireDataEvent("serviceadd", button.getServiceModel());
+          }, this);
+          button.addListener("keypress", e => {
+            if (e.getKeyIdentifier() === "Enter") {
+              this.fireDataEvent("serviceadd", button.getServiceModel());
+            }
           }, this);
         });
       group.addListener("changeValue", e => this.dispatchEvent(e.clone()), this);

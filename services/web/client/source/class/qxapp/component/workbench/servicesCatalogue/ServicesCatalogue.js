@@ -186,15 +186,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     },
 
     __createEvents: function() {
-      // Listen to "Enter" key
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Enter") {
-          this.__onAddService();
-        }
-      }, this);
-
-      // Listen to "Double Click" key
-      this.__serviceBrowser.addListener("servicedbltap", e => {
+      this.__serviceBrowser.addListener("serviceadd", e => {
         this.__onAddService(e.getData());
       }, this);
     },
@@ -335,6 +327,10 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__textfield.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
           this.__serviceBrowser.selectFirstVisible();
+          const selected = this.__serviceBrowser.getSelected();
+          if (selected !== null) {
+            this.__onAddService(selected);
+          }
         }
       }, this);
     }
