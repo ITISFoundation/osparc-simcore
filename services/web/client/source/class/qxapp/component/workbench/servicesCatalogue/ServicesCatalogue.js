@@ -322,6 +322,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __attachEventHandlers: function() {
       this.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("service-catalogue");
         this.__textfield.focus();
       }, this);
       this.__textfield.addListener("keypress", e => {
