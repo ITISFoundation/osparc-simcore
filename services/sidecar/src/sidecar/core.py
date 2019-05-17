@@ -282,7 +282,7 @@ class Sidecar:
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
         # stack name, should throw if not set
-        self._stack_name = os.environ["SWARM_NETWORK_NAME"]
+        self._stack_name = os.environ["SWARM_STACK_NAME"]
 
         # config nodeports
         node_ports.node_config.USER_ID = user_id

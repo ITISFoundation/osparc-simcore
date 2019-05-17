@@ -125,8 +125,8 @@ def __get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
     return ''
 
 def _get_network_name(client: DockerClient) -> str:
-    if config.SWARM_NETWORK_NAME:
-        return config.SWARM_NETWORK_NAME
+    if config.SWARM_STACK_NAME:
+        return config.SWARM_STACK_NAME
     # try to find the network name (usually named STACKNAME_default)
     networks = [x for x in client.networks.list(filters={"driver":["overlay"]}) if "default" in x.name]
     if not networks or len(networks)>1:
