@@ -97,7 +97,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const filterPart = new qx.ui.toolbar.Part().set({
         spacing: 10
       });
-      const filters = new qxapp.desktop.ServiceFilters("service-catalogue");
+      const filters = new qxapp.desktop.ServiceFilters("serviceCatalogue");
       this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
       const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
@@ -128,7 +128,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("service-catalogue").set({
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalogue").set({
         width: 568
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
@@ -322,7 +322,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __attachEventHandlers: function() {
       this.addListener("appear", () => {
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("service-catalogue");
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalogue");
         this.__textfield.focus();
       }, this);
       this.__textfield.addListener("keypress", e => {
