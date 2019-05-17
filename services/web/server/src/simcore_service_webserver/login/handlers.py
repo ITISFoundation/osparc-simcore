@@ -407,7 +407,7 @@ async def check_password_strength(request: web.Request):
 async def check_invitation(invitation:str, db):
     confirmation = await validate_confirmation_code(invitation, db)
     if confirmation is None:
-        raise web.HTTPForbidden(reason="Request requires invitation")
+        raise web.HTTPForbidden(reason="Request requires invitation or invitation expired")
 
 
 async def validate_confirmation_code(code, db):

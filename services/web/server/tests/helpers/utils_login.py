@@ -7,6 +7,7 @@ from yarl import URL
 from simcore_service_webserver.db_models import (ConfirmationAction, UserRole,
                                                  UserStatus)
 from simcore_service_webserver.login.cfg import cfg, get_storage
+from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 from utils_assert import assert_status
@@ -86,26 +87,19 @@ class LoggedUser(NewUser):
         self.user = await log_client_in(self.client, self.params)
         return self.user
 
-class NewInvitationCode(NewUser):
-    def __init__(self, client, data=None):
-        super().__init__(None, client.app)
+class NewInvitation(NewUser):
+    def __init__(self, client, guest="", host=None):
+        super().__init__(host, client.app)
         self.client = client
-        self.data = {} if data is None else data
+        self.guest = guest or get_random_string(10)
+        self.confirmation = None
 
     async def __aenter__(self):
-        # creates inviter user
-        self.user = await create_user()
+        # creates host user
+        self.user = await create_user(self.params)
 
-        self.data['inviter_email'] = self.user['email']
-        self.data.setdefault('invitee_email', 'guest@bar.org')
-
-        self.confirmation = await self.db.create_confirmation(
-            user={"id": self.user['id']},
-            action=ConfirmationAction.INVITATION.name,
-            data= json.dumps(self.data)
-        )
-
-        return self.confirmation["code"]
+        self.confirmation = await create_invitation(self.user, self.guest, self.db)
+        return self.confirmation
 
     async def __aexit__(self, *args):
         await self.db.delete_confirmation(self.confirmation)

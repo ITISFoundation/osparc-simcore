@@ -9,8 +9,9 @@ from aiohttp import web
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
+from simcore_service_webserver.login.registration import get_confirmation_info
 from utils_assert import assert_error, assert_status
-from utils_login import NewInvitationCode, NewUser, parse_link
+from utils_login import NewInvitation, NewUser, parse_link
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
@@ -131,14 +132,16 @@ async def test_registration_with_invitation(client, is_invitation_required, has_
     #
     # Front end then creates the following request
     #
-    async with NewInvitationCode(client) as invitation_code:
+    async with NewInvitation(client) as confirmation:
+        print( get_confirmation_info(confirmation) )
+
         url = client.app.router['auth_register'].url_for()
 
         r = await client.post(url, json={
             'email': EMAIL,
             'password': PASSWORD,
             'confirm': PASSWORD,
-            'invitation': invitation_code if has_valid_invitation else "WRONG_CODE"
+            'invitation': confirmation['code'] if has_valid_invitation else "WRONG_CODE"
         })
         await assert_status(r, expected_response)
 
