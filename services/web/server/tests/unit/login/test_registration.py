@@ -10,7 +10,7 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from utils_assert import assert_error, assert_status
-from utils_login import NewUser, parse_link
+from utils_login import NewInvitationCode, NewUser, parse_link
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
@@ -108,6 +108,47 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     user = await db.get_user({'email': EMAIL})
     assert user['status'] == UserStatus.ACTIVE.name
     await db.delete_user(user)
+
+
+@pytest.mark.parametrize("is_invitation_required,has_valid_invitation,expected_response", [
+    (True, True, web.HTTPOk),
+    (True, False, web.HTTPForbidden),
+    (False, True, web.HTTPOk),
+    (False, False, web.HTTPOk),
+])
+async def test_registration_with_invitation(client, is_invitation_required, has_valid_invitation, expected_response):
+    from servicelib.application_keys import APP_CONFIG_KEY
+    from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
+
+    client.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] =  {
+        "registration_confirmation_required": False,
+        "registration_invitation_required": is_invitation_required
+    }
+
+    #
+    # User gets an email with a link as
+    #   https:/some-web-address.io/#/register/?invitation={code}
+    #
+    # Front end then creates the following request
+    #
+    async with NewInvitationCode(client) as invitation_code:
+        url = client.app.router['auth_register'].url_for()
+
+        r = await client.post(url, json={
+            'email': EMAIL,
+            'password': PASSWORD,
+            'confirm': PASSWORD,
+            'invitation': invitation_code if has_valid_invitation else "WRONG_CODE"
+        })
+        await assert_status(r, expected_response)
+
+        # check optional fields in body
+        if not has_valid_invitation or not is_invitation_required:
+            r = await client.post(url, json={
+                    'email': "new-user" + EMAIL,
+                    'password': PASSWORD
+            })
+            await assert_status(r, expected_response)
 
 
 if __name__ == '__main__':

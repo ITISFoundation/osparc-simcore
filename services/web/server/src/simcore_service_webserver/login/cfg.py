@@ -11,7 +11,7 @@ DEFAULTS = {
     'PASSWORD_LEN': (6, 30),
     'LOGIN_REDIRECT': '/',
     'LOGOUT_REDIRECT': '/',
-    'REGISTRATION_CONFIRMATION_REQUIRED': True, # TODO: activate when
+    'REGISTRATION_CONFIRMATION_REQUIRED': True,
 
     # TODO: add in configuration file as environ!
     'SMTP_SENDER': None,
@@ -23,6 +23,7 @@ DEFAULTS = {
 
     # email confirmation links lifetime in days
     'REGISTRATION_CONFIRMATION_LIFETIME': 5,
+    'INVITATION_CONFIRMATION_LIFETIME': 5,
     'RESET_PASSWORD_CONFIRMATION_LIFETIME': 20 * _MINUTES,
     'CHANGE_EMAIL_CONFIRMATION_LIFETIME': 5,
 
