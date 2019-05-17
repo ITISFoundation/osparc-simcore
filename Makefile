@@ -47,7 +47,7 @@ export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export SWARM_STACK_NAME ?= simcore
+export SWARM_STACK_NAME ?= services
 # using ?= will only set if absent
 export DOCKER_IMAGE_TAG ?= latest
 $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
