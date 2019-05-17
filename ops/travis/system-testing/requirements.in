@@ -4,3 +4,4 @@ pytest-aiohttp
 
 docker
 tenacity
+pyyaml

@@ -22,6 +22,7 @@ py==1.8.0                 # via pytest
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest==4.5.0
+pyyaml==5.1
 requests==2.22.0          # via docker
 six==1.12.0               # via docker, docker-pycreds, pytest, tenacity, websocket-client
 tenacity==5.0.4
