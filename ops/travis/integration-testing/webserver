@@ -3,6 +3,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
+export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
+
 before_install() {
     bash ops/travis/helpers/install_docker_compose
     bash ops/travis/helpers/show_system_versions
@@ -15,18 +18,25 @@ install() {
 
 before_script() {
     pip list -v
-    make build
+    make pull-cache || true
+    make pull || make build
     docker images
 }
 
 script() {
-    pytest --cov=simcore_service_webserver -v services/web/server/tests/integration
+    pytest --cov=simcore_service_webserver --cov-append -v services/web/server/tests/integration
     # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
     #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }
 
 after_success() {
     coveralls
+    codecov
+}
+
+after_failure() {
+    docker images
+    make down
 }
 
 # Check if the function exists (bash specific)
