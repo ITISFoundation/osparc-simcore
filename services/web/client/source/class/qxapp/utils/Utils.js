@@ -291,6 +291,34 @@ qx.Class.define("qxapp.utils.Utils", {
       deleteCookie: cname => {
         document.cookie = cname + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       }
+    },
+
+    parseURLFragment: () => {
+      let urlHash = window.location.hash.slice(1);
+      const parsedFragment = {};
+      if (urlHash.length) {
+        urlHash = urlHash.split("?");
+        if (urlHash.length < 3) {
+          // Nav
+          urlHash[0].split("/").map(fragmentPart => {
+            if (fragmentPart.length) {
+              parsedFragment.nav = parsedFragment.nav || [];
+              parsedFragment.nav.push(decodeURIComponent(fragmentPart));
+            }
+          });
+          if (urlHash.length === 2) {
+            // Params
+            parsedFragment.params = parsedFragment.params || {};
+            urlHash[1].replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+              parsedFragment.params[decodeURIComponent(key)] = decodeURIComponent(value);
+            });
+          }
+        } else {
+          console.error("URL fragment doesn't have the correct format.");
+          return null;
+        }
+      }
+      return parsedFragment;
     }
   }
 });

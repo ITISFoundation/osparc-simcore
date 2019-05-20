@@ -71,12 +71,21 @@ qx.Class.define("qxapp.Application", {
     },
 
     __initRouting: function() {
-      // Route: /#/study/{id}
       // TODO: PC -> IP consider regex for uuid, i.e. /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/ ???
-      let result = /#\/study\/([0-9a-zA-Z\-]+)/.exec(window.location.hash);
-      if (result) {
-        qxapp.utils.Utils.cookie.deleteCookie("user");
-        qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[1]), this.__loadLoginPage, this);
+      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      if (urlFragment.nav && urlFragment.nav.length) {
+        if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
+          // Route: /#/study/{id}
+          qxapp.utils.Utils.cookie.deleteCookie("user");
+          qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
+        } else if (urlFragment.nav[0] === "registration" && urlFragment.params.invitation) {
+          qxapp.utils.Utils.cookie.deleteCookie("user");
+          this.__restart();
+        }
+        else {
+          // this.load404();
+          console.error("URL fragment format not recognized.")
+        }
       } else {
         this.__restart();
       }
