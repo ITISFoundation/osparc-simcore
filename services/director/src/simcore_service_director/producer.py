@@ -14,7 +14,7 @@ import tenacity
 from aiodocker.docker import Docker as DockerClient
 
 from . import config, exceptions, registry_proxy
-from .system_utils import get_system_extra_hosts
+from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -34,21 +34,13 @@ async def _docker_client() -> DockerClient:
         await client.close()
 
 
-async def _login_docker_registry(client: DockerClient):
-    try:
-        # login
-        registry_url = config.REGISTRY_URL
-        username = config.REGISTRY_USER
-        password = config.REGISTRY_PW
-        log.debug("logging into docker registry %s", registry_url)
-        client.login(registry=registry_url + '/v2',
-                     username=username, password=password)
-        log.debug("logged into docker registry %s", registry_url)
-    except docker.errors.APIError as err:
-        log.exception("Error while loggin into the registry")
-        raise exceptions.RegistryConnectionError(
-            "Error while logging to docker registry", err) from err
-
+async def _create_auth() -> Dict:
+    return {
+        "username": config.REGISTRY_URL,
+        "password": config.REGISTRY_PW,
+        "email": "",
+        "serveraddress": "{}/v2".format(config.REGISTRY_URL)
+    }
 
 async def _check_node_uuid_available(client: DockerClient, node_uuid: str):
     log.debug("Checked if UUID %s is already in use", node_uuid)
@@ -181,9 +173,7 @@ async def _add_main_service_label_to_service_runtime_params(
               docker_service_runtime_parameters["labels"])
 
 
-async def _add_network_to_service_runtime_params(
-        docker_service_runtime_parameters: Dict,
-        docker_network: Dict):
+async def _add_network_to_service_runtime_params(docker_service_runtime_parameters: Dict, docker_network: Dict):
 
     # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
@@ -220,7 +210,7 @@ async def _add_env_variables_to_service_runtime_params(
 
 async def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters: Dict):
     log.debug("Getting extra hosts with suffix: %s", config.EXTRA_HOSTS_SUFFIX)
-    extra_hosts = get_system_extra_hosts(config.EXTRA_HOSTS_SUFFIX)
+    extra_hosts = get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX)
     if "hosts" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["hosts"].update(extra_hosts)
     else:
@@ -430,11 +420,13 @@ async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_se
     task_template = {
         "ContainerSpec": {
             "Image": docker_image_full_path,
-            "Env": {env.split("=")[0]: env.split("=")[1] for env in docker_service_runtime_parameters["env"]} if "env" in docker_service_runtime_parameters else {}
+            "Env": {env.split("=")[0]: env.split("=")[1] for env in docker_service_runtime_parameters["env"]} if "env" in docker_service_runtime_parameters else {},
+            "Hosts": docker_service_runtime_parameters["hosts"] if "hosts" in docker_service_runtime_parameters else []
         },
         "Placement": {
             "Constraints": [x for x in docker_service_runtime_parameters["constraints"]] if "constraints" in docker_service_runtime_parameters else []
-        }
+        },
+        "Networks" : docker_service_runtime_parameters["networks"] if "networks" in docker_service_runtime_parameters else []
     }
 
     endpoint_spec = {
@@ -479,6 +471,7 @@ async def _start_docker_service(client: DockerClient,
         log.debug("Starting docker service %s using parameters %s",
                   docker_image_full_path, docker_service_runtime_parameters)
         tast_template, endpoint_spec, labels, name = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
+
         service = await client.services.create(task_template=tast_template, name=name, labels=labels, endpoint_spec=endpoint_spec)
 
         log.debug("Service started now waiting for it to run")
