@@ -47,7 +47,7 @@ export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
+export SWARM_STACK_NAME ?= services
 # using ?= will only set if absent
 export DOCKER_IMAGE_TAG ?= latest
 $(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
@@ -131,13 +131,12 @@ up-devel: up-swarm-devel
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 .PHONY: up-webclient-devel
 # target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
