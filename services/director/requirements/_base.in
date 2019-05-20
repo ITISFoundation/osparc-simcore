@@ -3,7 +3,8 @@
 #
 
 aiohttp
-docker
+aiodocker
+asyncio_extras
 requests
 tenacity
 jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 requires jsonschema<3
