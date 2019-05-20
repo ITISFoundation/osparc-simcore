@@ -20,8 +20,9 @@ SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
 
 log = logging.getLogger(__name__)
 
+
 @contextmanager
-def _docker_client() ->DockerClient:
+def _docker_client() -> DockerClient:
     try:
         client = aiodocker.Docker()
         yield client
@@ -30,6 +31,7 @@ def _docker_client() ->DockerClient:
         raise
     finally:
         client.close()
+
 
 async def _login_docker_registry(client: DockerClient):
     try:
@@ -67,11 +69,9 @@ async def _check_setting_correctness(setting: Dict):
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-async def _get_service_runtime_parameters_labels(
-            image: docker.models.images.Image,
-            tag: str) -> Dict:
+async def _get_service_runtime_parameters_labels(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(image, tag)
+    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
     runtime_parameters = dict()
     if SERVICE_RUNTIME_SETTINGS in image_labels:
         runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS])
@@ -79,11 +79,9 @@ async def _get_service_runtime_parameters_labels(
     return runtime_parameters
 
 
-async def _get_service_boot_parameters_labels(
-            image: docker.models.images.Image,
-            tag: str) -> Dict:
+async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(image, tag)
+    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
     boot_params = dict()
     if SERVICE_RUNTIME_BOOTSETTINGS in image_labels:
         boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS])
@@ -131,24 +129,25 @@ async def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
             return param['value']
     return ''
 
-async def _get_swarm_network(client: DockerClient) -> docker.models.networks.Network:
+
+async def _get_swarm_network(client: DockerClient) -> Dict:
     network_name = "default"
     if config.SWARM_STACK_NAME:
         network_name = config.SWARM_STACK_NAME
     # try to find the network name (usually named STACKNAME_default)
-    networks = [x for x in (await client.networks.list(filters={"scope":"swarm"})) if network_name in x.name]
-    if not networks or len(networks)>1:
-        raise exceptions.DirectorException(msg="Swarm network name is not configured, found following networks: {}".format(networks))
+    networks = [x for x in (await client.networks.list()) if x["Scope"] == "swarm" and network_name in x["Name"]]
+    if not networks or len(networks) > 1:
+        raise exceptions.DirectorException(
+            msg="Swarm network name is not configured, found following networks: {}".format(networks))
     return networks[0]
 
 
-async def _add_to_swarm_network_if_ports_published(
-        client: DockerClient,
-        docker_service_runtime_parameters: Dict):
+async def _add_to_swarm_network_if_ports_published(client: DockerClient, docker_service_runtime_parameters: Dict):
     if "endpoint_spec" in docker_service_runtime_parameters:
         try:
             swarm_network = await _get_swarm_network(client)
-            log.debug("Adding swarm network with id: %s to docker runtime parameters", swarm_network.name)
+            log.debug(
+                "Adding swarm network with id: %s to docker runtime parameters", swarm_network["Name"])
             await _add_network_to_service_runtime_params(docker_service_runtime_parameters, swarm_network)
         except exceptions.DirectorException:
             log.exception("Could not find a swarm network, not in a swarm?")
@@ -183,13 +182,13 @@ async def _add_main_service_label_to_service_runtime_params(
 
 async def _add_network_to_service_runtime_params(
         docker_service_runtime_parameters: Dict,
-        docker_network: docker.models.networks.Network):
+        docker_network: Dict):
 
     # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
-        docker_service_runtime_parameters["networks"].append(docker_network.id)
+        docker_service_runtime_parameters["networks"].append(docker_network["ID"])
     else:
-        docker_service_runtime_parameters["networks"] = [docker_network.id]
+        docker_service_runtime_parameters["networks"] = [docker_network["ID"]]
     log.debug("Added network parameter to docker runtime parameters: %s",
               docker_service_runtime_parameters["networks"])
 
@@ -201,22 +200,25 @@ async def _add_env_variables_to_service_runtime_params(
         node_uuid: str,
         node_base_path: str):
 
-    service_env_variables = ["=".join([key, value]) for key, value in config.SERVICES_DEFAULT_ENVS.items()]
+    service_env_variables = [
+        "=".join([key, value]) for key, value in config.SERVICES_DEFAULT_ENVS.items()]
     # add specifics
     service_env_variables.append("=".join(["SIMCORE_USER_ID", user_id]))
     service_env_variables.append("=".join(["SIMCORE_NODE_UUID", node_uuid]))
     service_env_variables.append("=".join(["SIMCORE_PROJECT_ID", project_id]))
-    service_env_variables.append("=".join(["SIMCORE_NODE_BASEPATH", node_base_path or ""]))
+    service_env_variables.append(
+        "=".join(["SIMCORE_NODE_BASEPATH", node_base_path or ""]))
 
     if "env" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["env"].extend(service_env_variables)
     else:
         docker_service_runtime_parameters["env"] = service_env_variables
-    log.debug("Added env parameter to docker runtime parameters: %s", docker_service_runtime_parameters["env"])
+    log.debug("Added env parameter to docker runtime parameters: %s",
+              docker_service_runtime_parameters["env"])
 
 
 async def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters: Dict):
-    log.debug("Getting extra hosts with suffix: %s",config.EXTRA_HOSTS_SUFFIX)
+    log.debug("Getting extra hosts with suffix: %s", config.EXTRA_HOSTS_SUFFIX)
     extra_hosts = get_system_extra_hosts(config.EXTRA_HOSTS_SUFFIX)
     if "hosts" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["hosts"].update(extra_hosts)
@@ -225,35 +227,28 @@ async def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_para
 
 
 async def _set_service_name(docker_service_runtime_parameters: Dict,
-                       service_name: str,
-                       node_uuid: str):
+                            service_name: str,
+                            node_uuid: str):
     # pylint: disable=C0103
     docker_service_runtime_parameters["name"] = service_name + "_" + node_uuid
     log.debug("Added service name parameter to docker runtime parameters: %s",
               docker_service_runtime_parameters["name"])
 
 
-async def _get_docker_image_port_mapping(service_id: str) -> Tuple[str, str]:
-    log.debug("getting port published by service: %s", service_id)
-    # TODO: It could be possible that the endpoint is also accessible using high/level client in service.attrs
-    # pylint: disable=C0103
-    low_level_client = docker.APIClient()
-    service_infos_json = low_level_client.services(filters={'id': service_id})
-    if len(service_infos_json) != 1:
-        log.warning("Expected a single port per service, got %s",
-                    service_infos_json)
+async def _get_docker_image_port_mapping(client: DockerClient, service: Dict) -> Tuple[str, str]:
+    log.debug("getting port published by service: %s", service)
+    service_details = await client.services.inspect(service["ID"])
 
     published_ports = list()
     target_ports = list()
-    for service_info in service_infos_json:
-        if 'Endpoint' in service_info:
-            service_endpoints = service_info['Endpoint']
-            if 'Ports' in service_endpoints:
-                ports_info_json = service_info['Endpoint']['Ports']
-                for port in ports_info_json:
-                    published_ports.append(port['PublishedPort'])
-                    target_ports.append(port["TargetPort"])
-    log.debug("Service %s publishes: %s ports", service_id, published_ports)
+    if 'Endpoint' in service_details:
+        service_endpoints = service_details['Endpoint']
+        if 'Ports' in service_endpoints:
+            ports_info_json = service_endpoints['Ports']
+            for port in ports_info_json:
+                published_ports.append(port['PublishedPort'])
+                target_ports.append(port["TargetPort"])
+    log.debug("Service %s publishes: %s ports", service["ID"], published_ports)
     published_port = None
     target_port = None
     if published_ports:
@@ -265,9 +260,9 @@ async def _get_docker_image_port_mapping(service_id: str) -> Tuple[str, str]:
 
 @tenacity.retry(wait=tenacity.wait_fixed(2),
                 stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
-async def _pass_port_to_service(service: docker.models.services.Service,
-                                 port: str,
-                                 service_boot_parameters_labels: Dict):
+async def _pass_port_to_service(service: Dict,
+                                port: str,
+                                service_boot_parameters_labels: Dict):
     for param in service_boot_parameters_labels:
         await _check_setting_correctness(param)
         if param['name'] == 'published_host':
@@ -275,7 +270,7 @@ async def _pass_port_to_service(service: docker.models.services.Service,
             route = param['value']
             log.debug("Service needs to get published host %s:%s using route %s",
                       config.PUBLISHED_HOST_NAME, port, route)
-            service_url = "http://" + str(service.name) + "/" + route
+            service_url = "http://" + str(service["Name"]) + "/" + route
             query_string = {"hostname": str(
                 config.PUBLISHED_HOST_NAME), "port": str(port)}
             log.debug("creating request %s and query %s",
@@ -284,7 +279,7 @@ async def _pass_port_to_service(service: docker.models.services.Service,
                 async with session.post(service_url, data=query_string) as response:
                     log.debug("query response: %s", await response.text())
             return
-    log.debug("service %s does not need to know its external port", service.name)
+    log.debug("service %s does not need to know its external port", service["Name"])
 
 
 async def _create_network_name(service_name: str, node_uuid: str) -> str:
@@ -292,16 +287,21 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
 
 
 async def _create_overlay_network_in_swarm(client: DockerClient,
-                                      service_name: str,
-                                      node_uuid: str) -> docker.models.networks.Network:
+                                           service_name: str,
+                                           node_uuid: str) -> Dict:
     log.debug("Creating overlay network for service %s with uuid %s",
               service_name, node_uuid)
     network_name = await _create_network_name(service_name, node_uuid)
     try:
-        docker_network = client.networks.create(
-            network_name, driver="overlay", scope="swarm", labels={"uuid": node_uuid})
-        log.debug("Network %s created for service %s with uuid %s",
-                  network_name, service_name, node_uuid)
+        network_config = {
+            "Name": network_name,
+            "Driver": "overlay",
+            "Labels": {
+                "uuid": node_uuid
+            }
+        }
+        docker_network = await client.networks.create(network_config)
+        log.debug("Network %s created for service %s with uuid %s", network_name, service_name, node_uuid)
         return docker_network
     except docker.errors.APIError as err:
         log.exception(
@@ -313,8 +313,7 @@ async def _create_overlay_network_in_swarm(client: DockerClient,
 async def _remove_overlay_network_of_swarm(client: DockerClient, node_uuid: str):
     log.debug("Removing overlay network for service with uuid %s", node_uuid)
     try:
-        networks = await client.networks.list(
-            filters={"label": "uuid=" + node_uuid})
+        networks = [x for x in await client.networks.list() if "uuid" in x["Labels"] and x["Labels"]["uuid"] == node_uuid]
         log.debug("Found %s networks with uuid %s", len(networks), node_uuid)
         # remove any network in the list (should be only one)
         for network in networks:
@@ -335,21 +334,21 @@ async def _wait_until_service_running_or_failed(client: DockerClient,
     log.debug("Waiting for service %s to start", service_id)
     # some times one has to wait until the task info is filled
     while True:
-        import pdb; pdb.set_trace()
-        service = await client.services.list(filters={"id": service_id})
-        if not service:
-            raise exceptions.ServiceUUIDNotFoundError(service_id)
-        service = service[0]
-        tasks = await client.tasks.list(filters={"desired-state":"running", "service":service["Spec"]["Name"]})
+        service = await client.services.inspect(service_id)
+        tasks = await client.tasks.list(filters={"desired-state": "running", "service": service["Spec"]["Name"]})
+        all_tasks_running = True
         for task in tasks:
             task_state = task["Status"]["State"]
             # log.debug("%s %s", service_id, task_state)
-            if task_state == "running":
-                break
-            elif task_state in ("failed", "rejected"):
+            if task_state in ("failed", "rejected"):
                 log.error("Error while waiting for service")
                 raise exceptions.ServiceStartTimeoutError(
                     service_name, node_uuid)
+            elif task_state != "running":
+                all_tasks_running = False
+                break
+        if all_tasks_running:
+            break
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_id)
@@ -373,16 +372,16 @@ async def _get_repos_from_key(service_key: str) -> List[Dict]:
 async def _get_dependant_repos(service_key: str, service_tag: str) -> Dict:
     list_of_images = await _get_repos_from_key(service_key)
     tag = await _find_service_tag(list_of_images, service_key,
-                             'Unkonwn name', service_tag)
+                                  'Unkonwn name', service_tag)
     # look for dependencies
     dependent_repositories = await registry_proxy.list_interactive_service_dependencies(service_key, tag)
     return dependent_repositories
 
 
 async def _find_service_tag(list_of_images: Dict,
-                       service_key: str,
-                       service_name: str,
-                       service_tag: str) -> str:
+                            service_key: str,
+                            service_name: str,
+                            service_tag: str) -> str:
     available_tags_list = sorted(list_of_images[service_key]['tags'])
     # not tags available... probably an undefined service there...
     if not available_tags_list:
@@ -400,14 +399,14 @@ async def _find_service_tag(list_of_images: Dict,
 
 
 async def _prepare_runtime_parameters(user_id: str,
-                                       project_id: str,
-                                       service_key: str,
-                                       service_tag: str,
-                                       main_service: bool,
-                                       node_uuid: str,
-                                       node_base_path: str,
-                                       client: DockerClient
-                                       ) -> Dict:
+                                      project_id: str,
+                                      service_key: str,
+                                      service_tag: str,
+                                      main_service: bool,
+                                      node_uuid: str,
+                                      node_base_path: str,
+                                      client: DockerClient
+                                      ) -> Dict:
     # get the docker runtime labels
     service_runtime_parameters_labels = await _get_service_runtime_parameters_labels(service_key, service_tag)
     # convert the labels to docker parameters
@@ -419,15 +418,16 @@ async def _prepare_runtime_parameters(user_id: str,
     await _add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, user_id, project_id, node_uuid, node_base_path)
     await _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters)
     await _set_service_name(docker_service_runtime_parameters,
-                       registry_proxy.get_service_last_names(service_key),
-                       node_uuid)
+                            registry_proxy.get_service_last_names(service_key),
+                            node_uuid)
     return docker_service_runtime_parameters
+
 
 async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_service_runtime_parameters: Dict) -> Dict:
     task_template = {
         "ContainerSpec": {
             "Image": docker_image_full_path,
-            "Env": {env.split("=")[0]:env.split("=")[1] for env in docker_service_runtime_parameters["env"]} if "env" in docker_service_runtime_parameters else {}
+            "Env": {env.split("=")[0]: env.split("=")[1] for env in docker_service_runtime_parameters["env"]} if "env" in docker_service_runtime_parameters else {}
         }
     }
     return task_template
@@ -441,18 +441,17 @@ async def _start_docker_service(client: DockerClient,
                                 main_service: bool,
                                 node_uuid: str,
                                 node_base_path: str,
-                                internal_network: docker.models.networks.Network
+                                internal_network: Dict
                                 ) -> Dict:  # pylint: disable=R0913
     # prepare runtime parameters
-    import pdb; pdb.set_trace()
     docker_service_runtime_parameters = await _prepare_runtime_parameters(user_id,
-                                                                           project_id,
-                                                                           service_key,
-                                                                           service_tag,
-                                                                           main_service,
-                                                                           node_uuid,
-                                                                           node_base_path,
-                                                                           client)
+                                                                          project_id,
+                                                                          service_key,
+                                                                          service_tag,
+                                                                          main_service,
+                                                                          node_uuid,
+                                                                          node_base_path,
+                                                                          client)
     # if an inter docker network exists, then the service must be part of it
     if internal_network is not None:
         await _add_network_to_service_runtime_params(docker_service_runtime_parameters, internal_network)
@@ -462,23 +461,29 @@ async def _start_docker_service(client: DockerClient,
 
     # lets start the service
     try:
-        docker_image_full_path = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
-        log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
+        docker_image_full_path = config.REGISTRY_URL + \
+            '/' + service_key + ':' + service_tag
+        log.debug("Starting docker service %s using parameters %s",
+                  docker_image_full_path, docker_service_runtime_parameters)
         use_rest_api_style = True
         if use_rest_api_style:
             tast_template = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
-            labels = docker_service_runtime_parameters["labels"] if "labels" in docker_service_runtime_parameters else []
+            labels = docker_service_runtime_parameters["labels"] if "labels" in docker_service_runtime_parameters else [
+            ]
             name = docker_service_runtime_parameters["name"] if "name" in docker_service_runtime_parameters else None
             service = await client.services.create(task_template=tast_template, name=name, labels=labels)
         else:
-            service = client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
+            service = client.services.create(
+                docker_image_full_path, **docker_service_runtime_parameters)
         log.debug("Service started now waiting for it to run")
-        service_id = service["ID"] if use_rest_api_style else service.id
-        service_name = docker_service_runtime_parameters["name"] if "name" in docker_service_runtime_parameters else None
+        service_id = service["ID"]
+        service_name = docker_service_runtime_parameters[
+            "name"] if "name" in docker_service_runtime_parameters else None
         await _wait_until_service_running_or_failed(client, service_id, docker_image_full_path, node_uuid)
         # the docker swarm opened some random port to access the service
-        published_port, target_port = await _get_docker_image_port_mapping(service_id)
-        log.debug("Service successfully started on %s:%s", service_entrypoint, published_port)
+        published_port, target_port = await _get_docker_image_port_mapping(client, service)
+        log.debug("Service successfully started on %s:%s",
+                  service_entrypoint, published_port)
         container_meta_data = {
             "published_port": published_port,
             "entry_point": service_entrypoint,
@@ -524,7 +529,8 @@ async def __create_node(client: DockerClient,
                         node_uuid: str,
                         node_base_path: str
                         ) -> List[Dict]:  # pylint: disable=R0913, R0915
-    log.debug("Creating %s docker services for node %s using uuid %s and base path %s for user %s", len(list_of_services), service_name, node_uuid, node_base_path, user_id)
+    log.debug("Creating %s docker services for node %s using uuid %s and base path %s for user %s", len(
+        list_of_services), service_name, node_uuid, node_base_path, user_id)
     log.debug("Services %s will be started", list_of_services)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
@@ -540,7 +546,8 @@ async def __create_node(client: DockerClient,
                                                         project_id,
                                                         service["key"],
                                                         service["tag"],
-                                                        list_of_services.index(service) == 0,
+                                                        list_of_services.index(
+                                                            service) == 0,
                                                         node_uuid,
                                                         node_base_path,
                                                         inter_docker_network)
@@ -551,7 +558,8 @@ async def __create_node(client: DockerClient,
 
 async def start_service(user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
     # pylint: disable=C0103
-    log.debug("starting service %s:%s using uuid %s, basepath %s", service_key, service_tag, node_uuid, node_base_path)
+    log.debug("starting service %s:%s using uuid %s, basepath %s",
+              service_key, service_tag, node_uuid, node_base_path)
     # first check the uuid is available
     with _docker_client() as client:
         await _check_node_uuid_available(client, node_uuid)
@@ -571,8 +579,8 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
         # _login_docker_registry(client)
 
         containers_meta_data = await __create_node(client, user_id, project_id,
-                                                list_of_services_to_start,
-                                                service_name, node_uuid, node_base_path)
+                                                   list_of_services_to_start,
+                                                   service_name, node_uuid, node_base_path)
         node_details = containers_meta_data[0]
         # we return only the info of the main service
         return node_details
@@ -592,14 +600,16 @@ async def __get_service_key_version_from_docker_service(service: Dict) -> Tuple[
 
 async def _get_service_basepath_from_docker_service(service: Dict) -> str:
     envs_list = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
-    envs_dict = {key:value for key,value in (x.split("=") for x in envs_list)}
+    envs_dict = {key: value for key, value in (
+        x.split("=") for x in envs_list)}
     return envs_dict["SIMCORE_NODE_BASEPATH"]
+
 
 async def _get_service_name(service: Dict) -> str:
     return service["Spec"]["Name"]
 
+
 async def get_service_details(node_uuid: str) -> Dict:
-    import pdb; pdb.set_trace()
     # get the docker client
     with _docker_client() as client:
         # _login_docker_registry(client)
@@ -626,7 +636,7 @@ async def get_service_details(node_uuid: str) -> Dict:
             service_name = await _get_service_name(service)
 
             # get the published port
-            published_port, target_port = await _get_docker_image_port_mapping(service.id)
+            published_port, target_port = await _get_docker_image_port_mapping(client, service)
             node_details = {
                 "published_port": published_port,
                 "entry_point": service_entrypoint,
@@ -665,7 +675,7 @@ async def stop_service(node_uuid: str):
         # remove the services
         try:
             for service in list_running_services_with_uuid:
-                await client.services.delete(_get_service_name(service))
+                await client.services.delete(await _get_service_name(service))
         except docker.errors.APIError as err:
             raise exceptions.GenericDockerError(
                 "Error while removing services", err)
