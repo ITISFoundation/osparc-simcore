@@ -512,7 +512,7 @@ async def _silent_service_cleanup(node_uuid):
         pass
 
 
-async def __create_node(client: DockerClient,
+async def _create_node(client: DockerClient,
                         user_id: str,
                         project_id: str,
                         list_of_services: List[Dict],
@@ -569,7 +569,7 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
         # create services
         # _login_docker_registry(client)
 
-        containers_meta_data = await __create_node(client, user_id, project_id,
+        containers_meta_data = await _create_node(client, user_id, project_id,
                                                    list_of_services_to_start,
                                                    service_name, node_uuid, node_base_path)
         node_details = containers_meta_data[0]
@@ -577,7 +577,7 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
         return node_details
 
 
-async def __get_service_key_version_from_docker_service(service: Dict) -> Tuple[str, str]:
+async def _get_service_key_version_from_docker_service(service: Dict) -> Tuple[str, str]:
     # docker_image_full_path = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
     service_full_name = str(
         service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
@@ -617,7 +617,7 @@ async def get_service_details(node_uuid: str) -> Dict:
                     msg="More than one docker service is labeled as main service")
 
             service = list_running_services_with_uuid[0]
-            service_key, service_tag = await __get_service_key_version_from_docker_service(service)
+            service_key, service_tag = await _get_service_key_version_from_docker_service(service)
 
             # get boot parameters to get the entrypoint
             service_boot_parameters_labels = await _get_service_boot_parameters_labels(service_key, service_tag)
