@@ -58,11 +58,16 @@ qx.Class.define("qxapp.auth.LoginPage", {
       row:0,
       column:0
     });
-
+    
     const page = qxapp.auth.core.Utils.findParameterInFragment("page");
     const code = qxapp.auth.core.Utils.findParameterInFragment("code");
     if (page === "reset-password" && code !== null) {
       pages.setSelection([reset]);
+    }
+
+    const urlFragment = qxapp.utils.Utils.parseURLFragment();
+    if (urlFragment.nav && urlFragment.nav.length && urlFragment.nav[0] === "registration") {
+      pages.setSelection([register]);
     }
 
     // Transitions between pages

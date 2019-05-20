@@ -78,7 +78,8 @@ qx.Class.define("qxapp.Application", {
           // Route: /#/study/{id}
           qxapp.utils.Utils.cookie.deleteCookie("user");
           qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
-        } else if (urlFragment.nav[0] === "registration" && urlFragment.params.invitation) {
+        } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
+          // Route: /#/registration/?invitation={token}
           qxapp.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
         }
