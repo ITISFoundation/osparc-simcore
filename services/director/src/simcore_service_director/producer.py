@@ -62,12 +62,10 @@ async def _check_setting_correctness(setting: Dict):
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-async def _get_service_runtime_parameters_labels(key: str, tag: str) -> Dict:
+async def _read_runtime_parameters(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
     image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
-    runtime_parameters = dict()
-    if SERVICE_RUNTIME_SETTINGS in image_labels:
-        runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS])
+    runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS]) if SERVICE_RUNTIME_SETTINGS in image_labels else {}
     log.debug("Retrieved service runtime settings: %s", runtime_parameters)
     return runtime_parameters
 
@@ -75,9 +73,7 @@ async def _get_service_runtime_parameters_labels(key: str, tag: str) -> Dict:
 async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
     image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
-    boot_params = dict()
-    if SERVICE_RUNTIME_BOOTSETTINGS in image_labels:
-        boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS])
+    boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS]) if SERVICE_RUNTIME_BOOTSETTINGS in image_labels else {}
     log.debug("Retrieved service boot settings: %s", boot_params)
     return boot_params
 
@@ -399,9 +395,7 @@ async def _prepare_runtime_parameters(user_id: str,
                                       node_base_path: str,
                                       client: DockerClient
                                       ) -> Dict:
-    # get the docker runtime labels
-    service_runtime_parameters_labels = await _get_service_runtime_parameters_labels(service_key, service_tag)
-    # convert the labels to docker parameters
+    service_runtime_parameters_labels = await _read_runtime_parameters(service_key, service_tag)
     docker_service_runtime_parameters = await _convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, node_uuid)
     # add specific parameters
     await _add_to_swarm_network_if_ports_published(client, docker_service_runtime_parameters)
@@ -466,17 +460,14 @@ async def _start_docker_service(client: DockerClient,
 
     # lets start the service
     try:
-        docker_image_full_path = config.REGISTRY_URL + \
-            '/' + service_key + ':' + service_tag
-        log.debug("Starting docker service %s using parameters %s",
-                  docker_image_full_path, docker_service_runtime_parameters)
+        docker_image_full_path = "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag)
+        log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
         tast_template, endpoint_spec, labels, name = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
 
         service = await client.services.create(task_template=tast_template, name=name, labels=labels, endpoint_spec=endpoint_spec)
 
         log.debug("Service started now waiting for it to run")
         service_id = service["ID"]
-
 
         service = await client.services.inspect(service_id)
         service_name = await _get_service_name(service)
