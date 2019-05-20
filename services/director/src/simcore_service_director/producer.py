@@ -409,7 +409,7 @@ async def _prepare_runtime_parameters(user_id: str,
     return docker_service_runtime_parameters
 
 
-async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_service_runtime_parameters: Dict) -> Tuple[Dict, Dict, Dict, str]:
+async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_service_runtime_parameters: Dict) -> Tuple[Dict, Dict, Dict, str, Dict]:
 
     task_template = {
         "ContainerSpec": {
@@ -420,7 +420,6 @@ async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_se
         "Placement": {
             "Constraints": [x for x in docker_service_runtime_parameters["constraints"]] if "constraints" in docker_service_runtime_parameters else []
         },
-        "Networks" : docker_service_runtime_parameters["networks"] if "networks" in docker_service_runtime_parameters else []
     }
 
     endpoint_spec = {
@@ -429,7 +428,8 @@ async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_se
 
     labels = docker_service_runtime_parameters["labels"] if "labels" in docker_service_runtime_parameters else []
     name = docker_service_runtime_parameters["name"] if "name" in docker_service_runtime_parameters else None
-    return task_template, endpoint_spec, labels, name
+    networks = docker_service_runtime_parameters["networks"] if "networks" in docker_service_runtime_parameters else []
+    return task_template, endpoint_spec, labels, name, networks
 
 
 async def _start_docker_service(client: DockerClient,
@@ -462,9 +462,9 @@ async def _start_docker_service(client: DockerClient,
     try:
         docker_image_full_path = "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag)
         log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
-        tast_template, endpoint_spec, labels, name = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
+        tast_template, endpoint_spec, labels, name, networks = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
 
-        service = await client.services.create(task_template=tast_template, name=name, labels=labels, endpoint_spec=endpoint_spec)
+        service = await client.services.create(task_template=tast_template, name=name, labels=labels, endpoint_spec=endpoint_spec, networks=networks)
 
         log.debug("Service started now waiting for it to run")
         service_id = service["ID"]
