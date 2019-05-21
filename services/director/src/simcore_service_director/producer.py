@@ -95,7 +95,7 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
         "Env": {
             **config.SERVICES_DEFAULT_ENVS,
             "SIMCORE_USER_ID": user_id,
-            "SIMCORE_NODE_ID": node_uuid,
+            "SIMCORE_NODE_UUID": node_uuid,
             "SIMCORE_PROJECT_ID": project_id,
             "SIMCORE_NODE_BASEPATH": node_base_path or ""
         },
