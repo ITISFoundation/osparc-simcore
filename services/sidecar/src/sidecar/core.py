@@ -58,6 +58,9 @@ class Sidecar:
         # current task
         self._task = None
 
+        # stack name
+        self._stack_name = None
+
         # executor options
         self._executor = ExecutorSettings()
 
@@ -278,6 +281,9 @@ class Sidecar:
         # volume paths for car container (w/o prefix)
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
+        # stack name, should throw if not set
+        self._stack_name = os.environ["SWARM_STACK_NAME"]
+
         # config nodeports
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
@@ -304,9 +310,9 @@ class Sidecar:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
             self._docker.client.containers.run(docker_image, "run",
                  detach=False, remove=True,
-                 volumes = {'services_input'  : {'bind' : '/input'},
-                            'services_output' : {'bind' : '/output'},
-                            'services_log'    : {'bind'  : '/log'}},
+                 volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
+                            '{}_output'.format(self._stack_name) : {'bind' : '/output'},
+                            '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
                  environment=self._docker.env)
         except docker.errors.ContainerError as _e:
             log.exception("Run container returned non zero exit code %s", str(_e))

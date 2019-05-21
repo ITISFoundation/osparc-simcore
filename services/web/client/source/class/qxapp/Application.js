@@ -47,7 +47,6 @@ qx.Class.define("qxapp.Application", {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
       }
-      /*
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -57,7 +56,6 @@ qx.Class.define("qxapp.Application", {
         // Chrome requires returnValue to be set.
         e.returnValue = "";
       });
-      */
       if (qx.core.Environment.get("dev.enableFakeSrv")) {
         console.debug("Fake server enabled");
         qxapp.dev.fake.srv.restapi.User;
@@ -74,8 +72,9 @@ qx.Class.define("qxapp.Application", {
 
     __initRouting: function() {
       // Route: /#/study/{id}
-      let result = /#\/study\/(.*)/.exec(window.location.hash);
-      if (result && result[1].length) {
+      // TODO: PC -> IP consider regex for uuid, i.e. /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/ ???
+      let result = /#\/study\/([0-9a-zA-Z\-]+)/.exec(window.location.hash);
+      if (result) {
         qxapp.utils.Utils.cookie.deleteCookie("user");
         qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(result[1]), this.__loadLoginPage, this);
       } else {

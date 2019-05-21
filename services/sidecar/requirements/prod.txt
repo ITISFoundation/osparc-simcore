@@ -1,5 +1,18 @@
-# paths relative to location of setup.py
-.
+# Shortcut to install 'sidecar' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs base requirements
+-r _base.txt
+
+# installs this repo's packages
 ../../services/storage/client-sdk/python/
 ../../packages/s3wrapper/
 ../../packages/simcore-sdk/
+
+# installs current package
+.

@@ -60,10 +60,14 @@ COPY  --chown=scu:scu services/storage/requirements/*.txt \
       tmp/storage/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/storage/requirements/base.txt
+      -r tmp/storage/requirements/_base.txt
+
+
+COPY  --chown=scu:scu services/storage/requirements/py27/*.txt \
+      tmp/storage/requirements/py27/
 
 RUN $SC_PIP2 install numpy==1.16.0 &&\
-    $SC_PIP2 install -r tmp/storage/requirements/py27.txt
+    $SC_PIP2 install -r tmp/storage/requirements/py27/base.txt
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container

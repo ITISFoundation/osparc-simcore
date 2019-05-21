@@ -8,7 +8,7 @@
     - access to security
     - access to login
 
-FIXME: reduce modules coupling!
+FIXME: reduce modules coupling! See all TODO: .``from ...`` comments
 TODO: THIS IS A PROTOTYPE!!!
 
 """
@@ -232,11 +232,6 @@ async def access_study(request: web.Request) -> web.Response:
 
 
 def setup(app: web.Application):
-    """
-
-    :param app: [description]
-    :type app: web.Application
-    """
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([

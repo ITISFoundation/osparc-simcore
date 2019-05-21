@@ -1,27 +1,25 @@
-import pathlib
-import sys
 import re
-from os.path import join
-import io
-from setuptools import (
-    find_packages,
-    setup
-)
+import sys
+from pathlib import Path
 
-_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
+from setuptools import find_packages, setup
 
-def list_packages(*parts):
-    pkg_names = []
-    COMMENT = re.compile(r'^\s*#')
-    with io.open(join(_CDIR, *parts)) as f:
-        pkg_names = [line.strip() for line in f.readlines() if not COMMENT.match(line)]
-    return pkg_names
+here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+def read_reqs( reqs_path: Path):
+    return re.findall(r'(^[^#-][\w]+[-~>=<.\w]+)', reqs_path.read_text(), re.MULTILINE)
+
 
 #-----------------------------------------------------------------
 
-INSTALL_REQUIRES = list_packages("requirements", "base.txt")
-TESTS_REQUIRE = list_packages("tests", "requirements.txt")
-
+install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
+    "s3wrapper==0.1.0",
+    "simcore-sdk==0.1.0",
+    "simcore-service-library==0.1.0",
+    "simcore-director-sdk==1.0.0"  # FIXME: notice that this is version 1 while the others are 0!
+]
+test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 setup(
     name='simcore-service-webserver',
@@ -43,10 +41,7 @@ setup(
             'simcore-service-webserver=simcore_service_webserver.__main__:main', ]
         },
     python_requires='>=3.6',
-    install_requires=INSTALL_REQUIRES,
-    tests_require=TESTS_REQUIRE,
-    extras_require= {
-        'test': TESTS_REQUIRE
-    },
+    install_requires=install_requirements,
+    tests_require=test_requirements,
     setup_requires=['pytest-runner']
 )

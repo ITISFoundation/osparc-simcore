@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(.py .pylintrc)
+FOLDER_CHECKS=(.py .pylintrc .travis.yml)
 
 before_install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
@@ -15,22 +15,17 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip install --upgrade pip~=19.1.1 wheel setuptools && pip3 --version
-        pip3 install packages/s3wrapper[test]
-        pip3 install packages/simcore-sdk[test]
-        pushd services/director; pip3 install -r requirements/ci.txt; popd
-        pip3 install packages/director-sdk/python
-        pushd services/web/server; pip3 install -r requirements/ci.txt; popd
-        pushd services/storage; pip3 install -r requirements/dev.txt; popd
-        pip3 install -r api/tests/requirements.txt
-        pip3 install -r services/apihub/tests/requirements.txt
+        bash ops/travis/helpers/ensure_python_pip
+        pip3 install pylint~=2.0
+        # Minimal packages to pass linter
+        pip install celery docker
     fi
 }
 
 before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
+        pip list -v
         pylint --version
     fi
 }
@@ -49,6 +44,10 @@ after_success() {
     then
         echo "linting successful"
     fi
+}
+
+after_failure() {
+    echo "failure... you can always write something more interesting here..."
 }
 
 # Check if the function exists (bash specific)

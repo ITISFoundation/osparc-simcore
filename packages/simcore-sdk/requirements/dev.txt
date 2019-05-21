@@ -1,0 +1,17 @@
+# Shortcut to install all packages needed to develop 'simcore-sdk'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
+
+# installs base + tests requirements
+-r _test.txt
+
+# installs this repo's packages
+-e ../s3wrapper/
+../../services/storage/client-sdk/python/ # Needed ONLY for testing
+
+# installs current package
+-e .

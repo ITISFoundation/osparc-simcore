@@ -117,6 +117,7 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                 request["validated-query"] = query
                 request["validated-body"] = body
             except OpenAPIError:
+                logger.debug("Failing openAPI specs", exc_info=1)
                 raise
             except Exception: # pylint: disable=W0703
                 pass

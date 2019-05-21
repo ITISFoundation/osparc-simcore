@@ -87,6 +87,8 @@ qx.Class.define("qxapp.auth.LoginPage", {
         srcPage.resetValues();
       }, this);
     });
+
+    this.__addVersionLink();
   },
 
   /*
@@ -97,5 +99,45 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
   events: {
     "done": "qx.event.type.Data"
+  },
+
+  members: {
+    __addVersionLink: function() {
+      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      versionLinkLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
+      if (platformVersion) {
+        const text = platformVersion.name + " v" + platformVersion.version;
+        const versionLink = new qxapp.ui.basic.LinkLabel(text, platformVersion.url).set({
+          alignX: "right",
+          allowGrowX: true,
+          font: "text-12"
+        });
+        versionLinkLayout.add(versionLink);
+
+        const separator = new qx.ui.basic.Label("::");
+        versionLinkLayout.add(separator);
+      }
+
+      const organizationLink = new qxapp.ui.basic.LinkLabel("© 2019 IT'IS Foundation", "https://itis.swiss").set({
+        alignX: "left",
+        allowGrowX: true,
+        font: "text-12"
+      });
+      versionLinkLayout.add(organizationLink);
+
+      versionLinkLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this._add(versionLinkLayout, {
+        row: 1,
+        column: 0
+      });
+    }
   }
 });

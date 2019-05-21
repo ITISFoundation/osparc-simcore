@@ -1,0 +1,16 @@
+#
+# Specifies third-party dependencies for 'service-library'
+#
+
+sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
+pyyaml>=4.2b1       # https://nvd.nist.gov/vuln/detail/CVE-2017-18342
+psycopg2-binary     # enforces binary version - http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
+openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
+
+aiohttp
+aiopg[sa]
+cryptography
+ujson
+werkzeug
+jsonschema
+aiohttp_session[secure] # TODO: eliminate this dependency or make it optional!

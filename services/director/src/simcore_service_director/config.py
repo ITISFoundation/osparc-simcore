@@ -32,3 +32,4 @@ SERVICES_DEFAULT_ENVS = {
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
     "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))
+SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME")

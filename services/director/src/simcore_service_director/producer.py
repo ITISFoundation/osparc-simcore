@@ -124,21 +124,27 @@ def __get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
             return param['value']
     return ''
 
+def _get_swarm_network(client: DockerClient) -> docker.models.networks.Network:
+    network_name = "default"
+    if config.SWARM_STACK_NAME:
+        network_name = config.SWARM_STACK_NAME
+    # try to find the network name (usually named STACKNAME_default)
+    networks = [x for x in client.networks.list(filters={"scope":"swarm"}) if network_name in x.name]
+    if not networks or len(networks)>1:
+        raise exceptions.DirectorException(msg="Swarm network name is not configured, found following networks: {}".format(networks))
+    return networks[0]
+
 
 def __add_to_swarm_network_if_ports_published(
         client: DockerClient,
         docker_service_runtime_parameters: Dict):
-    # TODO: SAN this is a brain killer... change services to something better...
     if "endpoint_spec" in docker_service_runtime_parameters:
-        network_id = "services_default"
-        log.debug(
-            "Adding swarm network with id: %s to docker runtime parameters", network_id)
-        list_of_networks = client.networks.list(
-            names=[network_id], filters={"scope": "swarm"})
-        for network in list_of_networks:
-            __add_network_to_service_runtime_params(
-                docker_service_runtime_parameters, network)
-        log.debug("Added swarm network %s to docker runtime parameters", network_id)
+        try:
+            swarm_network = _get_swarm_network(client)            
+            log.debug("Adding swarm network with id: %s to docker runtime parameters", swarm_network.name)
+            __add_network_to_service_runtime_params(docker_service_runtime_parameters, swarm_network)
+        except exceptions.DirectorException:
+            log.exception("Could not find a swarm network, not in a swarm?")
 
 
 def __add_uuid_label_to_service_runtime_params(

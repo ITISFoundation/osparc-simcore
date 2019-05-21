@@ -1,0 +1,19 @@
+#
+# Specifies dependencies required to run 's3wrapper'
+#
+
+# frozen specs
+-r _base.txt
+
+# testing
+pytest
+pytest-cov
+pytest-docker
+pytest-runner
+
+# mockups/fixtures
+requests
+
+# tools for CI
+pylint
+coveralls
