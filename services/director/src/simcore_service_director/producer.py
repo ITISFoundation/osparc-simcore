@@ -330,9 +330,8 @@ async def _wait_until_service_running_or_failed(client: DockerClient,
             # log.debug("%s %s", service_id, task_state)
             if task_state in ("failed", "rejected"):
                 log.error("Error while waiting for service")
-                raise exceptions.ServiceStartTimeoutError(
-                    service_name, node_uuid)
-            elif task_state != "running":
+                raise exceptions.ServiceStartTimeoutError(service_name, node_uuid)
+            if task_state != "running":
                 all_tasks_running = False
                 break
         if all_tasks_running:
@@ -552,7 +551,7 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
     log.debug("starting service %s:%s using uuid %s, basepath %s",
               service_key, service_tag, node_uuid, node_base_path)
     # first check the uuid is available
-    async with _docker_client() as client:
+    async with _docker_client() as client: # pylint: disable=not-async-context-manager
         await _check_node_uuid_available(client, node_uuid)
 
         service_name = registry_proxy.get_service_first_name(service_key)
@@ -602,7 +601,7 @@ async def _get_service_name(service: Dict) -> str:
 
 async def get_service_details(node_uuid: str) -> Dict:
     # get the docker client
-    async with _docker_client() as client:
+    async with _docker_client() as client:  # pylint: disable=not-async-context-manager
         # _login_docker_registry(client)
         try:
             list_running_services_with_uuid = await client.services.list(
@@ -648,7 +647,7 @@ async def get_service_details(node_uuid: str) -> Dict:
 
 async def stop_service(node_uuid: str):
     # get the docker client
-    async with _docker_client() as client:
+    async with _docker_client() as client: # pylint: disable=not-async-context-manager
         # _login_docker_registry(client)
 
         try:
