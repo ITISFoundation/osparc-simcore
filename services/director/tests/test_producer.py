@@ -129,7 +129,7 @@ async def test_dependent_services_have_common_network(run_services):
         assert len(list_of_services) == 2
 
 @pytest.mark.skip(reason="needs a real registry for testing auth")
-async def test_authentication(docker_swarm):
+async def test_authentication(loop, docker_swarm):
     #this needs to be filled up
     config.REGISTRY_URL = ""
     config.REGISTRY_USER = ""
