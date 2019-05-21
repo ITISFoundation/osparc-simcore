@@ -127,3 +127,14 @@ async def test_dependent_services_have_common_network(run_services):
         list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
         # there is one dependency per service
         assert len(list_of_services) == 2
+
+@pytest.mark.skip(reason="needs a real registry for testing auth")
+async def test_authentication(docker_swarm):
+    #this needs to be filled up
+    config.REGISTRY_URL = ""
+    config.REGISTRY_USER = ""
+    config.REGISTRY_PW = ""
+    config.REGISTRY_SSL = True
+    config.REGISTRY_AUTH = True
+    service = await producer.start_service("someuser", "project", "simcore/services/comp/itis/sleeper", "latest", "node", None)
+
