@@ -108,19 +108,18 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
   members: {
     __addVersionLink: function() {
-      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
+      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignX: "center"
+      })).set({
+        margin: [10, 0]
       });
 
       const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
       if (platformVersion) {
         const text = platformVersion.name + " v" + platformVersion.version;
         const versionLink = new qxapp.ui.basic.LinkLabel(text, platformVersion.url).set({
-          alignX: "right",
-          allowGrowX: true,
-          font: "text-12"
+          font: "text-12",
+          textColor: "text-darker"
         });
         versionLinkLayout.add(versionLink);
 
@@ -129,15 +128,10 @@ qx.Class.define("qxapp.auth.LoginPage", {
       }
 
       const organizationLink = new qxapp.ui.basic.LinkLabel("© 2019 IT'IS Foundation", "https://itis.swiss").set({
-        alignX: "left",
-        allowGrowX: true,
-        font: "text-12"
+        font: "text-12",
+        textColor: "text-darker"
       });
       versionLinkLayout.add(organizationLink);
-
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       this._add(versionLinkLayout, {
         row: 1,
