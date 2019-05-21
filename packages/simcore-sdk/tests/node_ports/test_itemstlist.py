@@ -48,7 +48,7 @@ def test_accessing_by_key():
 def test_access_by_wrong_key():
     from simcore_sdk.node_ports import exceptions
     itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])
-    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
+    with pytest.raises(exceptions.UnboundPortError):
         print(itemslist["fdoiht"])
 
 

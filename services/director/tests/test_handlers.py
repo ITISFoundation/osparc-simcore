@@ -52,17 +52,17 @@ def _check_services(created_services, services, schema_version="v1"):
 async def test_services_get(docker_registry, configure_schemas_location, push_services):
     fake_request = "fake request"
     # no registry defined
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as no registry URL is defined"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         services_enveloped = await rest.handlers.services_get(fake_request)
 
     # wrong registry defined
     config.REGISTRY_URL = "blahblah"
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as SSL is enabled by default"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         services_enveloped = await rest.handlers.services_get(fake_request)
 
     # right registry defined
     config.REGISTRY_URL = docker_registry
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as SSL is enabled by default"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         services_enveloped = await rest.handlers.services_get(fake_request)
 
     # no SSL
@@ -128,13 +128,13 @@ async def test_v0_services_conversion_to_new(configure_registry_access, configur
 async def test_services_by_key_version_get(configure_registry_access, configure_schemas_location, push_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.services_by_key_version_get(fake_request, None, None)
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", "ofwhateverversion")
 
     created_services = push_services(3,2)
@@ -156,37 +156,37 @@ async def test_services_by_key_version_get(configure_registry_access, configure_
 async def _start_get_stop_services(push_services, user_id, project_id):
     fake_request = "fake request"
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None, None)
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None, None)
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None, None)
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None, None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None, None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", "None")
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, "service_uuid")
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, None)
 
-    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, "service_uuid")
     created_services = push_services(0,2)
     assert len(created_services) == 2
@@ -240,7 +240,7 @@ async def _start_get_stop_services(push_services, user_id, project_id):
 
 
 async def test_running_services_post_and_delete_no_swarm(configure_registry_access, configure_schemas_location, push_services, user_id, project_id): #pylint: disable=W0613, W0621
-    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal error as there is no docker swarm"):
+    with pytest.raises(web_exceptions.HTTPInternalServerError):
         await _start_get_stop_services(push_services, user_id, project_id)
 
 
