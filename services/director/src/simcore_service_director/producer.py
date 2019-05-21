@@ -34,10 +34,8 @@ async def _docker_client() -> aiodocker.docker.Docker:
 
 async def _create_auth() -> Dict:
     return {
-        "username": config.REGISTRY_URL,
-        "password": config.REGISTRY_PW,
-        "email": "",
-        "serveraddress": "{}/v2".format(config.REGISTRY_URL)
+        "username": config.REGISTRY_USER,
+        "password": config.REGISTRY_PW
     }
 
 async def _check_node_uuid_available(client: aiodocker.docker.Docker, node_uuid: str):
@@ -112,11 +110,18 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
         }
     }
     docker_params = {
+        "auth": await _create_auth() if config.REGISTRY_AUTH else {},
+        "registry": config.REGISTRY_URL if config.REGISTRY_AUTH else "",
         "name": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid,
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
                 "Constraints": []
+            },
+            "RestartPolicy": {
+                "Condition": "on-failure",
+                "Delay": 5,
+                "MaxAttemps": 2
             }
         },
         "endpoint_spec": {},
@@ -294,21 +299,18 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
     service_name = service["Spec"]["Name"]
     log.debug("Waiting for service %s to start", service_name)
     while True:
-        tasks = await client.tasks.list(filters={"desired-state": "running", "service": service_name})
-        all_tasks_running = True
-        for task in tasks:
-            task_state = task["Status"]["State"]
-            # log.debug("%s %s", service_id, task_state)
+        tasks = await client.tasks.list(filters={"service": service_name})
+        # only keep the ones with the right service ID (we're being a bit picky maybe)
+        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+        # we are only interested in the last task which has index 0
+        if tasks:
+            last_task = tasks[0]
+            task_state = last_task["Status"]["State"]
+            log.debug("%s %s", service["ID"], task_state)
             if task_state in ("failed", "rejected"):
-                log.error("Error while waiting for service")
+                log.error("Error while waiting for service with %s", last_task["Status"])
                 raise exceptions.ServiceStartTimeoutError(service_name, node_uuid)
-            if task_state != "running":
-                all_tasks_running = False
-                break
-        if all_tasks_running:
-            # ensure the service inspection is also updated
-            service = await client.services.inspect(service["ID"])
-            if service["Spec"]["Mode"]["Replicated"]["Replicas"] == 1:
+            if task_state in ("running", "complete"):
                 break
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
@@ -411,7 +413,7 @@ async def _start_docker_service(client: aiodocker.docker.Docker,
         await _silent_service_cleanup(node_uuid)
         raise
     except aiodocker.exceptions.DockerError as err:
-        log.exception("The docker image was not found")
+        log.exception("Unexpected error")
         await _silent_service_cleanup(node_uuid)
         raise exceptions.ServiceNotAvailableError(
             service_key, service_tag) from err
@@ -466,7 +468,9 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
     async with _docker_client() as client: # pylint: disable=not-async-context-manager
         await _check_node_uuid_available(client, node_uuid)
 
+        #FIXME: check if this is needed should not be anymore
         service_name = registry_proxy.get_service_first_name(service_key)
+
         list_of_images = await _get_repos_from_key(service_key)
         service_tag = await _find_service_tag(list_of_images, service_key, service_name, service_tag)
         log.debug("Found service to start %s:%s", service_key, service_tag)
@@ -476,9 +480,6 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
         log.debug("Found service dependencies: %s", list_of_dependencies)
         if list_of_dependencies:
             list_of_services_to_start.extend(list_of_dependencies)
-
-        # create services
-        # _login_docker_registry(client)
 
         containers_meta_data = await _create_node(client, user_id, project_id,
                                                    list_of_services_to_start,
@@ -508,7 +509,6 @@ async def _get_service_basepath_from_docker_service(service: Dict) -> str:
 
 async def get_service_details(node_uuid: str) -> Dict:
     async with _docker_client() as client:  # pylint: disable=not-async-context-manager
-        # _login_docker_registry(client)
         try:
             list_running_services_with_uuid = await client.services.list(
                 filters={'label': ['uuid=' + node_uuid, "type=main"]})
@@ -552,8 +552,6 @@ async def get_service_details(node_uuid: str) -> Dict:
 async def stop_service(node_uuid: str):
     # get the docker client
     async with _docker_client() as client: # pylint: disable=not-async-context-manager
-        # _login_docker_registry(client)
-
         try:
             list_running_services_with_uuid = await client.services.list(
                 filters={'label': 'uuid=' + node_uuid})
