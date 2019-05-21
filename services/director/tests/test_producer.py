@@ -5,11 +5,12 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
+import asyncio
 import uuid
 
+import docker
 import pytest
 
-import docker
 from simcore_service_director import config, exceptions, producer
 
 
@@ -138,3 +139,53 @@ async def test_authentication(loop, docker_swarm):
     config.REGISTRY_AUTH = True
     service = await producer.start_service("someuser", "project", "simcore/services/comp/itis/sleeper", "latest", "node", None)
 
+@pytest.mark.skip(reason="slow test and not necessary to repeat")
+async def test_performance_async(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+    number_of_services = 1
+    pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
+    assert len(pushed_services) == 2 * number_of_services
+
+    for pushed_service in pushed_services:
+        service_description = pushed_service["service_description"]
+        service_key = service_description["key"]
+        service_version = service_description["version"]
+        service_port = pushed_service["internal_port"]
+        service_basepath = "/my/base/path"
+        # start the service
+        for i in range(10):
+            service_uuid = str(uuid.uuid1())
+            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+                await producer.get_service_details(service_uuid)
+            started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
+
+@pytest.mark.skip(reason="slow test and not necessary to repeat")
+async def test_performance_pure_docker_api_calls(loop, configure_registry_access, docker_registry, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+    number_of_services = 1
+    pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
+    assert len(pushed_services) == 2 * number_of_services
+
+    client = docker.from_env()
+    low_level_client = docker.APIClient()
+    for pushed_service in pushed_services:
+        service_description = pushed_service["service_description"]
+        service_key = service_description["key"]
+        service_version = service_description["version"]
+        service_port = pushed_service["internal_port"]
+        service_basepath = "/my/base/path"
+        # start the service
+        for i in range(10):
+            service_uuid = str(uuid.uuid1())
+            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+                await producer.get_service_details(service_uuid)
+            started_service = client.services.create("{}/{}:{}".format(docker_registry, service_key, service_version))
+            # wait for the task to start
+            while True:
+                tasks = started_service.tasks()
+                if tasks:
+                    last_task = tasks[0]
+                    task_state = last_task["Status"]["State"]
+                    if task_state in ("failed", "rejected"):
+                        assert True, "task failed"
+                    if task_state in ("running", "complete"):
+                        break
+                await asyncio.sleep(1)  # 1s
