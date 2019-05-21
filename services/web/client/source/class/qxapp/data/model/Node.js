@@ -484,6 +484,9 @@ qx.Class.define("qxapp.data.model.Node", {
     setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
+        if ("inputAccess" in nodeData) {
+          this.__settingsForm.setAccessLevel(nodeData.inputAccess);
+        }
       }
     },
 
