@@ -78,9 +78,7 @@ async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
     return boot_params
 
 
-async def _convert_labels_to_docker_runtime_parameters(
-        service_runtime_parameters_labels: Dict,
-        node_uuid: str) -> Dict:
+async def _convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels: Dict, node_uuid: str) -> Dict:
     # pylint: disable=C0103
     log.debug("Converting labels to docker runtime parameters")
     runtime_params = dict()
@@ -389,13 +387,16 @@ async def _prepare_runtime_parameters(user_id: str,
                                       project_id: str,
                                       service_key: str,
                                       service_tag: str,
+                                      docker_image: str,
                                       main_service: bool,
                                       node_uuid: str,
                                       node_base_path: str,
+                                      internal_network: Dict,
                                       client: DockerClient
                                       ) -> Dict:
     service_runtime_parameters_labels = await _read_runtime_parameters(service_key, service_tag)
     docker_service_runtime_parameters = await _convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, node_uuid)
+
     # add specific parameters
     await _add_to_swarm_network_if_ports_published(client, docker_service_runtime_parameters)
     await _add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, node_uuid)
@@ -405,31 +406,38 @@ async def _prepare_runtime_parameters(user_id: str,
     await _set_service_name(docker_service_runtime_parameters,
                             registry_proxy.get_service_last_names(service_key),
                             node_uuid)
-    return docker_service_runtime_parameters
+    # if an inter docker network exists, then the service must be part of it
+    if internal_network is not None:
+        await _add_network_to_service_runtime_params(docker_service_runtime_parameters, internal_network)
+    service_parameters = await _convert_to_rest_api_parameters(docker_image, docker_service_runtime_parameters)
+    return service_parameters
 
 
-async def _convert_to_rest_api_parameters(docker_image_full_path: str, docker_service_runtime_parameters: Dict) -> Tuple[Dict, Dict, Dict, str, Dict]:
-
-    task_template = {
-        "ContainerSpec": {
-            "Image": docker_image_full_path,
-            "Env": {env.split("=")[0]: env.split("=")[1] for env in docker_service_runtime_parameters["env"]} if "env" in docker_service_runtime_parameters else {},
-            "Hosts": docker_service_runtime_parameters["hosts"] if "hosts" in docker_service_runtime_parameters else []
+async def _convert_to_rest_api_parameters(docker_image: str, docker_py_runtime: Dict) -> Tuple[Dict, Dict, Dict, str, Dict]:
+    return {
+        "task_template": {
+            "ContainerSpec": {
+                "Image": docker_image,
+                "Env": {env.split("=")[0]: env.split("=")[1] for env in docker_py_runtime["env"]} if "env" in docker_py_runtime else {},
+                "Hosts": docker_py_runtime["hosts"] if "hosts" in docker_py_runtime else [],
+                "Resources": {
+                    "Limits":"",
+                    "Reservation":""
+                }
+            },
+            "Placement": {
+                "Constraints": [x for x in docker_py_runtime["constraints"]] if "constraints" in docker_py_runtime else []
+            },
         },
-        "Placement": {
-            "Constraints": [x for x in docker_service_runtime_parameters["constraints"]] if "constraints" in docker_service_runtime_parameters else []
-        },
+
+        "endpoint_spec": {
+            "Ports": docker_py_runtime["endpoint_spec"]["Ports"]
+        }  if "endpoint_spec" in docker_py_runtime else {},
+
+        "labels": docker_py_runtime["labels"] if "labels" in docker_py_runtime else [],
+        "name": docker_py_runtime["name"] if "name" in docker_py_runtime else None,
+        "networks": docker_py_runtime["networks"] if "networks" in docker_py_runtime else []
     }
-
-    endpoint_spec = {
-        "Ports": docker_service_runtime_parameters["endpoint_spec"]["Ports"]
-    }  if "endpoint_spec" in docker_service_runtime_parameters else {}
-
-    labels = docker_service_runtime_parameters["labels"] if "labels" in docker_service_runtime_parameters else []
-    name = docker_service_runtime_parameters["name"] if "name" in docker_service_runtime_parameters else None
-    networks = docker_service_runtime_parameters["networks"] if "networks" in docker_service_runtime_parameters else []
-    return task_template, endpoint_spec, labels, name, networks
-
 
 async def _start_docker_service(client: DockerClient,
                                 user_id: str,
@@ -441,39 +449,36 @@ async def _start_docker_service(client: DockerClient,
                                 node_base_path: str,
                                 internal_network: Dict
                                 ) -> Dict:  # pylint: disable=R0913
+    docker_image = "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag)
+
     # prepare runtime parameters
-    docker_service_runtime_parameters = await _prepare_runtime_parameters(user_id,
-                                                                          project_id,
-                                                                          service_key,
-                                                                          service_tag,
-                                                                          main_service,
-                                                                          node_uuid,
-                                                                          node_base_path,
-                                                                          client)
-    # if an inter docker network exists, then the service must be part of it
-    if internal_network is not None:
-        await _add_network_to_service_runtime_params(docker_service_runtime_parameters, internal_network)
-    # prepare boot parameters
-    service_boot_parameters_labels = await _get_service_boot_parameters_labels(service_key, service_tag)
-    service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
+    service_parameters = await _prepare_runtime_parameters(user_id, project_id, service_key, service_tag,
+                                                            docker_image, main_service, node_uuid,
+                                                            node_base_path, internal_network, client)
+
+    log.debug("Starting docker service %s using parameters %s", docker_image, service_parameters)
 
     # lets start the service
     try:
-        docker_image_full_path = "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag)
-        log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
-        tast_template, endpoint_spec, labels, name, networks = await _convert_to_rest_api_parameters(docker_image_full_path, docker_service_runtime_parameters)
-
-        service = await client.services.create(task_template=tast_template, name=name, labels=labels, endpoint_spec=endpoint_spec, networks=networks)
+        service = await client.services.create(**service_parameters)
 
         log.debug("Service started now waiting for it to run")
         service_id = service["ID"]
 
         service = await client.services.inspect(service_id)
         service_name = await _get_service_name(service)
-        await _wait_until_service_running_or_failed(client, service_id, docker_image_full_path, node_uuid)
+        await _wait_until_service_running_or_failed(client, service_id, docker_image, node_uuid)
+
         # the docker swarm opened some random port to access the service
         published_port, target_port = await _get_docker_image_port_mapping(client, service)
-        log.debug("Service successfully started on %s:%s", service_entrypoint, published_port)
+        log.debug("Service successfully started %s", service_name)
+
+        # now boot parameters
+        service_boot_parameters_labels = await _get_service_boot_parameters_labels(service_key, service_tag)
+        service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
+        if published_port:
+            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels)
+
         container_meta_data = {
             "published_port": published_port,
             "entry_point": service_entrypoint,
@@ -484,8 +489,6 @@ async def _start_docker_service(client: DockerClient,
             "service_port": target_port,
             "service_basepath": node_base_path
         }
-        if published_port:
-            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels)
         return container_meta_data
 
     except exceptions.ServiceStartTimeoutError as err:
@@ -577,7 +580,7 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
 
 
 async def _get_service_key_version_from_docker_service(service: Dict) -> Tuple[str, str]:
-    # docker_image_full_path = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
+    # docker_image = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
     service_full_name = str(
         service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
     if not service_full_name.startswith(config.REGISTRY_URL):
