@@ -57,9 +57,10 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       });
 
       let role = null;
-      if (qxapp.data.Permissions.getInstance().canDo("preferences.role.update")) {
+      const permissions = qxapp.data.Permissions.getInstance();
+      if (permissions.canDo("preferences.role.update")) {
         role = new qx.ui.form.SelectBox();
-        const roles = qxapp.data.Permissions.getInstance().getLowerRoles();
+        const roles = permissions.getChildrenRoles(permissions.getRole());
         for (let i=0; i<roles.length; i++) {
           const roleItem = new qx.ui.form.ListItem(roles[i]);
           role.add(roleItem);
@@ -67,7 +68,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
         }
         role.addListener("changeSelection", function(e) {
           const newRole = e.getData()[0].getLabel();
-          qxapp.data.Permissions.getInstance().setRole(newRole);
+          permissions.setRole(newRole);
         }, this);
       } else {
         role = new qx.ui.form.TextField().set({
