@@ -66,8 +66,12 @@ qx.Class.define("qxapp.auth.LoginPage", {
     }
 
     const urlFragment = qxapp.utils.Utils.parseURLFragment();
-    if (urlFragment.nav && urlFragment.nav.length && urlFragment.nav[0] === "registration") {
-      pages.setSelection([register]);
+    if (urlFragment.nav && urlFragment.nav.length) {
+      if (urlFragment.nav[0] === "registration") {
+        pages.setSelection([register]);
+      } else if (urlFragment.nav[0] === "reset-password") {
+        pages.setSelection([reset]);
+      }
     }
 
     // Transitions between pages
