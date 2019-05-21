@@ -294,7 +294,7 @@ async def email_confirmation(request: web.Request):
         * reset-password:
             - redirects to login
             - attaches page and token info onto the url
-            - info appended as fragment, e.g. https://osparc.io#page=reset-password;code=131234
+            - info appended as fragment, e.g. https://osparc.io#reset-password?code=131234
             - front-end should interpret that info as:
                 - show the reset-password page
                 - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
@@ -326,7 +326,7 @@ async def email_confirmation(request: web.Request):
 
         elif action == RESET_PASSWORD:
             # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_url = redirect_url.with_fragment("page=reset-password;code=%s" % code )
+            redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code )
             log.debug("Reset password requested %s", confirmation)
 
 
