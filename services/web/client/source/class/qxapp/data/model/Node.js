@@ -572,7 +572,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     renameNode: function(newLabel) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename")) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename", true)) {
         return false;
       }
       this.setLabel(newLabel);
