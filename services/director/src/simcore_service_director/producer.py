@@ -334,28 +334,24 @@ async def _get_repos_from_key(service_key: str) -> List[Dict]:
 
 async def _get_dependant_repos(service_key: str, service_tag: str) -> Dict:
     list_of_images = await _get_repos_from_key(service_key)
-    tag = await _find_service_tag(list_of_images, service_key,
-                                  'Unkonwn name', service_tag)
+    tag = await _find_service_tag(list_of_images, service_key, service_tag)
     # look for dependencies
     dependent_repositories = await registry_proxy.list_interactive_service_dependencies(service_key, tag)
     return dependent_repositories
 
 
-async def _find_service_tag(list_of_images: Dict,
-                            service_key: str,
-                            service_name: str,
-                            service_tag: str) -> str:
+async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag: str) -> str:
     available_tags_list = sorted(list_of_images[service_key]['tags'])
     # not tags available... probably an undefined service there...
     if not available_tags_list:
-        raise exceptions.ServiceNotAvailableError(service_name, service_tag)
+        raise exceptions.ServiceNotAvailableError(service_key, service_tag)
     tag = service_tag
     if not service_tag or service_tag == 'latest':
         # get latest tag
         tag = available_tags_list[len(available_tags_list)-1]
     elif available_tags_list.count(service_tag) != 1:
         raise exceptions.ServiceNotAvailableError(
-            service_name=service_name, service_tag=service_tag)
+            service_name=service_key, service_tag=service_tag)
 
     log.debug("Service tag found is %s ", service_tag)
     return tag
@@ -430,17 +426,17 @@ async def _create_node(client: aiodocker.docker.Docker,
                         user_id: str,
                         project_id: str,
                         list_of_services: List[Dict],
-                        service_name: str,
                         node_uuid: str,
                         node_base_path: str
                         ) -> List[Dict]:  # pylint: disable=R0913, R0915
-    log.debug("Creating %s docker services for node %s using uuid %s and base path %s for user %s", len(
-        list_of_services), service_name, node_uuid, node_base_path, user_id)
+    log.debug("Creating %s docker services for node %s and base path %s for user %s",
+        len(list_of_services), node_uuid, node_base_path, user_id)
     log.debug("Services %s will be started", list_of_services)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
     if len(list_of_services) > 1:
+        service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
         inter_docker_network_id = await _create_overlay_network_in_swarm(client, service_name, node_uuid)
         log.debug("Created docker network in swarm for service %s", service_name)
 
@@ -467,12 +463,8 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
     # first check the uuid is available
     async with _docker_client() as client: # pylint: disable=not-async-context-manager
         await _check_node_uuid_available(client, node_uuid)
-
-        #FIXME: check if this is needed should not be anymore
-        service_name = registry_proxy.get_service_first_name(service_key)
-
         list_of_images = await _get_repos_from_key(service_key)
-        service_tag = await _find_service_tag(list_of_images, service_key, service_name, service_tag)
+        service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
         log.debug("Found service to start %s:%s", service_key, service_tag)
         list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
         # find the service dependencies
@@ -483,7 +475,7 @@ async def start_service(user_id: str, project_id: str, service_key: str, service
 
         containers_meta_data = await _create_node(client, user_id, project_id,
                                                    list_of_services_to_start,
-                                                   service_name, node_uuid, node_base_path)
+                                                   node_uuid, node_base_path)
         node_details = containers_meta_data[0]
         # we return only the info of the main service
         return node_details
