@@ -16,8 +16,8 @@ from simcore_service_director import config, exceptions, producer
 @pytest.fixture
 async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
-    async def push_start_services(number_comp, number_dyn):
-        pushed_services = push_services(number_comp, number_dyn, 60)
+    async def push_start_services(number_comp, number_dyn, dependant=False):
+        pushed_services = push_services(number_comp, number_dyn, inter_dependent_services=dependant)
         assert len(pushed_services) == (number_comp + number_dyn)
         for pushed_service in pushed_services:
             service_description = pushed_service["service_description"]
@@ -31,6 +31,8 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             # start the service
             started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
+            if service_description["type"] == "dynamic":
+                assert started_service["published_port"]
             assert "entry_point" in started_service
             assert "service_uuid" in started_service
             assert started_service["service_uuid"] == service_uuid
@@ -114,3 +116,15 @@ async def test_interactive_service_published_port(run_services):
     service_information = low_level_client.inspect_service(docker_service.id)
     service_published_port = service_information["Endpoint"]["Ports"][0]["PublishedPort"]
     assert service_published_port == service_port
+
+async def test_dependent_services_have_common_network(run_services):
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=5, dependant=True)
+    assert len(running_dynamic_services) == 5
+
+    for service in running_dynamic_services:
+        client = docker.from_env()
+        service_uuid = service["service_uuid"]
+        list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
+        # there is one dependency per service
+        assert len(list_of_services) == 2
+
