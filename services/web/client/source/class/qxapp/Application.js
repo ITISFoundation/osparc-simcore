@@ -141,6 +141,8 @@ qx.Class.define("qxapp.Application", {
       }
       doc.add(view, options);
       this.__current = view;
+      // Clear URL
+      window.history.replaceState(null, "", "/");
     },
 
     /**
