@@ -118,8 +118,8 @@ async def test_interactive_service_published_port(run_services):
     assert service_published_port == service_port
 
 async def test_dependent_services_have_common_network(run_services):
-    running_dynamic_services = await run_services(number_comp=0, number_dyn=5, dependant=True)
-    assert len(running_dynamic_services) == 5
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=True)
+    assert len(running_dynamic_services) == 2
 
     for service in running_dynamic_services:
         client = docker.from_env()
@@ -127,4 +127,3 @@ async def test_dependent_services_have_common_network(run_services):
         list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
         # there is one dependency per service
         assert len(list_of_services) == 2
-
