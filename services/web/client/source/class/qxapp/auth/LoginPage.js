@@ -58,7 +58,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
       row:0,
       column:0
     });
-    
+
     const page = qxapp.auth.core.Utils.findParameterInFragment("page");
     const code = qxapp.auth.core.Utils.findParameterInFragment("code");
     if (page === "reset-password" && code !== null) {

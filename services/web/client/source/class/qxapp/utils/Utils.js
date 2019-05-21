@@ -300,7 +300,7 @@ qx.Class.define("qxapp.utils.Utils", {
         urlHash = urlHash.split("?");
         if (urlHash.length < 3) {
           // Nav
-          urlHash[0].split("/").map(fragmentPart => {
+          urlHash[0].split("/").forEach(fragmentPart => {
             if (fragmentPart.length) {
               parsedFragment.nav = parsedFragment.nav || [];
               parsedFragment.nav.push(decodeURIComponent(fragmentPart));

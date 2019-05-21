@@ -39,7 +39,7 @@ qx.Class.define("qxapp.auth.core.Utils", {
      *
      * Expected fragment format as https://osparc.io#page=reset-password;code=123546
      * where fragment is #page=reset-password;code=123546
-    */
+     */
     findParameterInFragment: function(parameterName) {
       let result = null;
       const params = window.location.hash.substr(1).split(";");

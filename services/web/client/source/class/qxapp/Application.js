@@ -82,10 +82,9 @@ qx.Class.define("qxapp.Application", {
           // Route: /#/registration/?invitation={token}
           qxapp.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
-        }
-        else {
+        } else {
           // this.load404();
-          console.error("URL fragment format not recognized.")
+          console.error("URL fragment format not recognized.");
         }
       } else {
         this.__restart();
