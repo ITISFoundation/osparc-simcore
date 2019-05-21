@@ -20,4 +20,4 @@ DOCKER_PASSWORD # the docker password (!beware this should be a [secure env vari
 
 ### Release workflow
 
-![Git release workflow](docs/img/git-release-workflow.svg)
+![Git release workflow](../docs/img/git-release-workflow.svg)
