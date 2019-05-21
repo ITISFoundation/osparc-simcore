@@ -21,6 +21,9 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
+# used for finding the volumes
+ENV SWARM_STACK_NAME = ''
+
 EXPOSE 8080
 
 VOLUME /home/scu/input

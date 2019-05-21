@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import socket
 from copy import deepcopy
 from pathlib import Path
@@ -70,7 +71,6 @@ def docker_compose_file(request, temp_folder, services_docker_compose, devel_env
     docker_compose_path = temp_folder / 'docker-compose.yml'
 
     _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
-
     yield Path(docker_compose_path)
 
     # cleanup
@@ -118,7 +118,6 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_en
         # remove builds
         if "build" in service:
             service.pop("build", None)
-            service['image'] = "services_{}:latest".format(name)
         # replaces environs
         if "environment" in service:
             _environs = {}

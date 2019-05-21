@@ -71,11 +71,6 @@ CMD ["serve", "--set", "qx.allowUrlSettings=true"]
 # ------------------------------------------------------------------------------------------
 FROM base-stage as build
 
-ARG VCS_URL
-ARG VCS_REF
-ARG VCS_REF_CLIENT
-ARG VCS_STATUS_CLIENT
-
 # 3. prepares docker
 COPY --chown=scu:scu docker docker
 RUN chmod +x docker/*.sh
@@ -88,6 +83,11 @@ RUN ./docker/install-contrib.sh
 # 5. compiles source -> build-output/
 COPY --chown=scu:scu source source
 COPY --chown=scu:scu Manifest.json Manifest.json
+
+ARG VCS_URL
+ARG VCS_REF
+ARG VCS_REF_CLIENT
+ARG VCS_STATUS_CLIENT
 
 RUN qx compile --target=build \
         --set osparc.vcsOriginUrl=\"${VCS_URL}\" \
