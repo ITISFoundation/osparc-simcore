@@ -128,7 +128,7 @@ async def test_registration_with_invitation(client, is_invitation_required, has_
 
     #
     # User gets an email with a link as
-    #   https:/some-web-address.io/#/register/?invitation={code}
+    #   https:/some-web-address.io/#/registration/?invitation={code}
     #
     # Front end then creates the following request
     #
