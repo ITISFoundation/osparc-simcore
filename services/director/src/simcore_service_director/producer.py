@@ -76,6 +76,7 @@ async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
     return boot_params
 
 
+# pylint: disable=too-many-branches
 async def _create_docker_service_params(client: aiodocker.docker.Docker,
                                         service_key: str,
                                         service_tag: str,
