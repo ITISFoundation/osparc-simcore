@@ -10,7 +10,7 @@ from aiopg.sa import Engine
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import UserStatus, users
-from .security_access_model import RoleBasedAccessModel
+from .security_access_model import RoleBasedAccessModel, check_access
 
 log = logging.getLogger(__file__)
 
@@ -75,13 +75,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
             if user:
                 role = user.get('role')
-
-                async def _check_expression(permission: Union[str, Tuple]):
-                    if isinstance(permission, Tuple):
-                        op, lhs, rhs = permission
-                        return op(await _check_expression(lhs), await _check_expression(rhs))
-                    return await self.access_model.can(role, permission, context)
-
-                return await _check_expression(permission)
+                return await check_access(self.access_model, role, permission, context)
 
         return False

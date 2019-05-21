@@ -41,7 +41,8 @@ class UserRole(Enum):
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
       "can": [
-        "project.read",
+        "project.list"
+        "project.read"
       ]
   },
   UserRole.USER: {

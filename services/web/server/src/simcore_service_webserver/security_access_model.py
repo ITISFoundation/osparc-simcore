@@ -7,7 +7,7 @@
 
 import inspect
 import logging
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple, Union
 
 import attr
 
@@ -53,8 +53,7 @@ class RoleBasedAccessModel:
     - All role permissions get registered here
     - Access point to check for permissions on a given operation within a context (passed to check function)
 
-
-    - Operation expressions (e.g. can operation A & operation B?) are interpreted at the implementation of 'permits' call in security_authorization
+    - For checks with operation expressions (e.g. can operation A & operation B?) see check_access free function below
 
     """
     def __init__(self, roles: List[RolePermissions]):
@@ -106,7 +105,24 @@ class RoleBasedAccessModel:
                 roles.append(role)
         return roles
 
+
     @classmethod
     def from_rawdata(cls, raw: Dict):
         roles = [RolePermissions.from_rawdata(role, value) for role, value in raw.items()]
         return RoleBasedAccessModel(roles)
+
+
+
+
+async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: Union[str, Tuple], context: Dict=None) -> bool:
+    """ Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
+
+        Returns True if a user with a role has permission on a given context
+    """
+    async def _check(expression: Union[str, Tuple]):
+        if isinstance(expression, Tuple):
+            op, lhs, rhs = expression # see security_permission._and and security_permission._or
+            return op(await _check(lhs), await _check(rhs))
+        return await model.can(role, expression, context)
+
+    return await _check(operations)

@@ -14,10 +14,11 @@ import attr
 import pytest
 from aiohttp import web
 
+from simcore_service_webserver.security_access_model import (
+    RoleBasedAccessModel, check_access)
+from simcore_service_webserver.security_permissions import and_, or_
 from simcore_service_webserver.security_roles import (ROLES_PERMISSIONS,
                                                       UserRole)
-from simcore_service_webserver.security_access_model import RoleBasedAccessModel
-
 
 
 @pytest.fixture
@@ -176,3 +177,24 @@ async def test_async_checked_permissions(access_model):
         "study.edge.edit",
         context={'response':True}
     )
+
+
+async def test_check_access_expressions(access_model):
+    R = UserRole
+
+    assert await check_access(access_model, R.ANONYMOUS, "study.stop")
+
+    assert await check_access(access_model, R.ANONYMOUS,
+        or_("study.stop", "study.node.create"))
+
+    assert not await check_access(access_model, R.ANONYMOUS,
+        and_("study.stop", "study.node.create"))
+
+    assert await check_access(access_model, R.USER,
+        and_("study.stop", "study.node.create"))
+
+    assert await check_access(access_model, R.USER,
+        and_("study.stop", or_("study.node.create", "study.nodestree.uuid.read")))
+
+    assert await check_access(access_model, R.TESTER,
+        and_("study.stop", and_("study.node.create", "study.nodestree.uuid.read")))

@@ -46,17 +46,13 @@ async def create_projects(request: web.Request):
 
 @login_required
 async def list_projects(request: web.Request):
+    await check_permission(request, "project.list")
+
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
     ptype = request.query.get('type', 'user')
-
-    # permissions for template and user studie are separated by design (see definitions in )
-    if ptype == "template":
-        await check_permission(request, "project.template.read")
-    else:
-        await check_permission(request, "project.user.read")
 
     projects_list = []
     if ptype in ("template", "all"):
@@ -80,6 +76,7 @@ async def list_projects(request: web.Request):
             _validate(request.app, project)
             validated_projects.append(project)
         except ValidationError:
+            log.exception("Skipping invalid project from list")
             continue
 
     return {'data': validated_projects}
@@ -118,7 +115,7 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    await check_permission(request, "project.udpate")
+    await check_permission(request, "project.update")
 
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 

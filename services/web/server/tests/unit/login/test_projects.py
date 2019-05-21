@@ -89,7 +89,9 @@ async def test_create(client, fake_project, role, expected):
         # TODO: validate response using OAS?
 
 
-        # FIXME: cannot delete user until project is deleted
+        # FIXME: cannot delete user until project is deleted. See cascade ,
+        #  i.e. removing a user, removes all its projects!!
+
         # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
         #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
         await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
