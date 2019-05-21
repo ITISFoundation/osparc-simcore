@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+pytest-aiohttp
+
+docker
+tenacity
+pyyaml

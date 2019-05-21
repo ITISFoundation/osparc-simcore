@@ -100,7 +100,11 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
+        /*
+        // Disabled for now. Registration only with an invitation.
         this.fireEvent("toRegister");
+        */
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(this.tr("Registration is currently only available with an invitation."), "INFO");
       }, this);
 
       let forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), function() {
