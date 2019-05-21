@@ -28,7 +28,7 @@ from simcore_service_webserver.security import setup_security
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
-ANONYMOUS_UID = -1 # For testing purposes
+FAKE_USER_ID = -1 # For testing purposes
 
 
 @pytest.fixture(scope="session")
@@ -61,7 +61,7 @@ def fake_db():
 @pytest.fixture
 def disable_permission_checks(mocker):
     mock1 = mocker.patch.object(aiohttp_security.api, "authorized_userid", return_value=Future(), autospec=True)
-    mock1.return_value.set_result(ANONYMOUS_UID)
+    mock1.return_value.set_result(FAKE_USER_ID)
 
     mock2 = mocker.patch.object(aiohttp_security.api, "permits", return_value=Future(), autospec=True)
     mock2.return_value.set_result(True)
@@ -143,7 +143,7 @@ async def test_list(client, mocker, fake_project):
     projects, error = unwrap_envelope(payload)
     assert not error
     assert not projects
-    mock.assert_called_once_with(user_id=ANONYMOUS_UID, db_engine=None)
+    mock.assert_called_once_with(user_id=FAKE_USER_ID, db_engine=None)
 
     resp = await client.get(url.with_query(start=0, count=0))
     payload = await resp.json()
@@ -152,7 +152,7 @@ async def test_list(client, mocker, fake_project):
     projects, error = unwrap_envelope(payload)
     assert not error
     assert not projects
-    mock.assert_called_with(user_id=ANONYMOUS_UID, db_engine=None)
+    mock.assert_called_with(user_id=FAKE_USER_ID, db_engine=None)
 
     resp = await client.get(url.with_query(start=0, count=2))
     payload = await resp.json()
@@ -161,7 +161,7 @@ async def test_list(client, mocker, fake_project):
     projects, error = unwrap_envelope(payload)
     assert not error
     assert projects
-    mock.assert_called_with(user_id=ANONYMOUS_UID, db_engine=None)
+    mock.assert_called_with(user_id=FAKE_USER_ID, db_engine=None)
 
     assert len(projects)==1
     assert projects[0] == fake_project
@@ -199,7 +199,7 @@ async def test_get(client, fake_project, mocker):
     payload = await resp.json()
     assert resp.status == 200, payload
 
-    mock.assert_called_once_with(ANONYMOUS_UID, pid, db_engine=None)
+    mock.assert_called_once_with(FAKE_USER_ID, pid, db_engine=None)
 
     project, error = unwrap_envelope(payload)
     assert not error
@@ -258,7 +258,7 @@ async def test_update(client, fake_db, fake_project, mocker):
     assert not error
     assert not project
 
-    mock.assert_called_once_with(fake_project, ANONYMOUS_UID, pid, db_engine=None)
+    mock.assert_called_once_with(fake_project, FAKE_USER_ID, pid, db_engine=None)
 
 async def test_delete(client, fake_db, fake_project, mocker):
     pid = fake_project["uuid"]
@@ -279,4 +279,4 @@ async def test_delete(client, fake_db, fake_project, mocker):
     assert not data
     assert not error
 
-    mock.assert_called_once_with(ANONYMOUS_UID, pid, db_engine=None)
+    mock.assert_called_once_with(FAKE_USER_ID, pid, db_engine=None)

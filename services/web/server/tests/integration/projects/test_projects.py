@@ -44,6 +44,34 @@ tool_services = [
 def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
+@pytest.fixture(scope="session")
+def fake_template_projects(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_isan(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_osparc(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture
+def fake_db():
+    Fake.reset()
+    yield Fake
+    Fake.reset()
+
 @pytest.fixture
 def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
     port = app_config["main"]["port"] = aiohttp_unused_port()
@@ -79,6 +107,8 @@ def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
 
+
+# TESTS --------------------------------------------------------------------
 
 async def _list_projects(client) -> List[Dict]:
     # GET /v0/projects
@@ -133,6 +163,8 @@ async def _delete_project(client, pid):
     project, error = unwrap_envelope(payload)
     assert not error, pprint(error)
     assert not project
+
+
 
 async def test_workflow(loop, client, fake_project):
     async with LoggedUser(client):
@@ -202,33 +234,6 @@ async def test_delete_invalid_project(loop, client):
         data, error = unwrap_envelope(payload)
         assert not data
         assert error
-
-@pytest.fixture
-def fake_db():
-    Fake.reset()
-    yield Fake
-    Fake.reset()
-
-@pytest.fixture(scope="session")
-def fake_template_projects(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-@pytest.fixture(scope="session")
-def fake_template_projects_isan(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-@pytest.fixture(scope="session")
-def fake_template_projects_osparc(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
 
 async def test_list_template_projects(loop, client, fake_db, fake_template_projects, fake_template_projects_isan, fake_template_projects_osparc):
     fake_db.load_template_projects()

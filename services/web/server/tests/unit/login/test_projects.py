@@ -73,10 +73,8 @@ PREFIX = "/" + API_VERSION
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPForbidden),
-    (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
-    (UserRole.ADMIN, web.HTTPCreated),
 ])
 async def test_create(client, fake_project, role, expected):
     url = client.app.router["create_projects"].url_for()

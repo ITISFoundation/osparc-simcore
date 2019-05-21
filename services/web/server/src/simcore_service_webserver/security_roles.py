@@ -15,21 +15,16 @@ class UserRole(Enum):
     Roles are sorted from lower to highest privileges
     USER is the role assigned by default A user with a higher/lower role is denoted super/infra user
 
-    ANONYMOUS : User who is not logged in. Mostly for testing purposes
-    GUEST     : Temporary user with limited access. E.g. used for demos for unregistred users under-users
+    ANONYMOUS : Temporary user with limited access. E.g. used for demos for unregistred users under-users
     USER      : Registered user. Basic permissions to use the platform [default]
     TESTER    : Upgraded user. First level of super-user with privileges to test the framework.
                 Can use everything but does not have an effect in other users or actual data
-    ADMIN     : Framework's administrator. Has access to everything, even other user's setup.
-                Not exposed to the front-end but for internal management.
 
     See security_access.py
     """
     ANONYMOUS = "ANONYMOUS"
-    GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
-    ADMIN = "ADMIN"
 
     @classmethod
     def super_users(cls):
@@ -45,8 +40,7 @@ class UserRole(Enum):
 #    - Roles can inherit permitted operations from other role
 #
 ROLES_PERMISSIONS = {
-  UserRole.ANONYMOUS: { },
-  UserRole.GUEST: {
+  UserRole.ANONYMOUS: {
       "can": [
           "studies.templates.read",
           "study.node.data.pull",
@@ -74,7 +68,7 @@ ROLES_PERMISSIONS = {
           "study.edge.create",
           "study.edge.delete"
       ],
-      "inherits": [UserRole.GUEST]
+      "inherits": [UserRole.ANONYMOUS]
   },
   UserRole.TESTER: {
       "can": [
@@ -83,11 +77,7 @@ ROLES_PERMISSIONS = {
           "study.nodestree.uuid.read",
           "study.logger.debug.read"
       ],
-      "inherits": [UserRole.USER, UserRole.GUEST]
-  },
-  UserRole.ADMIN: {
-      "can": [],
-      "inherits": [UserRole.TESTER, UserRole.USER, UserRole.GUEST]
+      "inherits": [UserRole.USER]
   }
 }
 

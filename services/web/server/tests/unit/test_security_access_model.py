@@ -49,11 +49,14 @@ def access_model():
                 "study.nodestree.uuid.read",
                 "study.logger.debug.read"
             ],
+             # This double inheritance is done intentionally redundant
             'inherits': [UserRole.USER, UserRole.ANONYMOUS]
         },
         UserRole.ADMIN: {
-            'can': [],
-            'inherits': [UserRole.TESTER, UserRole.USER, UserRole.ANONYMOUS]
+            'can': [
+                "study.amazing.action"
+            ],
+            'inherits': [UserRole.TESTER]
         },
     }
 
@@ -110,8 +113,38 @@ async def test_named_permissions(access_model):
     assert R.TESTER in who_can_delete
     assert R.ADMIN in who_can_delete
 
-async def test_checked_permissions(access_model):
 
+async def test_permissions_inheritance(access_model):
+    # ANONYMOUS <--- USER <--- TESTER <---ADMIN
+
+    R = UserRole
+
+    OPERATION = "studies.templates.read"
+    assert await access_model.can(R.ANONYMOUS, OPERATION)
+    assert await access_model.can(R.USER, OPERATION)
+    assert await access_model.can(R.TESTER, OPERATION)
+    assert await access_model.can(R.ADMIN, OPERATION)
+
+    OPERATION = "study.node.create"
+    assert not await access_model.can(R.ANONYMOUS, OPERATION)
+    assert await access_model.can(R.USER, OPERATION)
+    assert await access_model.can(R.TESTER, OPERATION)
+    assert await access_model.can(R.ADMIN, OPERATION)
+
+    OPERATION = "study.nodestree.uuid.read"
+    assert not await access_model.can(R.ANONYMOUS, OPERATION)
+    assert not await access_model.can(R.USER, OPERATION)
+    assert await access_model.can(R.TESTER, OPERATION)
+    assert await access_model.can(R.ADMIN, OPERATION)
+
+    OPERATION = "study.amazing.action"
+    assert not await access_model.can(R.ANONYMOUS, OPERATION)
+    assert not await access_model.can(R.USER, OPERATION)
+    assert not await access_model.can(R.TESTER, OPERATION)
+    assert await access_model.can(R.ADMIN, OPERATION)
+
+
+async def test_checked_permissions(access_model):
     R = UserRole # alias
 
     # add checked permissions
@@ -133,7 +166,6 @@ async def test_checked_permissions(access_model):
     )
 
 async def test_async_checked_permissions(access_model):
-
     R = UserRole # alias
 
     # add checked permissions
@@ -153,32 +185,3 @@ async def test_async_checked_permissions(access_model):
         "study.edge.edit",
         context={'response':True}
     )
-
-
-
-###################DEVELOPMENT#############################################################
-
-
-#-------------------------
-#from aiohttp import web
-#from aiohttp_session import check_permission
-
-
-
-#async def handler_something(context):
-#    await check_permission(context, 'studies.user.read')
-
-# operations are defined as a hierachical namespaces
-# resources hierarchy and a final verb for an action, e.g. read, write, edit, ...
-# roles list allowed operations under "can"
-# a role can inherit the allowed operations of a parent.
-# can use this to extend the list of allowed operations
-
-# in db ??
-# if some permissions are not used it's not so serious
-# TODO: wildcards to label operations
-
-    # permits(request, permission, context=None)
-    # - permission needs to be a str or an enum.Enum
-    # - request is identified -> user's email
-    # - DBAuthorizationPolicy.permits(identity, permission, context) -> detetermins the access
