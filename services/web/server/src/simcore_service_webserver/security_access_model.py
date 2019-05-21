@@ -53,11 +53,13 @@ class RoleBasedAccessModel:
     - All role permissions get registered here
     - Access point to check for permissions on a given operation within a context (passed to check function)
 
+
+    - Operation expressions (e.g. can operation A & operation B?) are interpreted at the implementation of 'permits' call in security_authorization
+
     """
     def __init__(self, roles: List[RolePermissions]):
         self._roles = {r.role:r for r in roles}
 
-    # TODO: who can do operation A and not operation A.*.C ?
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
     # TODO: operations to ADD/REMOVE/EDIT permissions in a role

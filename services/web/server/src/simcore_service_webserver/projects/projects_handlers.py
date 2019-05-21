@@ -1,5 +1,3 @@
-# pylint: disable=global-statement
-
 
 import json
 import logging
@@ -28,7 +26,7 @@ ANONYMOUS_UID = -1 # For testing purposes
 
 @login_required
 async def create_projects(request: web.Request):
-    await check_permission(request, "studies.user.create")
+    await check_permission(request, "project.create")
 
     project = await request.json()
     try:
@@ -45,6 +43,7 @@ async def create_projects(request: web.Request):
     raise web.HTTPCreated(text=json.dumps(project),
                           content_type='application/json')
 
+
 @login_required
 async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
@@ -55,9 +54,9 @@ async def list_projects(request: web.Request):
 
     # permissions for template and user studie are separated by design (see definitions in )
     if ptype == "template":
-        await check_permission(request, "studies.template.read")
+        await check_permission(request, "project.template.read")
     else:
-        await check_permission(request, "studies.user.read")
+        await check_permission(request, "project.user.read")
 
     projects_list = []
     if ptype in ("template", "all"):
@@ -88,7 +87,7 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
-    await check_permission(request, "studies.user.read")
+    await check_permission(request, "project.read")
 
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -101,6 +100,7 @@ async def get_project(request: web.Request):
         return {'data': project}
     except ProjectNotFoundError:
         raise web.HTTPNotFound
+
 
 @login_required
 async def replace_project(request: web.Request):
@@ -118,7 +118,7 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    await check_permission(request, "studies.user.edit")
+    await check_permission(request, "project.udpate")
 
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -133,10 +133,11 @@ async def replace_project(request: web.Request):
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
+
 @login_required
 async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "studies.user.delete")
+    await check_permission(request, "project.delete")
 
     project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -147,6 +148,8 @@ async def delete_project(request: web.Request):
 
     raise web.HTTPNoContent(content_type='application/json')
 
+
+# helpers --------------------
 
 def _validate(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]

@@ -5,7 +5,6 @@
 """
 import itertools
 from enum import Enum
-from typing import List, Tuple
 
 
 class UserRole(Enum):
@@ -42,53 +41,20 @@ class UserRole(Enum):
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
       "can": [
-          "studies.templates.read",
-          "study.node.data.pull",
-          "study.start",             # TODO: should mean study.*.start ??? bubble-up
-          "study.stop",
-          "study.update"
+        "project.read",
       ]
   },
   UserRole.USER: {
       "can": [
-          "studies.user.read",
-          "studies.user.create",
-          "studies.user.edit",
-          "studies.user.delete",
-          "storage.datcore.read",
-          "preferences.user.update",
-          "preferences.token.create",
-          "preferences.token.delete",
-          "study.node.create",
-          "study.node.delete",
-          "study.node.rename",
-          "study.node.start",
-          "study.node.data.push",
-          "study.node.data.delete",
-          "study.edge.create",
-          "study.edge.delete"
+          "project.create",
+          "project.update",
+          "project.delete",
       ],
       "inherits": [UserRole.ANONYMOUS]
   },
   UserRole.TESTER: {
       "can": [
-          "services.all.read",
-          "preferences.role.update",
-          "study.nodestree.uuid.read",
-          "study.logger.debug.read"
       ],
       "inherits": [UserRole.USER]
   }
 }
-
-
-def named_permissions() -> List[str]:
-    permissions = []
-    for role in ROLES_PERMISSIONS:
-        permissions += ROLES_PERMISSIONS[role].get("can", list())
-    return permissions
-
-def split_permission_name(permission:str) -> Tuple[str, str]:
-    parts = permission.split(".")
-    resource, action = ".".join(parts[:-1]), parts[-1]
-    return (resource, action)
