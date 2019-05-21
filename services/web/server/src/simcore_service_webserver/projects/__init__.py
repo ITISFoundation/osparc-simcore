@@ -82,6 +82,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
+    # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     routes = _create_routes("/projects", projects_handlers, specs, disable_login)
     app.router.add_routes(routes)
 

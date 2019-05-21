@@ -23,9 +23,34 @@ from simcore_service_webserver.projects.projects_handlers import Fake
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.session import setup_session
 
+import aiohttp_security.api
+from simcore_service_webserver.security import setup_security
+
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
 ANONYMOUS_UID = -1 # For testing purposes
+
+
+@pytest.fixture(scope="session")
+def fake_template_projects(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_isan(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
+
+@pytest.fixture(scope="session")
+def fake_template_projects_osparc(package_dir: Path) -> Dict:
+    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
+    assert projects_file.exists()
+    with projects_file.open() as fp:
+        return json.load(fp)
 
 @pytest.fixture
 def fake_db():
@@ -34,7 +59,16 @@ def fake_db():
     Fake.reset()
 
 @pytest.fixture
-def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
+def disable_permission_checks(mocker):
+    mock1 = mocker.patch.object(aiohttp_security.api, "authorized_userid", return_value=Future(), autospec=True)
+    mock1.return_value.set_result(ANONYMOUS_UID)
+
+    mock2 = mocker.patch.object(aiohttp_security.api, "permits", return_value=Future(), autospec=True)
+    mock2.return_value.set_result(True)
+    yield mock1, mock2
+
+@pytest.fixture
+def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db, disable_permission_checks):
     app = web.Application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
@@ -53,10 +87,11 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
 
     setup_db(app)
     setup_session(app)
+    setup_security(app)
     setup_rest(app, debug=True)
     setup_projects(app,
         enable_fake_data=False, # no fake data
-        disable_login=True
+        disable_login=True # TODO: Move this out and use mocks instead
     )
 
     yield loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
@@ -93,7 +128,6 @@ async def test_create(client, fake_project, mocker):
     mock.assert_called_once_with([fake_project], -1, db_engine=None)
 
 async def test_list(client, mocker, fake_project):
-    #-----------------
     mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.load_user_projects', return_value=Future())
     mock.return_value.set_result([fake_project])
 
@@ -131,27 +165,6 @@ async def test_list(client, mocker, fake_project):
 
     assert len(projects)==1
     assert projects[0] == fake_project
-
-@pytest.fixture(scope="session")
-def fake_template_projects(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-@pytest.fixture(scope="session")
-def fake_template_projects_isan(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-@pytest.fixture(scope="session")
-def fake_template_projects_osparc(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
 
 async def test_list_template_projects(client, fake_db, mocker, fake_project: Dict, fake_template_projects: Dict, fake_template_projects_isan: Dict, fake_template_projects_osparc: Dict):
     fake_db.load_template_projects()
@@ -215,8 +228,6 @@ async def test_get_project_template(client, fake_db, fake_template_projects: Dic
         assert project
 
         assert project == template
-
-
 
 async def test_update(client, fake_db, fake_project, mocker):
     pid = fake_project["uuid"]
