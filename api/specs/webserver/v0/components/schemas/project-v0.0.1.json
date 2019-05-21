@@ -194,7 +194,7 @@
                   "enum": ["Invisible", "ReadOnly", "ReadAndWrite"],
                   "default": "ReadAndWrite",
                   "examples": [
-                      "ReadOnly"
+                    "ReadOnly"
                   ]
                 }
               }
