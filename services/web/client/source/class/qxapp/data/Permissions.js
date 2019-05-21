@@ -59,7 +59,8 @@ qx.Class.define("qxapp.data.Permissions", {
 
     ROLES: {
       anonymous: {
-        can: []
+        can: [],
+        inherits: []
       },
       user: {
         can: [],
@@ -95,16 +96,28 @@ qx.Class.define("qxapp.data.Permissions", {
     },
 
     getChildrenRoles(role) {
-      const lowerRoles = [];
-      for (const r in this.self().ROLES) {
-        if (r.toLowerCase() === role.toLowerCase()) {
-          lowerRoles.push(r);
-          break;
-        } else {
-          lowerRoles.push(r);
+      role = role.toLowerCase();
+      const childrenRoles = [];
+      if (!this.self().ROLES[role]) {
+        return childrenRoles;
+      }
+      if (!childrenRoles.includes(role)) {
+        childrenRoles.unshift(role);
+      }
+      const children = this.self().ROLES[role].inherits;
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        if (!childrenRoles.includes(child)) {
+          childrenRoles.unshift(child);
+          const moreChildren = this.getChildrenRoles(child);
+          for (let j=moreChildren.length-1; j>=0; j--) {
+            if (!childrenRoles.includes(moreChildren[j])) {
+              childrenRoles.unshift(moreChildren[j]);
+            }
+          }
         }
       }
-      return lowerRoles;
+      return childrenRoles;
     },
 
     __getInitPermissions: function() {
