@@ -19,7 +19,7 @@ def test_v0_services_nonconformity(configure_schemas_location, push_v0_schema_se
 
     for service in services:
         # validate service
-        with pytest.raises(Exception, message="expecting json schema validation error"):
+        with pytest.raises(Exception):
             json_schema_validator.validate_instance_object(service["service_description"], service_schema)
 
 def test_v1_services_conformity(configure_schemas_location, push_services):

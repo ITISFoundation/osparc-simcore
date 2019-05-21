@@ -1,5 +1,7 @@
 # osparc-simcore platform
 
+**WARNING** This application is **still under development**.
+
 <!-- NOTE: when branched replace `master` in urls -->
 [`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
 [![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
@@ -51,4 +53,6 @@
   make down
 ```
 
-**WARNING** This application is **still under development** and still not suitable for production purposes.
+## Release workflow
+
+[Git release workflow](ops/README.md)
