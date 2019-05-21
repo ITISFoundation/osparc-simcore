@@ -12,7 +12,7 @@ from servicelib.jsonschema_validation import \
     validate_instance as validate_project
 
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..security import check_permission
+from ..security_api import check_permission
 from .config import CONFIG_SECTION_NAME
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)

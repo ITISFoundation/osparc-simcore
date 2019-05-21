@@ -9,7 +9,7 @@ from servicelib.rest_models import LogMessageType
 from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
-from ..security import check_password, encrypt_password, forget, remember
+from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .decorators import RQT_USERID_KEY, login_required
 from .storage import AsyncpgStorage

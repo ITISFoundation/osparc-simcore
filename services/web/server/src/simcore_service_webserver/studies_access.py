@@ -20,7 +20,7 @@ from typing import Dict
 from aiohttp import web
 
 from .resources import resources
-from .security import is_anonymous, remember
+from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ async def create_temporary_user(request: web.Request):
     from .login.cfg import get_storage
     from .login.handlers import ACTIVE, ANONYMOUS
     from .login.utils import get_client_ip, get_random_string
-    from .security import encrypt_password
+    from .security_api import encrypt_password
     # from .utils import generate_passphrase
     # from .utils import generate_password
 
@@ -90,7 +90,7 @@ async def create_temporary_user(request: web.Request):
 # TODO: from .users import get_user?
 async def get_authorized_user(request: web.Request) -> Dict:
     from .login.cfg import get_storage
-    from .security import authorized_userid
+    from .security_api import authorized_userid
 
     db = get_storage(request.app)
     userid = await authorized_userid(request)
