@@ -1,0 +1,97 @@
+title: simcore workbench
+description: description of a simcore workbench
+type: object
+x-patternProperties:
+  ^\S+$:
+    type: object
+    additionalProperties: false
+    required:
+      - key
+      - version
+      - position
+    properties:
+      key:
+        type: string
+        description: distinctive name for the node based on the docker registry path
+        pattern: '^(service)/(computational|dynamic)(/[^\s/]+)+$'
+        example:
+          - service/computational/sleeper
+          - service/dynamic/3dviewer
+      version:
+        type: string
+        description: semantic version number of the node
+        pattern: >-
+          ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+        example:
+          - 1.0.0
+          - 0.0.1
+      inputs:
+        type: object
+        description: values of input properties
+        patternProperties:
+          '^[-_a-zA-Z0-9]+$':
+            oneOf:
+              - type:
+                  - integer
+                  - boolean
+                  - string
+                  - number
+              - type: object
+                additionalProperties: false
+                required:
+                  - nodeUuid
+                  - output
+                properties:
+                  nodeUuid:
+                    type: string
+                  output:
+                    type: string
+              - type: object
+                additionalProperties: false
+                required:
+                  - store
+                  - path
+                properties:
+                  store:
+                    type: string
+                  path:
+                    type: string
+      outputs:
+        type: object
+        patternProperties:
+          '^[-_a-zA-Z0-9]+$':
+            oneOf:
+              - type:
+                  - integer
+                  - boolean
+                  - string
+                  - number
+              - type: object
+                additionalProperties: false
+                required:
+                  - store
+                  - path
+                properties:
+                  store:
+                    type: string
+                  path:
+                    type: string
+      links:
+        type: array
+        items:
+          type: string
+        description: node IDs of where the node is connected to
+        example:
+          - nodeUuid1
+          - nodeUuid2
+      position:
+        type: object
+        additionalProperties: false
+        required:
+          - x
+          - 'y'
+        properties:
+          x:
+            type: integer
+          'y':
+            type: integer
