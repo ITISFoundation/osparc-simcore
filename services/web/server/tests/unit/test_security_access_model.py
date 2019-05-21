@@ -52,12 +52,6 @@ def access_model():
              # This double inheritance is done intentionally redundant
             'inherits': [UserRole.USER, UserRole.ANONYMOUS]
         },
-        UserRole.ADMIN: {
-            'can': [
-                "study.amazing.action"
-            ],
-            'inherits': [UserRole.TESTER]
-        },
     }
 
     # RBAC: Role Based Access Control
@@ -71,6 +65,7 @@ def test_roles():
     assert super_users
     assert UserRole.USER not in super_users
     assert all( r in UserRole for r in super_users )
+
 
 def test_unique_permissions():
     # Limit for scalability. Test that unnecessary resources and/or actions are used
@@ -111,11 +106,10 @@ async def test_named_permissions(access_model):
     who_can_delete = await access_model.who_can("study.edge.delete")
     assert R.USER in who_can_delete
     assert R.TESTER in who_can_delete
-    assert R.ADMIN in who_can_delete
 
 
 async def test_permissions_inheritance(access_model):
-    # ANONYMOUS <--- USER <--- TESTER <---ADMIN
+    # ANONYMOUS <--- USER <--- TESTER
 
     R = UserRole
 
@@ -123,25 +117,21 @@ async def test_permissions_inheritance(access_model):
     assert await access_model.can(R.ANONYMOUS, OPERATION)
     assert await access_model.can(R.USER, OPERATION)
     assert await access_model.can(R.TESTER, OPERATION)
-    assert await access_model.can(R.ADMIN, OPERATION)
 
     OPERATION = "study.node.create"
     assert not await access_model.can(R.ANONYMOUS, OPERATION)
     assert await access_model.can(R.USER, OPERATION)
     assert await access_model.can(R.TESTER, OPERATION)
-    assert await access_model.can(R.ADMIN, OPERATION)
 
     OPERATION = "study.nodestree.uuid.read"
     assert not await access_model.can(R.ANONYMOUS, OPERATION)
     assert not await access_model.can(R.USER, OPERATION)
     assert await access_model.can(R.TESTER, OPERATION)
-    assert await access_model.can(R.ADMIN, OPERATION)
 
     OPERATION = "study.amazing.action"
     assert not await access_model.can(R.ANONYMOUS, OPERATION)
     assert not await access_model.can(R.USER, OPERATION)
     assert not await access_model.can(R.TESTER, OPERATION)
-    assert await access_model.can(R.ADMIN, OPERATION)
 
 
 async def test_checked_permissions(access_model):
@@ -164,6 +154,7 @@ async def test_checked_permissions(access_model):
         "study.edge.edit",
         context={'response':True}
     )
+
 
 async def test_async_checked_permissions(access_model):
     R = UserRole # alias

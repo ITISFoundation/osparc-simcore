@@ -9,7 +9,8 @@ from servicelib.rest_utils import extract_and_validate
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
 from .registry import get_registry
-ANONYMOUS_USER = -1
+
+ANONYMOUS_USER_ID = -1
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
     assert query, "POST expected /running_interactive_services? ... "
     assert not body
 
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     endpoint = _resolve_url(request)
 
     session = get_client_session(request.app)
@@ -149,7 +150,7 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     assert not body
 
     registry = get_registry(request.app)
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     services = registry.user_to_services_map[userid]
 
     if services:
