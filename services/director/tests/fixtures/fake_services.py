@@ -18,13 +18,14 @@ def push_services(loop, docker_registry, tmpdir):
     tmp_dir = Path(tmpdir)
 
     list_of_pushed_images_tags = []
-    dependent_image = None
+    dependent_images = []
     def build_push_images(number_of_computational_services, number_of_interactive_services, inter_dependent_services=False, bad_json_format=False):
         try:
             version = "1.0."
             dependent_image = None
             if inter_dependent_services:
                 dependent_image = _build_push_image(tmp_dir, registry_url, "computational", "dependency", "10.52.999999", None, bad_json_format=bad_json_format, schema_version="v1")
+                dependent_images.append(dependent_image)
 
             for image_index in range(0, number_of_computational_services):
                 image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), dependent_image, bad_json_format=bad_json_format, schema_version="v1")
@@ -40,10 +41,9 @@ def push_services(loop, docker_registry, tmpdir):
         return list_of_pushed_images_tags
 
     yield build_push_images
-    print("clean registry")
+    _logger.info("clean registry")
     _clean_registry(registry_url, list_of_pushed_images_tags)
-    if dependent_image:
-        _clean_registry(registry_url, [dependent_image])
+    _clean_registry(registry_url, dependent_images)
 
 @pytest.fixture(scope="function")
 def push_v0_schema_services(docker_registry, tmpdir):
@@ -71,7 +71,7 @@ def push_v0_schema_services(docker_registry, tmpdir):
         return list_of_pushed_images_tags
 
     yield build_push_images
-    print("clean registry")
+    _logger.info("clean registry")
     _clean_registry(registry_url, list_of_pushed_images_tags, schema_version)
 
 def _build_push_image(docker_dir, registry_url, service_type, name, tag, dependent_image=None, *, schema_version="v1", bad_json_format=False): # pylint: disable=R0913
