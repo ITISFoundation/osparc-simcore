@@ -97,17 +97,7 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
             "SIMCORE_PROJECT_ID": project_id,
             "SIMCORE_NODE_BASEPATH": node_base_path or ""
         },
-        "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
-        "Resources": {
-            "Limits": {
-                "NanoCPUs": 4 * pow(10, 9),
-                "MemoryBytes": 16 * pow(1024, 3)
-            },
-            "Reservation": {
-                "NanoCPUs": 0,
-                "MemoryBytes": 0
-            }
-        }
+        "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX)
     }
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
@@ -120,8 +110,18 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
-                "Delay": 5,
-                "MaxAttemps": 2
+                "Delay": 5000000,
+                "MaxAttempts": 2
+            },
+            "Resources": {
+                "Limits": {
+                    "NanoCPUs": 4 * pow(10, 9),
+                    "MemoryBytes": 16 * pow(1024, 3)
+                },
+                "Reservation": {
+                    "NanoCPUs": 0,
+                    "MemoryBytes": 0
+                }
             }
         },
         "endpoint_spec": {},
@@ -142,16 +142,16 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
         if param["type"] == "Resources":
             # python-API compatible for backward compatibility
             if "mem_limit" in param["value"]:
-                container_spec["Resources"]["Limits"]["MemoryBytes"] = param["value"]["mem_limit"]
+                docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"] = param["value"]["mem_limit"]
             if "cpu_limit" in param["value"]:
-                container_spec["Resources"]["Limits"]["NanoCPUs"] = param["value"]["cpu_limit"]
+                docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"] = param["value"]["cpu_limit"]
             if "mem_reservation" in param["value"]:
-                container_spec["Resources"]["Reservation"]["MemoryBytes"] = param["value"]["mem_reservation"]
+                docker_params["task_template"]["Resources"]["Reservation"]["MemoryBytes"] = param["value"]["mem_reservation"]
             if "cpu_reservation" in param["value"]:
-                container_spec["Resources"]["Reservation"]["NanoCPUs"] = param["value"]["cpu_reservation"]
+                docker_params["task_template"]["Resources"]["Reservation"]["NanoCPUs"] = param["value"]["cpu_reservation"]
             # REST-API compatible
             if "Limits" in param["value"] or "Reservation" in param["value"]:
-                container_spec["Resources"] = param["value"]
+                docker_params["task_template"]["Resources"] = param["value"]
 
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
