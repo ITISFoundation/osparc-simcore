@@ -22,7 +22,7 @@ from .rest_config import APP_OPENAPI_SPECS_KEY
 log = logging.getLogger(__file__)
 
 
-def setup(app: web.Application,* , disable_login=False):
+def setup(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
 
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
@@ -43,9 +43,10 @@ def setup(app: web.Application,* , disable_login=False):
         return
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = map_handlers_with_operations(
-        {'start_pipeline': computation_handlers.start_pipeline.__wrapped__ if disable_login else computation_handlers.start_pipeline,
-        'update_pipeline': computation_handlers.update_pipeline.__wrapped__ if disable_login else computation_handlers.update_pipeline},
+    routes = map_handlers_with_operations({
+            'start_pipeline': computation_handlers.start_pipeline,
+            'update_pipeline': computation_handlers.update_pipeline
+        },
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
         strict=True
     )

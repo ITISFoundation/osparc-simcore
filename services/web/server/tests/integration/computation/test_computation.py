@@ -24,10 +24,15 @@ from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+from utils_login import LoggedUser
+from utils_assert import assert_status
 
 API_VERSION = "v0"
+
+# TODO: create conftest at computation/ folder level
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
@@ -73,7 +78,7 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
 
     setup_db(app)
     setup_rest(app, debug=True)
-    setup_computation(app, disable_login=True)
+    setup_computation(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
 
@@ -103,17 +108,30 @@ def mock_workbench_adjacency_list(here):
     file_path = here / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
+
+@pytest.fixture
+async def logged_user(client): #, role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: role fixture is defined as a parametrization below
+    """
+    # TODO: parameterize roles
+    role = UserRole.USER
+
+    async with LoggedUser(
+        client,
+        {"role": role.name},
+        check_if_succeeds = role!=UserRole.ANONYMOUS
+    ) as user:
+        yield user
+
 # ------------------------------------------
 
 async def test_check_health(docker_stack, client):
     resp = await client.get("/%s/" % API_VERSION)
     payload = await resp.json()
 
-    assert resp.status == 200, str(payload)
-    data, error = unwrap_envelope(payload)
-
-    assert data
-    assert not error
+    data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
@@ -154,34 +172,38 @@ def _check_sleeper_services_completed(project_id, postgres_session):
         if "sleeper" in task_db.image["name"]:
             assert task_db.state == SUCCESS
 
-async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
+async def test_start_pipeline(sleeper_service,
+        client, logged_user,
+        project_id:str,
+        mock_workbench_payload, mock_workbench_adjacency_list,
+        postgres_session, celery_service,
+):
 
     resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )
-    assert resp.status == 200, str(await resp.text())
-    payload = await resp.json()
-    data, error = unwrap_envelope(payload)
 
-    assert data
-    assert not error
+    data, _ = await assert_status(resp, web.HTTPOk)
 
     assert "pipeline_name" in data
     assert "project_id" in data
     assert data['project_id'] == project_id
-    # check db comp_pipeline
+
     _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
     # _check_sleeper_services_completed(project_id, postgres_session)
 
-async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+
+async def test_update_pipeline(docker_stack,
+        client, logged_user,
+        project_id:str,
+        mock_workbench_payload, mock_workbench_adjacency_list,
+        postgres_session):
+
     resp = await client.put("/{}/computation/pipeline/{}".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )
-    assert resp.status == 204, str(await resp.text())
-    payload = await resp.json()
-    data, error = unwrap_envelope(payload)
 
-    assert not data
-    assert not error
+    data, _ = await assert_status(resp, web.HTTPNoContent)
+
     # check db comp_pipeline
     _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=True)

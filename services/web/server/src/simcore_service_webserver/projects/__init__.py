@@ -54,7 +54,7 @@ async def _get_specs(location):
 
 
 def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) -> bool:
-    """[summary]
+    """
 
     :param app: main web application
     :type app: web.Application
@@ -65,6 +65,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
     :return: False if subystem setup was skipped (e.g. explicitly disabled in config), otherwise True
     :rtype: bool
     """
+    # TODO: remove disable_login option. Use instead test.helpers to create logged users
 
     logger.debug("Setting up %s %s...", __name__,
             "[debug]" if enable_fake_data or disable_login
