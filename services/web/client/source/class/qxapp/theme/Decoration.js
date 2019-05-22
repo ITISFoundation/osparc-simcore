@@ -75,6 +75,13 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
+    "service-browser": {
+      style: {
+        width: 1,
+        color: "material-button-background"
+      }
+    },
+
     "link-button": {}
   }
 });
