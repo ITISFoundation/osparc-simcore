@@ -256,7 +256,7 @@ async def test_update(client, fake_db, fake_project, mocker):
 
     project, error = unwrap_envelope(payload)
     assert not error
-    assert not project
+    assert project
 
     mock.assert_called_once_with(fake_project, FAKE_USER_ID, pid, db_engine=None)
 
