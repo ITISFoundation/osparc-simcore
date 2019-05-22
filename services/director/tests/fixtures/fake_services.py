@@ -9,6 +9,7 @@ from pathlib import Path
 
 import docker
 import pytest
+import requests
 
 _logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, depende
     image = _create_base_image(docker_dir, docker_labels)
     # tag image
     image_tag = registry_url + "/{key}:{version}".format(key=service_description["key"], version=tag)
-    assert image.tag(image_tag) == True
+    assert image.tag(image_tag) is True
     # push image to registry
     docker_client.images.push(image_tag)
     # remove image from host
@@ -111,7 +112,6 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, depende
         }
 
 def _clean_registry(registry_url, list_of_images, schema_version="v1"):
-    import requests
     request_headers = {'accept': "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
@@ -121,11 +121,11 @@ def _clean_registry(registry_url, list_of_images, schema_version="v1"):
         else:
             tag = service_description["version"]
         url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=tag)
-        response = requests.request("GET", url, headers=request_headers)
+        response = requests.get(url, headers=request_headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
         url = "http://{host}/v2/{name}/manifests/{digest}".format(host=registry_url, name=service_description["key"], digest=docker_content_digest)
-        response = requests.request("DELETE", url, headers=request_headers)
+        response = requests.delete(url, headers=request_headers)
 
 def _create_base_image(base_dir, labels):
     # create a basic dockerfile
