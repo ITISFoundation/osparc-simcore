@@ -134,6 +134,7 @@ qx.Class.define("qxapp.file.FilePicker", {
           store: selectedItem.getLocation(),
           path: selectedItem.getFileId()
         };
+        this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
       }
