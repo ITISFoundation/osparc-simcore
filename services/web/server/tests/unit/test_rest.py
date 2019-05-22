@@ -106,7 +106,7 @@ async def test_frontend_config(client):
     response = await client.get("/v0/config")
 
     data, _ = await assert_status(response, web.HTTPOk)
-    assert data["invitation_required"] == False
+    assert not data["invitation_required"]
 
     # w/ invitation explicitly
     for enabled in (True, False):
@@ -114,7 +114,7 @@ async def test_frontend_config(client):
         response = await client.get("/v0/config")
 
         data, _ = await assert_status(response, web.HTTPOk)
-        assert data["invitation_required"] == enabled
+        assert data["invitation_required"] is enabled
 
 
 @pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
