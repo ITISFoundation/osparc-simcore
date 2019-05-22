@@ -190,17 +190,6 @@ async def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
             return param['value']
     return ''
 
-def _get_swarm_network(client: DockerClient) -> docker.models.networks.Network:
-    network_name = "default"
-    if config.SWARM_STACK_NAME:
-        network_name = config.SWARM_STACK_NAME
-    # try to find the network name (usually named STACKNAME_default)
-    networks = [x for x in client.networks.list(filters={"scope":"swarm"}) if network_name in x.name]
-    if not networks or len(networks)>1:
-        raise exceptions.DirectorException(msg="Swarm network name is not configured, found following networks: {}".format(networks))
-    return networks[0]
-
-
 async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
     network_name = "_default"
     if config.SWARM_STACK_NAME:
