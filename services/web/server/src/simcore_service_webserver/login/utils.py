@@ -10,7 +10,7 @@ import passlib.hash
 from aiohttp_jinja2 import render_string
 
 from ..resources import resources
-from .cfg import cfg #TODO: remove this singleton!!!
+from .cfg import cfg  # TODO: remove this singleton!!!
 
 CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
 log = getLogger(__name__)
@@ -50,10 +50,21 @@ async def is_confirmation_allowed(user, action):
 
 def is_confirmation_expired(confirmation):
     age = datetime.utcnow() - confirmation['created_at']
+    lifetime = get_confirmation_lifetime(confirmation)
+    return age > lifetime
+
+
+def get_confirmation_lifetime(confirmation):
     lifetime_days = cfg['{}_CONFIRMATION_LIFETIME'.format(
         confirmation['action'].upper())]
     lifetime = timedelta(days=lifetime_days)
-    return age > lifetime
+    return lifetime
+
+
+def get_expiration_date(confirmation):
+    lifetime = get_confirmation_lifetime(confirmation)
+    estimated_expiration = confirmation['created_at'] + lifetime
+    return estimated_expiration
 
 
 def get_client_ip(request):

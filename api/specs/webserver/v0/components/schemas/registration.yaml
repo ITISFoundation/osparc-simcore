@@ -26,7 +26,16 @@ RegistrationType:
     confirm:
       type: string
       #format: password
+    invitation:
+      type: string
+      description: "Invitation code"
+  required:
+    - email
+    - password
+
+
   example:
     email: foo@mymail.com
     password: 'my secret'
     confim: 'my secret'
+    type: 'ABCDE1234'
