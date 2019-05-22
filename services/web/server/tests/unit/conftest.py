@@ -19,6 +19,8 @@ from simcore_service_webserver.cli_config import read_and_validate
 
 log = logging.getLogger(__name__)
 
+sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
+
 @pytest.fixture(scope='session')
 def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

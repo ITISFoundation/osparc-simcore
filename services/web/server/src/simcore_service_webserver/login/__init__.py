@@ -1,16 +1,13 @@
 """ webserver's login subsystem
 
-This is a modification of aiohttp-login package
 
+    This sub-package is based on aiohttp-login https://github.com/imbolc/aiohttp-login
 """
-# TODO: create stand-alone fork of aiohttp-login
-
 import asyncio
 import logging
 
 import asyncpg
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..db import DSN
