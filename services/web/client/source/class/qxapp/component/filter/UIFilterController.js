@@ -54,7 +54,6 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
     registerFilter: function(filter) {
       const filterId = filter.getFilterId();
       const groupId = filter.getGroupId();
-      qx.event.message.Bus.getInstance().subscribe(this.__getInputMessageName(filterId, groupId), this.__subscriber, this);
       // Store filter reference for managing
       this.__filters = this.__filters || {};
       this.__filters[groupId] = this.__filters[groupId] || {};
@@ -105,13 +104,21 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
       return qxapp.utils.Utils.capitalize(groupId, suffix);
     },
 
-    __subscriber: function(msg) {
+    /**
+     * Function called when a filter state changes and it wants to publish those changes to trigger the filtering.
+     *
+     * @param {Object} filterData Mandatory data coming from the filter.
+     * @param {String} filterData.groupId Group id of the filter that changed.
+     * @param {String} filterData.filterId Filter id of the filter that changed.
+     * @param {Object} filterData.data Data contained by the filter.
+     */
+    publish: function(filterData) {
       // Update state
       const {
         groupId,
         filterId,
         data
-      } = msg.getData();
+      } = filterData;
       this.__state = this.__state || {};
       this.__state[groupId] = this.__state[groupId] || {};
       this.__state[groupId][filterId] = data;
