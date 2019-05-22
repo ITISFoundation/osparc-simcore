@@ -64,9 +64,6 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     # teardown here ...
 
 
-@pytest.fixture
-def logged_user
-
 # Tests CRUD operations --------------------------------------------
 # TODO: template for CRUD testing?
 
@@ -94,7 +91,6 @@ async def test_list_projects(client, fake_project, role, expected):
     #TODO: GET /v0/projects?type=template&start=0&count=3
 
 
-
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPForbidden),
     (UserRole.GUEST, web.HTTPForbidden),
@@ -118,7 +114,6 @@ async def test_create(client, fake_project, role, expected):
         # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
         #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
         await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
-
 
 
 @pytest.mark.parametrize("role,expected", [
@@ -153,7 +148,6 @@ async def test_replace_project(client, fake_project, role, expected):
 
             resp = await client.put(url, json=fake_project)
             await assert_status(resp, expected)
-
 
 
 @pytest.mark.parametrize("role,expected", [
