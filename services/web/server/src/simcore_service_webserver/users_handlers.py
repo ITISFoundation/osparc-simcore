@@ -11,8 +11,8 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import tokens, users
 from .login.decorators import RQT_USERID_KEY, login_required
-from .utils import gravatar_hash
 from .security_api import check_permission
+from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
 

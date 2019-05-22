@@ -52,18 +52,37 @@ ROLES_PERMISSIONS = {
   },
   UserRole.GUEST: {
       "can": [
-        "project.read",          # "studies.user.read", "studies.templates.read"
+        "project.read",          # "studies.user.read",
+                                 # "studies.templates.read"
+        # NOTE: All services* are not necessary since it only requires login
+        # and there is no distinction among logged in users.
+        # TODO: kept temporarily as a way to denote resources
+        "services.pipeline.*",   # "study.update",
+                                 # "study.start",
+                                 # "study.stop",
+        "services.interactive.*",# "study.node.start"
       ]
   },
   UserRole.USER: {
       "can": [
           "project.create",      # "studies.user.create",
           "project.update",
-          "project.delete",
-          "user.profile.update", # "preferences.user.update", "preferences.role.update"
-          "user.tokens.*",       # "preferences.token.create", # "preferences.token.delete"
+          "project.delete",      # "study.node.create",
+                                 # "study.node.delete",
+                                 # "study.node.rename",
+                                 # "study.edge.create",
+                                 # "study.edge.delete"
+
+          "user.profile.update", # "preferences.user.update",
+                                 # "preferences.role.update"
+          "user.tokens.*",       # "preferences.token.create",
+                                 # "preferences.token.delete"
           "storage.locations.*", # "storage.datcore.read"
           "storage.files.*",
+        # NOTE: All services* are not necessary since it only requires login
+        # and there is no distinction among logged in users.
+        # TODO: kept temporarily as a way to denote resources
+          "services.catalog.*",
       ],
       "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
@@ -81,31 +100,31 @@ ROLES_PERMISSIONS = {
 # "anonymous": [],
 # "guest": [
 ###   "studies.templates.read",
-#   "study.node.data.pull",
-#   "study.start",
-#   "study.stop",
-#   "study.update"
+#   "study.node.data.pull", , <----------???
+###   "study.start",
+###   "study.stop",
+###   "study.update"
 # ],
 # "user": [
 ###   "studies.user.read",
 ###   "studies.user.create",
-#   "storage.datcore.read",
+###   "storage.datcore.read",
 ###   "preferences.user.update",
 ###   "preferences.token.create",
 ###   "preferences.token.delete",
-#   "study.node.create",
-#   "study.node.delete",
-#   "study.node.rename",
-#   "study.node.start",
-#   "study.node.data.push",
-#   "study.node.data.delete",
+###   "study.node.create",
+###   "study.node.delete",
+###   "study.node.rename",
+###   "study.node.start",
+#   "study.node.data.push", <----------???
+#   "study.node.data.delete", <----------???
 #XX   "study.edge.create",
 #XX   "study.edge.delete"
 # ],
 # "tester": [
-#   "services.all.read",
+#   "services.all.read",   <----------???
 ###   "preferences.role.update",
-#   "study.nodestree.uuid.read",
-#   "study.logger.debug.read"
+#   "study.nodestree.uuid.read", <----------???
+#   "study.logger.debug.read" <----------???
 # ],
 # "admin": []

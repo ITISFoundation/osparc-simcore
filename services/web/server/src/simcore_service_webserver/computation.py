@@ -14,7 +14,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_routing import (iter_path_operations,
                                      map_handlers_with_operations)
 
-from . import computation_api
+from . import computation_handlers
 from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
@@ -44,8 +44,8 @@ def setup(app: web.Application,* , disable_login=False):
 
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
-        {'start_pipeline': computation_api.start_pipeline.__wrapped__ if disable_login else computation_api.start_pipeline,
-        'update_pipeline': computation_api.update_pipeline.__wrapped__ if disable_login else computation_api.update_pipeline},
+        {'start_pipeline': computation_handlers.start_pipeline.__wrapped__ if disable_login else computation_handlers.start_pipeline,
+        'update_pipeline': computation_handlers.update_pipeline.__wrapped__ if disable_login else computation_handlers.update_pipeline},
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
         strict=True
     )

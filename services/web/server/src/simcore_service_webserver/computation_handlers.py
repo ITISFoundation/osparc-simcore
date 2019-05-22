@@ -9,11 +9,11 @@ import datetime
 import logging
 from typing import Dict
 
-from aiohttp import web, web_exceptions
-from celery import Celery
 import sqlalchemy as sa
-from sqlalchemy import and_
+from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
+from celery import Celery
+from sqlalchemy import and_
 
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
@@ -25,6 +25,7 @@ from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
+from .security_api import check_permission
 
 ANONYMOUS_USER_ID = -1
 
@@ -237,8 +238,13 @@ async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
     log.debug("END OF ROUTINE.")
 
+
+# HANDLERS ------------------------------------------
+
 @login_required
 async def update_pipeline(request: web.Request) -> web.Response:
+    await check_permission(request, "services.pipeline.*")
+
     # retrieve the data
     project_id = request.match_info.get("project_id", None)
     assert project_id is not None
@@ -250,6 +256,7 @@ async def update_pipeline(request: web.Request) -> web.Response:
 # pylint:disable=too-many-branches, too-many-statements
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
+    await check_permission(request, "services.pipeline.*")
     # params, query, body = await extract_and_validate(request)
 
     # if params is not None:
