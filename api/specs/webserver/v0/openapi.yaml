@@ -32,6 +32,9 @@ paths:
   /check/{action}:
     $ref: './openapi-diagnostics.yaml#/paths/~1check~1{action}'
 
+  /config:
+    $ref: './openapi-diagnostics.yaml#/paths/~1config'
+
   # AUTHENTICATION & AUTHORIZATION --------------------------------------
 
   /auth/register:
