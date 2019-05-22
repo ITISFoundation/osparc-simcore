@@ -4,8 +4,9 @@
 """
 from aiohttp import web
 
-from servicelib.rest_utils import extract_and_validate, body_to_dict
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import wrap_as_envelope
+from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
 
@@ -46,3 +47,20 @@ async def check_action(request: web.Request):
     }
 
     return wrap_as_envelope(data=data)
+
+
+async def get_config(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert not query
+    assert not body
+
+    cfg = request.app[APP_CONFIG_KEY]
+    login_cfg = cfg.get('login',{})
+
+    data = {
+        'invitation_required': login_cfg.get('registration_invitation_required', False)
+    }
+
+    return data
