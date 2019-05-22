@@ -17,18 +17,20 @@ from .security_roles import UserRole
 class UserStatus(enum.Enum):
     """
         pending: user registered but not confirmed
-        active: user is authorized
+        active: user is confirmed and can use the platform
         banned: user is not authorized
     """
-    CONFIRMATION_PENDING = "pending"
-    ACTIVE = "active"
-    BANNED = "banned"
+    CONFIRMATION_PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    BANNED = "BANNED"
 
 
 class ConfirmationAction(enum.Enum):
-    REGISTRATION = "registration"
-    RESET_PASSWORD = "reset_password"
-    CHANGE_EMAIL = "change_email"
+    REGISTRATION = "REGISTRATION"
+    RESET_PASSWORD = "RESET_PASSWORD"
+    CHANGE_EMAIL = "CHANGE_EMAIL"
+    INVITATION = "INVITATION"
+
 
 
 # TABLES ----------------------------------------------------------------

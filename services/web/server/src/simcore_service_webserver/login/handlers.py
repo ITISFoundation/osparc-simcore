@@ -11,6 +11,7 @@ from servicelib.rest_utils import extract_and_validate
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
+from .config import get_login_config
 from .decorators import RQT_USERID_KEY, login_required
 from .storage import AsyncpgStorage
 from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
@@ -37,19 +38,24 @@ ANONYMOUS, USER, TESTER= to_names(UserRole, \
 REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(ConfirmationAction, \
     'REGISTRATION RESET_PASSWORD CHANGE_EMAIL')
 
-# Handlers & tails ------------------------------------------------------
 
 async def register(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     # see https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
+    app_cfg = get_login_config(request.app) # TODO: replace cfg by app_cfg
     db = get_storage(request.app)
-    email = body.email
-    username = email.split('@')[0]
-    password = body.password
-    confirm = body.confirm
 
-    await validate_registration(email, password, confirm, db)
+    email = body.email
+    username = email.split('@')[0] # FIXME: this has to be unique and add this in user registration!
+    password = body.password
+    confirm = body.confirm if hasattr(body, 'confirm') else None
+
+    if app_cfg.get("registration_invitation_required"):
+        invitation = body.invitation if hasattr(body, 'invitation') else None
+        await check_invitation(invitation, db)
+
+    await check_registration(email, password, confirm, db)
 
     user = await db.create_user({
         'name': username,
@@ -58,7 +64,7 @@ async def register(request: web.Request):
         'status': CONFIRMATION_PENDING if bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED)
                     else ACTIVE,
         'role':  USER,
-        'created_ip': get_client_ip(request),
+        'created_ip': get_client_ip(request), # FIXME: does not get right IP!
     })
 
     if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
@@ -295,7 +301,7 @@ async def email_confirmation(request: web.Request):
         * reset-password:
             - redirects to login
             - attaches page and token info onto the url
-            - info appended as fragment, e.g. https://osparc.io#page=reset-password;code=131234
+            - info appended as fragment, e.g. https://osparc.io#reset-password?code=131234
             - front-end should interpret that info as:
                 - show the reset-password page
                 - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
@@ -327,7 +333,7 @@ async def email_confirmation(request: web.Request):
 
         elif action == RESET_PASSWORD:
             # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_url = redirect_url.with_fragment("page=reset-password;code=%s" % code )
+            redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code )
             log.debug("Reset password requested %s", confirmation)
 
 
@@ -368,6 +374,7 @@ async def reset_password_allowed(request: web.Request):
     raise web.HTTPUnauthorized(reason="Cannot reset password. Invalid token or user",
                                content_type='application/json') # 401
 
+
 async def check_password_strength(request: web.Request):
     """ evaluates password strength and suggests some recommendations
 
@@ -404,6 +411,10 @@ async def check_password_strength(request: web.Request):
 
 
 # helpers -----------------------------------------------------------------
+async def check_invitation(invitation:str, db):
+    confirmation = await validate_confirmation_code(invitation, db)
+    if confirmation is None:
+        raise web.HTTPForbidden(reason="Request requires invitation or invitation expired")
 
 
 async def validate_confirmation_code(code, db):
@@ -422,8 +433,7 @@ def flash_response(msg: str, level: str="INFO"):
     return response
 
 
-async def validate_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
-
+async def check_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
     # email : required & formats
     # password: required & secure[min length, ...]
 
@@ -432,7 +442,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
         raise web.HTTPBadRequest(reason="Email and password required",
                                     content_type='application/json')
 
-    if password != confirm:
+    if confirm and password != confirm:
         raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
                                content_type='application/json')
 
