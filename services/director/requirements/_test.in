@@ -16,6 +16,7 @@ pytest-runner
 
 # fixtures
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
+docker
 
 # tools for CI
 pylint

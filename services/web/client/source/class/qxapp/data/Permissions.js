@@ -62,21 +62,21 @@ qx.Class.define("qxapp.data.Permissions", {
         can: [],
         inherits: []
       },
-      user: {
+      guest: {
         can: [],
         inherits: ["anonymous"]
+      },
+      user: {
+        can: [],
+        inherits: ["guest"]
       },
       tester: {
         can: [],
         inherits: ["user"]
       },
-      moderator: {
-        can: [],
-        inherits: ["tester"]
-      },
       admin: {
         can: [],
-        inherits: ["moderator"]
+        inherits: ["tester"]
       }
     }
   },
@@ -122,7 +122,8 @@ qx.Class.define("qxapp.data.Permissions", {
 
     __getInitPermissions: function() {
       return {
-        "anonymous": [
+        "anonymous": [],
+        "guest": [
           "studies.templates.read",
           "study.node.data.pull",
           "study.start",
@@ -151,7 +152,6 @@ qx.Class.define("qxapp.data.Permissions", {
           "study.nodestree.uuid.read",
           "study.logger.debug.read"
         ],
-        "moderator": [],
         "admin": []
       };
     },
