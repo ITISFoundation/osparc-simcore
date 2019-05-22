@@ -165,7 +165,7 @@ def _assert_same_projects(got: Dict, expected: Dict):
         assert got[key] == expected[key]
 
 
-async def test_access_study_by_anonymous(client, qx_client_outdir):
+async def test_access_study_by_anonymous_guest(client, qx_client_outdir):
     app = client.app
     params = {
         "uuid":STUDY_UUID,
@@ -191,9 +191,9 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
         data, _ = await assert_status(resp, web.HTTPOk)
         assert data['login'].endswith("guest-at-osparc.io")
         assert data['gravatar_id']
-        assert data['role'].upper() == UserRole.ANONYMOUS.name
+        assert data['role'].upper() == UserRole.GUEST.name
 
-        # anonymous user only a copy of the template project
+        # guest user only a copy of the template project
         projects = await _get_user_projects(client)
         assert len(projects) == 1
         got_prj = projects[0]
@@ -235,6 +235,7 @@ async def test_access_study_by_logged_user(client, qx_client_outdir):
             _assert_same_projects(got_prj, expected_prj)
 
 
+@pytest.mark.skip(reason="DEVELOPMENT")
 async def test_devel(client):
     app = client.app
     params = {
@@ -253,7 +254,5 @@ async def test_devel(client):
 
 #async def test_access_template_by_loggedin(client, ):
 #    pass
-
-
 
 #    # check if NO new anonymous user is created
