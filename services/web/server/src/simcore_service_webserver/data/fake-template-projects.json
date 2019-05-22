@@ -12,6 +12,10 @@
     "workbench": {
       "template-uuid-4434-9504-d4a9bebeda37": {
         "label": "sleeper 0",
+        "inputAccess": {
+          "in_1": "Invisible",
+          "in_2": "ReadOnly"
+        },
         "inputs": {
           "in_2": 2
         },
