@@ -13,10 +13,9 @@ from pprint import pprint
 from typing import Dict
 
 import pytest
+from aiohttp import web
 
 import simcore_service_webserver.statics
-import simcore_service_webserver.studies_access
-from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import studies_access
@@ -43,7 +42,7 @@ core_services = [
 ]
 
 tool_services = [
-    'adminer'
+#    'adminer'
 ]
 
 
@@ -203,7 +202,6 @@ async def test_access_study_by_anonymous(client, qx_client_outdir):
         _assert_same_projects(got_prj, expected_prj)
 
 
-
 async def test_access_study_by_logged_user(client, qx_client_outdir):
     app = client.app
     params = {
@@ -235,7 +233,6 @@ async def test_access_study_by_logged_user(client, qx_client_outdir):
             assert real_url.endswith("#/study/%s" % got_prj["uuid"])
 
             _assert_same_projects(got_prj, expected_prj)
-
 
 
 async def test_devel(client):

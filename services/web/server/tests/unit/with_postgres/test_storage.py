@@ -9,9 +9,11 @@ from aiohttp import web
 
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
+from simcore_service_webserver.security_roles import UserRole
 from utils_assert import assert_status
 from utils_login import LoggedUser
 
+API_VERSION = "v0"
 
 # TODO: create a fake storage service here
 @pytest.fixture()
@@ -71,56 +73,79 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
     server = loop.run_until_complete(aiohttp_server(app, port= cfg['port']))
     return server
 
-async def test_storage_locations(client, storage_server):
+
+@pytest.fixture
+async def logged_user(client, role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: role fixture is defined as a parametrization below
+    """
+    async with LoggedUser(
+        client,
+        {"role": role.name},
+        check_if_succeeds = role!=UserRole.ANONYMOUS
+    ) as user:
+        yield user
+
+
+#--------------------------------------------------------------------------
+PREFIX = "/" + API_VERSION + "/storage"
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_storage_locations(client, storage_server, logged_user, role, expected):
     url = "/v0/storage/locations"
+    assert url.startswith(PREFIX)
 
-    async with LoggedUser(client) as user:
-        print("Logged user:", user) # TODO: can use in the test
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
 
-        resp = await client.get(url)
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
-
-        data, error = unwrap_envelope(payload)
-
+    if not error:
         assert len(data) == 1
-        assert not error
+        assert data[0]['user_id'] == logged_user['id']
 
-        assert data[0]['user_id'] == user['id']
 
-async def test_storage_file_meta(client, storage_server):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_storage_file_meta(client, storage_server, logged_user, role, expected):
     # tests redirect of path with quotes in path
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/{}/metadata".format(quote(file_id, safe=''))
 
-    async with LoggedUser(client) as user:
-        print("Logged user:", user) # TODO: can use in the test
+    assert url.startswith(PREFIX)
 
-        resp = await client.get(url)
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
 
-        data, error = unwrap_envelope(payload)
-
+    if not error:
         assert len(data) == 1
-        assert not error
-
         assert data[0]['filemeta'] == 42
 
-async def test_storage_list_filter(client, storage_server):
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_storage_list_filter(client, storage_server, logged_user, role, expected):
     # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=''))
 
-    async with LoggedUser(client) as user:
-        print("Logged user:", user) # TODO: can use in the test
+    assert url.startswith(PREFIX)
 
-        resp = await client.get(url)
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
 
-        data, error = unwrap_envelope(payload)
-
+    if not error:
         assert len(data) == 1
-        assert not error
         assert data[0]['uuid_filter'] == file_id

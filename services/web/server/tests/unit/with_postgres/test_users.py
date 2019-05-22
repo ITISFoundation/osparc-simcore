@@ -19,13 +19,13 @@ from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, setup_rest
 from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
 from utils_login import LoggedUser
 from utils_tokens import (create_token_in_db, delete_all_tokens_from_db,
                           get_token_from_db)
-from simcore_service_webserver.security_roles import UserRole
 
 API_VERSION = "v0"
 

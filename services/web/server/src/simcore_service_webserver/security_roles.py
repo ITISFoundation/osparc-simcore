@@ -41,7 +41,8 @@ class UserRole(Enum):
 #    - Roles can inherit permitted operations from other role
 #
 #
-# NOTE: keep aliases in the same line
+# NOTE: keep UI equivalents in the same line
+# NOTE: Add permission label ONLY to discrimitate access among roles
 #
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
@@ -63,6 +64,8 @@ ROLES_PERMISSIONS = {
           "user.tokens.read",
           "user.tokens.update",
           "user.tokens.delete",  # "preferences.token.delete"
+          "storage.locations.*", # "storage.datcore.read"
+          "storage.files.*",
       ],
       "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
@@ -98,8 +101,8 @@ ROLES_PERMISSIONS = {
 #   "study.node.start",
 #   "study.node.data.push",
 #   "study.node.data.delete",
-#   "study.edge.create",
-#   "study.edge.delete"
+#XX   "study.edge.create",
+#XX   "study.edge.delete"
 # ],
 # "tester": [
 #   "services.all.read",
