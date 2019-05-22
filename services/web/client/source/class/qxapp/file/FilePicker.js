@@ -126,10 +126,10 @@ qx.Class.define("qxapp.file.FilePicker", {
     },
 
     __itemSelected: function() {
-      let data = this.__tree.getSelectedFile();
+      const data = this.__tree.getSelectedFile();
       if (data && data["isFile"]) {
-        let selectedItem = data["selectedItem"];
-        let outputs = this.getNode().getOutputs();
+        const selectedItem = data["selectedItem"];
+        const outputs = this.getNode().getOutputs();
         outputs["outFile"].value = {
           store: selectedItem.getLocation(),
           path: selectedItem.getFileId()
