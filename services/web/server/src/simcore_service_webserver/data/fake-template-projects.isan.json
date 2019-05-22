@@ -28,6 +28,14 @@
         "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+        "inputAccess": {
+          "Na": "ReadAndWrite",
+          "Kr": "ReadOnly",
+          "BCL": "ReadAndWrite",
+          "NBeats": "ReadOnly",
+          "Ligand": "Invisible",
+          "cAMKII": "Invisible"
+        },
         "inputs": {
           "Na": 0,
           "Kr": 0,
