@@ -97,14 +97,28 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
 
 
       //  create account | forgot password? links
-        /*
-        // Disabled for now. Registration only with an invitation.
-        this.fireEvent("toRegister");
-        */
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(this.tr("Registration is currently only available with an invitation."), "INFO");
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+        const interval = 1000;
+        const configTimer = new qx.event.Timer(interval);
+        const resource = qxapp.io.rest.ResourceFactory.getInstance();
+        let registerWithInvitation = resource.registerWithInvitation();
+        configTimer.addListener("interval", () => {
+          registerWithInvitation = resource.registerWithInvitation();
+          if (registerWithInvitation !== null) {
+            configTimer.stop();
+            if (registerWithInvitation) {
+              let text = this.tr("Registration is currently only available with an invitation.");
+              text += "<br>";
+              text += this.tr("Please contact info@itis.swiss");
+              qxapp.component.widget.FlashMessenger.getInstance().logAs(text, "INFO");
+            } else {
+              this.fireEvent("toRegister");
+            }
+          }
+        }, this);
+        configTimer.start();
       }, this);
 
       const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
