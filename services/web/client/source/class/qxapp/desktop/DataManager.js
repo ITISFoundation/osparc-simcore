@@ -107,7 +107,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
         this.__selectionChanged();
       }, this);
       filesTree.addListener("fileCopied", e => {
-        this.__initResources();
+        if (e) {
+          this.__initResources();
+        }
       }, this);
       filesTree.addListener("modelChanged", () => {
         this.__reloadChartData();

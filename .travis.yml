@@ -277,6 +277,7 @@ jobs:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk after_failure
 
     - stage: system-testing
+      name: build and up
       sudo: required
       language: python
       python:
