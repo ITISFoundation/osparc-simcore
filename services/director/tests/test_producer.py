@@ -5,19 +5,20 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
+import asyncio
 import uuid
 
+import docker
 import pytest
 
-import docker
 from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
 async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
-    async def push_start_services(number_comp, number_dyn):
-        pushed_services = push_services(number_comp, number_dyn, 60)
+    async def push_start_services(number_comp, number_dyn, dependant=False):
+        pushed_services = push_services(number_comp, number_dyn, inter_dependent_services=dependant)
         assert len(pushed_services) == (number_comp + number_dyn)
         for pushed_service in pushed_services:
             service_description = pushed_service["service_description"]
@@ -31,6 +32,8 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             # start the service
             started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
+            if service_description["type"] == "dynamic":
+                assert started_service["published_port"]
             assert "entry_point" in started_service
             assert "service_uuid" in started_service
             assert started_service["service_uuid"] == service_uuid
@@ -115,7 +118,74 @@ async def test_interactive_service_published_port(run_services):
     service_published_port = service_information["Endpoint"]["Ports"][0]["PublishedPort"]
     assert service_published_port == service_port
 
-async def test_extra_hosts_passed_to_services(run_services):
-    # would need to test right inside a docker or test from outside...
-    # start the director with extra hosts, start some services, and test if the extra hosts are added
-    pass
+async def test_dependent_services_have_common_network(run_services):
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=True)
+    assert len(running_dynamic_services) == 2
+
+    for service in running_dynamic_services:
+        client = docker.from_env()
+        service_uuid = service["service_uuid"]
+        list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
+        # there is one dependency per service
+        assert len(list_of_services) == 2
+
+@pytest.mark.skip(reason="needs a real registry for testing auth")
+async def test_authentication(loop, docker_swarm):
+    #this needs to be filled up
+    config.REGISTRY_URL = ""
+    config.REGISTRY_USER = ""
+    config.REGISTRY_PW = ""
+    config.REGISTRY_SSL = True
+    config.REGISTRY_AUTH = True
+    service = await producer.start_service("someuser", "project", "simcore/services/comp/itis/sleeper", "latest", "node", None)
+
+@pytest.mark.skip(reason="slow test and not necessary to repeat")
+async def test_performance_async(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+    number_of_services = 1
+    pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
+    assert len(pushed_services) == 2 * number_of_services
+
+    for pushed_service in pushed_services:
+        service_description = pushed_service["service_description"]
+        service_key = service_description["key"]
+        service_version = service_description["version"]
+        service_port = pushed_service["internal_port"]
+        service_basepath = "/my/base/path"
+        # start the service
+        for i in range(10):
+            service_uuid = str(uuid.uuid1())
+            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+                await producer.get_service_details(service_uuid)
+            started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
+
+@pytest.mark.skip(reason="slow test and not necessary to repeat")
+async def test_performance_pure_docker_api_calls(loop, configure_registry_access, docker_registry, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+    number_of_services = 1
+    pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
+    assert len(pushed_services) == 2 * number_of_services
+
+    client = docker.from_env()
+    low_level_client = docker.APIClient()
+    for pushed_service in pushed_services:
+        service_description = pushed_service["service_description"]
+        service_key = service_description["key"]
+        service_version = service_description["version"]
+        service_port = pushed_service["internal_port"]
+        service_basepath = "/my/base/path"
+        # start the service
+        for i in range(10):
+            service_uuid = str(uuid.uuid1())
+            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+                await producer.get_service_details(service_uuid)
+            started_service = client.services.create("{}/{}:{}".format(docker_registry, service_key, service_version))
+            # wait for the task to start
+            while True:
+                tasks = started_service.tasks()
+                if tasks:
+                    last_task = tasks[0]
+                    task_state = last_task["Status"]["State"]
+                    if task_state in ("failed", "rejected"):
+                        assert True, "task failed"
+                    if task_state in ("running", "complete"):
+                        break
+                await asyncio.sleep(1)  # 1s
