@@ -66,7 +66,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       this.__messages.push(flash);
     },
 
-    showMessage: function(message) {
+    __showMessage: function(message) {
       const msgWidth = message.getSizeHint().width;
       const root = qx.core.Init.getApplication().getRoot();
       const left = Math.round((root.getBounds().width - msgWidth) / 2);
@@ -80,7 +80,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       }, this, 5000);
     },
 
-    removeMessage: function(message) {
+    __removeMessage: function(message) {
       const root = qx.core.Init.getApplication().getRoot();
       root.remove(message);
     },
@@ -91,14 +91,14 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
         if (data.type === "add") {
           if (this.__messages.length === 1) {
             // First in the queue
-            this.showMessage(data.added[0]);
+            this.__showMessage(data.added[0]);
           }
         } else if (data.type === "remove") {
-          this.removeMessage(data.removed[0]);
+          this.__removeMessage(data.removed[0]);
           qx.event.Timer.once(() => {
             if (this.__messages.length) {
               // There are still messages to show
-              this.showMessage(this.__messages.getItem(0));
+              this.__showMessage(this.__messages.getItem(0));
             }
           }, this, 200);
         }
