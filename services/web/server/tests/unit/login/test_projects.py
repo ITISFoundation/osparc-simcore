@@ -26,10 +26,11 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 from utils_login import LoggedUser
-from utils_projects import delete_all_projects, NewProject
+from utils_projects import NewProject, delete_all_projects
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
+PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
@@ -66,8 +67,6 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 
 # Tests CRUD operations --------------------------------------------
 # TODO: template for CRUD testing?
-
-PREFIX = "/" + API_VERSION
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPForbidden),
