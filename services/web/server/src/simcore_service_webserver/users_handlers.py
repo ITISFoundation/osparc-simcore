@@ -70,7 +70,7 @@ async def update_my_profile(request: web.Request):
 # me/tokens/ ------------------------------------------------------
 @login_required
 async def create_tokens(request: web.Request):
-    await check_permission(request, "user.tokens.create")
+    await check_permission(request, "user.tokens.*")
 
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
 
@@ -93,7 +93,7 @@ async def create_tokens(request: web.Request):
 
 @login_required
 async def list_tokens(request: web.Request):
-    await check_permission(request, "user.tokens.read")
+    await check_permission(request, "user.tokens.*")
 
     # TODO: start = request.match_info.get('start', 0)
     # TODO: count = request.match_info.get('count', None)
@@ -112,7 +112,7 @@ async def list_tokens(request: web.Request):
 
 @login_required
 async def get_token(request: web.Request):
-    await check_permission(request, "user.tokens.read")
+    await check_permission(request, "user.tokens.*")
 
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info['service']
@@ -134,7 +134,7 @@ async def update_token(request: web.Request):
 
     WARNING: token_data has to be complete!
     """
-    await check_permission(request, "user.tokens.update")
+    await check_permission(request, "user.tokens.*")
 
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info['service']
@@ -167,7 +167,7 @@ async def update_token(request: web.Request):
 
 @login_required
 async def delete_token(request: web.Request):
-    await check_permission(request, "user.tokens.delete")
+    await check_permission(request, "user.tokens.*")
 
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info.get('service')

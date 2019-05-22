@@ -42,7 +42,8 @@ class UserRole(Enum):
 #
 #
 # NOTE: keep UI equivalents in the same line
-# NOTE: Add permission label ONLY to discrimitate access among roles
+# NOTE: DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
+#       If only needed to discrimiate a resource use `resource.sub_resource.*`
 #
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
@@ -60,10 +61,7 @@ ROLES_PERMISSIONS = {
           "project.update",
           "project.delete",
           "user.profile.update", # "preferences.user.update", "preferences.role.update"
-          "user.tokens.create",  # "preferences.token.create",
-          "user.tokens.read",
-          "user.tokens.update",
-          "user.tokens.delete",  # "preferences.token.delete"
+          "user.tokens.*",       # "preferences.token.create", # "preferences.token.delete"
           "storage.locations.*", # "storage.datcore.read"
           "storage.files.*",
       ],
