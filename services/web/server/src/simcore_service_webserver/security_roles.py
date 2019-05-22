@@ -50,17 +50,19 @@ ROLES_PERMISSIONS = {
   },
   UserRole.GUEST: {
       "can": [
-        "project.list",
-        "project.read", "studies.user.read", "studies.templates.read"
+        "project.read",          # "studies.user.read", "studies.templates.read"
       ]
   },
   UserRole.USER: {
       "can": [
-          "project.create", "studies.user.create",
+          "project.create",      # "studies.user.create",
           "project.update",
           "project.delete",
-          "user.profile.update", "preferences.user.update",
-          "user.tokens.create", "preferences.user.update",
+          "user.profile.update", # "preferences.user.update", "preferences.role.update"
+          "user.tokens.create",  # "preferences.token.create",
+          "user.tokens.read",
+          "user.tokens.update",
+          "user.tokens.delete",  # "preferences.token.delete"
       ],
       "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
@@ -88,8 +90,8 @@ ROLES_PERMISSIONS = {
 ###   "studies.user.create",
 #   "storage.datcore.read",
 ###   "preferences.user.update",
-#   "preferences.token.create",
-#   "preferences.token.delete",
+###   "preferences.token.create",
+###   "preferences.token.delete",
 #   "study.node.create",
 #   "study.node.delete",
 #   "study.node.rename",
@@ -101,7 +103,7 @@ ROLES_PERMISSIONS = {
 # ],
 # "tester": [
 #   "services.all.read",
-#   "preferences.role.update",
+###   "preferences.role.update",
 #   "study.nodestree.uuid.read",
 #   "study.logger.debug.read"
 # ],

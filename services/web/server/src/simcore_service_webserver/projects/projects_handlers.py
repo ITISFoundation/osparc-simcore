@@ -46,7 +46,7 @@ async def create_projects(request: web.Request):
 
 @login_required
 async def list_projects(request: web.Request):
-    await check_permission(request, "project.list")
+    await check_permission(request, "project.read")
 
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html

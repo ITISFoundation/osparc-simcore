@@ -25,6 +25,7 @@ from utils_assert import assert_status
 from utils_login import LoggedUser
 from utils_tokens import (create_token_in_db, delete_all_tokens_from_db,
                           get_token_from_db)
+from simcore_service_webserver.security_roles import UserRole
 
 API_VERSION = "v0"
 
@@ -63,9 +64,16 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 #
 
 @pytest.fixture
-async def logged_user(client):
-    """ adds a user in db and logs in with client """
-    async with LoggedUser(client) as user:
+async def logged_user(client, role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: role fixture is defined as a parametrization below
+    """
+    async with LoggedUser(
+        client,
+        {"role": role.name},
+        check_if_succeeds = role!=UserRole.ANONYMOUS
+    ) as user:
         yield user
 
 
@@ -106,50 +114,69 @@ async def fake_tokens(logged_user, tokens_db):
     return all_tokens
 
 
-
-
+#--------------------------------------------------------------------------
 PREFIX = "/" + API_VERSION + "/me"
 
-# test R on profile ----------------------------------------------------
-async def test_get_profile(logged_user, client):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_profile(logged_user, client, role, expected):
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
     resp = await client.get(url)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, expected)
 
-    assert data['login'] == logged_user["email"]
-    assert data['gravatar_id']
-    assert data['first_name'] == logged_user["name"]
-    assert data['last_name'] == ""
-    assert data['role'] == "User"
+    if not error:
+        assert data['login'] == logged_user["email"]
+        assert data['gravatar_id']
+        assert data['first_name'] == logged_user["name"]
+        assert data['last_name'] == ""
+        assert data['role'] == role.name.capitalize()
 
 
-async def test_update_profile(logged_user, client):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
+])
+async def test_update_profile(logged_user, client, role, expected):
     url = client.app.router["update_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
     resp = await client.put(url, json={"last_name": "Foo"})
-    await assert_status(resp, web.HTTPNoContent)
+    _, error = await assert_status(resp, expected)
 
-    resp = await client.get(url)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    if not error:
+        resp = await client.get(url)
+        data, _ = await assert_status(resp, web.HTTPOk)
 
-    assert data['first_name'] == logged_user["name"]
-    assert data['last_name'] == "Foo"
-    assert data['role'] == "User"
-
+        assert data['first_name'] == logged_user["name"]
+        assert data['last_name'] == "Foo"
+        assert data['role'] == role.name.capitalize()
 
 
 
 # Test CRUD on tokens --------------------------------------------
-RESOURCE_NAME = 'tokens'
-
-
 # TODO: template for CRUD testing?
 # TODO: create parametrize fixture with resource_name
 
-async def test_create(client, logged_user, tokens_db):
+RESOURCE_NAME = 'tokens'
+PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
+
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated),
+    (UserRole.TESTER, web.HTTPCreated),
+])
+async def test_create_token(client, logged_user, tokens_db, role, expected):
     url = client.app.router["create_tokens"].url_for()
     assert '/v0/me/tokens' == str(url)
 
@@ -160,46 +187,49 @@ async def test_create(client, logged_user, tokens_db):
     }
 
     resp = await client.post(url, json=token)
-    payload = await resp.json()
-    assert resp.status == 201, payload
+    data, error = await assert_status(resp, expected)
 
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data
-
-    db_token = await get_token_from_db(tokens_db, token_id=data)
-    assert db_token['token_data'] == token
-    assert db_token['user_id'] == logged_user["id"]
+    if not error:
+        db_token = await get_token_from_db(tokens_db, token_id=data)
+        assert db_token['token_data'] == token
+        assert db_token['user_id'] == logged_user["id"]
 
 
-async def test_read(client, logged_user, tokens_db, fake_tokens):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_read_token(client, logged_user, tokens_db, fake_tokens, role, expected):
     # list all
     url = client.app.router["list_tokens"].url_for()
     assert "/v0/me/tokens" == str(url)
+
     resp = await client.get(url)
-    payload = await resp.json()
-    assert resp.status == 200, payload
+    data, error = await assert_status(resp, expected)
 
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data == fake_tokens
+    if not error:
+        expected_token = random.choice(fake_tokens)
+        sid = expected_token['service']
 
-    # get one
-    expected = random.choice(fake_tokens)
-    sid = expected['service']
+        # get one
+        url = client.app.router["get_token"].url_for(service=sid)
+        assert "/v0/me/tokens/%s" % sid == str(url)
+        resp = await client.get(url)
 
-    url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
-    resp = await client.get(url)
-    payload = await resp.json()
-    assert resp.status == 200, payload
+        data, error = await assert_status(resp, expected)
 
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data == expected
+        assert data == expected_token, "list and read item are both read operations"
 
 
-async def test_update(client, logged_user, tokens_db, fake_tokens):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
+])
+async def test_update_token(client, logged_user, tokens_db, fake_tokens, role, expected):
 
     selected = random.choice(fake_tokens)
     sid = selected['service']
@@ -210,36 +240,34 @@ async def test_update(client, logged_user, tokens_db, fake_tokens):
     resp = await client.put(url, json={
         'token_secret': 'some completely new secret'
     })
-    payload = await resp.json()
-    assert resp.status == 200, payload
+    data, error = await assert_status(resp, expected)
 
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert not data
+    if not error:
+        # check in db
+        token_in_db = await get_token_from_db(tokens_db, token_service=sid)
 
-    # check in db
-    token_in_db = await get_token_from_db(tokens_db, token_service=sid)
+        assert token_in_db['token_data']['token_secret'] == 'some completely new secret'
+        assert token_in_db['token_data']['token_secret'] != selected['token_secret']
 
-    assert token_in_db['token_data']['token_secret'] == 'some completely new secret'
-    assert token_in_db['token_data']['token_secret'] != selected['token_secret']
-
-    selected['token_secret'] = 'some completely new secret'
-    assert token_in_db['token_data'] == selected
+        selected['token_secret'] = 'some completely new secret'
+        assert token_in_db['token_data'] == selected
 
 
-async def test_delete(client, logged_user, tokens_db, fake_tokens):
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
+])
+async def test_delete_token(client, logged_user, tokens_db, fake_tokens, role, expected):
     sid = fake_tokens[0]['service']
 
     url = client.app.router["delete_token"].url_for(service=sid)
     assert "/v0/me/tokens/%s" % sid == str(url)
 
     resp = await client.delete(url)
-    payload = await resp.json()
 
-    assert resp.status == 204, payload
+    data, error = await assert_status(resp, expected)
 
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert not data
-
-    assert not (await get_token_from_db(tokens_db, token_service=sid))
+    if not error:
+        assert not (await get_token_from_db(tokens_db, token_service=sid))
