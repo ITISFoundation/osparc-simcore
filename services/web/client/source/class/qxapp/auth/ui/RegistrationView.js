@@ -81,7 +81,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
               }
             }
           }
-          qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, level);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(msg, level);
         });
       }, this);
 
@@ -142,12 +142,12 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.widget.FlashMessenger.getInstance().log(log);
+        qxapp.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.register(userData, successFun, failFun, this);

@@ -168,7 +168,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
           });
         });
 
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
