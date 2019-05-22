@@ -67,12 +67,12 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
      * @param {Object} data Raw data coming from the filter.
      */
     _filterChange: function(data) {
-      const msgData = {
+      const filterData = {
         groupId: this.getGroupId(),
         filterId: this.getFilterId(),
         data
       };
-      qx.event.message.Bus.getInstance().dispatchByName(this._getMessageName(), msgData);
+      qxapp.component.filter.UIFilterController.getInstance().publish(filterData);
     }
   }
 });

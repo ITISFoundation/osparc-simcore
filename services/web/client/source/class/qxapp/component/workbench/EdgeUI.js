@@ -44,7 +44,7 @@ qx.Class.define("qxapp.component.workbench.EdgeUI", {
     this.setEdge(edge);
     this.setRepresentation(representation);
 
-    this._subscribeToFilterGroup("workbench");
+    this.subscribeToFilterGroup("workbench");
   },
 
   events: {
