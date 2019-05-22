@@ -194,12 +194,16 @@ qx.Class.define("qxapp.file.FilesTree", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
-          let store = qxapp.data.Store.getInstance();
+          const store = qxapp.data.Store.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
-          store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
-          store.addListenerOnce("fileCopied", ev => {
-            this.fireDataEvent("fileCopied", ev.getData());
-          }, this);
+          const requestSent = store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
+          if (requestSent) {
+            store.addListenerOnce("fileCopied", ev => {
+              if (ev) {
+                this.fireDataEvent("fileCopied", ev.getData());
+              }
+            }, this);
+          }
         }
       }, this);
     }

@@ -14,6 +14,7 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
 from simcore_sdk import node_ports
+from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
@@ -24,6 +25,7 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
 
 log = get_task_logger(__name__)
 log.setLevel(logging.DEBUG) # FIXME: set level via config
+node_port_log.setLevel(logging.DEBUG)
 
 @contextmanager
 def session_scope(session_factory):
@@ -55,6 +57,9 @@ class Sidecar:
 
         # current task
         self._task = None
+
+        # stack name
+        self._stack_name = None
 
         # executor options
         self._executor = ExecutorSettings()
@@ -138,17 +143,17 @@ class Sidecar:
         prog_data = {"Channel" : "Progress", "Node": self._task.node_id, "Progress" : progress}
         prog_body = json.dumps(prog_data)
         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
-    
+
     def _bg_job(self, log_file):
         connection = pika.BlockingConnection(self._pika.parameters)
 
         channel = connection.channel()
         channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
         channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout', auto_delete=True)
-        
+
         def _follow(thefile):
             thefile.seek(0,2)
-            while self._executor.run_pool:                
+            while self._executor.run_pool:
                 line = thefile.readline()
                 if not line:
                     time.sleep(1)
@@ -276,6 +281,9 @@ class Sidecar:
         # volume paths for car container (w/o prefix)
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
+        # stack name, should throw if not set
+        self._stack_name = os.environ["SWARM_STACK_NAME"]
+
         # config nodeports
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
@@ -302,9 +310,9 @@ class Sidecar:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
             self._docker.client.containers.run(docker_image, "run",
                  detach=False, remove=True,
-                 volumes = {'services_input'  : {'bind' : '/input'},
-                            'services_output' : {'bind' : '/output'},
-                            'services_log'    : {'bind'  : '/log'}},
+                 volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
+                            '{}_output'.format(self._stack_name) : {'bind' : '/output'},
+                            '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
                  environment=self._docker.env)
         except docker.errors.ContainerError as _e:
             log.exception("Run container returned non zero exit code %s", str(_e))
@@ -368,7 +376,7 @@ class Sidecar:
 
     def inspect(self, celery_task, user_id, project_id, node_id):
         log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
-        # import pdb; pdb.set_trace()
+
         next_task_nodes = []
         do_run = False
 

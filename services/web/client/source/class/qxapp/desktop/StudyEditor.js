@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       width: 500
     });
 
-    const scroll = new qx.ui.container.Scroll().set({
+    const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
     });
     scroll.add(sidePanel);
@@ -62,13 +62,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     study: {
       check: "qxapp.data.model.Study",
       nullable: false
-    },
-
-    canStart: {
-      nullable: false,
-      init: true,
-      check: "Boolean",
-      apply: "__applyCanStart"
     }
   },
 
@@ -82,6 +75,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
+    __scrollContainer: null,
     __workbenchUI: null,
     __treeView: null,
     __extraView: null,
@@ -98,9 +92,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     initDefault: function() {
-      let study = this.getStudy();
+      const study = this.getStudy();
 
-      let treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -110,15 +104,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
         collapsed: true
       }), 1);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
-      let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
+      const workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -152,38 +146,30 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
+      const nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
       nodeView.setWorkbench(study.getWorkbench());
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", () => {
-        if (this.getCanStart()) {
-          this.__startPipeline();
-        } else {
-          this.__workbenchUI.getLogger().info("Can not start pipeline");
-        }
-      }, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", () => {
-        this.__updatePipeline();
-      }, this);
+      this.__mainPanel.getControls().addListener("startPipeline", this.startPipeline, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", this.updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
-        this.__updatePipeline(node);
+        this.updatePipeline(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
-        const nodeLabel = data.nodeLabel;
+        const nodeId = data.nodeId;
         const msg = data.msg;
-        this.getLogger().info(nodeLabel, msg);
+        this.getLogger().info(nodeId, msg);
       }, this);
 
       [
@@ -211,6 +197,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {
       if (!nodeId) {
+        this.__loggerView.nodeSelected();
         return;
       }
       if (this.__nodeView) {
@@ -232,6 +219,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.__switchExtraView(nodeId);
 
       this.__treeView.nodeSelected(nodeId, openNodeAndParents);
+      this.__loggerView.nodeSelected(nodeId);
     },
 
     __getWidgetForNode: function(nodeId) {
@@ -313,19 +301,27 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __removeNode: function(nodeId) {
       if (nodeId === this.__currentNodeId) {
-        return;
+        return false;
       }
-      // remove first the connected edges
+
       const workbench = this.getStudy().getWorkbench();
       const connectedEdges = workbench.getConnectedEdges(nodeId);
-      for (let i=0; i<connectedEdges.length; i++) {
-        const edgeId = connectedEdges[i];
-        if (workbench.removeEdge(edgeId)) {
+      if (workbench.removeNode(nodeId)) {
+        // remove first the connected edges
+        for (let i=0; i<connectedEdges.length; i++) {
+          const edgeId = connectedEdges[i];
           this.__workbenchUI.clearEdge(edgeId);
         }
-      }
-      if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
+        return true;
+      }
+      return false;
+    },
+
+    __removeEdge: function(edgeId) {
+      const workbench = this.getStudy().getWorkbench();
+      if (workbench.removeEdge(edgeId, this.__currentNodeId)) {
+        this.__workbenchUI.clearEdge(edgeId);
       }
     },
 
@@ -409,7 +405,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
+    updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -422,7 +418,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       console.log(data);
 
       req.addListener("success", e => {
-        this.getLogger().debug("Workbench", "Pipeline successfully updated");
+        this.getLogger().debug(null, "Pipeline successfully updated");
         if (node) {
           node.retrieveInputs();
         } else {
@@ -434,17 +430,21 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }, this);
       req.addListener("error", e => {
-        this.getLogger().error("Workbench", "Error updating pipeline");
+        this.getLogger().error(null, "Error updating pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("Workbench", "Failed updating pipeline");
+        this.getLogger().error(null, "Failed updating pipeline");
       }, this);
       req.send();
 
-      this.getLogger().debug("Workbench", "Updating pipeline");
+      this.getLogger().debug(null, "Updating pipeline");
     },
 
-    __startPipeline: function() {
+    startPipeline: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
+        return false;
+      }
+
       this.getStudy().getWorkbench().clearProgressData();
 
       let socket = qxapp.wrapper.WebSocket.getInstance();
@@ -456,10 +456,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
         const msgs = d["Messages"];
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        const who = node.getLabel();
-        this.getLogger().infos(who, msgs);
+        this.getLogger().infos(nodeId, msgs);
       }, this);
       socket.emit(slotName);
 
@@ -492,19 +489,22 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.setCanStart(true);
-        this.getLogger().error("Workbench", "Error submitting pipeline");
+        this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.setCanStart(true);
-        this.getLogger().error("Workbench", "Failed submitting pipeline");
+        this.getLogger().error(null, "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info("Workbench", "Starting pipeline");
+      this.getLogger().info(null, "Starting pipeline");
+      return true;
     },
 
-    __stopPipeline: function() {
+    stopPipeline: function() {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
+        return false;
+      }
+
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
       data["project_id"] = this.getStudy().getUuid();
@@ -513,45 +513,33 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.setCanStart(false);
-        this.getLogger().error("Workbench", "Error stopping pipeline");
+        this.getLogger().error(null, "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.setCanStart(false);
-        this.getLogger().error("Workbench", "Failed stopping pipeline");
+        this.getLogger().error(null, "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      // temporary solution
-      this.setCanStart(true);
-
-      this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
+      return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.setCanStart(true);
         this.__pipelineId = null;
-        this.getLogger().error("Workbench", "Submition failed");
+        this.getLogger().error(null, "Submition failed");
       } else {
-        // this.setCanStart(false);
         this.__pipelineId = pipelineId;
-        this.getLogger().info("Workbench", "Pipeline started");
+        this.getLogger().info(null, "Pipeline started");
       }
     },
 
     __onPipelineStopped: function(e) {
       this.getStudy().getWorkbench().clearProgressData();
-
-      this.setCanStart(true);
-    },
-
-    __applyCanStart: function(value, old) {
-      this.__mainPanel.getControls().setCanStart(value);
     },
 
     __startAutoSaveTimer: function() {
@@ -614,6 +602,21 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+
+      const maximizeIframeCb = msg => {
+        this.__blocker.setStyles({
+          display: msg.getData() ? "none" : "block"
+        });
+        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+      };
+
+      this.addListener("appear", () => {
+        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      this.addListener("disappear", () => {
+        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
     }
   }
 });

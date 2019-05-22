@@ -33,6 +33,7 @@
  *   let node = new qxapp.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
+ *   node.startInteractiveNode();
  * </pre>
  */
 
@@ -323,8 +324,6 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     populateNodeData: function(nodeData) {
-      this.__startInteractiveNode();
-
       if (nodeData) {
         if (nodeData.label) {
           this.setLabel(nodeData.label);
@@ -496,10 +495,10 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    // post link creation routine
-    edgeAdded: function(link) {
+    // post edge creation routine
+    edgeAdded: function(edge) {
       if (this.isInKey("dash-plot")) {
-        const inputNode = this.getWorkbench().getNode(link.getInputNodeId());
+        const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
@@ -572,6 +571,14 @@ qx.Class.define("qxapp.data.model.Node", {
       return (index > -1);
     },
 
+    renameNode: function(newLabel) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename", true)) {
+        return false;
+      }
+      this.setLabel(newLabel);
+      return true;
+    },
+
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         this.setIFrame(new qxapp.component.widget.PersistentIframe());
@@ -607,6 +614,9 @@ qx.Class.define("qxapp.data.model.Node", {
 
     retrieveInputs: function() {
       if (this.isDynamic()) {
+        if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
+          return;
+        }
         let urlUpdate = this.getServiceUrl() + "/retrieve";
         urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
         let updReq = new qx.io.request.Xhr();
@@ -618,7 +628,7 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __startInteractiveNode: function() {
+    startInteractiveNode: function() {
       if (this.isDynamic()) {
         let retrieveBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/spinner/32"
@@ -649,7 +659,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
       const msgData = {
-        nodeLabel: this.getLabel(),
+        nodeId: this.getNodeId(),
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);
@@ -691,7 +701,7 @@ qx.Class.define("qxapp.data.model.Node", {
       request.addListener("error", e => {
         const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
         const errorMsgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
@@ -700,7 +710,7 @@ qx.Class.define("qxapp.data.model.Node", {
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
         const failMsgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
@@ -718,7 +728,7 @@ qx.Class.define("qxapp.data.model.Node", {
       if (error) {
         const msg = "Error received: " + error;
         const msgData = {
-          nodeLabel: this.getLabel(),
+          nodeId: this.getNodeId(),
           msg: msg
         };
         this.fireDataEvent("showInLogger", msgData);
@@ -749,7 +759,7 @@ qx.Class.define("qxapp.data.model.Node", {
       this.setServiceUrl(srvUrl);
       const msg = "Service ready on " + srvUrl;
       const msgData = {
-        nodeLabel: this.getLabel(),
+        nodeId: this.getNodeId(),
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);

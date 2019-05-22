@@ -23,7 +23,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   var link = new qxapp.ui.basic.LinkLabel(this.tr("oSparc"),"https://osparc.io");
+ *   const link = new qxapp.ui.basic.LinkLabel(this.tr("oSparc"),"https://osparc.io");
  *   this.getRoot().add(link);
  * </pre>
  */

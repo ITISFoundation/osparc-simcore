@@ -17,16 +17,16 @@ export DOCKER=docker.exe
 WINDOWS_MODE=ON
 else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 else
 $(info    detected native linux)
+SHELL = /bin/bash
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export DOCKER_REGISTRY=masu.speag.com
-export SERVICES_VERSION=2.8.0
 
 PY_FILES := $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
@@ -42,20 +42,19 @@ CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
 
+export VCS_URL:=$(shell git config --get remote.origin.url)
+export VCS_REF:=$(shell git rev-parse --short HEAD)
+export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
+export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export SWARM_STACK_NAME ?= services
+# using ?= will only set if absent
+export DOCKER_IMAGE_TAG ?= latest
+$(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
 
-VCS_URL:=$(shell git config --get remote.origin.url)
-VCS_REF:=$(shell git rev-parse --short HEAD)
-VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
-export VCS_URL
-export VCS_REF
-export VCS_REF_CLIENT
-export VCS_STATUS_CLIENT
-
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export BUILD_DATE
-
-
+# default to local (no registry)
+export DOCKER_REGISTRY ?= itisfoundation
+$(info DOCKER_REGISTRY set to ${DOCKER_REGISTRY})
 ## Tools ------------------------------------------------------------------------------------------------------
 #
 tools =
@@ -81,23 +80,15 @@ endif
 
 ## -------------------------------
 # Docker build and composition
+.PHONY: build
+# target: build: – Builds all core service images.
+build: .env .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
 
-.PHONY: build rebuild
-# target: build, rebuild: – Builds all core service images. Use `rebuild` to build w/o cache.
-build: .env pull-cache
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build
-
-rebuild:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
-
-
-.PHONY: build-devel rebuild-devel .tmp-webclient-build
-# target: build-devel, rebuild-devel: – Builds images of core services for development. Use `rebuild` to build w/o cache.
-build-devel: .env pull-cache .tmp-webclient-build
+.PHONY: build-devel .tmp-webclient-build
+# target: build-devel, rebuild-devel: – Builds images of core services for development.
+build-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
-
-rebuild-devel: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
 # targeting services_webserver:development and
@@ -115,7 +106,7 @@ endif
 
 .PHONY: build-client rebuild-client
 # target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-build-client: .env pull-cache
+build-client: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
@@ -140,13 +131,12 @@ up-devel: up-swarm-devel
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 .PHONY: up-webclient-devel
 # target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
@@ -200,13 +190,13 @@ endif
 
 .PHONY: pull-cache
 pull-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
-build-cache: pull-cache
+build-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER} tag itisfoundation/webclient:cache services_webclient:build
+	${DOCKER} tag ${DOCKER_REGISTRY}/webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
@@ -218,32 +208,36 @@ push-cache:
 
 
 ## -------------------------------
-# Staging
-# TODO: PC->SAN: see ops/travis/system-testing/build_and_run. Could move images FREFIX and TAG there
+# registry operations
+ifdef DOCKER_REGISTRY_NEW
+$(info DOCKER_REGISTRY_NEW set to ${DOCKER_REGISTRY_NEW})
+endif # DOCKER_REGISTRY_NEW
 
-.PHONY: tag push pull create-staging-stack-file
+.PHONY: tag push pull create-stack-file
 #target: tag – Tags service images
 tag:
-	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag services_$$i:latest ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
+ifndef DOCKER_REGISTRY_NEW
+	$(error DOCKER_REGISTRY_NEW variable is undefined)
+endif
+ifndef DOCKER_IMAGE_TAG_NEW
+	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
+endif
+	@echo "Tagging from ${DOCKER_REGISTRY}, ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
+	@for i in $(SERVICES_LIST); do \
+		${DOCKER} tag ${DOCKER_REGISTRY}/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$$i:${DOCKER_IMAGE_TAG_NEW}; \
 	done
 
 # target: push – Pushes images into a registry
 push:
-	for i in $(SERVICES_LIST); do \
-		${DOCKER} push ${DOCKER_IMAGE_PREFIX}$$i:${DOCKER_IMAGE_TAG}; \
-	done
+	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
 pull:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
 
-# target: create-staging-stack-file – use as 'make creat-staging-stack-file output_file=stack.yaml'
-create-staging-stack-file:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
+# target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
+create-stack-file:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
-
 
 ## -------------------------------
 # Tools
@@ -259,6 +253,7 @@ info:
 	@echo '+ VERSION              : ${VERSION}'
 	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
 	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
+	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
 	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
@@ -303,7 +298,7 @@ setup-check: .env .vscode/settings.json
 # target: .venv – Creates a python virtual environment with dev tools (pip, pylint, ...)
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8 virtualenv
+	.venv/bin/pip3 install pylint autopep8 virtualenv pip-tools
 	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
 
 .venv27: .venv
@@ -311,7 +306,6 @@ setup-check: .env .vscode/settings.json
 	@python2 --version
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
-
 
 
 ## -------------------------------

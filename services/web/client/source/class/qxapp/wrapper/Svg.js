@@ -81,27 +81,27 @@ qx.Class.define("qxapp.wrapper.Svg", {
       return SVG(id);
     },
 
-    drawCurve: function(draw, controls, linkWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
-      const linkColor = qxapp.theme.Color.colors["workbench-link-comp-active"];
+    drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
+      const edgeColor = qxapp.theme.Color.colors["workbench-edge-comp-active"];
 
       let path = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
         .stroke({
-          width: linkWidth,
-          color: linkColor
+          width: edgeWidth,
+          color: edgeColor
         });
 
       let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
         add.circle(portSphereDiameter)
-          .fill(linkColor);
+          .fill(edgeColor);
       });
       path.marker("start", marker1);
 
       let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
         add.path("M 0 0 V 4 L 2 2 Z")
-          .fill(linkColor)
+          .fill(edgeColor)
           .size(arrowSize, arrowSize);
       });
       path.marker("end", marker2);

@@ -44,7 +44,7 @@ qx.Class.define("qxapp.data.Store", {
     // "fakeFiles": "qx.event.type.Event",
     "myDocuments": "qx.event.type.Event",
     "nodeFiles": "qx.event.type.Event",
-    "presginedLink": "qx.event.type.Event",
+    "presignedLink": "qx.event.type.Event",
     "fileCopied": "qx.event.type.Event",
     "deleteFile": "qx.event.type.Event"
   },
@@ -1334,9 +1334,12 @@ qx.Class.define("qxapp.data.Store", {
           .data;
         for (let i=0; i<locations.length; i++) {
           const locationId = locations[i]["id"];
+          if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+            continue;
+          }
           // Get list of file meta data
           const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-          let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+          const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
           reqFiles.addListener("success", eFiles => {
             const files = eFiles.getTarget().getResponse()
@@ -1372,7 +1375,14 @@ qx.Class.define("qxapp.data.Store", {
       reqLoc.send();
     },
 
-    getPresginedLink: function(download = true, locationId, fileUuid) {
+    getPresignedLink: function(download = true, locationId, fileUuid) {
+      if (download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
+        return;
+      }
+      if (!download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+        return;
+      }
+
       // GET: Returns download link for requested file
       // POST: Returns upload link or performs copy operation to datcore
       let res = encodeURIComponent(fileUuid);
@@ -1385,26 +1395,30 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        const presginedLinkData = {
-          presginedLink: data,
+        const presignedLinkData = {
+          presignedLink: data,
           locationId: locationId,
           fileUuid: fileUuid
         };
-        console.log("presginedLink", presginedLinkData);
-        this.fireDataEvent("presginedLink", presginedLinkData);
+        console.log("presignedLink", presignedLinkData);
+        this.fireDataEvent("presignedLink", presignedLinkData);
       }, this);
 
       req.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
-        console.error("Failed getting Presgined Link", error);
+        console.error("Failed getting Presigned Link", error);
       });
 
       req.send();
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+        return false;
+      }
+
       // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
       let fileName = fileUuid.split("/");
       fileName = fileName[fileName.length-1];
@@ -1430,12 +1444,19 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.error(error);
         console.error("Failed copying file", fileUuid, "to", pathId);
+        this.fireDataEvent("fileCopied", null);
       });
 
       req.send();
+
+      return true;
     },
 
     deleteFile: function(locationId, fileUuid) {
+      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+        return false;
+      }
+
       // Deletes File
       let parameters = encodeURIComponent(fileUuid);
       const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
@@ -1453,9 +1474,12 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.error("Failed deleting file", error);
+        this.fireDataEvent("deleteFile", null);
       });
 
       req.send();
+
+      return true;
     }
   }
 });

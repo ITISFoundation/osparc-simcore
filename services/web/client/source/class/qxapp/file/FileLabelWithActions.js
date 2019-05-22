@@ -118,16 +118,16 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
         let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("presginedLink", e => {
-          const presginedLinkData = e.getData();
-          console.log(presginedLinkData.presginedLink);
-          if (presginedLinkData.presginedLink) {
-            qxapp.utils.Utils.downloadLink(presginedLinkData.presginedLink.link, fileName);
+        store.addListenerOnce("presignedLink", e => {
+          const presignedLinkData = e.getData();
+          console.log(presignedLinkData.presignedLink);
+          if (presignedLinkData.presignedLink) {
+            qxapp.utils.Utils.downloadLink(presignedLinkData.presignedLink.link, fileName);
           }
         }, this);
         const download = true;
         const locationId = selection.getLocation();
-        store.getPresginedLink(download, locationId, fileId);
+        store.getPresignedLink(download, locationId, fileId);
       }
     },
 
@@ -139,10 +139,13 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         const locationId = selection.getLocation();
         let store = qxapp.data.Store.getInstance();
         store.addListenerOnce("deleteFile", e => {
-          this.fireDataEvent("fileDeleted", e.getData());
+          if (e) {
+            this.fireDataEvent("fileDeleted", e.getData());
+          }
         }, this);
-        store.deleteFile(locationId, fileId);
+        return store.deleteFile(locationId, fileId);
       }
+      return false;
     }
   }
 });

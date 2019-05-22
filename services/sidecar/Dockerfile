@@ -21,6 +21,9 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
+# used for finding the volumes
+ENV SWARM_STACK_NAME = ''
+
 EXPOSE 8080
 
 VOLUME /home/scu/input
@@ -44,7 +47,7 @@ RUN apk add --no-cache \
       libc-dev
 
 RUN $SC_PIP install --upgrade \
-      pip \
+      pip~=19.1.1  \
       wheel \
       setuptools
 
@@ -55,7 +58,7 @@ COPY  --chown=scu:scu services/sidecar/requirements/*.txt \
       tmp/sidecar/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/sidecar/requirements/base.txt
+      -r tmp/sidecar/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------

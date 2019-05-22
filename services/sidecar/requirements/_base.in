@@ -1,0 +1,15 @@
+#
+# Specifies third-party dependencies for 'sidecar'
+#
+
+
+sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
+
+psycopg2-binary     # enforces binary version - http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
+celery
+docker
+kombu
+minio
+networkx
+pika
+tenacity

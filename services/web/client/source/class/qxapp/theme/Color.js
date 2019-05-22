@@ -20,15 +20,16 @@ qx.Theme.define("qxapp.theme.Color", {
   extend: osparc.theme.osparcdark.Color,
 
   colors: {
-    "workbench-link-comp-active": "#777",
-    "workbench-link-api-active": "#BBB",
-    "workbench-link-selected": "#00F",
+    "workbench-edge-comp-active": "#777",
+    "workbench-edge-api-active": "#BBB",
+    "workbench-edge-selected": "#00F",
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",
     "logger-warning-message": "#FF0",
     "logger-error-message": "#F00",
     "background-main-lighter": "#2D2D2D",
     "background-main-lighter+": "#373737",
-    "text-placeholder": "text-disabled"
+    "text-placeholder": "text-disabled",
+    "text-darker": "text-disabled"
   }
 });

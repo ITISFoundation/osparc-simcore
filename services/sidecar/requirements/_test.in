@@ -1,0 +1,18 @@
+#
+# Specifies dependencies required to run 'sidecar'
+#
+
+# frozen specs
+-r _base.txt
+
+# testing
+pytest
+pytest-docker
+pytest-cov
+
+# fixtures
+aiopg
+
+# tools for CI
+pylint
+coveralls

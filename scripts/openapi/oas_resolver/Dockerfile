@@ -12,7 +12,7 @@ WORKDIR /src
 
 # update pip
 RUN pip install --no-cache-dir --upgrade \
-      pip \
+      pip~=19.1.1  \
       wheel \
       setuptools
 

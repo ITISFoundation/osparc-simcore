@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 from jsonschema import (
-    SchemaError, 
-    ValidationError, 
+    SchemaError,
+    ValidationError,
     validate)
 
 from simcore_service_director import resources
@@ -18,7 +18,7 @@ def validate_individual_schemas(list_of_paths):
             schema_specs = json.load(file_ptr)
             try:
                 dummy_instance = {}
-                with pytest.raises(ValidationError, message="Expected a Json schema validation error"):
+                with pytest.raises(ValidationError):
                     validate(dummy_instance, schema_specs)
             except SchemaError as err:
                 pytest.fail(err.message)

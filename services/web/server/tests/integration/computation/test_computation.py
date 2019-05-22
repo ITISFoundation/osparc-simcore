@@ -10,6 +10,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+from pprint import pprint
 
 import pytest
 import yaml
@@ -17,8 +18,8 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_sdk.models.pipeline_models import (SUCCESS, ComputationalPipeline,
-                                                ComputationalTask)
+from simcore_sdk.models.pipeline_models import (
+    SUCCESS, ComputationalPipeline, ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.rest import setup_rest
@@ -58,7 +59,6 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
-
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     final_config_path = here / "config.app.yaml"
@@ -69,12 +69,16 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     app = web.Application()
     app[APP_CONFIG_KEY] = app_config
 
+    pprint(app_config)
+
     setup_db(app)
     setup_rest(app, debug=True)
     setup_computation(app, disable_login=True)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
+
     yield server
+
     # cleanup
     final_config_path.unlink()
 
@@ -151,7 +155,7 @@ def _check_sleeper_services_completed(project_id, postgres_session):
             assert task_db.state == SUCCESS
 
 async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
-    # import pdb; pdb.set_trace()
+
     resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )

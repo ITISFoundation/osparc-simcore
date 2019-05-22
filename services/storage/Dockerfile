@@ -44,7 +44,7 @@ RUN apk add --no-cache \
       linux-headers
 
 RUN $SC_PIP install --upgrade \
-      pip \
+      pip~=19.1.1  \
       wheel \
       setuptools
 
@@ -55,7 +55,7 @@ COPY  --chown=scu:scu services/storage/requirements/*.txt \
       tmp/storage/requirements/
 
 RUN $SC_PIP install \
-      -r tmp/storage/requirements/base.txt
+      -r tmp/storage/requirements/_base.txt
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container

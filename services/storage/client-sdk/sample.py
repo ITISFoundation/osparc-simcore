@@ -10,7 +10,8 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
-from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk import UsersApi, Configuration
 from simcore_service_storage_sdk.rest import ApiException
 
 temporary_file = tempfile.NamedTemporaryFile(delete=False)
@@ -28,9 +29,10 @@ node_id = uuid.uuid4()
 file_id = temp_file_path.name
 file_uuid = "{bucket_name}/{project_id}/{node_id}/{file_id}".format(bucket_name=bucket_name, project_id=project_id, node_id=node_id, file_id=file_id)
 
+
 @contextmanager
-def api_client(cfg):
-    client = ApiClient(cfg)
+def api_client(cfg: simcore_service_storage_sdk.Configuration) -> simcore_service_storage_sdk.ApiClient:
+    client = simcore_service_storage_sdk.ApiClient(cfg)
     try:
         yield client
     except ApiException as err:
@@ -39,6 +41,7 @@ def api_client(cfg):
         #NOTE: enforces to closing client session and connector.
         # this is a defect of the sdk
         del client.rest_client
+
 
 async def test_health_check(api:UsersApi):
     res = await api.health_check()
