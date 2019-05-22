@@ -45,12 +45,13 @@ class UserRole(Enum):
 #
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
-      "can": []
+      "can": [] # Add only permissions here to handles that do not require login.
+                # Anonymous user can only access
   },
   UserRole.GUEST: {
       "can": [
         "project.list",
-        "project.read", "studies.user.read", "studies.templates.read",
+        "project.read", "studies.user.read", "studies.templates.read"
       ]
   },
   UserRole.USER: {
@@ -58,6 +59,8 @@ ROLES_PERMISSIONS = {
           "project.create", "studies.user.create",
           "project.update",
           "project.delete",
+          "user.profile.update", "preferences.user.update",
+          "user.tokens.create", "preferences.user.update",
       ],
       "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
@@ -84,7 +87,7 @@ ROLES_PERMISSIONS = {
 ###   "studies.user.read",
 ###   "studies.user.create",
 #   "storage.datcore.read",
-#   "preferences.user.update",
+###   "preferences.user.update",
 #   "preferences.token.create",
 #   "preferences.token.delete",
 #   "study.node.create",

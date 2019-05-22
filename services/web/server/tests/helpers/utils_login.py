@@ -46,7 +46,7 @@ async def create_user(data=None):
     user['raw_password'] = password
     return user
 
-async def log_client_in(client, user_data=None):
+async def log_client_in(client, user_data=None, *, enable_check=True):
     # creates user directly in db
     user = await create_user(user_data)
 
@@ -56,7 +56,10 @@ async def log_client_in(client, user_data=None):
         'email': user['email'],
         'password': user['raw_password'],
     })
-    await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+
+    if enable_check:
+        await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+
     return user
 
 
@@ -77,12 +80,13 @@ class NewUser:
 
 
 class LoggedUser(NewUser):
-    def __init__(self, client, params=None):
+    def __init__(self, client, params=None, *, check_if_succeeds=True):
         super().__init__(params, client.app)
         self.client = client
+        self.enable_check = check_if_succeeds
 
     async def __aenter__(self):
-        self.user = await log_client_in(self.client, self.params)
+        self.user = await log_client_in(self.client, self.params, enable_check=self.enable_check)
         return self.user
 
 class NewInvitation(NewUser):

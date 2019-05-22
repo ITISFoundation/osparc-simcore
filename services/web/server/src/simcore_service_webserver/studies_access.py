@@ -61,7 +61,7 @@ async def create_temporary_user(request: web.Request):
         TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, ANONYMOUS
+    from .login.handlers import ACTIVE, GUEST
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
     # from .utils import generate_passphrase
@@ -81,7 +81,7 @@ async def create_temporary_user(request: web.Request):
         'email': email,
         'password_hash': encrypt_password(password),
         'status': ACTIVE,
-        'role':  ANONYMOUS, # TODO: THIS has to be a temporary user!
+        'role':  GUEST,
         'created_ip': get_client_ip(request),
     })
 

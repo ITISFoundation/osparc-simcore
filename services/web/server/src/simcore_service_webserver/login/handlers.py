@@ -32,8 +32,8 @@ def to_names(enum_cls, names):
 CONFIRMATION_PENDING, ACTIVE, BANNED = to_names(UserStatus, \
     'CONFIRMATION_PENDING ACTIVE BANNED')
 
-ANONYMOUS, USER, TESTER= to_names(UserRole, \
-    'ANONYMOUS USER TESTER')
+ANONYMOUS, GUEST, USER, TESTER= to_names(UserRole, \
+    'ANONYMOUS GUEST USER TESTER')
 
 REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(ConfirmationAction, \
     'REGISTRATION RESET_PASSWORD CHANGE_EMAIL')
@@ -102,6 +102,8 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
+    # TODO: ANONYMOUS user cannot login!!
+
     db = get_storage(request.app)
     email = body.email
     password = body.password
@@ -111,12 +113,12 @@ async def login(request: web.Request):
         raise web.HTTPUnauthorized(reason=cfg.MSG_UNKNOWN_EMAIL,
                 content_type='application/json')
 
-    if not check_password(password, user['password_hash']):
-        raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
+    if user['status'] == BANNED or user['role'] == ANONYMOUS:
+        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
                 content_type='application/json')
 
-    if user['status'] == BANNED:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
+    if not check_password(password, user['password_hash']):
+        raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json')
 
     if user['status'] == CONFIRMATION_PENDING:

@@ -69,13 +69,13 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 # TODO: template for CRUD testing?
 
 @pytest.mark.parametrize("role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_list_projects(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name} ) as user:
+    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
 
             # GET /v0/projects
@@ -92,13 +92,13 @@ async def test_list_projects(client, fake_project, role, expected):
 
 
 @pytest.mark.parametrize("role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
 async def test_create(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name} ) as user:
+    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
 
         # POST /v0/projects
         url = client.app.router["create_projects"].url_for()
@@ -118,14 +118,14 @@ async def test_create(client, fake_project, role, expected):
 
 
 @pytest.mark.parametrize("role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_get_project(client, fake_project, role, expected):
 
-    async with LoggedUser(client, {'role': role.name} ) as user:
+    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
 
             # GET /v0/projects/{project_id}
@@ -136,13 +136,13 @@ async def test_get_project(client, fake_project, role, expected):
 
 
 @pytest.mark.parametrize("role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_replace_project(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name} ) as user:
+    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
 
             # PUT /v0/projects/{project_id}
@@ -154,13 +154,13 @@ async def test_replace_project(client, fake_project, role, expected):
 
 
 @pytest.mark.parametrize("role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
 async def test_delete_project(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name} ) as user:
+    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
 
             # DELETE /v0/projects/{project_id}
