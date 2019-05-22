@@ -75,12 +75,13 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_list_projects(client, fake_project, role, expected):
-    url = client.app.router["list_projects"].url_for()
-    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
-
-    # GET /v0/projects
     async with LoggedUser(client, {'role': role.name} ) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+
+            # GET /v0/projects
+            url = client.app.router["list_projects"].url_for()
+            assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+
             resp = await client.get(url)
             data, errors = await assert_status(resp, expected)
 
@@ -97,11 +98,12 @@ async def test_list_projects(client, fake_project, role, expected):
     (UserRole.TESTER, web.HTTPCreated),
 ])
 async def test_create(client, fake_project, role, expected):
-    url = client.app.router["create_projects"].url_for()
-    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
-
-    # POST /v0/projects
     async with LoggedUser(client, {'role': role.name} ) as user:
+
+        # POST /v0/projects
+        url = client.app.router["create_projects"].url_for()
+        assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+
         resp = await client.post(url, json=fake_project)
 
         await assert_status(resp, expected)
@@ -125,6 +127,7 @@ async def test_get_project(client, fake_project, role, expected):
 
     async with LoggedUser(client, {'role': role.name} ) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+
             # GET /v0/projects/{project_id}
             url = client.app.router["get_project"].url_for(project_id=fake_project["uuid"])
 
@@ -141,6 +144,7 @@ async def test_get_project(client, fake_project, role, expected):
 async def test_replace_project(client, fake_project, role, expected):
     async with LoggedUser(client, {'role': role.name} ) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+
             # PUT /v0/projects/{project_id}
             url = client.app.router["replace_project"].url_for(project_id=fake_project["uuid"])
             fake_project["notes"] = "some different"
@@ -152,14 +156,15 @@ async def test_replace_project(client, fake_project, role, expected):
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPForbidden),
     (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
 ])
 async def test_delete_project(client, fake_project, role, expected):
     async with LoggedUser(client, {'role': role.name} ) as user:
         async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+
             # DELETE /v0/projects/{project_id}
-            url = client.app.router["delete_project"].url_for()
+            url = client.app.router["delete_project"].url_for(project_id=fake_project["uuid"])
 
             resp = await client.delete(url)
             await assert_status(resp, expected)

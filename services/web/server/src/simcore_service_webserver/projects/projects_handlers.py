@@ -130,6 +130,7 @@ async def replace_project(request: web.Request):
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
+    return {'data': new_values}
 
 @login_required
 async def delete_project(request: web.Request):
