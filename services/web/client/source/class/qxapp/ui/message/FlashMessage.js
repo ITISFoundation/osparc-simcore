@@ -26,7 +26,9 @@ qx.Class.define("qxapp.ui.message.FlashMessage", {
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.set({
-      maxWidth: 250
+      maxWidth: 250,
+      allowStretchX: false,
+      alignX: "center"
     });
 
     const badge = this.getChildControl("badge");
@@ -73,10 +75,14 @@ qx.Class.define("qxapp.ui.message.FlashMessage", {
           control = new qx.ui.basic.Label().set({
             rich: true
           });
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "closebutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage"));
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
+            alignY: "middle"
+          });
           this._add(control);
           break;
         case "badge":

@@ -39,11 +39,26 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
   construct: function() {
     this.base(arguments);
     this.__messages = new qx.data.Array();
+
+    this.__messageContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const root = qx.core.Init.getApplication().getRoot();
+    root.add(this.__messageContainer, {
+      top: 10
+    });
+
+    this.__displayedMessagesCount = 0;
+
     this.__attachEventHandlers();
+  },
+
+  statics: {
+    MAX_DISPLAYED: 3
   },
 
   members: {
     __messages: null,
+    __messageContainer: null,
+    __displayedMessagesCount: null,
 
     logAs: function(message, level="INFO", logger=null) {
       this.log({
@@ -62,45 +77,49 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       }
 
       const flash = new qxapp.ui.message.FlashMessage(message, level);
-      flash.addListener("closeMessage", () => this.__messages.remove(flash), this);
+      flash.addListener("closeMessage", () => this.__removeMessage(flash), this);
       this.__messages.push(flash);
     },
 
     __showMessage: function(message) {
-      const msgWidth = message.getSizeHint().width;
-      const root = qx.core.Init.getApplication().getRoot();
-      const left = Math.round((root.getBounds().width - msgWidth) / 2);
-      root.add(message, {
-        top: 10,
-        left
-      });
-
-      qx.event.Timer.once(e => {
-        this.__messages.remove(message);
-      }, this, 5000);
+      this.__messages.remove(message);
+      this.__messageContainer.add(message);
+      const {width} = message.getSizeHint();
+      if (this.__displayedMessagesCount === 0 || width > this.__messageContainer.getWidth()) {
+        this.__updateContainerPosition(width);
+      }
+      this.__displayedMessagesCount++;
+      qx.event.Timer.once(() => this.__removeMessage(message), this, 5000);
     },
 
     __removeMessage: function(message) {
+      if (this.__messageContainer.indexOf(message) > -1) {
+        this.__displayedMessagesCount--;
+        this.__messageContainer.remove(message);
+        qx.event.Timer.once(() => {
+          if (this.__messages.length) {
+            // There are still messages to show
+            this.__showMessage(this.__messages.getItem(0));
+          }
+        }, this, 200);
+      }
+    },
+
+    __updateContainerPosition: function(messageWidth) {
+      const width = messageWidth || this.__messageContainer.getSizeHint().width;
       const root = qx.core.Init.getApplication().getRoot();
-      root.remove(message);
+      this.__messageContainer.setLayoutProperties({
+        left: Math.round((root.getBounds().width - width) / 2)
+      });
     },
 
     __attachEventHandlers: function() {
       this.__messages.addListener("change", e => {
         const data = e.getData();
         if (data.type === "add") {
-          if (this.__messages.length === 1) {
-            // First in the queue
+          if (this.__displayedMessagesCount < this.self().MAX_DISPLAYED) {
             this.__showMessage(data.added[0]);
           }
-        } else if (data.type === "remove") {
-          this.__removeMessage(data.removed[0]);
-          qx.event.Timer.once(() => {
-            if (this.__messages.length) {
-              // There are still messages to show
-              this.__showMessage(this.__messages.getItem(0));
-            }
-          }, this, 200);
         }
       }, this);
     }
