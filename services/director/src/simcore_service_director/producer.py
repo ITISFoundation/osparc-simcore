@@ -3,13 +3,12 @@
 import asyncio
 import json
 import logging
-from asyncio_extras import async_contextmanager
 from typing import Dict, List, Tuple
-
 
 import aiodocker
 import aiohttp
 import tenacity
+from asyncio_extras import async_contextmanager
 
 from . import config, exceptions, registry_proxy
 from .system_utils import get_system_extra_hosts_raw
