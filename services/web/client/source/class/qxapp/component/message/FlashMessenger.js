@@ -12,6 +12,7 @@
 
    Authors:
      * Odei Maiz (odeimaiz)
+     * Ignacio Pascual (ignapas)
 
 ************************************************************************ */
 
@@ -35,7 +36,15 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
   extend: qx.core.Object,
   type: "singleton",
 
+  construct: function() {
+    this.base(arguments);
+    this.__messages = new qx.data.Array();
+    this.__attachEventHandlers();
+  },
+
   members: {
+    __messages: null,
+
     logAs: function(message, level="INFO", logger=null) {
       this.log({
         message: message,
@@ -52,37 +61,48 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
         message = logger + ": " + message;
       }
 
-      let label = new qxapp.ui.message.FlashMessage(message, level);
+      const flash = new qxapp.ui.message.FlashMessage(message, level);
+      flash.addListener("closeMessage", () => this.__messages.remove(flash), this);
+      this.__messages.push(flash);
+    },
 
-      // switch (level) {
-      //   case "DEBUG":
-      //     label.setBackgroundColor("blue");
-      //     label.setTextColor("white");
-      //     break;
-      //   case "INFO":
-      //     label.setBackgroundColor("blue");
-      //     label.setTextColor("white");
-      //     break;
-      //   case "WARNING":
-      //     label.setBackgroundColor("yellow");
-      //     label.setTextColor("black");
-      //     break;
-      //   case "ERROR":
-      //     label.setBackgroundColor("red");
-      //     label.setTextColor("black");
-      //     break;
-      // }
+    showMessage: function(message) {
+      const msgWidth = message.getSizeHint().width;
+      const root = qx.core.Init.getApplication().getRoot();
+      const left = Math.round((root.getBounds().width - msgWidth) / 2);
+      root.add(message, {
+        top: 10,
+        left
+      });
 
-      qx.core.Init.getApplication()
-        .getRoot()
-        .add(label);
-
-      const time = Math.max(4000, message.length*100);
       qx.event.Timer.once(e => {
-        qx.core.Init.getApplication()
-          .getRoot()
-          .remove(label);
-      }, this, time);
+        this.__messages.remove(message);
+      }, this, 5000);
+    },
+
+    removeMessage: function(message) {
+      const root = qx.core.Init.getApplication().getRoot();
+      root.remove(message);
+    },
+
+    __attachEventHandlers: function() {
+      this.__messages.addListener("change", e => {
+        const data = e.getData();
+        if (data.type === "add") {
+          if (this.__messages.length === 1) {
+            // First in the queue
+            this.showMessage(data.added[0]);
+          }
+        } else if (data.type === "remove") {
+          this.removeMessage(data.removed[0]);
+          qx.event.Timer.once(() => {
+            if (this.__messages.length) {
+              // There are still messages to show
+              this.showMessage(this.__messages.getItem(0));
+            }
+          }, this, 200);
+        }
+      }, this);
     }
   }
 });

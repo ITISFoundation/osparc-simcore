@@ -21,16 +21,29 @@
 qx.Class.define("qxapp.ui.message.FlashMessage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(message, level, icon, position) {
+  construct: function(message, level) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.HBox(10));
+
+    this.set({
+      maxWidth: 250
+    });
+
+    const badge = this.getChildControl("badge");
+    badge.setBackgroundColor(this.self().LOG_LEVEL_COLOR_MAP[level]);
+
     if (message) {
       this.setMessage(message);
     }
+
     this.getChildControl("closebutton");
   },
 
   properties: {
+    appearance: {
+      init: "flash",
+      refine: true
+    },
     message: {
       check: "String",
       nullable: true,
@@ -38,16 +51,42 @@ qx.Class.define("qxapp.ui.message.FlashMessage", {
     }
   },
 
+  statics: {
+    LOG_LEVEL_COLOR_MAP: {
+      "INFO": "blue",
+      "DEBUG": "yellow",
+      "WARING": "orange",
+      "ERROR": "red"
+    }
+  },
+
+  events: {
+    "closeMessage": "qx.event.type.Event"
+  },
+
   members: {
+    __closeCb: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "message":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            rich: true
+          });
           this._add(control);
           break;
         case "closebutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/16", () => this.exclude());
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage"));
+          this._add(control);
+          break;
+        case "badge":
+          control = new qx.ui.core.Widget().set({
+            height: 10,
+            width: 10,
+            allowStretchX: false,
+            allowStretchY: false,
+            alignY: "middle"
+          });
           this._add(control);
           break;
       }

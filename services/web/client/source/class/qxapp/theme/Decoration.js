@@ -75,6 +75,17 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "link-button": {}
+    "link-button": {},
+
+    "flash": {
+      style: {
+        radius: 3
+      }
+    },
+    "flash-badge": {
+      style: {
+        radius: 5
+      }
+    }
   }
 });
