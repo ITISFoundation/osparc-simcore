@@ -77,11 +77,19 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "link-button": {},
 
+    "service-browser": {
+      style: {
+        width: 1,
+        color: "material-button-background"
+      }
+    },
+
     "flash": {
       style: {
         radius: 3
       }
     },
+
     "flash-badge": {
       style: {
         radius: 5
