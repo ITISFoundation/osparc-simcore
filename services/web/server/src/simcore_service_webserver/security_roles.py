@@ -14,7 +14,8 @@ class UserRole(Enum):
     Roles are sorted from lower to highest privileges
     USER is the role assigned by default A user with a higher/lower role is denoted super/infra user
 
-    ANONYMOUS : Temporary user with limited access. E.g. used for demos for unregistred users under-users
+    ANONYMOUS : The user is not logged in
+    GUEST     : Temporary user with very limited access. Main used for demos and for a limited amount of time
     USER      : Registered user. Basic permissions to use the platform [default]
     TESTER    : Upgraded user. First level of super-user with privileges to test the framework.
                 Can use everything but does not have an effect in other users or actual data
@@ -22,6 +23,7 @@ class UserRole(Enum):
     See security_access.py
     """
     ANONYMOUS = "ANONYMOUS"
+    GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
 
@@ -38,20 +40,26 @@ class UserRole(Enum):
 #    - Resource is named hierarchically
 #    - Roles can inherit permitted operations from other role
 #
+#
+# NOTE: keep aliases in the same line
+#
 ROLES_PERMISSIONS = {
   UserRole.ANONYMOUS: {
+      "can": []
+  },
+  UserRole.GUEST: {
       "can": [
-        "project.list"
-        "project.read"
+        "project.list",
+        "project.read", "studies.user.read", "studies.templates.read",
       ]
   },
   UserRole.USER: {
       "can": [
-          "project.create",
+          "project.create", "studies.user.create",
           "project.update",
           "project.delete",
       ],
-      "inherits": [UserRole.ANONYMOUS]
+      "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
   UserRole.TESTER: {
       "can": [
@@ -59,3 +67,39 @@ ROLES_PERMISSIONS = {
       "inherits": [UserRole.USER]
   }
 }
+
+#
+# REFERENCE IN THE FRONT_END
+#
+
+# "anonymous": [],
+# "guest": [
+###   "studies.templates.read",
+#   "study.node.data.pull",
+#   "study.start",
+#   "study.stop",
+#   "study.update"
+# ],
+# "user": [
+###   "studies.user.read",
+###   "studies.user.create",
+#   "storage.datcore.read",
+#   "preferences.user.update",
+#   "preferences.token.create",
+#   "preferences.token.delete",
+#   "study.node.create",
+#   "study.node.delete",
+#   "study.node.rename",
+#   "study.node.start",
+#   "study.node.data.push",
+#   "study.node.data.delete",
+#   "study.edge.create",
+#   "study.edge.delete"
+# ],
+# "tester": [
+#   "services.all.read",
+#   "preferences.role.update",
+#   "study.nodestree.uuid.read",
+#   "study.logger.debug.read"
+# ],
+# "admin": []

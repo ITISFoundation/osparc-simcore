@@ -52,8 +52,9 @@ async def delete_all_projects(engine):
 
 
 class NewProject:
-    def __init__(self, params: Dict=None, app: web.Application=None, clear_all=True):
+    def __init__(self, params: Dict=None, app: web.Application=None, clear_all=True, user_id=None):
         self.params = params
+        self.user_id = user_id
         self.engine = app[APP_DB_ENGINE_KEY]
         self.prj = {}
         self.clear_all = clear_all
@@ -63,7 +64,7 @@ class NewProject:
             raise ValueError("UNDER DEVELOPMENT: Currently can only delete all projects ")
 
     async def __aenter__(self):
-        self.prj = await create_project(self.engine, self.params)
+        self.prj = await create_project(self.engine, self.params, self.user_id)
         return self.prj
 
     async def __aexit__(self, *args):

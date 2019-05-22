@@ -26,7 +26,7 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 from utils_login import LoggedUser
-from utils_projects import delete_all_projects
+from utils_projects import delete_all_projects, NewProject
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
@@ -64,15 +64,40 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     # teardown here ...
 
 
+@pytest.fixture
+def logged_user
+
 # Tests CRUD operations --------------------------------------------
+# TODO: template for CRUD testing?
+
 PREFIX = "/" + API_VERSION
 
-# TODO: template for CRUD testing?
-# TODO: create parametrize fixture with resource_name
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_list_projects(client, fake_project, role, expected):
+    url = client.app.router["list_projects"].url_for()
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+
+    # GET /v0/projects
+    async with LoggedUser(client, {'role': role.name} ) as user:
+        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+            resp = await client.get(url)
+            data, errors = await assert_status(resp, expected)
+
+            if not errors:
+                assert len(data) == 1
+
+    #TODO: GET /v0/projects?type=template&start=0&count=3
+
 
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
@@ -87,8 +112,6 @@ async def test_create(client, fake_project, role, expected):
         await assert_status(resp, expected)
 
         # TODO: validate response using OAS?
-
-
         # FIXME: cannot delete user until project is deleted. See cascade ,
         #  i.e. removing a user, removes all its projects!!
 
@@ -97,12 +120,53 @@ async def test_create(client, fake_project, role, expected):
         await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
 
 
-# CRUD---------
-#
-# GET /v0/projects
-# GET /v0/projects?type=template&start=0&count=3
-# POST /v0/projects  {projec}
 
-# GET /v0/projects/{project_id}
-# PUT /v0/projects/{project_id}
-# DELETE /v0/projects/{project_id}
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_project(client, fake_project, role, expected):
+
+    async with LoggedUser(client, {'role': role.name} ) as user:
+        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+            # GET /v0/projects/{project_id}
+            url = client.app.router["get_project"].url_for(project_id=fake_project["uuid"])
+
+            resp = await client.get(url)
+            await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_replace_project(client, fake_project, role, expected):
+    async with LoggedUser(client, {'role': role.name} ) as user:
+        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+            # PUT /v0/projects/{project_id}
+            url = client.app.router["replace_project"].url_for(project_id=fake_project["uuid"])
+            fake_project["notes"] = "some different"
+
+            resp = await client.put(url, json=fake_project)
+            await assert_status(resp, expected)
+
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_delete_project(client, fake_project, role, expected):
+    async with LoggedUser(client, {'role': role.name} ) as user:
+        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+            # DELETE /v0/projects/{project_id}
+            url = client.app.router["delete_project"].url_for()
+
+            resp = await client.delete(url)
+            await assert_status(resp, expected)

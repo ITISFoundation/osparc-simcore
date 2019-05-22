@@ -13,7 +13,7 @@ async def assert_status(response: web.Response, expected_cls:web.HTTPException, 
         assert not data
         assert not error
     else:
-        assert data
+        assert data is not None
         assert not error
 
         if expected_msg:
