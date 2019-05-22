@@ -271,7 +271,7 @@ qx.Class.define("qxapp.component.form.Auto", {
           switch (data[key]) {
             case "Invisible": {
               control.setEnabled(false);
-              control.setVisibility("hidden"); // "excluded"
+              control.setVisibility("excluded");
               break;
             }
             case "ReadOnly": {
