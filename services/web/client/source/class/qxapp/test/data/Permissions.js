@@ -66,9 +66,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeCreate: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       const anonNode = this.createDummyNode();
-      this.assertNull(anonNode, "anonymous is not allowed to create nodes");
+      this.assertNull(anonNode, "guest is not allowed to create nodes");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       const userNode = this.createDummyNode();
@@ -83,9 +83,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const dummyNode = this.createDummyNode();
       this.assertNotNull(dummyNode, "user is allowed to create nodes");
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       let removed = this.__workbench.removeNode(dummyNode.getNodeId());
-      this.assertFalse(removed, "anonymous is not allowed to delete nodes");
+      this.assertFalse(removed, "guest is not allowed to delete nodes");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       removed = this.__workbench.removeNode(dummyNode.getNodeId());
@@ -100,13 +100,13 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const node = this.createDummyNode();
       const newLabel = "my new label";
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       node.renameNode(newLabel);
-      this.assertNotIdentical(node.getLabel(), newLabel, "anonymous is not allowed to rename nodes");
+      this.assertNotIdentical(node.getLabel(), newLabel, "guest is not allowed to rename nodes");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       node.renameNode(newLabel);
-      this.assertIdentical(node.getLabel(), newLabel, "anonymous is not allowed to rename nodes");
+      this.assertIdentical(node.getLabel(), newLabel, "guest is not allowed to rename nodes");
     },
 
     // test study.edge.create
@@ -117,9 +117,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const node1 = this.createDummyNode();
       const node2 = this.createDummyNode();
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       const anonEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
-      this.assertNull(anonEdge, "anonymous is not allowed to create edges");
+      this.assertNull(anonEdge, "guest is not allowed to create edges");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       const userEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
@@ -135,9 +135,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const node2 = this.createDummyNode();
       const edge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       let removed = this.__workbench.removeEdge(edge.getEdgeId());
-      this.assertFalse(removed, "anonymous is not allowed to delete edges");
+      this.assertFalse(removed, "guest is not allowed to delete edges");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       removed = this.__workbench.removeEdge(edge.getEdgeId());
@@ -152,9 +152,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const file1 = "file1";
       const store = qxapp.data.Store.getInstance();
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       const req0sent = store.copyFile(loc0, file0, loc1, file1);
-      this.assertFalse(req0sent, "anonymous is not allowed to push files");
+      this.assertFalse(req0sent, "guest is not allowed to push files");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       const req1sent = store.copyFile(loc0, file0, loc1, file1);
@@ -167,9 +167,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const file0 = "file0";
       const store = qxapp.data.Store.getInstance();
 
-      qxapp.data.Permissions.getInstance().setRole("anonymous");
+      qxapp.data.Permissions.getInstance().setRole("guest");
       const req0sent = store.deleteFile(loc0, file0);
-      this.assertFalse(req0sent, "anonymous is not allowed to delete files");
+      this.assertFalse(req0sent, "guest is not allowed to delete files");
 
       qxapp.data.Permissions.getInstance().setRole("user");
       const req1sent = store.deleteFile(loc0, file0);

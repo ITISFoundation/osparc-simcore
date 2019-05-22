@@ -168,6 +168,15 @@ qx.Class.define("qxapp.component.form.Auto", {
       this.__setData(this.__model, data, relax);
     },
 
+    /**
+     * set access level to the data main model
+     *
+     * @param data {let} map with key access level pairs to apply
+     */
+    setAccessLevel: function(data) {
+      this.__setAccessLevel(this.__model, data);
+    },
+
 
     /**
      * set the data in a selectbox
@@ -245,6 +254,47 @@ qx.Class.define("qxapp.component.form.Auto", {
 
       return data;
     },
+
+
+    /**
+     * set access level to the data model
+     *
+     * @param model {let} TODOC
+     * @param data {let} TODOC
+     */
+    __setAccessLevel: function(model, data) {
+      this.__settingData = true;
+
+      for (const key in data) {
+        const control = this.getControl(key);
+        if (control) {
+          switch (data[key]) {
+            case "Invisible": {
+              control.setEnabled(false);
+              control.setVisibility("hidden"); // "excluded"
+              break;
+            }
+            case "ReadOnly": {
+              control.setEnabled(false);
+              control.setVisibility("visible");
+              break;
+            }
+            case "ReadAndWrite": {
+              control.setEnabled(true);
+              control.setVisibility("visible");
+              break;
+            }
+          }
+        }
+      }
+
+      this.__settingData = false;
+
+      /* only fire ONE if there was an attempt at change */
+
+      this.fireDataEvent("changeData", this.getData());
+    },
+
     __setupDateField: function(s) {
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target

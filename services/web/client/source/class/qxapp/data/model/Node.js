@@ -123,6 +123,11 @@ qx.Class.define("qxapp.data.model.Node", {
       nullable: true
     },
 
+    inputAccess: {
+      check: "Object",
+      nullable: true
+    },
+
     inputsMapper: {
       check: "qx.ui.core.Widget",
       init: null,
@@ -484,6 +489,10 @@ qx.Class.define("qxapp.data.model.Node", {
     setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
+        if ("inputAccess" in nodeData) {
+          this.__settingsForm.setAccessLevel(nodeData.inputAccess);
+          this.setInputAccess(nodeData.inputAccess);
+        }
       }
     },
 
@@ -821,10 +830,11 @@ qx.Class.define("qxapp.data.model.Node", {
         key: this.getKey(),
         version: this.getVersion(),
         label: this.getLabel(),
-        inputs: this.getInputValues(), // can a container have inputs?
+        inputs: this.getInputValues(),
+        inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         outputNode: this.getIsOutputNode(),
-        outputs: this.getOutputValues(), // can a container have outputs?
+        outputs: this.getOutputValues(),
         parent: this.getParentNodeId(),
         progress: this.getProgress(),
         thumbnail: this.getThumbnail()

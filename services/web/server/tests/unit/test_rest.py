@@ -17,6 +17,7 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
+from utils_assert import assert_status
 
 logging.basicConfig(level=logging.INFO)
 
@@ -96,97 +97,25 @@ async def test_check_action(client):
     assert data['query_value'] == QUERY
     assert data['body_value'] == FAKE
 
-@pytest.mark.skip(reason="DEV: Dummy login")
-async def test_auth_register(client, caplog):
-    caplog.set_level(logging.ERROR, logger='openapi_spec_validator')
-    caplog.set_level(logging.ERROR, logger='openapi_core')
 
-    response = await client.post('v0/auth/register',
-        json = {
-            'email': 'bar@mail.com',
-            'password': 'my secret',
-            'confirm': 'my secret',
-            },
-    )
-    payload = await response.json()
+async def test_frontend_config(client):
+    url = client.app.router["get_config"].url_for()
+    assert str(url) == "/v0/config"
 
-    assert response.status==web.HTTPOk.status_code, str(payload)
+    # default
+    response = await client.get("/v0/config")
 
-    data, error = [payload[k] for k in ('data', 'error')]
-    assert not error
-    assert data
+    data, _ = await assert_status(response, web.HTTPOk)
+    assert not data["invitation_required"]
 
-    assert 'message' in data
-    assert data.get('logger') == "user"
+    # w/ invitation explicitly
+    for enabled in (True, False):
+        client.app[APP_CONFIG_KEY]['login'] = {'registration_invitation_required': enabled}
+        response = await client.get("/v0/config")
 
-    # possible usage
-    client_log = logging.getLogger(data.get('logger', __name__))
-    level = getattr(logging, data.get('level', "INFO"))
-    client_log.log(level, msg=data['message'])
+        data, _ = await assert_status(response, web.HTTPOk)
+        assert data["invitation_required"] is enabled
 
-@pytest.mark.skip(reason="DEV: Dummy login")
-async def test_auth_login(client, caplog):
-
-    log_filter = logging.Filter(name='simcore_service_webserver')
-    logging.getLogger().addFilter(log_filter)
-
-    # valid registration
-    response = await client.post('v0/auth/register',
-        json = {
-            'email': 'foo@mymail.com',
-            'password': 'my secret',
-            'confirm': 'my secret',
-            },
-    )
-    payload = await response.json()
-    assert response.status==200, str(payload)
-
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data
-
-    # FIXME: routing errors are returned as text and not json!!
-
-    # valid login on registered ser
-    response = await client.post('v0/auth/login',
-        json = {
-            'email': 'foo@mymail.com',
-            'password': 'my secret',
-            },
-    )
-    payload = await response.json()
-    assert response.status==200, str(payload)
-
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data
-
-
-    # invalid login
-    response = await client.post('v0/auth/login',
-        json = {
-            'email': 'foo@mymail.com',
-            'password': 'wrong pass',
-            },
-    )
-    payload = await response.json()
-    assert response.status==web.HTTPUnprocessableEntity.status_code, str(payload)
-
-    data, error = unwrap_envelope(payload)
-    assert error
-    assert not data
-
-
-  # logout
-    response = await client.get('v0/auth/logout')
-
-    payload = await response.json()
-    assert response.status==web.HTTPOk.status_code, str(payload)
-
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data # logs
-    assert all( k in data for k in ('level', 'logger', 'message') )
 
 @pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
 async def test_start_pipeline(client):

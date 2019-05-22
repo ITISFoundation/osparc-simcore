@@ -66,16 +66,17 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
     log: function(logMessage) {
       let message = logMessage.message;
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
-      let logger =logMessage.logger;
+      const logger =logMessage.logger;
       if (logger) {
         message = logger + ": " + message;
       }
 
-      let label = new qx.ui.basic.Label(message).set({
+      const label = new qx.ui.basic.Label(message).set({
         allowGrowX: true,
         allowGrowY: true,
         alignX: "center",
         textAlign: "center",
+        rich: true,
         padding: 5
       });
       this.add(label);
