@@ -1,5 +1,6 @@
 from aiohttp import web
 
+from pprint import pformat
 from servicelib.rest_responses import unwrap_envelope
 
 
@@ -9,12 +10,13 @@ async def assert_status(response: web.Response, expected_cls:web.HTTPException, 
 
     if issubclass(expected_cls, web.HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg)
+
     elif issubclass(expected_cls, web.HTTPNoContent):
-        assert not data
-        assert not error
+        assert not data, pformat(data)
+        assert not error, pformat(error)
     else:
-        assert data is not None
-        assert not error
+        assert data is not None, pformat(data)
+        assert not error, pformat(error)
 
         if expected_msg:
             assert expected_msg in data["message"]
@@ -27,8 +29,8 @@ async def assert_error(response: web.Response, expected_cls:web.HTTPException, e
 
 
 def do_assert_error(data, error, expected_cls:web.HTTPException, expected_msg: str=None):
-    assert not data
-    assert error
+    assert not data, pformat(data)
+    assert error, pformat(error)
 
     # TODO: improve error messages
     assert len(error['errors']) == 1
