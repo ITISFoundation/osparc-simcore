@@ -32,9 +32,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
         // SEE: api/specs/webserver/v0/openapi.yaml
         const basePath = qxapp.io.rest.ResourceFactory.API;
-        // Singular resource
         const configCheck = new qxapp.io.rest.Resource({
-          // Get health check
           get: {
             method: "GET",
             url: basePath+"/config"

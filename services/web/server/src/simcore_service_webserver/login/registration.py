@@ -4,6 +4,7 @@
 """
 # TODO: Move handlers.check_registration  and other utils related with registration here
 import json
+import logging
 
 from yarl import URL
 
@@ -11,6 +12,7 @@ from ..db_models import ConfirmationAction
 from .storage import AsyncpgStorage
 from .utils import get_expiration_date
 
+log = logging.getLogger(__name__)
 
 async def create_invitation(host, guest, db:AsyncpgStorage):
     """ Creates an invitation token for a guest to register in the platform
@@ -36,11 +38,11 @@ async def create_invitation(host, guest, db:AsyncpgStorage):
 def get_confirmation_info(confirmation):
     info = confirmation
 
-    # data
+    # data column is a string
     try:
         info['data'] = json.loads(confirmation['data'])
     except json.decoder.JSONDecodeError:
-        pass
+        log.warning("Failed to load data from confirmation. Skipping 'data' field.")
 
     # extra
     info["expires"] = get_expiration_date(confirmation)

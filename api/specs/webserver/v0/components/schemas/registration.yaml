@@ -37,5 +37,5 @@ RegistrationType:
   example:
     email: foo@mymail.com
     password: 'my secret'
-    confim: 'my secret'
-    type: 'ABCDE1234'
+    confirm: 'my secret'
+    invitation: 33c451d4-17b7-4e65-9880-694559b8ffc2
