@@ -25,12 +25,14 @@ qx.Mixin.define("qxapp.component.filter.MFilterable", {
      *
      * @param {String} groupId Id of the filter group to subscribe to.
      */
-    _subscribeToFilterGroup: function(groupId) {
+    subscribeToFilterGroup: function(groupId) {
       const msgName = qxapp.utils.Utils.capitalize(groupId, "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, this.__subscriber, this);
     },
     /**
-     * Subscriber function for incoming messages.
+     * Subscriber function for incoming messages. It implements the common filtering workflow of every
+     * filterable GUI element: If the filter state is appropiate, compare it with the own state and act
+     * accordingly by applying the filter or removing it.
      *
      * @param {qx.event.message.Message} msg Message dispatched.
      */
