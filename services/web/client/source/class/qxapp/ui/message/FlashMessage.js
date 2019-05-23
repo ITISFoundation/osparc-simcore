@@ -21,6 +21,12 @@
 qx.Class.define("qxapp.ui.message.FlashMessage", {
   extend: qx.ui.core.Widget,
 
+  /**
+   * Constructor for the FlashMessage.
+   *
+   * @param {String} message Message that the user will read.
+   * @param {String="INFO","DEBUG","WARNING","ERROR"} level Logging level of the message. Each level has different, distinct color.
+   */
   construct: function(message, level) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(10));

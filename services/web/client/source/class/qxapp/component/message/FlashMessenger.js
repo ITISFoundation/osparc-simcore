@@ -60,6 +60,13 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
     __messageContainer: null,
     __displayedMessagesCount: null,
 
+    /**
+     * Public function to log a FlashMessage to the user.
+     *
+     * @param {String} message Message that the message will show.
+     * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
+     * @param {*} logger IDK
+     */
     logAs: function(message, level="INFO", logger=null) {
       this.log({
         message: message,
@@ -68,6 +75,14 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       });
     },
 
+    /**
+     * Public function to log a FlashMessage to the user.
+     *
+     * @param {Object} logMessage Constructed message to log.
+     * @param {String} logMessage.message Message that the message will show.
+     * @param {String="INFO","DEBUG","WARNING","ERROR"} logMessage.level Level of the warning. The color of the badge will change accordingly.
+     * @param {*} logMessage.logger IDK
+     */
     log: function(logMessage) {
       let message = logMessage.message;
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
@@ -81,6 +96,11 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       this.__messages.push(flash);
     },
 
+    /**
+     * Private method to show a message to the user. It will stack it on the previous ones.
+     *
+     * @param {qxapp.ui.message.FlashMessage} message FlassMessage element to show.
+     */
     __showMessage: function(message) {
       this.__messages.remove(message);
       this.__messageContainer.resetDecorator();
@@ -93,6 +113,11 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       qx.event.Timer.once(() => this.__removeMessage(message), this, 5000);
     },
 
+    /**
+     * Private method to remove a message. If there are still messages in the queue, it will show the next available one.
+     *
+     * @param {qxapp.ui.message.FlashMessage} message FlassMessage element to remove.
+     */
     __removeMessage: function(message) {
       if (this.__messageContainer.indexOf(message) > -1) {
         this.__displayedMessagesCount--;
@@ -107,6 +132,11 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       }
     },
 
+    /**
+     * Function to re-position the message container according to the next message size, or its own size, if the previous is missing.
+     *
+     * @param {Integer} messageWidth Size of the next message to add in pixels.
+     */
     __updateContainerPosition: function(messageWidth) {
       const width = messageWidth || this.__messageContainer.getSizeHint().width;
       const root = qx.core.Init.getApplication().getRoot();
