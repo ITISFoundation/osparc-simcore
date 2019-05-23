@@ -78,6 +78,8 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     pprint(app_config)
 
     setup_db(app)
+    setup_session(app)
+    setup_security(app)
     setup_rest(app, debug=True)
     setup_login(app)
     setup_computation(app)
