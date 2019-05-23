@@ -38,7 +38,7 @@ def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope="module")
-def webserver_environ(request, devel_environ, services_docker_compose) -> Dict[str, str]:
+def webserver_environ(request, devel_environ, services_docker_compose, docker_stack) -> Dict[str, str]:
     """ Environment variables for the webserver application
 
     """
@@ -115,7 +115,7 @@ def resolve_environ(service, environ):
     return _environs
 
 def get_service_published_port(service_name: str) -> str:
-    published_port = "none"
+    published_port = "-1"
     client = docker.from_env()
     services = [x for x in client.services.list() if service_name in x.name]
     if not services:
