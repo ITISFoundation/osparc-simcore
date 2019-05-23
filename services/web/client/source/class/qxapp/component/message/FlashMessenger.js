@@ -83,6 +83,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
 
     __showMessage: function(message) {
       this.__messages.remove(message);
+      this.__messageContainer.resetDecorator();
       this.__messageContainer.add(message);
       const {width} = message.getSizeHint();
       if (this.__displayedMessagesCount === 0 || width > this.__messageContainer.getWidth()) {
@@ -95,6 +96,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
     __removeMessage: function(message) {
       if (this.__messageContainer.indexOf(message) > -1) {
         this.__displayedMessagesCount--;
+        this.__messageContainer.setDecorator("flash-container-transitioned");
         this.__messageContainer.remove(message);
         qx.event.Timer.once(() => {
           if (this.__messages.length) {

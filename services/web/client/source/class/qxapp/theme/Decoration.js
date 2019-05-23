@@ -86,13 +86,24 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "flash": {
       style: {
-        radius: 3
+        radius: 3,
+        transitionProperty: "top",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
       }
     },
 
     "flash-badge": {
       style: {
         radius: 5
+      }
+    },
+
+    "flash-container-transitioned": {
+      style: {
+        transitionProperty: "height",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
       }
     }
   }
