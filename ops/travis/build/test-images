@@ -16,7 +16,18 @@ install() {
 }
 
 before_script() {
-    make pull-cache || true
+    {
+        make pull-cache
+    } || {
+        # if this is the very first build in a branch
+        # there is no cache available so let's use the main one if possible
+        if [[ -v DOCKER_REGISTRY ]]; then
+            branch_registry=${DOCKER_REGISTRY}
+            export DOCKER_REGISTRY=itisfoundation
+            # try getting the main cache, and set back the DOCKER_REGISTRY if it fails...
+            make pull-cache || export DOCKER_REGISTRY=${branch_registry}
+        fi
+    } || true
     make pull || true
 }
 
