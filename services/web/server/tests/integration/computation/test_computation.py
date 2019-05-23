@@ -27,6 +27,7 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.login import setup_login
 from utils_login import LoggedUser
 from utils_assert import assert_status
 
@@ -78,6 +79,7 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
 
     setup_db(app)
     setup_rest(app, debug=True)
+    setup_login(app)
     setup_computation(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
