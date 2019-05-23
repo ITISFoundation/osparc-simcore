@@ -57,8 +57,9 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
-      - EXTRA_HOSTS_SUFFIX=osparc.io
+      - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX}
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
@@ -105,7 +106,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '9081:8080'
+      - ${SIMCORE_PORT:-9081}:8080
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -185,6 +186,7 @@ services:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
     depends_on:
       - rabbit
       - postgres

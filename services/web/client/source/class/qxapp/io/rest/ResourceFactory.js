@@ -25,6 +25,43 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
   },
 
   members: {
+    __config: null,
+
+    requestConfig: function() {
+      if (this.__config === null) {
+        // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+        // SEE: api/specs/webserver/v0/openapi.yaml
+        const basePath = qxapp.io.rest.ResourceFactory.API;
+        const configCheck = new qxapp.io.rest.Resource({
+          get: {
+            method: "GET",
+            url: basePath+"/config"
+          }
+        });
+        configCheck.addListener("getSuccess", e => {
+          this.__config = e.getRequest().getResponse().data;
+        }, this);
+        configCheck.addListener("getError", e => {
+          console.error(e);
+          this.__config === null;
+        }, this);
+        configCheck.get();
+        this.__config === false;
+      }
+    },
+
+    registerWithInvitation: function() {
+      if (this.__config === null) {
+        this.requestConfig();
+        return null;
+      }
+      if (!("invitation_required" in this.__config)) {
+        this.requestConfig();
+        return null;
+      }
+      return this.__config["invitation_required"];
+    },
+
     createHealthCheck: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
