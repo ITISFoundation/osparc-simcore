@@ -102,27 +102,29 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       });
       this.addWidget(sizeWidget);
 
-      this.addWidget(new qx.ui.core.Spacer(10));
+      if (qxapp.data.Permissions.getInstance().canDo("study.filestree.uuid.read")) {
+        this.addWidget(new qx.ui.core.Spacer(10));
 
-      // Add Path
-      var pathWidget = new qx.ui.basic.Label().set({
-        width: 300,
-        maxWidth: 300,
-        textAlign: "right"
-      });
-      this.bind("path", pathWidget, "value");
-      this.addWidget(pathWidget);
+        // Add Path
+        var pathWidget = new qx.ui.basic.Label().set({
+          width: 300,
+          maxWidth: 300,
+          textAlign: "right"
+        });
+        this.bind("path", pathWidget, "value");
+        this.addWidget(pathWidget);
 
-      this.addWidget(new qx.ui.core.Spacer(10));
+        this.addWidget(new qx.ui.core.Spacer(10));
 
-      // Add NodeId
-      var fileIdWidget = new qx.ui.basic.Label().set({
-        width: 300,
-        maxWidth: 300,
-        textAlign: "right"
-      });
-      this.bind("fileId", fileIdWidget, "value");
-      this.addWidget(fileIdWidget);
+        // Add NodeId
+        var fileIdWidget = new qx.ui.basic.Label().set({
+          width: 300,
+          maxWidth: 300,
+          textAlign: "right"
+        });
+        this.bind("fileId", fileIdWidget, "value");
+        this.addWidget(fileIdWidget);
+      }
     }
   }
 });
