@@ -130,6 +130,38 @@ qx.Class.define("qxapp.file.FilesTree", {
       return null;
     },
 
+    __getLeafList: function(item, leaves) {
+      if (item.getChildren == null) { // eslint-disable-line no-eq-null
+        leaves.push(item);
+      } else {
+        for (let i=0; i<item.getChildren().length; i++) {
+          this.__getLeafList(item.getChildren().toArray()[i], leaves);
+        }
+      }
+    },
+
+    __findUuidInLeaves: function(uuid) {
+      const parent = this.getModel();
+      const list = [];
+      this.__getLeafList(parent, list);
+      for (let j = 0; j < list.length; j++) {
+        if (uuid === list[j].getFileId()) {
+          return list[j];
+        }
+      }
+      return null;
+    },
+
+    setSelectedFile: function(fileId) {
+      const item = this.__findUuidInLeaves(fileId);
+      if (item) {
+        this.openNodeAndParents(item);
+
+        const selected = new qx.data.Array([item]);
+        this.setSelection(selected);
+      }
+    },
+
     __getSelectedItem: function() {
       let selection = this.getSelection().toArray();
       if (selection.length > 0) {

@@ -53,6 +53,7 @@ qx.Class.define("qxapp.file.FilePicker", {
     let tree = this.__tree = this._createChildControlImpl("filesTree");
     tree.addListener("selectionChanged", this.__selectionChanged, this);
     tree.addListener("itemSelected", this.__itemSelected, this);
+    tree.addListener("modelChanged", this.__modelChanged, this);
 
     let addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
@@ -129,14 +130,31 @@ qx.Class.define("qxapp.file.FilePicker", {
       const data = this.__tree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        const outputs = this.getNode().getOutputs();
-        outputs["outFile"].value = {
+        const outputFile = this.__getOutputFile();
+        outputFile.value = {
           store: selectedItem.getLocation(),
           path: selectedItem.getFileId()
         };
         this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
+      }
+    },
+
+    __getOutputFile: function() {
+      const outputs = this.getNode().getOutputs();
+      return outputs["outFile"];
+    },
+
+    __modelChanged: function() {
+      console.log("modelChanged");
+      this.__checkSelectedFileIsListed();
+    },
+
+    __checkSelectedFileIsListed: function() {
+      const outFile = this.__getOutputFile();
+      if (outFile && "value" in outFile && "path" in outFile.value) {
+        this.__tree.setSelectedFile(outFile.value.path);
       }
     }
   }
