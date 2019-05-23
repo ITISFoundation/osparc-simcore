@@ -53,7 +53,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      let atm = new qx.ui.basic.Atom().set({
+      const atm = new qx.ui.basic.Atom().set({
         icon: "qxapp/osparc-white.svg",
         iconPosition: "top"
       });
@@ -64,7 +64,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       });
       this.add(atm);
 
-      let email = new qx.ui.form.TextField().set({
+      const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Your email address"),
         required: true
       });
@@ -75,7 +75,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         email.focus();
         email.activate();
       });
-      let pass = new qx.ui.form.PasswordField().set({
+      const pass = new qx.ui.form.PasswordField().set({
         placeholder: this.tr("Your password"),
         required: true
       });
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
+      const loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {
         this.__login();
       }, this);
@@ -97,13 +97,31 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
 
 
       //  create account | forgot password? links
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
-      let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
-        this.fireEvent("toRegister");
+      const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+        const interval = 1000;
+        const configTimer = new qx.event.Timer(interval);
+        const resource = qxapp.io.rest.ResourceFactory.getInstance();
+        let registerWithInvitation = resource.registerWithInvitation();
+        configTimer.addListener("interval", () => {
+          registerWithInvitation = resource.registerWithInvitation();
+          if (registerWithInvitation !== null) {
+            configTimer.stop();
+            if (registerWithInvitation) {
+              let text = this.tr("Registration is currently only available with an invitation.");
+              text += "<br>";
+              text += this.tr("Please contact info@itis.swiss");
+              qxapp.component.widget.FlashMessenger.getInstance().logAs(text, "INFO");
+            } else {
+              this.fireEvent("toRegister");
+            }
+          }
+        }, this);
+        configTimer.start();
       }, this);
 
-      let forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), function() {
+      const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
         this.fireEvent("toReset");
       }, this);
 
@@ -122,10 +140,10 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
     },
 
     __buildExternals: function() {
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       [this.tr("Login with NIH"), this.tr("Login with OpenID")].forEach(txt => {
-        let btn = this.createLinkButton(txt, function() {
+        const btn = this.createLinkButton(txt, function() {
           // TODO add here callback
           console.error("Login with external services are still not implemented");
         }, this);
@@ -148,9 +166,9 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      let manager = qxapp.auth.Manager.getInstance();
+      const manager = qxapp.auth.Manager.getInstance();
 
-      let successFun = function(log) {
+      const successFun = function(log) {
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
@@ -158,7 +176,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      let failFun = function(msg) {
+      const failFun = function(msg) {
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Introduced an invalid email or password");
         [email, pass].forEach(item => {
@@ -175,8 +193,8 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
     },
 
     resetValues: function() {
-      let fieldItems = this.__form.getItems();
-      for (var key in fieldItems) {
+      const fieldItems = this.__form.getItems();
+      for (const key in fieldItems) {
         fieldItems[key].resetValue();
       }
     }

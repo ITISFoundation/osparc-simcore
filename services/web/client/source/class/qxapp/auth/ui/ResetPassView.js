@@ -48,6 +48,14 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
       });
       this.add(confirm);
 
+      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const resetCode = urlFragment.params ? urlFragment.params.code || null : null;
+      const code = new qx.ui.form.TextField().set({
+        visibility: "excluded",
+        value: resetCode
+      });
+      this.add(code);
+
       validator.setValidator(function(_itemForms) {
         return qxapp.auth.core.Utils.checkSamePasswords(password, confirm);
       });
@@ -69,10 +77,7 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
       submitBtn.addListener("execute", function(e) {
         const valid = validator.validate();
         if (valid) {
-          const code = qxapp.auth.core.Utils.findParameterInFragment("code");
-          qxapp.auth.core.Utils.removeParameterInFragment("page");
-          qxapp.auth.core.Utils.removeParameterInFragment("code");
-          this.__submit(password.getValue(), confirm.getValue(), code);
+          this.__submit(password.getValue(), confirm.getValue(), code.getValue());
         }
       }, this);
 
@@ -88,7 +93,6 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        // TODO: See #465: clean all query from url: e.g. /?page=reset-password&code=qwewqefgfg
         qxapp.component.message.FlashMessenger.getInstance().log(log);
       };
 
