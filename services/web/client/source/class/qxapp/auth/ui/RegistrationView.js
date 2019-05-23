@@ -65,6 +65,14 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
       this.add(pass2);
 
+      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const token = urlFragment.params ? urlFragment.params.invitation || null : null;
+      const invitation = new qx.ui.form.TextField().set({
+        visibility: "excluded",
+        value: token
+      });
+      this.add(invitation);
+
       // interaction
       pass1.addListener("changeValue", e => {
         qxapp.auth.Manager.getInstance().evalPasswordStrength(e.getData(), (strength, rating, improvement) => {
@@ -123,7 +131,8 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
           this.__submit({
             email: email.getValue(),
             password: pass1.getValue(),
-            confirm: pass2.getValue()
+            confirm: pass2.getValue(),
+            invitation: invitation.getValue()
           });
         }
       }, this);

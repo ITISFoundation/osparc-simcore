@@ -18,8 +18,7 @@ install() {
 
 before_script() {
     pip list -v
-    make pull-cache || true
-    make pull || make build
+    make pull || ((make pull-cache || true) && make build)
     docker images
 }
 
