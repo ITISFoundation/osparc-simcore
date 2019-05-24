@@ -110,7 +110,10 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
         this.__updateContainerPosition(width);
       }
       this.__displayedMessagesCount++;
-      qx.event.Timer.once(() => this.__removeMessage(message), this, 5000);
+
+      const wordCount = message.getMessage().split(" ").length;
+      const readingTime = Math.max(4500, wordCount*330); // An average reader takes 300ms to read a word
+      qx.event.Timer.once(() => this.__removeMessage(message), this, readingTime);
     },
 
     /**
