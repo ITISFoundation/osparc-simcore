@@ -94,7 +94,7 @@
         "outputs": {
           "outFile": {
             "store": 1,
-            "path": "Shared Data/Bunny.vtk"
+            "path": "Shared Data/bunny.vtk"
           }
         },
         "progress": 100,
