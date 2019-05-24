@@ -64,107 +64,124 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 
     # teardown here ...
 
+@pytest.fixture
+async def logged_user(client, user_role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds = user_role!=UserRole.ANONYMOUS
+    ) as user:
+        yield user
+
+@pytest.fixture
+async def user_project(client, fake_project, logged_user):
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"]
+    ) as project:
+        yield project
+
 
 # Tests CRUD operations --------------------------------------------
 # TODO: template for CRUD testing?
 
-@pytest.mark.parametrize("role,expected", [
+@pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_list_projects(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
-        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+async def test_list_projects(client, logged_user, user_project, expected):
+    # GET /v0/projects
+    url = client.app.router["list_projects"].url_for()
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
-            # GET /v0/projects
-            url = client.app.router["list_projects"].url_for()
-            assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, expected)
 
-            resp = await client.get(url)
-            data, errors = await assert_status(resp, expected)
-
-            if not errors:
-                assert len(data) == 1
+    if not errors:
+        assert len(data) == 1
+        assert data[0] == user_project
 
     #TODO: GET /v0/projects?type=template&start=0&count=3
 
 
-@pytest.mark.parametrize("role,expected", [
+@pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_create(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
+async def test_create(client, fake_project, logged_user, expected):
+    # POST /v0/projects
+    url = client.app.router["create_projects"].url_for()
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
-        # POST /v0/projects
-        url = client.app.router["create_projects"].url_for()
-        assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+    resp = await client.post(url, json=fake_project)
 
-        resp = await client.post(url, json=fake_project)
+    await assert_status(resp, expected)
 
-        await assert_status(resp, expected)
+    # TODO: validate response using OAS?
+    # FIXME: cannot delete user until project is deleted. See cascade ,
+    #  i.e. removing a user, removes all its projects!!
 
-        # TODO: validate response using OAS?
-        # FIXME: cannot delete user until project is deleted. See cascade ,
-        #  i.e. removing a user, removes all its projects!!
-
-        # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
-        #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
-        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
+    # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
+    #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
+    await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
 
 
-@pytest.mark.parametrize("role,expected", [
+@pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_project(client, fake_project, role, expected):
+async def test_get_project(client, logged_user, user_project, expected):
+    # GET /v0/projects/{project_id}
+    url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
 
-    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
-        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
 
-            # GET /v0/projects/{project_id}
-            url = client.app.router["get_project"].url_for(project_id=fake_project["uuid"])
-
-            resp = await client.get(url)
-            await assert_status(resp, expected)
+    if not error:
+        assert data == user_project
 
 
-@pytest.mark.parametrize("role,expected", [
+
+@pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_replace_project(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
-        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+async def test_replace_project(client, logged_user, user_project, expected):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
-            # PUT /v0/projects/{project_id}
-            url = client.app.router["replace_project"].url_for(project_id=fake_project["uuid"])
-            fake_project["notes"] = "some different"
+    updated_project = deepcopy(user_project)
+    updated_project["notes"] = "some different"
 
-            resp = await client.put(url, json=fake_project)
-            await assert_status(resp, expected)
+    resp = await client.put(url, json=updated_project)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == updated_project
 
 
-@pytest.mark.parametrize("role,expected", [
+@pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_delete_project(client, fake_project, role, expected):
-    async with LoggedUser(client, {'role': role.name}, check_if_succeeds=False) as user:
-        async with NewProject(fake_project, client.app, user_id=user["id"]) as project:
+async def test_delete_project(client, logged_user, user_project, expected):
+    # DELETE /v0/projects/{project_id}
+    url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 
-            # DELETE /v0/projects/{project_id}
-            url = client.app.router["delete_project"].url_for(project_id=fake_project["uuid"])
-
-            resp = await client.delete(url)
-            await assert_status(resp, expected)
+    resp = await client.delete(url)
+    await assert_status(resp, expected)
