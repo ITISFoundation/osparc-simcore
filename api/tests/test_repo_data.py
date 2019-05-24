@@ -8,34 +8,24 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from pathlib import Path
 from typing import Dict, List
 
 import jsonschema
 import pytest
-
-# TODO: check schemas here!?
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItemList.json
-# ./src/simcore_service_webserver/data/fake-modeler-LF-getItemList.json
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItem.json
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-Material2Entities.json
-# ./tests/integration/computation/workbench_sleeper_dag_adjacency_list.json
-# ./tests/integration/computation/workbench_sleeper_payload.json
+import yaml
 
 
-@pytest.fixture
-def project_schema(api_specs_dir):
-    schema_path = api_specs_dir / "webserver/v0/components/schemas/project-v0.0.1.json"
-    with open(schema_path) as fh:
-        schema = json.load(fh)
-    return schema
+def _load_data(fpath: Path):
+    with open(fpath) as fh:
+        try:
+            data = json.load(fh)
+        except json.JSONDecodeError:
+            data = yaml.load(fh)
+    return data
 
-@pytest.fixture
-def workbench_schema(api_specs_dir):
-    schema_path = api_specs_dir / "webserver/v0/components/schemas/workbench.json"
-    with open(schema_path) as fh:
-        schema = json.load(fh)
-    return schema
 
+SYNCED_VERSIONS_SUFFIX = [".json", "-converted.yaml"]
 
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
@@ -46,12 +36,41 @@ PROJECTS_PATHS = [
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.json",
 ]
 
+# TODO: check schemas here!?
+# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItemList.json
+# ./src/simcore_service_webserver/data/fake-modeler-LF-getItemList.json
+# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItem.json
+# ./src/simcore_service_webserver/data/fake-materialDB-LF-Material2Entities.json
+# ./tests/integration/computation/workbench_sleeper_dag_adjacency_list.json
+# ./tests/integration/computation/workbench_sleeper_payload.json
+
+
+@pytest.fixture(
+    scope="module",
+    params=SYNCED_VERSIONS_SUFFIX
+)
+def project_schema(request, api_specs_dir):
+    suffix = request.param
+    schema_path = api_specs_dir / "webserver/v0/components/schemas/project-v0.0.1{}".format(suffix)
+    return _load_data(schema_path)
+
+
+@pytest.fixture(
+    scope="module",
+    params=SYNCED_VERSIONS_SUFFIX
+)
+def workbench_schema(request, api_specs_dir):
+    suffix = request.param
+    schema_path = api_specs_dir / "webserver/v0/components/schemas/workbench{}".format(suffix)
+    return _load_data(schema_path)
+
+# TESTS --------------------------------------------------
 
 # TODO: find json files under services with the workd project??
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
-    with open(this_repo_root_dir / data_path) as fh:
-       data = json.load(fh)
+
+    data = _load_data(this_repo_root_dir / data_path)
 
     # Adapts workbench
     if "workbench" in data_path:
@@ -90,7 +109,7 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
 
 
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
-def test_workbench_against_schema(data_path, project_schema, this_repo_root_dir):
+def test_workbench_against_schema(data_path, workbench_schema, this_repo_root_dir):
     """
         NOTE: failures here normally are due to lack of sync between
 
@@ -98,12 +117,11 @@ def test_workbench_against_schema(data_path, project_schema, this_repo_root_dir)
 
         api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     """
-    with open(this_repo_root_dir / data_path) as fh:
-       data = json.load(fh)
+    data = _load_data(this_repo_root_dir / data_path)
 
     assert any(isinstance(data, _type) for _type in [List, Dict])
     if isinstance(data, Dict):
         data = [data,]
 
     for project_data in data:
-        jsonschema.validate(project_data["workbench"], project_schema)
+        jsonschema.validate(project_data["workbench"], workbench_schema)

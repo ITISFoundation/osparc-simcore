@@ -40,7 +40,7 @@ def api_specs_dir(here):
     return _api_specs_dir_impl(here)
 
 def _api_specs_dir_impl(here):
-    specs_dir = here.parent / "specs"
+    specs_dir = Path(here.parent / "specs")
     return specs_dir
 
 
