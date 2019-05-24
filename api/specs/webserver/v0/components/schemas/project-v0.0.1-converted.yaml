@@ -51,18 +51,19 @@ properties:
           enum:
             - read
             - write
+    additionalProperties: true
   creationDate:
     type: string
     description: project creation date
     pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}Z
+      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
     example:
       - '2018-07-01T11:13:43Z'
   lastChangeDate:
     type: string
     description: last save date
     pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}Z
+      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
     example:
       - '2018-07-01T11:13:43Z'
   thumbnail:
@@ -77,17 +78,18 @@ properties:
         type: object
         additionalProperties: false
         required:
-          - key
-          - version
+          - label
           - position
         properties:
+          label:
+            type: string
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(service)/(computational|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic)(/[^\s/]+)+$'
             example:
-              - service/computational/sleeper
-              - service/dynamic/3dviewer
+              - simcore/services/comp/sleeper
+              - simcore/services/dynamic/3dviewer
           version:
             type: string
             description: semantic version number of the node
@@ -96,6 +98,16 @@ properties:
             example:
               - 1.0.0
               - 0.0.1
+          progress:
+            type: number
+            maximum: 100
+            minimum: 0
+            description: the node progress value
+          thumbnail:
+            type: string
+            description: url of the latest screenshot of the node
+            example:
+              - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
           inputs:
             type: object
             description: values of input properties
@@ -107,6 +119,7 @@ properties:
                       - boolean
                       - string
                       - number
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -124,9 +137,29 @@ properties:
                       - path
                     properties:
                       store:
-                        type: string
+                        type:
+                          - string
+                          - integer
                       path:
                         type: string
+          inputAccess:
+            description: map with key - access level pairs
+            type: object
+            patternProperties:
+              '^[-_a-zA-Z0-9]+$':
+                type: string
+                enum:
+                  - Invisible
+                  - ReadOnly
+                  - ReadAndWrite
+                default: ReadAndWrite
+                example:
+                  - ReadOnly
+          inputNodes:
+            type: array
+            items:
+              type: string
+              pattern: ^\S+$
           outputs:
             type: object
             patternProperties:
@@ -137,6 +170,7 @@ properties:
                       - boolean
                       - string
                       - number
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -144,9 +178,18 @@ properties:
                       - path
                     properties:
                       store:
-                        type: string
+                        type:
+                          - string
+                          - integer
                       path:
                         type: string
+          outputNode:
+            type: boolean
+          parent:
+            type:
+              - string
+              - 'null'
+            pattern: ^\S+$
           links:
             type: array
             items:
@@ -166,3 +209,4 @@ properties:
                 type: integer
               'y':
                 type: integer
+    additionalProperties: true
