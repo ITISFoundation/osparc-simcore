@@ -73,36 +73,6 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
       this.add(invitation);
 
-      // interaction
-      pass1.addListener("changeValue", e => {
-        qxapp.auth.Manager.getInstance().evalPasswordStrength(e.getData(), (strength, rating, improvement) => {
-          let msg = "Password is " + rating.toLowerCase() + ".";
-          let level = "INFO";
-
-          if (strength < 0.4) {
-            level = "WARNING";
-            msg += "\n";
-            if (improvement) {
-              msg += "Possible improvements: \n";
-              for (var key in improvement) {
-                msg += "- " + improvement[key] + "\n";
-              }
-            }
-          }
-          qxapp.component.message.FlashMessenger.getInstance().logAs(msg, level);
-        });
-      }, this);
-
-      // email.addListener("changeValue", function(e) {
-      //   // Auto-guess
-      //   if (uname.getValue()=== null) {
-      //     let data = e.getData().split("@")[0];
-      //     uname.setValue(qx.lang.String.capitalize(qx.lang.String.clean(data)));
-      //   }
-      // }, this);
-
-
-
       // validation
       validator.add(email, qx.util.Validate.email());
       validator.setValidator(function(_itemForms) {
