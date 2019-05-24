@@ -1,9 +1,14 @@
+"""
+    TODO: move to system testing: shall test different workflows on framework studies (=project)
+        e.g. run, pull, push ,... pipelines
+        This one here is too similar to unit/with_postgres/test_projects.py
+"""
+
 # pylint:disable=wildcard-import
 # pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 
 import json
 import sys
