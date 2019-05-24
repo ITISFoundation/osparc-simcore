@@ -143,7 +143,17 @@ paths:
       parameters:
         - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
       requestBody:
-        $ref: './openapi-services.yaml#/components/requestBodies/PipelineBody'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - workbench
+              properties:
+                workbench:
+                  $ref: './components/schemas/workbench-converted.yaml'
+                  # TODO: $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
       responses:
         "204":
           description: Succesfully updated the pipeline
@@ -157,7 +167,17 @@ paths:
       parameters:
         - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
       requestBody:
-        $ref: './openapi-services.yaml#/components/requestBodies/PipelineBody'
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - workbench
+              properties:
+                workbench:
+                  $ref: './components/schemas/workbench-converted.yaml'
+                  # TODO: $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
       responses:
         "200":
           description: Succesffully started the pipeline
@@ -244,16 +264,3 @@ components:
       schema:
         type: string
         example: "1.4"
-
-  requestBodies:
-    PipelineBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - workbench
-            properties:
-              workbench:
-                $ref: './components/schemas/workbench-converted.yaml'
-            # $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
