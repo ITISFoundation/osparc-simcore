@@ -7,7 +7,6 @@ required:
   - name
   - description
   - prjOwner
-  - collaborators
   - creationDate
   - lastChangeDate
   - thumbnail
@@ -32,17 +31,6 @@ properties:
   prjOwner:
     type: string
     description: user uuid
-  collaborators:
-    type: object
-    description: UUIDs of the users/groups who should get access to this
-    x-patternProperties:
-      ^\S+$:
-        type: array
-        items:
-          type: string
-          enum:
-            - read
-            - write
   creationDate:
     type: string
     description: project creation date

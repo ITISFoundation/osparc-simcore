@@ -46,7 +46,6 @@ projects = sa.Table("projects", metadata,
     sa.Column("description", sa.String, nullable=False),
     sa.Column("thumbnail", sa.String, nullable=False),
     sa.Column("prj_owner", sa.String, nullable=False),
-    sa.Column("collaborators", sa.JSON, nullable=False),
     sa.Column("creation_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column("last_change_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column("workbench", sa.JSON, nullable=False)

@@ -5,7 +5,6 @@
     "description": "3D Raw-graphs viewer with one input",
     "thumbnail": "",
     "prjOwner": "maiz",
-    "collaborators": {},
     "creationDate": "2019-05-24T10:36:57.813Z",
     "lastChangeDate": "2019-05-24T11:36:12.015Z",
     "workbench": {
@@ -58,7 +57,6 @@
     "description": "3D Paraview viewer with two inputs",
     "thumbnail": "",
     "prjOwner": "maiz",
-    "collaborators": {},
     "creationDate": "2019-05-24T10:36:57.813Z",
     "lastChangeDate": " 2019-05-24T10:38:12.888Z",
     "workbench": {
@@ -136,7 +134,6 @@
     "description": "MattWard Solver/PostPro viewer",
     "thumbnail": "",
     "prjOwner": "MattWard",
-    "collaborators": {},
     "creationDate": "2019-04-30T08:52:20.937Z",
     "lastChangeDate": "2019-04-30T08:59:26.090Z",
     "workbench": {

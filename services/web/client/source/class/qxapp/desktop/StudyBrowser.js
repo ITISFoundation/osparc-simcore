@@ -488,8 +488,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
+      const itemsToBeDisplayed = ["name", "description", "prjOwner", "creationDate", "lastChangeDate"];
+      const itemsToBeModified = fromTemplate ? [] : ["name", "description"];
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {

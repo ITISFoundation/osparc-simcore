@@ -47,7 +47,6 @@ qx.Class.define("qxapp.data.model.Study", {
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
       prjOwner: studyData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : studyData.prjOwner,
-      collaborators: studyData.collaborators === undefined ? this.getCollaborators() : studyData.collaborators,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
@@ -87,12 +86,6 @@ qx.Class.define("qxapp.data.model.Study", {
       check: "String",
       nullable: false,
       init: ""
-    },
-
-    collaborators: {
-      check: "Object",
-      nullable: false,
-      init: {}
     },
 
     creationDate: {
