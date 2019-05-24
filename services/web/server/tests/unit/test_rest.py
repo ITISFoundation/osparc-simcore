@@ -115,28 +115,3 @@ async def test_frontend_config(client):
 
         data, _ = await assert_status(response, web.HTTPOk)
         assert data["invitation_required"] is enabled
-
-
-@pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
-async def test_start_pipeline(client):
-
-    resp = await client.post("/start_pipeline",
-            json={
-                "project_id":"asdfsk-sdfsdgsd-sdfsfd-sdfsd",
-                "workbench":{
-                    "eroiuriet-dsffdgjh-eriter-dfdfg":{
-
-                    }
-                }
-
-            })
-    assert resp.status == 200
-
-    payload = await resp.json()
-    data, error = tuple(payload.get(k) for k in ('data', 'error'))
-
-    assert data
-    assert not error
-
-    assert data['name'] == 'simcore_service_webserver'
-    assert data['status'] == 'SERVICE_RUNNING'
