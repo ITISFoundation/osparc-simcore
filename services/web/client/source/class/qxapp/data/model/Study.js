@@ -45,7 +45,6 @@ qx.Class.define("qxapp.data.model.Study", {
       uuid: studyData.uuid === undefined ? this.getUuid() : studyData.uuid,
       name: studyData.name === undefined ? this.getName() : studyData.name,
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
-      notes: studyData.notes === undefined ? this.getNotes() : studyData.notes,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
       prjOwner: studyData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : studyData.prjOwner,
       collaborators: studyData.collaborators === undefined ? this.getCollaborators() : studyData.collaborators,
@@ -73,12 +72,6 @@ qx.Class.define("qxapp.data.model.Study", {
     },
 
     description: {
-      check: "String",
-      nullable: false,
-      init: ""
-    },
-
-    notes: {
       check: "String",
       nullable: false,
       init: ""

@@ -9,7 +9,6 @@
     "uuid",
     "name",
     "description",
-    "notes",
     "prjOwner",
     "collaborators",
     "creationDate",
@@ -38,13 +37,6 @@
       "description": "longer one-line description about the project",
       "examples": [
         "Dabbling in temporal transitions ..."
-      ]
-    },
-    "notes": {
-      "type": "string",
-      "description": "longer project description. using common mark",
-      "examples": [
-        "# title\nSome Text `with` common mark markup"
       ]
     },
     "prjOwner": {

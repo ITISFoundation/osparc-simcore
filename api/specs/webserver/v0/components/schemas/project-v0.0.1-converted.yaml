@@ -6,7 +6,6 @@ required:
   - uuid
   - name
   - description
-  - notes
   - prjOwner
   - collaborators
   - creationDate
@@ -30,13 +29,6 @@ properties:
     description: longer one-line description about the project
     example:
       - Dabbling in temporal transitions ...
-  notes:
-    type: string
-    description: longer project description. using common mark
-    example:
-      - |-
-        # title
-        Some Text `with` common mark markup
   prjOwner:
     type: string
     description: user uuid
