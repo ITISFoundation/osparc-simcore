@@ -2,6 +2,10 @@
     "workbench": {
         "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
             "label": "File Picker",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
             "inputs": {},
             "inputNodes": [],
             "outputNode": false,
@@ -17,6 +21,10 @@
         },
         "ee8d7b25-f203-4472-9210-86409b4364e2": {
             "label": "sleeper",
+            "position": {
+              "x": 0,
+              "y": 10
+            },
             "inputs": {
                 "in_1": null,
                 "in_2": 2
@@ -32,6 +40,10 @@
         },
         "884fa617-615f-407b-ad41-88c899561cda": {
             "label": "sleeper",
+            "position": {
+              "x": 0,
+              "y": 20
+            },
             "inputs": {
                 "in_1": null,
                 "in_2": 2
@@ -45,6 +57,10 @@
         },
         "d5012020-7a5d-4b04-a017-9560fa1ede7e": {
             "label": "sleeper",
+            "position": {
+              "x": 0,
+              "y": 30
+            },
             "inputs": {
                 "in_1": {
                     "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
@@ -66,6 +82,10 @@
         },
         "c5ff9180-702e-4b6e-af26-b88b190dcd6f": {
             "label": "sleeper",
+            "position": {
+              "x": 0,
+              "y": 40
+            },
             "inputs": {
                 "in_1": {
                     "nodeUuid": "ee8d7b25-f203-4472-9210-86409b4364e2",
@@ -85,6 +105,6 @@
             "parent": null,
             "key": "simcore/services/comp/itis/sleeper",
             "version": "1.0.0"
-        }        
+        }
     }
 }
