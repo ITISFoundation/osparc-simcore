@@ -32,6 +32,7 @@ from utils_login import LoggedUser
 from utils_assert import assert_status
 
 API_VERSION = "v0"
+API_PREFIX = "/" + API_VERSION
 
 # TODO: create conftest at computation/ folder level
 
@@ -47,9 +48,9 @@ core_services = [
 ]
 
 tool_services = [
-    'adminer',
-    'flower',
-    'portainer'
+#    'adminer',
+#    'flower',
+#    'portainer'
 ]
 
 @pytest.fixture(scope='session')
@@ -57,7 +58,7 @@ def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
-def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, here, docker_compose_file):
+def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_compose_file):
     port = app_config["main"]["port"] = aiohttp_unused_port()
     host = app_config['main']['host'] = '127.0.0.1'
 
@@ -84,22 +85,21 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     setup_login(app)
     setup_computation(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=port))
-
-    yield server
+    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
+        'port': port,
+        'host': 'localhost'
+    }))
 
     # cleanup
     final_config_path.unlink()
 
 
 @pytest.fixture
-def client(loop, webserver_service, aiohttp_client):
-    client = loop.run_until_complete(aiohttp_client(webserver_service))
-    return client
-
-@pytest.fixture
 def project_id() -> str:
     return str(uuid.uuid4())
+
+from typing import Dict
+
 
 @pytest.fixture
 def mock_workbench_payload(here):
@@ -114,31 +114,51 @@ def mock_workbench_adjacency_list(here):
         return json.load(fp)
 
 @pytest.fixture
-async def logged_user(client): #, role: UserRole):
+def mock_project(fake_data_dir, mock_workbench_payload):
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        project = json.load(fp)
+    project["workbench"] = mock_workbench_payload
+    return project
+
+
+@pytest.fixture
+async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
 
-    NOTE: role fixture is defined as a parametrization below
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
     """
-    # TODO: parameterize roles
-    role = UserRole.USER
-
     async with LoggedUser(
         client,
-        {"role": role.name},
-        check_if_succeeds = role!=UserRole.ANONYMOUS
+        {"role": user_role.name},
+        check_if_succeeds = user_role!=UserRole.ANONYMOUS
     ) as user:
         yield user
+
+from utils_projects import NewProject
+
+@pytest.fixture
+async def user_project(client, mock_project, logged_user):
+    mock_project["prjOwner"] = logged_user["name"]
+
+    async with NewProject(
+        mock_project,
+        client.app,
+        user_id=logged_user["id"]
+    ) as project:
+        yield project
+
 
 # ------------------------------------------
 
 async def test_check_health(docker_stack, client):
-    resp = await client.get("/%s/" % API_VERSION)
-    payload = await resp.json()
-
+    resp = await client.get( API_VERSION + "/")
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
+
+
+
 
 def _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs:bool):
     pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
@@ -176,38 +196,60 @@ def _check_sleeper_services_completed(project_id, postgres_session):
         if "sleeper" in task_db.image["name"]:
             assert task_db.state == SUCCESS
 
-async def test_start_pipeline(sleeper_service,
-        client, logged_user,
-        project_id:str,
+
+@pytest.mark.parametrize("user_role,expected_response", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_start_pipeline(client, postgres_session, celery_service, sleeper_service,
+        logged_user, user_project,
         mock_workbench_payload, mock_workbench_adjacency_list,
-        postgres_session, celery_service,
-):
+        expected_response
+    ):
+    project_id = user_project["uuid"]
+    assert user_project['workbench'] == mock_workbench_payload
 
-    resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
-        json = mock_workbench_payload,
-    )
+    url = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    assert str(url) == API_PREFIX + "/computation/pipeline/{}/start".format(project_id)
 
-    data, _ = await assert_status(resp, web.HTTPOk)
+    # POST /v0/computation/pipeline/{project_id}/start
+    resp = await client.post(url, json=mock_workbench_payload)
 
-    assert "pipeline_name" in data
-    assert "project_id" in data
-    assert data['project_id'] == project_id
+    data, error = await assert_status(resp, expected_response)
 
-    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
-    # _check_sleeper_services_completed(project_id, postgres_session)
+    if not error:
+        assert "pipeline_name" in data
+        assert "project_id" in data
+        assert data['project_id'] == project_id
+
+        _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
+        # _check_sleeper_services_completed(project_id, postgres_session)
 
 
-async def test_update_pipeline(docker_stack,
-        client, logged_user,
-        project_id:str,
+@pytest.mark.parametrize("user_role,expected_response", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPNoContent),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
+])
+async def test_update_pipeline(client, docker_stack, postgres_session,
+        logged_user, user_project,
         mock_workbench_payload, mock_workbench_adjacency_list,
-        postgres_session):
+        expected_response
+    ):
+    project_id = user_project["uuid"]
+    assert user_project['workbench'] == mock_workbench_payload
 
-    resp = await client.put("/{}/computation/pipeline/{}".format(API_VERSION, project_id),
-        json = mock_workbench_payload,
-    )
+    url = client.app.router["update_pipeline"].url_for(project_id=project_id)
+    assert str(url) == API_PREFIX + "/computation/pipeline/{}".format(project_id)
 
-    data, _ = await assert_status(resp, web.HTTPNoContent)
+    # POST /v0/computation/pipeline/{project_id}
+    resp = await client.put(url, json=mock_workbench_payload)
 
-    # check db comp_pipeline
-    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=True)
+    data, error = await assert_status(resp, expected_response)
+
+    if not error:
+        # check db comp_pipeline
+        _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=True)

@@ -12,11 +12,10 @@ from typing import Dict
 
 from aiohttp import web
 
+from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_models import \
     ProjectDB as storage
 from simcore_service_webserver.resources import resources
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY
-
 
 fake_template_resources = ['data/'+name for name in resources.listdir('data')
     if re.match(r"^fake-template-(.+).json", name) ]
