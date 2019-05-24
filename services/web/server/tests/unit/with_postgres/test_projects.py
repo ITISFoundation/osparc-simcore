@@ -30,7 +30,7 @@ from utils_projects import NewProject, delete_all_projects
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
-PREFIX = "/" + API_VERSION
+API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ async def user_project(client, fake_project, logged_user):
 async def test_list_projects(client, logged_user, user_project, expected):
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+    assert str(url) == API_PREFIX + "/" + RESOURCE_NAME
 
     resp = await client.get(url)
     data, errors = await assert_status(resp, expected)
@@ -117,11 +117,12 @@ async def test_list_projects(client, logged_user, user_project, expected):
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_create(client, fake_project, logged_user, expected):
+async def test_create_project(client, fake_project, logged_user, expected):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
-    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+    assert str(url) == API_PREFIX + "/" + RESOURCE_NAME
 
+    # NOTE: This case is not used in the UI. Remove???
     resp = await client.post(url, json=fake_project)
 
     await assert_status(resp, expected)
@@ -150,7 +151,6 @@ async def test_get_project(client, logged_user, user_project, expected):
 
     if not error:
         assert data == user_project
-
 
 
 @pytest.mark.parametrize("user_role,expected", [
@@ -185,3 +185,17 @@ async def test_delete_project(client, logged_user, user_project, expected):
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
+
+
+
+# POST /projects variants --------------------------------------
+@pytest.mark.skip("TODO: under dev")
+async def test_new_project_with_predefined_fields(client, fake_project, logged_user, expected):
+    # POST /v0/projects
+    #   optional body with predefined fields, e.g. { name='foo', description,... }
+    pass
+
+@pytest.mark.skip("TODO: under dev")
+async def test_new_project_from_template(client, logged_user, template_project, expected):
+    # POST /v0/projects?from_template={template_uuid}
+    pass
