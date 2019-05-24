@@ -36,6 +36,7 @@ x-patternProperties:
                   - boolean
                   - string
                   - number
+                  - 'null'
               - type: object
                 additionalProperties: false
                 required:
@@ -66,6 +67,7 @@ x-patternProperties:
                   - boolean
                   - string
                   - number
+                  - 'null'
               - type: object
                 additionalProperties: false
                 required:
@@ -95,3 +97,4 @@ x-patternProperties:
             type: integer
           'y':
             type: integer
+additionalProperties: true
