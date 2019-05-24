@@ -20,7 +20,7 @@
         "outputs": {
           "outFile": {
             "store": 1,
-            "path": "Shared Data/Height-Weight.csv"
+            "path": "Shared Data/Height-Weight"
           }
         },
         "progress": 100,
