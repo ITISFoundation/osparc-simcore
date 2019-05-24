@@ -441,14 +441,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __startPipeline: function() {
-      this.__doStartPipeline();
-    },
-
-    __doStartPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
         return false;
       }
 
+      return this.updateStudyDocument(null, this.__doStartPipeline);
+    },
+
+    __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
       let socket = qxapp.wrapper.WebSocket.getInstance();
@@ -588,8 +588,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resources.post(null, newObj);
     },
 
-    updateStudyDocument: function(newObj) {
-      if (newObj === undefined) {
+    updateStudyDocument: function(newObj, cb) {
+      if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
       const prjUuid = this.getStudy().getUuid();
@@ -598,6 +598,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        if (cb) {
+          cb.call(this);
+        }
       }, this);
       resource.put({
         "project_id": prjUuid
