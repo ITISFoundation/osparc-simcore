@@ -11,10 +11,12 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from pprint import pprint
+from typing import Dict
 
 import pytest
 import yaml
 from aiohttp import web
+from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -22,14 +24,16 @@ from simcore_sdk.models.pipeline_models import (
     SUCCESS, ComputationalPipeline, ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.login import setup_login
-from utils_login import LoggedUser
 from utils_assert import assert_status
+from utils_login import LoggedUser
+from utils_projects import NewProject
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -83,6 +87,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
     setup_security(app)
     setup_rest(app, debug=True)
     setup_login(app)
+    setup_projects(app)
     setup_computation(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
@@ -98,7 +103,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
 def project_id() -> str:
     return str(uuid.uuid4())
 
-from typing import Dict
 
 
 @pytest.fixture
@@ -117,7 +121,7 @@ def mock_workbench_adjacency_list(here):
 def mock_project(fake_data_dir, mock_workbench_payload):
     with (fake_data_dir / "fake-project.json").open() as fp:
         project = json.load(fp)
-    project["workbench"] = mock_workbench_payload
+    project["workbench"] = mock_workbench_payload["workbench"]
     return project
 
 
@@ -134,7 +138,6 @@ async def logged_user(client, user_role: UserRole):
     ) as user:
         yield user
 
-from utils_projects import NewProject
 
 @pytest.fixture
 async def user_project(client, mock_project, logged_user):
@@ -147,54 +150,55 @@ async def user_project(client, mock_project, logged_user):
     ) as project:
         yield project
 
+# HELPERS ----------------------------------
+def assert_db_contents(project_id, postgres_session,
+        mock_workbench_payload, mock_workbench_adjacency_list,
+        check_outputs:bool
+    ):
+    pipeline_db = postgres_session.query(ComputationalPipeline)\
+        .filter(ComputationalPipeline.project_id == project_id).one()
+    assert pipeline_db.project_id == project_id
+    assert pipeline_db.dag_adjacency_list == mock_workbench_adjacency_list
 
-# ------------------------------------------
+    # check db comp_tasks
+    tasks_db = postgres_session.query(ComputationalTask)\
+        .filter(ComputationalTask.project_id == project_id).all()
+    mock_pipeline = mock_workbench_payload["workbench"]
+    assert len(tasks_db) == len(mock_pipeline)
 
+    for task_db in tasks_db:
+        # assert task_db.task_id == (i+1)
+        assert task_db.project_id == project_id
+        assert task_db.node_id in mock_pipeline.keys()
+
+        assert task_db.inputs == mock_pipeline[task_db.node_id].get("inputs")
+
+        if check_outputs:
+            assert task_db.outputs == mock_pipeline[task_db.node_id].get("outputs")
+
+        assert task_db.image["name"] == mock_pipeline[task_db.node_id]["key"]
+        assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
+
+def assert_sleeper_services_completed(project_id, postgres_session):
+    # we wait 15 secs before testing...
+    time.sleep(15)
+    pipeline_db = postgres_session.query(ComputationalPipeline)\
+        .filter(ComputationalPipeline.project_id == project_id).one()
+    tasks_db = postgres_session.query(ComputationalTask)\
+        .filter(ComputationalTask.project_id == project_id).all()
+    for task_db in tasks_db:
+        if "sleeper" in task_db.image["name"]:
+            assert task_db.state == SUCCESS
+
+
+# TESTS ------------------------------------------
 async def test_check_health(docker_stack, client):
+    # TODO: check health of all core_services in list above!
     resp = await client.get( API_VERSION + "/")
     data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
-
-
-
-
-def _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs:bool):
-    pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
-    assert pipeline_db.project_id == project_id
-    assert pipeline_db.dag_adjacency_list == mock_workbench_adjacency_list
-
-    # check db comp_tasks
-    tasks_db = postgres_session.query(ComputationalTask).filter(ComputationalTask.project_id == project_id).all()
-    mock_pipeline = mock_workbench_payload["workbench"]
-    assert len(tasks_db) == len(mock_pipeline)
-    for i in range(len(tasks_db)):
-        task_db = tasks_db[i]
-        # assert task_db.task_id == (i+1)
-        assert task_db.project_id == project_id
-        assert task_db.node_id in mock_pipeline.keys()
-        if "inputs" in mock_pipeline[task_db.node_id]:
-            assert task_db.inputs == mock_pipeline[task_db.node_id]["inputs"]
-        else:
-            assert task_db.inputs == None
-        if check_outputs:
-            if "outputs" in mock_pipeline[task_db.node_id]:
-                assert task_db.outputs == mock_pipeline[task_db.node_id]["outputs"]
-            else:
-                assert task_db.outputs == None
-        assert task_db.image["name"] == mock_pipeline[task_db.node_id]["key"]
-        assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
-
-def _check_sleeper_services_completed(project_id, postgres_session):
-    # we wait 15 secs before testing...
-    time.sleep(15)
-    pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
-    tasks_db = postgres_session.query(ComputationalTask).filter(ComputationalTask.project_id == project_id).all()
-    for i in range(len(tasks_db)):
-        task_db = tasks_db[i]
-        if "sleeper" in task_db.image["name"]:
-            assert task_db.state == SUCCESS
 
 
 @pytest.mark.parametrize("user_role,expected_response", [
@@ -209,10 +213,10 @@ async def test_start_pipeline(client, postgres_session, celery_service, sleeper_
         expected_response
     ):
     project_id = user_project["uuid"]
-    assert user_project['workbench'] == mock_workbench_payload
+    assert user_project['workbench'] == mock_workbench_payload['workbench']
 
     url = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert str(url) == API_PREFIX + "/computation/pipeline/{}/start".format(project_id)
+    assert url == URL(API_PREFIX + "/computation/pipeline/{}".format(project_id))
 
     # POST /v0/computation/pipeline/{project_id}/start
     resp = await client.post(url, json=mock_workbench_payload)
@@ -224,8 +228,41 @@ async def test_start_pipeline(client, postgres_session, celery_service, sleeper_
         assert "project_id" in data
         assert data['project_id'] == project_id
 
-        _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
-        # _check_sleeper_services_completed(project_id, postgres_session)
+        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
+            mock_workbench_adjacency_list, check_outputs=False)
+        # assert_sleeper_services_completed(project_id, postgres_session)
+
+
+@pytest.mark.parametrize("user_role,expected_response", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_start_pipeline_without_body(client, postgres_session, celery_service, sleeper_service,
+        logged_user, user_project,
+        mock_workbench_adjacency_list,
+        expected_response
+    ):
+    project_id = user_project["uuid"]
+    mock_workbench_payload = user_project['workbench']
+
+    url = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    assert url == URL(API_PREFIX + "/computation/pipeline/{}/start".format(project_id))
+
+    # POST /v0/computation/pipeline/{project_id}/start
+    import pdb; pdb.set_trace()
+    resp = await client.post(url)
+    data, error = await assert_status(resp, expected_response)
+
+    if not error:
+        assert "pipeline_name" in data
+        assert "project_id" in data
+        assert data['project_id'] == project_id
+
+        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
+            mock_workbench_adjacency_list, check_outputs=False)
+        # assert_sleeper_services_completed(project_id, postgres_session)
 
 
 @pytest.mark.parametrize("user_role,expected_response", [
@@ -243,7 +280,7 @@ async def test_update_pipeline(client, docker_stack, postgres_session,
     assert user_project['workbench'] == mock_workbench_payload
 
     url = client.app.router["update_pipeline"].url_for(project_id=project_id)
-    assert str(url) == API_PREFIX + "/computation/pipeline/{}".format(project_id)
+    assert url == URL(API_PREFIX + "/computation/pipeline/{}".format(project_id))
 
     # POST /v0/computation/pipeline/{project_id}
     resp = await client.put(url, json=mock_workbench_payload)
@@ -252,4 +289,5 @@ async def test_update_pipeline(client, docker_stack, postgres_session,
 
     if not error:
         # check db comp_pipeline
-        _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=True)
+        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
+            mock_workbench_adjacency_list, check_outputs=True)

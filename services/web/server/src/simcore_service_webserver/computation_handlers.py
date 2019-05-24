@@ -25,6 +25,7 @@ from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
+from .projects import projects_handlers
 from .security_api import check_permission
 
 ANONYMOUS_USER_ID = -1
@@ -165,6 +166,7 @@ async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_
                     where(ComputationalPipeline.__table__.c.project_id==project_id)
         result = await conn.execute(query)
         pipeline = await result.first()
+
         if pipeline is None:
             # let's create one then
             query = ComputationalPipeline.__table__.insert().\
@@ -238,51 +240,84 @@ async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
     log.debug("END OF ROUTINE.")
 
-
 # HANDLERS ------------------------------------------
+
+async def _patch_project(request: web.Request, project_id, pipeline_data):
+    #FIXME: do NOT use handlers ... really unsafe. Create API instead
+
+    # update = get+patch+replace project
+    new_request = request.clone(
+        rel_url=request.app.router['get_project'].url_for(project_id=project_id)
+    )
+
+    #FIXME: read project 'Content-Length': '0'
+    payload = await projects_handlers.get_project(new_request)
+    project = payload["data"] # FIXME: this is not safe!!!!
+
+
+    if pipeline_data and project["workbench"] != pipeline_data:
+        # FIXME: patch json assuming project has the right format
+        project["workbench"] = pipeline_data
+
+        new_request = request.clone(
+            rel_url=request.app.router['replace_project'].url_for(project_id=project_id)
+        )
+        await projects_handlers.replace_project(new_request)
+    else:
+        pipeline_data = project["workbench"]
+
+    return pipeline_data
+
+
+
 
 @login_required
 async def update_pipeline(request: web.Request) -> web.Response:
     await check_permission(request, "services.pipeline.*")
 
-    # retrieve the data
+    # TODO: PC->SAN why validation is commented???
+    # params, query, body = await extract_and_validate(request)
     project_id = request.match_info.get("project_id", None)
     assert project_id is not None
+
     pipeline_data = (await request.json())["workbench"]
-    app = request.app
-    await _update_pipeline_db(app, project_id, pipeline_data)
-    return web.json_response(status=204)
+
+    await _patch_project(request, project_id, pipeline_data)
+
+    # update pipeline
+    await _update_pipeline_db(request.app, project_id, pipeline_data)
+
+    raise web.HTTPNoContent()
+
 
 # pylint:disable=too-many-branches, too-many-statements
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
     await check_permission(request, "services.pipeline.*")
+
+    # TODO: PC->SAN why validation is commented???
     # params, query, body = await extract_and_validate(request)
-
-    # if params is not None:
-    #     log.debug("params: %s", params)
-    # if query is not None:
-    #     log.debug("query: %s", query)
-    # if body is not None:
-    #     log.debug("body: %s", body)
-
-    # assert "project_id" in params
-    # assert "workbench" in body
-
-    # retrieve the data
     project_id = request.match_info.get("project_id", None)
     assert project_id is not None
-    pipeline_data = (await request.json())["workbench"]
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    app = request.app
-    await _update_pipeline_db(app, project_id, pipeline_data)
+
+    # if different workbench
+    payload = await request.json()
+    pipeline_data = payload.get("workbench") if payload else None
+    pipeline_data = await _patch_project(request, project_id, pipeline_data)
+
+    await _update_pipeline_db(request.app, project_id, pipeline_data)
+
     # commit the tasks to celery
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     _ = get_celery(request.app).send_task("comp.task", args=(userid, project_id,), kwargs={})
+
     log.debug("Task commited")
-    # answer the client
+
+    # answer the client while task has been spawned
     data = {
-    "pipeline_name":"request_data",
-    "project_id": project_id
+        # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?
+        "pipeline_name":"request_data",
+        "project_id": project_id
     }
     log.debug("END OF ROUTINE. Response %s", data)
     return data
