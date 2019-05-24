@@ -229,7 +229,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
