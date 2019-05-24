@@ -18,6 +18,7 @@
       "91ec95ec-fad5-45be-a253-ce1aa523e0e0": {
         "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0",
+        "label": "Picker",
         "outputs": {
           "outFile": {
             "store": "s3-z43",
@@ -30,7 +31,7 @@
         }
       },
       "d49d771b-824f-4767-bcd3-e77d2143ec53": {
-        "key": "simcore/services/computational/itis/sleeper",
+        "key": "simcore/services/comp/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 1",
         "inputs": {
@@ -45,7 +46,7 @@
         }
       },
       "06938447-726c-473f-9368-dfec2bff7873": {
-        "key": "simcore/services/computational/itis/sleeper",
+        "key": "simcore/services/comp/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 2",
         "inputs": {
@@ -60,7 +61,7 @@
         }
       },
       "a1415ee9-74f5-4427-94a0-2b53b52cc5a1": {
-        "key": "simcore/services/computational/itis/tutti",
+        "key": "simcore/services/comp/itis/tutti",
         "version": "0.0.0",
         "inputs": {
           "inNumber": {
@@ -86,6 +87,7 @@
           "06938447-726c-473f-9368-dfec2bff7873",
           "91ec95ec-fad5-45be-a253-ce1aa523e0e0"
         ],
+        "label": "A",
         "position": {
           "x": 400,
           "y": 400
@@ -231,7 +233,7 @@
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
     "workbench": {
       "Sleeper1": {
-        "key": "simcore/services/computational/itis/sleeper",
+        "key": "simcore/services/comp/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 1",
         "inputs": {
@@ -271,7 +273,7 @@
         "parent": "Container1"
       },
       "Sleeper2": {
-        "key": "simcore/services/computational/itis/sleeper",
+        "key": "simcore/services/comp/itis/sleeper",
         "version": "0.0.0",
         "inputs": {
           "inNumber": 3
@@ -279,6 +281,7 @@
         "inputNodes": [
           "Container2"
         ],
+        "label": "Sleeper2",
         "position": {
           "x": 350,
           "y": 50
@@ -286,11 +289,12 @@
         "parent": "Container1"
       },
       "Sleeper3": {
-        "key": "simcore/services/computational/itis/sleeper",
+        "key": "simcore/services/comp/itis/sleeper",
         "version": "0.0.0",
         "inputs": {
           "inNumber": 2
         },
+        "label": "Sleeper3",
         "position": {
           "x": 50,
           "y": 50
