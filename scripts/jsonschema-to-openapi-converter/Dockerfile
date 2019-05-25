@@ -8,20 +8,23 @@
 # docker build -t json2openapiconverter .
 # docker run -v %INPUT_FOLDER%:/input -v %OUTPUT_FOLDER%:/output json2openapiconverter
 
-
-
 FROM node
 
 LABEL maintainer=sanderegg
 
-VOLUME [ "/input" ]
-VOLUME [ "/output" ]
+ARG HOST_UID=${HOST_UID:-4000}
+ARG HOST_USER=${HOST_USER:-nodummy}
 
-WORKDIR /src
+RUN adduser --system --home /home/${HOST_USER} --uid ${HOST_UID} ${HOST_USER} \
+    && chown -R "${HOST_UID}:${HOST_UID}" /home/${HOST_USER}
+
+USER ${HOST_USER}
+WORKDIR /home/${HOST_USER}
 
 RUN npm install --save json-schema-to-openapi-schema && \
     npm install --save js-yaml
-COPY converter.js /src/converter.js
+
+COPY converter.js ./src/converter.js
 
 
-CMD [ "node", "/src/converter.js" ]
+CMD [ "node", "src/converter.js" ]

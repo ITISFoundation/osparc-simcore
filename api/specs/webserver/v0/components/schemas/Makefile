@@ -6,10 +6,6 @@ outputs := $(objects:.json=-converted.yaml)
 # target: all – convert all json-schemas to open-api compatible and formats them in yaml
 all: $(outputs)
 
-### target: build – Builds tool
-## TODO: Add in ITIS/Dockerfile and execute as host user!
-## build:
-##	docker build -t json2openapiconverter .
 
 %-converted.yaml:%.json
 	docker run -v ${CURDIR}:/input -v ${CURDIR}:/output json2openapiconverter
