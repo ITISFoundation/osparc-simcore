@@ -147,7 +147,6 @@ qx.Class.define("qxapp.file.FilePicker", {
     },
 
     __modelChanged: function() {
-      console.log("modelChanged");
       this.__checkSelectedFileIsListed();
     },
 
