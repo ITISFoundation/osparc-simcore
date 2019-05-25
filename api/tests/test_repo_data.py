@@ -15,18 +15,13 @@ import jsonschema
 import pytest
 import yaml
 
-
-def _load_data(fpath: Path):
-    with open(fpath) as fh:
-        try:
-            data = json.load(fh)
-        except json.JSONDecodeError:
-            data = yaml.load(fh)
-    return data
+SYNCED_VERSIONS_SUFFIX = [
+    ".json",                 # json-schema specs file
+    "-converted.yaml"        # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
+]
 
 
-SYNCED_VERSIONS_SUFFIX = [".json", "-converted.yaml"]
-
+# TODO: find json files under services with the word project or similar wildcard??
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
     "services/web/server/tests/integration/computation/workbench_sleeper_payload.json",
@@ -44,6 +39,13 @@ PROJECTS_PATHS = [
 # ./tests/integration/computation/workbench_sleeper_dag_adjacency_list.json
 # ./tests/integration/computation/workbench_sleeper_payload.json
 
+def _load_data(fpath: Path):
+    with open(fpath) as fh:
+        try:
+            data = json.load(fh)
+        except json.JSONDecodeError:
+            data = yaml.load(fh)
+    return data
 
 @pytest.fixture(
     scope="module",
@@ -66,18 +68,17 @@ def workbench_schema(request, api_specs_dir):
 
 # TESTS --------------------------------------------------
 
-# TODO: find json files under services with the workd project??
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
-
+    """
+        Both projects and workbench datasets are tested against the project schema
+    """
     data = _load_data(this_repo_root_dir / data_path)
 
-    # Adapts workbench
+    # Adapts workbench-only data: embedds data within a fake project skeleton
     if "workbench" in data_path:
-        # TODO:  pip install faker-schema
-        #from faker_schema.faker_schema import FakerSchema
-        #faker = FakerSchema()
-        #prj = faker.generate_fake(project_schema)
+        # TODO: Ideally project is faked to a schema.
+        # NOTE: tried already `faker-schema` but it does not do the job right
         prj = {
             "uuid": "eiusmod",
             "name": "minim",
@@ -111,11 +112,11 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_workbench_against_schema(data_path, workbench_schema, this_repo_root_dir):
     """
-        NOTE: failures here normally are due to lack of sync between
+        Both project and workbench datasets are tested against workbench schema
 
-        api/specs/webserver/v0/components/schemas/workbench.json and
-
-        api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+        NOTE: failures here normally are due to lack of sync between these to specs:
+        - api/specs/webserver/v0/components/schemas/workbench.json
+        - api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     """
     data = _load_data(this_repo_root_dir / data_path)
 
