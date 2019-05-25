@@ -1,47 +1,50 @@
 
 import json
 import logging
-from typing import Dict
 
 from aiohttp import web
 from jsonschema import ValidationError
 
-from servicelib.application_keys import (APP_DB_ENGINE_KEY,
-                                         APP_JSONSCHEMA_SPECS_KEY)
-from servicelib.jsonschema_validation import \
-    validate_instance as validate_project
-
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .config import CONFIG_SECTION_NAME
+from . import projects_api
+from .projects_api import validate_project
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_fakes import Fake
 from .projects_models import ProjectDB
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
 
 log = logging.getLogger(__name__)
 
-
-ANONYMOUS_UID = -1 # For testing purposes
 
 @login_required
 async def create_projects(request: web.Request):
     await check_permission(request, "project.create")
 
+    # TODO: partial or complete project. Values taken as default if undefined??
     project = await request.json()
-    try:
-        _validate(request.app, project)
-    except ValidationError:
-        raise web.HTTPBadRequest
 
-    _, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    user_id = request[RQT_USERID_KEY]
+    # TODO: update metadata: uuid, ownership, timestamp, etc
+
     try:
-        await ProjectDB.add_projects([project], uid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        # validate data
+        validate_project(request.app, project)
+
+        # save data
+        await ProjectDB.add_projects([project], user_id, db_engine=request.app[APP_DB_ENGINE_KEY])
+
+    except ValidationError:
+        raise web.HTTPBadRequest(reason="Invalid project data")
+
     except ProjectInvalidRightsError:
         raise web.HTTPUnauthorized
 
-    raise web.HTTPCreated(text=json.dumps(project),
-                          content_type='application/json')
+    else:
+        raise web.HTTPCreated(text=json.dumps(project),
+                                content_type='application/json')
 
 
 @login_required
@@ -51,7 +54,7 @@ async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
-    uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    uid = request[RQT_USERID_KEY]
     ptype = request.query.get('type', 'user')
 
     projects_list = []
@@ -73,7 +76,7 @@ async def list_projects(request: web.Request):
     validated_projects = []
     for project in projects_list:
         try:
-            _validate(request.app, project)
+            validate_project(request.app, project)
             validated_projects.append(project)
         except ValidationError:
             log.exception("Skipping invalid project from list")
@@ -84,19 +87,14 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
-    await check_permission(request, "project.read")
+    project = await projects_api.get_project_for_user(request,
+        project_uuid=request.match_info.get("project_id"),
+        user_id=request[RQT_USERID_KEY]
+    )
 
-    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
-
-    if project_uuid in Fake.projects:
-        return {'data': Fake.projects[project_uuid].data}
-
-    try:
-        project = await ProjectDB.get_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
-        _validate(request.app, project)
-        return {'data': project}
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound
+    return {
+        'data': project
+    }
 
 
 @login_required
@@ -117,38 +115,51 @@ async def replace_project(request: web.Request):
     """
     await check_permission(request, "project.update")
 
-    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
 
     new_values = await request.json()
     try:
-        _validate(request.app, new_values)
+        validate_project(request.app, new_values)
     except ValidationError:
         raise web.HTTPBadRequest
 
     try:
-        await ProjectDB.update_user_project(new_values, uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        await ProjectDB.update_user_project(new_values, user_id, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
     return {'data': new_values}
+
+
+@login_required
+async def patch_project(request: web.Request):
+    """
+        Client sends a patch and return updated project
+    """
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+
+    project_path = await request.json()
+    current_project = await projects_api.patch_project_for_user(request, project_uuid, user_id, project_path)
+
+    return {
+        'data': current_project
+    }
+
+
 
 @login_required
 async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
-    project_uuid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
 
     try:
-        await ProjectDB.delete_user_project(uid, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        await ProjectDB.delete_user_project(user_id, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
     raise web.HTTPNoContent(content_type='application/json')
-
-
-# helpers --------------------
-
-def _validate(app: web.Application, project: Dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
-    validate_project(project, project_schema)

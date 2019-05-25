@@ -162,7 +162,7 @@ paths:
 
   /computation/pipeline/{project_id}/start:
     post:
-      description: Starts a pipeline
+      description: Starts a pipeline. If workbench is sent (option), it will update project as well
       operationId: start_pipeline
       parameters:
         - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
