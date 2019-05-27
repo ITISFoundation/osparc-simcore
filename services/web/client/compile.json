@@ -58,7 +58,8 @@
       "name": "testtapper",
       "title": "Qooxdoo TestTAPper",
       "include": [
-        "qxapp.test.*"
+        "qxapp.test.*",
+        "iconfont.material.Load"
       ],
       "exclude": [
         "qx.test.*"
