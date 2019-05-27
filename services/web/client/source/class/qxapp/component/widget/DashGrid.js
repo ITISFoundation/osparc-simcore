@@ -39,7 +39,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       if (ready) {
         const values = Object.values(containerNode.getInnerNodes());
         for (const value of values) {
-          this.addNode(value);
+          this.__addNode(value);
         }
       }
     }, this);
@@ -86,7 +86,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     __cellEditors: null,
     __gridterWr: null,
 
-    addNode: function(node) {
+    __addNode: function(node) {
       let parentNode = this.getContainerNode();
       if (parentNode) {
         let workbench = parentNode.getWorkbench();
@@ -99,18 +99,27 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     },
 
     addClonedNode: function() {
-      let parentNode = this.getContainerNode();
-      if (parentNode) {
-        let workbench = parentNode.getWorkbench();
-        const innerNodes = Object.values(parentNode.getInnerNodes());
-        if (innerNodes.length > 0) {
-          const node = workbench.cloneNode(innerNodes[0]);
-          const success = this.addWidget(node);
-          if (!success) {
-            workbench.removeNode(node.getNodeId());
-          }
+      const parentNode = this.getContainerNode();
+      const masterInnerNode = this.__getMasterInnerNode();
+      if (parentNode && masterInnerNode) {
+        const workbench = parentNode.getWorkbench();
+        const node = workbench.cloneNode(masterInnerNode);
+        const success = this.addWidget(node);
+        if (!success) {
+          workbench.removeNode(node.getNodeId());
         }
       }
+    },
+
+    __getMasterInnerNode: function() {
+      const parentNode = this.getContainerNode();
+      if (parentNode) {
+        const innerNodes = Object.values(parentNode.getInnerNodes());
+        if (innerNodes.length > 0) {
+          return innerNodes[0];
+        }
+      }
+      return null;
     },
 
     addWidget: function(node) {

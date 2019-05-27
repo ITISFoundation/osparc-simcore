@@ -272,6 +272,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__mainLayout.add(this.__buttonsLayout);
     },
 
+    removeButtons: function() {
+      if (this.__mainLayout.indexOf(this.__buttonsLayout) != -1) {
+        this.__mainLayout.remove(this.__buttonsLayout);
+      }
+    },
+
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__inputNodesLayout.toggleCollapsed.bind(this.__inputNodesLayout));
 
