@@ -143,9 +143,11 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
     __updateContainerPosition: function(messageWidth) {
       const width = messageWidth || this.__messageContainer.getSizeHint().width;
       const root = qx.core.Init.getApplication().getRoot();
-      this.__messageContainer.setLayoutProperties({
-        left: Math.round((root.getBounds().width - width) / 2)
-      });
+      if (root && root.getBounds()) {
+        this.__messageContainer.setLayoutProperties({
+          left: Math.round((root.getBounds().width - width) / 2)
+        });
+      }
     },
 
     __attachEventHandlers: function() {
