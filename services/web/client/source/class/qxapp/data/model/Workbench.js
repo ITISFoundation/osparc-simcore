@@ -300,7 +300,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const allNodes = this.getNodes(true);
       const nodes = Object.values(allNodes);
       for (const node of nodes) {
-        if (!node.isDynamic()) {
+        if (node.isComputational() && !node.isInKey("file-picker")) {
           node.setProgress(0);
         }
       }
