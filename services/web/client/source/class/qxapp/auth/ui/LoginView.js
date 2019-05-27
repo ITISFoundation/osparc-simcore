@@ -112,7 +112,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
               let text = this.tr("Registration is currently only available with an invitation.");
               text += "<br>";
               text += this.tr("Please contact info@itis.swiss");
-              qxapp.component.widget.FlashMessenger.getInstance().logAs(text, "INFO");
+              qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             } else {
               this.fireEvent("toRegister");
             }
@@ -186,7 +186,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
           });
         });
 
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);

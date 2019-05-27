@@ -150,6 +150,7 @@ qx.Class.define("qxapp.data.Permissions", {
           "services.all.read",
           "preferences.role.update",
           "study.nodestree.uuid.read",
+          "study.filestree.uuid.read",
           "study.logger.debug.read"
         ],
         "admin": []
@@ -202,7 +203,7 @@ qx.Class.define("qxapp.data.Permissions", {
         canDo = this.__canRoleDo(this.__userRole, action);
       }
       if (showMsg && !canDo) {
-        qxapp.component.widget.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
     },

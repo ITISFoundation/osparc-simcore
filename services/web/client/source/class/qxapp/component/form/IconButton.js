@@ -25,7 +25,7 @@ qx.Class.define("qxapp.component.form.IconButton", {
    * Constructor for IconButton. It takes the icon id that will be converted into a button and a callback function
    * that will be executed whenever the button is clicked.
    *
-   * @param {string} icon Clickable icon to display.
+   * @param {String} icon Clickable icon to display.
    * @param {function} cb Callback function to be executed on tap.
    * @param {object} context Execution context (this) of the callback function.
    */

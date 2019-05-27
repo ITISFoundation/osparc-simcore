@@ -6,9 +6,7 @@ required:
   - uuid
   - name
   - description
-  - notes
   - prjOwner
-  - collaborators
   - creationDate
   - lastChangeDate
   - thumbnail
@@ -30,28 +28,9 @@ properties:
     description: longer one-line description about the project
     example:
       - Dabbling in temporal transitions ...
-  notes:
-    type: string
-    description: longer project description. using common mark
-    example:
-      - |-
-        # title
-        Some Text `with` common mark markup
   prjOwner:
     type: string
     description: user uuid
-  collaborators:
-    type: object
-    description: UUIDs of the users/groups who should get access to this
-    x-patternProperties:
-      ^\S+$:
-        type: array
-        items:
-          type: string
-          enum:
-            - read
-            - write
-    additionalProperties: true
   creationDate:
     type: string
     description: project creation date
@@ -78,18 +57,18 @@ properties:
         type: object
         additionalProperties: false
         required:
+          - key
+          - version
           - label
           - position
         properties:
-          label:
-            type: string
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic)(/[^\s/]+)+$'
             example:
               - simcore/services/comp/sleeper
               - simcore/services/dynamic/3dviewer
+              - file-picker
           version:
             type: string
             description: semantic version number of the node
@@ -98,6 +77,8 @@ properties:
             example:
               - 1.0.0
               - 0.0.1
+          label:
+            type: string
           progress:
             type: number
             maximum: 100
@@ -119,7 +100,7 @@ properties:
                       - boolean
                       - string
                       - number
-                      - null
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -160,6 +141,10 @@ properties:
             items:
               type: string
               pattern: ^\S+$
+            description: node IDs of where the node is connected to
+            example:
+              - nodeUuid1
+              - nodeUuid2
           outputs:
             type: object
             patternProperties:
@@ -190,14 +175,6 @@ properties:
               - string
               - 'null'
             pattern: ^\S+$
-          links:
-            type: array
-            items:
-              type: string
-            description: node IDs of where the node is connected to
-            example:
-              - nodeUuid1
-              - nodeUuid2
           position:
             type: object
             additionalProperties: false

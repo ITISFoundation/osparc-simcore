@@ -232,7 +232,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
           if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
-            if (node.isInKey("dash-plot")) {
+            if (node.isInKey("multi-plot")) {
               widget = new qxapp.component.widget.DashGrid(node);
             }
           }
@@ -267,8 +267,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       } else {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node.isContainer()) {
-          if (node.isInKey("dash-plot")) {
-            this.showScreenshotInExtraView("dash-plot");
+          if (node.isInKey("multi-plot")) {
+            this.showScreenshotInExtraView("multi-plot");
           } else {
             this.showScreenshotInExtraView("container");
           }

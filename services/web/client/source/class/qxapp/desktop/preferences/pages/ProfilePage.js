@@ -161,7 +161,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             req.addListenerOnce("success", e => {
               const res = e.getTarget().getResponse();
               if (res && res.data) {
-                qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+                qxapp.component.message.FlashMessenger.getInstance().log(res.data);
               }
             }, this);
 
@@ -170,7 +170,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
               this.__resetDataToModel();
               const error = e.getTarget().getResponse().error;
               const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
-              qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
             }, this);
 
             req.send();
@@ -194,7 +194,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       request.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse().error;
         const msg = error ? error["errors"][0].message : this.tr("Failed to get profile");
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       });
 
       request.send();
