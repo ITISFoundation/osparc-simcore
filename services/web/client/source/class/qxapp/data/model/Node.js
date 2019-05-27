@@ -73,6 +73,9 @@ qx.Class.define("qxapp.data.model.Node", {
         if (metaData.name) {
           this.setLabel(metaData.name);
         }
+        if (metaData.type) {
+          this.setType(metaData.type);
+        }
         if (metaData.inputsDefault) {
           this.__addInputsDefault(metaData.inputsDefault);
         }
@@ -101,6 +104,11 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     version: {
+      check: "String",
+      nullable: true
+    },
+
+    type: {
       check: "String",
       nullable: true
     },
@@ -227,8 +235,9 @@ qx.Class.define("qxapp.data.model.Node", {
 
     isContainer: function() {
       const hasKey = (this.getKey() === null);
+      const isGroup = (this.getType() === "group");
       const hasChildren = this.hasChildren();
-      return hasKey || hasChildren;
+      return hasKey || isGroup || hasChildren;
     },
 
     isDynamic: function() {
