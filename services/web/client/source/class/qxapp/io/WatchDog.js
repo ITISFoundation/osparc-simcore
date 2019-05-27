@@ -96,9 +96,9 @@ qx.Class.define("qxapp.io.WatchDog", {
     __updateOnlineStatus: function(e) {
       this.setOnLine(window.navigator.onLine);
       if (this.getOnLine()) {
-        qxapp.component.widget.FlashMessenger.getInstance().info("Internet is back");
+        qxapp.component.message.FlashMessenger.getInstance().info("Internet is back");
       } else {
-        qxapp.component.widget.FlashMessenger.getInstance().error("Internet is down");
+        qxapp.component.message.FlashMessenger.getInstance().error("Internet is down");
       }
     },
 
