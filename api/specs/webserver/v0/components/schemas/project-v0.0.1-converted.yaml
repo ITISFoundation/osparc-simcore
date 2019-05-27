@@ -6,9 +6,7 @@ required:
   - uuid
   - name
   - description
-  - notes
   - prjOwner
-  - collaborators
   - creationDate
   - lastChangeDate
   - thumbnail
@@ -30,27 +28,9 @@ properties:
     description: longer one-line description about the project
     example:
       - Dabbling in temporal transitions ...
-  notes:
-    type: string
-    description: longer project description. using common mark
-    example:
-      - |-
-        # title
-        Some Text `with` common mark markup
   prjOwner:
     type: string
     description: user uuid
-  collaborators:
-    type: object
-    description: UUIDs of the users/groups who should get access to this
-    x-patternProperties:
-      ^\S+$:
-        type: array
-        items:
-          type: string
-          enum:
-            - read
-            - write
   creationDate:
     type: string
     description: project creation date

@@ -3,10 +3,8 @@
     "uuid": "template-uuid-4d5e-9b09-ddcc63121ef4",
     "name": "Sleepers",
     "description": "",
-    "notes": "",
     "thumbnail": "",
     "prjOwner": "Maiz",
-    "collaborators": {},
     "creationDate": "2018-07-09T16:02:22Z",
     "lastChangeDate": "2018-07-09T16:02:22Z",
     "workbench": {
@@ -129,10 +127,8 @@
     "uuid": "template-uuid-4105-951b-7280a9f334f0",
     "name": "4x Colleen Clancy 0Ds",
     "description": "4x Colleen Clancy 0Ds",
-    "notes": "Empty",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
     "prjOwner": "Odei Maiz",
-    "collaborators": {},
     "creationDate": "2019-04-02T19:13:13.360Z",
     "lastChangeDate": "2019-04-02T19:33:41.858Z",
     "workbench": {

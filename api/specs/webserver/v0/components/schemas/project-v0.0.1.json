@@ -9,9 +9,7 @@
     "uuid",
     "name",
     "description",
-    "notes",
     "prjOwner",
-    "collaborators",
     "creationDate",
     "lastChangeDate",
     "thumbnail",
@@ -40,32 +38,9 @@
         "Dabbling in temporal transitions ..."
       ]
     },
-    "notes": {
-      "type": "string",
-      "description": "longer project description. using common mark",
-      "examples": [
-        "# title\nSome Text `with` common mark markup"
-      ]
-    },
     "prjOwner": {
       "type": "string",
       "description": "user uuid"
-    },
-    "collaborators": {
-      "type": "object",
-      "description": "UUIDs of the users/groups who should get access to this",
-      "patternProperties": {
-        "^\\S+$": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "read",
-              "write"
-            ]
-          }
-        }
-      }
     },
     "creationDate": {
       "type": "string",
