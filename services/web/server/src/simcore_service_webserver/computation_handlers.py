@@ -25,7 +25,7 @@ from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
-from .projects import projects_api
+from .projects.projects_api import get_project_for_user
 from .security_api import check_permission
 
 log = logging.getLogger(__file__)
@@ -237,54 +237,25 @@ async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
     log.debug("END OF ROUTINE.")
 
-async def _extract_payload(request, *, optional_body=False):
-    user_id = request.config_dict[RQT_USERID_KEY]
+# HANDLERS ------------------------------------------
 
+@login_required
+async def start_pipeline(request: web.Request) -> web.Response:
+    """ Starts pipeline described in the workbench section of a valid project
+        already at the server side
+    """
+    await check_permission(request, "services.pipeline.*")
+
+    # TODO: PC->SAN why validation is commented???
+    # params, query, body = await extract_and_validate(request)
     project_id = request.match_info.get("project_id", None)
     if project_id is None:
         raise web.HTTPBadRequest
 
-    body = await request.json()
-    pipeline_data = body.get("workbench") if body else None
-    if pipeline_data is None and not optional_body:
-        raise web.HTTPBadRequest
+    user_id = request.config_dict[RQT_USERID_KEY]
 
-    return user_id, project_id, pipeline_data
-
-# HANDLERS ------------------------------------------
-
-@login_required
-async def update_pipeline(request: web.Request) -> web.Response:
-    await check_permission(request, "services.pipeline.*")
-
-    # TODO: PC->SAN why validation is commented???
-    # params, query, body = await extract_and_validate(request)
-    user_id, project_id, pipeline_data = _extract_payload(request)
-
-    await projects_api.patch_project_for_user(request, project_id, user_id, {
-        "workbench": pipeline_data
-    })
-
-    # update pipeline
-    await _update_pipeline_db(request.app, project_id, pipeline_data)
-
-    raise web.HTTPNoContent()
-
-
-@login_required
-async def start_pipeline(request: web.Request) -> web.Response:
-    await check_permission(request, "services.pipeline.*")
-
-    # TODO: PC->SAN why validation is commented???
-    # params, query, body = await extract_and_validate(request)
-    user_id, project_id, pipeline_data = _extract_payload(request,
-        optional_body=True)
-
-    if pipeline_data:
-        # wanna patch first
-        await projects_api.patch_project_for_user(request, project_id, user_id, {
-            "workbench": pipeline_data
-        })
+    project = await get_project_for_user(request, project_id, user_id)
+    pipeline_data = project["workbench"]
 
     # save for task
     await _update_pipeline_db(request.app, project_id, pipeline_data)

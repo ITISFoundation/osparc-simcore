@@ -136,48 +136,13 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  /computation/pipeline/{project_id}:
-    put:
-      description: Update a pipeline
-      operationId: update_pipeline
-      parameters:
-        - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - workbench
-              properties:
-                workbench:
-                  $ref: './components/schemas/workbench-converted.yaml'
-                  # TODO: $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
-      responses:
-        "204":
-          description: Succesfully updated the pipeline
-        default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /computation/pipeline/{project_id}/start:
     post:
-      description: Starts a pipeline. If workbench is sent (option), it will update project as well
+      description: Starts a pipeline of a given project
       operationId: start_pipeline
       parameters:
         - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - workbench
-              properties:
-                workbench:
-                  $ref: './components/schemas/workbench-converted.yaml'
-                  # TODO: $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
       responses:
         "200":
           description: Succesffully started the pipeline

@@ -207,38 +207,6 @@ async def test_check_health(docker_stack, client):
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_start_pipeline(client, postgres_session, celery_service, sleeper_service,
-        logged_user, user_project,
-        mock_workbench_payload, mock_workbench_adjacency_list,
-        expected_response
-    ):
-    project_id = user_project["uuid"]
-    assert user_project['workbench'] == mock_workbench_payload['workbench']
-
-    url = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url == URL(API_PREFIX + "/computation/pipeline/{}".format(project_id))
-
-    # POST /v0/computation/pipeline/{project_id}/start
-    resp = await client.post(url, json=mock_workbench_payload)
-
-    data, error = await assert_status(resp, expected_response)
-
-    if not error:
-        assert "pipeline_name" in data
-        assert "project_id" in data
-        assert data['project_id'] == project_id
-
-        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
-            mock_workbench_adjacency_list, check_outputs=False)
-        # assert_sleeper_services_completed(project_id, postgres_session)
-
-
-@pytest.mark.parametrize("user_role,expected_response", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
 async def test_start_pipeline_without_body(client, postgres_session, celery_service, sleeper_service,
         logged_user, user_project,
         mock_workbench_adjacency_list,
@@ -263,31 +231,3 @@ async def test_start_pipeline_without_body(client, postgres_session, celery_serv
         assert_db_contents(project_id, postgres_session, mock_workbench_payload,
             mock_workbench_adjacency_list, check_outputs=False)
         # assert_sleeper_services_completed(project_id, postgres_session)
-
-
-@pytest.mark.parametrize("user_role,expected_response", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPNoContent),
-    (UserRole.USER, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPNoContent),
-])
-async def test_update_pipeline(client, docker_stack, postgres_session,
-        logged_user, user_project,
-        mock_workbench_payload, mock_workbench_adjacency_list,
-        expected_response
-    ):
-    project_id = user_project["uuid"]
-    assert user_project['workbench'] == mock_workbench_payload
-
-    url = client.app.router["update_pipeline"].url_for(project_id=project_id)
-    assert url == URL(API_PREFIX + "/computation/pipeline/{}".format(project_id))
-
-    # POST /v0/computation/pipeline/{project_id}
-    resp = await client.put(url, json=mock_workbench_payload)
-
-    data, error = await assert_status(resp, expected_response)
-
-    if not error:
-        # check db comp_pipeline
-        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
-            mock_workbench_adjacency_list, check_outputs=True)
