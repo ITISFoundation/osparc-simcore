@@ -6,14 +6,19 @@
 # pylint:disable=protected-access
 
 #
+import copy
+import difflib
+import json
 # https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 #
 from typing import Callable, Dict, List
 
 import attr
+import jsondiff
 import pytest
 from aiohttp import web
 
+from simcore_service_webserver.resources import resources
 from simcore_service_webserver.security_access_model import (
     RoleBasedAccessModel, check_access)
 from simcore_service_webserver.security_permissions import and_, or_
@@ -23,13 +28,40 @@ from simcore_service_webserver.security_roles import (ROLES_PERMISSIONS,
 
 @pytest.fixture
 def access_model():
+
+    def can_update_inputs(context):
+        current_data = context['current']
+        candidate_data = context['candidate']
+
+        diffs = jsondiff.diff(current_data, candidate_data)
+
+        if "workbench" in diffs:
+            try:
+                for node in diffs["workbench"]:
+                    # can ONLY modify `inputs` fields set as ReadAndWrite
+                    access = current_data['workbench'][node]["inputAccess"]
+                    inputs = diffs["workbench"][node]['inputs']
+                    for key in inputs:
+                        if access.get(key) != "ReadAndWrite":
+                            return False
+                    return True
+            except KeyError:
+                pass
+            return False
+
+        return len(diffs)==0 # no changes
+
+    #-----------
     fake_roles_permissions = {
         UserRole.ANONYMOUS: {
             'can': [
                 "studies.templates.read",
                 "study.start",
                 "study.stop",
-                "study.update"
+                {
+                    "name": "study.pipeline.node.inputs.update",
+                    "check": can_update_inputs
+                }
             ]
         },
         UserRole.USER: {
@@ -85,7 +117,7 @@ def test_unique_permissions():
 def test_access_model_loads():
     access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
 
-    roles_with_permissions = set(access_model._roles.keys())
+    roles_with_permissions = set(access_model.roles.keys())
     all_roles = set(UserRole)
 
     assert not all_roles.difference(roles_with_permissions)
@@ -135,25 +167,43 @@ async def test_permissions_inheritance(access_model):
     assert not await access_model.can(R.TESTER, OPERATION)
 
 
+
 async def test_checked_permissions(access_model):
     R = UserRole # alias
 
-    # add checked permissions
-    def sync_callback(context) -> bool:
-        return context['response']
+    with resources.stream('data/fake-template-projects.isan.json') as fh:
+        data = json.load(fh)
 
-    access_model._roles[R.TESTER].check['study.edge.edit'] = sync_callback
+    current = data[0]
+
+    # updates both allowed and not allowed fields
+    candidate = copy.deepcopy(current)
+    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Kr"] = 66 # ReadOnly!
+    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Na"] = 66 # ReadWrite
 
     assert not await access_model.can(
-        R.TESTER,
-        "study.edge.edit",
-        context={'response':False}
+        R.ANONYMOUS,
+        "study.pipeline.node.inputs.update",
+        context={'current': current, 'candidate': candidate}
     )
 
+    # updates allowed fields
+    candidate = copy.deepcopy(current)
+    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Na"] = 66 # ReadWrite
+
     assert await access_model.can(
-        R.TESTER,
-        "study.edge.edit",
-        context={'response':True}
+        R.ANONYMOUS,
+        "study.pipeline.node.inputs.update",
+        context={'current': current, 'candidate': candidate}
+    )
+
+    # udpates not permitted fields
+    candidate = copy.deepcopy(current)
+    candidate['notes'] = 'not allowed'
+    assert not await access_model.can(
+        R.ANONYMOUS,
+        "study.pipeline.node.inputs.update",
+        context={'current': current, 'candidate': candidate}
     )
 
 
@@ -164,7 +214,7 @@ async def test_async_checked_permissions(access_model):
     async def async_callback(context) -> bool:
         return context['response']
 
-    access_model._roles[R.TESTER].check['study.edge.edit'] = async_callback
+    access_model.roles[R.TESTER].check['study.edge.edit'] = async_callback
 
     assert not await access_model.can(
         R.TESTER,

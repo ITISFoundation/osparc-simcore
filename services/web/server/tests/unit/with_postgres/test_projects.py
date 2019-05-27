@@ -195,6 +195,9 @@ async def test_new_project_with_predefined_fields(client, fake_project, logged_u
     #   optional body with predefined fields, e.g. { name='foo', description,... }
     pass
 
+
+
+
 @pytest.mark.skip("TODO: under dev")
 async def test_new_project_from_template(client, logged_user, template_project, expected):
     # POST /v0/projects?from_template={template_uuid}
