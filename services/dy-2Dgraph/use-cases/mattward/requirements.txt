@@ -1,3 +1,0 @@
-pandas~=0.23
-plotly~=3.3
-ipywidgets~=7.4
