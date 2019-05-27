@@ -102,7 +102,7 @@ qx.Class.define("qxapp.file.FilePicker", {
           this._addAt(control, 1);
           break;
         case "addButton":
-          control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
+          control = new qxapp.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
           });
