@@ -53,9 +53,14 @@ qx.Class.define("qxapp.file.FilePicker", {
     let tree = this.__tree = this._createChildControlImpl("filesTree");
     tree.addListener("selectionChanged", this.__selectionChanged, this);
     tree.addListener("itemSelected", this.__itemSelected, this);
+    tree.addListener("modelChanged", this.__modelChanged, this);
 
     let addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
+      const data = e.getData();
+      if ("location" in data && "path" in data) {
+        this.__setOutputFile(data["location"], data["path"]);
+      }
       this.__initResources();
     }, this);
 
@@ -101,7 +106,7 @@ qx.Class.define("qxapp.file.FilePicker", {
           this._addAt(control, 1);
           break;
         case "addButton":
-          control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
+          control = new qxapp.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
           });
@@ -126,16 +131,44 @@ qx.Class.define("qxapp.file.FilePicker", {
     },
 
     __itemSelected: function() {
-      let data = this.__tree.getSelectedFile();
+      const data = this.__tree.getSelectedFile();
       if (data && data["isFile"]) {
-        let selectedItem = data["selectedItem"];
-        let outputs = this.getNode().getOutputs();
-        outputs["outFile"].value = {
+        const selectedItem = data["selectedItem"];
+        const outputFile = this.__getOutputFile();
+        outputFile.value = {
           store: selectedItem.getLocation(),
           path: selectedItem.getFileId()
         };
+        this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
+      }
+    },
+
+    __getOutputFile: function() {
+      const outputs = this.getNode().getOutputs();
+      return outputs["outFile"];
+    },
+
+    __setOutputFile: function(store, path) {
+      if (store && path) {
+        const outputs = this.getNode().getOutputs();
+        outputs["value"]["outFile"] = {
+          store,
+          path
+        };
+      }
+    },
+
+    __modelChanged: function() {
+      this.__checkSelectedFileIsListed();
+    },
+
+    __checkSelectedFileIsListed: function() {
+      const outFile = this.__getOutputFile();
+      if (outFile && "value" in outFile && "path" in outFile.value) {
+        this.__tree.setSelectedFile(outFile.value.path);
+        this.__tree.fireEvent("selectionChanged");
       }
     }
   }
