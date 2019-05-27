@@ -215,7 +215,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     nodeSelected: function(nodeId) {
       const workbench = this.getWorkbench();
       const node = workbench.getNode(nodeId);
-      if (node) {
+      if (node && !node.isContainer()) {
         this.__textfield.setValue(node.getLabel());
       } else {
         this.__textfield.setValue("");
