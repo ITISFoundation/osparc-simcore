@@ -134,11 +134,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       const data = this.__tree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        const outputFile = this.__getOutputFile();
-        outputFile.value = {
-          store: selectedItem.getLocation(),
-          path: selectedItem.getFileId()
-        };
+        this.__setOutputFile(selectedItem.getLocation(), selectedItem.getFileId());
         this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
@@ -152,8 +148,8 @@ qx.Class.define("qxapp.file.FilePicker", {
 
     __setOutputFile: function(store, path) {
       if (store && path) {
-        const outputs = this.getNode().getOutputs();
-        outputs["value"]["outFile"] = {
+        const outputFile = this.__getOutputFile();
+        outputFile.value = {
           store,
           path
         };
