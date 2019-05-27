@@ -285,6 +285,24 @@ qx.Theme.define("qxapp.theme.Appearance", {
         }
         return ret;
       }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      FlashMessage
+    ---------------------------------------------------------------------------
+    */
+    "flash": {
+      style: state => ({
+        padding: 10,
+        backgroundColor: "background-main-lighter+",
+        decorator: "flash"
+      })
+    },
+    "flash/badge": {
+      style: state => ({
+        decorator: "flash-badge"
+      })
     }
   }
 });

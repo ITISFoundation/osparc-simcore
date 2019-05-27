@@ -93,12 +93,12 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.widget.FlashMessenger.getInstance().log(log);
+        qxapp.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Could not reset password");
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       };
 
       manager.resetPassword(password, confirm, code, successFun, failFun, this);
