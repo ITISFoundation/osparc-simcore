@@ -488,8 +488,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "notes", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
+      const itemsToBeDisplayed = ["name", "description", "prjOwner", "creationDate", "lastChangeDate"];
+      const itemsToBeModified = fromTemplate ? [] : ["name", "description"];
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {
@@ -503,19 +503,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Description"));
               break;
-            case "notes":
-              control = new qx.ui.form.TextArea().set({
-                minimalLineHeight: 2
-              });
-              form.add(control, this.tr("Notes"));
-              break;
             case "prjOwner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
-              break;
-            case "collaborators":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Collaborators"));
               break;
             case "creationDate":
               control = new qx.ui.form.TextField();

@@ -26,7 +26,6 @@ PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
     "services/web/server/tests/integration/computation/workbench_sleeper_payload.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.isan.json",
-    "services/web/server/src/simcore_service_webserver/data/fake-user-projects.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.osparc.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.json",
 ]
@@ -44,6 +43,7 @@ def _load_data(fpath: Path):
         try:
             data = json.load(fh)
         except json.JSONDecodeError:
+            fh.seek(0)
             data = yaml.load(fh)
     return data
 
@@ -54,16 +54,6 @@ def _load_data(fpath: Path):
 def project_schema(request, api_specs_dir):
     suffix = request.param
     schema_path = api_specs_dir / "webserver/v0/components/schemas/project-v0.0.1{}".format(suffix)
-    return _load_data(schema_path)
-
-
-@pytest.fixture(
-    scope="module",
-    params=SYNCED_VERSIONS_SUFFIX
-)
-def workbench_schema(request, api_specs_dir):
-    suffix = request.param
-    schema_path = api_specs_dir / "webserver/v0/components/schemas/workbench{}".format(suffix)
     return _load_data(schema_path)
 
 # TESTS --------------------------------------------------
@@ -83,17 +73,7 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
             "uuid": "eiusmod",
             "name": "minim",
             "description": "ad",
-            "notes": "velit fugiat",
             "prjOwner": "ullamco eu voluptate",
-            "collaborators": {
-                "I<h)n6{%g5o": [
-                "write",
-                "read",
-                "read",
-                "write",
-                "write"
-                ]
-            },
             "creationDate": "8715-11-30T9:1:51.388Z",
             "lastChangeDate": "0944-02-31T5:1:7.795Z",
             "thumbnail": "labore incid",
@@ -107,22 +87,3 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
 
     for project_data in data:
         jsonschema.validate(project_data, project_schema)
-
-
-@pytest.mark.parametrize("data_path", PROJECTS_PATHS)
-def test_workbench_against_schema(data_path, workbench_schema, this_repo_root_dir):
-    """
-        Both project and workbench datasets are tested against workbench schema
-
-        NOTE: failures here normally are due to lack of sync between these to specs:
-        - api/specs/webserver/v0/components/schemas/workbench.json
-        - api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-    """
-    data = _load_data(this_repo_root_dir / data_path)
-
-    assert any(isinstance(data, _type) for _type in [List, Dict])
-    if isinstance(data, Dict):
-        data = [data,]
-
-    for project_data in data:
-        jsonschema.validate(project_data["workbench"], workbench_schema)

@@ -92,8 +92,6 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: specs}
 
     if enable_fake_data:
-        # injects fake projects to User with id=1
-        # Fake.load_user_projects(user_id=1)
         Fake.load_template_projects()
 
 
