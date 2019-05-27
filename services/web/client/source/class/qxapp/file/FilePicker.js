@@ -57,6 +57,10 @@ qx.Class.define("qxapp.file.FilePicker", {
 
     let addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
+      const data = e.getData();
+      if ("location" in data && "path" in data) {
+        this.__setOutputFile(data["location"], data["path"]);
+      }
       this.__initResources();
     }, this);
 
@@ -144,6 +148,16 @@ qx.Class.define("qxapp.file.FilePicker", {
     __getOutputFile: function() {
       const outputs = this.getNode().getOutputs();
       return outputs["outFile"];
+    },
+
+    __setOutputFile: function(store, path) {
+      if (store && path) {
+        const outputs = this.getNode().getOutputs();
+        outputs["value"]["outFile"] = {
+          store,
+          path
+        };
+      }
     },
 
     __modelChanged: function() {
