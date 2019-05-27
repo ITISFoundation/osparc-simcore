@@ -46,7 +46,7 @@ qx.Class.define("qxapp.file.FilesTree", {
       openMode: "none"
     });
 
-    this.getSelection().addListener("change", this.__selectionChanged, this);
+    this.addListener("tap", this.__selectionChanged, this);
 
     // Listen to "Enter" key
     this.addListener("keypress", function(keyEvent) {
