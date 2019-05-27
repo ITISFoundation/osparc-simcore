@@ -118,7 +118,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      const addBtn = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
+      const addBtn = new qxapp.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
         this.__initResources();
       }, this);

@@ -115,9 +115,8 @@ qx.Class.define("qxapp.file.FilesAdd", {
       let store = qxapp.data.Store.getInstance();
       store.addListenerOnce("presignedLink", e => {
         const presignedLinkData = e.getData();
-        // presignedLinkData.locationId;
-        // presignedLinkData.fileUuid;
-        console.log(file);
+        file["location"] = presignedLinkData.locationId;
+        file["path"] = presignedLinkData.fileUuid;
         if (presignedLinkData.presignedLink) {
           this.__uploadFile(file, presignedLinkData.presignedLink.link);
         }
