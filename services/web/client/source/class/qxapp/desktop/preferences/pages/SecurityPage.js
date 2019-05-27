@@ -227,7 +227,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
           request.addListenerOnce("success", function(e) {
             const res = e.getTarget().getResponse();
-            qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+            qxapp.component.message.FlashMessenger.getInstance().log(res.data);
 
             [currentPassword, newPassword, confirm].forEach(item => {
               item.resetValue();
@@ -237,7 +237,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
           request.addListenerOnce("fail", e => {
             const error = e.getTarget().getResponse().error;
             const msg = error ? error["errors"][0].message : this.tr("Failed to reset password");
-            qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
 
             [currentPassword, newPassword, confirm].forEach(item => {
               item.resetValue();
