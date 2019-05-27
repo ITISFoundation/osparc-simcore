@@ -9,7 +9,6 @@ from pprint import pformat
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from projects.projects_api import can_update_node_inputs
 from servicelib.application_keys import (APP_CONFIG_KEY,
                                          APP_JSONSCHEMA_SPECS_KEY)
 from servicelib.jsonschema_specs import create_jsonschema_specs

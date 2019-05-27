@@ -237,13 +237,7 @@ async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
     log.debug("END OF ROUTINE.")
 
-# HANDLERS ------------------------------------------
-
-@login_required
-async def start_pipeline(request: web.Request) -> web.Response:
-    """ Starts pipeline described in the workbench section of a valid project
-        already at the server side
-    """
+async def _pre_update_pipeline(request):
     await check_permission(request, "services.pipeline.*")
 
     # TODO: PC->SAN why validation is commented???
@@ -257,8 +251,26 @@ async def start_pipeline(request: web.Request) -> web.Response:
     project = await get_project_for_user(request, project_id, user_id)
     pipeline_data = project["workbench"]
 
-    # save for task
+    # update pipeline
     await _update_pipeline_db(request.app, project_id, pipeline_data)
+
+    return user_id, project_id
+
+# HANDLERS ------------------------------------------
+
+@login_required
+async def update_pipeline(request: web.Request) -> web.Response:
+    await _pre_update_pipeline(request)
+
+    raise web.HTTPNoContent()
+
+
+@login_required
+async def start_pipeline(request: web.Request) -> web.Response:
+    """ Starts pipeline described in the workbench section of a valid project
+        already at the server side
+    """
+    user_id, project_id = await _pre_update_pipeline(request)
 
     # commit the tasks to celery
     _ = get_celery(request.app).send_task("comp.task", args=(user_id, project_id,), kwargs={})

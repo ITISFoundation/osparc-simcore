@@ -1,26 +1,60 @@
 {
-    "uuid": "template-uuid-6257-a462-d7bf73b76c0c",
-    "name": "ex",
-    "description": "anim sint pariatur do dolore",
-    "prjOwner": "dolore ad do consectetur",
-    "creationDate": "1865-11-30T04:00:14.000Z",
-    "lastChangeDate": "7364-11-30T10:04:52.000Z",
-    "thumbnail": "sunt adipisicing enim anim nisi",
-    "workbench": {
-        "Xw)F": {
-            "key": "simcore/services/dynamic/unseen/university/of/ankh/morpork",
-            "version": "0.2249944.0",
-            "label": "some funky label",
-            "inputs": {},
-            "inputNodes": [],
-            "outputNode": false,
-            "outputs": {},
-            "parent": null,
-            "progress": 0,
-            "position": {
-                "x": -29926723,
-                "y": 92196123
-            }
+  "uuid": "template-uuid-6257-a462-d7bf73b76c0c",
+  "name": "ex",
+  "description": "anim sint pariatur do dolore",
+  "prjOwner": "dolore ad do consectetur",
+  "creationDate": "1865-11-30T04:00:14.000Z",
+  "lastChangeDate": "7364-11-30T10:04:52.000Z",
+  "thumbnail": "sunt adipisicing enim anim nisi",
+  "workbench": {
+    "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf": {
+      "key": "file-picker",
+      "version": "1.0.0",
+      "label": "File Picker 0D",
+      "inputs": {},
+      "inputNodes": [],
+      "outputNode": false,
+      "outputs": {},
+      "parent": null,
+      "position": {
+        "x": 50,
+        "y": 150
+      }
+    },
+    "5739e377-17f7-4f09-a6ad-62659fb7fdec": {
+      "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
+      "version": "1.0.0",
+      "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+      "inputAccess": {
+        "Na": "ReadAndWrite",
+        "Kr": "ReadOnly",
+        "BCL": "ReadAndWrite",
+        "NBeats": "ReadOnly",
+        "Ligand": "Invisible",
+        "cAMKII": "Invisible"
+      },
+      "inputs": {
+        "Na": 0,
+        "Kr": 0,
+        "BCL": 200,
+        "NBeats": 5,
+        "Ligand": 0,
+        "cAMKII": "WT",
+        "initfile": {
+          "nodeUuid": "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf",
+          "output": "outFile"
         }
+      },
+      "inputNodes": [
+        "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
+      ],
+      "outputNode": false,
+      "outputs": {},
+      "parent": null,
+      "position": {
+        "x": 300,
+        "y": 150
+      }
     }
+  }
 }

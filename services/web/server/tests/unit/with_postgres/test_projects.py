@@ -164,7 +164,7 @@ async def test_replace_project(client, logged_user, user_project, expected):
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
     updated_project = deepcopy(user_project)
-    updated_project["notes"] = "some different"
+    updated_project["description"] = "some different"
 
     resp = await client.put(url, json=updated_project)
     data, error = await assert_status(resp, expected)
@@ -196,9 +196,48 @@ async def test_new_project_with_predefined_fields(client, fake_project, logged_u
     pass
 
 
-
-
 @pytest.mark.skip("TODO: under dev")
 async def test_new_project_from_template(client, logged_user, template_project, expected):
     # POST /v0/projects?from_template={template_uuid}
     pass
+
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_update_project_workbench_inputs(client, logged_user, user_project, expected):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+
+    updated_project = deepcopy(user_project)
+    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+
+    resp = await client.put(url, json=updated_project)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == updated_project
+
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_update_project_workbench_readonly_inputs(client, logged_user, user_project, expected):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+
+    updated_project = deepcopy(user_project)
+    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Kr"] = 5
+
+    resp = await client.put(url, json=updated_project)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == updated_project

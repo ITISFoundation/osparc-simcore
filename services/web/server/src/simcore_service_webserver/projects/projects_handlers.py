@@ -10,7 +10,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from .. import security_permissions as sp
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import get_project_for_user, validate_project
+from .projects_api import validate_project
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_fakes import Fake
@@ -87,6 +87,9 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+
     project = await get_project_for_user(request,
         project_uuid=request.match_info.get("project_id"),
         user_id=request[RQT_USERID_KEY]
@@ -113,13 +116,14 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
+
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     new_values = await request.json()
 
     dbe = request.config_dict[APP_DB_ENGINE_KEY]
 
-    await check_permission(request, sp.or_("project.update", "project.workbench.node.inputs.update"),
+    await check_permission(request, "project.update | project.workbench.node.inputs.update",
     context={
         'db_engine': dbe,
         'project_id': project_uuid,
@@ -140,14 +144,15 @@ async def replace_project(request: web.Request):
     return {'data': new_values}
 
 
-@login_required
-async def patch_project(_request: web.Request):
-    """
-        Client sends a patch and return updated project
-        PATCH
-    """
-    # TODO: implement patch with diff as body!
-    raise NotImplementedError()
+# TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+#@login_required
+#async def patch_project(_request: web.Request):
+#    """
+#        Client sends a patch and return updated project
+#        PATCH
+#    """
+#    # TODO: implement patch with diff as body!
+#    raise NotImplementedError()
 
 
 @login_required

@@ -7,6 +7,7 @@
 
 import inspect
 import logging
+import re
 from typing import Callable, Dict, List, Tuple, Union
 
 import attr
@@ -118,15 +119,30 @@ class RoleBasedAccessModel:
     # TODO: print table??
 
 
-async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: Union[str, Tuple], context: Dict=None) -> bool:
+# TODO: implement expression parser: reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
+operators_pattern = re.compile(r'(&|\||\bAND\b|\bOR\b)')
+
+
+async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: str, context: Dict=None) -> bool:
     """ Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
         Returns True if a user with a role has permission on a given context
     """
-    async def _check(expression: Union[str, Tuple]):
-        if isinstance(expression, Tuple):
-            op, lhs, rhs = expression # see security_permission._and and security_permission._or
-            return op(await _check(lhs), await _check(rhs))
-        return await model.can(role, expression, context)
+    tokens = operators_pattern.split(operations)
+    if len(tokens)==1:
+        return await model.can(role, tokens[0], context)
 
-    return await _check(operations)
+    elif len(tokens)==3:
+        tokens = [t.strip() for t in tokens if t.strip() != '']
+        lhs, op, rhs = tokens
+        lhs = await model.can(role, lhs, context)
+        if op in ["AND", "&"]:
+            if not lhs:
+                return (await model.can(role, rhs, context))
+            return True
+        else:
+            return lhs or (await model.can(role, rhs, context))
+
+
+    # FIXME: This only works for operators with TWO operands
+    raise NotImplementedError("Invalid expression %s" % operations)
