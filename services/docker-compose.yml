@@ -15,7 +15,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '8043:8043'
+      - '8043'
     deploy:
       placement:
        constraints:
@@ -36,7 +36,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '8001:8080'
+      - '8080'
     environment:
     # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
     # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
@@ -121,6 +121,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
@@ -165,8 +167,6 @@ services:
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8000:8000"
     environment:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
@@ -209,7 +209,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - "11111:8080"
+      - "8080"
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -243,8 +243,8 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672"
+      - "15672"
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
@@ -255,7 +255,7 @@ services:
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5432"
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
@@ -263,7 +263,7 @@ services:
       - MINIO_ACCESS_KEY=12345678
       - MINIO_SECRET_KEY=12345678
     ports:
-      - "9001:9000"
+      - "9000"
     command: server /data
 volumes:
   input:

@@ -5,6 +5,7 @@ from yarl import URL
 
 from simcore_service_webserver.db_models import UserRole, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
+from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 from utils_assert import assert_status
@@ -83,3 +84,20 @@ class LoggedUser(NewUser):
     async def __aenter__(self):
         self.user = await log_client_in(self.client, self.params)
         return self.user
+
+class NewInvitation(NewUser):
+    def __init__(self, client, guest="", host=None):
+        super().__init__(host, client.app)
+        self.client = client
+        self.guest = guest or get_random_string(10)
+        self.confirmation = None
+
+    async def __aenter__(self):
+        # creates host user
+        self.user = await create_user(self.params)
+
+        self.confirmation = await create_invitation(self.user, self.guest, self.db)
+        return self.confirmation
+
+    async def __aexit__(self, *args):
+        await self.db.delete_confirmation(self.confirmation)

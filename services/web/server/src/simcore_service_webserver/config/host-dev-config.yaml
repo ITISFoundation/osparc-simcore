@@ -29,6 +29,7 @@ rabbit:
   user: simcore
 login:
   enabled: True
+  registration_invitation_required: False
   registration_confirmation_required: False
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
