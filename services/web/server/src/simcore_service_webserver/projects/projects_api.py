@@ -42,16 +42,3 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id) -> D
 
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason="Project not found")
-
-async def patch_project_for_user(request: web.Request, project_uuid, user_id, data) -> Dict:
-
-    await check_permission(request, "project.update", context={
-        'project_id': project_uuid,
-        'user_id': user_id,
-        'update_data': data
-    })
-
-    raise NotImplementedError
-
-    # TODO: add "project.update" check
-    # TODO: add patch functionalty

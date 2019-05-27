@@ -6,7 +6,6 @@
 import itertools
 from enum import Enum
 
-
 class UserRole(Enum):
     """ SORTED enumeration of user roles
 
@@ -54,7 +53,6 @@ ROLES_PERMISSIONS = {
       "can": [
         "project.read",          # "studies.user.read",
                                  # "studies.templates.read"
-        ## TODO: "project.workbench.node.inputs.update", #<<<<---------
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
         # TODO: kept temporarily as a way to denote resources

@@ -6,9 +6,10 @@ import asyncio
 import logging
 from pprint import pformat
 
+from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from aiohttp import web
+from projects.projects_api import can_update_node_inputs
 from servicelib.application_keys import (APP_CONFIG_KEY,
                                          APP_JSONSCHEMA_SPECS_KEY)
 from servicelib.jsonschema_specs import create_jsonschema_specs
@@ -19,6 +20,7 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import nodes_handlers, projects_handlers
 from .config import CONFIG_SECTION_NAME
+from .projects_access import setup_access
 from .projects_fakes import Fake
 
 RETRY_WAIT_SECS = 2
@@ -52,7 +54,6 @@ async def _get_specs(location):
     return specs
 
 
-
 def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) -> bool:
     """
 
@@ -82,6 +83,9 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
+
+    # security - access : Inject permissions to rest API resources
+    setup_access(app)
 
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     routes = _create_routes("/projects", projects_handlers, specs, disable_login)

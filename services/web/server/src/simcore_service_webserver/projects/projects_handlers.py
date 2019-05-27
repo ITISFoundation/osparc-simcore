@@ -5,16 +5,16 @@ import logging
 from aiohttp import web
 from jsonschema import ValidationError
 
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
+from .. import security_permissions as sp
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from . import projects_api
-from .projects_api import validate_project
+from .projects_api import get_project_for_user, validate_project
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_fakes import Fake
 from .projects_models import ProjectDB
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
-    project = await projects_api.get_project_for_user(request,
+    project = await get_project_for_user(request,
         project_uuid=request.match_info.get("project_id"),
         user_id=request[RQT_USERID_KEY]
     )
@@ -113,19 +113,27 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    await check_permission(request, "project.update")
-
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-
     new_values = await request.json()
+
+    dbe = request.config_dict[APP_DB_ENGINE_KEY]
+
+    await check_permission(request, sp.or_("project.update", "project.workbench.node.inputs.update"),
+    context={
+        'db_engine': dbe,
+        'project_id': project_uuid,
+        'user_id': user_id,
+        'new_data': new_values
+    })
+
     try:
         validate_project(request.app, new_values)
+        await ProjectDB.update_user_project(new_values, user_id, project_uuid, db_engine=dbe)
+
     except ValidationError:
         raise web.HTTPBadRequest
 
-    try:
-        await ProjectDB.update_user_project(new_values, user_id, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
@@ -133,20 +141,13 @@ async def replace_project(request: web.Request):
 
 
 @login_required
-async def patch_project(request: web.Request):
+async def patch_project(_request: web.Request):
     """
         Client sends a patch and return updated project
+        PATCH
     """
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-
-    project_path = await request.json()
-    current_project = await projects_api.patch_project_for_user(request, project_uuid, user_id, project_path)
-
-    return {
-        'data': current_project
-    }
-
+    # TODO: implement patch with diff as body!
+    raise NotImplementedError()
 
 
 @login_required

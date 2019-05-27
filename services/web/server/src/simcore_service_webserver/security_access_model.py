@@ -57,7 +57,7 @@ class RoleBasedAccessModel:
 
     """
     def __init__(self, roles: List[RolePermissions]):
-        self._roles = {r.role:r for r in roles}
+        self.roles = {r.role:r for r in roles}
 
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
@@ -72,7 +72,7 @@ class RoleBasedAccessModel:
             return False
 
         # undefined role
-        role_access = self._roles.get(role, False)
+        role_access = self.roles.get(role, False)
         if not role_access:
             log.debug("Role %s has no permissions defined in acces model", role)
             return False
@@ -85,9 +85,13 @@ class RoleBasedAccessModel:
         # checked operations
         if operation in role_access.check.keys():
             check = role_access.check[operation]
-            if inspect.iscoroutinefunction(check):
-                return (await check(context))
-            return check(context)
+            try:
+                if inspect.iscoroutinefunction(check):
+                    return (await check(context))
+                return check(context)
+            except Exception: #pylint: disable=broad-except
+                log.exception("Check operation '%s', shall not raise [%s]", operation, check)
+                return False
 
         # check if any parents
         if not role_access.inherits:
@@ -99,11 +103,11 @@ class RoleBasedAccessModel:
         return False
 
     async def who_can(self, operation: str, context: Dict=None):
-        roles = []
-        for role in self._roles:
+        allowed = []
+        for role in self.roles:
             if await self.can(role, operation, context):
-                roles.append(role)
-        return roles
+                allowed.append(role)
+        return allowed
 
 
     @classmethod
@@ -111,7 +115,7 @@ class RoleBasedAccessModel:
         roles = [RolePermissions.from_rawdata(role, value) for role, value in raw.items()]
         return RoleBasedAccessModel(roles)
 
-
+    # TODO: print table??
 
 
 async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: Union[str, Tuple], context: Dict=None) -> bool:

@@ -6,11 +6,14 @@ import logging
 
 import passlib.hash
 import sqlalchemy as sa
-from aiohttp_security.api import (authorized_userid, check_permission, forget,
-                                  is_anonymous, remember)
+from aiohttp import web
+from aiohttp_security.api import (AUTZ_KEY, authorized_userid,
+                                  check_permission, forget, is_anonymous,
+                                  remember)
 from aiopg.sa import Engine
 
 from .db_models import UserStatus, users
+from .security_roles import UserRole
 
 log = logging.getLogger(__file__)
 
@@ -33,8 +36,12 @@ def encrypt_password(password):
 def check_password(password, password_hash):
     return passlib.hash.sha256_crypt.verify(password, password_hash)
 
+def get_access_model(app: web.Application):
+    autz_policy = app[AUTZ_KEY]
+    return autz_policy.access_model
 
 __all__ = (
     'encrypt_password', 'check_credentials',
-    'authorized_userid', 'forget', 'remember', 'is_anonymous', 'check_permission'
+    'authorized_userid', 'forget', 'remember', 'is_anonymous', 'check_permission',
+    'get_access_model', 'UserRole'
 )
