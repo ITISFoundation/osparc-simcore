@@ -154,6 +154,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       const outFile = this.__getOutputFile();
       if (outFile && "value" in outFile && "path" in outFile.value) {
         this.__tree.setSelectedFile(outFile.value.path);
+        this.__tree.fireEvent("selectionChanged");
       }
     }
   }
