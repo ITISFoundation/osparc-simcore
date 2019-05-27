@@ -137,6 +137,18 @@ paths:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
 
+  /computation/pipeline/{project_id}:
+      put:
+        description: "Update a pipeline using workbench section from given project"
+        operationId: update_pipeline
+        parameters:
+          - $ref: './openapi-services.yaml#/components/parameters/ProjectId'
+        responses:
+          "204":
+            description: Succesfully updated the pipeline
+          default:
+            $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
   /computation/pipeline/{project_id}/start:
     post:
       description: Starts a pipeline of a given project
