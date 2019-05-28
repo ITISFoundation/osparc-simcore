@@ -64,7 +64,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__createStudiesLayout();
         this.__createCommandEvents();
         if (studyId) {
-          this.__createStudy(studyId);
+          let resource = this.__studyResources.project;
+          resource.addListenerOnce("getSuccess", e => {
+            const studyData = e.getRequest().getResponse().data;
+            this.__startStudy(studyData);
+          }, this);
+          resource.addListener("getError", ev => {
+            console.error(ev);
+          });
+          resource.get({
+            "project_id": studyId
+          });
         }
       }
     }, this);
@@ -148,30 +158,30 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       });
     },
 
-    __newStudyBtnClkd: function() {
+    __createStudyBtnClkd: function(templateData) {
       if (this.__creatingNewStudy) {
         return;
       }
       this.__creatingNewStudy = true;
 
-      let win = new qx.ui.window.Window(this.tr("Create New Study")).set({
+      const win = new qx.ui.window.Window(this.tr("Create New Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
         showMinimize: false,
         showMaximize: false,
         minWidth: 500,
         centerOnAppear: true,
-        autoDestroy: true
+        autoDestroy: true,
+        modal: true
       });
 
-      let newStudyDlg = new qxapp.component.widget.NewStudyDlg();
+      const newStudyDlg = new qxapp.component.widget.NewStudyDlg(templateData);
       newStudyDlg.addListenerOnce("createStudy", e => {
+        const minStudyData = qxapp.data.model.Study.createMinimumStudyObject();
         const data = e.getData();
-        const newStudy = {
-          name: data.prjTitle,
-          description: data.prjDescription
-        };
-        this.__startStudy(newStudy, true);
+        minStudyData["name"] = data.prjTitle;
+        minStudyData["description"] = data.prjDescription;
+        this.__createStudy(minStudyData, data.prjTemplateId);
         win.close();
       }, this);
       win.add(newStudyDlg);
@@ -181,7 +191,28 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }, this);
     },
 
-    __startStudy: function(studyData, isNew = false) {
+    __createStudy: function(minStudyData, templateId) {
+      const resources = this.__studyResources.projects;
+
+      resources.addListenerOnce("postSuccess", e => {
+        const studyData = e.getRequest().getResponse().data;
+        this.__startStudy(studyData);
+      }, this);
+
+      resources.addListener("postError", e => {
+        console.error(e);
+      });
+
+      if (templateId) {
+        resources.postFromTemplate({
+          "template_id": templateId
+        }, minStudyData);
+      } else {
+        resources.post(null, minStudyData);
+      }
+    },
+
+    __startStudy: function(studyData) {
       if (this.__servicesReady === null) {
         this.__showChildren(false);
         let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
@@ -197,13 +228,19 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this._remove(iframe);
             iframe.dispose();
             this.__showChildren(true);
-            this.__loadStudy(studyData, isNew);
+            this.__loadStudy(studyData);
           }
         }, this);
         servicesTimer.start();
       } else {
-        this.__loadStudy(studyData, isNew);
+        this.__loadStudy(studyData);
       }
+    },
+
+    __loadStudy: function(studyData) {
+      let study = new qxapp.data.model.Study(studyData);
+      let studyEditor = new qxapp.desktop.StudyEditor(study);
+      this.fireDataEvent("startStudy", studyEditor);
     },
 
     __showChildren: function(show) {
@@ -215,35 +252,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           children[i].setVisibility("excluded");
         }
       }
-    },
-
-    __loadStudy: function(studyData, isNew) {
-      let study = new qxapp.data.model.Study(studyData);
-      let studyEditor = new qxapp.desktop.StudyEditor(study, isNew);
-      this.fireDataEvent("startStudy", studyEditor);
-    },
-
-    __createStudy: function(studyId, fromTemplate = false) {
-      let resource = this.__studyResources.project;
-
-      resource.addListenerOnce("getSuccess", e => {
-        // TODO: is this listener added everytime we call ?? It does not depend on input params
-        // but it needs to be here to implemenet startStudy
-        let studyData = e.getRequest().getResponse().data;
-        if (fromTemplate) {
-          studyData = qxapp.utils.Utils.replaceTemplateUUIDs(studyData);
-          studyData["prjOwner"] = qxapp.auth.Data.getInstance().getUserName();
-        }
-        this.__startStudy(studyData, fromTemplate);
-      }, this);
-
-      resource.addListener("getError", e => {
-        console.error(e);
-      });
-
-      resource.get({
-        "project_id": studyId
-      });
     },
 
     __createUserStudyList: function() {
@@ -390,9 +398,23 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         createItem: function() {
           let item = new qxapp.desktop.StudyBrowserListItem();
           item.addListener("dbltap", e => {
-            const studyUuid = item.getModel();
-            if (studyUuid) {
-              that.__createStudy(studyUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+            const studyId = item.getModel();
+            if (studyId) {
+              let resource = that.__studyResources.project; // eslint-disable-line no-underscore-dangle
+              resource.addListenerOnce("getSuccess", ev => {
+                const studyData = ev.getRequest().getResponse().data;
+                if (fromTemplate) {
+                  that.__createStudyBtnClkd(studyData); // eslint-disable-line no-underscore-dangle
+                } else {
+                  that.__startStudy(studyData); // eslint-disable-line no-underscore-dangle
+                }
+              }, that);
+              resource.addListener("getError", ev => {
+                console.error(ev);
+              });
+              resource.get({
+                "project_id": studyId
+              });
             }
           });
           item.addListener("tap", e => {
@@ -400,7 +422,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             if (studyUuid) {
               list.setSelection([item]);
             } else {
-              that.__newStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
+              that.__createStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
           return item;
