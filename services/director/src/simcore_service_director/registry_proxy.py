@@ -1,7 +1,7 @@
 #pylint: disable=C0111
 import json
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import aiohttp
 from yarl import URL
@@ -15,7 +15,7 @@ DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 _logger = logging.getLogger(__name__)
 
 
-async def _registry_request(path: str, method: str ="GET") -> str:
+async def _registry_request(path: str, method: str ="GET") -> Tuple[Dict, str]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
@@ -23,6 +23,8 @@ async def _registry_request(path: str, method: str ="GET") -> str:
     url = url.with_path("{version}/{path}".format(version=config.REGISTRY_VERSION, path=path))
 
     # try the registry
+    resp_data = {}
+    resp_headers = {}
     async with aiohttp.ClientSession() as session:
         async with getattr(session, method.lower())(url) as response:
             if response.status == 404:
@@ -52,18 +54,29 @@ async def _registry_request(path: str, method: str ="GET") -> str:
                             raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
                         bearer_code = (await token_resp.json())["token"]
                         headers = {"Authorization": "Bearer {}".format(bearer_code)}
-                        async with getattr(session, method.lower())(url, headers=headers) as response2:
-                            if response2.status > 399:
+                        async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
+                            if resp_wtoken.status > 399:
                                 _logger.exception("Unknown error while accessing with token authorized registry: %s", str(response))
-                                raise exceptions.RegistryConnectionError(str(response2))
-                            return await response2.json(content_type=None)
+                                raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                            resp_data = await resp_wtoken.json(content_type=None)
+                            resp_headers = resp_wtoken.headers
                 elif auth_type == "Basic":
                     # basic authentication
-                    async with getattr(session, method.lower())(url, auth=auth) as response2:
-                        if response2.status > 399:
+                    async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+                        if resp_wbasic.status > 399:
                             _logger.exception("Unknown error while accessing with token authorized registry: %s", str(response))
-                            raise exceptions.RegistryConnectionError(str(response2))
-                        return await response2.json(content_type=None)
+                            raise exceptions.RegistryConnectionError(str(resp_wbasic))
+                        resp_data = await resp_wbasic.json(content_type=None)
+                        resp_headers = resp_wbasic.headers
+            elif response.status > 399:
+                _logger.exception("Unknown error while accessing registry: %s", str(response))
+                raise exceptions.RegistryConnectionError(str(response))
+            else:
+                # registry that does not need an auth
+                resp_data = await response.json(content_type=None)
+                resp_headers = response.headers
+
+            return (resp_data, resp_headers)
 
 async def _retrieve_list_of_repositories() -> List[str]:
     result_json = await _registry_request('_catalog')
