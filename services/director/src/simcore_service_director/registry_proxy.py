@@ -15,12 +15,12 @@ DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 _logger = logging.getLogger(__name__)
 
 
-async def _registry_request(path: str, method: str ="GET") -> Tuple[Dict, str]:
+async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
                                 url=config.REGISTRY_URL))
-    url = url.with_path("{version}/{path}".format(version=config.REGISTRY_VERSION, path=path))
+    url = url.join(path)
 
     # try the registry
     resp_data = {}
@@ -79,41 +79,43 @@ async def _registry_request(path: str, method: str ="GET") -> Tuple[Dict, str]:
             return (resp_data, resp_headers)
 
 async def _retrieve_list_of_repositories() -> List[str]:
-    result_json = await _registry_request('_catalog')
-    result_json = result_json['repositories']
-    _logger.debug("retrieved list of repos: %s", result_json)
-    return result_json
+    result, headers = await _registry_request('v2/_catalog?n=5')
+    repos_list = result["repositories"]
+    while "Link" in headers:
+        link = str(headers["Link"]).split(";")[0].strip("<>")
+        result, headers = await _registry_request(link)
+        repos_list.extend(result["repositories"])
+    _logger.debug("retrieved list of repos: %s", repos_list)
+    return repos_list
 
 async def _get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
     image_tags = {}
-    label_data = await _registry_request(repo_key + '/manifests/' + repo_tag)
+    label_data, _ = await _registry_request("v2/" + repo_key + '/manifests/' + repo_tag)
     labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-    if labels:
-        for key in labels.keys():
-            if key.startswith("io.simcore."):
-                try:
-                    label_data = json.loads(labels[key])
-                    for label_key in label_data.keys():
-                        image_tags[label_key] = label_data[label_key]
-                except json.decoder.JSONDecodeError:
-                    logging.exception("Error while decoding json formatted data from %s:%s", repo_key, repo_tag)
-                    # silently skip this repo
-                    return {}
+    if not labels:
+        return image_tags
+    for key in labels:
+        if key.startswith("io.simcore."):
+            try:
+                label_data = json.loads(labels[key])
+                for label_key in label_data.keys():
+                    image_tags[label_key] = label_data[label_key]
+            except json.decoder.JSONDecodeError:
+                logging.exception("Error while decoding json formatted data from %s:%s", repo_key, repo_tag)
+                # silently skip this repo
+                return {}
 
     return image_tags
 
 async def _get_repo_details(repo: str) -> List[Dict]:
     #pylint: disable=too-many-nested-blocks
     current_repo = []
-    if "/comp/" in repo or "/dynamic/" in repo:
-        # get list of repo versions
-        im_data = await _registry_request(repo + '/tags/list')
-        tags = im_data['tags']
-        if tags:
-            for tag in tags:
-                image_tags = await _get_repo_version_details(repo, tag)
-                if image_tags:
-                    current_repo.append(image_tags)
+    # get list of repo versions
+    im_data = await _registry_request("v2/" + repo + '/tags/list')
+    for tag in im_data['tags']:
+        image_tags = await _get_repo_version_details(repo, tag)
+        if image_tags:
+            current_repo.append(image_tags)
 
     return current_repo
 
@@ -143,7 +145,7 @@ async def get_service_details(service_key: str, service_version: str) -> List[Di
     return await _get_repo_version_details(service_key, service_version)
 
 async def retrieve_list_of_images_in_repo(repository_name: str):
-    request_result = await _registry_request(repository_name + '/tags/list')
+    request_result = await _registry_request("v2/" + repository_name + '/tags/list')
     _logger.debug("retrieved list of images in %s: %s",repository_name, request_result)
     return request_result
 
@@ -161,7 +163,7 @@ async def list_interactive_service_dependencies(service_key: str, service_tag: s
     return dependency_keys
 
 async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
-    request_result = await _registry_request(image + '/manifests/' + tag)
+    request_result = await _registry_request("v2/" + image + '/manifests/' + tag)
     labels = json.loads(request_result["history"][0]["v1Compatibility"])[
         "container_config"]["Labels"]
     _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)

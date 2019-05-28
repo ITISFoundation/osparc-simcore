@@ -17,7 +17,6 @@ REGISTRY_USER = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL = os.environ.get("REGISTRY_URL", "")
 REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True) in ["true", "True", True]
-REGISTRY_VERSION = os.environ.get("REGISTRY_VERSION", "v2")
 
 EXTRA_HOSTS_SUFFIX = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
