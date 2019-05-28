@@ -8,7 +8,7 @@
 import inspect
 import logging
 import re
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List
 
 import attr
 
@@ -142,7 +142,6 @@ async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: s
             return True
         else:
             return lhs or (await model.can(role, rhs, context))
-
-
-    # FIXME: This only works for operators with TWO operands
-    raise NotImplementedError("Invalid expression %s" % operations)
+    else:
+        # FIXME: This only works for operators with TWO operands
+        raise NotImplementedError("Invalid expression %s" % operations)
