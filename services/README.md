@@ -1,9 +1,6 @@
 # services
 
 Each folder contains a services that is part or can be spawned by the platform.
-The prefix *dy-* in the naming indicates that this service is not a building
-part of the application (i.e. not listed as an services in the docker-compose file)
-but instead it is *dy*namically spawned by the director as a back-end service.
 
 ## overview
 
@@ -17,22 +14,10 @@ and here follows a quick description of each service.
 
 User login/authentication service...
 
-### computation
-
-Computational services...
-
 ### director
 
 The director is responsible for making dynamic services and computational services available in a docker registry to the workbench application.
 It is also responsible for starting and stopping such a service on demand. A service may be composed of 1 to N connected docker images.
-
-### jupyter
-
-This is a third party service based on jupyter notebook images. It brings the jupyter notebook in the osparc workbench.
-
-### modeling
-
-This is a service providing 3D modeling capabilities.
 
 ### web
 
