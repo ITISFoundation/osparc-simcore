@@ -135,13 +135,13 @@ async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: s
     elif len(tokens)==3:
         tokens = [t.strip() for t in tokens if t.strip() != '']
         lhs, op, rhs = tokens
-        lhs = await model.can(role, lhs, context)
+        can_lhs = await model.can(role, lhs, context)
         if op in ["AND", "&"]:
-            if not lhs:
-                return (await model.can(role, rhs, context))
-            return True
+            if can_lhs:
+                return await model.can(role, rhs, context)
+            return False
         else:
-            return lhs or (await model.can(role, rhs, context))
+            return can_lhs or (await model.can(role, rhs, context))
     else:
         # FIXME: This only works for operators with TWO operands
         raise NotImplementedError("Invalid expression %s" % operations)
