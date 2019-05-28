@@ -100,7 +100,7 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       const builtInServices = [{
-        key: "file-picker",
+        key: "simcore/services/frontend/file-picker",
         version: "1.0.0",
         type: "dynamic",
         name: "File Picker",
@@ -120,7 +120,7 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "nodes-group",
+        key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
         name: "Group of nodes",
@@ -131,7 +131,7 @@ qx.Class.define("qxapp.data.Store", {
         }],
         contact: "maiz@itis.ethz.ch"
       }, {
-        key: "multi-plot",
+        key: "simcore/services/frontend/multi-plot",
         version: "1.0.0",
         type: "group",
         dedicatedWidget: true,
@@ -1269,10 +1269,10 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/dynamic/raw-graphs": {
           "category": "PostPro"
         },
-        "file-picker": {
+        "simcore/services/frontend/file-picker": {
           "category": "Data"
         },
-        "multi-plot": {
+        "simcore/services/frontend/multi-plot": {
           "category": "PostPro"
         }
       };

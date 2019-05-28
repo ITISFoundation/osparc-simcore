@@ -1,7 +1,7 @@
 {
     "workbench": {
         "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
-            "key": "file-picker",
+            "key": "simcore/services/frontend/file-picker",
             "version": "1.0.0",
             "label": "File Picker",
             "inputs": {},

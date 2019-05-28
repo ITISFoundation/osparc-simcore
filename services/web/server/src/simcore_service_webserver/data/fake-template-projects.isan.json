@@ -9,7 +9,7 @@
     "lastChangeDate": "2018-10-22T09:33:41.858Z",
     "workbench": {
       "template-uuid-4674-b758-946151cae351": {
-        "key": "file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 0D",
         "inputs": {},
@@ -93,7 +93,7 @@
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
     "workbench": {
       "template-uuid-4212-8108-c7cfab4f241e": {
-        "key": "file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "inputs": {},
         "outputs": {},
@@ -107,7 +107,7 @@
         }
       },
       "template-uuid-4ea2-9778-2b2e0e28907a": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 1D",
         "inputs": {},
@@ -122,7 +122,7 @@
         }
       },
       "template-uuid-41c5-bb23-d55cc2cb0252": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 2D",
         "inputs": {},
@@ -334,7 +334,7 @@
     "lastChangeDate": "2019-04-30T09:56:43.191Z",
     "workbench": {
       "template-uuid-4552-ad8d-e4699176f397": {
-        "key": "file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker",
         "inputs": {},
@@ -565,7 +565,7 @@
         }
       },
       "template-uuid-4265-9a51-a1c2212798ae": {
-        "key": "multi-plot",
+        "key": "simcore/services/frontend/multi-plot",
         "version": "1.0.0",
         "label": "Membrane Potentials",
         "inputs": {},
@@ -585,7 +585,7 @@
         }
       },
       "template-uuid-41a1-808a-5ce21f5eff0f": {
-        "key": "multi-plot",
+        "key": "simcore/services/frontend/multi-plot",
         "version": "1.0.0",
         "label": "LCC Currents",
         "inputs": {},

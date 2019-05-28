@@ -81,10 +81,11 @@
             "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
+              "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "examples": [
                 "simcore/services/comp/sleeper",
                 "simcore/services/dynamic/3dviewer",
-                "file-picker"
+                "simcore/services/frontend/file-picker"
               ]
             },
             "version": {

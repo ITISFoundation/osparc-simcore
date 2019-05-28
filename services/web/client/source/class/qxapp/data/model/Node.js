@@ -228,22 +228,16 @@ qx.Class.define("qxapp.data.model.Node", {
 
     isDynamic: function() {
       const metaData = this.getMetaData();
-      if (metaData && metaData.type && metaData.type === "dynamic") {
-        return true;
-      }
-      return false;
+      return (metaData && metaData.type && metaData.type === "dynamic");
     },
 
     isComputational: function() {
       const metaData = this.getMetaData();
-      if (metaData && metaData.type && metaData.type === "computational") {
-        return true;
-      }
-      return false;
+      return (metaData && metaData.type && metaData.type === "computational");
     },
 
     isRealService: function() {
-      return this.isInKey("simcore/service");
+      return (this.isInKey("simcore/service/dynamic") || this.isInKey("simcore/service/comp"));
     },
 
     getMetaData: function() {
