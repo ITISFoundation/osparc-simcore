@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "qxcompiler": "^0.2.22",
-    "qooxdoo-sdk": "^6.0.0-alpha-20181212"
-  }
-}
