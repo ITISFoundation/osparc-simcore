@@ -1,4 +1,5 @@
 #pylint: disable=C0111
+import enum
 import json
 import logging
 from typing import Dict, List, Tuple
@@ -8,12 +9,16 @@ from yarl import URL
 
 from . import config, exceptions
 
-INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
-COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
+
+NUMBER_OF_RETRIEVED_REPOS = 5
+NUMBER_OF_RETRIEVED_TAGS = 5
 
 _logger = logging.getLogger(__name__)
 
+class ServiceType(enum.Enum):
+    COMPUTATIONAL = "comp"
+    DYNAMIC = "dynamic"
 
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
@@ -29,7 +34,7 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
         async with getattr(session, method.lower())(url) as response:
             if response.status == 404:
                 _logger.exception("path to registry not found: %s", url)
-                raise exceptions.RegistryConnectionError(path)
+                raise exceptions.ServiceNotAvailableError(path)
             if response.status == 401:
                 if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
                     raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
@@ -78,76 +83,89 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
 
             return (resp_data, resp_headers)
 
-async def _retrieve_list_of_repositories() -> List[str]:
-    result, headers = await _registry_request('v2/_catalog?n=5')
-    repos_list = result["repositories"]
-    while "Link" in headers:
-        link = str(headers["Link"]).split(";")[0].strip("<>")
-        result, headers = await _registry_request(link)
-        repos_list.extend(result["repositories"])
-    _logger.debug("retrieved list of repos: %s", repos_list)
+async def _list_repositories() -> List[str]:
+    # if there are more repos, the Link will be available in the response headers until none available
+    loop = True
+    request = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
+    repos_list = []
+    while loop:
+        result, headers = await _registry_request(request)
+        if result["repositories"]:
+            repos_list.extend(result["repositories"])
+        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
+        loop = "Link" in headers
     return repos_list
 
-async def _get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
+async def _get_image_details(image_key: str, image_tag: str) -> Dict:
     image_tags = {}
-    label_data, _ = await _registry_request("v2/" + repo_key + '/manifests/' + repo_tag)
+    request = URL("v2/{}/manifests/{}".format(image_key, image_tag))
+    label_data, _ = await _registry_request(request)
     labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
     if not labels:
         return image_tags
     for key in labels:
-        if key.startswith("io.simcore."):
-            try:
-                label_data = json.loads(labels[key])
-                for label_key in label_data.keys():
-                    image_tags[label_key] = label_data[label_key]
-            except json.decoder.JSONDecodeError:
-                logging.exception("Error while decoding json formatted data from %s:%s", repo_key, repo_tag)
-                # silently skip this repo
-                return {}
+        if not key.startswith("io.simcore."):
+            continue
+        try:
+            label_data = json.loads(labels[key])
+            for label_key in label_data.keys():
+                image_tags[label_key] = label_data[label_key]
+        except json.decoder.JSONDecodeError:
+            logging.exception("Error while decoding json formatted data from %s:%s", image_key, image_tag)
+            # silently skip this repo
+            return {}
 
     return image_tags
 
-async def _get_repo_details(repo: str) -> List[Dict]:
-    #pylint: disable=too-many-nested-blocks
-    current_repo = []
+async def _list_image_tags(image_key: str) -> List[Dict]:
+    image_tags = []
     # get list of repo versions
-    im_data = await _registry_request("v2/" + repo + '/tags/list')
-    for tag in im_data['tags']:
-        image_tags = await _get_repo_version_details(repo, tag)
-        if image_tags:
-            current_repo.append(image_tags)
+    loop = True
+    request = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
+    while loop:
+        tags, headers = await _registry_request(request)
+        if tags["tags"]:
+            image_tags.extend(tags["tags"])
+        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
+        loop = "Link" in headers
+    return image_tags
 
-    return current_repo
+async def _get_repo_details(image_key: str) -> List[Dict]:
+    repo_details = []
+    image_tags = await _list_image_tags(image_key)
+    for tag in image_tags:
+        image_details = await _get_image_details(image_key, tag)
+        if image_details:
+            repo_details.append(image_details)
+    return repo_details
 
-async def _list_services(service_prefix: str) -> List[List[Dict]]:
-    _logger.debug("getting list of computational services")
-    list_all_repos = await _retrieve_list_of_repositories()
+async def _list_services(service_type: ServiceType) -> List[List[Dict]]:
+    _logger.debug("getting list of services")
+    repos = await _list_repositories()
     # get the services repos
-    list_of_specific_repos = [repo for repo in list_all_repos if str(repo).startswith(service_prefix)]
-    _logger.debug("retrieved list of computational repos : %s", list_of_specific_repos)
-    repositories = []
-    # or each repo get all tags details
-    for repo in list_of_specific_repos:
+    filtered_repos = [repo for repo in repos if str(repo).startswith(_get_prefix(service_type))]
+    _logger.debug("retrieved list of repos : %s", filtered_repos)
+    
+    # only list as service if it actually contains the necessary labels
+    services = []
+    for repo in filtered_repos:
         details = await _get_repo_details(repo)
         for repo_detail in details:
-            repositories.append(repo_detail)
+            services.append(repo_detail)
 
-    return repositories
-
+    return services
 
 async def list_computational_services() -> List[List[Dict]]:
-    return await _list_services(COMPUTATIONAL_SERVICES_PREFIX)
+    return await _list_services(ServiceType.COMPUTATIONAL)
 
 async def list_interactive_services() -> List[List[Dict]]:
-    return await _list_services(INTERACTIVE_SERVICES_PREFIX)
+    return await _list_services(ServiceType.DYNAMIC)
 
 async def get_service_details(service_key: str, service_version: str) -> List[Dict]:
-    return await _get_repo_version_details(service_key, service_version)
+    return await _get_image_details(service_key, service_version)
 
-async def retrieve_list_of_images_in_repo(repository_name: str):
-    request_result = await _registry_request("v2/" + repository_name + '/tags/list')
-    _logger.debug("retrieved list of images in %s: %s",repository_name, request_result)
-    return request_result
+async def retrieve_list_of_image_tags(image_key: str):
+    return await _list_image_tags(image_key)
 
 async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
     image_labels = await retrieve_labels_of_image(service_key, service_tag)
@@ -163,30 +181,33 @@ async def list_interactive_service_dependencies(service_key: str, service_tag: s
     return dependency_keys
 
 async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
-    request_result = await _registry_request("v2/" + image + '/manifests/' + tag)
-    labels = json.loads(request_result["history"][0]["v1Compatibility"])[
-        "container_config"]["Labels"]
+    request = URL("v2/{}/manifests/{}".format(image, tag))
+    request_result, _ = await _registry_request(request)
+    labels = json.loads(request_result["history"][0]["v1Compatibility"])["container_config"]["Labels"]
     _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
-def get_service_first_name(repository_name: str) -> str:
-    if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
-    elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(COMPUTATIONAL_SERVICES_PREFIX):]
+def _get_prefix(service_type: ServiceType) -> str:
+    return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
+
+def get_service_first_name(image_key: str) -> str:
+    if str(image_key).startswith(_get_prefix(ServiceType.DYNAMIC)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.DYNAMIC)):]
+    elif str(image_key).startswith(_get_prefix(ServiceType.COMPUTATIONAL)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.COMPUTATIONAL)):]
     else:
         return "invalid service"
 
-    _logger.debug("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
+    _logger.debug("retrieved service name from repo %s : %s", image_key, service_name_suffixes)
     return service_name_suffixes.split('/')[0]
 
-def get_service_last_names(repository_name: str) -> str:
-    if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
-    elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(COMPUTATIONAL_SERVICES_PREFIX):]
+def get_service_last_names(image_key: str) -> str:
+    if str(image_key).startswith(_get_prefix(ServiceType.DYNAMIC)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.DYNAMIC)):]
+    elif str(image_key).startswith(_get_prefix(ServiceType.COMPUTATIONAL)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.COMPUTATIONAL)):]
     else:
         return "invalid service"
     service_last_name = str(service_name_suffixes).replace("/", "_")
-    _logger.debug("retrieved service last name from repo %s : %s", repository_name, service_last_name)
+    _logger.debug("retrieved service last name from repo %s : %s", image_key, service_last_name)
     return service_last_name

@@ -318,7 +318,7 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
 async def _get_repos_from_key(service_key: str) -> List[Dict]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
-        service_key: await registry_proxy.retrieve_list_of_images_in_repo(service_key)
+        service_key: await registry_proxy.retrieve_list_of_image_tags(service_key)
     }
     log.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:
@@ -339,7 +339,7 @@ async def _get_dependant_repos(service_key: str, service_tag: str) -> Dict:
 
 
 async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag: str) -> str:
-    available_tags_list = sorted(list_of_images[service_key]['tags'])
+    available_tags_list = sorted(list_of_images[service_key])
     # not tags available... probably an undefined service there...
     if not available_tags_list:
         raise exceptions.ServiceNotAvailableError(service_key, service_tag)
