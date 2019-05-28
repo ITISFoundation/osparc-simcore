@@ -31,6 +31,10 @@ SERVICES_DEFAULT_ENVS = {
 
 # some services need to know the published host to be functional (paraview)
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
+# used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
     "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))
+# used to find the right network name
 SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME")
+# useful when developing with an alternative registry namespace
+SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")
