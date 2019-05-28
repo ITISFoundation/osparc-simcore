@@ -51,10 +51,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     setup_security(app)
     setup_rest(app, debug=True)
     setup_login(app)            # needed for login_utils fixtures
-    assert setup_projects(app,
-        enable_fake_data=False, # no fake data
-        disable_login=False
-    )
+    assert setup_projects(app)
 
     # server and client
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
@@ -104,11 +101,19 @@ async def test_list_projects(client, logged_user, user_project, expected):
     resp = await client.get(url)
     data, errors = await assert_status(resp, expected)
 
+    #TODO: GET /v0/projects?type=user
+
     if not errors:
         assert len(data) == 1
         assert data[0] == user_project
 
+@pytest.mark.skip("TODO")
+async def test_list_templates_only(client, logged_user, user_project, expected):
+    #TODO: GET /v0/projects?type=template
     #TODO: GET /v0/projects?type=template&start=0&count=3
+    pass
+
+
 
 
 @pytest.mark.parametrize("user_role,expected", [
@@ -193,12 +198,20 @@ async def test_delete_project(client, logged_user, user_project, expected):
 async def test_new_project_with_predefined_fields(client, fake_project, logged_user, expected):
     # POST /v0/projects
     #   optional body with predefined fields, e.g. { name='foo', description,... }
+    # -->
+
+    #"uuid",
+    #"prjOwner",
+    #"creationDate",
+    #"lastChangeDate",
+
     pass
 
 
 @pytest.mark.skip("TODO: under dev")
 async def test_new_project_from_template(client, logged_user, template_project, expected):
     # POST /v0/projects?from_template={template_uuid}
+    #
     pass
 
 
@@ -208,11 +221,20 @@ async def test_new_project_from_template(client, logged_user, template_project, 
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_update_project_workbench_inputs(client, logged_user, user_project, expected):
+async def test_replace_project_workbench_inputs(client, logged_user, user_project, expected):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
     updated_project = deepcopy(user_project)
+    #
+    #"inputAccess": {
+    #    "Na": "ReadAndWrite", <--------
+    #    "Kr": "ReadOnly",
+    #    "BCL": "ReadAndWrite",
+    #    "NBeats": "ReadOnly",
+    #    "Ligand": "Invisible",
+    #    "cAMKII": "Invisible"
+    #  },
     updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
 
     resp = await client.put(url, json=updated_project)

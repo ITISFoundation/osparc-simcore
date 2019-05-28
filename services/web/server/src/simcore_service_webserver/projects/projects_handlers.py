@@ -7,7 +7,6 @@ from jsonschema import ValidationError
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .. import security_permissions as sp
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from .projects_api import validate_project
@@ -19,6 +18,8 @@ from .projects_models import ProjectDB
 log = logging.getLogger(__name__)
 
 
+ANONYMOUS_USER_ID = -1 # ONLY for testing purpuses. TODO: remove with disable_login is deprecated
+
 @login_required
 async def create_projects(request: web.Request):
     await check_permission(request, "project.create")
@@ -26,12 +27,16 @@ async def create_projects(request: web.Request):
     # TODO: partial or complete project. Values taken as default if undefined??
     project = await request.json()
 
-    user_id = request[RQT_USERID_KEY]
-    # TODO: update metadata: uuid, ownership, timestamp, etc
-
     try:
         # validate data
         validate_project(request.app, project)
+
+        user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+
+        # TODO: update metadata: uuid, ownership, timestamp, etc
+        #project["prjOwner"] =
+        #project["creationDate"] =
+        #project["lastChangeDate"] =
 
         # save data
         await ProjectDB.add_projects([project], user_id, db_engine=request.app[APP_DB_ENGINE_KEY])
@@ -54,7 +59,7 @@ async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
-    uid = request[RQT_USERID_KEY]
+    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     ptype = request.query.get('type', 'user')
 
     projects_list = []
@@ -63,7 +68,7 @@ async def list_projects(request: web.Request):
         projects_list += await ProjectDB.load_template_projects(db_engine=request.app[APP_DB_ENGINE_KEY])
 
     if ptype in ("user", "all"):
-        projects_list += await ProjectDB.load_user_projects(user_id=uid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        projects_list += await ProjectDB.load_user_projects(user_id=user_id, db_engine=request.app[APP_DB_ENGINE_KEY])
 
 
     start = int(request.query.get('start', 0))
@@ -92,7 +97,7 @@ async def get_project(request: web.Request):
 
     project = await get_project_for_user(request,
         project_uuid=request.match_info.get("project_id"),
-        user_id=request[RQT_USERID_KEY]
+        user_id=request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     )
 
     return {
@@ -117,7 +122,7 @@ async def replace_project(request: web.Request):
     :raises web.HTTPNotFound: cannot find project id in repository
     """
 
-    user_id = request[RQT_USERID_KEY]
+    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     project_uuid = request.match_info.get("project_id")
     new_values = await request.json()
 
@@ -160,7 +165,7 @@ async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
-    user_id = request[RQT_USERID_KEY]
+    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     project_uuid = request.match_info.get("project_id")
 
     try:

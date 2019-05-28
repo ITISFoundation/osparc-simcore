@@ -125,7 +125,7 @@ async def test_create(client, fake_project, mocker):
 
     assert not error
 
-    mock.assert_called_once_with([fake_project], -1, db_engine=None)
+    mock.assert_called_once_with([fake_project], FAKE_USER_ID, db_engine=None)
 
 async def test_list(client, mocker, fake_project):
     mock = mocker.patch('simcore_service_webserver.projects.projects_handlers.ProjectDB.load_user_projects', return_value=Future())

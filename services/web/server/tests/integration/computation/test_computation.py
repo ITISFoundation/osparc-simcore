@@ -219,7 +219,6 @@ async def test_start_pipeline(client, postgres_session, celery_service, sleeper_
     assert url == URL(API_PREFIX + "/computation/pipeline/{}/start".format(project_id))
 
     # POST /v0/computation/pipeline/{project_id}/start
-    import pdb; pdb.set_trace()
     resp = await client.post(url)
     data, error = await assert_status(resp, expected_response)
 
