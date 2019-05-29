@@ -44,8 +44,10 @@ qx.Class.define("qxapp.file.FilePicker", {
   construct: function(node, studyId) {
     this.base(arguments);
 
-    this.setNode(node);
-    this.setStudyId(studyId);
+    this.set({
+      node,
+      studyId
+    });
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);

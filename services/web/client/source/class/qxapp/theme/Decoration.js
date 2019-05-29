@@ -105,6 +105,12 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
       }
+    },
+
+    "no-border": {
+      style: {
+        width: 0
+      }
     }
   }
 });
