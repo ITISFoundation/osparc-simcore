@@ -100,9 +100,9 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       const builtInServices = [{
-        key: "simcore/services/dynamic/itis/file-picker",
-        version: "0.0.0",
-        type: "computational",
+        key: "simcore/services/frontend/file-picker",
+        version: "1.0.0",
+        type: "dynamic",
         name: "File Picker",
         description: "File Picker",
         authors: [{
@@ -120,9 +120,20 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
-        key: "simcore/services/dynamic/itis/dash-plot",
+        key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
-        type: "container",
+        type: "group",
+        name: "Group of nodes",
+        description: "Groups a collection of nodes in a single node",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch"
+      }, {
+        key: "simcore/services/frontend/multi-plot",
+        version: "1.0.0",
+        type: "group",
         dedicatedWidget: true,
         name: "2D plot - Multi",
         description: "2D plot - Multi",
@@ -1234,9 +1245,6 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/dynamic/cc-2d-viewer": {
           "category": "PostPro"
         },
-        "simcore/services/dynamic/itis/file-picker": {
-          "category": "Data"
-        },
         "simcore/services/dynamic/jupyter-base-notebook": {
           "category": "Notebook"
         },
@@ -1261,7 +1269,10 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/dynamic/raw-graphs": {
           "category": "PostPro"
         },
-        "simcore/services/dynamic/itis/dash-plot": {
+        "simcore/services/frontend/file-picker": {
+          "category": "Data"
+        },
+        "simcore/services/frontend/multi-plot": {
           "category": "PostPro"
         }
       };

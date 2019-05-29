@@ -9,9 +9,7 @@
     "uuid",
     "name",
     "description",
-    "notes",
     "prjOwner",
-    "collaborators",
     "creationDate",
     "lastChangeDate",
     "thumbnail",
@@ -40,32 +38,9 @@
         "Dabbling in temporal transitions ..."
       ]
     },
-    "notes": {
-      "type": "string",
-      "description": "longer project description. using common mark",
-      "examples": [
-        "# title\nSome Text `with` common mark markup"
-      ]
-    },
     "prjOwner": {
       "type": "string",
       "description": "user uuid"
-    },
-    "collaborators": {
-      "type": "object",
-      "description": "UUIDs of the users/groups who should get access to this",
-      "patternProperties": {
-        "^\\S+$": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "read",
-              "write"
-            ]
-          }
-        }
-      }
     },
     "creationDate": {
       "type": "string",
@@ -97,20 +72,20 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
+            "key",
+            "version",
             "label",
             "position"
           ],
           "properties": {
-            "label": {
-              "type": "string"
-            },
             "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
-              "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "examples": [
                 "simcore/services/comp/sleeper",
-                "simcore/services/dynamic/3dviewer"
+                "simcore/services/dynamic/3dviewer",
+                "simcore/services/frontend/file-picker"
               ]
             },
             "version": {
@@ -121,6 +96,9 @@
                 "1.0.0",
                 "0.0.1"
               ]
+            },
+            "label": {
+              "type": "string"
             },
             "progress": {
               "type":"number",
@@ -146,7 +124,8 @@
                         "integer",
                         "boolean",
                         "string",
-                        "number"
+                        "number",
+                        "null"
                       ]
                     },
                     {
@@ -204,7 +183,12 @@
               "items": {
                 "type": "string",
                 "pattern": "^\\S+$"
-              }
+              },
+              "description": "node IDs of where the node is connected to",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
             },
             "outputs": {
               "type": "object",
@@ -216,7 +200,8 @@
                         "integer",
                         "boolean",
                         "string",
-                        "number"
+                        "number",
+                        "null"
                       ]
                     },
                     {
@@ -245,17 +230,6 @@
             "parent": {
               "type": ["string", "null"],
               "pattern": "^\\S+$"
-            },
-            "links": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "node IDs of where the node is connected to",
-              "examples": [
-                "nodeUuid1",
-                "nodeUuid2"
-              ]
             },
             "position": {
               "type": "object",

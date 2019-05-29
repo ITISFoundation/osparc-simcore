@@ -156,8 +156,6 @@ def _assert_same_projects(got: Dict, expected: Dict):
     PROPERTIES_TO_CHECK =  [
         "name",
         "description",
-        "notes",
-        "collaborators",
         "creationDate",
         "lastChangeDate",
         "thumbnail"
