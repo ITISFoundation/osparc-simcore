@@ -167,30 +167,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createFilterByLayout: function(label, btns) {
-      let filterTypeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let typeLabel = new qx.ui.basic.Label(label);
-      filterTypeLayout.add(typeLabel);
-
-      let group = new qx.ui.form.RadioGroup().set({
-        allowEmptySelection: true
-      });
-      btns.forEach(cat => {
-        let button = new qx.ui.form.ToggleButton(cat).set({
-          maxWidth: 150
-        });
-        group.add(button);
-        filterTypeLayout.add(button, {
-          flex: 1
-        });
-      }, this);
-
-      return {
-        layout: filterTypeLayout,
-        radioGroup: group
-      };
-    },
-
     __createVersionsList: function() {
       let versionsLayout = this.__createVBoxWLabel(this.tr("Versions"));
 
