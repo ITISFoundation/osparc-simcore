@@ -20,6 +20,50 @@ class ServiceType(enum.Enum):
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
 
+async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> Tuple[Dict, Dict]:
+    if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
+        raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
+    # auth issue let's try some authentication get the auth type
+    auth_type = None
+    auth_details = None
+    for key in auth_headers:
+        if str(key).lower() == "www-authenticate":
+            auth_type, auth_details = str(auth_headers[key]).split(" ", 1)
+            auth_details = {x.split("=")[0]:x.split("=")[1].strip('"') for x in auth_details.split(",")}
+            break
+    if not auth_type:
+        raise exceptions.RegistryConnectionError("Unknown registry type: cannot deduce authentication method!")
+    auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
+
+    # bearer type, it needs a token with all communications
+    if auth_type == "Bearer":
+        async with aiohttp.ClientSession() as session:
+            # get the token
+            token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
+            async with session.get(token_url, auth=auth) as token_resp:
+                if not token_resp.status == 200:
+                    raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
+                bearer_code = (await token_resp.json())["token"]
+                headers = {"Authorization": "Bearer {}".format(bearer_code)}
+                async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
+                    if resp_wtoken.status > 399:
+                        _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
+                        raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                    resp_data = await resp_wtoken.json(content_type=None)
+                    resp_headers = resp_wtoken.headers
+                    return (resp_data, resp_headers)
+    elif auth_type == "Basic":
+        async with aiohttp.ClientSession() as session:
+            # basic authentication
+            async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+                if resp_wbasic.status > 399:
+                    _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
+                    raise exceptions.RegistryConnectionError(str(resp_wbasic))
+                resp_data = await resp_wbasic.json(content_type=None)
+                resp_headers = resp_wbasic.headers
+                return (resp_data, resp_headers)
+    raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
+
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
@@ -36,43 +80,7 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
                 _logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(path)
             if response.status == 401:
-                if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
-                    raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
-                # auth issue let's try some authentication get the auth type
-                auth_type = None
-                auth_details = None
-                for key in response.headers:
-                    if str(key).lower() == "www-authenticate":
-                        auth_type, auth_details = str(response.headers[key]).split(" ", 1)
-                        auth_details = {x.split("=")[0]:x.split("=")[1].strip('"') for x in auth_details.split(",")}
-                        break
-                if not auth_type:
-                    raise exceptions.RegistryConnectionError("Unknown registry type: cannot deduce authentication method!")
-                auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
-
-                # bearer type, it needs a token with all communications
-                if auth_type == "Bearer":
-                    # get the token
-                    token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
-                    async with session.get(token_url, auth=auth) as token_resp:
-                        if not token_resp.status == 200:
-                            raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
-                        bearer_code = (await token_resp.json())["token"]
-                        headers = {"Authorization": "Bearer {}".format(bearer_code)}
-                        async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
-                            if resp_wtoken.status > 399:
-                                _logger.exception("Unknown error while accessing with token authorized registry: %s", str(response))
-                                raise exceptions.RegistryConnectionError(str(resp_wtoken))
-                            resp_data = await resp_wtoken.json(content_type=None)
-                            resp_headers = resp_wtoken.headers
-                elif auth_type == "Basic":
-                    # basic authentication
-                    async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
-                        if resp_wbasic.status > 399:
-                            _logger.exception("Unknown error while accessing with token authorized registry: %s", str(response))
-                            raise exceptions.RegistryConnectionError(str(resp_wbasic))
-                        resp_data = await resp_wbasic.json(content_type=None)
-                        resp_headers = resp_wbasic.headers
+                resp_data, resp_headers = await _auth_registry_request(url, method, response.headers)
             elif response.status > 399:
                 _logger.exception("Unknown error while accessing registry: %s", str(response))
                 raise exceptions.RegistryConnectionError(str(response))
@@ -145,7 +153,7 @@ async def _list_services(service_type: ServiceType) -> List[List[Dict]]:
     # get the services repos
     filtered_repos = [repo for repo in repos if str(repo).startswith(_get_prefix(service_type))]
     _logger.debug("retrieved list of repos : %s", filtered_repos)
-    
+
     # only list as service if it actually contains the necessary labels
     services = []
     for repo in filtered_repos:
