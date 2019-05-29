@@ -18,8 +18,6 @@ from .projects_models import ProjectDB
 log = logging.getLogger(__name__)
 
 
-ANONYMOUS_USER_ID = -1 # ONLY for testing purpuses. TODO: remove with disable_login is deprecated
-
 @login_required
 async def create_projects(request: web.Request):
     await check_permission(request, "project.create")
@@ -31,15 +29,12 @@ async def create_projects(request: web.Request):
         # validate data
         validate_project(request.app, project)
 
-        user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+        user_id = request[RQT_USERID_KEY]
+        db_engine=request.config_dict[APP_DB_ENGINE_KEY]
 
-        # TODO: update metadata: uuid, ownership, timestamp, etc
-        #project["prjOwner"] =
-        #project["creationDate"] =
-        #project["lastChangeDate"] =
-
-        # save data
-        await ProjectDB.add_projects([project], user_id, db_engine=request.app[APP_DB_ENGINE_KEY])
+        # update metadata (uuid, timestamps, ownership) and save
+        project_uuid = await ProjectDB.add_project(project, user_id, db_engine)
+        assert project_uuid == project["uuid"]
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
@@ -58,18 +53,21 @@ async def list_projects(request: web.Request):
 
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
-
-    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    user_id = request[RQT_USERID_KEY]
     ptype = request.query.get('type', 'user')
 
     projects_list = []
     if ptype in ("template", "all"):
         projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
-        projects_list += await ProjectDB.load_template_projects(db_engine=request.app[APP_DB_ENGINE_KEY])
+        projects_list += await ProjectDB.load_template_projects(
+            db_engine=request.app[APP_DB_ENGINE_KEY]
+        )
 
     if ptype in ("user", "all"):
-        projects_list += await ProjectDB.load_user_projects(user_id=user_id, db_engine=request.app[APP_DB_ENGINE_KEY])
-
+        projects_list += await ProjectDB.load_user_projects(
+            user_id=user_id,
+            db_engine=request.app[APP_DB_ENGINE_KEY]
+        )
 
     start = int(request.query.get('start', 0))
     count = int(request.query.get('count',len(projects_list)))
@@ -97,7 +95,7 @@ async def get_project(request: web.Request):
 
     project = await get_project_for_user(request,
         project_uuid=request.match_info.get("project_id"),
-        user_id=request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+        user_id=request[RQT_USERID_KEY]
     )
 
     return {
@@ -122,23 +120,24 @@ async def replace_project(request: web.Request):
     :raises web.HTTPNotFound: cannot find project id in repository
     """
 
-    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    new_values = await request.json()
+    new_project = await request.json()
 
-    dbe = request.config_dict[APP_DB_ENGINE_KEY]
+    db_engine = request.config_dict[APP_DB_ENGINE_KEY]
 
     await check_permission(request, "project.update | project.workbench.node.inputs.update",
     context={
-        'db_engine': dbe,
+        'db_engine': db_engine,
         'project_id': project_uuid,
         'user_id': user_id,
-        'new_data': new_values
+        'new_data': new_project
     })
 
     try:
-        validate_project(request.app, new_values)
-        await ProjectDB.update_user_project(new_values, user_id, project_uuid, db_engine=dbe)
+        validate_project(request.app, new_project)
+
+        await ProjectDB.update_user_project(new_project, user_id, project_uuid, db_engine)
 
     except ValidationError:
         raise web.HTTPBadRequest
@@ -146,7 +145,7 @@ async def replace_project(request: web.Request):
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
-    return {'data': new_values}
+    return {'data': new_project}
 
 
 # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
@@ -165,7 +164,7 @@ async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
-    user_id = request.config_dict.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
 
     try:
