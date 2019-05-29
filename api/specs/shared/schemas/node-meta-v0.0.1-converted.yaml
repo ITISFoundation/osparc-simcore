@@ -138,7 +138,7 @@ properties:
             patternProperties:
               .+:
                 type: string
-                pattern: '^[_a-z0-9]+$'
+                pattern: '^[-_a-zA-Z0-9]+$'
             example:
               - dir/input1.txt: key_1
                 dir33/input2.txt: key2
@@ -204,6 +204,7 @@ properties:
                             label: The Rat
                           - key: dog
                             label: Bello the Dog
+    additionalProperties: true
   outputs:
     type: object
     description: definition of the outputs of this node
@@ -255,7 +256,8 @@ properties:
             patternProperties:
               .+:
                 type: string
-                pattern: '^[_a-z0-9]+$'
+                pattern: '^[-_a-zA-Z0-9]+$'
             example:
               - dir/input1.txt: key_1
                 dir33/input2.txt: key2
+    additionalProperties: true

@@ -148,7 +148,6 @@ async def test_workflow(loop, client, fake_project):
 
         modified_project = deepcopy(projects[0])
         modified_project["name"] = "some other name"
-        modified_project["notes"] = "John Raynor killed Kerrigan"
         modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop("Xw)F")
         modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
         # modifiy
