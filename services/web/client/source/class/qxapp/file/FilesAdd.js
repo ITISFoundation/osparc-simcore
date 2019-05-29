@@ -133,8 +133,8 @@ qx.Class.define("qxapp.file.FilesAdd", {
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
       const hBox = this._createChildControlImpl("progressBox");
-      const label = new qx.ui.basic.Label(file.name);
-      const progressBar = new qx.ui.indicator.ProgressBar();
+      const label = new qx.ui.basic.Atom(file.name);
+      const progressBar = new qxapp.ui.toolbar.ProgressBar();
       hBox.add(label);
       hBox.add(progressBar);
 

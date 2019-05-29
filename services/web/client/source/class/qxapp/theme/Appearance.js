@@ -209,6 +209,14 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "toolbar-progressbar": {
+      include: "progressbar",
+      alias: "progressbar",
+      style: () => ({
+        margin: [7, 10]
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       SidePanel
