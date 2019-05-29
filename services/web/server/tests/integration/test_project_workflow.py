@@ -99,10 +99,7 @@ def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, a
     setup_security(app)
     setup_rest(app, debug=True)
     setup_login(app)
-    setup_projects(app,
-        enable_fake_data=False, # no fake data
-        disable_login=False
-    )
+    assert setup_projects(app)
 
     yield loop.run_until_complete( aiohttp_server(app, port=port) )
 
@@ -128,8 +125,6 @@ async def logged_user(client): #, role: UserRole):
 
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects
-
-PREFIX = "/" + API_VERSION
 
 async def _request_list(client) -> List[Dict]:
     # GET /v0/projects
@@ -180,6 +175,7 @@ async def test_workflow(client, fake_project, logged_user):
 
     # creation
     await _request_create(client, fake_project)
+
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
@@ -187,7 +183,7 @@ async def test_workflow(client, fake_project, logged_user):
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
-    modified_project["notes"] = "John Raynor killed Kerrigan"
+    modified_project["description"] = "John Raynor killed Kerrigan"
     modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop("Xw)F")
     modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
     # modify
@@ -205,6 +201,7 @@ async def test_workflow(client, fake_project, logged_user):
 
     # delete
     await _request_delete(client, pid)
+
     # list empty
     projects = await _request_list(client)
     assert not projects

@@ -53,6 +53,7 @@ async def _get_specs(location):
     return specs
 
 
+
 def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) -> bool:
     """
 

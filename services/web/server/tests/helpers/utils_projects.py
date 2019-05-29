@@ -41,8 +41,11 @@ async def create_project(engine, params: Dict=None, user_id=None) -> Dict:
     """
     params = params or {}
 
+    assert "uuid" not in params, "Cannot enforce uuid"
+
     project_data = load_data('data/fake-template-projects.isan.json')[0]
     project_data.update(params)
+
 
     project_uuid = await storage.add_project(project_data, user_id, engine)
     assert project_uuid == project_data["uuid"]

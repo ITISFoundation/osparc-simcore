@@ -90,10 +90,7 @@ def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, a
     setup_rest(app, debug=True) # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
-    setup_projects(app,
-        enable_fake_data=False, # no fake data
-        disable_login=False
-    )
+    assert setup_projects(app)
     setup_studies_access(app)
 
     yield loop.run_until_complete( aiohttp_server(app, port=port) )
@@ -166,13 +163,12 @@ def _assert_same_projects(got: Dict, expected: Dict):
 async def test_access_study_by_anonymous_guest(client, qx_client_outdir):
     app = client.app
     params = {
-        "uuid":STUDY_UUID,
         "name":"some-template"
     }
 
     async with NewProject(params, app) as expected_prj:
 
-        url_path = "/study/%s" % STUDY_UUID
+        url_path = "/study/%s" % expected_prj["uuid"]
         resp = await client.get(url_path)
         content = await resp.text()
 
