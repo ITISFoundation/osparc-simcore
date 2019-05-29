@@ -9,8 +9,6 @@ openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered
 
 aiohttp
 aiopg[sa]
-cryptography
 ujson
 werkzeug
 jsonschema
-aiohttp_session[secure] # TODO: eliminate this dependency or make it optional!
