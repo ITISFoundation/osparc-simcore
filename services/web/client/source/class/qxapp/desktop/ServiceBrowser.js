@@ -106,30 +106,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServicesList: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      const filterStrLayout = this.__createFilterStringLayout();
-      servicesLayout.add(filterStrLayout);
-
-      const typeBtns = [
-        "Computational",
-        "Dynamic"
-      ];
-      const typeResp = this.__createFilterByLayout(this.tr("Type"), typeBtns);
-      const filterTypeLayout = typeResp["layout"];
-      this.__filterByType = typeResp["radioGroup"];
-      servicesLayout.add(filterTypeLayout);
-
-      const catBtns = [
-        "Data",
-        "Modeling",
-        "Simulator",
-        "Solver",
-        "PostPro",
-        "Notebook"
-      ];
-      const catResp = this.__createFilterByLayout(this.tr("Category"), catBtns);
-      const filterCatLayout = catResp["layout"];
-      this.__filterByCategory = catResp["radioGroup"];
-      servicesLayout.add(filterCatLayout);
+      const serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
+      servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
@@ -157,6 +135,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       servCtrl.setDelegate({
         createItem: () => {
           const item = new qxapp.desktop.ServiceBrowserListItem();
+          item.subscribeToFilterGroup("serviceBrowser");
           item.addListener("tap", e => {
             // const serviceKey = item.getModel();
             // this.__serviceSelected(serviceKey);
@@ -175,7 +154,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       });
       servicesLayout.add(servicesList);
 
-
       // Workaround to the list.changeSelection
       servCtrl.addListener("changeValue", e => {
         if (e.getData() && e.getData().length>0) {
@@ -186,55 +164,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         }
       }, this);
 
-      // create the filter
-      const searchIn = [
-        "key",
-        "name",
-        "type",
-        "contact",
-        "category"
-      ];
-      let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(servCtrl, searchIn);
-      let dlgt = servCtrl.getDelegate();
-      dlgt["filter"] = filterObj["filter"];
-      // set the filter
-      servCtrl.setDelegate(dlgt);
-
-      // make every input in the textfield update the controller
-      this.__searchTextfield.bind("changeValue", filterObj, "searchString");
-
-      this.__filterByType.addListener("changeValue", e => {
-        const sel = e.getData();
-        filterObj.removeFilter("type");
-        if (sel) {
-          filterObj.addFilter("type", sel.getLabel());
-        }
-        servCtrl.update();
-      }, this);
-
-      this.__filterByCategory.addListener("changeValue", e => {
-        const sel = e.getData();
-        filterObj.removeFilter("category");
-        if (sel) {
-          filterObj.addFilter("category", sel.getLabel());
-        }
-        servCtrl.update();
-      }, this);
-
       return servicesLayout;
-    },
-
-    __createFilterStringLayout: function() {
-      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
-      filterLayout.add(searchLabel);
-
-      let textfield = this.__searchTextfield = new qx.ui.form.TextField();
-      textfield.setLiveUpdate(true);
-      filterLayout.add(textfield, {
-        flex: 1
-      });
-      return filterLayout;
     },
 
     __createFilterByLayout: function(label, btns) {
