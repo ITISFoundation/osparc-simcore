@@ -6,23 +6,25 @@ import enum
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Mapping
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
-from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
+from psycopg2.errors import \
+    UniqueViolation  # pylint: disable=no-name-in-module
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_sdk.models import metadata
 
 from ..db_models import users
-from ..utils import now_str, format_datetime
+from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
+from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +73,8 @@ def _convert_to_db_names(project_data: Dict) -> Dict:
         converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
-def _convert_to_schema_names(project_db_data) -> Dict:
+
+def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
     converted_args = {}
     for key, value in project_db_data.items():
         if key in ["type", "id"]:
@@ -86,6 +89,7 @@ def _convert_to_schema_names(project_db_data) -> Dict:
 class ProjectDB:
     # TODO: should implement similar model as services/web/server/src/simcore_service_webserver/login/storage.py
     # TODO: Move to projects_db as free functions
+    # TODO: test all function return schema-compatible data
 
     @classmethod
     def get_engine(cls, request: web.Request) -> Engine:
@@ -197,10 +201,7 @@ class ProjectDB:
         return projects_list
 
     @classmethod
-    async def load_template_projects(cls, db_engine) -> List[Dict]:
-        """ loads the template project from the db
-
-        """
+    async def load_template_projects(cls, db_engine: Engine) -> List[Dict]:
         log.info("Loading template projects")
         projects_list = []
         async with db_engine.acquire() as conn:
@@ -212,6 +213,19 @@ class ProjectDB:
                 log.debug("found project: %s", result_dict)
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
+
+    @classmethod
+    async def get_template_project(cls, project_uuid: str, db_engine: Engine) -> Dict:
+        template_prj = None
+        async with db_engine.acquire() as conn:
+            query = select([projects]).where(
+                and_(projects.c.type == ProjectType.TEMPLATE, projects.c.uuid == project_uuid)
+            )
+            result = await conn.execute(query)
+            row = await result.first()
+            template_prj = _convert_to_schema_names(row) if row else None
+
+        return template_prj
 
     @classmethod
     async def get_user_project(cls, user_id: str, project_uuid: str, db_engine: Engine) -> Dict:

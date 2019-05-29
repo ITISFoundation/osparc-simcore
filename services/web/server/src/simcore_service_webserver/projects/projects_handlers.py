@@ -9,7 +9,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import validate_project
+from .projects_api import create_data_from_template, validate_project
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_fakes import Fake
@@ -22,19 +22,36 @@ log = logging.getLogger(__name__)
 async def create_projects(request: web.Request):
     await check_permission(request, "project.create")
 
-    # TODO: partial or complete project. Values taken as default if undefined??
-    project = await request.json()
+    user_id = request[RQT_USERID_KEY]
+    db_engine=request.config_dict[APP_DB_ENGINE_KEY]
+    template_uuid = request.query.get('from_template')
 
     try:
+        project = {}
+        if template_uuid:
+            # create from template
+            template_prj = await ProjectDB.get_template_project(template_uuid, db_engine)
+
+            if not template_prj:
+                for prj in Fake.projects.values():
+                    if prj.template and prj.data['uuid']==template_uuid:
+                        template_prj = prj
+            if not template_prj:
+                raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
+
+            project = create_data_from_template(template_prj, user_id)
+
+        # overrides with body
+        if request.has_body:
+            body = await request.json()
+            if body:
+                project.update(body)
+
         # validate data
         validate_project(request.app, project)
 
-        user_id = request[RQT_USERID_KEY]
-        db_engine=request.config_dict[APP_DB_ENGINE_KEY]
-
         # update metadata (uuid, timestamps, ownership) and save
-        project_uuid = await ProjectDB.add_project(project, user_id, db_engine)
-        assert project_uuid == project["uuid"]
+        await ProjectDB.add_project(project, user_id, db_engine)
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")

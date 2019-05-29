@@ -30,14 +30,23 @@ def load_data(name):
 
 
 async def create_project(engine, params: Dict=None, user_id=None) -> Dict:
+    """ Injects new project in database for user or as template
+
+    :param params: predefined project properties (except for non-writeable e.g. uuid), defaults to None
+    :type params: Dict, optional
+    :param user_id: assigns this project to user or template project if None, defaults to None
+    :type user_id: int, optional
+    :return: schema-compliant project
+    :rtype: Dict
+    """
     params = params or {}
 
-    prj = load_data('data/fake-template-projects.isan.json')[0]
-    prj.update(params)
+    project_data = load_data('data/fake-template-projects.isan.json')[0]
+    project_data.update(params)
 
-    prj_uuid = await storage.add_project(prj, user_id, engine)
-    assert prj_uuid == prj["uuid"]
-    return prj
+    project_uuid = await storage.add_project(project_data, user_id, engine)
+    assert project_uuid == project_data["uuid"]
+    return project_data
 
 
 async def delete_all_projects(engine):

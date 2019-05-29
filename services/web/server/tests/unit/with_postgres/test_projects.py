@@ -6,6 +6,7 @@
 
 import collections
 import json
+import uuid as uuidlib
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
@@ -36,7 +37,7 @@ API_PREFIX = "/" + API_VERSION
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-#def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg):
+#def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
     app = web.Application()
 
     # config app
@@ -84,6 +85,16 @@ async def user_project(client, fake_project, logged_user):
     ) as project:
         yield project
 
+
+@pytest.fixture
+async def template_project(client, fake_project):
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=None
+    ) as template_prj:
+        yield template_prj
+
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k:dikt[k] for k in keys}
@@ -107,7 +118,7 @@ def assert_replaced(current_project, update_data):
 async def test_list_projects(client, logged_user, user_project, expected):
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    assert str(url) == API_PREFIX + "/" + RESOURCE_NAME
+    assert str(url) == API_PREFIX + "/projects"
 
     resp = await client.get(url)
     data, errors = await assert_status(resp, expected)
@@ -189,8 +200,6 @@ async def test_new_project(client, logged_user, expected):
         #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
         await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
 
-
-@pytest.mark.skip("UnderDEV")
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
@@ -199,17 +208,33 @@ async def test_new_project(client, logged_user, expected):
 ])
 async def test_new_project_from_template(client, logged_user, template_project, expected):
     # POST /v0/projects?from_template={template_uuid}
-    #    NO BODY!!
-
     url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
+
     resp = await client.post(url)
 
     data, error = await assert_status(resp, expected)
 
     if not error:
-        raise NotImplementedError
-        # TODO: create project from template changes uuids
-        # TODO: like template but all uuids changed AND ownership and time-stamps
+        project = data
+        modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
+
+        # different ownership
+        assert project["prjOwner"] == logged_user["email"]
+        assert project["prjOwner"] != template_project["prjOwner"]
+
+        # different timestamps
+        assert to_datetime(template_project["creationDate"]) < to_datetime(project["creationDate"])
+        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(project["lastChangeDate"])
+
+        # different uuids for project and nodes!?
+        assert project["uuid"] != template_project["uuid"]
+
+        # check uuid replacement
+        for node_name in project["workbench"]:
+            try:
+                uuidlib.UUID(node_name)
+            except ValueError:
+                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
