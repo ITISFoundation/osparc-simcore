@@ -132,7 +132,7 @@ async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: s
     if len(tokens)==1:
         return await model.can(role, tokens[0], context)
 
-    elif len(tokens)==3:
+    if len(tokens)==3:
         tokens = [t.strip() for t in tokens if t.strip() != '']
         lhs, op, rhs = tokens
         can_lhs = await model.can(role, lhs, context)
@@ -140,8 +140,7 @@ async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: s
             if can_lhs:
                 return await model.can(role, rhs, context)
             return False
-        else:
-            return can_lhs or (await model.can(role, rhs, context))
-    else:
-        # FIXME: This only works for operators with TWO operands
-        raise NotImplementedError("Invalid expression %s" % operations)
+        return can_lhs or (await model.can(role, rhs, context))
+
+    # FIXME: This only works for operators with TWO operands
+    raise NotImplementedError("Invalid expression %s" % operations)

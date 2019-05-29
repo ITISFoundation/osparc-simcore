@@ -8,13 +8,12 @@ import uuid as uuidlib
 from datetime import datetime
 from typing import Dict, List, Mapping
 
+import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
-from psycopg2.errors import \
-    UniqueViolation  # pylint: disable=no-name-in-module
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -24,7 +23,6 @@ from ..db_models import users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
-from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
 
@@ -155,7 +153,7 @@ class ProjectDB:
                     row = await result.first()
                     project_id = row[projects.c.id]
                     retry = False
-                except UniqueViolation as err:
+                except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
                     if err.diag.constraint_name != "projects_uuid_key":
                         raise
                     kargs["uuid"] = str(uuidlib.uuid1())
