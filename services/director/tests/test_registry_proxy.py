@@ -38,7 +38,7 @@ async def test_list_interactive_services(docker_registry, push_services, configu
     assert len(interactive_services) == 4
 
 
-async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_retrieve_list_of_image_tags(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     images = push_services( number_of_computational_services=5,
                             number_of_interactive_services=3)
     image_number = {}
@@ -50,8 +50,8 @@ async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, c
         image_number[key] = image_number[key]+1
 
     for key, number in image_number.items():
-        list_of_images = await registry_proxy.retrieve_list_of_images_in_repo(key)
-        assert len(list_of_images["tags"]) == number
+        list_of_image_tags = await registry_proxy.retrieve_list_of_image_tags(key)
+        assert len(list_of_image_tags) == number
 
 
 async def test_list_interactive_service_dependencies(docker_registry, push_services, configure_registry_access, configure_schemas_location):
