@@ -28,7 +28,7 @@
  *
  * <pre class='javascript'>
  *   let study = new qxapp.data.model.Study(studyData);
- *   let prjEditor = new qxapp.desktop.StudyEditor(study, isNew);
+ *   let prjEditor = new qxapp.desktop.StudyEditor(study);
  * </pre>
  */
 
@@ -103,6 +103,21 @@ qx.Class.define("qxapp.data.model.Study", {
     workbench: {
       check: "qxapp.data.model.Workbench",
       nullable: false
+    }
+  },
+
+  statics: {
+    createMinimumStudyObject: function() {
+      // TODO: Check if this can be automatically generated from schema
+      return {
+        uuid: "",
+        name: "",
+        description: "",
+        thumbnail: "",
+        prjOwner: "",
+        creationDate: new Date(),
+        lastChangeDate: new Date()
+      };
     }
   },
 

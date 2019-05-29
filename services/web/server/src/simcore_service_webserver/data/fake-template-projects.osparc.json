@@ -9,7 +9,7 @@
     "lastChangeDate": "2018-12-05T21:13:13.360Z",
     "workbench": {
       "template-uuid-4261-b92f-7343aecaab44": {
-        "key": "file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker",
         "inputs": {},

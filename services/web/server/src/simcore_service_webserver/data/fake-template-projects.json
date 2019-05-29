@@ -133,7 +133,7 @@
     "lastChangeDate": "2019-04-02T19:33:41.858Z",
     "workbench": {
       "template-uuid-4997-a192-10b0f519cf12": {
-        "key": "file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 0D",
         "inputs": {},
@@ -147,7 +147,7 @@
         }
       },
       "template-uuid-4501-9a59-88c4a82abf92": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 0D (1)",
         "inputs": {},
@@ -162,7 +162,7 @@
         }
       },
       "template-uuid-44d5-8aca-e7932de01e9d": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 0D (2)",
         "inputs": {},
@@ -177,7 +177,7 @@
         }
       },
       "template-uuid-4abd-b3df-c4760a40213a": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 0D (3)",
         "inputs": {},
@@ -192,7 +192,7 @@
         }
       },
       "template-uuid-49fa-bb61-cfdac0d394c6": {
-        "key": "nodes-group",
+        "key": "simcore/services/frontend/nodes-group",
         "version": "1.0.0",
         "label": "CC 0D (4)",
         "inputs": {},
@@ -415,7 +415,7 @@
         }
       },
       "template-uuid-43ae-9dfc-5b439ffaeed5": {
-        "key": "multi-plot",
+        "key": "simcore/services/frontend/multi-plot",
         "version": "1.0.0",
         "label": "Multi Plot",
         "inputs": {},
