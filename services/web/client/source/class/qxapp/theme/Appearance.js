@@ -60,7 +60,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           backgroundColor: "background-selected-dark",
-          decorator: "window-small-cap"
+          decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
     },
@@ -132,7 +132,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "window",
       alias: "window",
       style: (state, styles) => {
-        styles.decorator = "window-small-cap";
+        styles.decorator = state.maximized ? "window-small-cap-maximized" : "window-small-cap";
         return styles;
       }
     },

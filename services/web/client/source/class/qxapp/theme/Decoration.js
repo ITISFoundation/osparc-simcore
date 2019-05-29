@@ -61,6 +61,16 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
+    "window-small-cap-maximized": {
+      include: "window",
+      style: {
+        width: 0,
+        transitionProperty: "opacity",
+        transitionDuration: "0.05s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
     "workbench-small-cap-captionbar": {
       style: {
         width: 0
