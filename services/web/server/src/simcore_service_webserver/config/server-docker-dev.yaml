@@ -54,4 +54,6 @@ storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
   version: v0
+session:
+  secret_key: TODO_PLACE_HERE_A_SECRET_IN_PRODUCTION
 ...
