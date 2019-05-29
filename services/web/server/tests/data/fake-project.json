@@ -8,7 +8,7 @@
   "thumbnail": "sunt adipisicing enim anim nisi",
   "workbench": {
     "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf": {
-      "key": "file-picker",
+      "key": "simcore/services/frontend/file-picker",
       "version": "1.0.0",
       "label": "File Picker 0D",
       "inputs": {},
