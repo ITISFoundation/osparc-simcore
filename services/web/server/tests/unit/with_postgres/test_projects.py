@@ -24,6 +24,7 @@ from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.utils import now_str, to_datetime
 from utils_assert import assert_status
 from utils_login import LoggedUser
 from utils_projects import NewProject, delete_all_projects
@@ -83,10 +84,20 @@ async def user_project(client, fake_project, logged_user):
     ) as project:
         yield project
 
+def assert_replaced(current_project, update_data):
+    def _extract(dikt, keys):
+        return {k:dikt[k] for k in keys}
 
-# Tests CRUD operations --------------------------------------------
-# TODO: template for CRUD testing?
+    modified = ["lastChangeDate", ]
+    keep = [k for k in update_data.keys() if k not in modified]
 
+    assert _extract(current_project, keep) == _extract(update_data, keep)
+
+    k = "lastChangeDate"
+    assert to_datetime(update_data[k]) < to_datetime(current_project[k])
+
+
+# GET --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
@@ -113,34 +124,6 @@ async def test_list_templates_only(client, logged_user, user_project, expected):
     #TODO: GET /v0/projects?type=template&start=0&count=3
     pass
 
-
-
-
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated),
-    (UserRole.TESTER, web.HTTPCreated),
-])
-async def test_create_project(client, fake_project, logged_user, expected):
-    # POST /v0/projects
-    url = client.app.router["create_projects"].url_for()
-    assert str(url) == API_PREFIX + "/" + RESOURCE_NAME
-
-    # NOTE: This case is not used in the UI. Remove???
-    resp = await client.post(url, json=fake_project)
-
-    await assert_status(resp, expected)
-
-    # TODO: validate response using OAS?
-    # FIXME: cannot delete user until project is deleted. See cascade ,
-    #  i.e. removing a user, removes all its projects!!
-
-    # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
-    #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
-    await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
-
-
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
@@ -157,7 +140,78 @@ async def test_get_project(client, logged_user, user_project, expected):
     if not error:
         assert data == user_project
 
+# POST --------
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated),
+    (UserRole.TESTER, web.HTTPCreated),
+])
+async def test_new_project(client, logged_user, expected):
+    # POST /v0/projects
+    url = client.app.router["create_projects"].url_for()
+    assert str(url) == API_PREFIX + "/projects"
 
+    # Pre-defined fields imposed by required properties in schema
+    default_project = {
+        "uuid": "0000000",
+        "name": "Minimal name",
+        "description": "this description should not change",
+        "prjOwner": "me",
+        "creationDate": now_str(),
+        "lastChangeDate": now_str(),
+        "thumbnail": "None",
+        "workbench":{}
+    }
+
+    resp = await client.post(url, json=default_project)
+
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        new_project = data
+
+        # updated fields
+        assert default_project["uuid"] != new_project["uuid"]
+        assert default_project["prjOwner"] != logged_user["name"]
+        assert to_datetime(default_project["creationDate"]) < to_datetime(new_project["creationDate"])
+
+        # invariant fields
+        for key in new_project.keys():
+            if key not in ('uuid', 'prjOwner', 'creationDate', 'lastChangeDate'):
+                assert default_project[key] == new_project[key]
+
+        # TODO: validate response using OAS?
+        # FIXME: cannot delete user until project is deleted. See cascade  or too coupled??
+        #  i.e. removing a user, removes all its projects!!
+
+        # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
+        #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
+        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
+
+
+@pytest.mark.skip("UnderDEV")
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated),
+    (UserRole.TESTER, web.HTTPCreated),
+])
+async def test_new_project_from_template(client, logged_user, template_project, expected):
+    # POST /v0/projects?from_template={template_uuid}
+    #    NO BODY!!
+
+    url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
+    resp = await client.post(url)
+
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        raise NotImplementedError
+        # TODO: create project from template changes uuids
+        # TODO: like template but all uuids changed AND ownership and time-stamps
+
+# PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
@@ -168,15 +222,66 @@ async def test_replace_project(client, logged_user, user_project, expected):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
-    updated_project = deepcopy(user_project)
-    updated_project["description"] = "some different"
+    project_update = deepcopy(user_project)
+    project_update["description"] = "some updated from original project!!!"
 
-    resp = await client.put(url, json=updated_project)
+    resp = await client.put(url, json=project_update)
     data, error = await assert_status(resp, expected)
 
     if not error:
-        assert data == updated_project
+        assert_replaced(current_project=data, update_data=project_update)
 
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_replace_project_updated_inputs(client, logged_user, user_project, expected):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+
+    project_update = deepcopy(user_project)
+    #
+    #"inputAccess": {
+    #    "Na": "ReadAndWrite", <--------
+    #    "Kr": "ReadOnly",
+    #    "BCL": "ReadAndWrite",
+    #    "NBeats": "ReadOnly",
+    #    "Ligand": "Invisible",
+    #    "cAMKII": "Invisible"
+    #  },
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+
+    resp = await client.put(url, json=project_update)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert_replaced(current_project=data, update_data=project_update)
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_replace_project_updated_readonly_inputs(client, logged_user, user_project, expected):
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+
+    project_update = deepcopy(user_project)
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Kr"] = 5
+
+    resp = await client.put(url, json=project_update)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert_replaced(current_project=data, update_data=project_update)
+
+
+
+# DELETE -------
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -193,73 +298,61 @@ async def test_delete_project(client, logged_user, user_project, expected):
 
 
 
-# POST /projects variants --------------------------------------
-@pytest.mark.skip("TODO: under dev")
-async def test_new_project_with_predefined_fields(client, fake_project, logged_user, expected):
-    # POST /v0/projects
-    #   optional body with predefined fields, e.g. { name='foo', description,... }
-    # -->
+# ######## DEVELOPMENT ###################################################
+# import uuid
+# from simcore_service_webserver.projects.projects_models import projects as projects_tbl
+# from simcore_service_webserver.db_models import users as users_tbl
+# from sqlalchemy import select
 
-    #"uuid",
-    #"prjOwner",
-    #"creationDate",
-    #"lastChangeDate",
-
-    pass
+# from change_case import ChangeCase
+# from aiopg.sa.exc import Error as DbError
+# from psycopg2.errors import UniqueViolation
 
 
-@pytest.mark.skip("TODO: under dev")
-async def test_new_project_from_template(client, logged_user, template_project, expected):
-    # POST /v0/projects?from_template={template_uuid}
-    #
-    pass
+# @pytest.mark.skip("DEV")
+# @pytest.mark.parametrize("user_role,expected", [
+#     (UserRole.USER, web.HTTPOk),
+# ])
+# async def test_it(client, logged_user, user_project, expected):
+
+#     db_engine = client.app[APP_DB_ENGINE_KEY]
+#     tbl = projects_tbl
 
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_replace_project_workbench_inputs(client, logged_user, user_project, expected):
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+#     new_uuid = user_project["uuid"]
+#     async with db_engine.acquire() as conn:
+#         import pdb; pdb.set_trace()
 
-    updated_project = deepcopy(user_project)
-    #
-    #"inputAccess": {
-    #    "Na": "ReadAndWrite", <--------
-    #    "Kr": "ReadOnly",
-    #    "BCL": "ReadAndWrite",
-    #    "NBeats": "ReadOnly",
-    #    "Ligand": "Invisible",
-    #    "cAMKII": "Invisible"
-    #  },
-    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+#         try:
+#             ins = tbl.insert().values({ChangeCase.camel_to_snake(k):v for k,v in user_project.items() if k!='id'})
+#             await conn.execute(ins)
+#         except UniqueViolation as ee:
+#             import pdb; pdb.set_trace()
+#         except DbError as ee:
+#             import pdb; pdb.set_trace()
 
-    resp = await client.put(url, json=updated_project)
-    data, error = await assert_status(resp, expected)
+#         # try until found a unique uuid
+#         while True:
+#             result = await conn.execute(select([tbl.c.id])\
+#                 .where(tbl.c.uuid==new_uuid))
+#             found = await result.first()
+#             if found:
+#                 new_uuid = str(uuid.uuid1())
+#             else: # is unique
+#                 break
 
-    if not error:
-        assert data == updated_project
+#         result = await conn.execute(select([users_tbl.c.email]).where(users_tbl.c.id==logged_user["id"]))
+#         user_email = await result.first()
+#         import pdb; pdb.set_trace()
+#         assert user_email[0] == logged_user["email"]
 
+#         result = await conn.execute(select([tbl]).where(tbl.c.uuid==user_project["uuid"]))
+#         row = await result.first()
+#         assert row
+#         assert row[tbl.c.uuid] == user_project["uuid"]
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_update_project_workbench_readonly_inputs(client, logged_user, user_project, expected):
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
+#         result = await conn.execute(select([tbl]).where(tbl.c.uuid==new_uuid))
+#         row = await result.first()
+#         row = await result.fetchone()
 
-    updated_project = deepcopy(user_project)
-    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
-    updated_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Kr"] = 5
-
-    resp = await client.put(url, json=updated_project)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert data == updated_project
+#     # retrieve project

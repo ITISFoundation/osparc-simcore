@@ -35,7 +35,8 @@ async def create_project(engine, params: Dict=None, user_id=None) -> Dict:
     prj = load_data('data/fake-template-projects.isan.json')[0]
     prj.update(params)
 
-    await storage.add_project(prj, user_id, engine)
+    prj_uuid = await storage.add_project(prj, user_id, engine)
+    assert prj_uuid == prj["uuid"]
     return prj
 
 

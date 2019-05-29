@@ -4,17 +4,23 @@
 
 import enum
 import logging
+import uuid as uuidlib
 from datetime import datetime
 from typing import Dict, List
 
 import sqlalchemy as sa
+from aiohttp import web
+from aiopg.sa import Engine
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
+from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
 from sqlalchemy.sql import and_, select
 
+from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_sdk.models import metadata
 
 from ..db_models import users
+from ..utils import now_str, format_datetime
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 
@@ -57,6 +63,8 @@ user_to_projects = sa.Table("user_to_projects", metadata,
     sa.Column("project_id", sa.BigInteger, sa.ForeignKey(projects.c.id), nullable=False)
 )
 
+
+# TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_data: Dict) -> Dict:
     converted_args = {}
     for key, value in project_data.items():
@@ -70,15 +78,21 @@ def _convert_to_schema_names(project_db_data) -> Dict:
             continue
         converted_value = value
         if isinstance(value, datetime):
-            converted_value = "{}Z".format(value.isoformat(timespec='milliseconds'))
+            converted_value = format_datetime(value)
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
+
 class ProjectDB:
     # TODO: should implement similar model as services/web/server/src/simcore_service_webserver/login/storage.py
+    # TODO: Move to projects_db as free functions
 
     @classmethod
-    async def add_projects(cls, projects_list: List[Dict], user_id: str, db_engine):
+    def get_engine(cls, request: web.Request) -> Engine:
+        return request.config_dict.get(APP_DB_ENGINE_KEY)
+
+    @classmethod
+    async def add_projects(cls, projects_list: List[Dict], user_id: str, db_engine: Engine) -> List[str]:
         """
             adds all projects and assigns to a user
 
@@ -86,37 +100,69 @@ class ProjectDB:
 
         """
         log.info("adding projects to database for user %s", user_id)
+        uuids = []
         for prj in projects_list:
-            await cls.add_project(prj, user_id, db_engine)
+            prj_uuid = await cls.add_project(prj, user_id, db_engine)
+            uuids.append(prj_uuid)
+        return uuids
 
     @classmethod
-    async def add_project(cls, prj: Dict, user_id: str, db_engine):
-        """ Add project to user.
+    async def add_project(cls, prj: Dict, user_id: str, db_engine: Engine) -> str:
+        """  Add project to user
 
         If user_id is None, then project is added as template
 
-        :raises ProjectInvalidRightsError: User has no permission to access project
+        WARNING: invalid uuids will automatically be replaced
+
+        :raises ProjectInvalidRightsError: Assigning project to an unregistered user
+        :return: newly assigned project UUID
+        :rtype: str
         """
-        #FIXME: E1120:No value for argument 'dml' in method call
-        # pylint: disable=E1120
+        #pylint: disable=no-value-for-parameter
+        user_email = await cls._get_user_email(user_id, db_engine)
 
         async with db_engine.acquire() as conn:
-            # TODO: check security of this query
-            kargs = {
+            # TODO: check security of this query with args. Hard-code values?
+            # TODO: check best rollback design. see transaction.begin...
+            # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
+            prj.update({
+                "creationDate": now_str(),
+                "lastChangeDate": now_str(),
+                "prjOwner":user_email
+            })
+            kargs = _convert_to_db_names(prj)
+            kargs.update({
                 "type": ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
-            }
-            kargs.update(_convert_to_db_names(prj))
-            query = projects.insert().values(**kargs)
+            })
 
-            result = await conn.execute(query)
-            row = await result.fetchone()
-            project_id = row["id"]
+            # validate uuid
+            try:
+                uuidlib.UUID(kargs.get('uuid'))
+            except ValueError:
+                kargs["uuid"] = str(uuidlib.uuid1())
+
+            # insert project
+            retry = True
+            project_id = None
+            while retry:
+                try:
+                    query = projects.insert().values(**kargs)
+                    result = await conn.execute(query)
+                    row = await result.first()
+                    project_id = row[projects.c.id]
+                    retry = False
+                except UniqueViolation as err:
+                    if err.diag.constraint_name != "projects_uuid_key":
+                        raise
+                    kargs["uuid"] = str(uuidlib.uuid1())
+                    retry = True
 
             if user_id is not None:
                 try:
                     query = user_to_projects.insert().values(
                         user_id=user_id,
-                        project_id=project_id)
+                        project_id=project_id
+                    )
                     await conn.execute(query)
                 except IntegrityError as exc:
                     log.exception("Unregistered user trying to add project")
@@ -128,8 +174,12 @@ class ProjectDB:
 
                     raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
+            # Updated values
+            prj["uuid"] = kargs["uuid"]
+            return prj["uuid"]
+
     @classmethod
-    async def load_user_projects(cls, user_id: str, db_engine) -> List[Dict]:
+    async def load_user_projects(cls, user_id: str, db_engine: Engine) -> List[Dict]:
         """ loads a project for a user
 
         """
@@ -137,7 +187,8 @@ class ProjectDB:
         projects_list = []
         async with db_engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table).where(user_to_projects.c.user_id == user_id)
+            query = select([projects]).select_from(joint_table)\
+                .where(user_to_projects.c.user_id == user_id)
 
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
@@ -150,7 +201,6 @@ class ProjectDB:
         """ loads the template project from the db
 
         """
-
         log.info("Loading template projects")
         projects_list = []
         async with db_engine.acquire() as conn:
@@ -164,17 +214,11 @@ class ProjectDB:
         return projects_list
 
     @classmethod
-    async def get_user_project(cls, user_id: str, project_uuid: str, db_engine) -> Dict:
+    async def get_user_project(cls, user_id: str, project_uuid: str, db_engine: Engine) -> Dict:
         """[summary]
 
-        :param user_id: [description]
-        :type user_id: str
-        :param project_uuid: [description]
-        :type project_uuid: str
-        :param db_engine: [description]
-        :type db_engine: [type]
         :raises ProjectNotFoundError: project is not assigned to user
-        :return: project
+        :return: schema-compliant project
         :rtype: Dict
         """
         log.info("Getting project %s for user %s", project_uuid, user_id)
@@ -184,7 +228,7 @@ class ProjectDB:
                 select_from(joint_table).\
                     where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
             result = await conn.execute(query)
-            row = await result.fetchone()
+            row = await result.first()
             if not row:
                 raise ProjectNotFoundError(project_uuid)
             result_dict = {key:value for key,value in row.items()}
@@ -192,22 +236,33 @@ class ProjectDB:
             return _convert_to_schema_names(result_dict)
 
     @classmethod
-    async def update_user_project(cls, project_data: Dict, user_id: str, project_uuid: str, db_engine):
+    async def update_user_project(cls, project_data: Dict, user_id: str, project_uuid: str, db_engine: Engine):
         """ updates a project from a user
 
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
+
         async with db_engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects.c.id]).\
+            query = select([projects.c.id, projects.c.uuid]).\
                 select_from(joint_table).\
                     where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
             result = await conn.execute(query)
+
             # ensure we have found one
-            rows = await result.fetchall()
-            if not rows:
+            row = await result.first()
+            if not row:
                 raise ProjectNotFoundError(project_uuid)
-            row = rows[0]
+
+            # uuid can ONLY be set upon creation
+            if row[projects.c.uuid] != project_data["uuid"]:
+                # TODO: add message
+                raise ProjectInvalidRightsError(user_id, project_data["uuid"])
+            # TODO: should also take ownership???
+
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+
             # now update it
             #FIXME: E1120:No value for argument 'dml' in method call
             # pylint: disable=E1120
@@ -217,7 +272,7 @@ class ProjectDB:
             await conn.execute(query)
 
     @classmethod
-    async def delete_user_project(cls, user_id: str, project_uuid: str, db_engine):
+    async def delete_user_project(cls, user_id: str, project_uuid: str, db_engine: Engine):
         """ deletes a project from a user
 
         """
@@ -255,6 +310,35 @@ class ProjectDB:
                     query = projects.delete().\
                         where(projects.c.id == row[projects.c.id])
                     await conn.execute(query)
+
+    @classmethod
+    async def make_unique_project_uuid(cls, db_engine: Engine):
+        async with db_engine.acquire() as conn:
+            # generate a uuid
+            # TODO: what if project already exists, shall we fail and ask to update??
+            # TODO: add failure in case of hangs in while loop??
+            # TODO: there is a small risk of two queries asking for the same id. better to retry?
+            while True:
+                project_uuid = str(uuidlib.uuid1())
+                result = await conn.execute(
+                    select([projects])\
+                        .where(projects.c.uuid==project_uuid)
+                )
+                found = await result.first()
+                if not found:
+                    break
+        return project_uuid
+    # TODO: refactor. separate model from storage API
+
+    @classmethod
+    async def _get_user_email(cls, user_id, db_engine):
+        async with db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([users.c.email])\
+                    .where(users.c.id == user_id)
+            )
+            row = await result.first()
+        return row[users.c.email] if row else "Unknown"
 
 __all__ = (
     "ProjectDB"
