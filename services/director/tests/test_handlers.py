@@ -127,11 +127,10 @@ async def test_v0_services_conversion_to_new(configure_registry_access, configur
 
 async def test_services_by_key_version_get(configure_registry_access, configure_schemas_location, push_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
-
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.services_by_key_version_get(fake_request, None, None)
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
+    with pytest.raises(web_exceptions.HTTPNotFound):
         web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", None)
 
     with pytest.raises(web_exceptions.HTTPNotFound):
