@@ -213,15 +213,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServiceDescription: function() {
-      let descriptionLayout = this.__createVBoxWLabel(this.tr("Description"));
-
-      let serviceDescription = this.__serviceDescription = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      let scroller = new qx.ui.container.Scroll();
-      scroller.add(serviceDescription);
+      const descriptionLayout = this.__createVBoxWLabel(this.tr("Description"));
+      const scroller = this.__serviceDescription = new qx.ui.container.Scroll();
+      scroller.add(descriptionLayout);
       descriptionLayout.add(scroller, {
         flex: 1
       });
-
       return descriptionLayout;
     },
 
@@ -264,16 +261,10 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __updateServciceDescription: function(selectedService) {
-      let serviceDescription = this.__serviceDescription;
-      serviceDescription.removeAll();
+      const serviceDescription = this.__serviceDescription;
       if (selectedService && serviceDescription) {
         let jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescription");
-        serviceDescription.add(jsonTreeWidget, {
-          top: -30,
-          right: 0,
-          bottom: 0,
-          left: -60
-        });
+        serviceDescription.add(jsonTreeWidget);
       }
     },
 
