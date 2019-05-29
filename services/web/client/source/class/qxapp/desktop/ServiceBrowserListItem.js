@@ -43,8 +43,8 @@
 
 qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
   extend: qx.ui.core.Widget,
-  implement : [qx.ui.form.IModel],
-  include : [qx.ui.form.MModelProperty],
+  implement : [qx.ui.form.IModel, qxapp.component.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, qxapp.component.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
@@ -53,6 +53,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       alignY: "middle"
     });
     this._setLayout(layout);
+    this.setPadding(5);
 
     this._add(this.getChildControl("title"));
     this._add(this.getChildControl("subtitle"));
@@ -168,6 +169,43 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       textToShow += ", Contact: ";
       textToShow += this.getContact();
       subtitle.setValue(textToShow);
+    },
+
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        const label = this.getName()
+          .trim()
+          .toLowerCase();
+        if (label.indexOf(data.text) === -1) {
+          return true;
+        }
+      }
+      if (data.tags && data.tags.length) {
+        const category = this.getCategory() || "";
+        const type = this.getType() || "";
+        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      if (data.tags && data.tags.length) {
+        return true;
+      }
+      return false;
     }
   }
 });
