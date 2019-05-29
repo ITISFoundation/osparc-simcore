@@ -53,6 +53,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       alignY: "middle"
     });
     this._setLayout(layout);
+    this.setPadding(5);
 
     this._add(this.getChildControl("title"));
     this._add(this.getChildControl("subtitle"));
