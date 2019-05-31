@@ -109,17 +109,18 @@ class ProjectDB:
         return uuids
 
     @classmethod
-    async def add_project(cls, prj: Dict, user_id: str, db_engine: Engine) -> str:
-        """  Add project to user
+    async def add_project(cls, prj: Dict, user_id: str, db_engine: Engine, *, force_project_uuid=False) -> str:
+        """  Inserst a new project in the database and assigns it to a user (ownership) if provided.
 
-        If user_id is None, then project is added as template
-
-        WARNING: invalid uuids will automatically be replaced
+        - If user_id is None, then project is added as template.
+        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
+        invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: Assigning project to an unregistered user
         :return: newly assigned project UUID
         :rtype: str
         """
+
         #pylint: disable=no-value-for-parameter
         user_email = await cls._get_user_email(user_id, db_engine)
 
@@ -141,6 +142,8 @@ class ProjectDB:
             try:
                 uuidlib.UUID(kargs.get('uuid'))
             except ValueError:
+                if force_project_uuid:
+                    raise
                 kargs["uuid"] = str(uuidlib.uuid1())
 
             # insert project
@@ -154,7 +157,7 @@ class ProjectDB:
                     project_id = row[projects.c.id]
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
-                    if err.diag.constraint_name != "projects_uuid_key":
+                    if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
                         raise
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True

@@ -32,10 +32,11 @@ async def create_projects(request: web.Request):
             # create from template
             template_prj = await ProjectDB.get_template_project(template_uuid, db_engine)
 
-            if not template_prj:
+            if not template_prj: # TODO: inject these projects in db instead!
                 for prj in Fake.projects.values():
                     if prj.template and prj.data['uuid']==template_uuid:
                         template_prj = prj
+                        break
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
@@ -103,6 +104,7 @@ async def list_projects(request: web.Request):
             continue
 
     return {'data': validated_projects}
+
 
 
 @login_required

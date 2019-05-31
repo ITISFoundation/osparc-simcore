@@ -77,12 +77,13 @@ def fake_db():
     Fake.reset()
 
 @pytest.fixture
-def fake_project(fake_data_dir: Path) -> Dict:
+def fake_project_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
-        yield json.load(fp)
+        return json.load(fp)
 
 @pytest.fixture
 def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+# def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<< DEVELOPMENT
     port = app_config["main"]["port"] = aiohttp_unused_port()
     app_config['main']['host'] = '127.0.0.1'
 
@@ -108,6 +109,9 @@ def client(loop, webserver_service, aiohttp_client):
     client = loop.run_until_complete(aiohttp_client(webserver_service))
     yield client
 
+from utils_projects import delete_all_projects
+from simcore_service_webserver.db import APP_DB_ENGINE_KEY
+
 @pytest.fixture
 async def logged_user(client): #, role: UserRole):
     """ adds a user in db and logs in with client
@@ -122,6 +126,7 @@ async def logged_user(client): #, role: UserRole):
         check_if_succeeds = role!=UserRole.ANONYMOUS
     ) as user:
         yield user
+        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
 
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects
@@ -168,23 +173,25 @@ async def _request_delete(client, pid):
 
 
 
-async def test_workflow(client, fake_project, logged_user):
+async def test_workflow(client, fake_project_data, logged_user):
     # empty list
     projects = await _request_list(client)
     assert not projects
 
     # creation
-    await _request_create(client, fake_project)
+    await _request_create(client, fake_project_data)
 
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
-    assert projects[0] == fake_project
+    for key in projects[0].keys():
+        if key not in ('uuid', 'prjOwner', 'creationDate', 'lastChangeDate'):
+            assert projects[0][key] == fake_project_data[key]
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
-    modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop("Xw)F")
+    modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop( list(modified_project["workbench"].keys())[0] )
     modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
     # modify
     pid = modified_project["uuid"]
@@ -193,11 +200,16 @@ async def test_workflow(client, fake_project, logged_user):
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
-    assert projects[0] == modified_project
+
+    for key in projects[0].keys():
+        if key not in ('lastChangeDate', ):
+            assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
-    assert project == modified_project
+    for key in project.keys():
+        if key not in ('lastChangeDate', ):
+            assert project[key] == modified_project[key]
 
     # delete
     await _request_delete(client, pid)
@@ -245,12 +257,12 @@ async def test_list_template_projects(client, logged_user, fake_db,
                                 len(fake_template_projects_osparc))
 
 
-async def test_project_uuid_uniqueness(client, logged_user, fake_project):
+async def test_project_uuid_uniqueness(client, logged_user, fake_project_data):
     # create the project once
-    await _request_create(client, fake_project)
+    await _request_create(client, fake_project_data)
     # create a second project with same uuid shall fail
     with pytest.raises(AssertionError):
-        await _request_create(client, fake_project)
+        await _request_create(client, fake_project_data)
     # delete
-    pid = fake_project["uuid"]
+    pid = fake_project_data["uuid"]
     await _request_delete(client, pid)
