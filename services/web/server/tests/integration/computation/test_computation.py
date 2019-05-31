@@ -163,7 +163,7 @@ def assert_db_contents(project_id, postgres_session,
     # check db comp_tasks
     tasks_db = postgres_session.query(ComputationalTask)\
         .filter(ComputationalTask.project_id == project_id).all()
-    mock_pipeline = mock_workbench_payload["workbench"]
+    mock_pipeline = mock_workbench_payload
     assert len(tasks_db) == len(mock_pipeline)
 
     for task_db in tasks_db:
@@ -244,7 +244,7 @@ async def test_update_pipeline(client, docker_stack, postgres_session,
         expected_response
     ):
     project_id = user_project["uuid"]
-    assert user_project['workbench'] == mock_workbench_payload
+    assert user_project['workbench'] == mock_workbench_payload['workbench']
 
     url = client.app.router["update_pipeline"].url_for(project_id=project_id)
     assert url == URL(API_PREFIX + "/computation/pipeline/{}".format(project_id))
@@ -256,5 +256,5 @@ async def test_update_pipeline(client, docker_stack, postgres_session,
 
     if not error:
         # check db comp_pipeline
-        assert_db_contents(project_id, postgres_session, mock_workbench_payload,
+        assert_db_contents(project_id, postgres_session, mock_workbench_payload['workbench'],
             mock_workbench_adjacency_list, check_outputs=True)

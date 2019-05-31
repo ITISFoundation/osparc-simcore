@@ -246,6 +246,7 @@ async def _pre_update_pipeline(request):
     if project_id is None:
         raise web.HTTPBadRequest
 
+
     user_id = request[RQT_USERID_KEY]
 
     project = await get_project_for_user(request, project_id, user_id)
