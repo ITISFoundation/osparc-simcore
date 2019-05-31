@@ -41,9 +41,6 @@ async def create_project(engine, params: Dict=None, user_id=None, *, force_uuid=
     """
     params = params or {}
 
-    if not force_uuid:
-        assert "uuid" not in params, "Cannot enforce uuid"
-
     project_data = load_data('data/fake-template-projects.isan.json')[0]
     project_data.update(params)
 

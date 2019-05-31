@@ -123,7 +123,6 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     from .projects.projects_exceptions import ProjectNotFoundError
     from .projects.projects_api import create_data_from_template
 
-    import pdb; pdb.set_trace()
     db_engine = request.app[APP_DB_ENGINE_KEY]
 
     # assign id to copy

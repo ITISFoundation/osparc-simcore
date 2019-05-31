@@ -76,7 +76,7 @@ class ProjectDBAPI:
             raise ValueError("Postgres engine still not initialized ({}). Check setup_db".format(APP_DB_ENGINE_KEY))
 
     @property
-    def engine(self):
+    def engine(self) -> Engine:
         # lazy evaluation
         if self._engine is None:
             self._init_engine()
@@ -95,12 +95,12 @@ class ProjectDBAPI:
             uuids.append(prj_uuid)
         return uuids
 
-    async def add_project(self, prj: Dict, user_id: str) -> str:
-        """  Add project to user
+    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False) -> str:
+        """  Inserts a new project in the database and, if a user is specified, it assigns ownership
 
-        If user_id is None, then project is added as template
-
-        WARNING: invalid uuids will automatically be replaced
+        - If user_id is None, then project is added as template.
+        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
+        invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: Assigning project to an unregistered user
         :return: newly assigned project UUID
@@ -127,6 +127,8 @@ class ProjectDBAPI:
             try:
                 uuidlib.UUID(kargs.get('uuid'))
             except ValueError:
+                if force_project_uuid:
+                    raise
                 kargs["uuid"] = str(uuidlib.uuid1())
 
             # insert project
@@ -140,7 +142,7 @@ class ProjectDBAPI:
                     project_id = row[projects.c.id]
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
-                    if err.diag.constraint_name != "projects_uuid_key":
+                    if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
                         raise
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
