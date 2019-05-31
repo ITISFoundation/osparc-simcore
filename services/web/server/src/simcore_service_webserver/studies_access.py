@@ -108,39 +108,6 @@ def compose_uuid(template_uuid, user_id) -> str:
     new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
     return new_uuid
 
-def create_project_from_template(template_project, user):
-    """ Creates a copy of the template and prepares it
-        to be owned by a given user
-    """
-    from copy import deepcopy
-    from .projects.projects_models import ProjectType
-
-    user_id = user["id"]
-
-    def _replace_uuids(node):
-        if isinstance(node, str):
-            if node.startswith(TEMPLATE_PREFIX):
-                node = compose_uuid(node, user_id)
-        elif isinstance(node, list):
-            node = [_replace_uuids(item) for item in node]
-        elif isinstance(node, dict):
-            _frozen_items = tuple(node.items())
-            for key, value in _frozen_items:
-                if isinstance(key, str):
-                    if key.startswith(TEMPLATE_PREFIX):
-                        new_key = compose_uuid(key, user_id)
-                        node[new_key] = node.pop(key)
-                        key = new_key
-                node[key] = _replace_uuids(value)
-        return node
-
-    project = deepcopy(template_project)
-    project = _replace_uuids(project)
-
-    project["type"] = ProjectType.STANDARD
-    project["prj_owner"] = user["name"]
-
-    return project
 
 # TODO: from .projects import ...?
 async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
@@ -154,7 +121,9 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     from .projects.projects_models import ProjectDB as db
     from .projects.projects_exceptions import ProjectNotFoundError
+    from .projects.projects_api import create_data_from_template
 
+    import pdb; pdb.set_trace()
     db_engine = request.app[APP_DB_ENGINE_KEY]
 
     # assign id to copy
@@ -166,9 +135,10 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = create_project_from_template(template_project, user)
+        project = create_data_from_template(template_project, user["id"])
 
-        await db.add_project(project, user["id"], db_engine)
+        project["uuid"] = project_uuid
+        await db.add_project(project, user["id"], db_engine, force_project_uuid=True)
 
     return project_uuid
 

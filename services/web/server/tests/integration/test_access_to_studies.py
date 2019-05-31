@@ -46,7 +46,7 @@ tool_services = [
 ]
 
 
-STUDY_UUID = TEMPLATE_PREFIX + "THIS_IS_A_FAKE_STUDY_FOR_TESTING_UUID"
+SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def client(loop, webserver_service, aiohttp_client, monkeypatch):
     client = loop.run_until_complete(aiohttp_client(webserver_service))
 
     assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
-    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [STUDY_UUID, ])
+    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [SHARED_STUDY_UUID, ])
 
     yield client
 
@@ -121,14 +121,10 @@ async def test_access_to_invalid_study(client):
 async def test_access_to_forbidden_study(client):
     app = client.app
 
-    VALID_BUT_NON_SHARABLE_STUDY_UUID = "8402b4e0-3659-4e36-bc26-c4312f02f05f"
-    params = {
-        "uuid": VALID_BUT_NON_SHARABLE_STUDY_UUID
-    }
+    async with NewProject({}, app) as expected_prj:
+        valid_but_not_sharable = expected_prj["uuid"]
 
-    async with NewProject(params, app) as expected_prj:
-
-        resp = await client.get("/study/%s" % VALID_BUT_NON_SHARABLE_STUDY_UUID)
+        resp = await client.get("/study/%s" % valid_but_not_sharable)
         content = await resp.text()
 
         assert resp.status == web.HTTPNotFound.status_code, \
@@ -159,14 +155,14 @@ def _assert_same_projects(got: Dict, expected: Dict):
     for key in PROPERTIES_TO_CHECK:
         assert got[key] == expected[key]
 
-
 async def test_access_study_by_anonymous_guest(client, qx_client_outdir):
     app = client.app
     params = {
+        "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
     }
 
-    async with NewProject(params, app) as expected_prj:
+    async with NewProject(params, app, force_uuid=True) as expected_prj:
 
         url_path = "/study/%s" % expected_prj["uuid"]
         resp = await client.get(url_path)
@@ -199,14 +195,14 @@ async def test_access_study_by_anonymous_guest(client, qx_client_outdir):
 async def test_access_study_by_logged_user(client, qx_client_outdir):
     app = client.app
     params = {
-        "uuid":STUDY_UUID,
+        "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
     }
 
     async with LoggedUser(client):
-        async with NewProject(params, app, clear_all=True) as expected_prj:
+        async with NewProject(params, app, clear_all=True, force_uuid=True) as expected_prj:
 
-            url_path = "/study/%s" % STUDY_UUID
+            url_path = "/study/%s" % SHARED_STUDY_UUID
             resp = await client.get(url_path)
             content = await resp.text()
 
@@ -227,26 +223,3 @@ async def test_access_study_by_logged_user(client, qx_client_outdir):
             assert real_url.endswith("#/study/%s" % got_prj["uuid"])
 
             _assert_same_projects(got_prj, expected_prj)
-
-
-@pytest.mark.skip(reason="DEVELOPMENT")
-async def test_devel(client):
-    app = client.app
-    params = {
-        "uuid":STUDY_UUID,
-        "name":"some-template"
-    }
-
-    async with NewProject(params, app) as expected_prj:
-
-        prj = await get_template_project(app, STUDY_UUID)
-
-        assert prj is not None
-        assert prj["uuid"] == STUDY_UUID
-        assert prj == expected_prj
-
-
-#async def test_access_template_by_loggedin(client, ):
-#    pass
-
-#    # check if NO new anonymous user is created

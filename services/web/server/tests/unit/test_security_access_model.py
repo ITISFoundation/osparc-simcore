@@ -199,7 +199,7 @@ async def test_checked_permissions(access_model):
 
     # udpates not permitted fields
     candidate = copy.deepcopy(current)
-    candidate['notes'] = 'not allowed'
+    candidate['description'] = 'not allowed to write here'
     assert not await access_model.can(
         R.ANONYMOUS,
         "study.pipeline.node.inputs.update",
