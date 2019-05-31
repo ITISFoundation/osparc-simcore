@@ -22,7 +22,7 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import Fake
@@ -32,6 +32,7 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 from utils_login import LoggedUser
+from utils_projects import delete_all_projects
 
 API_VERSION = "v0"
 
@@ -109,8 +110,6 @@ def client(loop, webserver_service, aiohttp_client):
     client = loop.run_until_complete(aiohttp_client(webserver_service))
     yield client
 
-from utils_projects import delete_all_projects
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 
 @pytest.fixture
 async def logged_user(client): #, role: UserRole):
@@ -255,14 +254,3 @@ async def test_list_template_projects(client, logged_user, fake_db,
     assert len(projects) == (len(fake_template_projects) + \
                                 len(fake_template_projects_isan) + \
                                 len(fake_template_projects_osparc))
-
-
-async def test_project_uuid_uniqueness(client, logged_user, fake_project_data):
-    # create the project once
-    await _request_create(client, fake_project_data)
-    # create a second project with same uuid shall fail
-    with pytest.raises(AssertionError):
-        await _request_create(client, fake_project_data)
-    # delete
-    pid = fake_project_data["uuid"]
-    await _request_delete(client, pid)
