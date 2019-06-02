@@ -36,7 +36,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         let style = {
           decorator: null,
-          padding: [0, 0],
+          padding: 0,
           backgroundColor: "transparent"
         };
         if (states.hovered) {

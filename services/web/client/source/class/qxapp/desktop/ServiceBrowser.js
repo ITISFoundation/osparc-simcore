@@ -92,9 +92,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const servicesList = this.__createServicesList();
       servicesLayout.add(servicesList);
 
-      const versionsList = this.__createVersionsList();
-      servicesLayout.add(versionsList);
-
       const serviceDescription = this.__createServiceDescription();
       servicesLayout.add(serviceDescription, {
         flex: 1
@@ -111,7 +108,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
-        spacing: 10,
         minWidth: 500,
         height: 600,
         appearance: "pb-list"
@@ -137,16 +133,14 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           const item = new qxapp.desktop.ServiceBrowserListItem();
           item.subscribeToFilterGroup("serviceBrowser");
           item.addListener("tap", e => {
-            // const serviceKey = item.getModel();
-            // this.__serviceSelected(serviceKey);
             servicesList.setSelection([item]);
           });
           return item;
         },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
-          ctrl.bindProperty("key", "title", null, item, id);
-          ctrl.bindProperty("name", "name", null, item, id);
+          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
           ctrl.bindProperty("category", "category", null, item, id);
           ctrl.bindProperty("contact", "contact", null, item, id);
@@ -167,35 +161,26 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createVersionsList: function() {
-      let versionsLayout = this.__createVBoxWLabel(this.tr("Versions"));
-
-      let versionsList = this.__versionsList = new qx.ui.form.List().set({
-        orientation: "vertical",
-        spacing: 10,
-        minWidth: 100,
-        height: 600,
-        appearance: "pb-list"
-      });
-      versionsList.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedVersion = e.getData()[0].getLabel();
-          this.__versionSelected(selectedVersion, true);
-        }
-      }, this);
-      versionsLayout.add(versionsList);
-
-      return versionsLayout;
-    },
-
     __createServiceDescription: function() {
-      const descriptionLayout = this.__createVBoxWLabel(this.tr("Description"));
-      const scroller = this.__serviceDescription = new qx.ui.container.Scroll();
-      scroller.add(descriptionLayout);
-      descriptionLayout.add(scroller, {
+      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
+
+      const label = new qx.ui.basic.Label(this.tr("Description")).set({
+        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        minWidth: 150
+      });
+      titleContainer.add(label);
+
+      titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
+      const versions = this.__versionsList = new qx.ui.form.SelectBox();
+      titleContainer.add(versions);
+
+      descriptionView.add(titleContainer);
+      descriptionView.add(descriptionContainer, {
         flex: 1
       });
-      return descriptionLayout;
+      return descriptionView;
     },
 
     __createVBoxWLabel: function(text) {
@@ -212,15 +197,19 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
     __serviceSelected: function(serviceKey) {
       if (this.__versionsList) {
-        let versionsList = this.__versionsList;
+        const versionsList = this.__versionsList;
         versionsList.removeAll();
         if (serviceKey in this.__allServices) {
-          let versions = qxapp.utils.Services.getVersions(this.__allServices, serviceKey);
-          for (let i = versions.length; i--;) {
-            let listItem = new qx.ui.form.ListItem(versions[i]);
-            versionsList.add(listItem);
-            if (i === versions.length-1) {
-              versionsList.setSelection([listItem]);
+          const versions = qxapp.utils.Services.getVersions(this.__allServices, serviceKey);
+          if (versions) {
+            let lastItem = null;
+            versions.forEach(version => {
+              lastItem = new qx.ui.form.ListItem(version);
+              versionsList.add(lastItem);
+            });
+            if (lastItem) {
+              versionsList.setSelection([lastItem]);
+              this.__versionSelected(lastItem.getLabel());
             }
           }
         }
@@ -232,11 +221,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       if (serviceSelection.length > 0) {
         const serviceKey = serviceSelection[0].getModel();
         const selectedService = qxapp.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
-        this.__updateServciceDescription(selectedService);
+        this.__updateServiceDescription(selectedService);
       }
     },
 
-    __updateServciceDescription: function(selectedService) {
+    __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
       if (selectedService && serviceDescription) {
         let jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescription");
