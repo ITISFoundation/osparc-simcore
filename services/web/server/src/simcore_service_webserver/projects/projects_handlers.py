@@ -45,9 +45,15 @@ async def create_projects(request: web.Request):
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-            # FIXME: ONLY first level is updated
-            for key, value in predefined.items():
-                project.setdefault(key, value)
+
+            if project:
+                # TODO: this is only first level replacemnet!
+                for key, value in predefined.items():
+                    if value and "uuid" not in key:
+                        project[key] = value
+            else:
+                # TODO: take skeleton and fill instead
+                project = predefined
 
         # validate data
         validate_project(request.app, project)
