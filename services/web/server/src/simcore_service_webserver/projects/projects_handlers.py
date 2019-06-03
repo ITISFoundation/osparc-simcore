@@ -35,7 +35,7 @@ async def create_projects(request: web.Request):
             if not template_prj: # TODO: inject these projects in db instead!
                 for prj in Fake.projects.values():
                     if prj.template and prj.data['uuid']==template_uuid:
-                        template_prj = prj
+                        template_prj = prj.data
                         break
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
