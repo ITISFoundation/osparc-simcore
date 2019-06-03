@@ -236,6 +236,59 @@ async def test_new_project_from_template(client, logged_user, template_project, 
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated),
+    (UserRole.TESTER, web.HTTPCreated),
+])
+async def test_new_project_from_template_with_body(client, logged_user, template_project, expected):
+    # POST /v0/projects?from_template={template_uuid}
+    url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
+
+    predefined = {
+        "uuid":"",
+        "name":"Sleepers8",
+        "description":"Some lines from user",
+        "thumbnail":"",
+        "prjOwner":"",
+        "creationDate":"2019-06-03T09:59:31.987Z",
+        "lastChangeDate":"2019-06-03T09:59:31.987Z",
+        "workbench":{}
+    }
+
+    resp = await client.post(url, json=predefined)
+
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        project = data
+
+        # uses predefined
+        assert project["name"] == predefined["name"]
+        assert project["description"] == predefined["description"]
+
+
+        modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
+
+        # different ownership
+        assert project["prjOwner"] == logged_user["email"]
+        assert project["prjOwner"] != template_project["prjOwner"]
+
+        # different timestamps
+        assert to_datetime(template_project["creationDate"]) < to_datetime(project["creationDate"])
+        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(project["lastChangeDate"])
+
+        # different uuids for project and nodes!?
+        assert project["uuid"] != template_project["uuid"]
+
+        # check uuid replacement
+        for node_name in project["workbench"]:
+            try:
+                uuidlib.UUID(node_name)
+            except ValueError:
+                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
