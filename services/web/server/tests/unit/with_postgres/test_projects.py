@@ -151,6 +151,7 @@ async def test_get_project(client, logged_user, user_project, expected):
     if not error:
         assert data == user_project
 
+
 # POST --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -165,14 +166,14 @@ async def test_new_project(client, logged_user, expected):
 
     # Pre-defined fields imposed by required properties in schema
     default_project = {
-        "uuid": "0000000",
+        "uuid": "0000000-invalid-uuid",
         "name": "Minimal name",
         "description": "this description should not change",
-        "prjOwner": "me",
+        "prjOwner": "me but I will be removed anyway",
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
-        "thumbnail": "None",
-        "workbench":{}
+        "thumbnail": "",
+        "workbench": {}
     }
 
     resp = await client.post(url, json=default_project)
@@ -288,6 +289,7 @@ async def test_new_project_from_template_with_body(client, logged_user, template
                 uuidlib.UUID(node_name)
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+
 
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [

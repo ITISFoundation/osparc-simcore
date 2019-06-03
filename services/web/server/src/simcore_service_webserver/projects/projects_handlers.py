@@ -45,11 +45,9 @@ async def create_projects(request: web.Request):
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-            if predefined:
-                # FIXME: what to update from predefined??? uuid or timestamps shall not be updated
-                for key, value in predefined.items():
-                    if value and key not in ("uuid", "lastChangeDate", "creationDate"):
-                        project[key] = value
+            # FIXME: ONLY first level is updated
+            for key, value in predefined.items():
+                project.setdefault(key, value)
 
         # validate data
         validate_project(request.app, project)

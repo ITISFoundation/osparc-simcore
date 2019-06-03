@@ -170,11 +170,18 @@ async def test_permissions_inheritance(access_model):
 
 async def test_checked_permissions(access_model):
     R = UserRole # alias
+    MOCKPATH = 'data/fake-template-projects.isan.old.json'
 
-    with resources.stream('data/fake-template-projects.isan.json') as fh:
+    with resources.stream(MOCKPATH) as fh:
         data = json.load(fh)
 
-    current = data[0]
+    current ={}
+    for prj in data:
+        if prj["uuid"] == "template-uuid-1234-a1a7-f7d4f3a8f26b":
+            current = prj
+            break
+
+    assert current, "Did '%s' changed??" % MOCKPATH
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
