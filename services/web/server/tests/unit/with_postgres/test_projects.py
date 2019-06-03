@@ -18,7 +18,7 @@ from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
@@ -199,7 +199,7 @@ async def test_new_project(client, logged_user, expected):
 
         # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
         #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
-        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
+        await delete_all_projects(client.app)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),

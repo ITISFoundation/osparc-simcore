@@ -4,10 +4,6 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 """
 
-# TODO: WIP!!!!!!!!!!!!!!!!!!!!!!!!!!
-#pylint: disable=unreachable
-raise NotImplementedError
-
 #TODO: move here class ProjectDB:
 # TODO: should implement similar model as services/web/server/src/simcore_service_webserver/login/storage.py
 
@@ -68,6 +64,12 @@ class ProjectDBAPI:
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
+
+    @classmethod
+    def init_from_engine(cls, engine: Engine):
+        db_api = ProjectDBAPI({})
+        db_api._engine = engine #pylint: disable=protected-access
+        return db_api
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
@@ -340,6 +342,6 @@ class ProjectDBAPI:
 
 
 
-def setup_project_db(app: web.Application):
+def setup_projects_db(app: web.Application):
     db = ProjectDBAPI(app)
     app[APP_PROJECT_DBAPI] = db

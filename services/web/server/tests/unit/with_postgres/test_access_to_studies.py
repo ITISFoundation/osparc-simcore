@@ -19,7 +19,7 @@ import simcore_service_webserver.statics
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import studies_access
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.rest import setup_rest
@@ -106,7 +106,7 @@ async def logged_user(client): #, role: UserRole):
         check_if_succeeds = role!=UserRole.ANONYMOUS
     ) as user:
         yield user
-        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
+        await delete_all_projects(client.app)
 
 
 async def _get_user_projects(client):

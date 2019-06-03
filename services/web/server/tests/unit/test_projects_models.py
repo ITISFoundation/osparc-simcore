@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from simcore_service_webserver.projects.projects_models import (ProjectDB,
+from simcore_service_webserver.projects.projects_db import (ProjectDBAPI,
                                                                 _convert_to_db_names,
                                                                 _convert_to_schema_names)
 
@@ -83,7 +83,9 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
 
     db_engine, mock_connection = mock_db_engine(mock_result)
 
-    await ProjectDB.add_projects([fake_project], user_id=user_id, db_engine=db_engine)
+
+    db = ProjectDBAPI.init_from_engine(db_engine)
+    await db.add_projects([fake_project], user_id=user_id)
 
     db_engine.acquire.assert_called()
     mock_connection.execute.assert_called()

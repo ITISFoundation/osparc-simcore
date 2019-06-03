@@ -4,7 +4,6 @@ from aiohttp import web
 
 from ..security_api import get_access_model, UserRole
 from .projects_fakes import Fake
-from .projects_models import ProjectDB
 
 
 async def can_update_node_inputs(context):
@@ -12,7 +11,7 @@ async def can_update_node_inputs(context):
 
         Returns True if user has permission to update inputs
     """
-    db = context['db_engine']
+    db = context['dbapi']
     project_uuid = context['project_id']
     user_id = context['user_id']
     updated_project = context['new_data']
@@ -25,7 +24,7 @@ async def can_update_node_inputs(context):
     if project_uuid in Fake.projects:
         current_project = Fake.projects[project_uuid].data
     else:
-        current_project = await ProjectDB.get_user_project(user_id, project_uuid, db_engine=db)
+        current_project = await db.get_user_project(user_id, project_uuid)
 
     diffs = jsondiff.diff(current_project, updated_project)
 
@@ -48,7 +47,7 @@ async def can_update_node_inputs(context):
 
 
 
-def setup_access(app: web.Application):
+def setup_projects_access(app: web.Application):
     """
         security - access : Inject permissions to rest API resources
     """

@@ -39,16 +39,15 @@ SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
-    from servicelib.application_keys import APP_DB_ENGINE_KEY
-
-    from .projects.projects_models import ProjectDB
+    from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_fakes import Fake
 
+    db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
     # BUG: ensure items in project_list have unique UUIDs
     projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
+    projects_list += await db.load_template_projects()
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
@@ -117,27 +116,26 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
         Contrains of this method:
             - Avoids multiple copies of the same template on each account
     """
-    from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-    from .projects.projects_models import ProjectDB as db
+    from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
     from .projects.projects_api import create_data_from_template
 
-    db_engine = request.app[APP_DB_ENGINE_KEY]
+    db = request.config_dict[APP_PROJECT_DBAPI]
 
     # assign id to copy
     project_uuid = compose_uuid(template_project["uuid"], user["id"])
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid, db_engine)
+        await db.get_user_project(user["id"], project_uuid)
 
     except ProjectNotFoundError:
         # new project from template
         project = create_data_from_template(template_project, user["id"])
 
         project["uuid"] = project_uuid
-        await db.add_project(project, user["id"], db_engine, force_project_uuid=True)
+        await db.add_project(project, user["id"], force_project_uuid=True)
 
     return project_uuid
 

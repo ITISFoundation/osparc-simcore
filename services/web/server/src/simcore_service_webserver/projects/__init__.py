@@ -19,7 +19,8 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import nodes_handlers, projects_handlers
 from .config import CONFIG_SECTION_NAME
-from .projects_access import setup_access
+from .projects_access import setup_projects_access
+from .projects_db import setup_projects_db
 from .projects_fakes import Fake
 
 RETRY_WAIT_SECS = 2
@@ -84,8 +85,12 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
-    # security - access : Inject permissions to rest API resources
-    setup_access(app)
+    # security access : Inject permissions to rest API resources
+    setup_projects_access(app)
+
+    # database API
+    setup_projects_db(app)
+
 
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     routes = _create_routes("/projects", projects_handlers, specs, disable_login)
@@ -94,7 +99,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
     routes = _create_routes("/nodes", nodes_handlers, specs, disable_login)
     app.router.add_routes(routes)
 
-    # get project jsonschema definition
+    # json-schemas for projects datasets
     project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
     specs = loop.run_until_complete( _get_specs(project_schema_location) )

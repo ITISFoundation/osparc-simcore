@@ -22,7 +22,7 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import Fake
@@ -125,7 +125,7 @@ async def logged_user(client): #, role: UserRole):
         check_if_succeeds = role!=UserRole.ANONYMOUS
     ) as user:
         yield user
-        await delete_all_projects(client.app[APP_DB_ENGINE_KEY])
+        await delete_all_projects(client.app)
 
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects

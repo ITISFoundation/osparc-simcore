@@ -12,15 +12,14 @@ from typing import Dict
 
 from aiohttp import web
 
-from servicelib.application_keys import (APP_DB_ENGINE_KEY,
-                                         APP_JSONSCHEMA_SPECS_KEY)
+from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
 from ..security_api import check_permission
 from .config import CONFIG_SECTION_NAME
+from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
 from .projects_fakes import Fake
-from .projects_models import ProjectDB
 
 BASE_UUID = uuidlib.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 TEMPLATE_PREFIX = "template-uuid"
@@ -49,8 +48,8 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id) -> D
         return Fake.projects[project_uuid].data
 
     try:
-        db = request.config_dict[APP_DB_ENGINE_KEY]
-        project = await ProjectDB.get_user_project(user_id, project_uuid, db_engine=db)
+        db = request.config_dict[APP_PROJECT_DBAPI]
+        project = await db.get_user_project(user_id, project_uuid)
 
         # TODO: how to handle when database has an invalid project schema???
         validate_project(request.app, project)

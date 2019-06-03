@@ -5,32 +5,31 @@ import logging
 from aiohttp import web
 from jsonschema import ValidationError
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from .projects_api import create_data_from_template, validate_project
+from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_fakes import Fake
-from .projects_models import ProjectDB
 
 log = logging.getLogger(__name__)
 
 
 @login_required
 async def create_projects(request: web.Request):
+    # pylint: disable=too-many-branches
     await check_permission(request, "project.create")
 
     user_id = request[RQT_USERID_KEY]
-    db_engine=request.config_dict[APP_DB_ENGINE_KEY]
+    db = request.config_dict[APP_PROJECT_DBAPI]
     template_uuid = request.query.get('from_template')
 
     try:
         project = {}
         if template_uuid:
             # create from template
-            template_prj = await ProjectDB.get_template_project(template_uuid, db_engine)
+            template_prj = await db.get_template_project(template_uuid)
 
             if not template_prj: # TODO: inject these projects in db instead!
                 for prj in Fake.projects.values():
@@ -59,7 +58,7 @@ async def create_projects(request: web.Request):
         validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        await ProjectDB.add_project(project, user_id, db_engine)
+        await db.add_project(project, user_id)
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
@@ -80,19 +79,15 @@ async def list_projects(request: web.Request):
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     user_id = request[RQT_USERID_KEY]
     ptype = request.query.get('type', 'user')
+    db = request.config_dict[APP_PROJECT_DBAPI]
 
     projects_list = []
     if ptype in ("template", "all"):
         projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
-        projects_list += await ProjectDB.load_template_projects(
-            db_engine=request.app[APP_DB_ENGINE_KEY]
-        )
+        projects_list += await db.load_template_projects()
 
     if ptype in ("user", "all"):
-        projects_list += await ProjectDB.load_user_projects(
-            user_id=user_id,
-            db_engine=request.app[APP_DB_ENGINE_KEY]
-        )
+        projects_list += await db.load_user_projects(user_id=user_id)
 
     start = int(request.query.get('start', 0))
     count = int(request.query.get('count',len(projects_list)))
@@ -150,11 +145,11 @@ async def replace_project(request: web.Request):
     project_uuid = request.match_info.get("project_id")
     new_project = await request.json()
 
-    db_engine = request.config_dict[APP_DB_ENGINE_KEY]
+    db = request.config_dict[APP_PROJECT_DBAPI]
 
     await check_permission(request, "project.update | project.workbench.node.inputs.update",
     context={
-        'db_engine': db_engine,
+        'dbapi': db,
         'project_id': project_uuid,
         'user_id': user_id,
         'new_data': new_project
@@ -163,7 +158,7 @@ async def replace_project(request: web.Request):
     try:
         validate_project(request.app, new_project)
 
-        await ProjectDB.update_user_project(new_project, user_id, project_uuid, db_engine)
+        await db.update_user_project(new_project, user_id, project_uuid)
 
     except ValidationError:
         raise web.HTTPBadRequest
@@ -192,9 +187,10 @@ async def delete_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    db = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
-        await ProjectDB.delete_user_project(user_id, project_uuid, db_engine=request.app[APP_DB_ENGINE_KEY])
+        await db.delete_user_project(user_id, project_uuid)
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
