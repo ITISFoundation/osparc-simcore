@@ -1110,7 +1110,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getServices: function(reload) {
-      if (!this.__reloadingServices && reload || Object.keys(this.__servicesCached).length === 0) {
+      if (!this.__reloadingServices && (reload || Object.keys(this.__servicesCached).length === 0)) {
         this.__reloadingServices = true;
         let req = new qxapp.io.request.ApiRequest("/services", "GET");
         req.addListener("success", e => {
