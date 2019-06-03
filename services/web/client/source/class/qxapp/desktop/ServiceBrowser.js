@@ -176,6 +176,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const versions = this.__versionsList = new qx.ui.form.SelectBox();
       titleContainer.add(versions);
 
+      versions.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length) {
+          this.__versionSelected(e.getData()[0].getLabel());
+        }
+      })
+
       descriptionView.add(titleContainer);
       descriptionView.add(descriptionContainer, {
         flex: 1
