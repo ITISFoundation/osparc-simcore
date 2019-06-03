@@ -50,7 +50,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(0, 5);
-    layout.setColumnFlex(0, 1)
+    layout.setColumnFlex(0, 1);
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -127,18 +127,14 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       let control;
       switch (id) {
         case "title":
-          control = new qxapp.ui.basic.Label(14, true).set({
-            // anonymous: true
-          });
+          control = new qxapp.ui.basic.Label(14, true);
           this._add(control, {
             row: 0,
             column: 0
           });
           break;
         case "description":
-          control = new qx.ui.basic.Label().set({
-            // anonymous: true
-          });
+          control = new qx.ui.basic.Label();
           this._add(control, {
             row: 1,
             column: 0
@@ -146,8 +142,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
           break;
         case "contact":
           control = new qx.ui.basic.Label().set({
-            font: "text-12",
-            // anonymous: true
+            font: "text-12"
           });
           this._add(control, {
             row: 1,
