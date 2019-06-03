@@ -116,7 +116,8 @@ qx.Class.define("qxapp.data.model.Study", {
         thumbnail: "",
         prjOwner: "",
         creationDate: new Date(),
-        lastChangeDate: new Date()
+        lastChangeDate: new Date(),
+        workbench: {}
       };
     }
   },
