@@ -180,7 +180,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         if (e.getData() && e.getData().length) {
           this.__versionSelected(e.getData()[0].getLabel());
         }
-      })
+      }, this);
 
       descriptionView.add(titleContainer);
       descriptionView.add(descriptionContainer, {
