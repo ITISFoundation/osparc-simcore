@@ -8,13 +8,19 @@
     "thumbnail": "sunt adipisicing enim anim nisi",
     "workbench": {
         "Xw)F": {
-        "key": "simcore/services/dynamic/unseen/university/of/ankh/morpork",
-        "version": "0.2249944.0",
-        "label": "some funky label",
-        "position": {
-            "x": -29926723,
-            "y": 92196123
-        }
+            "key": "simcore/services/dynamic/unseen/university/of/ankh/morpork",
+            "version": "0.2249944.0",
+            "label": "some funky label",
+            "inputs": {},
+            "inputNodes": [],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "progress": 0,
+            "position": {
+                "x": -29926723,
+                "y": 92196123
+            }
         }
     }
 }

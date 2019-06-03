@@ -249,8 +249,6 @@ paths:
       operationId: update_pipeline
       parameters:
         - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        $ref: '#/components/requestBodies/PipelineBody'
       responses:
         "204":
           description: Succesfully updated the pipeline
@@ -267,8 +265,6 @@ paths:
       operationId: start_pipeline
       parameters:
         - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        $ref: '#/components/requestBodies/PipelineBody'
       responses:
         "200":
           description: Succesffully started the pipeline
@@ -384,16 +380,3 @@ components:
         application/json:
           schema:
             $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-  requestBodies:
-    PipelineBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - workbench
-            properties:
-              workbench:
-                $ref: './components/schemas/workbench-converted.yaml'
-            # $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'

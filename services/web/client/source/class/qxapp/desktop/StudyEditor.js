@@ -20,7 +20,7 @@
 qx.Class.define("qxapp.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(study, isNew) {
+  construct: function(study) {
     this.base(arguments, "horizontal");
 
     qxapp.utils.UuidToName.getInstance().setStudy(study);
@@ -49,11 +49,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     this.initDefault();
     this.connectEvents();
 
-    if (isNew) {
-      this.createStudyDocument();
-    } else {
-      this.updateStudyDocument();
-    }
     this.__startAutoSaveTimer();
     this.__attachEventHandlers();
   },
@@ -232,7 +227,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
           if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
-            if (node.isInKey("dash-plot")) {
+            if (node.isInKey("multi-plot")) {
               widget = new qxapp.component.widget.DashGrid(node);
             }
           }
@@ -267,8 +262,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       } else {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node.isContainer()) {
-          if (node.isInKey("dash-plot")) {
-            this.showScreenshotInExtraView("dash-plot");
+          if (node.isInKey("multi-plot")) {
+            this.showScreenshotInExtraView("multi-plot");
           } else {
             this.showScreenshotInExtraView("container");
           }
@@ -574,18 +569,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
       }
-    },
-
-    createStudyDocument: function(newObj) {
-      if (newObj === undefined) {
-        newObj = this.getStudy().serializeStudy();
-      }
-      let resources = this.__studyResources.projects;
-      resources.addListenerOnce("postSuccess", ev => {
-        console.log("Study replaced");
-        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-      }, this);
-      resources.post(null, newObj);
     },
 
     updateStudyDocument: function(newObj, cb) {
