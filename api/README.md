@@ -2,7 +2,7 @@
 
 # Concept
 
-REST APIs and models (defined as openAPI- or JSON-schemas) are defined in a central location (/apis) to allow for "design-first" development.
+REST APIs and models (defined as openAPI- or JSON-schemas) are defined in a central location [``api/specs``](api/specs) to allow for **design-first development**.
 
 # Development guidelines
 
@@ -64,8 +64,11 @@ In that case, a version subfolder shall be added in the __/shared/__ subfolder a
 Mixing JSONSchema with OpenAPI schema needs some additional steps:
 
 1. Define the JSONSchema schema.
-2. Convert the JSONSchema formatted file to OpenAPI formatted file using the [converter](../scripts/jsonschema/openapi_converter).
-3. In the openapi specifications file ref the converted OpenAPI schema file.
+2. Convert the JSONSchema formatted file to OpenAPI formatted file using a [converter](scripts/json-schema-to-openapi-schema) tool.
+3. In the openapi specifications file ref the converted OpenAPI schema file
+
+This is automated for instance in [api/specs/webserver/v0/components/schemas/Makefile](api/specs/webserver/v0/components/schemas/Makefile)
+
 
 ## Using the openAPI
 
@@ -83,5 +86,5 @@ The current python-based packages use the aiohttp-apiset library to create route
 
 ## references
 
-- [defining reusable components - good practices](https://dev.to/mikeralphson/defining-reusable-components-with-the-openapi-specification-4077)
+- [Defining reusable components - good practices](https://dev.to/mikeralphson/defining-reusable-components-with-the-openapi-specification-4077)
 - [official guidelines on OAS re-usability](https://github.com/OAI/OpenAPI-Specification/blob/master/guidelines/v2.0/REUSE.md)
