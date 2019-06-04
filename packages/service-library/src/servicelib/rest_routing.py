@@ -25,6 +25,7 @@ def get_handlers_from_namespace(handlers_nsp) -> Dict:
     """ Gets all handlers in a namespace define by a class or a module
 
     """
+    # TODO: Should search for function that are marked as "handlers". Similar to @pytest.fixtures??
     if inspect.ismodule(handlers_nsp):
         predicate = lambda obj: inspect.isfunction(obj) and has_handler_signature(obj)
     elif hasattr(handlers_nsp, "__class__"):

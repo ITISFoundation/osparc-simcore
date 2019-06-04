@@ -9,11 +9,11 @@ import datetime
 import logging
 from typing import Dict
 
-from aiohttp import web, web_exceptions
-from celery import Celery
 import sqlalchemy as sa
-from sqlalchemy import and_
+from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
+from celery import Celery
+from sqlalchemy import and_
 
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
@@ -25,9 +25,8 @@ from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
-
-ANONYMOUS_USER = -1
-
+from .projects.projects_api import get_project_for_user
+from .security_api import check_permission
 
 log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
@@ -129,7 +128,7 @@ async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: d
         if "outputs" in value:
             node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
-        
+
         # HACK: skip fake services
         if "demodec" in node_key:
             log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
@@ -164,20 +163,21 @@ async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_
                     where(ComputationalPipeline.__table__.c.project_id==project_id)
         result = await conn.execute(query)
         pipeline = await result.first()
+
         if pipeline is None:
             # let's create one then
             query = ComputationalPipeline.__table__.insert().\
-                    values(project_id=project_id, 
-                            dag_adjacency_list=dag_adjacency_list, 
+                    values(project_id=project_id,
+                            dag_adjacency_list=dag_adjacency_list,
                             state=0)
-            
+
             log.debug("Pipeline object created")
         else:
             # let's modify it
             log.debug("Pipeline object found")
             query = ComputationalPipeline.__table__.update().\
                         where(ComputationalPipeline.__table__.c.project_id == project_id).\
-                        values(state=0, 
+                        values(state=0,
                                 dag_adjacency_list=dag_adjacency_list)
         await conn.execute(query)
 
@@ -198,7 +198,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
         for node_id in tasks:
             task = tasks[node_id]
             query = sa.select([ComputationalTask]).\
-                    where(and_(ComputationalTask.__table__.c.project_id == project_id, 
+                    where(and_(ComputationalTask.__table__.c.project_id == project_id,
                                 ComputationalTask.__table__.c.node_id == node_id))
             result = await conn.execute(query)
             comp_task = await result.fetchone()
@@ -216,7 +216,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                 internal_id = internal_id+1
             else:
                 query = ComputationalTask.__table__.update().\
-                        where(and_(ComputationalTask.__table__.c.project_id==project_id, 
+                        where(and_(ComputationalTask.__table__.c.project_id==project_id,
                                 ComputationalTask.__table__.c.node_id==node_id)).\
                         values(job_id = None,
                                 state = 0,
@@ -227,7 +227,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 submit = datetime.datetime.utcnow())
             await conn.execute(query)
 
-async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):        
+async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     db_engine = app[APP_DB_ENGINE_KEY]
 
     log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
@@ -237,45 +237,52 @@ async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
     log.debug("END OF ROUTINE.")
 
+async def _pre_update_pipeline(request):
+    await check_permission(request, "services.pipeline.*")
+
+    # TODO: PC->SAN why validation is commented???
+    # params, query, body = await extract_and_validate(request)
+    project_id = request.match_info.get("project_id", None)
+    if project_id is None:
+        raise web.HTTPBadRequest
+
+
+    user_id = request[RQT_USERID_KEY]
+
+    project = await get_project_for_user(request, project_id, user_id)
+    pipeline_data = project["workbench"]
+
+    # update pipeline
+    await _update_pipeline_db(request.app, project_id, pipeline_data)
+
+    return user_id, project_id
+
+# HANDLERS ------------------------------------------
+
 @login_required
 async def update_pipeline(request: web.Request) -> web.Response:
-    # retrieve the data
-    project_id = request.match_info.get("project_id", None)
-    assert project_id is not None
-    pipeline_data = (await request.json())["workbench"]
-    app = request.app
-    await _update_pipeline_db(app, project_id, pipeline_data)
-    return web.json_response(status=204)
+    await _pre_update_pipeline(request)
 
-# pylint:disable=too-many-branches, too-many-statements
+    raise web.HTTPNoContent()
+
+
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
-    # params, query, body = await extract_and_validate(request)
-    
-    # if params is not None:
-    #     log.debug("params: %s", params)
-    # if query is not None:
-    #     log.debug("query: %s", query)
-    # if body is not None:
-    #     log.debug("body: %s", body)
+    """ Starts pipeline described in the workbench section of a valid project
+        already at the server side
+    """
+    user_id, project_id = await _pre_update_pipeline(request)
 
-    # assert "project_id" in params
-    # assert "workbench" in body
-
-    # retrieve the data
-    project_id = request.match_info.get("project_id", None)
-    assert project_id is not None
-    pipeline_data = (await request.json())["workbench"]
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
-    app = request.app
-    await _update_pipeline_db(app, project_id, pipeline_data)
     # commit the tasks to celery
-    _ = get_celery(request.app).send_task("comp.task", args=(userid, project_id,), kwargs={})
+    _ = get_celery(request.app).send_task("comp.task", args=(user_id, project_id,), kwargs={})
+
     log.debug("Task commited")
-    # answer the client
+
+    # answer the client while task has been spawned
     data = {
-    "pipeline_name":"request_data",
-    "project_id": project_id
+        # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?
+        "pipeline_name":"request_data",
+        "project_id": project_id
     }
     log.debug("END OF ROUTINE. Response %s", data)
     return data

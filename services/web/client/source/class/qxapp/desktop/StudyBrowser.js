@@ -194,20 +194,25 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __createStudy: function(minStudyData, templateId) {
       const resources = this.__studyResources.projects;
 
-      resources.addListenerOnce("postSuccess", e => {
-        const studyData = e.getRequest().getResponse().data;
-        this.__startStudy(studyData);
-      }, this);
-
-      resources.addListener("postError", e => {
-        console.error(e);
-      });
-
       if (templateId) {
+        resources.addListenerOnce("postFromTemplateSuccess", e => {
+          const studyData = e.getRequest().getResponse().data;
+          this.__startStudy(studyData);
+        }, this);
+        resources.addListenerOnce("postFromTemplateError", e => {
+          console.error(e);
+        });
         resources.postFromTemplate({
           "template_id": templateId
         }, minStudyData);
       } else {
+        resources.addListenerOnce("postSuccess", e => {
+          const studyData = e.getRequest().getResponse().data;
+          this.__startStudy(studyData);
+        }, this);
+        resources.addListenerOnce("postError", e => {
+          console.error(e);
+        });
         resources.post(null, minStudyData);
       }
     },
@@ -391,7 +396,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
       const nThumbnails = 25;
-      let thumbnailCounter = 0;
       let that = this;
       let delegate = {
         // Item's Layout
@@ -429,15 +433,15 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         },
         // Item's data binding
         bindItem: function(controller, item, id) {
-          controller.bindProperty("thumbnail", "icon", {
+          controller.bindProperty("uuid", "icon", {
             converter: function(data) {
-              let thumbnailId = thumbnailCounter + (fromTemplate ? 10 : 0);
-              if (thumbnailId >= nThumbnails) {
-                thumbnailId -= nThumbnails;
+              if (data) {
+                const lastCharacters = data.substr(data.length-10);
+                const aNumber = parseInt(lastCharacters, 16);
+                const thumbnailId = aNumber%nThumbnails;
+                return "qxapp/img"+ thumbnailId +".jpg";
               }
-              let thumbnailUrl = data.match(/^@/) ? data : "qxapp/img"+ thumbnailId +".jpg";
-              thumbnailCounter++;
-              return thumbnailUrl;
+              return "@FontAwesome5Solid/plus-circle/80";
             }
           }, item, id);
           controller.bindProperty("name", "prjTitle", {

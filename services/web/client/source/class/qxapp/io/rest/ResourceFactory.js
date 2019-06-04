@@ -87,20 +87,20 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       const basePath = qxapp.io.rest.ResourceFactory.API;
 
       // Singular resource
-      var project = new qxapp.io.rest.Resource({
-        // Retrieve project
+      const study = new qxapp.io.rest.Resource({
+        // Retrieve study
         get: {
           method: "GET",
           url: basePath+"/projects/{project_id}"
         },
 
-        // Update project
+        // Update study
         put: {
           method: "PUT",
           url: basePath+"/projects/{project_id}"
         },
 
-        // Delete project
+        // Delete study
         del: {
           method: "DELETE",
           url: basePath+"/projects/{project_id}"
@@ -108,14 +108,14 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       // Plural resource
-      var projects = new qxapp.io.rest.Resource({
-        // Retrieve list of projects
+      const studies = new qxapp.io.rest.Resource({
+        // Retrieve list of studies
         get: {
           method: "GET",
           url: basePath+"/projects?type=user"
         },
 
-        // Create project
+        // Create study
         // NOTE: When calling ".post(null, payload)" the first argument needs to be filled in
         // so that the second argument contains the payload
         post: {
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       var templates = new qxapp.io.rest.Resource({
-        // Retrieve list of projects
+        // Retrieve list of studies
         get: {
           method: "GET",
           url: basePath+"/projects?type=template"
@@ -139,8 +139,8 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
 
 
       return {
-        "project": project,
-        "projects": projects,
+        "project": study,
+        "projects": studies,
         "templates": templates
       };
     },

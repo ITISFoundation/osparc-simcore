@@ -45,7 +45,8 @@ async def create_jsonschema_specs(location: Path) -> Dict:
 
     try:
         # will throw a SchemaError if the schema is bad.
-        validate_instance(None, spec_dict)
+        # FIXME: validate_instance in this case logs an error when raising the exception! TMP patched adding log_errors flag
+        validate_instance(None, spec_dict, log_errors=False)
     except ValidationError:
         # no instance provided so it makes sense for a valid schema
         pass
