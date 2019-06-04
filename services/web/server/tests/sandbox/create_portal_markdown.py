@@ -10,11 +10,20 @@ import sys
 from pathlib import Path
 
 from simcore_service_webserver.resources import resources
+from simcore_service_webserver.login.utils import get_random_string
+from simcore_service_webserver.login.registration import get_invitation_url, URL
 
 MARKDOWN_FILENAME = "study_access_demo.md"
 ISSUE = r"https://github.com/ITISFoundation/osparc-simcore/issues/"
 
 current_path = Path( sys.argv[0] if __name__ == "__main__" else __file__).resolve()
+
+HOST_URLS_MAPS = [
+    ('localhost', r'http://127.0.0.1:9081'),
+    ('master', r'http://osparc01.itis.ethz.ch:9081'),
+    ('staging', r'https://staging.osparc.io'),
+    ('osparc.io', r'https://osparc.io')
+]
 
 
 def write_list(hostname, url, data, fh):
@@ -33,11 +42,20 @@ def main():
         print("# THE PORTAL Emulator\n", file=fh)
         print("This pages is for testing purposes for issue [#{1}]({0}{1})\n".format(ISSUE, 715), file=fh)
 
-        write_list('localhost', r'http://127.0.0.1:9081', data, fh)
-        write_list('master', r'http://osparc01.itis.ethz.ch:9081', data, fh)
-        write_list('staging', r'https://staging.io:9081', data, fh)
-        write_list('osparc.io', r'https://osparc.io', data, fh)
+        for hostname, url in HOST_URLS_MAPS:
+            write_list(hostname, url, data, fh)
 
+        print("---", file=fh)
+
+        print("# INVITATIONS Samples:", file=fh)
+        codes = [ get_random_string(30) for n in range(5)]
+
+        for hostname, url in HOST_URLS_MAPS:
+            print("## urls for @{}".format(hostname), file=fh)
+            for code in codes:
+                print("- [{code}]({base_url})".format(base_url=get_invitation_url({'code':code, 'action':"INVITATION"}, URL(url)), code=code), file=fh)
+
+        print("", file=fh)
 
 if __name__ == "__main__":
     main()
