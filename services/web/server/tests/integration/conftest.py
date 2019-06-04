@@ -5,12 +5,15 @@
 import logging
 import sys
 from pathlib import Path
+from pprint import pprint
 from typing import Dict
 
 import docker
 import pytest
 import trafaret_config
 import yaml
+from tenacity import after_log, retry, stop_after_attempt, wait_fixed
+
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
@@ -29,9 +32,7 @@ pytest_plugins = [
 log = logging.getLogger(__name__)
 
 sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
-
 API_VERSION = "v0"
-
 
 @pytest.fixture(scope='session')
 def here():
@@ -59,18 +60,19 @@ def webserver_environ(request, devel_environ, services_docker_compose, docker_st
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    for name in core_services:
-        if 'ports' not in services_docker_compose['services'][name]:
-            continue
+
+    services_with_published_ports = [name for name in core_services
+                if 'ports' in services_docker_compose['services'][name] ]
+
+    for name in services_with_published_ports:
 
         # published port is sometimes dynamically defined by the swarm
         published_port = get_service_published_port(name)
-        assert published_port != "-1"
 
         environ['%s_HOST' % name.upper()] = '127.0.0.1'
         environ['%s_PORT' % name.upper()] = published_port
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-    from pprint import pprint
+
     pprint(environ)
     return environ
 
@@ -116,16 +118,20 @@ def resolve_environ(service, environ):
         _environs[key] = value
     return _environs
 
+
+
+@retry(wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN))
 def get_service_published_port(service_name: str) -> str:
-    published_port = "-1"
+    # WARNING: ENSURE that service name defines a port
+    # NOTE: retries since services can take some time to start
     client = docker.from_env()
     services = [x for x in client.services.list() if service_name in x.name]
     if not services:
-        return published_port
+        raise RuntimeError("Cannot find published port for service '%s'. Probably services still not up" % service_name)
     service_endpoint = services[0].attrs["Endpoint"]
 
     if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
-        return published_port
+        raise RuntimeError("Cannot find published port for service '%s' in endpoint. Probably services still not up" % service_name)
 
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
     return str(published_port)
