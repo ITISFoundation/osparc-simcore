@@ -190,6 +190,7 @@ async def delete_project(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
+        # TODO: this should also delete all the dynamic services used by this project when this happens.
         await db.delete_user_project(user_id, project_uuid)
     except ProjectNotFoundError:
         raise web.HTTPNotFound

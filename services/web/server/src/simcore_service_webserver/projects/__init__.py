@@ -1,6 +1,7 @@
 """ projects management subsystem
 
-TODO: now they are called 'studies'
+    A project is a document defining a osparc study
+    It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
 import asyncio
 import logging
@@ -29,10 +30,14 @@ CONNECT_TIMEOUT_SECS = 30
 
 logger = logging.getLogger(__name__)
 
-def _create_routes(prefix, handlers_module, specs, disable_login):
+def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
+    """
+    :param disable_login: Disables login_required decorator for testing purposes defaults to False
+    :type disable_login: bool, optional
+    """
+    # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     handlers = get_handlers_from_namespace(handlers_module)
     if disable_login:
-        # Disables login_required decorator for testing purposes
         handlers = { name: hnds.__wrapped__ for name, hnds in handlers.items() }
 
     routes = map_handlers_with_operations(
@@ -55,24 +60,17 @@ async def _get_specs(location):
 
 
 
-def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) -> bool:
+def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     """
 
     :param app: main web application
     :type app: web.Application
     :param enable_fake_data: will inject some fake projects, defaults to False
     :param enable_fake_data: bool, optional
-    :param disable_login: will disable user login for testing, defaults to False
-    :param disable_login: bool, optional
     :return: False if subystem setup was skipped (e.g. explicitly disabled in config), otherwise True
     :rtype: bool
     """
-    # TODO: remove disable_login option. Use instead test.helpers to create logged users
-
-    logger.debug("Setting up %s %s...", __name__,
-            "[debug]" if enable_fake_data or disable_login
-                      else ""
-    )
+    logger.debug("Setting up %s ...", __name__)
 
     assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], \
         "{} is missing from configuration".format(CONFIG_SECTION_NAME)
@@ -92,11 +90,10 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
     setup_projects_db(app)
 
 
-    # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
-    routes = _create_routes("/projects", projects_handlers, specs, disable_login)
+    routes = _create_routes("/projects", projects_handlers, specs)
     app.router.add_routes(routes)
 
-    routes = _create_routes("/nodes", nodes_handlers, specs, disable_login)
+    routes = _create_routes("/nodes", nodes_handlers, specs)
     app.router.add_routes(routes)
 
     # json-schemas for projects datasets
@@ -109,6 +106,7 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False) 
         app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: specs}
 
     if enable_fake_data:
+        # TODO: inject data in database instead of keeping in memory!?
         Fake.load_template_projects()
 
     return True

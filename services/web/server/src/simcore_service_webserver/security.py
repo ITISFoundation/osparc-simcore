@@ -29,6 +29,7 @@ def setup(app):
     access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
 
     # TODO: create basic/bearer authentication policy based on tokens instead of cookies!!
+    # when you do that, also update the openapi to reflect that
     authorization_policy = AuthorizationPolicy(app, access_model)
     aiohttp_security.setup(app, identity_policy, authorization_policy)
 
