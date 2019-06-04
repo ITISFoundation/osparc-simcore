@@ -9,9 +9,11 @@
 # pylint:disable=redefined-outer-name
 
 
+import json
 import os
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import sqlalchemy as sa
@@ -20,9 +22,10 @@ import yaml
 
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_config import \
+    app_schema as app_schema
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
-from simcore_service_webserver.application_config import app_schema as app_schema
 
 tests_folder = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent.parent
 sys.path.append(str(tests_folder/ 'helpers'))
@@ -33,7 +36,18 @@ def here():
 
 @pytest.fixture(scope="session")
 def mock_dir(here):
-    return here / "mock"
+    return here / "../mock"
+
+@pytest.fixture(scope='session')
+def fake_data_dir(here):
+    dirpath = (here / "../../data").resolve()
+    assert dirpath.exists()
+    return dirpath
+
+@pytest.fixture
+def fake_project(fake_data_dir: Path) -> Dict:
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        yield json.load(fp)
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
@@ -97,18 +111,11 @@ def postgres_service(docker_services, docker_ip, app_cfg):
 
 
 @pytest.fixture
-def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started manually, comment
-    """
-        For debugging, postgres_service can be started manually as
-            docker-compose -f docker-compose.debug.yml up
-
-        In that case, comment postgres_service)
-    """
+def postgres_db(app_cfg, postgres_service):
     cfg = app_cfg["db"]["postgres"]
-    url = DSN.format(**cfg)
+    url_from_cfg = DSN.format(**cfg)
 
-    # NOTE: Comment this to avoid postgres_service
-    url = postgres_service
+    url = postgres_service or url_from_cfg
 
     # Configures db and initializes tables
     # Uses syncrounous engine for that

@@ -102,7 +102,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
             email: email.getValue(),
             password: pass1.getValue(),
             confirm: pass2.getValue(),
-            invitation: invitation.getValue()
+            invitation: invitation.getValue() ? invitation.getValue() : ""
           });
         }
       }, this);
