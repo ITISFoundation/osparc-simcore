@@ -25,6 +25,7 @@ idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, yarl
 jinja-app-loader==1.0.2
 jinja2==2.10.1            # via aiohttp-jinja2
+jsondiff==1.1.2
 jsonschema==2.6.0
 kombu==4.5.0              # via celery
 lazy-object-proxy==1.4.1  # via openapi-core

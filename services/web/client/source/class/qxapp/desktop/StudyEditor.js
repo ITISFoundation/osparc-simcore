@@ -446,7 +446,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
-      let socket = qxapp.wrapper.WebSocket.getInstance();
+      const socket = qxapp.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -475,17 +475,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
-      let req = new qxapp.io.request.ApiRequest(url, "POST");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("starting pipeline: " + url);
-      console.log(data);
-
+      const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
+      const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");

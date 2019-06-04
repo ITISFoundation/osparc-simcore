@@ -7,9 +7,11 @@ from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
+from ..security_api import check_permission
 from .config import get_client_session, get_config
 from .registry import get_registry
-ANONYMOUS_USER = -1
+
+ANONYMOUS_USER_ID = -1
 
 log = logging.getLogger(__name__)
 
@@ -35,9 +37,9 @@ def _resolve_url(request: web.Request) -> URL:
 
 # HANDLERS -------------------------------------------------------------------
 
-
 @login_required
 async def services_get(request: web.Request) -> web.Response:
+    await check_permission(request, "services.catalog.*")
     await extract_and_validate(request)
 
     url = _resolve_url(request)
@@ -57,14 +59,14 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
 
         if service already renning, then returns its metainfo
     """
-
+    await check_permission(request, "services.interactive.*")
     params, query, body = await extract_and_validate(request)
 
     assert not params
     assert query, "POST expected /running_interactive_services? ... "
     assert not body
 
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     endpoint = _resolve_url(request)
 
     session = get_client_session(request.app)
@@ -98,6 +100,8 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
 
 @login_required
 async def running_interactive_services_get(request: web.Request) -> web.Response:
+    await check_permission(request, "services.interactive.*")
+
     params, query, body = await extract_and_validate(request)
 
     assert params, "GET expected /running_interactive_services/{service_uuid}"
@@ -119,6 +123,8 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     """ Stops and removes an interactive service from the
 
     """
+    await check_permission(request, "services.interactive.*")
+
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
@@ -142,6 +148,8 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
 
 @login_required
 async def running_interactive_services_delete_all(request: web.Request) -> web.Response:
+    await check_permission(request, "services.interactive.*")
+
     params, query, body = await extract_and_validate(request)
 
     assert not params
@@ -149,7 +157,7 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     assert not body
 
     registry = get_registry(request.app)
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     services = registry.user_to_services_map[userid]
 
     if services:

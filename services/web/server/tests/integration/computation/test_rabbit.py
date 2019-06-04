@@ -49,7 +49,7 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, rab
     app = web.Application()
     app[APP_CONFIG_KEY] = app_config
 
-    setup_computation(app, disable_login=True)
+    setup_computation(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
     yield server
