@@ -7,7 +7,7 @@
 import docker
 import pytest
 import tenacity
-
+import time
 
 @pytest.fixture(scope="session")
 def docker_registry():
@@ -42,10 +42,12 @@ def docker_registry():
     private_image = docker_client.images.pull(repo)
     docker_client.images.remove(image=private_image.id)
 
-
     yield url
 
     container.stop()
+
+    while docker_client.containers.list(filters={"name": container.name}):
+        time.sleep(1)
 
 @tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
 def _wait_till_registry_is_responsive(url):
