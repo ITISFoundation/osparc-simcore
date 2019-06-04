@@ -42,6 +42,7 @@ def docker_registry():
     private_image = docker_client.images.pull(repo)
     docker_client.images.remove(image=private_image.id)
 
+
     yield url
 
     container.stop()
