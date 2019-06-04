@@ -36,7 +36,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         let style = {
           decorator: null,
-          padding: [0, 0],
+          padding: 0,
           backgroundColor: "transparent"
         };
         if (states.hovered) {
@@ -60,7 +60,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           backgroundColor: "background-selected-dark",
-          decorator: "window-small-cap"
+          decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
     },
@@ -132,7 +132,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "window",
       alias: "window",
       style: (state, styles) => {
-        styles.decorator = "window-small-cap";
+        styles.decorator = state.maximized ? "window-small-cap-maximized" : "window-small-cap";
         return styles;
       }
     },
@@ -206,6 +206,14 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "selectbox/list",
       style: () => ({
         padding: 0
+      })
+    },
+
+    "toolbar-progressbar": {
+      include: "progressbar",
+      alias: "progressbar",
+      style: () => ({
+        margin: [7, 10]
       })
     },
 

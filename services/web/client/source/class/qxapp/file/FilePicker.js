@@ -44,8 +44,10 @@ qx.Class.define("qxapp.file.FilePicker", {
   construct: function(node, studyId) {
     this.base(arguments);
 
-    this.setNode(node);
-    this.setStudyId(studyId);
+    this.set({
+      node,
+      studyId
+    });
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
@@ -54,6 +56,13 @@ qx.Class.define("qxapp.file.FilePicker", {
     tree.addListener("selectionChanged", this.__selectionChanged, this);
     tree.addListener("itemSelected", this.__itemSelected, this);
     tree.addListener("modelChanged", this.__modelChanged, this);
+
+    const toolbar = new qx.ui.toolbar.ToolBar();
+    const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
+    toolbar.addSpacer();
+    toolbar.add(mainButtons);
+
+    this._add(toolbar);
 
     let addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
@@ -91,6 +100,7 @@ qx.Class.define("qxapp.file.FilePicker", {
   members: {
     __tree: null,
     __selectBtn: null,
+    __mainButtons: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -101,20 +111,16 @@ qx.Class.define("qxapp.file.FilePicker", {
             flex: 1
           });
           break;
-        case "progressBox":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          this._addAt(control, 1);
-          break;
         case "addButton":
           control = new qxapp.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
           });
-          this._add(control);
+          this.__mainButtons.add(control);
           break;
         case "selectButton":
-          control = new qx.ui.form.Button(this.tr("Select"));
-          this._add(control);
+          control = new qx.ui.toolbar.Button(this.tr("Select"));
+          this.__mainButtons.add(control);
           break;
       }
 

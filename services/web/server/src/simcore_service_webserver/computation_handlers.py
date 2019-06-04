@@ -42,7 +42,7 @@ def get_celery(_app: web.Application):
 
 async def _get_node_details(node_key:str, node_version:str, app: web.Application)->dict:
     if "file-picker" in node_key:
-        # Tcreate a fake file-picker schema here!!
+        # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
                         "outputs":{
                             "outFile":{
