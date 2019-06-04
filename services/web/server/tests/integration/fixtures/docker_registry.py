@@ -8,11 +8,16 @@ import docker
 import pytest
 import tenacity
 
+
 @pytest.fixture(scope="session")
 def docker_registry():
     # run the registry outside of the stack
     docker_client = docker.from_env()
-    container = docker_client.containers.run("registry:2", ports={"5000":"5000"}, restart_policy={"Name":"always"}, detach=True)
+    container = docker_client.containers.run("registry:2",
+        ports={"5000":"5000"},
+        restart_policy={"Name":"always"},
+        detach=True
+    )
     host = "127.0.0.1"
     port = 5000
     url = "{host}:{port}".format(host=host, port=port)

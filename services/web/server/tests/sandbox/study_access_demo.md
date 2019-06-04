@@ -7,33 +7,25 @@ Emulator of the actual [NIH/Sparc Portal](https://data.sparc.science)
 
 ## studies available @localhost
 
-- [ISAN: UCDavis use case: 0D](http://127.0.0.1:9081/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
-- [ISAN: UCDavis use cases: 1D, 2D](http://127.0.0.1:9081/study/template-uuid-41e9-a1a7-f7d4f3a8f26b)
-- [ISAN: Kember use case](http://127.0.0.1:9081/study/template-uuid-4a0d-b88d-e80bfa272ebd)
-- [ISAN: MattWard use case](http://127.0.0.1:9081/study/template-uuid-420d-b88d-e80bfa272ebd)
-- [ISAN: 4x CC 0D](http://127.0.0.1:9081/study/template-uuid-40e1-bb95-c68f6358bfe2)
+- [ISAN: 2D Plot](http://127.0.0.1:9081/study/template-uuid-4d5e-b80e-401c8066782f)
+- [ISAN: 3D Paraview](http://127.0.0.1:9081/study/template-uuid-4d5e-b80e-401c8066781f)
+- [ISAN: MattWard use case](http://127.0.0.1:9081/study/template-uuid-420d-b82d-e80bfa272ebd)
 
 ## studies available @master
 
-- [ISAN: UCDavis use case: 0D](http://osparc01.itis.ethz.ch:9081/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
-- [ISAN: UCDavis use cases: 1D, 2D](http://osparc01.itis.ethz.ch:9081/study/template-uuid-41e9-a1a7-f7d4f3a8f26b)
-- [ISAN: Kember use case](http://osparc01.itis.ethz.ch:9081/study/template-uuid-4a0d-b88d-e80bfa272ebd)
-- [ISAN: MattWard use case](http://osparc01.itis.ethz.ch:9081/study/template-uuid-420d-b88d-e80bfa272ebd)
-- [ISAN: 4x CC 0D](http://osparc01.itis.ethz.ch:9081/study/template-uuid-40e1-bb95-c68f6358bfe2)
+- [ISAN: 2D Plot](http://osparc01.itis.ethz.ch:9081/study/template-uuid-4d5e-b80e-401c8066782f)
+- [ISAN: 3D Paraview](http://osparc01.itis.ethz.ch:9081/study/template-uuid-4d5e-b80e-401c8066781f)
+- [ISAN: MattWard use case](http://osparc01.itis.ethz.ch:9081/study/template-uuid-420d-b82d-e80bfa272ebd)
 
 ## studies available @staging
 
-- [ISAN: UCDavis use case: 0D](https://staging.io:9081/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
-- [ISAN: UCDavis use cases: 1D, 2D](https://staging.io:9081/study/template-uuid-41e9-a1a7-f7d4f3a8f26b)
-- [ISAN: Kember use case](https://staging.io:9081/study/template-uuid-4a0d-b88d-e80bfa272ebd)
-- [ISAN: MattWard use case](https://staging.io:9081/study/template-uuid-420d-b88d-e80bfa272ebd)
-- [ISAN: 4x CC 0D](https://staging.io:9081/study/template-uuid-40e1-bb95-c68f6358bfe2)
+- [ISAN: 2D Plot](https://staging.io:9081/study/template-uuid-4d5e-b80e-401c8066782f)
+- [ISAN: 3D Paraview](https://staging.io:9081/study/template-uuid-4d5e-b80e-401c8066781f)
+- [ISAN: MattWard use case](https://staging.io:9081/study/template-uuid-420d-b82d-e80bfa272ebd)
 
 ## studies available @osparc.io
 
-- [ISAN: UCDavis use case: 0D](https://osparc.io/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
-- [ISAN: UCDavis use cases: 1D, 2D](https://osparc.io/study/template-uuid-41e9-a1a7-f7d4f3a8f26b)
-- [ISAN: Kember use case](https://osparc.io/study/template-uuid-4a0d-b88d-e80bfa272ebd)
-- [ISAN: MattWard use case](https://osparc.io/study/template-uuid-420d-b88d-e80bfa272ebd)
-- [ISAN: 4x CC 0D](https://osparc.io/study/template-uuid-40e1-bb95-c68f6358bfe2)
+- [ISAN: 2D Plot](https://osparc.io/study/template-uuid-4d5e-b80e-401c8066782f)
+- [ISAN: 3D Paraview](https://osparc.io/study/template-uuid-4d5e-b80e-401c8066781f)
+- [ISAN: MattWard use case](https://osparc.io/study/template-uuid-420d-b82d-e80bfa272ebd)
 
