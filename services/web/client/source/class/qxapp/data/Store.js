@@ -89,8 +89,8 @@ qx.Class.define("qxapp.data.Store", {
           }
           return metaData;
         }
-        const moreServices = this.getFakeServices().concat(this.getBuiltInServices());
-        metaData = qxapp.utils.Services.getFromArray(moreServices, key, version);
+        const allServices = this.getFakeServices().concat(this.getBuiltInServices());
+        metaData = qxapp.utils.Services.getFromArray(allServices, key, version);
         if (metaData) {
           return qxapp.utils.Utils.deepCloneObject(metaData);
         }
@@ -1118,8 +1118,9 @@ qx.Class.define("qxapp.data.Store", {
           const {
             data
           } = requ.getResponse();
-          const newServices = data.concat(this.getBuiltInServices());
-          const services = qxapp.utils.Services.convertArrayToObject(newServices);
+          const allServices = data.concat(this.getBuiltInServices());
+          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
+          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, true);
         }, this);
 
@@ -1128,8 +1129,9 @@ qx.Class.define("qxapp.data.Store", {
             error
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
-          const moreServices = this.getFakeServices().concat(this.getBuiltInServices());
-          const services = qxapp.utils.Services.convertArrayToObject(moreServices);
+          const allServices = this.getFakeServices().concat(this.getBuiltInServices());
+          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
+          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, false);
         }, this);
         req.send();
