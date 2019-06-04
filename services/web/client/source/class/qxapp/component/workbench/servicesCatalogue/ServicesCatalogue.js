@@ -173,7 +173,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const addBtn = this.__addBtn = new qx.ui.toolbar.Button("Add").set({
         enabled: false
       });
-      addBtn.addListener("execute", this.__onAddService, this);
+      addBtn.addListener("execute", () => this.__onAddService(), this);
       addBtn.setAllowGrowX(false);
       buttonsPart.add(addBtn);
       const cancelBtn = new qx.ui.toolbar.Button("Cancel");

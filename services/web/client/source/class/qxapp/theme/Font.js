@@ -84,6 +84,13 @@ qx.Theme.define("qxapp.theme.Font", {
       family: ["Roboto"],
       color: "text",
       italic: true
+    },
+
+    "workbench-start-hint": {
+      size: 20,
+      family: ["Roboto"],
+      color: "workbench-start-hint",
+      bold: true
     }
   }
 });
