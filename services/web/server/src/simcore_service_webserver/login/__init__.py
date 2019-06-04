@@ -8,6 +8,8 @@ import logging
 
 import asyncpg
 from aiohttp import web
+
+import asyncio
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..db import DSN
@@ -37,7 +39,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=app.loop)
+    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=asyncio.get_event_loop())
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
 
     # config
@@ -64,7 +66,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     yield
 
     try:
-        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS, loop=app.loop)
+        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS)
     except asyncio.TimeoutError:
         log.exception("Failed to close login storage loop")
 
