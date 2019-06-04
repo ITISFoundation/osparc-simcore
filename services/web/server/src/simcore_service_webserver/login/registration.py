@@ -2,17 +2,59 @@
 
 
 """
-# TODO: Move handlers.check_registration  and other utils related with registration here
 import json
 import logging
 
+from aiohttp import web
 from yarl import URL
 
-from ..db_models import ConfirmationAction
+from ..db_models import UserStatus
+from .cfg import cfg
+from .confirmation import (ConfirmationAction, get_expiration_date,
+                            is_confirmation_expired,
+                            validate_confirmation_code)
 from .storage import AsyncpgStorage
-from .utils import get_expiration_date
 
 log = logging.getLogger(__name__)
+
+
+async def check_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
+    # email : required & formats
+    # password: required & secure[min length, ...]
+
+    # If the email field is missing, return a 400 - HTTPBadRequest
+    if email is None or password is None:
+        raise web.HTTPBadRequest(reason="Email and password required",
+                                    content_type='application/json')
+
+    if confirm and password != confirm:
+        raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
+                               content_type='application/json')
+
+    # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity
+    # TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
+    # TODO: use passwordmeter to enforce good passwords, but first create helper in front-end
+
+    user = await db.get_user({'email': email})
+    if user:
+        # Resets pending confirmation if re-registers?
+        if user['status'] == UserStatus.CONFIRMATION_PENDING.value:
+            _confirmation = await db.get_confirmation({
+                'user': user,
+                'action': ConfirmationAction.REGISTRATION.value
+            })
+
+            if is_confirmation_expired(_confirmation):
+                await db.delete_confirmation(_confirmation)
+                await db.delete_user(user)
+                return
+
+        # If the email is already taken, return a 409 - HTTPConflict
+        raise web.HTTPConflict(reason=cfg.MSG_EMAIL_EXISTS,
+                               content_type='application/json')
+
+    log.debug("Registration data validated")
+
 
 async def create_invitation(host, guest, db:AsyncpgStorage):
     """ Creates an invitation token for a guest to register in the platform
@@ -33,6 +75,14 @@ async def create_invitation(host, guest, db:AsyncpgStorage):
         })
     )
     return confirmation
+
+
+async def check_invitation(invitation:str, db):
+    confirmation = await validate_confirmation_code(invitation, db)
+    if confirmation:
+        await db.delete_confirmation(confirmation)
+    else:
+        raise web.HTTPForbidden(reason="Request requires invitation or invitation expired")
 
 
 def get_confirmation_info(confirmation):
