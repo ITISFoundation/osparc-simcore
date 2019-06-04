@@ -121,7 +121,7 @@ class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
     def body(self) -> str:
         return self._text
 
-    # BUG: not part of BaseOpenAPIResponse but used in openapi-core
+    # FIXME: not part of BaseOpenAPIResponse but used in openapi-core
     data = body
 
     @property

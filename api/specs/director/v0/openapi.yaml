@@ -226,10 +226,6 @@ paths:
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
-          content:
-            application/json:
-              schema:
-                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:

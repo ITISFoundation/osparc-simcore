@@ -1,14 +1,15 @@
 """ projects management subsystem
 
-TODO: now they are called 'studies'
+    A project is a document defining a osparc study
+    It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
 import asyncio
 import logging
 from pprint import pformat
 
+from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from aiohttp import web
 from servicelib.application_keys import (APP_CONFIG_KEY,
                                          APP_JSONSCHEMA_SPECS_KEY)
 from servicelib.jsonschema_specs import create_jsonschema_specs
@@ -19,6 +20,8 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import nodes_handlers, projects_handlers
 from .config import CONFIG_SECTION_NAME
+from .projects_access import setup_projects_access
+from .projects_db import setup_projects_db
 from .projects_fakes import Fake
 
 RETRY_WAIT_SECS = 2
@@ -27,10 +30,14 @@ CONNECT_TIMEOUT_SECS = 30
 
 logger = logging.getLogger(__name__)
 
-def _create_routes(prefix, handlers_module, specs, disable_login):
+def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
+    """
+    :param disable_login: Disables login_required decorator for testing purposes defaults to False
+    :type disable_login: bool, optional
+    """
+    # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     handlers = get_handlers_from_namespace(handlers_module)
     if disable_login:
-        # Disables login_required decorator for testing purposes
         handlers = { name: hnds.__wrapped__ for name, hnds in handlers.items() }
 
     routes = map_handlers_with_operations(
@@ -53,36 +60,43 @@ async def _get_specs(location):
 
 
 
-def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
+def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     """
+
     :param app: main web application
     :type app: web.Application
     :param enable_fake_data: will inject some fake projects, defaults to False
     :param enable_fake_data: bool, optional
-    :param disable_login: will disable user login for testing, defaults to False
-    :param disable_login: bool, optional
+    :return: False if subystem setup was skipped (e.g. explicitly disabled in config), otherwise True
+    :rtype: bool
     """
-    logger.debug("Setting up %s %s...", __name__,
-            "[debug]" if enable_fake_data or disable_login
-                      else ""
-    )
+    logger.debug("Setting up %s ...", __name__)
 
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], "{} is missing from configuration".format(CONFIG_SECTION_NAME)
+    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], \
+        "{} is missing from configuration".format(CONFIG_SECTION_NAME)
+
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     if "enabled" in cfg and not cfg["enabled"]:
         logger.warning("'%s' explicitly disabled in config", __name__)
-        return
+        return False
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
-    routes = _create_routes("/projects", projects_handlers, specs, disable_login)
+    # security access : Inject permissions to rest API resources
+    setup_projects_access(app)
+
+    # database API
+    setup_projects_db(app)
+
+
+    routes = _create_routes("/projects", projects_handlers, specs)
     app.router.add_routes(routes)
 
-    routes = _create_routes("/nodes", nodes_handlers, specs, disable_login)
+    routes = _create_routes("/nodes", nodes_handlers, specs)
     app.router.add_routes(routes)
 
-    # get project jsonschema definition
+    # json-schemas for projects datasets
     project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
     specs = loop.run_until_complete( _get_specs(project_schema_location) )
@@ -92,10 +106,10 @@ def setup(app: web.Application, *, enable_fake_data=False, disable_login=False):
         app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: specs}
 
     if enable_fake_data:
-        # injects fake projects to User with id=1
-        # Fake.load_user_projects(user_id=1)
+        # TODO: inject data in database instead of keeping in memory!?
         Fake.load_template_projects()
 
+    return True
 
 
 # alias

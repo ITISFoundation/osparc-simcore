@@ -26,12 +26,21 @@ def current_dir():
 def here():
     return current_dir()
 
+
+@pytest.fixture(scope='session')
+def this_repo_root_dir(here):
+    root_dir = here.parent.parent
+    assert root_dir
+    assert any(root_dir.glob(".git"))
+    return root_dir
+
+
 @pytest.fixture(scope='session')
 def api_specs_dir(here):
     return _api_specs_dir_impl(here)
 
 def _api_specs_dir_impl(here):
-    specs_dir = here.parent / "specs"
+    specs_dir = Path(here.parent / "specs")
     return specs_dir
 
 

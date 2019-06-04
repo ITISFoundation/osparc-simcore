@@ -28,7 +28,7 @@
  *
  * <pre class='javascript'>
  *   let study = new qxapp.data.model.Study(studyData);
- *   let prjEditor = new qxapp.desktop.StudyEditor(study, isNew);
+ *   let prjEditor = new qxapp.desktop.StudyEditor(study);
  * </pre>
  */
 
@@ -45,10 +45,8 @@ qx.Class.define("qxapp.data.model.Study", {
       uuid: studyData.uuid === undefined ? this.getUuid() : studyData.uuid,
       name: studyData.name === undefined ? this.getName() : studyData.name,
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
-      notes: studyData.notes === undefined ? this.getNotes() : studyData.notes,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
       prjOwner: studyData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : studyData.prjOwner,
-      collaborators: studyData.collaborators === undefined ? this.getCollaborators() : studyData.collaborators,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
@@ -78,12 +76,6 @@ qx.Class.define("qxapp.data.model.Study", {
       init: ""
     },
 
-    notes: {
-      check: "String",
-      nullable: false,
-      init: ""
-    },
-
     thumbnail: {
       check: "String",
       nullable: true,
@@ -94,12 +86,6 @@ qx.Class.define("qxapp.data.model.Study", {
       check: "String",
       nullable: false,
       init: ""
-    },
-
-    collaborators: {
-      check: "Object",
-      nullable: false,
-      init: {}
     },
 
     creationDate: {
@@ -117,6 +103,22 @@ qx.Class.define("qxapp.data.model.Study", {
     workbench: {
       check: "qxapp.data.model.Workbench",
       nullable: false
+    }
+  },
+
+  statics: {
+    createMinimumStudyObject: function() {
+      // TODO: Check if this can be automatically generated from schema
+      return {
+        uuid: "",
+        name: "",
+        description: "",
+        thumbnail: "",
+        prjOwner: "",
+        creationDate: new Date(),
+        lastChangeDate: new Date(),
+        workbench: {}
+      };
     }
   },
 

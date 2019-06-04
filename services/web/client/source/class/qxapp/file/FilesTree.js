@@ -43,7 +43,8 @@ qx.Class.define("qxapp.file.FilesTree", {
     this.base(arguments, null, "label", "children");
 
     this.set({
-      openMode: "none"
+      openMode: "none",
+      decorator: "no-border"
     });
 
     this.addListener("tap", this.__selectionChanged, this);

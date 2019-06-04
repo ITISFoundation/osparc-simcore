@@ -62,11 +62,13 @@ def webserver_environ(request, devel_environ, services_docker_compose, docker_st
     for name in core_services:
         if 'ports' not in services_docker_compose['services'][name]:
             continue
-        
+
         # published port is sometimes dynamically defined by the swarm
+        published_port = get_service_published_port(name)
+        assert published_port != "-1"
 
         environ['%s_HOST' % name.upper()] = '127.0.0.1'
-        environ['%s_PORT' % name.upper()] = get_service_published_port(name)
+        environ['%s_PORT' % name.upper()] = published_port
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
     from pprint import pprint
     pprint(environ)
@@ -121,9 +123,9 @@ def get_service_published_port(service_name: str) -> str:
     if not services:
         return published_port
     service_endpoint = services[0].attrs["Endpoint"]
-    
+
     if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
         return published_port
-    
+
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
     return str(published_port)
