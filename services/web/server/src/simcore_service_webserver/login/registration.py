@@ -1,9 +1,12 @@
 """ Core functionality and tools for user's registration
 
-
+    - registration code
+    - invitation code
 """
 import json
 import logging
+from pprint import pformat
+from typing import Dict
 
 from aiohttp import web
 from yarl import URL
@@ -11,8 +14,7 @@ from yarl import URL
 from ..db_models import UserStatus
 from .cfg import cfg
 from .confirmation import (ConfirmationAction, get_expiration_date,
-                            is_confirmation_expired,
-                            validate_confirmation_code)
+                           is_confirmation_expired, validate_confirmation_code)
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
@@ -55,8 +57,7 @@ async def check_registration(email: str, password: str, confirm: str, db: Asyncp
 
     log.debug("Registration data validated")
 
-
-async def create_invitation(host, guest, db:AsyncpgStorage):
+async def create_invitation(host:Dict, guest:str, db:AsyncpgStorage):
     """ Creates an invitation token for a guest to register in the platform
 
         Creates and injects an invitation token in the confirmation table associated
@@ -76,18 +77,17 @@ async def create_invitation(host, guest, db:AsyncpgStorage):
     )
     return confirmation
 
-
 async def check_invitation(invitation:str, db):
     confirmation = await validate_confirmation_code(invitation, db)
     if confirmation:
+        #TODO check if action=invitation??
+        log.info("Invitation code used. Deleting: %s", pformat(get_confirmation_info(confirmation)))
         await db.delete_confirmation(confirmation)
     else:
         raise web.HTTPForbidden(reason="Request requires invitation or invitation expired")
 
-
 def get_confirmation_info(confirmation):
-    info = confirmation
-
+    info = dict(confirmation)
     # data column is a string
     try:
         info['data'] = json.loads(confirmation['data'])
@@ -101,7 +101,6 @@ def get_confirmation_info(confirmation):
         info["url"] = get_invitation_url(confirmation)
 
     return info
-
 
 def get_invitation_url(confirmation, origin: URL=None) -> URL:
     code = confirmation['code']
