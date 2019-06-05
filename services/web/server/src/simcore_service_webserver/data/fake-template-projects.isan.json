@@ -169,7 +169,13 @@
         "inputs": {},
         "inputNodes": [],
         "outputNode": false,
-        "outputs": {},
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/initial_WStates"
+          }
+        },
+        "progress": 100,
         "parent": null,
         "position": {
           "x": 50,
