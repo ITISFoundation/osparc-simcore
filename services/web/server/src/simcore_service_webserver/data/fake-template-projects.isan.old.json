@@ -1,89 +1,5 @@
 [
   {
-    "uuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
-    "name": "ISAN: UCDavis use case: 0D",
-    "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
-    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
-    "prjOwner": "Colleen Clancy",
-    "creationDate": "2018-10-22T09:13:13.360Z",
-    "lastChangeDate": "2018-10-22T09:33:41.858Z",
-    "workbench": {
-      "template-uuid-4674-b758-946151cae351": {
-        "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0",
-        "label": "File Picker 0D",
-        "inputs": {},
-        "inputNodes": [],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 50,
-          "y": 150
-        }
-      },
-      "template-uuid-409d-998c-c1f04de67f8b": {
-        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
-        "version": "1.0.0",
-        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
-        "inputAccess": {
-          "Na": "ReadAndWrite",
-          "Kr": "ReadOnly",
-          "BCL": "ReadAndWrite",
-          "NBeats": "ReadOnly",
-          "Ligand": "Invisible",
-          "cAMKII": "Invisible"
-        },
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 200,
-          "NBeats": 5,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "initfile": {
-            "nodeUuid": "template-uuid-4674-b758-946151cae351",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-4674-b758-946151cae351"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 300,
-          "y": 150
-        }
-      },
-      "template-uuid-43e7-9fda-cf9625e59986": {
-        "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "2.8.0",
-        "label": "cc-0d-viewer",
-        "inputs": {
-          "vm_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "out_4"
-          },
-          "all_results_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "out_1"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-409d-998c-c1f04de67f8b"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 550,
-          "y": 150
-        }
-      }
-    }
-  }, {
     "uuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
     "name": "ISAN: UCDavis use cases: 1D, 2D",
     "description": "Colleen Clancy 1D and 2D use cases with a file picker and PostPro viewers",
@@ -94,7 +10,7 @@
     "workbench": {
       "template-uuid-4212-8108-c7cfab4f241e": {
         "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0",
+        "version": "1.0.0",
         "label": "File Picker 1&2 D",
         "inputs": {},
         "inputNodes": [],
@@ -331,7 +247,7 @@
     "workbench": {
       "template-uuid-4552-ad8d-e4699176f397": {
         "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0",
+        "version": "1.0.0",
         "label": "File Picker",
         "inputs": {},
         "inputNodes": [],
