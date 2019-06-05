@@ -60,6 +60,7 @@ ROLES_PERMISSIONS = {
                                  # "study.start",
                                  # "study.stop",
         "services.interactive.*",# "study.node.start"
+        "services.catalog.*",
       ]
   },
   UserRole.USER: {
@@ -81,7 +82,6 @@ ROLES_PERMISSIONS = {
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
         # TODO: kept temporarily as a way to denote resources
-          "services.catalog.*",
       ],
       "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
   },
