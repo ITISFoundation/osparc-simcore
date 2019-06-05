@@ -69,7 +69,6 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service,
     app_cfg['projects']['enabled'] = True
     app_cfg['storage']['enabled'] = False
     app_cfg['rabbit']['enabled'] = False
-    import pdb; pdb.set_trace()
 
     app = web.Application()
     app[APP_CONFIG_KEY] = app_cfg
