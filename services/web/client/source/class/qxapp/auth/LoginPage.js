@@ -73,7 +73,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
         pages.setSelection([reset]);
       }
     } else if (urlFragment.params && urlFragment.params.registered) {
-      qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account have been created. You can now use your credentials to login."));
+      qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account have been created.<br>You can now use your credentials to login."));
     }
 
     // Transitions between pages
