@@ -257,8 +257,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
           nodeUuid: nodeBId
         });
       }
-
-      this.__updateHint();
     },
 
     __addNodeToWorkbench: function(nodeUI, position) {
@@ -300,6 +298,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
 
       qx.ui.core.queue.Layout.flush();
+      
+      this.__updateHint();
     },
 
     __createNodeUI: function(nodeId) {
@@ -815,8 +815,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
           }
         }
       }
-
-      this.__updateHint();
     },
 
     addWindowToDesktop: function(node) {
