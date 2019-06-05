@@ -72,6 +72,8 @@ qx.Class.define("qxapp.auth.LoginPage", {
       } else if (urlFragment.nav[0] === "reset-password") {
         pages.setSelection([reset]);
       }
+    } else if (urlFragment.params && urlFragment.params.registered) {
+      qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account have been created. You can now use your credentials to login."));
     }
 
     // Transitions between pages
