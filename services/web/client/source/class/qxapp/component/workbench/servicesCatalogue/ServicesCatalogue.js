@@ -173,7 +173,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const addBtn = this.__addBtn = new qx.ui.toolbar.Button("Add").set({
         enabled: false
       });
-      addBtn.addListener("execute", this.__onAddService, this);
+      addBtn.addListener("execute", () => this.__onAddService(), this);
       addBtn.setAllowGrowX(false);
       buttonsPart.add(addBtn);
       const cancelBtn = new qx.ui.toolbar.Button("Cancel");
@@ -246,7 +246,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         selectBox.removeAll();
         if (serviceKey in this.__allServicesObj) {
           let versions = qxapp.utils.Services.getVersions(this.__allServicesObj, serviceKey);
-          const latest = new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST));
+          const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
             selectBox.add(new qx.ui.form.ListItem(versions[i]));
