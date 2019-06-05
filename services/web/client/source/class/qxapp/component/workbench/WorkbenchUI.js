@@ -298,7 +298,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
 
       qx.ui.core.queue.Layout.flush();
-      
+
       this.__updateHint();
     },
 
