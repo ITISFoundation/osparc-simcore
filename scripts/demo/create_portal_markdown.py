@@ -24,7 +24,7 @@ HOST_URLS_MAPS = [
     ('localhost', r'http://127.0.0.1:9081'),
     ('master', r'http://osparc01.itis.ethz.ch:9081'),
     ('staging', r'https://staging.osparc.io'),
-    ('osparc.io', r'https://osparc.io')
+    # ('osparc.io', r'https://osparc.io')
 ]
 
 MOCK_CODES = [
