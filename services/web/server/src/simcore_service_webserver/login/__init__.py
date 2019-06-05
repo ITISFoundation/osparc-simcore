@@ -9,7 +9,6 @@ import logging
 import asyncpg
 from aiohttp import web
 
-import asyncio
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..db import DSN

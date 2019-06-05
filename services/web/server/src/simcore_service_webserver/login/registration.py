@@ -12,7 +12,7 @@ from aiohttp import web
 from yarl import URL
 
 from ..db_models import UserStatus
-from .cfg import cfg, get_storage
+from .cfg import cfg
 from .confirmation import (ConfirmationAction, get_expiration_date,
                            is_confirmation_expired, validate_confirmation_code)
 from .storage import AsyncpgStorage
