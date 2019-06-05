@@ -895,8 +895,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __updateHint: function() {
       const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
-      const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
-      if (isEmptyWorkspace && hintBounds) {
+      if (isEmptyWorkspace) {
+        const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
         const {height, width} = this.__desktopCanvas.getBounds();
         this.__startHint.setLayoutProperties({
           top: Math.round((height - hintBounds.height) / 2),
