@@ -237,7 +237,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isRealService: function() {
-      return (this.isInKey("simcore/service/dynamic") || this.isInKey("simcore/service/comp"));
+      return (this.isInKey("simcore/services/dynamic") || this.isInKey("simcore/services/comp"));
     },
 
     getMetaData: function() {
