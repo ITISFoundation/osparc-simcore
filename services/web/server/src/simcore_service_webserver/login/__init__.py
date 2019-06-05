@@ -14,6 +14,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from ..db import DSN
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
+from ..rest_config import CONFIG_SECTION_NAME as REST_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
@@ -80,7 +81,7 @@ def setup(app: web.Application):
 
     log.debug("Setting up %s ...", __name__)
 
-    # TODO: requires rest ready!
+    assert REST_SECTION in app[APP_CONFIG_KEY]
     assert SMTP_SECTION in app[APP_CONFIG_KEY]
     assert DB_SECTION in app[APP_CONFIG_KEY]
 

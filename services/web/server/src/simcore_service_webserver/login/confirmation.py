@@ -10,7 +10,6 @@ from .cfg import cfg
 
 from ..db_models import ConfirmationAction
 
-
 async def validate_confirmation_code(code, db):
     confirmation = await db.get_confirmation({'code': code})
     if confirmation and is_confirmation_expired(confirmation):
