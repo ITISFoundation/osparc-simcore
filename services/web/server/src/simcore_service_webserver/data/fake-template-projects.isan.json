@@ -9,7 +9,7 @@
     "lastChangeDate": "2019-05-24T11:36:12.015Z",
     "workbench": {
       "template-uuid-48eb-a9d2-aaad6b72400a": {
-        "key": "simcore/services/dynamic/itis/file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker",
         "inputs": {},
@@ -61,7 +61,7 @@
     "lastChangeDate": " 2019-05-24T10:38:12.888Z",
     "workbench": {
       "template-uuid-403e-865a-8c5ca30671c6": {
-        "key": "simcore/services/dynamic/itis/file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 1",
         "inputs": {},
@@ -81,7 +81,7 @@
         }
       },
       "template-uuid-421f-be24-d44d112cc5c1": {
-        "key": "simcore/services/dynamic/itis/file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 2",
         "inputs": {},
@@ -163,7 +163,7 @@
     "lastChangeDate": "2018-10-22T09:33:41.858Z",
     "workbench": {
       "template-uuid-4674-b758-946151cae351": {
-        "key": "simcore/services/dynamic/itis/file-picker",
+        "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 0D",
         "inputs": {},
