@@ -30,6 +30,8 @@ qx.Theme.define("qxapp.theme.Color", {
     "background-main-lighter": "#2D2D2D",
     "background-main-lighter+": "#373737",
     "text-placeholder": "text-disabled",
-    "text-darker": "text-disabled"
+    "text-darker": "text-disabled",
+    "tabview-pane-background": "background-main",
+    "workbench-start-hint": "#505050"
   }
 });

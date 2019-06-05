@@ -88,6 +88,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
+    this.__startHint = new qx.ui.basic.Label(this.tr("Double click on this area to start")).set({
+      font: "workbench-start-hint",
+      textColor: "workbench-start-hint",
+      visibility: "excluded"
+    });
+    this.__desktopCanvas.add(this.__startHint);
+
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -291,6 +298,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
 
       qx.ui.core.queue.Layout.flush();
+
+      this.__updateHint();
     },
 
     __createNodeUI: function(nodeId) {
@@ -719,6 +728,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
       }
+      this.__updateHint();
     },
 
     __clearAllNodes: function() {
@@ -876,6 +886,21 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         let srvCat = this.__createServicesCatalogue(pos);
         srvCat.open();
       }, this);
+
+      this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
+    },
+
+    __updateHint: function() {
+      const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
+      this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
+      if (isEmptyWorkspace) {
+        const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
+        const {height, width} = this.__desktopCanvas.getBounds();
+        this.__startHint.setLayoutProperties({
+          top: Math.round((height - hintBounds.height) / 2),
+          left: Math.round((width - hintBounds.width) / 2)
+        });
+      }
     }
   }
 });
