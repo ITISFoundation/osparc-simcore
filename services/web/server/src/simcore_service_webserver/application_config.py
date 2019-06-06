@@ -45,6 +45,7 @@ def create_schema():
             "client_outdir": T.String(),
             "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
             "testing": T.Bool(),
+            "studies_access_enabled": T.Bool(),
         }),
         db_config.CONFIG_SECTION_NAME: db_config.schema,
         director_config.CONFIG_SECTION_NAME: director_config.schema,

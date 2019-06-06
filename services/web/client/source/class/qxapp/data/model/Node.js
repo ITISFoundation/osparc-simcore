@@ -237,7 +237,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isRealService: function() {
-      return (this.isInKey("simcore/service/dynamic") || this.isInKey("simcore/service/comp"));
+      return (this.isInKey("simcore/services/dynamic") || this.isInKey("simcore/services/comp"));
     },
 
     getMetaData: function() {
@@ -623,7 +623,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     retrieveInputs: function() {
-      if (this.isDynamic()) {
+      if (this.isDynamic() && this.isRealService()) {
         if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
           return;
         }
@@ -804,7 +804,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __stopInteractiveNode: function() {
-      if (this.isDynamic()) {
+      if (this.isDynamic() && this.isRealService()) {
         let url = "/running_interactive_services";
         let query = "/"+encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");

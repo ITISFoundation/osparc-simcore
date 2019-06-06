@@ -40,6 +40,7 @@ importlib-metadata==0.16  # via pluggy
 isort==4.3.20             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
+jsondiff==1.1.2
 jsonschema==2.6.0
 kombu==4.5.0
 lazy-object-proxy==1.4.1

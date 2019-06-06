@@ -19,8 +19,10 @@ from typing import Dict
 
 from aiohttp import web
 
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .resources import resources
-from .security import is_anonymous, remember
+from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
@@ -39,16 +41,13 @@ SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
-    from servicelib.application_keys import APP_DB_ENGINE_KEY
+    from .projects.projects_db import APP_PROJECT_DBAPI
 
-    from .projects.projects_models import ProjectDB
-    from .projects.projects_fakes import Fake
-
+    db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
     # BUG: ensure items in project_list have unique UUIDs
-    projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await ProjectDB.load_template_projects(db_engine=app[APP_DB_ENGINE_KEY])
+    projects_list = await db.load_template_projects()
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
@@ -61,9 +60,9 @@ async def create_temporary_user(request: web.Request):
         TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, ANONYMOUS
+    from .login.handlers import ACTIVE, GUEST
     from .login.utils import get_client_ip, get_random_string
-    from .security import encrypt_password
+    from .security_api import encrypt_password
     # from .utils import generate_passphrase
     # from .utils import generate_password
 
@@ -81,7 +80,7 @@ async def create_temporary_user(request: web.Request):
         'email': email,
         'password_hash': encrypt_password(password),
         'status': ACTIVE,
-        'role':  ANONYMOUS, # TODO: THIS has to be a temporary user!
+        'role':  GUEST,
         'created_ip': get_client_ip(request),
     })
 
@@ -90,7 +89,7 @@ async def create_temporary_user(request: web.Request):
 # TODO: from .users import get_user?
 async def get_authorized_user(request: web.Request) -> Dict:
     from .login.cfg import get_storage
-    from .security import authorized_userid
+    from .security_api import authorized_userid
 
     db = get_storage(request.app)
     userid = await authorized_userid(request)
@@ -108,39 +107,6 @@ def compose_uuid(template_uuid, user_id) -> str:
     new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
     return new_uuid
 
-def create_project_from_template(template_project, user):
-    """ Creates a copy of the template and prepares it
-        to be owned by a given user
-    """
-    from copy import deepcopy
-    from .projects.projects_models import ProjectType
-
-    user_id = user["id"]
-
-    def _replace_uuids(node):
-        if isinstance(node, str):
-            if node.startswith(TEMPLATE_PREFIX):
-                node = compose_uuid(node, user_id)
-        elif isinstance(node, list):
-            node = [_replace_uuids(item) for item in node]
-        elif isinstance(node, dict):
-            _frozen_items = tuple(node.items())
-            for key, value in _frozen_items:
-                if isinstance(key, str):
-                    if key.startswith(TEMPLATE_PREFIX):
-                        new_key = compose_uuid(key, user_id)
-                        node[new_key] = node.pop(key)
-                        key = new_key
-                node[key] = _replace_uuids(value)
-        return node
-
-    project = deepcopy(template_project)
-    project = _replace_uuids(project)
-
-    project["type"] = ProjectType.STANDARD
-    project["prj_owner"] = user["name"]
-
-    return project
 
 # TODO: from .projects import ...?
 async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
@@ -150,25 +116,26 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
         Contrains of this method:
             - Avoids multiple copies of the same template on each account
     """
-    from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-    from .projects.projects_models import ProjectDB as db
+    from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
+    from .projects.projects_api import create_data_from_template
 
-    db_engine = request.app[APP_DB_ENGINE_KEY]
+    db = request.config_dict[APP_PROJECT_DBAPI]
 
     # assign id to copy
     project_uuid = compose_uuid(template_project["uuid"], user["id"])
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid, db_engine)
+        await db.get_user_project(user["id"], project_uuid)
 
     except ProjectNotFoundError:
         # new project from template
-        project = create_project_from_template(template_project, user)
+        project = create_data_from_template(template_project, user["id"])
 
-        await db.add_project(project, user["id"], db_engine)
+        project["uuid"] = project_uuid
+        await db.add_project(project, user["id"], force_project_uuid=True)
 
     return project_uuid
 
@@ -229,14 +196,19 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-
-
 def setup(app: web.Application):
+
+    cfg = app[APP_CONFIG_KEY]["main"]
+    if not cfg["studies_access_enabled"]:
+        log.warning("'%s' setup explicitly disabled in config", __name__)
+        return False
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
         web.get(r"/study/{id}", access_study, name="study"),
     ])
+
+    return True
 
 
 # alias

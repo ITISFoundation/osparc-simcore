@@ -148,16 +148,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", this.startPipeline, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.updatePipeline, this);
+      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
-        this.updatePipeline(node);
+        this.__updatePipeline(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -400,7 +400,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    updatePipeline: function(node) {
+    __updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -435,14 +435,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    startPipeline: function() {
+    __startPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
         return false;
       }
 
+      return this.updateStudyDocument(null, this.__doStartPipeline);
+    },
+
+    __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
-      let socket = qxapp.wrapper.WebSocket.getInstance();
+      const socket = qxapp.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -471,17 +475,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
-      let req = new qxapp.io.request.ApiRequest(url, "POST");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("starting pipeline: " + url);
-      console.log(data);
-
+      const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
+      const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
@@ -495,7 +490,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return true;
     },
 
-    stopPipeline: function() {
+    __stopPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
         return false;
       }
@@ -567,8 +562,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj) {
-      if (newObj === undefined) {
+    updateStudyDocument: function(newObj, cb) {
+      if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
       const prjUuid = this.getStudy().getUuid();
@@ -577,6 +572,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        if (cb) {
+          cb.call(this);
+        }
       }, this);
       resource.put({
         "project_id": prjUuid
