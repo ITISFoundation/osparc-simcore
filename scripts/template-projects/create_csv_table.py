@@ -1,3 +1,7 @@
+""" Produces csv with a table of projects that can be inserted in the postgres db by importing it via adminer website
+
+"""
+
 import json
 
 from change_case import ChangeCase
@@ -5,7 +9,7 @@ from change_case import ChangeCase
 from simcore_service_webserver.projects.projects_models import ProjectType, projects
 from simcore_service_webserver.resources import resources
 
-TEMPLATE_STUDIES_NAME = 'data/fake-template-projects.isan.json'
+TEMPLATE_STUDIES_NAME = "data/fake-template-projects.isan.json"
 TEMPLATE_STUDIES_TABLE = "template-projects-table.csv"
 
 COLS = [c.name for c in projects.columns if c!=projects.c.id] #pylint: disable=not-an-iterable
@@ -36,6 +40,7 @@ def main():
         for project in data:
             values = [normalize(key, project.get(key)) for key in PROJECT_KEYS]
             print(ROW.format(*values), file=fh)
+
 
 if __name__ == "__main__":
     main()
