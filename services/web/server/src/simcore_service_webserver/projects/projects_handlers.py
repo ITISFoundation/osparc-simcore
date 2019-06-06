@@ -11,7 +11,6 @@ from .projects_api import create_data_from_template, validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
-from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
 
@@ -30,12 +29,6 @@ async def create_projects(request: web.Request):
         if template_uuid:
             # create from template
             template_prj = await db.get_template_project(template_uuid)
-
-            if not template_prj: # TODO: inject these projects in db instead!
-                for prj in Fake.projects.values():
-                    if prj.template and prj.data['uuid']==template_uuid:
-                        template_prj = prj.data
-                        break
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
@@ -83,7 +76,6 @@ async def list_projects(request: web.Request):
 
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
         projects_list += await db.load_template_projects()
 
     if ptype in ("user", "all"):
