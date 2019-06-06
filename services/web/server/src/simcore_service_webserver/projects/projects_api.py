@@ -19,7 +19,6 @@ from ..security_api import check_permission
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
-from .projects_fakes import Fake
 
 BASE_UUID = uuidlib.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 TEMPLATE_PREFIX = "template-uuid"
@@ -43,9 +42,6 @@ def validate_project(app: web.Application, project: Dict):
 
 async def get_project_for_user(request: web.Request, project_uuid, user_id) -> Dict:
     await check_permission(request, "project.read")
-
-    if project_uuid in Fake.projects:
-        return Fake.projects[project_uuid].data
 
     try:
         db = request.config_dict[APP_PROJECT_DBAPI]
