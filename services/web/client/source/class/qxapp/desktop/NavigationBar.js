@@ -200,9 +200,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.add(logout);
 
       const userBtn = new qx.ui.form.MenuButton(null, null, menu);
-      userBtn.getChildControl("icon").getContentElement().setStyles({
-        "border-radius": "16px"
-      });
+      userBtn.getChildControl("icon").getContentElement()
+        .setStyles({
+          "border-radius": "16px"
+        });
 
       return userBtn;
     },
