@@ -89,19 +89,14 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
     const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
-    let userLbl = new qx.ui.basic.Label(userName).set({
-      minWidth: 10
-    });
-    this._add(userLbl);
 
-    let userBtn = this.__createUserBtn();
-    userBtn.set(commonBtnSettings);
+    const userBtn = this.__createUserBtn();
     userBtn.set({
-      decorator: new qx.ui.decoration.Decorator().set({
-        radius: 50,
-        backgroundImage: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT)
-      })
+      ...commonBtnSettings,
+      icon: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT),
+      label: userName
     });
+
     this._add(userBtn);
   },
 
@@ -182,38 +177,38 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     __createUserBtn: function() {
       const menu = new qx.ui.menu.Menu();
 
-      // Account Settings
-      // ---
-      // Help
-      // About
-      // ---
-      // Logout
-
-      // TODO: add commands (i.e. short-cut system)
       const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
+      menu.add(preferences);
+
+      menu.addSeparator();
+
+      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
+      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
+      menu.add(newIssueBtn);
+
+      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
+      helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
+      menu.add(helpBtn);
+
+      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
+      aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
+      menu.add(aboutBtn);
+
+      menu.addSeparator();
 
       const logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
         qx.core.Init.getApplication().logout();
       });
-
-      menu.add(preferences);
-      menu.addSeparator();
-      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
-      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
-      menu.add(newIssueBtn);
-      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
-      menu.add(helpBtn);
-      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
-      menu.add(aboutBtn);
-      menu.addSeparator();
       menu.add(logout);
 
-      const btn = new qx.ui.form.MenuButton(null, null, menu);
-      return btn;
+      const userBtn = new qx.ui.form.MenuButton(null, null, menu);
+      userBtn.getChildControl("icon").getContentElement().setStyles({
+        "border-radius": "16px"
+      });
+
+      return userBtn;
     },
 
     __onOpenAccountSettings: function() {
