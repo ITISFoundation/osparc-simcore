@@ -183,10 +183,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.addSeparator();
 
-      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue"));
-      newIssueBtn.addListener("execute", this.__onOpenNewIssueV0, this);
-      menu.add(newIssueBtn);
-
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
       menu.add(helpBtn);
@@ -221,11 +217,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         win.center();
         win.open();
       }
-    },
-
-    __onOpenNewIssueV0: function() {
-      const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
-      window.open(url);
     }
   }
 });
