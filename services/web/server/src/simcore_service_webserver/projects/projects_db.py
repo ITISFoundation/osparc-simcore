@@ -27,6 +27,7 @@ from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 from .projects_models import ProjectType, projects, user_to_projects
+from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
 
@@ -189,7 +190,8 @@ class ProjectDBAPI:
 
     async def load_template_projects(self) -> List[Dict]:
         log.info("Loading template projects")
-        projects_list = []
+        projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
+
         async with self.engine.acquire() as conn:
             query = select([projects]).\
                 where(projects.c.type == ProjectType.TEMPLATE)
@@ -201,6 +203,10 @@ class ProjectDBAPI:
         return projects_list
 
     async def get_template_project(self, project_uuid: str) -> Dict:
+        prj = Fake.projects.get(project_uuid)
+        if prj and prj.template:
+            return prj.data
+
         template_prj = None
         async with self.engine.acquire() as conn:
             query = select([projects]).where(
@@ -219,6 +225,10 @@ class ProjectDBAPI:
         :return: schema-compliant project
         :rtype: Dict
         """
+        prj = Fake.projects.get(project_uuid)
+        if prj and not prj.template:
+            return Fake.projects[project_uuid].data
+
         log.info("Getting project %s for user %s", project_uuid, user_id)
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)

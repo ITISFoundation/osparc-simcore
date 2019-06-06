@@ -42,14 +42,12 @@ SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
     from .projects.projects_db import APP_PROJECT_DBAPI
-    from .projects.projects_fakes import Fake
 
     db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
     # BUG: ensure items in project_list have unique UUIDs
-    projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await db.load_template_projects()
+    projects_list = await db.load_template_projects()
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
