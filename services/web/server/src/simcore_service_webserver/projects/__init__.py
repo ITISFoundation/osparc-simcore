@@ -65,9 +65,9 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
 
     :param app: main web application
     :type app: web.Application
-    :param enable_fake_data: will inject some fake projects, defaults to False
+    :param enable_fake_data: if True it injects template projects under /data, defaults to False (USE ONLY FOR TESTING)
     :param enable_fake_data: bool, optional
-    :return: False if subystem setup was skipped (e.g. explicitly disabled in config), otherwise True
+    :return: False if setup skips (e.g. explicitly disabled in config), otherwise True
     :rtype: bool
     """
     logger.debug("Setting up %s ...", __name__)
@@ -106,7 +106,6 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
         app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: specs}
 
     if enable_fake_data:
-        # TODO: inject data in database instead of keeping in memory!?
         Fake.load_template_projects()
 
     return True
