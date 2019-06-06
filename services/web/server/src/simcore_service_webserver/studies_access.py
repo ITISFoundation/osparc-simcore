@@ -19,6 +19,8 @@ from typing import Dict
 
 from aiohttp import web
 
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .resources import resources
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
@@ -196,14 +198,19 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-
-
 def setup(app: web.Application):
+
+    cfg = app[APP_CONFIG_KEY]["main"]
+    if not cfg["studies_access_enabled"]:
+        log.warning("'%s' setup explicitly disabled in config", __name__)
+        return False
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
         web.get(r"/study/{id}", access_study, name="study"),
     ])
+
+    return True
 
 
 # alias
