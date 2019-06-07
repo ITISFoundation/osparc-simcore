@@ -111,7 +111,7 @@ async def logged_user(client): #, role: UserRole):
 
 async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3))
+    resp = await client.get(url.with_query(start=0, count=3, type="user"))
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -157,7 +157,6 @@ async def test_access_study_anonymously(client, qx_client_outdir):
     }
 
     async with NewProject(params, client.app, force_uuid=True) as template_project:
-
         url_path = "/study/%s" % SHARED_STUDY_UUID
         resp = await client.get(url_path)
         content = await resp.text()
