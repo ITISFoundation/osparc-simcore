@@ -131,18 +131,16 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "service-window": {
       include: "window",
       alias: "window",
-      style: (state, styles) => {
-        styles.decorator = state.maximized ? "window-small-cap-maximized" : "window-small-cap";
-        return styles;
-      }
+      style: state => ({
+        decorator: state.maximized ? "service-window-maximized" : "service-window"
+      })
     },
     "service-window/captionbar": {
       include: "window/captionbar",
-      style: (state, styles) => {
-        styles.backgroundColor = "material-button-background";
-        styles.decorator = "workbench-small-cap-captionbar";
-        return styles;
-      }
+      style: state => ({
+        backgroundColor: "material-button-background",
+        decorator: "workbench-small-cap-captionbar"
+      })
     },
     /*
     ---------------------------------------------------------------------------
