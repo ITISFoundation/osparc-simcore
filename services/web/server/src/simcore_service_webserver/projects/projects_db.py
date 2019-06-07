@@ -214,12 +214,16 @@ class ProjectDBAPI:
             )
             result = await conn.execute(query)
             row = await result.first()
+            # FIXME: either raise or return None, but all these functions should behave the same
             template_prj = _convert_to_schema_names(row) if row else None
 
         return template_prj
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
         """
+
+        WARNING: only return STANDARD templates associated to user.
+            It does NOT return template projects but only standard!
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
@@ -230,6 +234,9 @@ class ProjectDBAPI:
             return Fake.projects[project_uuid].data
 
         log.info("Getting project %s for user %s", project_uuid, user_id)
+
+        # FIXME:  Will return templates if associated to
+        # a template can be in the future associated to a users, not only standard
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).\

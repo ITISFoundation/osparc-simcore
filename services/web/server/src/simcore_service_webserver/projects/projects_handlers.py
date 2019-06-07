@@ -106,10 +106,16 @@ async def get_project(request: web.Request):
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
 
-    project = await get_project_for_user(request,
-        project_uuid=request.match_info.get("project_id"),
-        user_id=request[RQT_USERID_KEY]
-    )
+    project_uuid = request.match_info.get("project_id")
+    db = request.config_dict[APP_PROJECT_DBAPI]
+
+    project = await db.get_template_project(project_uuid)
+
+    if project is None:
+        project = await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=request[RQT_USERID_KEY]
+        )
 
     return {
         'data': project
