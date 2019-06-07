@@ -3,7 +3,6 @@ import jsondiff
 from aiohttp import web
 
 from ..security_api import get_access_model, UserRole
-from .projects_fakes import Fake
 
 
 async def can_update_node_inputs(context):
@@ -20,11 +19,7 @@ async def can_update_node_inputs(context):
         return False
 
     # get current version
-    # TODO: unify call
-    if project_uuid in Fake.projects:
-        current_project = Fake.projects[project_uuid].data
-    else:
-        current_project = await db.get_user_project(user_id, project_uuid)
+    current_project = await db.get_user_project(user_id, project_uuid)
 
     diffs = jsondiff.diff(current_project, updated_project)
 

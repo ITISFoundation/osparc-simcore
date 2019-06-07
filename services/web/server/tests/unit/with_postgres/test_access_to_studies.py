@@ -79,8 +79,8 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service,
     setup_rest(app, debug=True) # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
-    assert setup_projects(app)
-    setup_studies_access(app)
+    assert setup_projects(app), "Shall not skip this setup"
+    assert setup_studies_access(app), "Shall not skip this setup"
 
     assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
     monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [SHARED_STUDY_UUID, ])
