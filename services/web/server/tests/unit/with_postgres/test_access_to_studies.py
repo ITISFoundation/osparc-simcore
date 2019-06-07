@@ -111,7 +111,7 @@ async def logged_user(client): #, role: UserRole):
 
 async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3))
+    resp = await client.get(url.with_query(start=0, count=3, type="user"))
     payload = await resp.json()
     assert resp.status == 200, payload
 
