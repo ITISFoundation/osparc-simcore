@@ -128,7 +128,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid, include_templates=False)
+        await db.get_user_project(user["id"], project_uuid)
 
     except ProjectNotFoundError:
         # new project from template
@@ -174,12 +174,12 @@ async def access_study(request: web.Request) -> web.Response:
     if not user:
         raise RuntimeError("Unable to start user session")
 
+    msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
+    log.debug("Copying %s ...", msg_tail)
 
-    log.debug("Copying study %s to %s account ...", template_project['name'], user["email"])
     copied_project_id = await copy_study_to_account(request, template_project, user)
 
-    log.debug("Coped study %s to %s account as %s",
-        template_project['name'], user["email"], copied_project_id)
+    log.debug("Copied %s as %s", msg_tail, copied_project_id)
 
 
     try:

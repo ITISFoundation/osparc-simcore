@@ -157,7 +157,6 @@ async def test_access_study_anonymously(client, qx_client_outdir):
     }
 
     async with NewProject(params, client.app, force_uuid=True) as template_project:
-
         url_path = "/study/%s" % SHARED_STUDY_UUID
         resp = await client.get(url_path)
         content = await resp.text()
