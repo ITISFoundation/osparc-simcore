@@ -40,14 +40,27 @@ def validate_project(app: web.Application, project: Dict):
     validate_instance(project, project_schema) # TODO: handl
 
 
-async def get_project_for_user(request: web.Request, project_uuid, user_id) -> Dict:
+async def get_project_for_user(request: web.Request, project_uuid, user_id, *, include_templates=False) -> Dict:
+    """ Returns a project accessible to user
+
+    :raises web.HTTPNotFound: if no match found
+    :return: schema-compliant project data
+    :rtype: Dict
+    """
     await check_permission(request, "project.read")
 
     try:
         db = request.config_dict[APP_PROJECT_DBAPI]
-        project = await db.get_user_project(user_id, project_uuid)
+
+        project = None
+        if include_templates:
+            project = await db.get_template_project(project_uuid)
+
+        if not project:
+            project = await db.get_user_project(user_id, project_uuid)
 
         # TODO: how to handle when database has an invalid project schema???
+        # Notice that db model does not include a check on project schema.
         validate_project(request.app, project)
         return project
 
