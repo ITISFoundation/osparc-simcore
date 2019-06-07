@@ -19,6 +19,8 @@ from typing import Dict
 
 from aiohttp import web
 
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .resources import resources
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
@@ -40,14 +42,12 @@ SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
     from .projects.projects_db import APP_PROJECT_DBAPI
-    from .projects.projects_fakes import Fake
 
     db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
     # BUG: ensure items in project_list have unique UUIDs
-    projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await db.load_template_projects()
+    projects_list = await db.load_template_projects()
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
@@ -196,14 +196,19 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-
-
 def setup(app: web.Application):
+
+    cfg = app[APP_CONFIG_KEY]["main"]
+    if not cfg["studies_access_enabled"]:
+        log.warning("'%s' setup explicitly disabled in config", __name__)
+        return False
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
         web.get(r"/study/{id}", access_study, name="study"),
     ])
+
+    return True
 
 
 # alias

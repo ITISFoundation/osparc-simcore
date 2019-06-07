@@ -24,12 +24,6 @@ This pages is for testing purposes for issue [#715](https://github.com/ITISFound
 - [ISAN: UCDavis use case: 0D](https://staging.osparc.io/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
 - [ISAN: MattWard use case](https://staging.osparc.io/study/template-uuid-420d-b82d-e80bfa272ebd)
 
-## studies available @osparc.io
-
-- [ISAN: 2D Plot](https://osparc.io/study/template-uuid-4d5e-b80e-401c8066782f)
-- [ISAN: 3D Paraview](https://osparc.io/study/template-uuid-4d5e-b80e-401c8066781f)
-- [ISAN: UCDavis use case: 0D](https://osparc.io/study/template-uuid-1234-a1a7-f7d4f3a8f26b)
-- [ISAN: MattWard use case](https://osparc.io/study/template-uuid-420d-b82d-e80bfa272ebd)
 
 ---
 # INVITATIONS Samples:

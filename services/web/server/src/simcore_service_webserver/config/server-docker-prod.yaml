@@ -7,6 +7,7 @@ main:
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: INFO
   testing: False
+  studies_access_enabled: False
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
