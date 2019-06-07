@@ -156,12 +156,12 @@ async def access_study(request: web.Request) -> web.Response:
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
     if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
-        raise web.HTTPNotFound(reason="Requested study is not shared ['%s']" % study_id)
+        raise web.HTTPNotFound(reason="This study was not shared [{}]".format(study_id))
 
     # TODO: should copy **any** type of project is sharable -> get_sharable_project
     template_project = await get_template_project(request.app, study_id)
     if not template_project:
-        raise RuntimeError("Unable to load study %s" % study_id)
+        raise web.HTTPNotFound(reason="Invalid study [{}]".format(study_id))
 
     user = None
     is_anonymous_user = await is_anonymous(request)
@@ -174,12 +174,12 @@ async def access_study(request: web.Request) -> web.Response:
     if not user:
         raise RuntimeError("Unable to start user session")
 
+    msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
+    log.debug("Copying %s ...", msg_tail)
 
-    log.debug("Copying study %s to %s account ...", template_project['name'], user["email"])
     copied_project_id = await copy_study_to_account(request, template_project, user)
 
-    log.debug("Coped study %s to %s account as %s",
-        template_project['name'], user["email"], copied_project_id)
+    log.debug("Copied %s as %s", msg_tail, copied_project_id)
 
 
     try:
