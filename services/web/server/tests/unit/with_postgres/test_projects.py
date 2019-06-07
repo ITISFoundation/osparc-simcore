@@ -63,7 +63,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 
     # teardown here ...
 
-@pytest.fixture
+@pytest.fixture()
 async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
 
@@ -74,7 +74,9 @@ async def logged_user(client, user_role: UserRole):
         {"role": user_role.name},
         check_if_succeeds = user_role!=UserRole.ANONYMOUS
     ) as user:
+        print("-----> logged in user", user_role)
         yield user
+        print("<----- logged out user", user_role)
 
 @pytest.fixture
 async def user_project(client, fake_project, logged_user):
@@ -83,7 +85,9 @@ async def user_project(client, fake_project, logged_user):
         client.app,
         user_id=logged_user["id"]
     ) as project:
+        print("-----> added project", project["name"])
         yield project
+        print("<----- removed project", project["name"])
 
 
 @pytest.fixture
@@ -91,9 +95,12 @@ async def template_project(client, fake_project):
     async with NewProject(
         fake_project,
         client.app,
-        user_id=None
+        user_id=None,
+        clear_all=True
     ) as template_prj:
+        print("-----> added template project", template_prj["name"])
         yield template_prj
+        print("<----- removed template project", template_prj["name"])
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
