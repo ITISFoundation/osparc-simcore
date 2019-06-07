@@ -210,20 +210,22 @@ class ProjectDBAPI:
         template_prj = None
         async with self.engine.acquire() as conn:
             query = select([projects]).where(
-                and_(projects.c.type == ProjectType.TEMPLATE, projects.c.uuid == project_uuid)
+                and_(projects.c.type == ProjectType.TEMPLATE,
+                     projects.c.uuid == project_uuid)
             )
             result = await conn.execute(query)
             row = await result.first()
-            # FIXME: either raise or return None, but all these functions should behave the same
-            template_prj = _convert_to_schema_names(row) if row else None
+            if row:
+                template_prj = _convert_to_schema_names(row)
 
         return template_prj
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
-        """
+        """ Returns all projects owned by the user
 
-        WARNING: only return STANDARD templates associated to user.
-            It does NOT return template projects but only standard!
+            - A project is owned with it is mapped in user_to_projects list
+            - prj_owner field is not
+            - Notice that a user can have access to a template but he might not onw it
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
@@ -233,22 +235,19 @@ class ProjectDBAPI:
         if prj and not prj.template:
             return Fake.projects[project_uuid].data
 
-        log.info("Getting project %s for user %s", project_uuid, user_id)
-
-        # FIXME:  Will return templates if associated to
-        # a template can be in the future associated to a users, not only standard
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects]).\
-                select_from(joint_table).\
-                    where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
+            query = select([projects]).select_from(joint_table).where(
+                and_(projects.c.uuid == project_uuid,
+                     user_to_projects.c.user_id == user_id)
+            )
             result = await conn.execute(query)
             row = await result.first()
+
+            # FIXME: prefer None to raise an exception. Read https://stackoverflow.com/questions/1313812/raise-exception-vs-return-none-in-functions?answertab=votes#tab-top
             if not row:
                 raise ProjectNotFoundError(project_uuid)
-            result_dict = {key:value for key,value in row.items()}
-            log.debug("found project: %s", result_dict)
-            return _convert_to_schema_names(result_dict)
+            return _convert_to_schema_names(row)
 
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
@@ -323,7 +322,6 @@ class ProjectDBAPI:
                     query = projects.delete().\
                         where(projects.c.id == row[projects.c.id])
                     await conn.execute(query)
-
 
     async def make_unique_project_uuid(self) -> str:
         """ Generates a project identifier still not used in database

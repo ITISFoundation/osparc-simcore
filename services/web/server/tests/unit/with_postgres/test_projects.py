@@ -115,7 +115,7 @@ def assert_replaced(current_project, update_data):
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_list_projects(client, logged_user, user_project, expected):
+async def test_list_projects(client, logged_user, user_project, template_project, expected):
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -123,11 +123,26 @@ async def test_list_projects(client, logged_user, user_project, expected):
     resp = await client.get(url)
     data, errors = await assert_status(resp, expected)
 
-    #TODO: GET /v0/projects?type=user
+    if not errors:
+        assert len(data) == 2
+        assert data[0] == template_project
+        assert data[1] == user_project
 
+    #GET /v0/projects?type=user
+    resp = await client.get(url.with_query(type='user'))
+    data, errors = await assert_status(resp, expected)
     if not errors:
         assert len(data) == 1
         assert data[0] == user_project
+
+    #GET /v0/projects?type=template
+    resp = await client.get(url.with_query(type='template'))
+    data, errors = await assert_status(resp, expected)
+    if not errors:
+        assert len(data) == 1
+        assert data[0] == template_project
+
+
 
 @pytest.mark.skip("TODO")
 async def test_list_templates_only(client, logged_user, user_project, expected):
@@ -141,8 +156,10 @@ async def test_list_templates_only(client, logged_user, user_project, expected):
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_project(client, logged_user, user_project, expected):
+async def test_get_project(client, logged_user, user_project, template_project, expected):
     # GET /v0/projects/{project_id}
+
+    # with a project owned by user
     url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
 
     resp = await client.get(url)
@@ -150,6 +167,15 @@ async def test_get_project(client, logged_user, user_project, expected):
 
     if not error:
         assert data == user_project
+
+    # with a template
+    url = client.app.router["get_project"].url_for(project_id=template_project["uuid"])
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == template_project
 
 
 # POST --------

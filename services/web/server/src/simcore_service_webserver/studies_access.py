@@ -128,7 +128,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid)
+        await db.get_user_project(user["id"], project_uuid, include_templates=False)
 
     except ProjectNotFoundError:
         # new project from template
@@ -156,12 +156,12 @@ async def access_study(request: web.Request) -> web.Response:
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
     if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
-        raise web.HTTPNotFound(reason="Requested study is not shared ['%s']" % study_id)
+        raise web.HTTPNotFound(reason="This study was not shared [{}]".format(study_id))
 
     # TODO: should copy **any** type of project is sharable -> get_sharable_project
     template_project = await get_template_project(request.app, study_id)
     if not template_project:
-        raise RuntimeError("Unable to load study %s" % study_id)
+        raise web.HTTPNotFound(reason="Invalid study [{}]".format(study_id))
 
     user = None
     is_anonymous_user = await is_anonymous(request)
