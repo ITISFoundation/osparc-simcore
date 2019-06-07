@@ -92,15 +92,19 @@ async def user_project(client, fake_project, logged_user):
 
 @pytest.fixture
 async def template_project(client, fake_project):
+    project_data = deepcopy(fake_project)
+    project_data["name"] = "Fake template"
+    project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
+
     async with NewProject(
-        fake_project,
+        project_data,
         client.app,
         user_id=None,
         clear_all=True
-    ) as template_prj:
-        print("-----> added template project", template_prj["name"])
-        yield template_prj
-        print("<----- removed template project", template_prj["name"])
+    ) as template_project:
+        print("-----> added template project", template_project["name"])
+        yield template_project
+        print("<----- removed template project", template_project["name"])
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
