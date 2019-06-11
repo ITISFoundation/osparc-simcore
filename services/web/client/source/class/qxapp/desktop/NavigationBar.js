@@ -87,6 +87,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
+    this._add(new qxapp.ui.form.LinkButton(this.tr("Create issue"), qxapp.component.widget.NewGHIssue.getNewIssueUrl()).set({
+      appearance: "link-button"
+    }));
+
     const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
     const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
 

@@ -281,16 +281,11 @@ qx.Theme.define("qxapp.theme.Appearance", {
     */
     "link-button": {
       include: "material-button",
-      style: (state, style) => {
-        const ret = Object.assign({}, style);
-        ret.decorator = "link-button";
-        ret.backgroundColor = "transparent";
-        ret.textColor = "text-darker";
-        if (state.hovered) {
-          ret.textColor = "text";
-        }
-        return ret;
-      }
+      style: state => ({
+        decorator: "link-button",
+        backgroundColor: "transparent",
+        textColor: state.hovered ? "text" : "text-darker"
+      })
     },
 
     /*

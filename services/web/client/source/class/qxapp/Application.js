@@ -68,8 +68,6 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__initRouting();
-
-      this.__addFeedbackButton();
     },
 
     __initRouting: function() {
@@ -202,20 +200,6 @@ qx.Class.define("qxapp.Application", {
           "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       }
-    },
-
-    __addFeedbackButton: function() {
-      const sendFeedback = new qxapp.ui.form.LinkButton("Create issue", qxapp.component.widget.NewGHIssue.getNewIssueUrl()).set({
-        zIndex: 10000
-      });
-      sendFeedback.addListener("appear", () => {
-        qx.bom.element.Transform.setOrigin(sendFeedback.getContentElement().getDomElement(), "left top");
-        qx.bom.element.Transform.rotate(sendFeedback.getContentElement().getDomElement(), "-90deg");
-      });
-      this.getRoot().add(sendFeedback, {
-        top: "50%",
-        left: 8
-      });
     }
   }
 });
