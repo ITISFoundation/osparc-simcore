@@ -219,7 +219,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         this.showInMainView(widget, nodeId);
       }
       if (widget === this.__workbenchUI) {
-        const workbench = this.getStudy().getWorkbench();
         if (nodeId === "root") {
           this.__workbenchUI.loadModel(workbench);
         } else {
