@@ -86,15 +86,11 @@ paths:
       summary: Updates token
       operationId: update_token
       responses:
-        '200':
-          description: got detailed token
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/me.yaml#/TokenEnveloped'
+        '204':
+          description: token has been successfully updated
     delete:
       summary: Delete token
       operationId: delete_token
       responses:
         '204':
-          description: project has been successfully deleted
+          description: token has been successfully deleted

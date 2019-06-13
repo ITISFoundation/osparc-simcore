@@ -6,9 +6,7 @@ required:
   - uuid
   - name
   - description
-  - notes
   - prjOwner
-  - collaborators
   - creationDate
   - lastChangeDate
   - thumbnail
@@ -30,39 +28,21 @@ properties:
     description: longer one-line description about the project
     example:
       - Dabbling in temporal transitions ...
-  notes:
-    type: string
-    description: longer project description. using common mark
-    example:
-      - |-
-        # title
-        Some Text `with` common mark markup
   prjOwner:
     type: string
     description: user uuid
-  collaborators:
-    type: object
-    description: UUIDs of the users/groups who should get access to this
-    x-patternProperties:
-      ^\S+$:
-        type: array
-        items:
-          type: string
-          enum:
-            - read
-            - write
   creationDate:
     type: string
     description: project creation date
     pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}Z
+      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
     example:
       - '2018-07-01T11:13:43Z'
   lastChangeDate:
     type: string
     description: last save date
     pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}Z
+      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[1-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
     example:
       - '2018-07-01T11:13:43Z'
   thumbnail:
@@ -79,15 +59,18 @@ properties:
         required:
           - key
           - version
+          - label
           - position
         properties:
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(service)/(computational|dynamic)(/[^\s/]+)+$'
+            pattern: >-
+              ^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$
             example:
-              - service/computational/sleeper
-              - service/dynamic/3dviewer
+              - simcore/services/comp/sleeper
+              - simcore/services/dynamic/3dviewer
+              - simcore/services/frontend/file-picker
           version:
             type: string
             description: semantic version number of the node
@@ -96,6 +79,18 @@ properties:
             example:
               - 1.0.0
               - 0.0.1
+          label:
+            type: string
+          progress:
+            type: number
+            maximum: 100
+            minimum: 0
+            description: the node progress value
+          thumbnail:
+            type: string
+            description: url of the latest screenshot of the node
+            example:
+              - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
           inputs:
             type: object
             description: values of input properties
@@ -107,6 +102,7 @@ properties:
                       - boolean
                       - string
                       - number
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -124,9 +120,33 @@ properties:
                       - path
                     properties:
                       store:
-                        type: string
+                        type:
+                          - string
+                          - integer
                       path:
                         type: string
+          inputAccess:
+            description: map with key - access level pairs
+            type: object
+            patternProperties:
+              '^[-_a-zA-Z0-9]+$':
+                type: string
+                enum:
+                  - Invisible
+                  - ReadOnly
+                  - ReadAndWrite
+                default: ReadAndWrite
+                example:
+                  - ReadOnly
+          inputNodes:
+            type: array
+            items:
+              type: string
+              pattern: ^\S+$
+            description: node IDs of where the node is connected to
+            example:
+              - nodeUuid1
+              - nodeUuid2
           outputs:
             type: object
             patternProperties:
@@ -137,6 +157,7 @@ properties:
                       - boolean
                       - string
                       - number
+                      - 'null'
                   - type: object
                     additionalProperties: false
                     required:
@@ -144,17 +165,18 @@ properties:
                       - path
                     properties:
                       store:
-                        type: string
+                        type:
+                          - string
+                          - integer
                       path:
                         type: string
-          links:
-            type: array
-            items:
-              type: string
-            description: node IDs of where the node is connected to
-            example:
-              - nodeUuid1
-              - nodeUuid2
+          outputNode:
+            type: boolean
+          parent:
+            type:
+              - string
+              - 'null'
+            pattern: ^\S+$
           position:
             type: object
             additionalProperties: false
@@ -166,3 +188,4 @@ properties:
                 type: integer
               'y':
                 type: integer
+    additionalProperties: true

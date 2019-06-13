@@ -49,7 +49,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
   construct: function(label = this.tr("Add file(s)")) {
     this.base(arguments);
 
-    let filesAddLayout = new qx.ui.layout.VBox(10);
+    let filesAddLayout = new qx.ui.layout.HBox(10);
     this._setLayout(filesAddLayout);
 
     // Create a button
@@ -100,10 +100,10 @@ qx.Class.define("qxapp.file.FilesAdd", {
       switch (id) {
         case "progressBox":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          this._addAt(control, 1);
+          this._addAt(control, 0);
           break;
         case "addButton":
-          control = new qx.ui.form.Button();
+          control = new qx.ui.toolbar.Button();
           this._add(control);
           break;
       }
@@ -115,9 +115,8 @@ qx.Class.define("qxapp.file.FilesAdd", {
       let store = qxapp.data.Store.getInstance();
       store.addListenerOnce("presignedLink", e => {
         const presignedLinkData = e.getData();
-        // presignedLinkData.locationId;
-        // presignedLinkData.fileUuid;
-        console.log(file);
+        file["location"] = presignedLinkData.locationId;
+        file["path"] = presignedLinkData.fileUuid;
         if (presignedLinkData.presignedLink) {
           this.__uploadFile(file, presignedLinkData.presignedLink.link);
         }
@@ -133,15 +132,11 @@ qx.Class.define("qxapp.file.FilesAdd", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
-      let hBox = this._createChildControlImpl("progressBox");
-      let label = new qx.ui.basic.Label(file.name);
-      let progressBar = new qx.ui.indicator.ProgressBar();
-      hBox.add(label, {
-        width: "15%"
-      });
-      hBox.add(progressBar, {
-        width: "85%"
-      });
+      const hBox = this._createChildControlImpl("progressBox");
+      const label = new qx.ui.basic.Atom(file.name);
+      const progressBar = new qxapp.ui.toolbar.ProgressBar();
+      hBox.add(label);
+      hBox.add(progressBar);
 
       // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
       let xhr = new XMLHttpRequest();

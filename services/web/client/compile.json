@@ -54,11 +54,12 @@
     },
     {
       "class": "qxl.testtapper.Application",
-      "theme": "qx.theme.Simple",
+      "theme": "qxapp.theme.Theme",
       "name": "testtapper",
       "title": "Qooxdoo TestTAPper",
       "include": [
-        "qxapp.test.*"
+        "qxapp.test.*",
+        "iconfont.material.Load"
       ],
       "exclude": [
         "qx.test.*"

@@ -16,6 +16,7 @@ paths:
           in: query
           schema:
             type: string
+            default: 'all'
             enum: [template, user, all]
           description: if true only templates otherwise only users
         - name: start
@@ -42,6 +43,12 @@ paths:
     post:
       summary: Create new project
       operationId: create_projects
+      parameters:
+        - name: from_template
+          in: query
+          schema:
+            type: string
+          description: 'Option to create a project from existing template: from_template={template_uuid}'
       requestBody:
         content:
           application/json:

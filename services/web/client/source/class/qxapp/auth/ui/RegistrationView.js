@@ -65,35 +65,13 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
       this.add(pass2);
 
-      // interaction
-      pass1.addListener("changeValue", e => {
-        qxapp.auth.Manager.getInstance().evalPasswordStrength(e.getData(), (strength, rating, improvement) => {
-          let msg = "Password is " + rating.toLowerCase() + ".";
-          let level = "INFO";
-
-          if (strength < 0.4) {
-            level = "WARNING";
-            msg += "\n";
-            if (improvement) {
-              msg += "Possible improvements: \n";
-              for (var key in improvement) {
-                msg += "- " + improvement[key] + "\n";
-              }
-            }
-          }
-          qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, level);
-        });
-      }, this);
-
-      // email.addListener("changeValue", function(e) {
-      //   // Auto-guess
-      //   if (uname.getValue()=== null) {
-      //     let data = e.getData().split("@")[0];
-      //     uname.setValue(qx.lang.String.capitalize(qx.lang.String.clean(data)));
-      //   }
-      // }, this);
-
-
+      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const token = urlFragment.params ? urlFragment.params.invitation || null : null;
+      const invitation = new qx.ui.form.TextField().set({
+        visibility: "excluded",
+        value: token
+      });
+      this.add(invitation);
 
       // validation
       validator.add(email, qx.util.Validate.email());
@@ -123,7 +101,8 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
           this.__submit({
             email: email.getValue(),
             password: pass1.getValue(),
-            confirm: pass2.getValue()
+            confirm: pass2.getValue(),
+            invitation: invitation.getValue() ? invitation.getValue() : ""
           });
         }
       }, this);
@@ -142,12 +121,12 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.widget.FlashMessenger.getInstance().log(log);
+        qxapp.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.register(userData, successFun, failFun, this);

@@ -54,3 +54,16 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/fake.yaml#/FakeEnveloped'
+  /config:
+    get:
+      summary: Front end runtime configuration
+      operationId: get_config
+      responses:
+        '200':
+          description: configuration details
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/config.yaml#/ConfigEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'

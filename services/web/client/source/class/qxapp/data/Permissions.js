@@ -62,21 +62,21 @@ qx.Class.define("qxapp.data.Permissions", {
         can: [],
         inherits: []
       },
-      user: {
+      guest: {
         can: [],
         inherits: ["anonymous"]
+      },
+      user: {
+        can: [],
+        inherits: ["guest"]
       },
       tester: {
         can: [],
         inherits: ["user"]
       },
-      moderator: {
-        can: [],
-        inherits: ["tester"]
-      },
       admin: {
         can: [],
-        inherits: ["moderator"]
+        inherits: ["tester"]
       }
     }
   },
@@ -122,7 +122,8 @@ qx.Class.define("qxapp.data.Permissions", {
 
     __getInitPermissions: function() {
       return {
-        "anonymous": [
+        "anonymous": [],
+        "guest": [
           "studies.templates.read",
           "study.node.data.pull",
           "study.start",
@@ -149,9 +150,9 @@ qx.Class.define("qxapp.data.Permissions", {
           "services.all.read",
           "preferences.role.update",
           "study.nodestree.uuid.read",
+          "study.filestree.uuid.read",
           "study.logger.debug.read"
         ],
-        "moderator": [],
         "admin": []
       };
     },
@@ -202,7 +203,7 @@ qx.Class.define("qxapp.data.Permissions", {
         canDo = this.__canRoleDo(this.__userRole, action);
       }
       if (showMsg && !canDo) {
-        qxapp.component.widget.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+        qxapp.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
     },

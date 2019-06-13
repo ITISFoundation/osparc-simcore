@@ -7,6 +7,7 @@ main:
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: DEBUG
   testing: True
+  studies_access_enabled: False
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -21,6 +22,8 @@ db:
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
 rabbit:
+  host: ${RABBIT_HOST}
+  port: ${RABBIT_PORT}
   user: ${RABBITMQ_USER}
   password: ${RABBITMQ_PASSWORD}
   channels:
@@ -33,6 +36,7 @@ rabbit:
 #   bucket_name: ${S3_BUCKET_NAME}
 login:
   enabled: True
+  registration_invitation_required: False
   registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
 smtp:
   sender: 'OSPARC support <support@osparc.io>'

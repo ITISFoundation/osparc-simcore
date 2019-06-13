@@ -5,6 +5,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from .login.decorators import login_required
+from .security_api import check_permission
 from .storage_config import get_client_session, get_config
 
 
@@ -30,7 +31,6 @@ def _resolve_storage_url(request: web.Request) -> URL:
     url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
     return url
 
-
 async def _request_storage(request: web.Request, method: str):
     await extract_and_validate(request)
 
@@ -51,41 +51,48 @@ async def _request_storage(request: web.Request, method: str):
 
 @login_required
 async def get_storage_locations(request: web.Request):
+    await check_permission(request, "storage.locations.*")
+
     payload = await _request_storage(request, 'GET')
     return payload
 
 
 @login_required
 async def get_files_metadata(request: web.Request):
+    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'GET')
     return payload
-
 
 @login_required
 async def get_file_metadata(request: web.Request):
+    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'GET')
     return payload
 
 
 @login_required
-async def update_file_meta_data(_request: web.Request):
+async def update_file_meta_data(request: web.Request):
+    await check_permission(request, "storage.files.*")
     raise NotImplementedError
-    # payload = await _request_storage(request, 'PATCH')
+    # payload = await _request_storage(request, 'PATCH' or 'PUT'???) See projects
     # return payload
 
 
 @login_required
 async def download_file(request: web.Request):
+    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'GET')
     return payload
 
 
 @login_required
 async def upload_file(request: web.Request):
+    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'PUT')
     return payload
 
 @login_required
 async def delete_file(request: web.Request):
+    await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'DELETE')
     return payload

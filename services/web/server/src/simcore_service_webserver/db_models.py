@@ -7,41 +7,30 @@ import enum
 from datetime import datetime
 
 import sqlalchemy as sa
+
 from simcore_sdk.models import metadata
+
+from .security_roles import UserRole
 
 # ENUM TYPES ----------------------------------------------------------------
 
 class UserStatus(enum.Enum):
     """
         pending: user registered but not confirmed
-        active: user is authorized
+        active: user is confirmed and can use the platform
         banned: user is not authorized
     """
-    CONFIRMATION_PENDING = "pending"
-    ACTIVE = "active"
-    BANNED = "banned"
-
-class UserRole(enum.IntEnum):
-    """
-        TODO: based on the user role, one can define pemissions
-        to perform certain tasks
-
-        anonymous: User who is not logged in. Read only access?
-        user: basic permissions to use the platform [default]
-        moderator: adds permissions ...???
-        admin: full access
-    """
-    ANONYMOUS = 0
-    USER = 1
-    TESTER = 2
-    MODERATOR = 10
-    ADMIN = 100
+    CONFIRMATION_PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    BANNED = "BANNED"
 
 
 class ConfirmationAction(enum.Enum):
-    REGISTRATION = "registration"
-    RESET_PASSWORD = "reset_password"
-    CHANGE_EMAIL = "change_email"
+    REGISTRATION = "REGISTRATION"
+    RESET_PASSWORD = "RESET_PASSWORD"
+    CHANGE_EMAIL = "CHANGE_EMAIL"
+    INVITATION = "INVITATION"
+
 
 
 # TABLES ----------------------------------------------------------------

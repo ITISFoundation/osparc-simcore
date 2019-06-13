@@ -44,8 +44,10 @@ qx.Class.define("qxapp.file.FilePicker", {
   construct: function(node, studyId) {
     this.base(arguments);
 
-    this.setNode(node);
-    this.setStudyId(studyId);
+    this.set({
+      node,
+      studyId
+    });
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
@@ -53,9 +55,21 @@ qx.Class.define("qxapp.file.FilePicker", {
     let tree = this.__tree = this._createChildControlImpl("filesTree");
     tree.addListener("selectionChanged", this.__selectionChanged, this);
     tree.addListener("itemSelected", this.__itemSelected, this);
+    tree.addListener("modelChanged", this.__modelChanged, this);
+
+    const toolbar = new qx.ui.toolbar.ToolBar();
+    const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
+    toolbar.addSpacer();
+    toolbar.add(mainButtons);
+
+    this._add(toolbar);
 
     let addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
+      const data = e.getData();
+      if ("location" in data && "path" in data) {
+        this.__setOutputFile(data["location"], data["path"]);
+      }
       this.__initResources();
     }, this);
 
@@ -86,6 +100,7 @@ qx.Class.define("qxapp.file.FilePicker", {
   members: {
     __tree: null,
     __selectBtn: null,
+    __mainButtons: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -96,20 +111,16 @@ qx.Class.define("qxapp.file.FilePicker", {
             flex: 1
           });
           break;
-        case "progressBox":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          this._addAt(control, 1);
-          break;
         case "addButton":
-          control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
+          control = new qxapp.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
           });
-          this._add(control);
+          this.__mainButtons.add(control);
           break;
         case "selectButton":
-          control = new qx.ui.form.Button(this.tr("Select"));
-          this._add(control);
+          control = new qx.ui.toolbar.Button(this.tr("Select"));
+          this.__mainButtons.add(control);
           break;
       }
 
@@ -126,16 +137,44 @@ qx.Class.define("qxapp.file.FilePicker", {
     },
 
     __itemSelected: function() {
-      let data = this.__tree.getSelectedFile();
+      const data = this.__tree.getSelectedFile();
       if (data && data["isFile"]) {
-        let selectedItem = data["selectedItem"];
-        let outputs = this.getNode().getOutputs();
-        outputs["outFile"].value = {
+        const selectedItem = data["selectedItem"];
+        const outputFile = this.__getOutputFile();
+        outputFile.value = {
           store: selectedItem.getLocation(),
           path: selectedItem.getFileId()
         };
+        this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
+      }
+    },
+
+    __getOutputFile: function() {
+      const outputs = this.getNode().getOutputs();
+      return outputs["outFile"];
+    },
+
+    __setOutputFile: function(store, path) {
+      if (store && path) {
+        const outputs = this.getNode().getOutputs();
+        outputs["value"]["outFile"] = {
+          store,
+          path
+        };
+      }
+    },
+
+    __modelChanged: function() {
+      this.__checkSelectedFileIsListed();
+    },
+
+    __checkSelectedFileIsListed: function() {
+      const outFile = this.__getOutputFile();
+      if (outFile && "value" in outFile && "path" in outFile.value) {
+        this.__tree.setSelectedFile(outFile.value.path);
+        this.__tree.fireEvent("selectionChanged");
       }
     }
   }

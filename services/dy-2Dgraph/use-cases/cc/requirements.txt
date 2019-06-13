@@ -1,5 +1,0 @@
-matplotlib~=3.0
-pandas~=0.23
-plotly~=3.3
-tqdm~=4.23
-ipywidgets~=7.4

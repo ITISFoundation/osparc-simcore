@@ -93,6 +93,35 @@ qx.Class.define("qxapp.utils.Services", {
         return services[key][versions[versions.length - 1]];
       }
       return null;
+    },
+
+    isServiceInList: function(listOfServices, serveiceKey) {
+      for (let i=0; i<listOfServices.length; i++) {
+        if (listOfServices[i].key === serveiceKey) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    filterOutUnavailableGroups: function(listOfServices) {
+      const filteredServices = [];
+      for (let i=0; i<listOfServices.length; i++) {
+        const service = listOfServices[i];
+        if ("innerNodes" in service) {
+          let allIn = true;
+          const innerServices = service["innerNodes"];
+          for (const innerService in innerServices) {
+            allIn &= qxapp.utils.Services.isServiceInList(listOfServices, innerServices[innerService].key);
+          }
+          if (allIn) {
+            filteredServices.push(service);
+          }
+        } else {
+          filteredServices.push(service);
+        }
+      }
+      return filteredServices;
     }
   }
 });

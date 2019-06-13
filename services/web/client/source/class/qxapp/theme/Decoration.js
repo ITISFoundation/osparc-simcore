@@ -61,6 +61,16 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
+    "window-small-cap-maximized": {
+      include: "window",
+      style: {
+        width: 0,
+        transitionProperty: "opacity",
+        transitionDuration: "0.05s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
     "workbench-small-cap-captionbar": {
       style: {
         width: 0
@@ -75,6 +85,42 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
-    "link-button": {}
+    "link-button": {},
+
+    "service-browser": {
+      style: {
+        width: 1,
+        color: "material-button-background"
+      }
+    },
+
+    "flash": {
+      style: {
+        radius: 3,
+        transitionProperty: "top",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "flash-badge": {
+      style: {
+        radius: 5
+      }
+    },
+
+    "flash-container-transitioned": {
+      style: {
+        transitionProperty: "height",
+        transitionDuration: "0.2s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "no-border": {
+      style: {
+        width: 0
+      }
+    }
   }
 });

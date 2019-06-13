@@ -11,6 +11,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import tokens, users
 from .login.decorators import RQT_USERID_KEY, login_required
+from .security_api import check_permission
 from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 # me/ -----------------------------------------------------------
 @login_required
 async def get_my_profile(request: web.Request):
+    # ONLY login required to see its profile. E.g. anonymous can never see its profile
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
@@ -39,8 +41,10 @@ async def get_my_profile(request: web.Request):
 
 @login_required
 async def update_my_profile(request: web.Request):
+    await check_permission(request, "user.profile.update")
+
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    
+
     # TODO: validate
     body = await request.json()
 
@@ -59,13 +63,15 @@ async def update_my_profile(request: web.Request):
                 )
         resp = await conn.execute(query)
         assert resp.rowcount == 1
-    
+
     raise web.HTTPNoContent(content_type='application/json')
 
 
 # me/tokens/ ------------------------------------------------------
 @login_required
 async def create_tokens(request: web.Request):
+    await check_permission(request, "user.tokens.*")
+
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
 
     # TODO: validate
@@ -87,6 +93,8 @@ async def create_tokens(request: web.Request):
 
 @login_required
 async def list_tokens(request: web.Request):
+    await check_permission(request, "user.tokens.*")
+
     # TODO: start = request.match_info.get('start', 0)
     # TODO: count = request.match_info.get('count', None)
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
@@ -104,6 +112,8 @@ async def list_tokens(request: web.Request):
 
 @login_required
 async def get_token(request: web.Request):
+    await check_permission(request, "user.tokens.*")
+
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info['service']
 
@@ -124,6 +134,8 @@ async def update_token(request: web.Request):
 
     WARNING: token_data has to be complete!
     """
+    await check_permission(request, "user.tokens.*")
+
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info['service']
 
@@ -151,9 +163,12 @@ async def update_token(request: web.Request):
         resp = await conn.execute(query)
         assert resp.rowcount == 1
 
+    raise web.HTTPNoContent(content_type='application/json')
 
 @login_required
 async def delete_token(request: web.Request):
+    await check_permission(request, "user.tokens.*")
+
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     service_id = request.match_info.get('service')
 

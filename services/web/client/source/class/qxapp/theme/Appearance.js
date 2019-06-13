@@ -36,7 +36,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         let style = {
           decorator: null,
-          padding: [0, 0],
+          padding: 0,
           backgroundColor: "transparent"
         };
         if (states.hovered) {
@@ -60,7 +60,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           backgroundColor: "background-selected-dark",
-          decorator: "window-small-cap"
+          decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
     },
@@ -127,6 +127,23 @@ qx.Theme.define("qxapp.theme.Appearance", {
         };
       }
     },
+
+    "service-window": {
+      include: "window",
+      alias: "window",
+      style: (state, styles) => {
+        styles.decorator = state.maximized ? "window-small-cap-maximized" : "window-small-cap";
+        return styles;
+      }
+    },
+    "service-window/captionbar": {
+      include: "window/captionbar",
+      style: (state, styles) => {
+        styles.backgroundColor = "material-button-background";
+        styles.decorator = "workbench-small-cap-captionbar";
+        return styles;
+      }
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView
@@ -171,6 +188,35 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "textfilter": {},
     "textfilter/textfield": "toolbar-textfield",
 
+    "toolbar-selectbox": {
+      include: "textfield",
+      alias: "selectbox",
+      style: () => ({
+        margin: [7, 10],
+        paddingLeft: 5
+      })
+    },
+    "toolbar-selectbox/arrow": {
+      include: "selectbox/arrow",
+      style: style => ({
+        cursor: style.disabled ? "auto" : "pointer"
+      })
+    },
+    "toolbar-selectbox/list": {
+      include: "selectbox/list",
+      style: () => ({
+        padding: 0
+      })
+    },
+
+    "toolbar-progressbar": {
+      include: "progressbar",
+      alias: "progressbar",
+      style: () => ({
+        margin: [7, 10]
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       SidePanel
@@ -206,6 +252,32 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     /*
     ---------------------------------------------------------------------------
+      Jumbo
+    ---------------------------------------------------------------------------
+    */
+    "jumbo": {
+      include: "material-button",
+      alias: "material-button",
+      style: (state, styles) => {
+        styles.padding = [7, 8, 5, 8];
+        return styles;
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      ServiceBrowser
+    ---------------------------------------------------------------------------
+    */
+    "service-browser": {
+      style: state => ({
+        padding: 8,
+        decorator: "service-browser"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
       Buttons
     ---------------------------------------------------------------------------
     */
@@ -221,6 +293,24 @@ qx.Theme.define("qxapp.theme.Appearance", {
         }
         return ret;
       }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      FlashMessage
+    ---------------------------------------------------------------------------
+    */
+    "flash": {
+      style: state => ({
+        padding: 10,
+        backgroundColor: "background-main-lighter+",
+        decorator: "flash"
+      })
+    },
+    "flash/badge": {
+      style: state => ({
+        decorator: "flash-badge"
+      })
     }
   }
 });

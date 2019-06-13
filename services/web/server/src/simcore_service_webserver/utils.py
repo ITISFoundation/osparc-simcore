@@ -5,6 +5,7 @@ import hashlib
 import os
 import string
 import sys
+from datetime import datetime
 from pathlib import Path
 from secrets import choice
 from typing import Iterable, List
@@ -133,3 +134,27 @@ def load_words():
     with open('/usr/share/dict/words') as f:
         words = [word.strip() for word in f]
     return words
+
+
+
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+def now():
+    return datetime.utcnow()
+
+def format_datetime(snapshot :datetime) -> str:
+    #return snapshot.strftime(DATETIME_FORMAT)
+    # TODO: this fullfills datetime schema!!!
+    # 'pattern': '\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z',
+
+    # FIXME: ensure snapshot is ZULU time!
+    return "{}Z".format(snapshot.isoformat(timespec='milliseconds'))
+
+def now_str() -> str:
+    """ Returns formatted time snapshot in UTC
+    """
+    return format_datetime(now())
+
+def to_datetime(snapshot: str) -> datetime:
+    #
+    return datetime.strptime(snapshot, DATETIME_FORMAT)

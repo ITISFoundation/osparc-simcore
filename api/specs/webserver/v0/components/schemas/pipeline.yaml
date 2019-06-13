@@ -6,12 +6,12 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/PipelineCreatedType'
+          $ref: '#/components/schemas/PipelineCreatedSchema'
         error:
           nullable: true
           default: null
-    
-    PipelineCreatedType:
+
+    PipelineCreatedSchema:
       type: object
       required:
         - pipeline_name

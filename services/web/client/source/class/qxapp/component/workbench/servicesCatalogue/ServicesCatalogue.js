@@ -45,10 +45,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      caption: "Services Catalogue"
+      caption: this.tr("Services Catalogue"),
+      appearance: "service-window",
+      contentPadding: 0
     });
 
-    let catalogueLayout = new qx.ui.layout.VBox(10);
+    let catalogueLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogueLayout);
 
     let filterLayout = this.__createFilterLayout();
@@ -59,15 +61,14 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       flex: 1
     });
 
-    let versionLayout = this.__createVersionsLayout();
-    this.add(versionLayout);
-
     let btnLayout = this.__createButtonsLayout();
     this.add(btnLayout);
 
     this.__createEvents();
 
     this.__populateList();
+
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -83,41 +84,43 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __allServicesObj: null,
     __textfield: null,
     __showAll: null,
-    __list: null,
-    __controller: null,
     __contextNodeId: null,
     __contextPort: null,
     __versionsBox: null,
+    __infoBtn: null,
+    __serviceBrowser: null,
+    __addBtn: null,
 
     __createFilterLayout: function() {
-      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
-      filterLayout.add(searchLabel);
-      let textfield = this.__textfield = new qx.ui.form.TextField();
-      textfield.setLiveUpdate(true);
-      filterLayout.add(textfield, {
-        flex: 1
+      const toolbar = new qx.ui.toolbar.ToolBar();
+
+      const filterPart = new qx.ui.toolbar.Part().set({
+        spacing: 10
       });
-      // check box for filtering
-      let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
-      showAll.setValue(false);
-      showAll.addListener("changeValue", e => {
+      const filters = new qxapp.desktop.ServiceFilters("serviceCatalogue");
+      this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
+      filterPart.add(filters);
+      const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
+      showAllCheckbox.set({
+        value: false,
+        // FIXME: Backend should do the filtering
+        visibility: qxapp.data.Permissions.getInstance().canDo("test") ? "visible" : "excluded"
+      });
+      showAllCheckbox.addListener("changeValue", e => {
         this.__updateList();
       }, this);
-      // FIXME: Backend should do the filtering
-      if (qxapp.data.Permissions.getInstance().canDo("test")) {
-        filterLayout.add(showAll);
-      }
-      // buttons for reloading services
-      let reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__populateList(true);
-      }, this);
-      filterLayout.add(reloadBtn);
+      filterPart.add(showAllCheckbox);
+      toolbar.add(filterPart);
 
-      return filterLayout;
+      toolbar.addSpacer();
+
+      const controlsPart = new qx.ui.toolbar.Part();
+      // buttons for reloading services (is this necessary?)
+      const reloadBtn = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/16");
+      reloadBtn.addListener("execute", () => this.__populateList(true), this);
+      controlsPart.add(reloadBtn);
+      toolbar.add(controlsPart);
+      return toolbar;
     },
 
     __createListLayout: function() {
@@ -125,98 +128,66 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      let list = this.__list = new qx.ui.form.List();
-      list.setSelectionMode("one");
-      /*
-      list.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData()[0].getModel();
-          this.__changedSelection(selectedService.getKey());
-        } else {
-          this.__changedSelection(null);
-        }
-      }, this);
-      */
-
-      // create the controller
-      let controller = this.__controller = new qx.data.controller.List(new qx.data.Array([]), list);
-      // set the name for the label property
-      controller.setLabelPath("name");
-      // convert for the label
-      controller.setLabelOptions({
-        converter: function(data, model) {
-          return model.getName();
-        }
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalogue").set({
+        width: 568
       });
-      // Workaround to the list.changeSelection
-      controller.addListener("changeValue", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData().toArray()[0];
+      const scrolledServices = new qx.ui.container.Scroll().set({
+        height: 260
+      });
+      scrolledServices.add(services);
+
+      this.__serviceBrowser.addListener("changeValue", e => {
+        if (e.getData() && e.getData().getServiceModel()) {
+          const selectedService = e.getData().getServiceModel();
           this.__changedSelection(selectedService.getKey());
         } else {
           this.__changedSelection(null);
         }
       }, this);
 
-      // create the filter
-      let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(this.__controller, ["name"]);
-      // set the filter
-      filterObj.bindItem = (ctrl, item, id) => {
-        controller.bindDefaultProperties(item, id);
-      };
-      this.__controller.setDelegate(filterObj);
-
-      // make every input in the textfield update the controller
-      this.__textfield.bind("changeValue", filterObj, "searchString");
-
-      return list;
-    },
-
-    __createVersionsLayout: function() {
-      let versionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      let versionLabel = new qx.ui.basic.Label(this.tr("Version"));
-      versionLayout.add(versionLabel);
-      let selectBox = this.__versionsBox = new qx.ui.form.SelectBox();
-      selectBox.add(new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST)));
-      selectBox.setValue(selectBox.getChildrenContainer().getSelectables()[0].getLabel());
-      versionLayout.add(selectBox);
-      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/16");
-      infoBtn.addListener("execute", function() {
-        this.__showServiceInfo();
-      }, this);
-      versionLayout.add(infoBtn);
-      return versionLayout;
+      return scrolledServices;
     },
 
     __createButtonsLayout: function() {
-      let btnBox = new qx.ui.layout.HBox(10);
-      btnBox.setAlignX("right");
-      let btnLayout = new qx.ui.container.Composite(btnBox);
+      const toolbar = new qx.ui.toolbar.ToolBar();
 
-      let addBtn = new qx.ui.form.Button("Add");
-      addBtn.addListener("execute", this.__onAddService, this);
+      const infoPart = new qx.ui.toolbar.Part();
+      const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));
+      infoPart.add(versionLabel);
+      const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox().set({
+        enabled: false
+      });
+      infoPart.add(selectBox);
+      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16").set({
+        enabled: false
+      });
+      infoBtn.addListener("execute", function() {
+        this.__showServiceInfo();
+      }, this);
+      infoPart.add(infoBtn);
+      toolbar.add(infoPart);
+
+      toolbar.addSpacer();
+
+      const buttonsPart = new qx.ui.toolbar.Part();
+      const addBtn = this.__addBtn = new qx.ui.toolbar.Button("Add").set({
+        enabled: false
+      });
+      addBtn.addListener("execute", () => this.__onAddService(), this);
       addBtn.setAllowGrowX(false);
-      btnLayout.add(addBtn);
-
-      let cancelBtn = new qx.ui.form.Button("Cancel");
+      buttonsPart.add(addBtn);
+      const cancelBtn = new qx.ui.toolbar.Button("Cancel");
       cancelBtn.addListener("execute", this.__onCancel, this);
       cancelBtn.setAllowGrowX(false);
-      btnLayout.add(cancelBtn);
+      buttonsPart.add(cancelBtn);
+      toolbar.add(buttonsPart);
 
-      return btnLayout;
+      return toolbar;
     },
 
     __createEvents: function() {
-      // Listen to "Enter" key
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Enter") {
-          this.__onAddService();
-        }
-      }, this);
-
-      // Listen to "Double Click" key
-      this.__list.addListener("dbltap", e => {
-        this.__onAddService();
+      this.__serviceBrowser.addListener("serviceadd", e => {
+        this.__onAddService(e.getData());
       }, this);
     },
 
@@ -265,8 +236,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
 
       let newModel = new qx.data.Array(groupedServicesList);
-      this.__controller.setModel(newModel);
-      this.__controller.update();
+
+      this.__serviceBrowser.setModel(newModel);
     },
 
     __changedSelection: function(serviceKey) {
@@ -275,7 +246,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         selectBox.removeAll();
         if (serviceKey in this.__allServicesObj) {
           let versions = qxapp.utils.Services.getVersions(this.__allServicesObj, serviceKey);
-          const latest = new qx.ui.form.ListItem(this.tr(this.self(arguments).LATEST));
+          const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
             selectBox.add(new qx.ui.form.ListItem(versions[i]));
@@ -283,16 +254,25 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
           selectBox.setSelection([latest]);
         }
       }
+      if (this.__addBtn) {
+        this.__addBtn.setEnabled(serviceKey !== null);
+      }
+      if (this.__infoBtn) {
+        this.__infoBtn.setEnabled(serviceKey !== null);
+      }
+      if (this.__versionsBox) {
+        this.__versionsBox.setEnabled(serviceKey !== null);
+      }
     },
 
-    __onAddService: function() {
-      if (this.__list.isSelectionEmpty()) {
+    __onAddService: function(model) {
+      if (model == null && this.__serviceBrowser.isSelectionEmpty()) { // eslint-disable-line no-eq-null
         return;
       }
 
-      const service = this.__getSelectedService();
+      const service = model || this.__getSelectedService();
       if (service) {
-        let serviceModel = qx.data.marshal.Json.createModel(service);
+        const serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
           service: serviceModel,
           contextNodeId: this.__contextNodeId,
@@ -304,8 +284,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     },
 
     __getSelectedService: function() {
-      const selection = this.__list.getSelection()[0];
-      const serviceKey = selection.getModel().getKey();
+      const selected = this.__serviceBrowser.getSelected();
+      const serviceKey = selected.getKey();
       let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
@@ -338,6 +318,22 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __onCancel: function() {
       this.close();
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalogue");
+        this.__textfield.focus();
+      }, this);
+      this.__textfield.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          this.__serviceBrowser.selectFirstVisible();
+          const selected = this.__serviceBrowser.getSelected();
+          if (selected !== null) {
+            this.__onAddService(selected);
+          }
+        }
+      }, this);
     }
   }
 });

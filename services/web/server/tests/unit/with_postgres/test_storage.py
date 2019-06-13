@@ -1,0 +1,151 @@
+# pylint:disable=unused-import
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
+from urllib.parse import quote
+
+import pytest
+from aiohttp import web
+
+from servicelib.rest_responses import unwrap_envelope
+from servicelib.rest_utils import extract_and_validate
+from simcore_service_webserver.security_roles import UserRole
+from utils_assert import assert_status
+from utils_login import LoggedUser
+
+API_VERSION = "v0"
+
+# TODO: create a fake storage service here
+@pytest.fixture()
+def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
+    cfg = app_cfg["storage"]
+    cfg['port']= aiohttp_unused_port()
+
+    app = web.Application()
+    async def _get_locs(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+        return web.json_response({
+            'data': [{"user_id": int(query["user_id"])}, ]
+        })
+
+    async def _get_filemeta(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+
+        return web.json_response({
+            'data': [{"filemeta": 42}, ]
+        })
+
+    async def _get_filtered_list(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+        assert query["uuid_filter"], "expected a filter"
+
+        return web.json_response({
+            'data': [{"uuid_filter": query["uuid_filter"]}, ]
+        })
+
+    version = cfg['version']
+
+    app.router.add_get("/%s/locations" % version, _get_locs)
+    app.router.add_get("/%s/locations/0/files/{file_id}/metadata" % version, _get_filemeta)
+    app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
+
+    assert cfg['host']=='localhost'
+
+
+    server = loop.run_until_complete(aiohttp_server(app, port= cfg['port']))
+    return server
+
+
+@pytest.fixture
+async def logged_user(client, role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: role fixture is defined as a parametrization below
+    """
+    async with LoggedUser(
+        client,
+        {"role": role.name},
+        check_if_succeeds = role!=UserRole.ANONYMOUS
+    ) as user:
+        yield user
+
+
+#--------------------------------------------------------------------------
+PREFIX = "/" + API_VERSION + "/storage"
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_storage_locations(client, storage_server, logged_user, role, expected):
+    url = "/v0/storage/locations"
+    assert url.startswith(PREFIX)
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert len(data) == 1
+        assert data[0]['user_id'] == logged_user['id']
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_storage_file_meta(client, storage_server, logged_user, role, expected):
+    # tests redirect of path with quotes in path
+    file_id = "a/b/c/d/e/dat"
+    url = "/v0/storage/locations/0/files/{}/metadata".format(quote(file_id, safe=''))
+
+    assert url.startswith(PREFIX)
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert len(data) == 1
+        assert data[0]['filemeta'] == 42
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_storage_list_filter(client, storage_server, logged_user, role, expected):
+    # tests composition of 2 queries
+    file_id = "a/b/c/d/e/dat"
+    url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=''))
+
+    assert url.startswith(PREFIX)
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert len(data) == 1
+        assert data[0]['uuid_filter'] == file_id
