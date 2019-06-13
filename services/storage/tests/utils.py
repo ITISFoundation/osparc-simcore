@@ -1,6 +1,5 @@
 import logging
 import os
-from contextlib import contextmanager
 
 import pytest
 import requests
