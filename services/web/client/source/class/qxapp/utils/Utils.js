@@ -68,31 +68,6 @@ qx.Class.define("qxapp.utils.Utils", {
       return segmentsA.length - segmentsB.length;
     },
 
-    compareVersionNumbersOld: function(v1, v2) {
-      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
-      let v1parts = v1.split(".");
-      let v2parts = v2.split(".");
-
-      for (let i = 0; i < v1parts.length; ++i) {
-        if (v2parts.length === i) {
-          return 1;
-        }
-        if (v1parts[i] === v2parts[i]) {
-          continue;
-        }
-        if (v1parts[i] > v2parts[i]) {
-          return 1;
-        }
-        return -1;
-      }
-
-      if (v1parts.length != v2parts.length) {
-        return -1;
-      }
-
-      return 0;
-    },
-
     // deep clone of nested objects
     // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
     deepCloneObject: function(src) {
