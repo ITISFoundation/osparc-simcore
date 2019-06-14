@@ -51,6 +51,25 @@ qx.Class.define("qxapp.utils.Utils", {
 
     compareVersionNumbers: function(v1, v2) {
       // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
+      // - a number < 0 if a < b
+      // - a number > 0 if a > b
+      // - 0 if a = b
+      const regExStrip0 = /(\.0+)+$/;
+      const segmentsA = v1.replace(regExStrip0, "").split(".");
+      const segmentsB = v2.replace(regExStrip0, "").split(".");
+      const l = Math.min(segmentsA.length, segmentsB.length);
+
+      for (let i = 0; i < l; i++) {
+        const diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+        if (diff) {
+          return diff;
+        }
+      }
+      return segmentsA.length - segmentsB.length;
+    },
+
+    compareVersionNumbersOld: function(v1, v2) {
+      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
       let v1parts = v1.split(".");
       let v2parts = v2.split(".");
 
