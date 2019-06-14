@@ -43,8 +43,8 @@ qx.Class.define("qxapp.test.utils.Utils", {
     */
 
     testCompareVersionNumbers: function() {
-      this.assertPossitive(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.0"));
-      this.assertPossitive(-1*qxapp.utils.Utils.compareVersionNumbers("1.0.0", "1.0.1"));
+      this.assertPositiveNumber(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.0"));
+      this.assertPositiveNumber(-1*qxapp.utils.Utils.compareVersionNumbers("1.0.0", "1.0.1"));
       this.assertFalse(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.1"));
 
       const unsorted = [
@@ -64,7 +64,7 @@ qx.Class.define("qxapp.test.utils.Utils", {
         "2.11.0"
       ];
       const result = unsorted.sort(qxapp.utils.Utils.compareVersionNumbers);
-      this.assertEqual(sorted, result);
+      this.assertEquals(sorted, result);
     }
   }
 });
