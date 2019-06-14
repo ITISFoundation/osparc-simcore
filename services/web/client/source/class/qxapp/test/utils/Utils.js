@@ -45,7 +45,7 @@ qx.Class.define("qxapp.test.utils.Utils", {
     testCompareVersionNumbers: function() {
       this.assertPositiveNumber(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.0"));
       this.assertPositiveNumber(-1*qxapp.utils.Utils.compareVersionNumbers("1.0.0", "1.0.1"));
-      this.assertFalse(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.1"));
+      this.assertEquals(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.1"), 0);
 
       const unsorted = [
         "1.0.5",
