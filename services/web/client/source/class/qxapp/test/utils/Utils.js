@@ -64,7 +64,7 @@ qx.Class.define("qxapp.test.utils.Utils", {
         "2.11.0"
       ];
       const result = unsorted.sort(qxapp.utils.Utils.compareVersionNumbers);
-      this.assertEquals(sorted, result);
+      this.assertArrayEquals(sorted, result);
     }
   }
 });
