@@ -258,10 +258,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "jumbo": {
       include: "material-button",
       alias: "material-button",
-      style: (state, styles) => {
-        styles.padding = [7, 8, 5, 8];
-        return styles;
-      }
+      style: state => ({
+        padding: [7, 8, 5, 8]
+      })
     },
 
     /*
@@ -310,6 +309,36 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "flash/badge": {
       style: state => ({
         decorator: "flash-badge"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      IFrame
+    ---------------------------------------------------------------------------
+    */
+    "iframe": {},
+
+    /*
+    ---------------------------------------------------------------------------
+      GroupBox
+    ---------------------------------------------------------------------------
+    */
+    "settings-groupbox": {
+      include: "groupbox",
+      alias: "groupbox"
+    },
+    "settings-groupbox/frame": {
+      include: "groupbox/frame",
+      style: state => ({
+        decorator: "no-border"
+      })
+    },
+    "settings-groupbox/legend": {
+      alias: "atom",
+      include: "groupbox/legend",
+      style: state => ({
+        font: "title-16"
       })
     }
   }

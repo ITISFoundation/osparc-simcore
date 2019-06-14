@@ -89,6 +89,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __innerContainer: null,
     __containerHeight: null,
     __layoutFlex: null,
+    __minHeight: null,
 
     toggleCollapsed: function() {
       this.setCollapsed(!this.getCollapsed());
@@ -102,16 +103,21 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (this.getContent()) {
         this.__caret.setSource(collapsed ? this.self().MORE_CARET : this.self().LESS_CARET);
         if (collapsed) {
+          this.__minHeight = this.getMinHeight();
+          this.resetMinHeight();
           if (this.getLayoutProperties().flex) {
             this.__layoutFlex = this.getLayoutProperties().flex;
             this.setLayoutProperties({
               flex: 0
             });
           }
-        } else if (this.__layoutFlex) {
-          this.setLayoutProperties({
-            flex: this.__layoutFlex
-          });
+        } else {
+          this.setMinHeight(this.__minHeight);
+          if (this.__layoutFlex) {
+            this.setLayoutProperties({
+              flex: this.__layoutFlex
+            });
+          }
         }
         this.__innerContainer.setHeight(collapsed ? 0 : this.__containerHeight);
       }
@@ -140,8 +146,8 @@ qx.Class.define("qxapp.desktop.PanelView", {
       }
 
       this.__innerContainer.removeAll();
-      content.setMinHeight(0);
       this.__innerContainer.add(content);
+      this.__innerContainer.setHeight(this.getCollapsed() ? 0 : this.__containerHeight);
 
       if (this.__caret === null) {
         this.__caret = new qx.ui.basic.Image(this.getCollapsed() ? this.self().MORE_CARET : this.self().LESS_CARET).set({

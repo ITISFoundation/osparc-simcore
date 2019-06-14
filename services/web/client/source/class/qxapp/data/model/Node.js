@@ -39,6 +39,7 @@
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
 
   /**
     * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
@@ -643,18 +644,14 @@ qx.Class.define("qxapp.data.model.Node", {
 
     startInteractiveNode: function() {
       if (this.isDynamic() && this.isRealService()) {
-        let retrieveBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/spinner/32"
-        });
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
         retrieveBtn.setEnabled(false);
         this.setRetrieveIFrameButton(retrieveBtn);
 
-        let restartBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/redo-alt/32"
-        });
+        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/16");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);
