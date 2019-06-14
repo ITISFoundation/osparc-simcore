@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 /**
- * Test Permissions
+ * Test Utils
  *
  */
-qx.Class.define("qxapp.test.data.Permissions", {
+qx.Class.define("qxapp.test.utils.Utils", {
   extend: qx.dev.unit.TestCase,
   include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
 
