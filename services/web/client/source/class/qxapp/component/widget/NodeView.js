@@ -67,14 +67,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
     this.add(inputPanel, 0);
 
-    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-      alignX: "center",
-      padding: [0, 5]
-    });
+    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.add(mainLayout, 1);
 
     this.__settingsLayout = new qx.ui.groupbox.GroupBox(this.tr("Settings")).set({
-      appearance: "settings-groupbox"
+      appearance: "settings-groupbox",
+      maxWidth: 400,
+      alignX: "center"
     });
     this.__settingsLayout.setLayout(new qx.ui.layout.VBox());
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
