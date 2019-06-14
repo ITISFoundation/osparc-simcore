@@ -199,10 +199,26 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         this.__nodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
-      let widget = this.__getWidgetForNode(nodeId);
-      this.showInMainView(widget, nodeId);
+      const widget = this.__getWidgetForNode(nodeId);
+      const workbench = this.getStudy().getWorkbench();
+      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
+        const filePicker = new qx.ui.window.Window(this.tr("File picker")).set({
+          layout: new qx.ui.layout.Grow(),
+          contentPadding: 0,
+          width: 570,
+          height: 450,
+          appearance: "service-window",
+          showMinimize: false
+        });
+        widget.addListener("finished", () => filePicker.close());
+        filePicker.add(widget);
+        qx.core.Init.getApplication().getRoot().add(filePicker);
+        filePicker.show();
+        filePicker.center();
+      } else {
+        this.showInMainView(widget, nodeId);
+      }
       if (widget === this.__workbenchUI) {
-        const workbench = this.getStudy().getWorkbench();
         if (nodeId === "root") {
           this.__workbenchUI.loadModel(workbench);
         } else {
@@ -239,14 +255,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
-            widget.addListener("finished", function() {
-              let loadNodeId = "root";
-              const filePicker = widget.getNode();
-              if (filePicker.isPropertyInitialized("parentNodeId")) {
-                loadNodeId = filePicker.getParentNodeId();
-              }
-              this.nodeSelected(loadNodeId);
-            }, this);
           } else {
             widget = this.__nodeView;
           }
@@ -291,7 +299,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
         return;
       }
-      this.__workbenchUI.openServicesCatalogue();
+      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {

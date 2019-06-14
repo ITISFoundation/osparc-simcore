@@ -163,7 +163,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        this.openServicesCatalogue();
+        this.openServiceCatalog();
       }, this);
       return plusButton;
     },
@@ -202,13 +202,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return unlinkBtn;
     },
 
-    openServicesCatalogue: function() {
-      let srvCat = this.__createServicesCatalogue();
+    openServiceCatalog: function() {
+      let srvCat = this.__createServiceCatalog();
       srvCat.open();
     },
 
-    __createServicesCatalogue: function(pos) {
-      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+    __createServiceCatalog: function(pos) {
+      let srvCat = new qxapp.component.workbench.ServiceCatalog();
       if (pos) {
         srvCat.moveTo(pos.x, pos.y);
       } else {
@@ -221,12 +221,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         srvCat.moveTo(workbenchUICenter.x - 200, workbenchUICenter.y - 200);
       }
       srvCat.addListener("addService", ev => {
-        this.__addServiceFromCatalogue(ev, pos);
+        this.__addServiceFromCatalog(ev, pos);
       }, this);
       return srvCat;
     },
 
-    __addServiceFromCatalogue: function(e, pos) {
+    __addServiceFromCatalog: function(e, pos) {
       const data = e.getData();
       const service = data.service;
       let nodeAId = data.contextNodeId;
@@ -457,7 +457,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
             x: posX,
             y: posY
           };
-          let srvCat = this.__createServicesCatalogue(pos);
+          let srvCat = this.__createServiceCatalog(pos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -883,7 +883,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
           x: x,
           y: y
         };
-        let srvCat = this.__createServicesCatalogue(pos);
+        let srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
       }, this);
 

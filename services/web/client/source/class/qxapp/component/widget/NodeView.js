@@ -134,7 +134,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
           contentPadding: 0,
           showMinimize: false,
           width: 900,
-          height: 600
+          height: 600,
+          appearance: "service-window"
         });
         win.add(nodeDataManager, {
           top: 0,
