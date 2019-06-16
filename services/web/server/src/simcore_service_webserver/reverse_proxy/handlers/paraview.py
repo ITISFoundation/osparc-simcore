@@ -10,20 +10,24 @@ import pprint
 
 import aiohttp
 from aiohttp import client, web
+from yarl import URL
 
-SUPPORTED_IMAGE_NAME = "DISABLED" #"simcore/services/dynamic/3d-viewer"
+SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/3d-viewer"
 SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
 
 
-async def handler(req: web.Request, service_url: str, mount_point: str, proxy_path: str):
+async def handler(req: web.Request, service_url: str, mountpoint: str, proxy_path: str):
     # FIXME:
     assert req.path_qs.endswith(proxy_path)
-    assert mount_point in req.path, "Expected /x/identifier as mount point, got %s" % req.path
+    assert mountpoint in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 
     #target_url = service_url + req.path_qs
-
+    logger.info('##### request service_url: %s, mountpoint: %s, proxy_path: %s\n %s', service_url,
+                    mountpoint, proxy_path, req.headers)
+    full_url = URL(service_url) / proxy_path
+    logger.info("**************** requesting %s, %s", req.method, str(full_url))
     reqH = req.headers.copy()
     if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
 
@@ -32,9 +36,10 @@ async def handler(req: web.Request, service_url: str, mount_point: str, proxy_pa
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
 
         client_session = aiohttp.ClientSession(cookies=req.cookies)
-        async with client_session.ws_connect(
-            service_url+proxy_path,
-        ) as ws_client:
+        logger.info("created session")
+        # the websocker connection is at the root (see kitware wslink server.py:185)
+        ws_url = URL(service_url).with_path("ws")
+        async with client_session.ws_connect(str(ws_url)) as ws_client:
             logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
             async def ws_forward(ws_from, ws_to):
@@ -61,7 +66,7 @@ async def handler(req: web.Request, service_url: str, mount_point: str, proxy_pa
             return ws_server
     else:
         async with client.request(
-            req.method, service_url+proxy_path,
+            req.method, str(full_url),
             headers=reqH,
             allow_redirects=False,
             data=await req.read()
@@ -69,11 +74,11 @@ async def handler(req: web.Request, service_url: str, mount_point: str, proxy_pa
             headers = res.headers.copy()
             del headers['content-length']
             body = await res.read()
-            if proxy_path == '/Visualizer.js':
+            if proxy_path == 'Visualizer.js':
                 body = body.replace(b'"/ws"', b'"%s/ws"' %
-                                    mount_point.encode(), 1)
+                                    mountpoint.encode(), 1)
                 body = body.replace(
-                    b'"/paraview/"', b'"%s/paraview/"' % mount_point.encode(), 1)
+                    b'"/paraview/"', b'"%s/paraview/"' % mountpoint.encode(), 1)
                 logger.info("fixed Visualizer.js paths on the fly")
             return web.Response(
                 headers=headers,
