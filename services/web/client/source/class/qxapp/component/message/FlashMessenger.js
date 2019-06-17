@@ -105,7 +105,9 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       this.__messages.remove(message);
       this.__messageContainer.resetDecorator();
       this.__messageContainer.add(message);
-      const {width} = message.getSizeHint();
+      const {
+        width
+      } = message.getSizeHint();
       if (this.__displayedMessagesCount === 0 || width > this.__messageContainer.getWidth()) {
         this.__updateContainerPosition(width);
       }
