@@ -895,7 +895,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {
         const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
-        const {height, width} = this.__desktopCanvas.getBounds();
+        const {
+          height,
+          width
+        } = this.__desktopCanvas.getBounds();
         this.__startHint.setLayoutProperties({
           top: Math.round((height - hintBounds.height) / 2),
           left: Math.round((width - hintBounds.width) / 2)
