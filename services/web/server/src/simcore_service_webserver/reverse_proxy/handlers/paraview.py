@@ -84,6 +84,7 @@ async def handle_web_request(request: web.Request, target_url: URL, mount_point:
 async def handler(request: web.Request, service_url: str, mount_point: str, proxy_path: str, **_kargs):
     logger.debug("handling request %s, using service url %s", request, service_url)
     target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
+    ws_available = False
     if check_ws_in_headers(request):
         ws = web.WebSocketResponse()
         ws_available = ws.can_prepare(request)
