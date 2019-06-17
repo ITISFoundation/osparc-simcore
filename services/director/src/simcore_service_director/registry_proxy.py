@@ -64,7 +64,14 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
                 return (resp_data, resp_headers)
     raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
 
+
+_registry_requests_cache = {}
+
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
+    cache_key = "{}_{}".format(path, method)
+    if cache_key in _registry_requests_cache:
+        return _registry_requests_cache[cache_key]
+
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
@@ -89,6 +96,8 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
                 resp_data = await response.json(content_type=None)
                 resp_headers = response.headers
 
+            # cache data
+            _registry_requests_cache[cache_key] = (resp_data, resp_headers)
             return (resp_data, resp_headers)
 
 async def _list_repositories() -> List[str]:
