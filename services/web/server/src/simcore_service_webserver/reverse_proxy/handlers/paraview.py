@@ -23,8 +23,6 @@ async def handler(req: web.Request, service_url: str, mountpoint: str, proxy_pat
     assert req.path_qs.endswith(proxy_path)
     assert mountpoint in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 
-    #target_url = service_url + req.path_qs
-                    mountpoint, proxy_path, req.headers)
     full_url = URL(service_url) / proxy_path
     reqH = req.headers.copy()
     if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
