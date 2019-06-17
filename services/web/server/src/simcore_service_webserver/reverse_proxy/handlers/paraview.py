@@ -24,7 +24,6 @@ SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
 
-
 def check_ws_in_headers(request):
     return request.headers.get('connection', '').lower() == 'upgrade' and \
            request.headers.get('upgrade', '').lower() == 'websocket' and \
