@@ -2,10 +2,8 @@
 
     - Adds a layer to the postgres API with a focus on the projects data
     - Shall be used as entry point for all the queries to the database regarding projects
-"""
 
-#TODO: move here class ProjectDB:
-# TODO: should implement similar model as services/web/server/src/simcore_service_webserver/login/storage.py
+"""
 
 import logging
 import uuid as uuidlib
@@ -26,6 +24,7 @@ from ..db_models import users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
+from .projects_fakes import Fake
 from .projects_models import ProjectType, projects, user_to_projects
 
 log = logging.getLogger(__name__)
@@ -40,7 +39,6 @@ def _convert_to_db_names(project_data: Dict) -> Dict:
         converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
-
 def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
     converted_args = {}
     for key, value in project_db_data.items():
@@ -51,7 +49,6 @@ def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
             converted_value = format_datetime(value)
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
-
 
 
 # TODO: test all function return schema-compatible data
@@ -189,7 +186,9 @@ class ProjectDBAPI:
 
     async def load_template_projects(self) -> List[Dict]:
         log.info("Loading template projects")
-        projects_list = []
+        # TODO: eliminate this and use mock to replace get_user_project instead
+        projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
+
         async with self.engine.acquire() as conn:
             query = select([projects]).\
                 where(projects.c.type == ProjectType.TEMPLATE)
@@ -200,38 +199,54 @@ class ProjectDBAPI:
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def get_template_project(self, project_uuid: str) -> Dict:
-        template_prj = None
-        async with self.engine.acquire() as conn:
-            query = select([projects]).where(
-                and_(projects.c.type == ProjectType.TEMPLATE, projects.c.uuid == project_uuid)
-            )
-            result = await conn.execute(query)
-            row = await result.first()
-            template_prj = _convert_to_schema_names(row) if row else None
-
-        return template_prj
-
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
-        """
+        """ Returns all projects *owned* by the user
+
+            - A project is owned with it is mapped in user_to_projects list
+            - prj_owner field is not
+            - Notice that a user can have access to a template but he might not onw it
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
         :rtype: Dict
         """
-        log.info("Getting project %s for user %s", project_uuid, user_id)
+        # TODO: eliminate this and use mock to replace get_user_project instead
+        prj = Fake.projects.get(project_uuid)
+        if prj and not prj.template:
+            return Fake.projects[project_uuid].data
+
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects]).\
-                select_from(joint_table).\
-                    where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
+            query = select([projects]).select_from(joint_table).where(
+                and_(projects.c.uuid == project_uuid,
+                     user_to_projects.c.user_id == user_id)
+            )
             result = await conn.execute(query)
             row = await result.first()
+
+            # FIXME: prefer None to raise an exception. Read https://stackoverflow.com/questions/1313812/raise-exception-vs-return-none-in-functions?answertab=votes#tab-top
             if not row:
                 raise ProjectNotFoundError(project_uuid)
-            result_dict = {key:value for key,value in row.items()}
-            log.debug("found project: %s", result_dict)
-            return _convert_to_schema_names(result_dict)
+            return _convert_to_schema_names(row)
+
+    async def get_template_project(self, project_uuid: str) -> Dict:
+        # TODO: eliminate this and use mock to replace get_user_project instead
+        prj = Fake.projects.get(project_uuid)
+        if prj and prj.template:
+            return prj.data
+
+        template_prj = None
+        async with self.engine.acquire() as conn:
+            query = select([projects]).where(
+                and_(projects.c.type == ProjectType.TEMPLATE,
+                     projects.c.uuid == project_uuid)
+            )
+            result = await conn.execute(query)
+            row = await result.first()
+            if row:
+                template_prj = _convert_to_schema_names(row)
+
+        return template_prj
 
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
@@ -307,7 +322,6 @@ class ProjectDBAPI:
                         where(projects.c.id == row[projects.c.id])
                     await conn.execute(query)
 
-
     async def make_unique_project_uuid(self) -> str:
         """ Generates a project identifier still not used in database
 
@@ -329,7 +343,6 @@ class ProjectDBAPI:
                 if not found:
                     break
         return project_uuid
-
 
     async def _get_user_email(self, user_id):
         async with self.engine.acquire() as conn:

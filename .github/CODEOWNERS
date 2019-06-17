@@ -7,7 +7,9 @@
 /ops/                                     @sanderegg, @pcrespov
 /docs/                                    @pcrespov
 /packages/service-library                 @pcrespov
+/scripts/demo                             @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
+/scripts/template-projects                @odeimaiz, @pcrespov
 /services/dy*                             @sanderegg
 /services/sidecar                         @pcrespov, @mguidon
 /services/web/client                      @odeimaiz, @oetiker, @ignapas

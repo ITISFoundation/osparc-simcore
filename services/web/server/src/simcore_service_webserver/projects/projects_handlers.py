@@ -11,7 +11,6 @@ from .projects_api import create_data_from_template, validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
-from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
 
@@ -30,12 +29,6 @@ async def create_projects(request: web.Request):
         if template_uuid:
             # create from template
             template_prj = await db.get_template_project(template_uuid)
-
-            if not template_prj: # TODO: inject these projects in db instead!
-                for prj in Fake.projects.values():
-                    if prj.template and prj.data['uuid']==template_uuid:
-                        template_prj = prj.data
-                        break
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
@@ -78,12 +71,11 @@ async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     user_id = request[RQT_USERID_KEY]
-    ptype = request.query.get('type', 'user')
+    ptype = request.query.get('type', 'all') # TODO: get default for oaspecs
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += [prj.data for prj in Fake.projects.values() if prj.template]
         projects_list += await db.load_template_projects()
 
     if ptype in ("user", "all"):
@@ -111,12 +103,18 @@ async def list_projects(request: web.Request):
 
 @login_required
 async def get_project(request: web.Request):
+    """ Returns all projects accessible to a user (not necesarly owned)
+
+    """
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
 
+    project_uuid = request.match_info.get("project_id")
+
     project = await get_project_for_user(request,
-        project_uuid=request.match_info.get("project_id"),
-        user_id=request[RQT_USERID_KEY]
+        project_uuid=project_uuid,
+        user_id=request[RQT_USERID_KEY],
+        include_templates=True
     )
 
     return {

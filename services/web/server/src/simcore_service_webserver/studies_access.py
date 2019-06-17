@@ -19,6 +19,8 @@ from typing import Dict
 
 from aiohttp import web
 
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .resources import resources
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
@@ -40,14 +42,12 @@ SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
     from .projects.projects_db import APP_PROJECT_DBAPI
-    from .projects.projects_fakes import Fake
 
     db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
     # BUG: ensure items in project_list have unique UUIDs
-    projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-    projects_list += await db.load_template_projects()
+    projects_list = await db.load_template_projects()
 
     for prj in projects_list:
         if prj.get('uuid') == project_uuid:
@@ -156,12 +156,12 @@ async def access_study(request: web.Request) -> web.Response:
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
     if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
-        raise web.HTTPNotFound(reason="Requested study is not shared ['%s']" % study_id)
+        raise web.HTTPNotFound(reason="This study was not shared [{}]".format(study_id))
 
     # TODO: should copy **any** type of project is sharable -> get_sharable_project
     template_project = await get_template_project(request.app, study_id)
     if not template_project:
-        raise RuntimeError("Unable to load study %s" % study_id)
+        raise web.HTTPNotFound(reason="Invalid study [{}]".format(study_id))
 
     user = None
     is_anonymous_user = await is_anonymous(request)
@@ -174,12 +174,12 @@ async def access_study(request: web.Request) -> web.Response:
     if not user:
         raise RuntimeError("Unable to start user session")
 
+    msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
+    log.debug("Copying %s ...", msg_tail)
 
-    log.debug("Copying study %s to %s account ...", template_project['name'], user["email"])
     copied_project_id = await copy_study_to_account(request, template_project, user)
 
-    log.debug("Coped study %s to %s account as %s",
-        template_project['name'], user["email"], copied_project_id)
+    log.debug("Copied %s as %s", msg_tail, copied_project_id)
 
 
     try:
@@ -196,14 +196,19 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-
-
 def setup(app: web.Application):
+
+    cfg = app[APP_CONFIG_KEY]["main"]
+    if not cfg["studies_access_enabled"]:
+        log.warning("'%s' setup explicitly disabled in config", __name__)
+        return False
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
         web.get(r"/study/{id}", access_study, name="study"),
     ])
+
+    return True
 
 
 # alias
