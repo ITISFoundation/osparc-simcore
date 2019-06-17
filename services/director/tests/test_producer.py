@@ -88,14 +88,17 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert "POSTGRES_PASSWORD" in envs_dict
         assert "POSTGRES_DB" in envs_dict
         assert "STORAGE_ENDPOINT" in envs_dict
+
+        assert "SIMCORE_USER_ID" in envs_dict
+        assert envs_dict["SIMCORE_USER_ID"] == user_id
         assert "SIMCORE_NODE_UUID" in envs_dict
         assert envs_dict["SIMCORE_NODE_UUID"] == service_uuid
         assert "SIMCORE_PROJECT_ID" in envs_dict
         assert envs_dict["SIMCORE_PROJECT_ID"] == project_id
-        assert "SIMCORE_USER_ID" in envs_dict
-        assert envs_dict["SIMCORE_USER_ID"] == user_id
         assert "SIMCORE_NODE_BASEPATH" in envs_dict
         assert envs_dict["SIMCORE_NODE_BASEPATH"] == service["service_basepath"]
+        assert "SIMCORE_HOST_NAME" in envs_dict
+        assert envs_dict["SIMCORE_HOST_NAME"] == docker_server.name
 
 async def test_interactive_service_published_port(run_services):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
