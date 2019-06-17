@@ -29,9 +29,11 @@ qx.Class.define("qxapp.component.form.IconButton", {
    * @param {function} cb Callback function to be executed on tap.
    * @param {object} context Execution context (this) of the callback function.
    */
-  construct: function(icon, cb, context = null) {
+  construct: function(icon, cb, context) {
     this.base(arguments, icon);
-    this.addListener("tap", cb, context);
+    if (cb) {
+      this.addListener("tap", cb, context);
+    }
     this.setCursor("pointer");
   }
 });

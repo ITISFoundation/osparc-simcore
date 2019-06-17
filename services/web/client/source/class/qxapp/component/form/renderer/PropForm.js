@@ -88,6 +88,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           row: this._row,
           column: 1
         });
+        const infoIcon = new qxapp.component.form.IconButton("@FontAwesome5Solid/info-circle/16").set({
+          visibility: "hidden"
+        });
+        this._add(infoIcon, {
+          row: this._row,
+          column: 2
+        });
         this._row++;
         this._connectVisibility(item, label);
         // store the names for translation
@@ -107,11 +114,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           if (this.getNode()) {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
           }
+          infoIcon.show();
         }, this);
         item.addListener("focusout", () => {
           if (this.getNode()) {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
+          infoIcon.hide();
         }, this);
       }
     },
