@@ -36,7 +36,7 @@ async def _on_startup_and_cleanup(app):
             await asyncio.sleep(RETRY_WAIT_SECS)
     yield
     # tear-down
-    app[APP_S3_KEY] = None
+
 
 
 def setup(app: web.Application):

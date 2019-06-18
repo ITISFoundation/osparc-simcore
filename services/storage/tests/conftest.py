@@ -3,6 +3,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=unsupported-assignment-operation
 
 import asyncio
 import os
@@ -20,11 +21,11 @@ from aiopg.sa import create_engine
 import simcore_service_storage
 import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
-from simcore_service_storage.dsm import DataStorageManager
+from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
                                               SIMCORE_S3_ID, SIMCORE_S3_STR)
-from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
+from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER_ID, USER
 
 
 
@@ -55,24 +56,7 @@ def osparc_api_specs_dir(osparc_simcore_root_dir):
 
 @pytest.fixture(scope='session')
 def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
-    # create its own virtualenv
-    venv27 = tmpdir_factory.mktemp("virtualenv") / ".venv27"
-    # TODO: how to split in command safely?
-    cmd = "virtualenv --python=python2 %s" % (venv27)
-    assert subprocess.check_call(
-        cmd.split()) == 0, "Unable to run %s" % cmd
-
-    # installs python2 requirements
-    pip_exec = venv27 / "bin" / "pip"
-    assert pip_exec.exists()
-
-    requirements_py2 = here.parent / "requirements/py27/base.txt"
-    cmd = "{} install -r {}".format(pip_exec, requirements_py2)
-    assert subprocess.check_call(
-        cmd.split()) == 0, "Unable to run %s" % cmd
-
-    python27_exec = venv27 / "bin" / "python2.7"
-    assert python27_exec.exists()
+    python27_exec = "python3"
     return python27_exec
 
 
@@ -284,8 +268,11 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 @pytest.fixture(scope="function")
 async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
+    api_token = os.environ.get("BF_API_KEY")
+    api_secret = os.environ.get("BF_API_SECRET")
+    if api_secret is None:
+        yield "no_bucket"
+        return
 
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
@@ -314,4 +301,9 @@ def dsm_fixture(s3_client, python27_exec, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
     dsm_fixture = DataStorageManager(
         s3_client, python27_exec, postgres_engine, loop, pool, BUCKET_NAME)
+
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+    dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
+
     return dsm_fixture
