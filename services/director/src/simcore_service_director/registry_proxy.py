@@ -83,12 +83,14 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
                                 url=config.REGISTRY_URL))
     url = url.join(path)
-
-    # try the registry
+    # try the registry with basic authentication first, spare 1 call
     resp_data = {}
     resp_headers = {}
+    auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
+        if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
+            else None
     async with aiohttp.ClientSession() as session:
-        async with getattr(session, method.lower())(url) as response:
+        async with getattr(session, method.lower())(url, auth=auth) as response:
             if response.status == 404:
                 _logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(path)
