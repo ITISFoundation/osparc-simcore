@@ -46,6 +46,8 @@ def call_python_2_script(script: str, python_exec: Path):
     script = prefix + dedent(script)
 
     # pylint: disable=E1101
+    # for now keep the Pool mechanims for asynchronizity but switch to python3
+    python_exec = "python3"
     gw = execnet.makegateway("popen//python=%s" % python_exec)
     channel = gw.remote_exec(script)
     return channel.receive()

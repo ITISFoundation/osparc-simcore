@@ -10,6 +10,7 @@ jsonschema<3            # openapi-spec-validator from service-libs has requireme
 aiohttp
 aiofiles
 aiopg[sa]~=0.15.0     # Fixes 0.16.0 https://github.com/aio-libs/aiopg/issues/535
+blackfynn
 execnet
 marshmallow
 trafaret
