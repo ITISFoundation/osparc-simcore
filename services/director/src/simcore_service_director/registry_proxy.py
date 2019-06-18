@@ -6,6 +6,7 @@ import logging
 from typing import Dict, List, Tuple
 
 import aiohttp
+from aiohttp import web
 from yarl import URL
 
 from . import config, exceptions
@@ -16,11 +17,53 @@ NUMBER_OF_RETRIEVED_REPOS = 50
 NUMBER_OF_RETRIEVED_TAGS = 50
 
 _logger = logging.getLogger(__name__)
+_registry_requests_cache = {}
+TASK_NAME = __name__ + "_registry_caching_task"
+TASK_STATE = "{}_state".format(TASK_NAME)
 
 class ServiceType(enum.Enum):
     ALL = ""
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
+
+class TaskState(enum.IntEnum):
+    STARTING = 0
+    RUNNING = 1
+    FAILED = 2
+    STOPPED = 3
+
+async def registry_caching_task(app: web.Application):
+    _logger.info("starting registry caching task")
+    try:
+        app[TASK_STATE] = TaskState.STARTING
+        _logger.info("initializing...")
+        _logger.info("initialisation completed")
+        app[TASK_STATE] = TaskState.RUNNING
+        while True:
+            _registry_requests_cache.clear()
+            await list_services(ServiceType.ALL)
+            await asyncio.sleep(15 * 60)
+    except asyncio.CancelledError:
+        _logger.info("cancelling task...")
+        app[TASK_STATE] = TaskState.STOPPED
+        raise
+    except:
+        _logger.exception("task closing:")
+        app[TASK_STATE] = TaskState.FAILED
+        raise
+    finally:
+        _logger.info("finished task...")
+
+async def start(app: web.Application):
+    app[TASK_NAME] = asyncio.get_event_loop().create_task(registry_caching_task(app))
+
+async def cleanup(app: web.Application):
+    task = app[TASK_NAME]
+    task.cancel()
+
+def setup_cache_task(app: web.Application):
+    app.on_startup.append(start)
+    app.on_cleanup.append(cleanup)
 
 async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
@@ -72,13 +115,10 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
                 return (resp_data, resp_headers)
     raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
 
-
-_registry_requests_cache = {}
-
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     cache_key = "{}_{}".format(path, method)
-    # if cache_key in _registry_requests_cache:
-    #     return _registry_requests_cache[cache_key]
+    if cache_key in _registry_requests_cache:
+        return _registry_requests_cache[cache_key]
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
