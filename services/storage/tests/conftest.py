@@ -268,11 +268,10 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 @pytest.fixture(scope="function")
 async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
-    if api_secret == "none":
-        yield "no_bucket"
-        return
+    api_token = os.environ.get("BF_API_KEY")
+    api_secret = os.environ.get("BF_API_SECRET")
+    if api_secret is None:
+        return "no_bucket"
 
 
     pool = ThreadPoolExecutor(2)
