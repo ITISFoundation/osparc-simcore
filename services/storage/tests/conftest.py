@@ -271,8 +271,8 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
     if api_secret is None:
-        return "no_bucket"
-
+        yield "no_bucket"
+        return
 
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
