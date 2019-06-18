@@ -139,9 +139,10 @@ async def test_get_image_details(push_services, configure_registry_access, confi
 
         assert details == service_description
 
-import time
-# @pytest.mark.skip(reason="test needs credentials to real registry")
+
+@pytest.mark.skip(reason="test needs credentials to real registry")
 async def test_get_services_performance(loop, configure_custom_registry):
+    import time
     start_time = time.perf_counter()
     services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
     stop_time = time.perf_counter()

@@ -70,3 +70,10 @@ def user_id():
 @pytest.fixture
 def project_id():
     yield "some_project_id"
+
+@pytest.fixture(scope="session")
+def configure_custom_registry():
+    config.REGISTRY_URL = "some registry"
+    config.REGISTRY_AUTH = True
+    config.REGISTRY_USER = "username"
+    config.REGISTRY_PW = "pw"

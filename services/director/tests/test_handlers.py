@@ -246,8 +246,10 @@ async def test_running_services_post_and_delete_no_swarm(configure_registry_acce
 async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
     await _start_get_stop_services(push_services, user_id, project_id)
 
-import time
+
+@pytest.mark.skip(reason="test needs credentials to real registry")
 async def test_performance_get_services(loop, configure_custom_registry, configure_schemas_location):
+    import time
     fake_request = "fake request"
     start_time = time.perf_counter()
     number_of_calls = 1
