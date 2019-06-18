@@ -245,3 +245,27 @@ async def test_running_services_post_and_delete_no_swarm(configure_registry_acce
 
 async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
     await _start_get_stop_services(push_services, user_id, project_id)
+
+import time
+async def test_performance_get_services(loop, configure_custom_registry, configure_schemas_location):
+    fake_request = "fake request"
+    start_time = time.perf_counter()
+    number_of_calls = 3
+    number_of_services = 0
+    for i in range(number_of_calls):
+        print("calling iteration", i)
+        start_time_i = time.perf_counter()
+        web_response = await rest.handlers.services_get(fake_request)
+        assert web_response.status == 200
+        assert web_response.content_type == "application/json"
+        services_enveloped = json.loads(web_response.text)
+        assert isinstance(services_enveloped["data"], list)
+        services = services_enveloped["data"]
+        number_of_services = len(services)
+        print("iteration completed in", (time.perf_counter() - start_time_i), "s")
+    stop_time = time.perf_counter()
+    print("Time to run {} times: {}s, #services {}, time per call {}s/service"
+    .format(number_of_calls,
+        stop_time-start_time,
+        number_of_services,
+        (stop_time-start_time)/number_of_calls/number_of_services))

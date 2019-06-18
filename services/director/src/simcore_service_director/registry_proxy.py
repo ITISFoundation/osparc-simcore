@@ -11,8 +11,8 @@ from . import config, exceptions
 
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 
-NUMBER_OF_RETRIEVED_REPOS = 5
-NUMBER_OF_RETRIEVED_TAGS = 5
+NUMBER_OF_RETRIEVED_REPOS = 50
+NUMBER_OF_RETRIEVED_TAGS = 50
 
 _logger = logging.getLogger(__name__)
 
@@ -69,9 +69,8 @@ _registry_requests_cache = {}
 
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     cache_key = "{}_{}".format(path, method)
-    if cache_key in _registry_requests_cache:
-        return _registry_requests_cache[cache_key]
-
+    # if cache_key in _registry_requests_cache:
+    #     return _registry_requests_cache[cache_key]
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",

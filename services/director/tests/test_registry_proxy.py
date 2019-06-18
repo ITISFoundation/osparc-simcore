@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from simcore_service_director import registry_proxy
 
 
@@ -132,3 +134,25 @@ async def test_get_service_details(push_services, configure_registry_access, con
         details = await registry_proxy.get_service_details(service_description["key"], service_description["version"])
 
         assert details == service_description
+
+import time
+# @pytest.mark.skip(reason="test needs credentials to real registry")
+async def test_get_services_performance(loop, configure_custom_registry):
+    start_time = time.perf_counter()
+    services = await registry_proxy.list_interactive_services()
+    stop_time = time.perf_counter()
+    print("\nTime to run getting interactive services: {}s, #services {}, time per call {}s/service".format(
+        stop_time - start_time,
+        len(services),
+        (stop_time - start_time) / len(services)
+    ))
+    start_time = time.perf_counter()
+    services = await registry_proxy.list_computational_services()
+    stop_time = time.perf_counter()
+    print("\nTime to run getting computational services: {}s, #services {}, time per call {}s/service".format(
+        stop_time - start_time,
+        len(services),
+        (stop_time - start_time) / len(services)
+    ))
+
+
