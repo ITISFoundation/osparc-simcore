@@ -319,7 +319,7 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
 async def _get_repos_from_key(service_key: str) -> List[Dict]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
-        service_key: await registry_proxy.retrieve_list_of_image_tags(service_key)
+        service_key: await registry_proxy.list_image_tags(service_key)
     }
     log.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:

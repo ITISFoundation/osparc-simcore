@@ -28,10 +28,13 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     log.debug("Client does services_get request %s with service_type %s", request, service_type)
     try:
         services = []
-        if not service_type or "computational" in service_type:
-            services.extend(await _list_services(registry_proxy.list_computational_services))
-        if not service_type or "interactive" in service_type:
-            services.extend(await _list_services(registry_proxy.list_interactive_services))
+        if not service_type:
+            services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
+        elif "computational" in service_type:
+            services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
+        elif "interactive" in service_type:
+            services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
+        services = node_validator.validate_nodes(services)
         return web.json_response(data=dict(data=services))
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
@@ -41,7 +44,7 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
 async def services_by_key_version_get(request, service_key, service_version):  # pylint:disable=unused-argument
     log.debug("Client does services_get request %s with service_key %s, service_version %s", request, service_key, service_version)
     try:
-        services = [await registry_proxy.get_service_details(service_key, service_version)]
+        services = [await registry_proxy.get_image_details(service_key, service_version)]
         return web.json_response(data=dict(data=services))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
@@ -49,11 +52,6 @@ async def services_by_key_version_get(request, service_key, service_version):  #
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
-
-async def _list_services(list_service_fct):
-    services = await list_service_fct()
-    services = node_validator.validate_nodes(services)
-    return services
 
 async def running_interactive_services_post(request, user_id, project_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument, too-many-arguments
     log.debug("Client does running_interactive_services_post request %s with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s",

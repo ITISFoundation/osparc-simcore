@@ -8,10 +8,12 @@ from simcore_service_director import registry_proxy
 
 
 async def test_list_no_services_available(docker_registry, configure_registry_access, configure_schemas_location):
-    computational_services = await registry_proxy.list_computational_services()
+    computational_services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
     assert (not computational_services) # it's empty
-    interactive_services = await registry_proxy.list_interactive_services()
+    interactive_services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
     assert (not interactive_services)
+    all_services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
+    assert (not all_services)
 
 async def test_list_services_with_bad_json_formatting(docker_registry, configure_registry_access, configure_schemas_location, push_services):
     # some services
@@ -19,28 +21,30 @@ async def test_list_services_with_bad_json_formatting(docker_registry, configure
                                     number_of_interactive_services=2,
                                     bad_json_format=True)
     assert len(created_services) == 5
-    computational_services = await registry_proxy.list_computational_services()
+    computational_services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
     assert (not computational_services) # it's empty
-    interactive_services = await registry_proxy.list_interactive_services()
+    interactive_services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
     assert (not interactive_services)
+    all_services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
+    assert (not all_services)
 
 
 async def test_list_computational_services(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     push_services( number_of_computational_services=6,
                    number_of_interactive_services=3)
 
-    computational_services = await registry_proxy.list_computational_services()
+    computational_services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
     assert len(computational_services) == 6
 
 
 async def test_list_interactive_services(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     push_services( number_of_computational_services=5,
                    number_of_interactive_services=4)
-    interactive_services = await registry_proxy.list_interactive_services()
+    interactive_services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
     assert len(interactive_services) == 4
 
 
-async def test_retrieve_list_of_image_tags(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_list_of_image_tags(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     images = push_services( number_of_computational_services=5,
                             number_of_interactive_services=3)
     image_number = {}
@@ -52,7 +56,7 @@ async def test_retrieve_list_of_image_tags(docker_registry, push_services, confi
         image_number[key] = image_number[key]+1
 
     for key, number in image_number.items():
-        list_of_image_tags = await registry_proxy.retrieve_list_of_image_tags(key)
+        list_of_image_tags = await registry_proxy.list_image_tags(key)
         assert len(list_of_image_tags) == number
 
 
@@ -126,12 +130,12 @@ def test_get_service_last_namess():
     assert registry_proxy.get_service_last_names(repo) == "invalid service"
 
 
-async def test_get_service_details(push_services, configure_registry_access, configure_schemas_location):
+async def test_get_image_details(push_services, configure_registry_access, configure_schemas_location):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
     for image in images:
         service_description = image["service_description"]
-        details = await registry_proxy.get_service_details(service_description["key"], service_description["version"])
+        details = await registry_proxy.get_image_details(service_description["key"], service_description["version"])
 
         assert details == service_description
 
@@ -139,7 +143,7 @@ import time
 # @pytest.mark.skip(reason="test needs credentials to real registry")
 async def test_get_services_performance(loop, configure_custom_registry):
     start_time = time.perf_counter()
-    services = await registry_proxy.list_interactive_services()
+    services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
     stop_time = time.perf_counter()
     print("\nTime to run getting interactive services: {}s, #services {}, time per call {}s/service".format(
         stop_time - start_time,
@@ -147,7 +151,7 @@ async def test_get_services_performance(loop, configure_custom_registry):
         (stop_time - start_time) / len(services)
     ))
     start_time = time.perf_counter()
-    services = await registry_proxy.list_computational_services()
+    services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
     stop_time = time.perf_counter()
     print("\nTime to run getting computational services: {}s, #services {}, time per call {}s/service".format(
         stop_time - start_time,

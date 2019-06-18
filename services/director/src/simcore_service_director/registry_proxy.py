@@ -17,6 +17,7 @@ NUMBER_OF_RETRIEVED_TAGS = 50
 _logger = logging.getLogger(__name__)
 
 class ServiceType(enum.Enum):
+    ALL = ""
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
 
@@ -46,6 +47,9 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
                 bearer_code = (await token_resp.json())["token"]
                 headers = {"Authorization": "Bearer {}".format(bearer_code)}
                 async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
+                    if resp_wtoken.status == 404:
+                        _logger.exception("path to registry not found: %s", url)
+                        raise exceptions.ServiceNotAvailableError(url)
                     if resp_wtoken.status > 399:
                         _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
                         raise exceptions.RegistryConnectionError(str(resp_wtoken))
@@ -56,6 +60,9 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
         async with aiohttp.ClientSession() as session:
             # basic authentication
             async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+                if resp_wbasic.status == 404:
+                    _logger.exception("path to registry not found: %s", url)
+                    raise exceptions.ServiceNotAvailableError(url)
                 if resp_wbasic.status > 399:
                     _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
                     raise exceptions.RegistryConnectionError(str(resp_wbasic))
@@ -99,6 +106,7 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
             _registry_requests_cache[cache_key] = (resp_data, resp_headers)
             return (resp_data, resp_headers)
 
+
 async def _list_repositories() -> List[str]:
     # if there are more repos, the Link will be available in the response headers until none available
     loop = True
@@ -112,7 +120,7 @@ async def _list_repositories() -> List[str]:
         loop = "Link" in headers
     return repos_list
 
-async def _get_image_details(image_key: str, image_tag: str) -> Dict:
+async def get_image_details(image_key: str, image_tag: str) -> Dict:
     image_tags = {}
     request = URL("v2/{}/manifests/{}".format(image_key, image_tag))
     label_data, _ = await _registry_request(request)
@@ -133,7 +141,7 @@ async def _get_image_details(image_key: str, image_tag: str) -> Dict:
 
     return image_tags
 
-async def _list_image_tags(image_key: str) -> List[Dict]:
+async def list_image_tags(image_key: str) -> List[Dict]:
     image_tags = []
     # get list of repo versions
     loop = True
@@ -148,40 +156,39 @@ async def _list_image_tags(image_key: str) -> List[Dict]:
 
 async def _get_repo_details(image_key: str) -> List[Dict]:
     repo_details = []
-    image_tags = await _list_image_tags(image_key)
+    image_tags = await list_image_tags(image_key)
     for tag in image_tags:
-        image_details = await _get_image_details(image_key, tag)
+        image_details = await get_image_details(image_key, tag)
         if image_details:
             repo_details.append(image_details)
     return repo_details
 
-async def _list_services(service_type: ServiceType) -> List[List[Dict]]:
+async def list_services(service_type: ServiceType) -> List[List[Dict]]:
     _logger.debug("getting list of services")
+    import time
+    start_time = time.perf_counter()
     repos = await _list_repositories()
+    stop_time = time.perf_counter()
+    print("time for getting list of repos {}s".format(stop_time-start_time))
     # get the services repos
     filtered_repos = [repo for repo in repos if str(repo).startswith(_get_prefix(service_type))]
     _logger.debug("retrieved list of repos : %s", filtered_repos)
 
+    start_time = time.perf_counter()
     # only list as service if it actually contains the necessary labels
     services = []
     for repo in filtered_repos:
-        details = await _get_repo_details(repo)
-        for repo_detail in details:
-            services.append(repo_detail)
+        try:
+            details = await _get_repo_details(repo)
+            for repo_detail in details:
+                services.append(repo_detail)
+        except exceptions.ServiceNotAvailableError:
+            # there might be service in bad shape
+            continue
 
+    stop_time = time.perf_counter()
+    print("time for getting details of repos {}s".format(stop_time-start_time))
     return services
-
-async def list_computational_services() -> List[List[Dict]]:
-    return await _list_services(ServiceType.COMPUTATIONAL)
-
-async def list_interactive_services() -> List[List[Dict]]:
-    return await _list_services(ServiceType.DYNAMIC)
-
-async def get_service_details(service_key: str, service_version: str) -> List[Dict]:
-    return await _get_image_details(service_key, service_version)
-
-async def retrieve_list_of_image_tags(image_key: str):
-    return await _list_image_tags(image_key)
 
 async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
     image_labels = await retrieve_labels_of_image(service_key, service_tag)
@@ -204,6 +211,8 @@ async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
     return labels
 
 def _get_prefix(service_type: ServiceType) -> str:
+    if service_type == ServiceType.ALL:
+        return "{}/".format(config.SIMCORE_SERVICES_PREFIX)
     return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
 
 def get_service_first_name(image_key: str) -> str:
