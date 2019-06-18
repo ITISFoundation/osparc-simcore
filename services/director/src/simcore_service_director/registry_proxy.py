@@ -1,4 +1,5 @@
 #pylint: disable=C0111
+import asyncio
 import enum
 import json
 import logging
@@ -108,8 +109,8 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
             _registry_requests_cache[cache_key] = (resp_data, resp_headers)
             return (resp_data, resp_headers)
 
-
 async def _list_repositories() -> List[str]:
+    _logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
     loop = True
     request = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
@@ -120,13 +121,35 @@ async def _list_repositories() -> List[str]:
             repos_list.extend(result["repositories"])
         request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
         loop = "Link" in headers
+    _logger.debug("listed %s repositories", len(repos_list))
     return repos_list
+
+async def list_image_tags(image_key: str) -> List[Dict]:
+    _logger.debug("listing image tags in %s", image_key)
+    image_tags = []
+    # get list of image tags
+    loop = True
+    request = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
+    while loop:
+        tags, headers = await _registry_request(request)
+        if tags["tags"]:
+            image_tags.extend(tags["tags"])
+        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
+        loop = "Link" in headers
+    _logger.debug("Found %s image tags in %s", len(image_tags), image_key)
+    return image_tags
+
+async def get_image_labels(image: str, tag: str) -> Dict:
+    _logger.debug("getting image labels of %s:%s", image, tag)
+    request = URL("v2/{}/manifests/{}".format(image, tag))
+    request_result, _ = await _registry_request(request)
+    labels = json.loads(request_result["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
+    return labels
 
 async def get_image_details(image_key: str, image_tag: str) -> Dict:
     image_tags = {}
-    request = URL("v2/{}/manifests/{}".format(image_key, image_tag))
-    label_data, _ = await _registry_request(request)
-    labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+    labels = await get_image_labels(image_key, image_tag)
     if not labels:
         return image_tags
     for key in labels:
@@ -143,57 +166,39 @@ async def get_image_details(image_key: str, image_tag: str) -> Dict:
 
     return image_tags
 
-async def list_image_tags(image_key: str) -> List[Dict]:
-    image_tags = []
-    # get list of repo versions
-    loop = True
-    request = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
-    while loop:
-        tags, headers = await _registry_request(request)
-        if tags["tags"]:
-            image_tags.extend(tags["tags"])
-        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
-        loop = "Link" in headers
-    return image_tags
-
-async def _get_repo_details(image_key: str) -> List[Dict]:
+async def get_repo_details(image_key: str) -> List[Dict]:
     repo_details = []
     image_tags = await list_image_tags(image_key)
-    for tag in image_tags:
-        image_details = await get_image_details(image_key, tag)
+    tasks = [get_image_details(image_key, tag) for tag in image_tags]
+    results = await asyncio.gather(*tasks)
+    for image_details in results:
         if image_details:
             repo_details.append(image_details)
     return repo_details
 
-async def list_services(service_type: ServiceType) -> List[List[Dict]]:
+async def list_services(service_type: ServiceType) -> List[Dict]:
     _logger.debug("getting list of services")
-    import time
-    start_time = time.perf_counter()
     repos = await _list_repositories()
-    stop_time = time.perf_counter()
-    print("time for getting list of repos {}s".format(stop_time-start_time))
     # get the services repos
-    filtered_repos = [repo for repo in repos if str(repo).startswith(_get_prefix(service_type))]
-    _logger.debug("retrieved list of repos : %s", filtered_repos)
-
-    start_time = time.perf_counter()
+    prefixes = []
+    if service_type in [ServiceType.DYNAMIC, ServiceType.ALL]:
+        prefixes.append(_get_prefix(ServiceType.DYNAMIC))
+    if service_type in [ServiceType.COMPUTATIONAL, ServiceType.ALL]:
+        prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
+    repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
+    _logger.debug("retrieved list of repos : %s", repos)
+    
     # only list as service if it actually contains the necessary labels
+    tasks = [get_repo_details(repo) for repo in repos]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     services = []
-    for repo in filtered_repos:
-        try:
-            details = await _get_repo_details(repo)
-            for repo_detail in details:
-                services.append(repo_detail)
-        except exceptions.ServiceNotAvailableError:
-            # there might be service in bad shape
-            continue
-
-    stop_time = time.perf_counter()
-    print("time for getting details of repos {}s".format(stop_time-start_time))
+    for repo_details in results:
+        if repo_details and isinstance(repo_details, list):
+            services.extend(repo_details)
     return services
 
 async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
-    image_labels = await retrieve_labels_of_image(service_key, service_tag)
+    image_labels = await get_image_labels(service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
@@ -205,16 +210,7 @@ async def list_interactive_service_dependencies(service_key: str, service_tag: s
 
     return dependency_keys
 
-async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
-    request = URL("v2/{}/manifests/{}".format(image, tag))
-    request_result, _ = await _registry_request(request)
-    labels = json.loads(request_result["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
-    return labels
-
 def _get_prefix(service_type: ServiceType) -> str:
-    if service_type == ServiceType.ALL:
-        return "{}/".format(config.SIMCORE_SERVICES_PREFIX)
     return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
 
 def get_service_first_name(image_key: str) -> str:

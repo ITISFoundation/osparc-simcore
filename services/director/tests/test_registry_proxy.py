@@ -77,12 +77,12 @@ async def test_list_interactive_service_dependencies(docker_registry, push_servi
 
 
 
-async def test_retrieve_labels_of_image(docker_registry, push_services, configure_registry_access, configure_schemas_location):
+async def test_get_image_labels(docker_registry, push_services, configure_registry_access, configure_schemas_location):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
     for image in images:
         service_description = image["service_description"]
-        labels = await registry_proxy.retrieve_labels_of_image(service_description["key"], service_description["version"])
+        labels = await registry_proxy.get_image_labels(service_description["key"], service_description["version"])
         assert "io.simcore.key" in labels
         assert "io.simcore.version" in labels
         assert "io.simcore.type" in labels
@@ -143,20 +143,11 @@ import time
 # @pytest.mark.skip(reason="test needs credentials to real registry")
 async def test_get_services_performance(loop, configure_custom_registry):
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(registry_proxy.ServiceType.DYNAMIC)
+    services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
     stop_time = time.perf_counter()
-    print("\nTime to run getting interactive services: {}s, #services {}, time per call {}s/service".format(
+    print("\nTime to run getting services: {}s, #services {}, time per call {}s/service".format(
         stop_time - start_time,
         len(services),
         (stop_time - start_time) / len(services)
     ))
-    start_time = time.perf_counter()
-    services = await registry_proxy.list_services(registry_proxy.ServiceType.COMPUTATIONAL)
-    stop_time = time.perf_counter()
-    print("\nTime to run getting computational services: {}s, #services {}, time per call {}s/service".format(
-        stop_time - start_time,
-        len(services),
-        (stop_time - start_time) / len(services)
-    ))
-
-
+    

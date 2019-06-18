@@ -250,7 +250,7 @@ import time
 async def test_performance_get_services(loop, configure_custom_registry, configure_schemas_location):
     fake_request = "fake request"
     start_time = time.perf_counter()
-    number_of_calls = 3
+    number_of_calls = 1
     number_of_services = 0
     for i in range(number_of_calls):
         print("calling iteration", i)

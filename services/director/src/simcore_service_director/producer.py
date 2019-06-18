@@ -59,7 +59,7 @@ async def _check_setting_correctness(setting: Dict):
 
 async def _read_service_settings(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
+    image_labels = await registry_proxy.get_image_labels(key, tag)
     runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS]) if SERVICE_RUNTIME_SETTINGS in image_labels else {}
     log.debug("Retrieved service runtime settings: %s", runtime_parameters)
     return runtime_parameters
@@ -67,7 +67,7 @@ async def _read_service_settings(key: str, tag: str) -> Dict:
 
 async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
+    image_labels = await registry_proxy.get_image_labels(key, tag)
     boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS]) if SERVICE_RUNTIME_BOOTSETTINGS in image_labels else {}
     log.debug("Retrieved service boot settings: %s", boot_params)
     return boot_params
