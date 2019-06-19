@@ -1,10 +1,10 @@
 # pylint: disable=W0613, W0621
 
 import json
-
+import time
 import pytest
 
-from simcore_service_director import registry_proxy
+from simcore_service_director import registry_proxy, config
 
 
 async def test_list_no_services_available(docker_registry, configure_registry_access, configure_schemas_location):
@@ -139,7 +139,20 @@ async def test_get_image_details(push_services, configure_registry_access, confi
 
         assert details == service_description
 
-async def test_registry_caching(push_services, configure_registry_access, configure_schemas_location)é
+async def test_registry_caching(push_services, configure_registry_access, configure_schemas_location):
+    images = push_services(number_of_computational_services=1,
+                           number_of_interactive_services=1)
+    config.REGISTRY_CACHING = True
+    start_time = time.perf_counter()
+    services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
+    time_to_retrieve_without_cache = time.perf_counter() - start_time
+    assert len(services) == len(images)
+    start_time = time.perf_counter()
+    services = await registry_proxy.list_services(registry_proxy.ServiceType.ALL)
+    time_to_retrieve_with_cache = time.perf_counter() - start_time
+    assert len(services) == len(images)
+    assert time_to_retrieve_with_cache < time_to_retrieve_without_cache
+
 
 @pytest.mark.skip(reason="test needs credentials to real registry")
 async def test_get_services_performance(loop, configure_custom_registry):
