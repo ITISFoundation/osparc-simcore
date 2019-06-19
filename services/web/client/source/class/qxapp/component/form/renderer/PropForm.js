@@ -84,7 +84,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           column: 0
         });
         label.setBuddy(item);
-        this._add(new qxapp.component.form.TextFieldWHint(null, item), {
+        this._add(new qxapp.component.form.FieldWHint(null, "Lorem impsum sit amet", item), {
           row: this._row,
           column: 1
         });
