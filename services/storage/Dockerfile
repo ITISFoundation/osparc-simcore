@@ -48,11 +48,6 @@ RUN $SC_PIP install --upgrade \
       wheel \
       setuptools
 
-RUN apk add --no-cache python2 python2-dev  && \
-    python2 -m ensurepip && \
-    rm -r /usr/lib/python*/ensurepip && \
-    $SC_PIP2 install --upgrade pip setuptools
-
 WORKDIR /build
 
 # install base 3rd party dependencies
@@ -61,13 +56,6 @@ COPY  --chown=scu:scu services/storage/requirements/*.txt \
 
 RUN $SC_PIP install \
       -r tmp/storage/requirements/_base.txt
-
-
-COPY  --chown=scu:scu services/storage/requirements/py27/*.txt \
-      tmp/storage/requirements/py27/
-
-RUN $SC_PIP2 install numpy==1.16.0 &&\
-    $SC_PIP2 install -r tmp/storage/requirements/py27/base.txt
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
