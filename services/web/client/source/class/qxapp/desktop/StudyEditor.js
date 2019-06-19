@@ -211,14 +211,17 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           appearance: "service-window",
           showMinimize: false
         });
-        widget.addListener("finished", () => filePicker.close());
+        const showParentWorkbench = () => {
+          const node = widget.getNode();
+          this.nodeSelected(node.getParentNodeId() || "root");
+        }
         filePicker.add(widget);
         qx.core.Init.getApplication().getRoot().add(filePicker);
         filePicker.show();
         filePicker.center();
-        // show parent workbench
-        const node = widget.getNode();
-        this.nodeSelected(node.getParentNodeId() || "root");
+        
+        widget.addListener("finished", () => filePicker.close(), this);
+        filePicker.addListener("close", () => showParentWorkbench());
       } else {
         this.showInMainView(widget, nodeId);
       }
