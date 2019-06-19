@@ -214,12 +214,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         const showParentWorkbench = () => {
           const node = widget.getNode();
           this.nodeSelected(node.getParentNodeId() || "root");
-        }
+        };
         filePicker.add(widget);
         qx.core.Init.getApplication().getRoot().add(filePicker);
         filePicker.show();
         filePicker.center();
-        
+
         widget.addListener("finished", () => filePicker.close(), this);
         filePicker.addListener("close", () => showParentWorkbench());
       } else {
@@ -257,14 +257,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           if (widget === null) {
             widget = this.__workbenchUI;
           }
+        } else if (node.isInKey("file-picker")) {
+          widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
         } else {
-          if (node.isInKey("file-picker")) {
-            widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
-          } else {
-            this.__nodeView.setNode(node);
-            this.__nodeView.buildLayout();
-            widget = this.__nodeView;
-          }
+          this.__nodeView.setNode(node);
+          this.__nodeView.buildLayout();
+          widget = this.__nodeView;
         }
       }
       return widget;
