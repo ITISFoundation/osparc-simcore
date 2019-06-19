@@ -192,7 +192,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {
       if (!nodeId) {
-        this.__loggerView.nodeSelected();
+        this.__loggerView.setCurrentNodeId();
         return;
       }
       if (this.__nodeView) {
@@ -230,7 +230,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.__switchExtraView(nodeId);
 
       this.__treeView.nodeSelected(nodeId, openNodeAndParents);
-      this.__loggerView.nodeSelected(nodeId);
+      this.__loggerView.setCurrentNodeId(nodeId);
     },
 
     __getWidgetForNode: function(nodeId) {
