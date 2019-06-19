@@ -11,6 +11,7 @@ from typing import List, Tuple, Dict
 import aiofiles
 import aiohttp
 import attr
+import asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
@@ -47,7 +48,7 @@ async def _setup_dsm(app: web.Application):
     python27_exec = Path(main_cfg["python2"])
 
     engine = app.get(APP_DB_ENGINE_KEY)
-    loop = app.loop
+    loop = asyncio.get_event_loop()
     s3_client = app.get(APP_S3_KEY)
 
     max_workers = main_cfg["max_workers"]

@@ -91,6 +91,6 @@ class ReverseChooser:
 
 
         response = await handler(request, service_url,
-                                 mountpoint=mountpoint,
+                                 mount_point=mountpoint,
                                  proxy_path=proxy_path)
         return response

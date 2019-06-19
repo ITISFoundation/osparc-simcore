@@ -94,7 +94,8 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
             "SIMCORE_USER_ID": user_id,
             "SIMCORE_NODE_UUID": node_uuid,
             "SIMCORE_PROJECT_ID": project_id,
-            "SIMCORE_NODE_BASEPATH": node_base_path or ""
+            "SIMCORE_NODE_BASEPATH": node_base_path or "",
+            "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX)
     }
