@@ -72,10 +72,17 @@ def user_id():
 def project_id():
     yield "some_project_id"
 
+def pytest_addoption(parser):
+    parser.addoption("--registry_url", action="store", default="default url")
+    parser.addoption("--registry_user", action="store", default="default user")
+    parser.addoption("--registry_pw", action="store", default="default pw")
+
 @pytest.fixture(scope="session")
-def configure_custom_registry():
-    config.REGISTRY_URL = "some registry"
+def configure_custom_registry(pytestconfig):
+    # to set these values call
+    # pytest --registry_url myregistry --registry_user username --registry_pw password
+    config.REGISTRY_URL = pytestconfig.getoption("registry_url")
     config.REGISTRY_AUTH = True
-    config.REGISTRY_USER = "username"
-    config.REGISTRY_PW = "pw"
+    config.REGISTRY_USER = pytestconfig.getoption("registry_user")
+    config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
     config.REGISTRY_CACHING = False
