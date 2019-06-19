@@ -251,11 +251,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
             widget = this.__workbenchUI;
           }
         } else {
-          this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
           if (node.isInKey("file-picker")) {
             widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
           } else {
+            this.__nodeView.setNode(node);
+            this.__nodeView.buildLayout();
             widget = this.__nodeView;
           }
         }
