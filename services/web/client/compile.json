@@ -73,6 +73,9 @@
     "add-css": [
       {
         "uri": "resource/jsontreeviewer/jsonTree.css"
+      },
+      {
+        "uri": "resource/hint/hint.css"
       }
     ],
     "add-script": [

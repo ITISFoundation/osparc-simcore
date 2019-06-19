@@ -84,16 +84,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           column: 0
         });
         label.setBuddy(item);
-        this._add(item, {
+        this._add(new qxapp.component.form.TextFieldWHint(null, item), {
           row: this._row,
           column: 1
-        });
-        const infoIcon = new qxapp.component.form.IconButton("@FontAwesome5Solid/info-circle/16").set({
-          visibility: "hidden"
-        });
-        this._add(infoIcon, {
-          row: this._row,
-          column: 2
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -114,13 +107,11 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           if (this.getNode()) {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocus", msgDataFn);
           }
-          infoIcon.show();
         }, this);
         item.addListener("focusout", () => {
           if (this.getNode()) {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
-          infoIcon.hide();
         }, this);
       }
     },

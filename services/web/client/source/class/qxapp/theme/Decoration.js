@@ -135,6 +135,12 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         width: 0
       }
+    },
+
+    "hint": {
+      style: {
+        radius: 3
+      }
     }
   }
 });

@@ -333,6 +333,19 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         font: "title-16"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Hints
+    ---------------------------------------------------------------------------
+    */
+    "hint": {
+      style: state => ({
+        backgroundColor: "background-main-lighter+",
+        decorator: "hint",
+        height: 50
+      })
     }
   }
 });
