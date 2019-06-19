@@ -146,7 +146,9 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
                 resp_headers = response.headers
 
             # cache data
-            _registry_requests_cache[cache_key] = (resp_data, resp_headers)
+            if config.REGISTRY_CACHING:
+                _registry_requests_cache[cache_key] = (resp_data, resp_headers)
+
             return (resp_data, resp_headers)
 
 async def _list_repositories() -> List[str]:
