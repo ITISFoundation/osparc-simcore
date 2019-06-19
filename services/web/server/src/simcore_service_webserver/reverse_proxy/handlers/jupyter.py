@@ -7,7 +7,8 @@ import logging
 import pprint
 
 import aiohttp
-from aiohttp import client, web
+from aiohttp import web 
+from .aiohttp_client_extension import client_request
 from yarl import URL
 
 
@@ -22,9 +23,10 @@ SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/cc-1d-viewer",
                         "simcore/services/dynamic/cc-0d-viewer",
                         "simcore/services/dynamic/spat-an-app-nb",
-                        "simcore/services/dynamic/raw-graphs"
+                        "simcore/services/dynamic/raw-graphs",
+                        "simcore/services/dynamic/mattward-dash",
+                        "simcore/services/dynamic/bornstein-dash"
                         ]
-SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
                 req.app[APP_SOCKETS_KEY].remove(ws_server)
     else:
         target_url = URL(service_url).origin().with_path(req.path).with_query(req.query)
-        async with client.request(
+        async with client_request(
             req.method, target_url,
             headers=reqH,
             allow_redirects=False,
@@ -98,7 +100,21 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
                 status=res.status,
                 body=body
             )
-            return response
+        # TODO: PC add chunks load. Mattwards takes very long to load
+        # TODO: PC unique session or redo context management??
+        # TODO: should be fixed in #710
+        #     response = web.Response(
+        #         headers=res.headers.copy(),
+        #         status=res.status
+        #     )
+        #     await response.prepare(req)
+        #     content = res.content
+        #     whole = await content.read()
+        #     await response.write(whole)
+        logger.debug("<-- %s", target_url)
+        # await response.write_eof()
+        return response
+
 
 
 if __name__ == "__main__":
