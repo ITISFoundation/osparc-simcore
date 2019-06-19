@@ -202,6 +202,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const widget = this.__getWidgetForNode(nodeId);
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
+        // open file picker in window
         const filePicker = new qx.ui.window.Window(this.tr("File picker")).set({
           layout: new qx.ui.layout.Grow(),
           contentPadding: 0,
@@ -215,6 +216,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         qx.core.Init.getApplication().getRoot().add(filePicker);
         filePicker.show();
         filePicker.center();
+        // show parent workbench
+        const node = widget.getNode();
+        this.nodeSelected(node.getParentNodeId() || "root");
       } else {
         this.showInMainView(widget, nodeId);
       }
