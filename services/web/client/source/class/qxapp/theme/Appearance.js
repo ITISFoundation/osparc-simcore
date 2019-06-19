@@ -343,8 +343,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "hint": {
       style: state => ({
         backgroundColor: "background-main-lighter+",
-        decorator: "hint",
-        height: 50
+        decorator: "hint"
       })
     }
   }

@@ -70,7 +70,7 @@ qx.Class.define("qxapp.component.form.TextFieldWHint", {
       this.__textField.addListener("focus", () => this.__infoButton.show(), this);
       this.__textField.addListener("focusout", () => this.__infoButton.exclude(), this);
       this.__infoButton.addListener("mouseover", () => {
-        this.__hint = qxapp.component.hint.HintManager.getHint(this.__infoButton, "Lorem ipsum sit amet");
+        this.__hint = qxapp.component.hint.HintManager.getHint(this.__infoButton, "Lorem ipsum sit amet.");
       }, this);
       this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
     }

@@ -27,7 +27,10 @@ qx.Class.define("qxapp.ui.hint.Hint", {
     });
     this.__caret.getContentElement().addClass("hint");
     this._add(this.__caret);
-    this.__hintContainer.add(new qx.ui.basic.Label(text));
+    this.__hintContainer.add(new qx.ui.basic.Label(text).set({
+      rich: true,
+      maxWidth: 250
+    }));
     this._add(this.__hintContainer, {
       flex: 1
     });
