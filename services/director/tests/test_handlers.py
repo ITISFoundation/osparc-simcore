@@ -17,7 +17,7 @@ from helpers import json_schema_validator
 API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
 
-async def test_root_get():
+async def test_root_get(loop):
     fake_request = "fake request"
     web_response = await rest.handlers.root_get(fake_request)
     assert web_response.content_type == "application/json"
@@ -51,6 +51,7 @@ def _check_services(created_services, services, schema_version="v1"):
 
 async def test_services_get(docker_registry, configure_schemas_location, push_services):
     fake_request = "fake request"
+    config.REGISTRY_CACHING = False
     # no registry defined
     with pytest.raises(web_exceptions.HTTPInternalServerError):
         services_enveloped = await rest.handlers.services_get(fake_request)
@@ -111,7 +112,7 @@ async def test_services_get(docker_registry, configure_schemas_location, push_se
     assert len(services) == 2
 
 
-async def test_v0_services_conversion_to_new(configure_registry_access, configure_schemas_location, push_v0_schema_services): #pylint: disable=W0613, W0621
+async def test_v0_services_conversion_to_new(loop, configure_registry_access, configure_schemas_location, push_v0_schema_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
     created_services = push_v0_schema_services(3,2)
     assert len(created_services) == 5

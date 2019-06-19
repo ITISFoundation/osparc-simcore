@@ -39,7 +39,7 @@ async def registry_caching_task(app: web.Application):
         _logger.info("initializing...")
         _logger.info("initialisation completed")
         app[TASK_STATE] = TaskState.RUNNING
-        while True:
+        while config.REGISTRY_CACHING:
             _registry_requests_cache.clear()
             await list_services(ServiceType.ALL)
             await asyncio.sleep(15 * 60)
@@ -117,7 +117,7 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
 
 async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     cache_key = "{}_{}".format(path, method)
-    if cache_key in _registry_requests_cache:
+    if config.REGISTRY_CACHING and cache_key in _registry_requests_cache:
         return _registry_requests_cache[cache_key]
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
@@ -227,7 +227,7 @@ async def list_services(service_type: ServiceType) -> List[Dict]:
         prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
     repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
     _logger.debug("retrieved list of repos : %s", repos)
-    
+
     # only list as service if it actually contains the necessary labels
     tasks = [get_repo_details(repo) for repo in repos]
     results = await asyncio.gather(*tasks, return_exceptions=True)

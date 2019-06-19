@@ -62,6 +62,7 @@ def configure_schemas_location(package_dir, shared_schemas_specs_dir):
 def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_SSL = False
+    config.REGISTRY_CACHING = False
 
 @pytest.fixture
 def user_id():
@@ -77,3 +78,4 @@ def configure_custom_registry():
     config.REGISTRY_AUTH = True
     config.REGISTRY_USER = "username"
     config.REGISTRY_PW = "pw"
+    config.REGISTRY_CACHING = False
