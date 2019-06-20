@@ -147,15 +147,21 @@ qx.Theme.define("qxapp.theme.Appearance", {
       PanelView
     ---------------------------------------------------------------------------
     */
+    "panelview": {
+      style: state => ({
+        decorator: "panelview"
+      })
+    },
+    "panelview/title": {
+      style: state => ({
+        font: "title-14"
+      })
+    },
     "panelview-titlebar": {
       style: state => ({
         height: 24,
-        padding: [0, 5]
-      })
-    },
-    "panelview-titlebar-label": {
-      style: state => ({
-        marginTop: 4
+        padding: [0, 5],
+        alignY: "middle"
       })
     },
     "panelview-content": {
