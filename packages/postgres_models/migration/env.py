@@ -16,8 +16,8 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from simcore_postgres_models.api import metadata
-target_metadata = metadata
+from simcore_postgres_models.api import target_metadatas
+target_metadata = target_metadatas
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
