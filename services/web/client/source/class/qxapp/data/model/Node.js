@@ -801,7 +801,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__stopInteractiveNode();
+      this.__stopInteractiveService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -813,7 +813,7 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __stopInteractiveNode: function() {
+    __stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
         const store = qxapp.data.Store.getInstance();
         store.stopInteractiveService(this.getNodeId());
