@@ -184,6 +184,20 @@ qx.Class.define("qxapp.data.model.Node", {
     "showInLogger": "qx.event.type.Data"
   },
 
+  statics: {
+    isDynamic: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "dynamic");
+    },
+
+    isComputational: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "computational");
+    },
+
+    isRealService: function(metaData) {
+      return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
+    }
+  },
+
   members: {
     __metaData: null,
     __innerNodes: null,
@@ -227,17 +241,15 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isDynamic: function() {
-      const metaData = this.getMetaData();
-      return (metaData && metaData.type && metaData.type === "dynamic");
+      return qxapp.data.model.Node.isDynamic(this.getMetaData());
     },
 
     isComputational: function() {
-      const metaData = this.getMetaData();
-      return (metaData && metaData.type && metaData.type === "computational");
+      return qxapp.data.model.Node.isComputational(this.getMetaData());
     },
 
     isRealService: function() {
-      return (this.isInKey("simcore/services/dynamic") || this.isInKey("simcore/services/comp"));
+      return qxapp.data.model.Node.isRealService(this.getMetaData());
     },
 
     getMetaData: function() {
