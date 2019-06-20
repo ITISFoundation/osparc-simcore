@@ -601,23 +601,27 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            let resource = this.__studyResources.project;
-
-            resource.addListenerOnce("delSuccess", ev => {
-              this.reloadUserStudies();
-            }, this);
-
-            resource.del({
-              "project_id": studyData["uuid"]
-            });
-
-            this.__itemSelected(null);
+            this.__deleteStudy(studyData["uuid"]);
           }
         }, this);
       }, this);
       form.addButton(deleteButton);
 
       this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
+    },
+
+    __deleteStudy: function(studyId) {
+      let resource = this.__studyResources.project;
+
+      resource.addListenerOnce("delSuccess", ev => {
+        this.reloadUserStudies();
+      }, this);
+
+      resource.del({
+        "project_id": studyId
+      });
+
+      this.__itemSelected(null);
     },
 
     __createConfirmWindow: function() {
