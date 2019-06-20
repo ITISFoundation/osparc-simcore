@@ -209,7 +209,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           width: 570,
           height: 450,
           appearance: "service-window",
-          showMinimize: false
+          showMinimize: false,
+          modal: true
         });
         const showParentWorkbench = () => {
           const node = widget.getNode();
