@@ -18,7 +18,7 @@
 /**
  * Widget that provides access to the data belonging to the active user.
  * - On the left side: myData FilesTree with the FileLabelWithActions
- * - On the right side: a pie chart reflecting the data resources consumed
+ * - On the right side: a pie chart reflecting the data resources consumed (hidden until there is real info)
  *
  * *Example*
  *
@@ -89,8 +89,11 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      const chartLayout = this.__createChartLayout();
-      dataManagerLayout.add(chartLayout);
+      const showPieChart = false;
+      if (showPieChart) {
+        const chartLayout = this.__createChartLayout();
+        dataManagerLayout.add(chartLayout);
+      }
 
       this._add(dataManagerMainLayout);
     },
