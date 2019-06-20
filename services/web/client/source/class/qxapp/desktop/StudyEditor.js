@@ -200,19 +200,27 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const widget = this.__getWidgetForNode(nodeId);
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
-        const filePicker = new qx.ui.window.Window(this.tr("File picker")).set({
+        // open file picker in window
+        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           layout: new qx.ui.layout.Grow(),
           contentPadding: 0,
           width: 570,
           height: 450,
           appearance: "service-window",
-          showMinimize: false
+          showMinimize: false,
+          modal: true
         });
-        widget.addListener("finished", () => filePicker.close());
+        const showParentWorkbench = () => {
+          const node = widget.getNode();
+          this.nodeSelected(node.getParentNodeId() || "root");
+        };
         filePicker.add(widget);
         qx.core.Init.getApplication().getRoot().add(filePicker);
         filePicker.show();
         filePicker.center();
+
+        widget.addListener("finished", () => filePicker.close(), this);
+        filePicker.addListener("close", () => showParentWorkbench());
       } else {
         this.showInMainView(widget, nodeId);
       }
@@ -246,14 +254,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           if (widget === null) {
             widget = this.__workbenchUI;
           }
+        } else if (node.isInKey("file-picker")) {
+          widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
         } else {
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
-          if (node.isInKey("file-picker")) {
-            widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
-          } else {
-            widget = this.__nodeView;
-          }
+          widget = this.__nodeView;
         }
       }
       return widget;
