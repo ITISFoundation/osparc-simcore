@@ -153,7 +153,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     iFrame: {
       check: "qxapp.component.widget.PersistentIframe",
-      init: null
+      init: null,
+      nullable: true
     },
 
     restartIFrameButton: {
@@ -816,11 +817,10 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     removeIFrame: function() {
-      return;
-      let iFrame = this.getIFrame(null);
+      let iFrame = this.getIFrame();
       if (iFrame) {
-        iFrame.destructMe();
-        iFrame = null;
+        iFrame.destroy();
+        this.setIFrame(null);
       }
     },
 
