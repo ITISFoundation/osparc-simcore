@@ -27,13 +27,13 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+ *   let srvCat = new qxapp.component.workbench.ServiceCatalog();
  *   srvCat.center();
  *   srvCat.open();
  * </pre>
  */
 
-qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue", {
+qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
   extend: qx.ui.window.Window,
 
   construct: function() {
@@ -41,17 +41,16 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     this.set({
       showMinimize: false,
-      showStatusbar: false,
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      caption: this.tr("Services Catalogue"),
+      caption: this.tr("Service catalog"),
       appearance: "service-window",
       contentPadding: 0
     });
 
-    let catalogueLayout = new qx.ui.layout.VBox();
-    this.setLayout(catalogueLayout);
+    let catalogLayout = new qx.ui.layout.VBox();
+    this.setLayout(catalogLayout);
 
     let filterLayout = this.__createFilterLayout();
     this.add(filterLayout);
@@ -97,7 +96,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       const filterPart = new qx.ui.toolbar.Part().set({
         spacing: 10
       });
-      const filters = new qxapp.desktop.ServiceFilters("serviceCatalogue");
+      const filters = new qxapp.desktop.ServiceFilters("serviceCatalog");
       this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
       const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
@@ -128,7 +127,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalogue").set({
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalog").set({
         width: 568
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
@@ -304,7 +303,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         modal: true,
         width: 550,
         height: 550,
-        layout: new qx.ui.layout.Canvas()
+        layout: new qx.ui.layout.Canvas(),
+        appearance: "service-window"
       });
       win.add(jsonTreeWidget, {
         top: -30,
@@ -322,7 +322,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __attachEventHandlers: function() {
       this.addListener("appear", () => {
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalogue");
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
         this.__textfield.focus();
       }, this);
       this.__textfield.addListener("keypress", e => {
