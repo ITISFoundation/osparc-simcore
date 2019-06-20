@@ -644,14 +644,14 @@ qx.Class.define("qxapp.data.model.Node", {
 
     startInteractiveNode: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
         retrieveBtn.setEnabled(false);
         this.setRetrieveIFrameButton(retrieveBtn);
 
-        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/16");
+        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);

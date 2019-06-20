@@ -54,7 +54,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     titlePart.add(new qx.ui.basic.Atom(this.tr("Inputs")).set({
       font: "title-18"
     }));
-    const collapseBtn = this.__collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/16");
+    const collapseBtn = this.__collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
     buttonPart.add(collapseBtn);
     inputPanel.add(titleBar);
 
@@ -122,7 +122,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       });
       titlePart.add(title);
 
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/16");
+      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
       buttonsPart.add(filesBtn);
 
       filesBtn.addListener("execute", function() {

@@ -147,16 +147,14 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children[i];
-        if ("key" in child && child.key === portId) {
+        if (child.getField && child.getField().key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
           let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          let unlinkBtn = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/unlink/16"
-          });
+          let unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
           unlinkBtn.addListener("execute", function() {
             this.fireDataEvent("removeLink", portId);
           }, this);
@@ -177,7 +175,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
-          this._addAt(this._form.getControl(portId), i, {
+          this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
             row: layoutProps.row,
             column: 1
           });
