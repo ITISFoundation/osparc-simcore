@@ -7,22 +7,28 @@
 
 import json
 import uuid
+from urllib.parse import quote
 
 import pytest
-from aiohttp import web_exceptions
-from simcore_service_director import config, resources, rest
+from aiohttp import web, web_exceptions
 
 from helpers import json_schema_validator
+from simcore_service_director import config, main, resources, rest
 
 API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
-
-async def test_root_get(loop):
-    fake_request = "fake request"
-    web_response = await rest.handlers.root_get(fake_request)
+@pytest.fixture
+def client(loop, aiohttp_client, aiohttp_unused_port, configure_schemas_location, configure_registry_access):
+    app = main.setup_app()    
+    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
+    client = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
+    return client
+    
+async def test_root_get(loop, client):
+    web_response = await client.get("/v0/")
     assert web_response.content_type == "application/json"
     assert web_response.status == 200
-    healthcheck_enveloped = json.loads(web_response.text)
+    healthcheck_enveloped = await web_response.json()
     assert "data" in healthcheck_enveloped
 
     assert isinstance(healthcheck_enveloped["data"], dict)
@@ -49,93 +55,69 @@ def _check_services(created_services, services, schema_version="v1"):
         json_schema_validator.validate_instance_object(service, service_schema)
 
 
-async def test_services_get(docker_registry, configure_schemas_location, push_services):
-    fake_request = "fake request"
-    config.REGISTRY_CACHING = False
-    # no registry defined
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        services_enveloped = await rest.handlers.services_get(fake_request)
-
-    # wrong registry defined
-    config.REGISTRY_URL = "blahblah"
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        services_enveloped = await rest.handlers.services_get(fake_request)
-
-    # right registry defined
-    config.REGISTRY_URL = docker_registry
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        services_enveloped = await rest.handlers.services_get(fake_request)
-
-    # no SSL
-    config.REGISTRY_SSL = False
+async def test_services_get(docker_registry, client, push_services):
     # empty case
-    web_response = await rest.handlers.services_get(fake_request)
+    web_response = await client.get("/v0/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
+    services_enveloped = await web_response.json()
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services([], services)
 
     # some services
     created_services = push_services(3,2)
-    web_response = await rest.handlers.services_get(fake_request)
+    web_response = await client.get("/v0/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
+    services_enveloped = await web_response.json()
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services(created_services, services)
+    
+    web_response = await client.get("/v0/services?service_type=blahblah")
+    assert web_response.status == 400
+    assert web_response.content_type == "application/json"
+    services_enveloped = await web_response.json()
+    assert not "data" in services_enveloped
+    assert "error" in services_enveloped
 
-    web_response = await rest.handlers.services_get(fake_request, "blahblah")
+    web_response = await client.get("/v0/services?service_type=computational")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    assert len(services) == 0
-
-    web_response = await rest.handlers.services_get(fake_request, "computational")
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
+    services_enveloped = await web_response.json()
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     assert len(services) == 3
 
-    web_response = await rest.handlers.services_get(fake_request, "interactive")
+    web_response = await client.get("/v0/services?service_type=interactive")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
+    services_enveloped = await web_response.json()
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     assert len(services) == 2
 
 
-async def test_v0_services_conversion_to_new(loop, configure_registry_access, configure_schemas_location, push_v0_schema_services): #pylint: disable=W0613, W0621
-    fake_request = "fake request"
+async def test_v0_services_conversion_to_new(client, push_v0_schema_services): #pylint: disable=W0613, W0621
     created_services = push_v0_schema_services(3,2)
     assert len(created_services) == 5
-    web_response = await rest.handlers.services_get(fake_request)
+    web_response = await client.get("/v0/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
+    services_enveloped = await web_response.json()
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     # ensure old style services are not retrieved
     assert len(services) == 0
 
-
-async def test_services_by_key_version_get(configure_registry_access, configure_schemas_location, push_services): #pylint: disable=W0613, W0621
-    fake_request = "fake request"
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.services_by_key_version_get(fake_request, None, None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", "ofwhateverversion")
+async def test_services_by_key_version_get(client, push_services): #pylint: disable=W0613, W0621
+    web_response = await client.get("/v0/services/whatever/someversion")
+    assert web_response.status == 400    
+    web_response = await client.get("/v0/services/simcore/services/dynamic/something/someversion")
+    assert web_response.status == 404
+    web_response = await client.get("/v0/services/simcore/services/dynamic/something/1.5.2")
+    assert web_response.status == 404
 
     created_services = push_services(3,2)
     assert len(created_services) == 5
@@ -143,70 +125,64 @@ async def test_services_by_key_version_get(configure_registry_access, configure_
     retrieved_services = []
     for created_service in created_services:
         service_description = created_service["service_description"]
-        web_response = await rest.handlers.services_by_key_version_get(fake_request, service_description["key"], service_description["version"])
-        assert web_response.status == 200
+        # note that it is very important to remove the safe="/" from quote!!!!
+        url = "/v0/services/{}/{}".format(quote(service_description["key"], safe=""), quote(service_description["version"], safe=""))
+        web_response = await client.get(url)
+        
+        assert web_response.status == 200, await web_response.text() #here the error is actually json.
         assert web_response.content_type == "application/json"
-        services_enveloped = json.loads(web_response.text)
+        services_enveloped = await web_response.json()
+        
         assert isinstance(services_enveloped["data"], list)
         services = services_enveloped["data"]
         assert len(services) == 1
         retrieved_services.append(services[0])
     _check_services(created_services, retrieved_services)
 
-async def _start_get_stop_services(push_services, user_id, project_id):
-    fake_request = "fake request"
+async def _start_get_stop_services(client, push_services, user_id, project_id):
+    params = {}
+    web_response = await client.post("/v0/running_interactive_services", params=params)
+    assert web_response.status == 400
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None, None)
+    params = {
+        "user_id": "None",
+        "project_id": "None",
+        "service_uuid": "sdlfkj4",
+        "service_key": "None",
+        "service_tag": "None", # optional
+        "service_basepath": "None" #optional
+    }
+    web_response = await client.post("/v0/running_interactive_services", params=params)
+    data = await web_response.json()
+    assert web_response.status == 400, data
 
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None, None)
-
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None, None)
-
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None, None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None, None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None", "None")
-
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.running_interactive_services_get(fake_request, "service_uuid")
-
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        web_response = await rest.handlers.running_interactive_services_delete(fake_request, None)
-
-    with pytest.raises(web_exceptions.HTTPNotFound):
-        web_response = await rest.handlers.running_interactive_services_delete(fake_request, "service_uuid")
+    params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
+    params["service_tag"] = "1.2.3"
+    web_response = await client.post("/v0/running_interactive_services", params=params)
+    data = await web_response.json()
+    assert web_response.status == 404, data
+    
     created_services = push_services(0,2)
     assert len(created_services) == 2
     for created_service in created_services:
-        service_description = created_service["service_description"]
-        service_key = service_description["key"]
-        service_tag = service_description["version"]
+        service_description = created_service["service_description"]        
+        params["user_id"] = user_id
+        params["project_id"] = project_id
+        params["service_key"] = service_description["key"]
+        params["service_tag"] = service_description["version"]
         service_port = created_service["internal_port"]
-        service_basepath = ""
-        service_uuid = str(uuid.uuid4())
+        params["service_basepath"] = ""
+        params["service_uuid"] = str(uuid.uuid4())
         # start the service
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, project_id, service_key, service_uuid, service_tag, service_basepath)
+        web_response = await client.post("/v0/running_interactive_services", params=params)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
-        running_service_enveloped = json.loads(web_response.text)
+        running_service_enveloped = await web_response.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point", "service_host", "service_port", "service_basepath"])
-        assert running_service_enveloped["data"]["service_uuid"] == service_uuid
-        assert running_service_enveloped["data"]["service_key"] == service_key
-        assert running_service_enveloped["data"]["service_version"] == service_tag
+        assert running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
+        assert running_service_enveloped["data"]["service_key"] == params["service_key"]
+        assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
         # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
         assert running_service_enveloped["data"]["service_port"] == service_port
         # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
@@ -217,15 +193,16 @@ async def _start_get_stop_services(push_services, user_id, project_id):
 
 
         # get the service
-        web_response = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
-        assert web_response.status == 200
-        assert web_response.content_type == "application/json"
-        running_service_enveloped = json.loads(web_response.text)
+        web_response = await client.request("GET", "/v0/running_interactive_services/{}".format(params["service_uuid"]))
+        assert web_response.status == 200        
+        text = await web_response.text()
+        assert web_response.content_type == "application/json", text
+        running_service_enveloped = await web_response.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point"])
-        assert running_service_enveloped["data"]["service_uuid"] == service_uuid
-        assert running_service_enveloped["data"]["service_key"] == service_key
-        assert running_service_enveloped["data"]["service_version"] == service_tag
+        assert running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
+        assert running_service_enveloped["data"]["service_key"] == params["service_key"]
+        assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
         assert running_service_enveloped["data"]["published_port"] == service_published_port
         assert running_service_enveloped["data"]["entry_point"] == service_entry_point
         assert running_service_enveloped["data"]["service_host"] == service_host
@@ -233,19 +210,26 @@ async def _start_get_stop_services(push_services, user_id, project_id):
         assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
-        web_response = await rest.handlers.running_interactive_services_delete(fake_request, service_uuid)
+        web_response = await client.delete("/v0/running_interactive_services/{}".format(params["service_uuid"]))
         assert web_response.status == 204
         assert web_response.content_type == "application/json"
-        assert web_response.text is None
+        data = await web_response.json()
+        assert data is None
 
 
-async def test_running_services_post_and_delete_no_swarm(configure_registry_access, configure_schemas_location, push_services, user_id, project_id): #pylint: disable=W0613, W0621
-    with pytest.raises(web_exceptions.HTTPInternalServerError):
-        await _start_get_stop_services(push_services, user_id, project_id)
+async def test_running_services_post_and_delete_no_swarm(client, push_services, user_id, project_id): #pylint: disable=W0613, W0621
+    params = {
+        "user_id": "None",
+        "project_id": "None",
+        "service_uuid": "sdlfkj4",
+        "service_key": "simcore/services/comp/some-key"
+    }
+    web_response = await client.post("/v0/running_interactive_services", params=params)
+    data = await web_response.json()
+    assert web_response.status == 500, data
 
-
-async def test_running_services_post_and_delete(configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
-    await _start_get_stop_services(push_services, user_id, project_id)
+async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
+    await _start_get_stop_services(client, push_services, user_id, project_id)
 
 
 @pytest.mark.skip(reason="test needs credentials to real registry")

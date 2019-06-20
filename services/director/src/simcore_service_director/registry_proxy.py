@@ -5,11 +5,11 @@ import json
 import logging
 from typing import Dict, List, Tuple
 
-import aiohttp
-from aiohttp import web
+from aiohttp import BasicAuth, ClientSession, web
 from yarl import URL
 
-from . import config, exceptions
+from simcore_service_director import config, exceptions
+from simcore_service_director.cache_request_decorator import cache_requests
 
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 
@@ -17,53 +17,11 @@ NUMBER_OF_RETRIEVED_REPOS = 50
 NUMBER_OF_RETRIEVED_TAGS = 50
 
 _logger = logging.getLogger(__name__)
-_registry_requests_cache = {}
-TASK_NAME = __name__ + "_registry_caching_task"
-TASK_STATE = "{}_state".format(TASK_NAME)
 
 class ServiceType(enum.Enum):
     ALL = ""
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
-
-class TaskState(enum.IntEnum):
-    STARTING = 0
-    RUNNING = 1
-    FAILED = 2
-    STOPPED = 3
-
-async def registry_caching_task(app: web.Application):
-    _logger.info("starting registry caching task")
-    try:
-        app[TASK_STATE] = TaskState.STARTING
-        _logger.info("initializing...")
-        _logger.info("initialisation completed")
-        app[TASK_STATE] = TaskState.RUNNING
-        while config.REGISTRY_CACHING:
-            _registry_requests_cache.clear()
-            await list_services(ServiceType.ALL)
-            await asyncio.sleep(15 * 60)
-    except asyncio.CancelledError:
-        _logger.info("cancelling task...")
-        app[TASK_STATE] = TaskState.STOPPED
-        raise
-    except:
-        _logger.exception("task closing:")
-        app[TASK_STATE] = TaskState.FAILED
-        raise
-    finally:
-        _logger.info("finished task...")
-
-async def start(app: web.Application):
-    app[TASK_NAME] = asyncio.get_event_loop().create_task(registry_caching_task(app))
-
-async def cleanup(app: web.Application):
-    task = app[TASK_NAME]
-    task.cancel()
-
-def setup_cache_task(app: web.Application):
-    app.on_startup.append(start)
-    app.on_cleanup.append(cleanup)
 
 async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
@@ -78,11 +36,11 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
             break
     if not auth_type:
         raise exceptions.RegistryConnectionError("Unknown registry type: cannot deduce authentication method!")
-    auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
+    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
 
     # bearer type, it needs a token with all communications
     if auth_type == "Bearer":
-        async with aiohttp.ClientSession() as session:
+        async with ClientSession() as session:
             # get the token
             token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
             async with session.get(token_url, auth=auth) as token_resp:
@@ -101,7 +59,7 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
                     resp_headers = resp_wtoken.headers
                     return (resp_data, resp_headers)
     elif auth_type == "Basic":
-        async with aiohttp.ClientSession() as session:
+        async with ClientSession() as session:
             # basic authentication
             async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
                 if resp_wbasic.status == 404:
@@ -115,10 +73,9 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
                 return (resp_data, resp_headers)
     raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
 
-async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
-    cache_key = "{}_{}".format(path, method)
-    if config.REGISTRY_CACHING and cache_key in _registry_requests_cache:
-        return _registry_requests_cache[cache_key]
+
+@cache_requests
+async def _registry_request(_: web.Application, path: URL, method: str ="GET") -> Tuple[Dict, Dict]:    
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
@@ -127,10 +84,10 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     # try the registry with basic authentication first, spare 1 call
     resp_data = {}
     resp_headers = {}
-    auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
+    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
         if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
             else None
-    async with aiohttp.ClientSession() as session:
+    async with ClientSession() as session:
         async with getattr(session, method.lower())(url, auth=auth) as response:
             if response.status == 404:
                 _logger.exception("path to registry not found: %s", url)
@@ -145,53 +102,49 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
                 resp_data = await response.json(content_type=None)
                 resp_headers = response.headers
 
-            # cache data
-            if config.REGISTRY_CACHING:
-                _registry_requests_cache[cache_key] = (resp_data, resp_headers)
-
             return (resp_data, resp_headers)
 
-async def _list_repositories() -> List[str]:
+async def _list_repositories(app: web.Application) -> List[str]:
     _logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
-    request = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
+    path = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
     repos_list = []
     while True:
-        result, headers = await _registry_request(request)
+        result, headers = await _registry_request(app, path)
         if result["repositories"]:
             repos_list.extend(result["repositories"])
         if "Link" not in headers:
             break
-        request = URL(str(headers["Link"]).split(";")[0].strip("<>"))
+        path = URL(str(headers["Link"]).split(";")[0].strip("<>"))
     _logger.debug("listed %s repositories", len(repos_list))
     return repos_list
 
-async def list_image_tags(image_key: str) -> List[Dict]:
+async def list_image_tags(app: web.Application, image_key: str) -> List[Dict]:
     _logger.debug("listing image tags in %s", image_key)
     image_tags = []
     # get list of image tags
-    request = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
+    path = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
     while True:
-        tags, headers = await _registry_request(request)
+        tags, headers = await _registry_request(app, path)
         if tags["tags"]:
             image_tags.extend(tags["tags"])
         if "Link" not in headers:
             break
-        request = URL(str(headers["Link"]).split(";")[0].strip("<>"))
+        path = URL(str(headers["Link"]).split(";")[0].strip("<>"))
     _logger.debug("Found %s image tags in %s", len(image_tags), image_key)
     return image_tags
 
-async def get_image_labels(image: str, tag: str) -> Dict:
+async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
     _logger.debug("getting image labels of %s:%s", image, tag)
-    request = URL("v2/{}/manifests/{}".format(image, tag))
-    request_result, _ = await _registry_request(request)
+    path = URL("v2/{}/manifests/{}".format(image, tag))
+    request_result, _ = await _registry_request(app, path)
     labels = json.loads(request_result["history"][0]["v1Compatibility"])["container_config"]["Labels"]
     _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
-async def get_image_details(image_key: str, image_tag: str) -> Dict:
+async def get_image_details(app: web.Application, image_key: str, image_tag: str) -> Dict:
     image_tags = {}
-    labels = await get_image_labels(image_key, image_tag)
+    labels = await get_image_labels(app, image_key, image_tag)
     if not labels:
         return image_tags
     for key in labels:
@@ -208,19 +161,19 @@ async def get_image_details(image_key: str, image_tag: str) -> Dict:
 
     return image_tags
 
-async def get_repo_details(image_key: str) -> List[Dict]:
+async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
     repo_details = []
-    image_tags = await list_image_tags(image_key)
-    tasks = [get_image_details(image_key, tag) for tag in image_tags]
+    image_tags = await list_image_tags(app, image_key)
+    tasks = [get_image_details(app, image_key, tag) for tag in image_tags]
     results = await asyncio.gather(*tasks)
     for image_details in results:
         if image_details:
             repo_details.append(image_details)
     return repo_details
 
-async def list_services(service_type: ServiceType) -> List[Dict]:
+async def list_services(app: web.Application, service_type: ServiceType) -> List[Dict]:
     _logger.debug("getting list of services")
-    repos = await _list_repositories()
+    repos = await _list_repositories(app)
     # get the services repos
     prefixes = []
     if service_type in [ServiceType.DYNAMIC, ServiceType.ALL]:
@@ -231,7 +184,7 @@ async def list_services(service_type: ServiceType) -> List[Dict]:
     _logger.debug("retrieved list of repos : %s", repos)
 
     # only list as service if it actually contains the necessary labels
-    tasks = [get_repo_details(repo) for repo in repos]
+    tasks = [get_repo_details(app, repo) for repo in repos]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     services = []
     for repo_details in results:
@@ -239,8 +192,8 @@ async def list_services(service_type: ServiceType) -> List[Dict]:
             services.extend(repo_details)
     return services
 
-async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
-    image_labels = await get_image_labels(service_key, service_tag)
+async def list_interactive_service_dependencies(app: web.Application, service_key: str, service_tag: str) -> List[Dict]:
+    image_labels = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
