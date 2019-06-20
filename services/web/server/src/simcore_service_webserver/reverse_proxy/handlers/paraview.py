@@ -75,7 +75,7 @@ async def handle_web_request(request: web.Request, target_url: URL, mount_point:
                 b'"/paraview/"', b'"%s/paraview/"' % mount_point.encode(), 1)
             logger.info("fixed Visualizer.js paths on the fly")
         response = web.Response(
-            headers=res.headers.copy(),
+            headers=headers,
             status=res.status,
             body=body
         )
