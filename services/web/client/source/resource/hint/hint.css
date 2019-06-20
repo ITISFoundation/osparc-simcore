@@ -6,10 +6,6 @@
     display: block !important;
 }
 
-.hint-input:hover > .hint-field {
-    margin-right: 18px;
-}
-
 .hint:after {
     bottom: 0;
     left: 50%;
