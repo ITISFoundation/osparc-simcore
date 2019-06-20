@@ -12,11 +12,6 @@
 qx.Class.define("qxapp.component.hint.HintManager", {
   extend: qx.core.Object,
   type: "singleton",
-  construct: function() {
-    this.base(arguments);
-    const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
-    qx.module.Css.includeStylesheet(hintCssUri);
-  },
   statics: {
     getHint: function(element, text) {
       return this.getInstance().getHint(element, text);

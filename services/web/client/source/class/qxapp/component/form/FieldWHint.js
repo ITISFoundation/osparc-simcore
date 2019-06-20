@@ -25,16 +25,19 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
    */
   construct: function(value, hint, field) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    }));
+    this._setLayout(new qx.ui.layout.Canvas());
 
     this.__field = field || new qx.ui.form.TextField();
     if (value) {
       this.__field.setValue(value);
     }
+    this.getContentElement().addClass("hint-input");
+    this.__field.getContentElement().addClass("hint-field");
     this._add(this.__field, {
-      flex: 1
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
     });
 
     if (hint) {
@@ -55,10 +58,12 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
       let control;
       switch (id) {
         case "infobutton":
-          control = new qxapp.component.form.IconButton("@FontAwesome5Solid/info-circle/14").set({
-            visibility: "hidden"
+          control = new qxapp.component.form.IconButton("@FontAwesome5Solid/info-circle/14");
+          control.getContentElement().addClass("hint-button");
+          this._add(control, {
+            right: 0,
+            bottom: 5
           });
-          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -66,11 +71,9 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
 
     __attachEventHandlers: function() {
       if (this.__hintText) {
-        this.__field.addListener("focus", () => this.__infoButton.show(), this);
-        this.__field.addListener("focusout", () => this.__infoButton.hide(), this);
-        this.__infoButton.addListener("mouseover", () => {
-          this.__hint = qxapp.component.hint.HintManager.getHint(this.__infoButton, this.__hintText);
-        }, this);
+        this.addListener("mouseover", () => this.__field.setMarginRight(18), this);
+        this.addListener("mouseout", () => this.__field.resetMarginRight(), this);
+        this.__infoButton.addListener("mouseover", () => this.__hint = qxapp.component.hint.HintManager.getHint(this.__infoButton, this.__hintText), this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
       }
     },

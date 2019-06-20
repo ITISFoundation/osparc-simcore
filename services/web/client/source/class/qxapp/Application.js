@@ -68,6 +68,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__initRouting();
+      this.__loadHintCss();
     },
 
     __initRouting: function() {
@@ -200,6 +201,11 @@ qx.Class.define("qxapp.Application", {
           "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       }
+    },
+
+    __loadHintCss: function() {
+      const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
+      qx.module.Css.includeStylesheet(hintCssUri);
     }
   }
 });
