@@ -2,12 +2,20 @@
 
 All models in the database hosted at the ``postgres`` service
 
+## Models
+
+Installs only models
+```console
+
+  pip install -r .
+
+```
+
 
 ## Migration
 
 ```console
-  pip install simcore-postgres-models[migration]
-
+  pip install .[migration]
 
   # TODO: create an entrypoint around postgres_model that wraps calls to alembic and
   # point to the right `postgres` service.
