@@ -71,6 +71,7 @@ qx.Class.define("qxapp.desktop.MainPage", {
         }
         if (this.__studyEditor) {
           this.__studyEditor.updateStudyDocument();
+          this.__studyEditor.closeStudy();
         }
         this.__showDashboard();
       }, this);

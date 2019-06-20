@@ -801,7 +801,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__stopInteractiveService();
+      this.stopInteractiveService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -813,10 +813,20 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __stopInteractiveService: function() {
+    removeIFrame: function() {
+      return;
+      let iFrame = this.getIFrame(null);
+      if (iFrame) {
+        iFrame.destructMe();
+        iFrame = null;
+      }
+    },
+
+    stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
         const store = qxapp.data.Store.getInstance();
         store.stopInteractiveService(this.getNodeId());
+        this.removeIFrame();
       }
     },
 
