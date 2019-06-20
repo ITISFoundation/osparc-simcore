@@ -815,10 +815,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __stopInteractiveNode: function() {
       if (this.isDynamic() && this.isRealService()) {
-        let url = "/running_interactive_services";
-        let query = "/"+encodeURIComponent(this.getNodeId());
-        let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
-        request.send();
+        const store = qxapp.data.Store.getInstance();
+        store.stopInteractiveService(this.getNodeId());
       }
     },
 
