@@ -1,1 +1,20 @@
 Generic single-database configuration.
+
+
+```command
+alembic revision init
+alembic revision -m "Empty db"
+alembic upgrade head
+```
+
+
+```command
+$ alembic revision --autogenerate -m "Adding storage service tables"
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'file_meta_data'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'user_to_projects_id_seq' as owned by integer column 'user_to_projects(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'tokens_token_id_seq' as owned by integer column 'tokens(token_id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'comp_tasks_task_id_seq' as owned by integer column 'comp_tasks(task_id)', assuming SERIAL and omitting
+  Generating /home/crespo/devp/osparc-simcore/packages/postgres_models/migration/versions/86fca23596da_adding_storage_service_tables.py ... done
+```
