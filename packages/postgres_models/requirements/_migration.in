@@ -1,0 +1,7 @@
+# Installs dependencies to migrate 'simcore-postgres-models'
+#
+
+# frozen specs
+-r _base.txt
+
+alembic
