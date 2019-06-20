@@ -73,6 +73,10 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
         }, this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
       }
+    },
+
+    getField: function() {
+      return this.__field;
     }
   }
 });
