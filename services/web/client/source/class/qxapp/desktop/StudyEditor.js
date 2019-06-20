@@ -203,7 +203,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
         // open file picker in window
-        const filePicker = new qx.ui.window.Window(this.tr("File picker")).set({
+        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           layout: new qx.ui.layout.Grow(),
           contentPadding: 0,
           width: 570,
