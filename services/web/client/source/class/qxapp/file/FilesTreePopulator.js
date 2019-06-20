@@ -72,14 +72,14 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
-      let data = {
+      const rootData = {
         label: treeName,
         location: null,
         path: null,
         children: []
       };
-      let emptyModel = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(emptyModel);
+      const root = qx.data.marshal.Json.createModel(rootData, true);
+      this.__tree.setModel(root);
       this.__tree.setDelegate({
         createItem: () => new qxapp.file.FileTreeItem(),
         bindItem: (c, item, id) => {
