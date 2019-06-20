@@ -29,8 +29,7 @@ qx.Class.define("qxapp.ui.hint.Hint", {
     this._add(this.__caret);
     this.__hintContainer.add(new qx.ui.basic.Label(text).set({
       rich: true,
-      maxWidth: 250,
-      minWidth: 0
+      maxWidth: 250
     }));
     this._add(this.__hintContainer, {
       flex: 1

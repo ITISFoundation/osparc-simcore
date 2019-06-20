@@ -238,22 +238,22 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.nodeId && this.__arePortsCompatible(output.nodeId, output.portId, child.nodeId, child.portId));
+      return this._getChildren().filter(child => child.getField && this.__arePortsCompatible(output.nodeId, output.portId, child.getField().nodeId, child.getField().portId));
     },
 
     __highlightCompatibles: function(output) {
       const inputs = this.__getCompatibleInputs(output);
       for (let i in inputs) {
-        const input = inputs[i];
+        const input = inputs[i].getField();
         input.setDecorator("material-textfield-focused");
       }
     },
 
     __unhighlightAll: function() {
-      const inputs = this._getChildren().filter(child => child.nodeId);
+      const inputs = this._getChildren().filter(child => child.getField);
       for (let i in inputs) {
         const input = inputs[i];
-        input.resetDecorator();
+        input.getField().resetDecorator();
       }
     },
 
