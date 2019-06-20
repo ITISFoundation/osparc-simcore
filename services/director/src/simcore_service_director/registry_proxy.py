@@ -154,15 +154,15 @@ async def _registry_request(path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
 async def _list_repositories() -> List[str]:
     _logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
-    loop = True
     request = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
     repos_list = []
-    while loop:
+    while True:
         result, headers = await _registry_request(request)
         if result["repositories"]:
             repos_list.extend(result["repositories"])
-        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
-        loop = "Link" in headers
+        if "Link" not in headers:
+            break
+        request = URL(str(headers["Link"]).split(";")[0].strip("<>"))
     _logger.debug("listed %s repositories", len(repos_list))
     return repos_list
 
@@ -170,14 +170,14 @@ async def list_image_tags(image_key: str) -> List[Dict]:
     _logger.debug("listing image tags in %s", image_key)
     image_tags = []
     # get list of image tags
-    loop = True
     request = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
-    while loop:
+    while True:
         tags, headers = await _registry_request(request)
         if tags["tags"]:
             image_tags.extend(tags["tags"])
-        request = URL(str(headers["Link"]).split(";")[0].strip("<>")) if "Link" in headers else None
-        loop = "Link" in headers
+        if "Link" not in headers:
+            break
+        request = URL(str(headers["Link"]).split(";")[0].strip("<>"))
     _logger.debug("Found %s image tags in %s", len(image_tags), image_key)
     return image_tags
 
