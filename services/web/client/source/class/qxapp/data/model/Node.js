@@ -694,7 +694,9 @@ qx.Class.define("qxapp.data.model.Node", {
       let progressTimer = new qx.event.Timer(interval);
       progressTimer.addListener("interval", () => {
         if (this.getServiceUrl() === null) {
-          const newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          let newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          newProgress = Math.min(newProgress, 100);
+          newProgress = Math.max(newProgress, 0);
           this.setProgress(newProgress);
           if (newProgress === 100) {
             increment = false;
