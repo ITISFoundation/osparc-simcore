@@ -1,12 +1,16 @@
 """ Database models
 
 """
+import datetime
+import uuid
+from pathlib import Path
 from typing import Tuple
 
 import attr
 import sqlalchemy as sa
 
-from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
+                                              SIMCORE_S3_STR)
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
@@ -30,7 +34,13 @@ file_meta_data = sa.Table(
     sa.Column("node_name", sa.String),
     sa.Column("file_name", sa.String),
     sa.Column("user_id", sa.String),
-    sa.Column("user_name", sa.String)
+    sa.Column("user_name", sa.String),
+    sa.Column("file_id", sa.String),
+    sa.Column("raw_file_path", sa.String),
+    sa.Column("display_file_path", sa.String),
+    sa.Column("created_at", sa.String),
+    sa.Column("last_modified", sa.String),
+    sa.Column("file_size", sa.Integer)
 #    sa.Column("state", sa.String())
 )
 
@@ -119,6 +129,26 @@ class FileMetaData:
     user_id: str=""
     user_name: str=""
 
+    # unique uuid for the file
+    # simcore.s3: uuid created upon insertion
+    # datcore: datcore uuid
+    #
+    file_id: str = "" # unique uuid for the file
+
+    # raw path to file
+    # simcore.s3: proj_id/node_id/filename.ending
+    #             emailaddress/...
+    # datcore: dataset/collection/filename.ending
+    raw_file_path: str = ""
+    # human readlable  path to file
+    # simcore.s3: proj_name/node_name/filename.ending
+    #              my_documents/...
+    # datcore: dataset/collection/filename.ending
+    display_file_path: str = "" # human readlable file path : , my_documents/folder/filename.ending,
+    created_at: str = ""
+    last_modified: str =""
+    file_size: int = 0
+
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
         assert len(parts) == 3
@@ -131,3 +161,16 @@ class FileMetaData:
             self.project_id = parts[0]
             self.node_id = parts[1]
             self.file_uuid = file_uuid
+            self.file_id = str(uuid.uuid4())
+            self.raw_file_path = self.file_uuid
+            self.display_file_path = str(Path("not") / Path("yet") / Path("implemented"))
+            self.created_at = str(datetime.datetime.now())
+            self.last_modified = self.created_at
+            self.file_size = -1
+
+    def __str__(self):
+        d = attr.asdict(self)
+        _str =""
+        for _d in d:
+            _str += "  {0: <25}: {1}\n".format(_d, str(d[_d]))
+        return _str

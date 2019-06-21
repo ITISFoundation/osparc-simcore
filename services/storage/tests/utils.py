@@ -79,7 +79,14 @@ def insert_metadata(url: str, fmd: FileMetaData):
         node_name = fmd.node_name,
         file_name = fmd.file_name,
         user_id = fmd.user_id,
-        user_name= fmd.user_name)
+        user_name= fmd.user_name,
+        file_id = fmd.file_id,
+        raw_file_path = fmd.raw_file_path,
+        display_file_path = fmd.display_file_path,
+        created_at = fmd.created_at,
+        last_modified = fmd.last_modified,
+        file_size = fmd.file_size)
+
 
     engine = sa.create_engine(url)
     conn = engine.connect()

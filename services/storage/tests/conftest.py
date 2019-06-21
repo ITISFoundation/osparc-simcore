@@ -6,6 +6,7 @@
 # pylint:disable=unsupported-assignment-operation
 
 import asyncio
+import datetime
 import os
 import subprocess
 import sys
@@ -25,8 +26,8 @@ from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
                                               SIMCORE_S3_ID, SIMCORE_S3_STR)
-from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER_ID, USER
-
+from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
+                   USER_ID)
 
 
 @pytest.fixture(scope='session')
@@ -53,17 +54,6 @@ def osparc_api_specs_dir(osparc_simcore_root_dir):
     dirpath = osparc_simcore_root_dir / "api" / "specs"
     assert dirpath.exists()
     return dirpath
-
-@pytest.fixture(scope='session')
-def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
-    python27_exec = "python3"
-    return python27_exec
-
-
-@pytest.fixture(scope='session')
-def python27_path(python27_exec):
-    return Path(python27_exec).parent.parent
-    # Assumes already created with make .venv27
 
 
 @pytest.fixture(scope='session')
@@ -226,7 +216,10 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         object_name = Path(str(project_id), str(
             node_id), str(counter)).as_posix()
         file_uuid = Path(object_name).as_posix()
-
+        raw_file_path = file_uuid
+        display_file_path = str(Path(project_name)/Path(node)/Path(file_name))
+        created_at = str(datetime.datetime.now())
+        file_size = 1234
         assert s3_client.upload_file(bucket_name, object_name, _file)
 
         d = {'file_uuid': file_uuid,
@@ -240,7 +233,13 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
              'node_name': node,
              'file_name': file_name,
              'user_id': str(user_id),
-             'user_name': user_name
+             'user_name': user_name,
+             "file_id": str(uuid.uuid4()),
+             "raw_file_path": file_uuid,
+             "display_file_path": display_file_path,
+             "created_at": created_at,
+             "last_modified": created_at,
+             "file_size": file_size,
              }
 
         counter = counter + 1
@@ -266,7 +265,7 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 
 
 @pytest.fixture(scope="function")
-async def datcore_testbucket(loop, python27_exec, mock_files_factory):
+async def datcore_testbucket(loop, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
@@ -275,7 +274,7 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
         return
 
     pool = ThreadPoolExecutor(2)
-    dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
+    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
     await dcw.create_test_dataset(BUCKET_NAME)
 
@@ -297,10 +296,10 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, python27_exec, postgres_engine, loop):
+def dsm_fixture(s3_client, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
     dsm_fixture = DataStorageManager(
-        s3_client, python27_exec, postgres_engine, loop, pool, BUCKET_NAME)
+        s3_client, postgres_engine, loop, pool, BUCKET_NAME)
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -6,12 +7,11 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 import aiofiles
 import aiohttp
 import attr
-import asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
@@ -23,11 +23,10 @@ from s3wrapper.s3_client import S3Client
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
                      file_meta_data)
+from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
                        SIMCORE_S3_STR)
-
-from .s3 import get_config_s3
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -45,7 +44,6 @@ async def _setup_dsm(app: web.Application):
     main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
-    python27_exec = Path(main_cfg["python2"])
 
     engine = app.get(APP_DB_ENGINE_KEY)
     loop = asyncio.get_event_loop()
@@ -57,7 +55,7 @@ async def _setup_dsm(app: web.Application):
     s3_cfg = get_config_s3(app)
     bucket_name = s3_cfg["bucket_name"]
 
-    dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool, bucket_name)
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name)
 
     app[APP_DSM_KEY] = dsm
 
@@ -108,7 +106,6 @@ class DataStorageManager:
             https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
     s3_client: S3Client
-    python27_exec: Path
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor
@@ -155,7 +152,7 @@ class DataStorageManager:
         api_token, api_secret = self._get_datcore_tokens(user_id)
         logger.info("token: %s, secret %s", api_token, api_secret)
         if api_token:
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             profile = await dcw.ping()
             if profile:
                 return True
@@ -185,7 +182,7 @@ class DataStorageManager:
                     data.append(d)
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             data = await dcw.list_files()
 
         if sortby:
@@ -226,7 +223,7 @@ class DataStorageManager:
                     return d
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             data = await _dcw.list_files
             return data
 
@@ -255,7 +252,7 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
 #            return await dcw.delete_file(dataset=dataset, filename=filename)
             return await dcw.delete_file(dataset, filename)
@@ -263,7 +260,7 @@ class DataStorageManager:
     async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
         await dcw.upload_file(datcore_bucket, local_file_path, fmd)
 
         # actually we have to query the master db
@@ -350,7 +347,7 @@ class DataStorageManager:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
             link = await dcw.download_link(dataset, filename)
         return link
