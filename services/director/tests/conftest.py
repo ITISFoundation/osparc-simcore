@@ -62,6 +62,7 @@ def configure_schemas_location(package_dir, shared_schemas_specs_dir):
 def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_SSL = False
+    config.REGISTRY_CACHING = False
 
 @pytest.fixture
 def user_id():
@@ -70,3 +71,18 @@ def user_id():
 @pytest.fixture
 def project_id():
     yield "some_project_id"
+
+def pytest_addoption(parser):
+    parser.addoption("--registry_url", action="store", default="default url")
+    parser.addoption("--registry_user", action="store", default="default user")
+    parser.addoption("--registry_pw", action="store", default="default pw")
+
+@pytest.fixture(scope="session")
+def configure_custom_registry(pytestconfig):
+    # to set these values call
+    # pytest --registry_url myregistry --registry_user username --registry_pw password
+    config.REGISTRY_URL = pytestconfig.getoption("registry_url")
+    config.REGISTRY_AUTH = True
+    config.REGISTRY_USER = pytestconfig.getoption("registry_user")
+    config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
+    config.REGISTRY_CACHING = False
