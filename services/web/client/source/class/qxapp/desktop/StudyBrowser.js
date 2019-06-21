@@ -601,23 +601,39 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            let resource = this.__studyResources.project;
-
-            resource.addListenerOnce("delSuccess", ev => {
-              this.reloadUserStudies();
-            }, this);
-
-            resource.del({
-              "project_id": studyData["uuid"]
-            });
-
-            this.__itemSelected(null);
+            this.__deleteStudy(studyData);
           }
         }, this);
       }, this);
       form.addButton(deleteButton);
 
       this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
+    },
+
+    __deleteStudy: function(studyData) {
+      this.__stopInteractiveServicesInStudy(studyData);
+
+      let resource = this.__studyResources.project;
+
+      resource.addListenerOnce("delSuccess", ev => {
+        this.reloadUserStudies();
+      }, this);
+
+      resource.del({
+        "project_id": studyData["uuid"]
+      });
+
+      this.__itemSelected(null);
+    },
+
+    __stopInteractiveServicesInStudy: function(studyData) {
+      const store = qxapp.data.Store.getInstance();
+      for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
+        const metadata = store.getNodeMetaData(nodedata.key, nodedata.version);
+        if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
+          store.stopInteractiveService(nodeId);
+        }
+      }
     },
 
     __createConfirmWindow: function() {

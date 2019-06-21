@@ -595,6 +595,10 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, newObj);
     },
 
+    closeStudy: function() {
+      this.getStudy().closeStudy();
+    },
+
     __attachEventHandlers: function() {
       this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
