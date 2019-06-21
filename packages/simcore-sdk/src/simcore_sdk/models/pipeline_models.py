@@ -1,7 +1,7 @@
 import networkx as nx
 from sqlalchemy.orm import mapper
 
-from simcore_postgres_models.tables.comp_pipeline_table import comp_pipeline
+from simcore_postgres_models.tables.comp_pipeline_table import comp_pipeline, UNKNOWN, PENDING, RUNNING, SUCCESS, FAILED
 from simcore_postgres_models.tables.comp_tasks_table import comp_tasks
 
 from .base import metadata
@@ -48,5 +48,5 @@ mapper(ComputationalTask, comp_tasks)
 __all__ = [
     "metadata",
     "ComputationalPipeline",
-    "ComputationalTask"
-]
+    "ComputationalTask",
+] + "UNKNOWN PENDING RUNNING SUCCESS FAILED".split()
