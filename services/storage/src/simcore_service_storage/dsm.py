@@ -183,7 +183,7 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_files()
+            data = await dcw.list_files_recursively()
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))

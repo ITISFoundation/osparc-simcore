@@ -269,6 +269,7 @@ async def datcore_testbucket(loop, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
+
     if api_secret is None:
         yield "no_bucket"
         return

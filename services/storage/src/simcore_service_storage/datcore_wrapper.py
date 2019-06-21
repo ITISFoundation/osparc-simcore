@@ -92,7 +92,6 @@ class DatcoreWrapper:
     def delete_file(self, dataset: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
         try:
-
             ds = self.d_client.get_dataset(dataset)
             if ds is not None:
                 self.d_client.delete_file(ds, filename)
