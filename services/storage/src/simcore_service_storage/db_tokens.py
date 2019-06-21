@@ -7,22 +7,13 @@ from aiohttp import web
 from psycopg2 import Error as DbApiError
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
+from .models import tokens
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
 RETRY_WAIT_SECS = {"min":1, "max":3}
 RETRY_COUNT = 3
-
-# FIXME: this is a temporary solution DO NOT USE. This table needs to be in sync
-# with services/web/server/src/simcore_service_webserver/db_models.py
-_metadata = sa.MetaData()
-_tokens = sa.Table("tokens", _metadata,
-    sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
-    sa.Column("user_id", sa.BigInteger, nullable=False),
-    sa.Column("token_service", sa.String, nullable=False),
-    sa.Column("token_data", sa.JSON, nullable=False),
-)
 
 
 @retry(wait=wait_random(**RETRY_WAIT_SECS),
@@ -31,7 +22,7 @@ _tokens = sa.Table("tokens", _metadata,
        reraise=True)
 async def _get_tokens_from_db(engine, userid):
     async with engine.acquire() as conn:
-        stmt = sa.select([_tokens, ]).where(_tokens.c.user_id == userid)
+        stmt = sa.select([tokens, ]).where(tokens.c.user_id == userid)
         result = await conn.execute(stmt)
         row = await result.first()
         data = dict(row) if row else {}
