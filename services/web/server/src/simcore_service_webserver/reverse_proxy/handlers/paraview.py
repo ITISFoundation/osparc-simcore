@@ -94,8 +94,8 @@ async def handler(request: web.Request, service_url: str, mount_point: str, prox
             try:
                 request.app[APP_SOCKETS_KEY].append(ws)
                 # paraview special handling, it is somehow fixed at the root endpoint
-                target_url = target_url.with_path("ws")
-                ws = await handle_websocket_requests(ws, request, target_url)
+                ws_url = URL(service_url).with_path("ws")
+                ws = await handle_websocket_requests(ws, request, ws_url)
                 return ws
             finally:
                 request.app[APP_SOCKETS_KEY].remove(ws)
