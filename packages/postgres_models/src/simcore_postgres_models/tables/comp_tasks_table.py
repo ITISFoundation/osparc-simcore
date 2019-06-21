@@ -1,4 +1,7 @@
 
+""" Computational Tasks Table
+
+"""
 import sqlalchemy as sa
 
 from .base import metadata

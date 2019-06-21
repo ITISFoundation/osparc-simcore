@@ -1,5 +1,9 @@
-# TODO: services/web/server/src/simcore_service_webserver/db_models.py
+""" User Tokens table
+"""
+import sqlalchemy as sa
 
+from .base import metadata
+from .users_table import users
 
 # NOTE: this is another way of of defining keys ...
 tokens = sa.Table("tokens", metadata,

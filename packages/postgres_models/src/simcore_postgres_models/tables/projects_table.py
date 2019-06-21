@@ -1,5 +1,7 @@
-"""
-    Object Relational Models and access to DB
+""" Projects table
+
+    - Every row fits a project document schemed as api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+
 """
 import enum
 import logging
@@ -12,7 +14,6 @@ from .users_table import users
 
 log = logging.getLogger(__name__)
 
-# ENUM TYPES ----------------------------------------------------------------
 
 class ProjectType(enum.Enum):
     """
@@ -22,12 +23,6 @@ class ProjectType(enum.Enum):
     TEMPLATE = "template"
     STANDARD = "standard"
 
-
-# TABLES ----------------------------------------------------------------
-#
-#  We use a classical Mapping w/o using a Declarative system.
-#
-# See https://docs.sqlalchemy.org/en/latest/orm/mapping_styles.html#classical-mappings
 
 projects = sa.Table("projects", metadata,
     sa.Column("id", sa.BigInteger, nullable=False, primary_key=True),
@@ -41,10 +36,4 @@ projects = sa.Table("projects", metadata,
     sa.Column("creation_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column("last_change_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column("workbench", sa.JSON, nullable=False)
-)
-
-user_to_projects = sa.Table("user_to_projects", metadata,
-    sa.Column("id", sa.BigInteger, nullable=False, primary_key=True),
-    sa.Column("user_id", sa.BigInteger, sa.ForeignKey(users.c.id), nullable=False),
-    sa.Column("project_id", sa.BigInteger, sa.ForeignKey(projects.c.id), nullable=False)
 )

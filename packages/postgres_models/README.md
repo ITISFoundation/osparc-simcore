@@ -1,6 +1,6 @@
 # simcore postgres models
 
-All models in the database hosted at the ``postgres`` service
+Database models served by the ``postgres`` service
 
 ## Models
 
