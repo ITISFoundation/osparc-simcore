@@ -32,7 +32,7 @@ qx.Class.define("qxapp.ui.message.FlashMessage", {
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.set({
-      maxWidth: 250,
+      maxWidth: 340,
       allowStretchX: false,
       alignX: "center"
     });

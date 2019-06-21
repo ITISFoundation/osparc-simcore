@@ -86,6 +86,12 @@ qx.Class.define("qxapp.Application", {
           // Route: /#/reset-password/?code={resetCode}
           qxapp.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
+        }
+      } else if (urlFragment.params) {
+        if (urlFragment.params.registered) {
+          // Route: /#/?registered=true
+          qxapp.utils.Utils.cookie.deleteCookie("user");
+          this.__restart();
         } else {
           // this.load404();
           console.error("URL fragment format not recognized.");
