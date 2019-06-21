@@ -11,6 +11,9 @@ logging.basicConfig(
 
 API_VERSION = "v0"
 API_ROOT = "oas3"
+REGISTRY_CACHING = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
+REGISTRY_CACHING_TTL = os.environ.get("REGISTRY_CACHING_TTL", 15*60)
+APP_REGISTRY_CACHE_DATA_KEY = __name__ + "_registry_cache_data"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True", True]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")

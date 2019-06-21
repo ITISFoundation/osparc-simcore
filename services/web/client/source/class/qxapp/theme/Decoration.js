@@ -51,7 +51,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
     },
 
     "window-small-cap": {
-      include: "window",
+      include: "service-window",
       style: {
         width: 0,
         radius: 3,
@@ -62,7 +62,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
     },
 
     "window-small-cap-maximized": {
-      include: "window",
+      include: "service-window-maximized",
       style: {
         width: 0,
         transitionProperty: "opacity",
@@ -74,6 +74,21 @@ qx.Theme.define("qxapp.theme.Decoration", {
     "workbench-small-cap-captionbar": {
       style: {
         width: 0
+      }
+    },
+
+    "service-window": {
+      include: "window",
+      style: {
+        radius: 3,
+        width: 1
+      }
+    },
+
+    "service-window-maximized": {
+      include: "window",
+      style: {
+        width: 1
       }
     },
 
@@ -89,7 +104,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "service-browser": {
       style: {
-        width: 1,
         color: "material-button-background"
       }
     },
