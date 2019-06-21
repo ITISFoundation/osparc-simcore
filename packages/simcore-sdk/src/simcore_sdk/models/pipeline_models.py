@@ -1,10 +1,16 @@
 import networkx as nx
 from sqlalchemy.orm import mapper
 
-from simcore_postgres_models.tables.comp_pipeline_table import comp_pipeline, UNKNOWN, PENDING, RUNNING, SUCCESS, FAILED
+from simcore_postgres_models.tables.comp_pipeline_table import (FAILED,
+                                                                PENDING,
+                                                                RUNNING,
+                                                                SUCCESS,
+                                                                UNKNOWN,
+                                                                comp_pipeline)
 from simcore_postgres_models.tables.comp_tasks_table import comp_tasks
 
 from .base import metadata
+
 
 # NOTE: All this file ises classical mapping to keep LEGACY
 class Base:
@@ -49,4 +55,5 @@ __all__ = [
     "metadata",
     "ComputationalPipeline",
     "ComputationalTask",
-] + "UNKNOWN PENDING RUNNING SUCCESS FAILED".split()
+    "UNKNOWN", "PENDING", "RUNNING", "SUCCESS", "FAILED"
+]
