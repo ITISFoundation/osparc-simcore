@@ -240,7 +240,7 @@ class DatcoreClient(object):
 
         # pylint: disable = E1101
         for item in source:
-            if item.name == filename:
+            if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
                 file_desc = self.client._api.packages.get_sources(item.id)[0]
                 url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
                 return url
