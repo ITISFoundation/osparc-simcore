@@ -67,12 +67,11 @@ qx.Class.define("qxapp.data.Converters", {
       for (let i=0; i<files.length; i++) {
         const file = files[i];
         if (this.__isLocationValid(file["location_id"])) {
-          let fileInTree = {
-            label: file["location"],
-            location: file["location_id"],
-            path: "",
-            children: []
-          };
+          let fileInTree = this.__createDirEntry(
+            file["location"],
+            file["location_id"],
+            ""
+          );
           if (file["location_id"] === 0 || file["location_id"] === "0") {
             // simcore files
             let splitted = file["file_uuid"].split("/");
@@ -84,22 +83,24 @@ qx.Class.define("qxapp.data.Converters", {
               let nodeLabel = file["node_name"] === "" ? uuidToName.convertToName(nodeId) : file["node_name"];
               let fileName = file["file_name"] === "" ? fileId : file["file_name"];
               // node file
-              fileInTree.children.push({
-                label: prjLabel,
-                location: file["location_id"],
-                path: prjId,
-                children: [{
-                  label: nodeLabel,
-                  location: file["location_id"],
-                  path: prjId +"/"+ nodeId,
-                  children: [this.__createFileEntry(
-                    fileName,
+              fileInTree.children.push(
+                this.__createDirEntry(
+                  prjLabel,
+                  file["location_id"],
+                  prjId,
+                  [this.__createDirEntry(
+                    nodeLabel,
                     file["location_id"],
-                    file["file_uuid"],
-                    file["size"])
-                  ]
-                }]
-              });
+                    prjId +"/"+ nodeId,
+                    [this.__createFileEntry(
+                      fileName,
+                      file["location_id"],
+                      file["file_uuid"],
+                      file["size"])
+                    ]
+                  )]
+                )
+              );
               this.__mergeFileTreeChildren(children, fileInTree);
             }
           } else if (file["location_id"] === 1 || file["location_id"] === "1") {
@@ -107,12 +108,11 @@ qx.Class.define("qxapp.data.Converters", {
             let parent = fileInTree;
             let splitted = file["file_uuid"].split("/");
             for (let j=0; j<splitted.length-1; j++) {
-              const newItem = {
-                label: splitted[j],
-                location: file["location_id"],
-                path: parent.path === "" ? splitted[j] : parent.path +"/"+ splitted[j],
-                children: []
-              };
+              const newItem = this.__createDirEntry(
+                splitted[j],
+                file["location_id"],
+                parent.path === "" ? splitted[j] : parent.path +"/"+ splitted[j]
+              );
               parent.children.push(newItem);
               parent = newItem;
             }
@@ -128,6 +128,15 @@ qx.Class.define("qxapp.data.Converters", {
       }
 
       return children;
+    },
+
+    __createDirEntry: function(label, location, path, children = []) {
+      return {
+        label,
+        location,
+        path,
+        children
+      };
     },
 
     __createFileEntry: function(label, location, fileId, size) {
