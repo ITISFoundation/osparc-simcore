@@ -40,13 +40,14 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   events: {
-    "servicesRegistered": "qx.event.type.Event",
-    // "fakeFiles": "qx.event.type.Event",
-    "myDocuments": "qx.event.type.Event",
-    "nodeFiles": "qx.event.type.Event",
-    "presignedLink": "qx.event.type.Event",
-    "fileCopied": "qx.event.type.Event",
-    "deleteFile": "qx.event.type.Event"
+    "servicesRegistered": "qx.event.type.Data",
+    // "fakeFiles": "qx.event.type.Data",
+    "myLocations": "qx.event.type.Data",
+    "myDocuments": "qx.event.type.Data",
+    "nodeFiles": "qx.event.type.Data",
+    "presignedLink": "qx.event.type.Data",
+    "fileCopied": "qx.event.type.Data",
+    "deleteFile": "qx.event.type.Data"
   },
 
   members: {
@@ -1345,6 +1346,7 @@ qx.Class.define("qxapp.data.Store", {
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
+        this.fireDataEvent("myLocations", locations);
         for (let i=0; i<locations.length; i++) {
           const locationId = locations[i]["id"];
           if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
