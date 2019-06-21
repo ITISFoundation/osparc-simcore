@@ -35,6 +35,26 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     this.__tree = tree;
   },
 
+  statics: {
+    addLoadingChild: function(parent) {
+      parent["children"] = [{
+        label: "Loading...",
+        location: null,
+        path: null,
+        icon: "qxapp/loading.gif"
+      }];
+    },
+
+    removeLoadingChild: function(parent) {
+      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
+        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
+          parent.getChildren().toArray()
+            .splice(i, 1);
+        }
+      }
+    }
+  },
+
   members: {
     __tree: null,
 
