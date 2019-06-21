@@ -10,7 +10,6 @@ from datetime import datetime
 import sqlalchemy as sa
 
 from .base import metadata
-from .users_table import users
 
 log = logging.getLogger(__name__)
 
