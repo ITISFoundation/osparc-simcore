@@ -67,7 +67,7 @@ qx.Class.define("qxapp.data.Converters", {
       for (let i=0; i<files.length; i++) {
         const file = files[i];
         if (this.__isLocationValid(file["location_id"])) {
-          let fileInTree = this.__createDirEntry(
+          let fileInTree = this.createDirEntry(
             file["location"],
             file["location_id"],
             ""
@@ -84,15 +84,15 @@ qx.Class.define("qxapp.data.Converters", {
               let fileName = file["file_name"] === "" ? fileId : file["file_name"];
               // node file
               fileInTree.children.push(
-                this.__createDirEntry(
+                this.createDirEntry(
                   prjLabel,
                   file["location_id"],
                   prjId,
-                  [this.__createDirEntry(
+                  [this.createDirEntry(
                     nodeLabel,
                     file["location_id"],
                     prjId +"/"+ nodeId,
-                    [this.__createFileEntry(
+                    [this.createFileEntry(
                       fileName,
                       file["location_id"],
                       file["file_uuid"],
@@ -108,7 +108,7 @@ qx.Class.define("qxapp.data.Converters", {
             let parent = fileInTree;
             let splitted = file["file_uuid"].split("/");
             for (let j=0; j<splitted.length-1; j++) {
-              const newItem = this.__createDirEntry(
+              const newItem = this.createDirEntry(
                 splitted[j],
                 file["location_id"],
                 parent.path === "" ? splitted[j] : parent.path +"/"+ splitted[j]
@@ -116,7 +116,7 @@ qx.Class.define("qxapp.data.Converters", {
               parent.children.push(newItem);
               parent = newItem;
             }
-            let fileInfo = this.__createFileEntry(
+            let fileInfo = this.createFileEntry(
               splitted[splitted.length-1],
               file["location_id"],
               file["file_uuid"],
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.data.Converters", {
       return children;
     },
 
-    __createDirEntry: function(label, location, path, children = []) {
+    createDirEntry: function(label, location, path, children = []) {
       return {
         label,
         location,
@@ -139,7 +139,7 @@ qx.Class.define("qxapp.data.Converters", {
       };
     },
 
-    __createFileEntry: function(label, location, fileId, size) {
+    createFileEntry: function(label, location, fileId, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
