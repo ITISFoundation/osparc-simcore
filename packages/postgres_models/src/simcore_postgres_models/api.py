@@ -4,7 +4,10 @@ from simcore_sdk.models import metadata as sdk_metadata  # imports pipeline stuf
 import simcore_service_webserver.db_models
 import simcore_service_webserver.projects
 
-from simcore_service_storage.models import metadata as storage_metadata
+#from simcore_service_storage.models import metadata as storage_metadata
 
+from .tables.base import metadata
+from .tables import file_meta_data_table
 
-target_metadatas = [sdk_metadata, storage_metadata]
+#target_metadatas = [sdk_metadata, storage_metadata]
+target_metadatas = [sdk_metadata, metadata]

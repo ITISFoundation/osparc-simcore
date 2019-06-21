@@ -33,6 +33,17 @@ Issue 709
 
 - what autogenerate [does NOT decect](https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
 
+- https://stackoverflow.com/questions/42992256/how-do-you-add-migrate-an-existing-database-with-alembic-flask-migrate-if-you-di
+```console
+alembic revision --autogenerate -m "Init tables" # to an empty db
+
+# changes to real db con these tables
+alembic stamp head
+
+# revision changes
+alembic revision --autogenerate -m "Added column to file_meta_data"
+alembic upgrade head
+```
 
 ## Migration between major releases of postgresql
 
