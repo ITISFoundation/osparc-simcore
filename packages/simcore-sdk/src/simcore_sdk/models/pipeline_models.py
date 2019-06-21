@@ -1,22 +1,21 @@
-import uuid
-
 import networkx as nx
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import mapper
 
-from .base import Base
+from simcore_postgres_models.tables.comp_pipeline_table import comp_pipeline
+from simcore_postgres_models.tables.comp_tasks_table import comp_tasks
 
-UNKNOWN = 0
-PENDING = 1
-RUNNING = 2
-SUCCESS = 3
-FAILED = 4
+from .base import metadata
 
-class ComputationalPipeline(Base):
-    __tablename__ = 'comp_pipeline'
+# NOTE: All this file ises classical mapping to keep LEGACY
+class Base:
+    metadata = metadata
 
-    project_id = Column(String, primary_key=True, default=str(uuid.uuid4()))
-    dag_adjacency_list = Column(JSON)
-    state = Column(String, default=UNKNOWN)
+
+class ComputationalPipeline(object):
+    #pylint: disable=no-member
+    def __init__(self, **kargs):
+        for key, value in kargs.items():
+            setattr(self, key, value)
 
     @property
     def execution_graph(self):
@@ -34,25 +33,20 @@ class ComputationalPipeline(Base):
     def __repr__(self):
         return '<id {}>'.format(self.id)
 
-class ComputationalTask(Base):
-    __tablename__ = 'comp_tasks'
-    # this task db id
-    task_id = Column(Integer, primary_key=True)
-    project_id = Column(String, ForeignKey('comp_pipeline.project_id'))
-    # dag node id
-    node_id = Column(String)
-    # celery task id
-    job_id = Column(String)
-    # internal id (better for debugging, nodes from 1 to N)
-    internal_id = Column(Integer)
-    
-    schema = Column(JSON)
-    inputs = Column(JSON)
-    outputs = Column(JSON)
-    image = Column(JSON)
-    state = Column(Integer, default=UNKNOWN)
+mapper(ComputationalPipeline, comp_pipeline)
 
-    # utc timestamps for submission/start/end
-    submit = Column(DateTime)
-    start = Column(DateTime)
-    end = Column(DateTime)
+
+class ComputationalTask(object):
+    def __init__(self, **kargs):
+        for key, value in kargs.items():
+            setattr(self, key, value)
+
+
+mapper(ComputationalTask, comp_tasks)
+
+
+__all__ = [
+    "metadata",
+    "ComputationalPipeline",
+    "ComputationalTask"
+]
