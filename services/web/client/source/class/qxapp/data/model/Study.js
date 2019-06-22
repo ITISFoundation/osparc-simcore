@@ -129,6 +129,13 @@ qx.Class.define("qxapp.data.model.Study", {
       }
     },
 
+    closeStudy: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        node.stopInteractiveService();
+      }
+    },
+
     serializeStudy: function() {
       this.setLastChangeDate(new Date());
 
