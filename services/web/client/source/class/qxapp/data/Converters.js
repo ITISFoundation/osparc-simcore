@@ -120,7 +120,7 @@ qx.Class.define("qxapp.data.Converters", {
               splitted[splitted.length-1],
               file["location_id"],
               file["file_uuid"],
-              file["size"]);
+              file["file_size"]);
             parent.children.push(fileInfo);
             this.__mergeFileTreeChildren(children, fileInTree);
           }
