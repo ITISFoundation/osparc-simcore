@@ -96,7 +96,7 @@ qx.Class.define("qxapp.data.Converters", {
                       fileName,
                       file["location_id"],
                       file["file_uuid"],
-                      file["size"])
+                      file["file_size"])
                     ]
                   )]
                 )
