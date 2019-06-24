@@ -18,7 +18,7 @@ class Base:
     metadata = metadata
 
 
-class ComputationalPipeline(object):
+class ComputationalPipeline:
     #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():
@@ -47,7 +47,7 @@ mapper(ComputationalPipeline, comp_pipeline)
 
 
 
-class ComputationalTask(object):
+class ComputationalTask:
     #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():

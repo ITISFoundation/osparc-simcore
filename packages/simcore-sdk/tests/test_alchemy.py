@@ -76,8 +76,8 @@ def test_legacy_queries_with_mapper_adapter():
     assert isinstance(ComputationalPipeline.project_id, column_type)
 
     # pylint: disable=protected-access
-    column_names = set([c.name for c in comp_pipeline.c])
+    column_names = set(c.name for c in comp_pipeline.c)
     assert set(ComputationalPipeline._sa_class_manager.keys()) == column_names
 
-    column_names = set([c.name for c in comp_tasks.c])
+    column_names = set(c.name for c in comp_tasks.c)
     assert set(ComputationalTask._sa_class_manager.keys()) == column_names
