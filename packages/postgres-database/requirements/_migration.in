@@ -1,4 +1,4 @@
-# Installs dependencies to migrate 'simcore-postgres-models'
+# Installs dependencies to migrate 'simcore-postgres-database'
 #
 
 # frozen specs

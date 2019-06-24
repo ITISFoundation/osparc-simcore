@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'simcore-postgres-models'
+# Specifies third-party dependencies for 'simcore-postgres-database'
 #
 
 # psycopg2-binary     # enforces binary version

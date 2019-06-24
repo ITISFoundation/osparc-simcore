@@ -1,5 +1,5 @@
 #
-# Specifies dependencies required to run tests on 'simcore-postgres-models'
+# Specifies dependencies required to run tests on 'simcore-postgres-database'
 #
 
 # frozen specs
