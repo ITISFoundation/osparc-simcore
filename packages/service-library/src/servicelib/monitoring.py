@@ -34,10 +34,14 @@ def middleware_factory(app_name):
         request.app['REQUEST_COUNT'].labels(
             app_name, request.method, request.path, resp.status).inc()
 
+        # TODO: num errors!
+
         return resp
     return middlewave_handler
 
-async def metrics(request):
+async def metrics(_request):
+    # TODO: NOT async!
+    # prometheus_client access to a singleton registry!
     resp = web.Response(body=prometheus_client.generate_latest())
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
