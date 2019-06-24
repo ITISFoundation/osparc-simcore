@@ -150,7 +150,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       });
       currentNodeButton.addListener("changeValue", e => {
         // this.currectNodeClicked(currentNodeButton.getValue());
-        this.currectNodeClicked(e.getdata());
+        this.currectNodeClicked(e.getData());
       }, this);
       toolbar.add(currentNodeButton);
 

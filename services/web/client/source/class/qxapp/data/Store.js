@@ -1495,6 +1495,13 @@ qx.Class.define("qxapp.data.Store", {
       req.send();
 
       return true;
+    },
+
+    stopInteractiveService(nodeId) {
+      const url = "/running_interactive_services";
+      const query = "/"+encodeURIComponent(nodeId);
+      const request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
+      request.send();
     }
   }
 });
