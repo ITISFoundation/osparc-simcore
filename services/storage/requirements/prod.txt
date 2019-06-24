@@ -11,7 +11,7 @@
 
 # installs this repo's packages
 ../../packages/s3wrapper/
-../../packages/postgres-models/
+../../packages/postgres-database/
 ../../packages/simcore-sdk/
 ../../packages/service-library
 

@@ -1,4 +1,4 @@
-# DEPRECATED: Use instead postgres-models
+# DEPRECATED: Use instead postgres-database
 import networkx as nx
 from sqlalchemy.orm import mapper
 
