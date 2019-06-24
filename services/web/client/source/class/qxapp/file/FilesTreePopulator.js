@@ -122,6 +122,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
           c.bindProperty("fileId", "fileId", null, item, id);
           c.bindProperty("location", "location", null, item, id);
           c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
         }

@@ -96,6 +96,7 @@ qx.Class.define("qxapp.data.Converters", {
                       fileName,
                       file["location_id"],
                       file["file_uuid"],
+                      file["last_modified"],
                       file["file_size"])
                     ]
                   )]
@@ -120,6 +121,7 @@ qx.Class.define("qxapp.data.Converters", {
               splitted[splitted.length-1],
               file["location_id"],
               file["file_uuid"],
+              file["last_modified"],
               file["file_size"]);
             parent.children.push(fileInfo);
             this.__mergeFileTreeChildren(children, fileInTree);
@@ -139,7 +141,7 @@ qx.Class.define("qxapp.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, fileId, size) {
+    createFileEntry: function(label, location, fileId, lastModified, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
@@ -149,14 +151,18 @@ qx.Class.define("qxapp.data.Converters", {
       if (fileId === undefined) {
         fileId = "Unknown fileId";
       }
+      if (lastModified === undefined) {
+        lastModified = (Math.floor(Math.random()*1000000)+1).toString();
+      }
       if (size === undefined) {
         size = (Math.floor(Math.random()*1000000)+1).toString();
       }
       return {
-        label: label,
-        location: location,
-        fileId: fileId,
-        size: size
+        label,
+        location,
+        fileId,
+        lastModified,
+        size
       };
     },
 

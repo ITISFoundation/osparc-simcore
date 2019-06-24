@@ -61,6 +61,12 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       nullable : true
     },
 
+    lastModified : {
+      check : "String",
+      event: "changeSize",
+      nullable : true
+    },
+
     size : {
       check : "String",
       event: "changeSize",
