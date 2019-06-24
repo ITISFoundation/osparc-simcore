@@ -1339,7 +1339,7 @@ qx.Class.define("qxapp.data.Store", {
       reqFiles.send();
     },
 
-    getMyDocuments: function() {
+    getMyLocations: function() {
       // Get available storage locations
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
@@ -1347,37 +1347,6 @@ qx.Class.define("qxapp.data.Store", {
         const locations = eLoc.getTarget().getResponse()
           .data;
         this.fireDataEvent("myLocations", locations);
-        for (let i=0; i<locations.length; i++) {
-          const locationId = locations[i]["id"];
-          if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-            continue;
-          }
-          // Get list of file meta data
-          const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-          const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-          reqFiles.addListener("success", eFiles => {
-            const files = eFiles.getTarget().getResponse()
-              .data;
-            console.log("My Files", files);
-            if (files && files.length>0) {
-              const data = {
-                location: locationId,
-                files: files
-              };
-              this.fireDataEvent("myDocuments", data);
-            }
-          }, this);
-
-          reqFiles.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            console.error("Failed getting Files list", error);
-          });
-
-          reqFiles.send();
-        }
       }, this);
 
       reqLoc.addListener("fail", e => {
@@ -1388,6 +1357,37 @@ qx.Class.define("qxapp.data.Store", {
       });
 
       reqLoc.send();
+    },
+
+    getFilesByLocation: function(locationId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of file meta data
+      const endPoint = "/storage/locations/" + locationId + "/files/metadata";
+      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        console.log("My Files", files);
+        if (files && files.length>0) {
+          const data = {
+            location: locationId,
+            files: files
+          };
+          this.fireDataEvent("myDocuments", data);
+        }
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
