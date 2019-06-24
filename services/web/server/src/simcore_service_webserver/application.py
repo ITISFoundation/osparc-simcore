@@ -7,9 +7,8 @@ import logging
 from aiohttp import web
 
 
-
-
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.monitoring import setup_monitoring
 
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
@@ -47,6 +46,10 @@ def create_application(config: dict):
     testing = config["main"].get("testing", False)
 
     # TODO: create dependency mechanism and compute setup order
+
+    # TODO: activate optionaly?
+    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
+    setup_monitoring(app, "simcore_service_webserver")
     setup_statics(app)
     setup_db(app)
     setup_session(app)

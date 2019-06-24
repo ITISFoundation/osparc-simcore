@@ -28,10 +28,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
   #----------------------------------------------
-  # TODO: Pedro reviews
-  # wdb:
-  #  image: kozea/wdb
-  #  ports:
-  #    - "1984:1984"
+  # https://hub.docker.com/r/prom/prometheus
+  prometheus:
+    image: prom/prometheus:v2.10.0
+    ports:
+      - 9090:9090
+    volumes:
+      # FIXME: add this folder as docker config??
+      - prometheus/config/:/etc/prometheus/
+      - prometheus_data:/prometheus-data
 volumes:
   portainer_data:
+  prometheus_data:
