@@ -1,5 +1,3 @@
-# pylint: disable=unused-import
-
 # FIXME: temporary import from other modules until all models are found. Then revert the import!
 #from simcore_sdk.models import metadata as sdk_metadata  # imports pipeline stuff as well
 #import simcore_service_webserver.db_models
@@ -12,6 +10,7 @@
 
 #target_metadatas = [sdk_metadata, storage_metadata]
 
+# pylint: disable=unused-import
 from . import storage_tables, webserver_tables
 from .tables.base import metadata
 
