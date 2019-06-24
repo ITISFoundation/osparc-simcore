@@ -1,3 +1,4 @@
+# DEPRECATED: Use instead postgres-models
 import networkx as nx
 from sqlalchemy.orm import mapper
 
@@ -21,6 +22,7 @@ class ComputationalPipeline(object):
     #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():
+            assert key in ComputationalPipeline._sa_class_manager.keys()
             setattr(self, key, value)
 
     @property
@@ -42,9 +44,14 @@ class ComputationalPipeline(object):
 mapper(ComputationalPipeline, comp_pipeline)
 
 
+
+
+
 class ComputationalTask(object):
+    #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():
+            assert key in ComputationalTask._sa_class_manager.keys()
             setattr(self, key, value)
 
 
