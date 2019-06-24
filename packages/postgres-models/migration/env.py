@@ -1,10 +1,9 @@
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from simcore_postgres_models.settings import target_metadatas, sqlalchemy_url
+from sqlalchemy import engine_from_config, pool
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,7 +15,6 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from simcore_postgres_models.api import target_metadatas
 target_metadata = target_metadatas
 
 # other values from the config, defined by the needs of env.py,
@@ -37,7 +35,9 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # url = config.get_main_option("sqlalchemy.url")
+
+
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True
     )
