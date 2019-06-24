@@ -5,7 +5,7 @@
 import sqlalchemy as sa
 
 from .base import metadata
-from .comp_pipeline_table import UNKNOWN
+from .comp_pipeline import UNKNOWN
 
 comp_tasks = sa.Table("comp_tasks", metadata,
     # this task db id

@@ -1,8 +1,8 @@
 import sqlalchemy as sa
 
 from .base import metadata
-from .projects_table import projects
-from .users_table import users
+from .projects import projects
+from .users import users
 
 user_to_projects = sa.Table("user_to_projects", metadata,
     sa.Column("id", sa.BigInteger, nullable=False, primary_key=True),

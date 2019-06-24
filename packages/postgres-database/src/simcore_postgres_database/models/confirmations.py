@@ -9,7 +9,7 @@ import enum
 import sqlalchemy as sa
 
 from .base import metadata
-from .users_table import users
+from .users import users
 
 
 class ConfirmationAction(enum.Enum):

@@ -3,7 +3,7 @@
 import sqlalchemy as sa
 
 from .base import metadata
-from .users_table import users
+from .users import users
 
 # NOTE: this is another way of of defining keys ...
 tokens = sa.Table("tokens", metadata,
