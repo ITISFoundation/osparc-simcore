@@ -4,7 +4,7 @@
     The access model is created upon setting up of the security subsystem
 """
 
-from simcore_postgres_database.models.users_table import UserRole
+from simcore_postgres_database.models.users import UserRole
 
 
 # A role defines a set of operations that the user *can* perform
