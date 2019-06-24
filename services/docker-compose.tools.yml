@@ -34,9 +34,15 @@ services:
     ports:
       - 9090:9090
     volumes:
-      # FIXME: add this folder as docker config??
-      - prometheus/config/:/etc/prometheus/
       - prometheus_data:/prometheus-data
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    depends_on:
+      - webserver
 volumes:
   portainer_data:
   prometheus_data:
+configs:
+  prometheus_config:
+    file: ./prometheus/config/prometheus.yml
