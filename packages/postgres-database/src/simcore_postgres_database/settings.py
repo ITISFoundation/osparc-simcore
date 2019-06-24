@@ -1,9 +1,8 @@
-# pylint: disable=unused-import
 import os
 
-from . import storage_tables, webserver_tables
-from .tables.base import metadata
+from . import metadata
 
+# Schemas metadata (pre-loaded in __init__.py)
 target_metadatas = [metadata, ]
 
 # Data Source Name (DSN) template

@@ -1,8 +1,8 @@
 """
    Facade to keep API LEGACY
 """
-from simcore_postgres_models.tables.base import metadata
-from simcore_postgres_models.webserver_tables import (ConfirmationAction,
+from simcore_postgres_database.models.base import metadata
+from simcore_postgres_database.webserver_models import (ConfirmationAction,
                                                       UserRole, UserStatus,
                                                       confirmations, tokens,
                                                       users)

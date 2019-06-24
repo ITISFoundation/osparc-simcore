@@ -1,4 +1,4 @@
-from simcore_postgres_models.tables.base import metadata
+from simcore_postgres_database.models.base import metadata
 
 __all__ = [
     "metadata"

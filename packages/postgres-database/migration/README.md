@@ -26,7 +26,7 @@ INFO  [alembic.autogenerate.compare] Detected added table 'file_meta_data'
 INFO  [alembic.ddl.postgresql] Detected sequence named 'user_to_projects_id_seq' as owned by integer column 'user_to_projects(id)', assuming SERIAL and omitting
 INFO  [alembic.ddl.postgresql] Detected sequence named 'tokens_token_id_seq' as owned by integer column 'tokens(token_id)', assuming SERIAL and omitting
 INFO  [alembic.ddl.postgresql] Detected sequence named 'comp_tasks_task_id_seq' as owned by integer column 'comp_tasks(task_id)', assuming SERIAL and omitting
-  Generating /home/crespo/devp/osparc-simcore/packages/postgres_models/migration/versions/86f
+  Generating /home/crespo/devp/osparc-simcore/packages/postgres-database/migration/versions/86f
 ca23596da_adding_storage_service_tables.py ... done
 ```
 Auto-generates some scripts under [migration/versions](packages/postgres-models/migration/versions). The migration script **needs to be reviewed and edited**, as Alembic currently does not detect every change you

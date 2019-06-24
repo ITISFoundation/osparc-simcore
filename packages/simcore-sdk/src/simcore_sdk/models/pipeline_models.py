@@ -2,13 +2,13 @@
 import networkx as nx
 from sqlalchemy.orm import mapper
 
-from simcore_postgres_models.tables.comp_pipeline_table import (FAILED,
+from simcore_postgres_database.models.comp_pipeline_table import (FAILED,
                                                                 PENDING,
                                                                 RUNNING,
                                                                 SUCCESS,
                                                                 UNKNOWN,
                                                                 comp_pipeline)
-from simcore_postgres_models.tables.comp_tasks_table import comp_tasks
+from simcore_postgres_database.models.comp_tasks_table import comp_tasks
 
 from .base import metadata
 

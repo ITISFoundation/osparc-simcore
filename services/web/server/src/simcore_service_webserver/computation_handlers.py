@@ -18,7 +18,7 @@ from celery import Celery
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
-from simcore_postgres_models.webserver_tables import comp_pipeline, comp_tasks
+from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as rabbit_config
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION

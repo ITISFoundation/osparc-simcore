@@ -9,7 +9,7 @@ import sqlalchemy as sa
 import tenacity
 from sqlalchemy.orm import sessionmaker
 
-from simcore_postgres_models.tables.base import metadata
+from simcore_postgres_database.models.base import metadata
 from simcore_service_webserver.db import DSN
 
 

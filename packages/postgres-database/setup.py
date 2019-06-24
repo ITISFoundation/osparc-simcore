@@ -20,7 +20,7 @@ test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 
 setup(
-    name='simcore-postgres-models',
+    name='simcore-postgres-database',
     version=version,
     author="Pedro Crespo (pcrespov)",
     description="Database models served by the simcore 'postgres' core service",

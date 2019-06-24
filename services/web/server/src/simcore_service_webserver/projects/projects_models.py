@@ -2,7 +2,7 @@
     Facade
 """
 
-from simcore_postgres_models.webserver_tables import (ProjectType, projects,
+from simcore_postgres_database.webserver_models import (ProjectType, projects,
                                                       user_to_projects)
 
 __all__ = [
