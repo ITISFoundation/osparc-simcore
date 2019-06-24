@@ -21,6 +21,7 @@ multidict==4.5.2          # via aiohttp, yarl
 openapi-core==0.8.0
 openapi-spec-validator==0.2.6  # via openapi-core
 pathlib==1.0.1            # via openapi-spec-validator
+prometheus-client==0.7.1
 psycopg2-binary==2.8.2
 pycparser==2.19           # via cffi
 pyyaml==5.1

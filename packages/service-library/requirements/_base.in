@@ -13,4 +13,7 @@ cryptography
 ujson
 werkzeug
 jsonschema
+
+# TODO: these two shall be optional!
 aiohttp_session[secure] # TODO: eliminate this dependency or make it optional!
+prometheus_client  # TODO: add as optional service-library[monitoring]
