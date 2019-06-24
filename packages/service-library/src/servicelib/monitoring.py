@@ -20,21 +20,22 @@ import time
 def middleware_factory(app_name):
     @web.middleware
     async def middlewave_handler(request, handler):
-        request['start_time'] = time.time()
-        request.app['REQUEST_IN_PROGRESS'].labels(
-            app_name, request.path, request.method).inc()
+        try:
+            request['start_time'] = time.time()
+            request.app['REQUEST_IN_PROGRESS'].labels(
+                app_name, request.path, request.method).inc()
 
-        resp = await handler(request)
+            resp = await handler(request)
 
-        resp_time = time.time() - request['start_time']
-        request.app['REQUEST_LATENCY'].labels(
-            app_name, request.path).observe(resp_time)
-        request.app['REQUEST_IN_PROGRESS'].labels(
-            app_name, request.path, request.method).dec()
-        request.app['REQUEST_COUNT'].labels(
-            app_name, request.method, request.path, resp.status).inc()
+            resp_time = time.time() - request['start_time']
+            request.app['REQUEST_LATENCY'].labels(
+                app_name, request.path).observe(resp_time)
+        finally:
+            request.app['REQUEST_IN_PROGRESS'].labels(
+                app_name, request.path, request.method).dec()
 
-        # TODO: num errors!
+            request.app['REQUEST_COUNT'].labels(
+                app_name, request.method, request.path, resp.status).inc()
 
         return resp
     return middlewave_handler
