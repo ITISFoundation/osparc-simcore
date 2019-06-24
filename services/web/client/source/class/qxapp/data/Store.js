@@ -1353,6 +1353,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
+        this.fireDataEvent("myLocations", []);
         console.error("Failed getting Storage Locations", error);
       });
 
@@ -1371,19 +1372,25 @@ qx.Class.define("qxapp.data.Store", {
         const files = eFiles.getTarget().getResponse()
           .data;
         console.log("My Files", files);
+        const data = {
+          location: locationId,
+          files: []
+        };
         if (files && files.length>0) {
-          const data = {
-            location: locationId,
-            files: files
-          };
-          this.fireDataEvent("myDocuments", data);
+          data.files = files;
         }
+        this.fireDataEvent("myDocuments", data);
       }, this);
 
       reqFiles.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          files: []
+        };
+        this.fireDataEvent("myDocuments", data);
         console.error("Failed getting Files list", error);
       });
 
