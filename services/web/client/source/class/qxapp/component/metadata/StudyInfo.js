@@ -38,7 +38,9 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
     __study: null,
 
     __createMainInfo: function() {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
+        alignY: "middle"
+      }));
 
       const title = new qx.ui.basic.Label(this.__study.getName()).set({
         font: "title-16",
