@@ -36,8 +36,10 @@ services:
     volumes:
       - prometheus_data:/prometheus-data
     configs:
-      - source: prometheus_config
+      - source: promet;heus_config
         target: /etc/prometheus/prometheus.yml
+      - source: prometheus_rules
+        target: /etc/prometheus/prometheus-rules.yml
     depends_on:
       - webserver
 volumes:
@@ -46,3 +48,5 @@ volumes:
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
+  prometheus_rules:
+    file: ./prometheus/config/prometheus-rules.yml
