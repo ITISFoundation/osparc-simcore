@@ -33,6 +33,7 @@ faker==1.0.7
 globre==0.1.5
 idna-ssl==1.1.0
 idna==2.8
+importlib-metadata==0.18  # via pluggy, pytest
 isort==4.3.20             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
@@ -46,20 +47,22 @@ more-itertools==7.0.0     # via pytest
 multidict==4.5.2
 openapi-core==0.8.0
 openapi-spec-validator==0.2.6
+packaging==19.0           # via pytest
 passlib==1.7.1
 passwordmeter==0.1.8
 pathlib==1.0.1
 pika==0.10.0
-pluggy==0.11.0            # via pytest
+pluggy==0.12.0            # via pytest
 psycopg2-binary==2.8.2
 py==1.8.0                 # via pytest
 pylint==2.3.1
+pyparsing==2.4.0          # via packaging
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
 pytest-mock==1.10.4
 pytest-runner==4.4
-pytest==4.5.0
+pytest==4.6.3
 python-dateutil==2.8.0    # via faker
 python-engineio==3.5.1
 python-socketio==4.0.1
@@ -83,3 +86,4 @@ wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0  # via docker
 wrapt==1.11.1             # via astroid
 yarl==1.3.0
+zipp==0.5.1               # via importlib-metadata
