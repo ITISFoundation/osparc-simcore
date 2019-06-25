@@ -599,7 +599,21 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         saveAsButton.setMinWidth(70);
 
         saveAsButton.addListener("execute", e => {
-          console.log("Save study as template", studyData["uuid"]);
+          const studyId = studyData["uuid"];
+          console.log("Save study as template", studyId);
+
+          const resources = this.__studyResources.projects;
+
+          resources.addListenerOnce("postSaveAsTemplateSuccess", ev => {
+            console.log(ev);
+            this.reloadTemplateStudies();
+          }, this);
+          resources.addListenerOnce("postSaveAsTemplateError", ev => {
+            console.error(ev);
+          });
+          resources.postSaveAsTemplate({
+            "study_id": studyId
+          });
         }, this);
 
         form.addButton(saveAsButton);
