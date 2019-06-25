@@ -5,14 +5,20 @@
     Codes can be used one time
     Codes have expiration date (duration time is configurable)
 """
+import logging
 from datetime import datetime, timedelta
-from .cfg import cfg
 
 from ..db_models import ConfirmationAction
+from .cfg import cfg
+
+log = logging.getLogger(__name__)
 
 async def validate_confirmation_code(code, db):
     confirmation = await db.get_confirmation({'code': code})
-    if confirmation and is_confirmation_expired(confirmation):
+    has_expired = is_confirmation_expired(confirmation)
+    if confirmation and has_expired:
+        log.info("Confirmation code '%s' %s. Deleting ...", code,
+            "expired" if has_expired else "consumed")
         await db.delete_confirmation(confirmation)
         confirmation = None
     return confirmation
