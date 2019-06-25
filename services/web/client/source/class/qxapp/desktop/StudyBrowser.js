@@ -442,7 +442,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           controller.bindProperty("uuid", "icon", {
             converter: function(data) {
               if (data) {
-                const thumbnailId = this.__uuidToNumber(data);
+                const thumbnailId = that.__uuidToNumber(data); // eslint-disable-line no-underscore-dangle
                 return "qxapp/img"+ thumbnailId +".jpg";
               }
               return "@FontAwesome5Solid/plus-circle/80";
