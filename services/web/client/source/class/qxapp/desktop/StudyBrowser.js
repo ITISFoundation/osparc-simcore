@@ -436,10 +436,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           controller.bindProperty("uuid", "icon", {
             converter: function(data) {
               if (data) {
-                const lastCharacters = data.substr(data.length-10);
-                const aNumber = parseInt(lastCharacters, 16);
-                const thumbnailId = aNumber%nThumbnails;
-                return "qxapp/img"+ thumbnailId +".jpg";
+                return qxapp.utils.Utils.getThumbnailFromUuid(data);
               }
               return "@FontAwesome5Solid/plus-circle/80";
             }

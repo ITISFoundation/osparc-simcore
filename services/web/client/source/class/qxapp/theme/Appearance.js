@@ -154,7 +154,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
     },
     "panelview/title": {
       style: state => ({
-        font: "title-14"
+        font: "title-16"
       })
     },
     "panelview-titlebar": {

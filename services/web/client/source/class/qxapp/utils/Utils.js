@@ -313,6 +313,13 @@ qx.Class.define("qxapp.utils.Utils", {
         }
       }
       return parsedFragment;
+    },
+
+    getThumbnailFromUuid: (uuid) => {
+      const lastCharacters = uuid.substr(uuid.length-10);
+      const aNumber = parseInt(lastCharacters, 16);
+      const thumbnailId = aNumber%25;
+      return "qxapp/img"+ thumbnailId +".jpg";
     }
   }
 });

@@ -72,7 +72,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
     this.__settingsLayout = new qx.ui.groupbox.GroupBox(this.tr("Settings")).set({
       appearance: "settings-groupbox",
-      maxWidth: 400,
+      maxWidth: 500,
       alignX: "center"
     });
     this.__settingsLayout.setLayout(new qx.ui.layout.VBox());

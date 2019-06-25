@@ -30,10 +30,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     // Title bar
-    this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
-      .set({
-        appearance: "panelview-titlebar"
-      });
+    this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
+    })).set({
+      appearance: "panelview-titlebar",
+    });
     this._add(this.__titleBar);
 
     this.__caret = this.getChildControl("caret");
@@ -51,8 +52,8 @@ qx.Class.define("qxapp.desktop.PanelView", {
   },
 
   statics: {
-    MORE_CARET: "@MaterialIcons/expand_more/20",
-    LESS_CARET: "@MaterialIcons/expand_less/20"
+    MORE_CARET: "@MaterialIcons/expand_more/",
+    LESS_CARET: "@MaterialIcons/expand_less/"
   },
 
   properties: {
@@ -83,6 +84,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
     appearance: {
       init: "panelview",
       refine: true
+    },
+
+    caretSize: {
+      init: 20,
+      nullable: false,
+      check: "Integer",
+      apply: "_applyCaretSize"
     }
   },
 
@@ -104,8 +112,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
           this.__titleBar.addAt(control, 0);
           break;
         case "caret":
-          control = new qx.ui.basic.Image(this.getCollapsed() ? this.self().MORE_CARET : this.self().LESS_CARET).set({
-            marginTop: 2,
+          control = new qx.ui.basic.Image(this.__getCaretId(this.getCollapsed())).set({
             visibility: "excluded"
           });
           this.__titleBar.addAt(control, 1);
@@ -124,7 +131,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyCollapsed: function(collapsed) {
       if (this.getContent()) {
-        this.__caret.setSource(collapsed ? this.self().MORE_CARET : this.self().LESS_CARET);
+        this.__caret.setSource(this.__getCaretId(collapsed));
         if (collapsed) {
           this.__minHeight = this.getMinHeight();
           if (this.getContent()) {
@@ -193,6 +200,17 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applySideCollapsed: function(sideCollapse, old) {
       this.setCollapsed(sideCollapse);
+    },
+
+    _applyCaretSize: function(size) {
+      this.__caret.setSource(this.__getCaretId(this.getCollapsed()));
+    },
+
+    __getCaretId(collapsed) {
+      const caretSize = this.getCaretSize();
+      const moreCaret = this.self().MORE_CARET;
+      const lessCaret = this.self().LESS_CARET;
+      return collapsed ? moreCaret + caretSize : lessCaret + caretSize;
     },
 
     __attachEventHandlers: function() {
