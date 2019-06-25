@@ -54,7 +54,13 @@ class Handlers:
         return 3
 
     async def get_mixed(self, request: web.Request):
-        data = [{'x': 3, 'y': "3", 'z': [Data(3, "3")]*2}]*3
+        data = [
+            {
+                'x': 3,
+                'y': "3",
+                'z': [Data(3, "3")]*2
+            }
+        ]*3
         return data
 
 

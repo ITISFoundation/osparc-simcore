@@ -85,9 +85,9 @@ components:
         data:
           type: array
           items:
+            # Free form objects
             type: object
-            additionalProperties:
-              type: string
+            additionalProperties: true
         error:
           $ref: "#/components/schemas/Error"
     EnvelopedNumber:

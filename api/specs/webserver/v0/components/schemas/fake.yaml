@@ -22,8 +22,7 @@ FakeType:
       type: string
     body_value:
       type: object
-      additionalProperties:
-        type: string
+      additionalProperties: true
   example:
     path_value: foo
     query_value: bar
