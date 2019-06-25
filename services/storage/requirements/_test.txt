@@ -12,15 +12,15 @@ astroid==2.2.5            # via pylint
 async-timeout==3.0.1
 atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
-blackfynn==2.11.1
-boto3==1.9.153
-botocore==1.12.153
-certifi==2019.3.9
+blackfynn==2.13.1
+boto3==1.9.175
+botocore==1.12.175
+certifi==2019.6.16
 chardet==3.0.4
 codecov==2.0.15
 configparser==3.7.4
 coverage==4.5.3           # via codecov, coveralls, pytest-cov
-coveralls==1.7.0
+coveralls==1.8.1
 deprecated==1.2.5
 docopt==0.6.2
 docutils==0.14
@@ -31,20 +31,19 @@ idna==2.8
 importlib-metadata==0.18  # via pluggy, pytest
 isort==4.3.20             # via pylint
 jmespath==0.9.4
-jsonschema==2.6.0
 lazy-object-proxy==1.4.1  # via astroid
-marshmallow==2.19.2
+marshmallow==2.19.5
 mccabe==0.6.1             # via pylint
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2
-numpy==1.16.3
+numpy==1.16.4
 packaging==19.0           # via pytest
 pandas==0.24.2
 pluggy==0.12.0            # via pytest
 protobuf==3.2.0
-psutil==5.6.2
-psycopg2-binary==2.7.7
-psycopg2==2.8.2
+psutil==5.6.3
+psycopg2-binary==2.8.3
+psycopg2==2.8.3
 py==1.8.0                 # via pytest
 pylint==2.3.1
 pyparsing==2.4.0          # via packaging
@@ -52,27 +51,27 @@ pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
 pytest-mock==1.10.4
-pytest-runner==4.4
+pytest-runner==5.1
 pytest==4.6.3
 python-dateutil==2.8.0
 pytz==2019.1
-pyyaml==5.1
+pyyaml==5.1.1
 requests==2.22.0
-s3transfer==0.2.0
+s3transfer==0.2.1
 semantic-version==2.6.0
 semver==2.8.1
 six==1.12.0
-sqlalchemy==1.3.3
+sqlalchemy==1.3.5
 tenacity==5.0.4
 trafaret-config==2.0.2
 trafaret==1.2.0
-typed-ast==1.3.5          # via astroid
-typing-extensions==3.7.2
-urllib3==1.24.3
-virtualenv==16.6.0
+typed-ast==1.4.0          # via astroid
+typing-extensions==3.7.4
+urllib3==1.25.3
+virtualenv==16.6.1
 wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0
-wrapt==1.11.1
+wrapt==1.11.2
 yarl==1.3.0
 zipp==0.5.1               # via importlib-metadata
 
