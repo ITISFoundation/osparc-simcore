@@ -102,6 +102,7 @@ components:
       properties:
         data:
           type: string
+          format: password
         error:
           $ref: "#/components/schemas/Error"
     EnvelopedData:

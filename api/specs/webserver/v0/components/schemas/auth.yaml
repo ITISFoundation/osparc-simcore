@@ -17,7 +17,7 @@ LoginForm:
       #FIXME: format: email
     password:
       type: string
-      #FIXME: format: password
+      format: password
   example:
     email: foo@mymail.com
     password: 'my secret'
@@ -55,10 +55,10 @@ ResetPasswordForm:
   properties:
     password:
       type: string
-      #FIXME: format: password
+      format: password
     confirm:
       type: string
-      #FIXME: format: password
+      format: password
   example:
     password: 'my secret'
     confirm: 'my secret'
@@ -73,13 +73,13 @@ ChangePasswordForm:
   properties:
     current:
       type: string
-      #FIXME: format: password
+      format: password
     new:
       type: string
-      #FIXME: format: password
+      format: password
     confirm:
       type: string
-      #FIXME: format: password
+      format: password
   example:
     current: 'my secret'
     new: 'my new secret'
