@@ -31,6 +31,14 @@ async def check_health(request: web.Request):
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
+    # FIXME: there is a bug!! cannot unmarshall a Free-Form Object
+    #
+    #
+    # {'path_value': 'one', 'query_value': 'two', 'body_value': {}}
+    # data1 = body_to_dict(body)
+    # data = await request.json()
+    # {'path_value': 'one', 'query_value': 'two', 'body_value': {'a': 'foo', 'b': '45'}}
+
     assert params, "params %s" % params
     assert query, "query %s" % query
     assert body, "body %s" % body

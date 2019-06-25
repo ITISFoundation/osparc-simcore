@@ -6,7 +6,7 @@ UNDER DEVELOPMENT
 TODO: deprecate. Too general
 """
 import json
-from typing import Dict
+from typing import Dict, List
 
 import attr
 from aiohttp import web
@@ -21,11 +21,15 @@ from .rest_oas import get_specs
 
 def body_to_dict(body: BodyModel) -> Dict:
     # openapi_core.extensions.models.factories.Model -> dict
+    # TODO: add tests ... ensure this is right!
     dikt = {}
-    for k,v in body.__dict__.items():
-        if hasattr(v, '__dict__'):
-            v = body_to_dict(v)
-        dikt[k] = v
+    for key, value in body.__dict__.items():
+        if hasattr(value, '__dict__'):
+            value = body_to_dict(value)
+        elif isinstance(value, List):
+            value = [body_to_dict(item) for item in value ]
+
+        dikt[key] = value
     return dikt
 
 
