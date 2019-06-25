@@ -151,7 +151,10 @@ qx.Class.define("qxapp.data.Permissions", {
           "preferences.role.update",
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
-          "study.logger.debug.read"
+          "study.logger.debug.read",
+          "studies.template.create",
+          "studies.template.update",
+          "studies.template.delete"
         ],
         "admin": []
       };
