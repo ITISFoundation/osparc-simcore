@@ -509,13 +509,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       });
     },
 
-    __createForm: function(studyData, fromTemplate) {
+    __createForm: function(studyData, isTemplate) {
       while (this.__editStudyLayout.getChildren().length > 1) {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "prjOwner", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = fromTemplate ? [] : ["name", "description"];
+      const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
+      const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
+      const canDeleteTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.delete");
+
+      const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
+      const itemsToBeModified = (isTemplate && !canUpdateTemplate) ? [] : ["name", "description", "thumbnail"];
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {
@@ -528,6 +532,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             case "description":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Description"));
+              break;
+            case "thumbnail":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Thumbnail"));
               break;
             case "prjOwner":
               control = new qx.ui.form.TextField();
@@ -563,7 +571,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       // buttons
       let saveButton = new qx.ui.form.Button(this.tr("Save"));
       saveButton.setMinWidth(70);
-      saveButton.setEnabled(!fromTemplate);
+      saveButton.setEnabled(!isTemplate || canUpdateTemplate);
       saveButton.addListener("execute", e => {
         for (let i=0; i<itemsToBeModified.length; i++) {
           const key = itemsToBeModified[i];
@@ -585,6 +593,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }, this);
       form.addButton(saveButton);
 
+      if (!isTemplate && canCreateTemplate) {
+        const saveAsButton = new qx.ui.form.Button(this.tr("Save As Template"));
+        saveAsButton.setMinWidth(70);
+
+        saveAsButton.addListener("execute", e => {
+          console.log("Save study as template", studyData["uuid"]);
+        }, this);
+
+        form.addButton(saveAsButton);
+      }
+
       let cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
       cancelButton.setMinWidth(70);
       cancelButton.addListener("execute", e => {
@@ -594,7 +613,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
       let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
       deleteButton.setMinWidth(70);
-      deleteButton.setEnabled(!fromTemplate);
+      deleteButton.setEnabled(!isTemplate || canDeleteTemplate);
       deleteButton.addListener("execute", e => {
         let win = this.__createConfirmWindow();
         win.center();
