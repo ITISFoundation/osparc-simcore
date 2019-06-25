@@ -153,6 +153,10 @@ async def test_registration_with_invitation(client, is_invitation_required, has_
             })
             await assert_status(r, expected_response)
 
+        if is_invitation_required and has_valid_invitation:
+            db = get_storage(client.app)
+            assert not await db.get_confirmation(confirmation)
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '--maxfail=1'])
