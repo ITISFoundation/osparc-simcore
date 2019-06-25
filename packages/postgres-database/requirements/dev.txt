@@ -10,4 +10,4 @@
 -r _test.txt
 
 # current module
--e .
+-e .[migration]

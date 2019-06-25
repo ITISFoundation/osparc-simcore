@@ -5,3 +5,6 @@
 -r _base.txt
 
 alembic
+click
+docker
+tenacity
