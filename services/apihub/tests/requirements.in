@@ -1,6 +1,3 @@
-
-openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
-
 aiohttp
 openapi-spec-validator
 jsonschema
