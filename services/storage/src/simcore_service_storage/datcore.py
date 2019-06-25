@@ -61,8 +61,8 @@ class DatcoreClient(object):
     def list_dataset_files_recursively(self, files: List[FileMetaData], base: BaseCollection, current_root: Path):
         for item in base:
             if isinstance(item, Collection):
-                current_root = current_root  / Path(item.name)
-                self.list_dataset_files_recursively(files, item, current_root)
+                _current_root = current_root  / Path(item.name)
+                self.list_dataset_files_recursively(files, item, _current_root)
             else:
                 parts = current_root.parts
                 bucket_name = parts[0]
