@@ -104,4 +104,5 @@ class NewInvitation(NewUser):
         return self.confirmation
 
     async def __aexit__(self, *args):
-        await self.db.delete_confirmation(self.confirmation)
+        if await self.db.get_confirmation(self.confirmation):
+            await self.db.delete_confirmation(self.confirmation)

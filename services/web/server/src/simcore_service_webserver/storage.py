@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 async def storage_client_ctx(app: web.Application):
     # TODO: deduce base url from configuration and add to session
-    async with ClientSession(loop=app.loop) as session: # TODO: check if should keep webserver->storage session?
+    async with ClientSession() as session: # TODO: check if should keep webserver->storage session?
         app[APP_STORAGE_SESSION_KEY] = session
         yield
 
