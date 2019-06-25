@@ -100,6 +100,12 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     workbench: {
       check: "qxapp.data.model.Workbench",
       nullable: false
+    },
+
+    currentNodeId: {
+      check: "String",
+      nullable: true,
+      apply: "__currentNodeIdChanged"
     }
   },
 
@@ -130,6 +136,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   },
 
   members: {
+    __currentNodeButton: null,
     __textfield: null,
     __logModel: null,
     __logView: null,
@@ -138,11 +145,14 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     __createFilterToolbar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
 
-      const clearButton = new qx.ui.toolbar.Button(this.tr("Clear"), "@FontAwesome5Solid/ban/16");
-      clearButton.addListener("execute", e => {
-        this.clearLogger();
+      const currentNodeButton = this.__currentNodeButton = new qx.ui.form.ToggleButton(this.tr("This node")).set({
+        appearance: "toolbar-button"
+      });
+      currentNodeButton.addListener("changeValue", e => {
+        // this.currectNodeClicked(currentNodeButton.getValue());
+        this.currectNodeClicked(e.getData());
       }, this);
-      toolbar.add(clearButton);
+      toolbar.add(currentNodeButton);
 
       toolbar.add(new qx.ui.toolbar.Separator());
       this.__textfield = new qx.ui.form.TextField().set({
@@ -212,7 +222,20 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       return table;
     },
 
-    nodeSelected: function(nodeId) {
+    __currentNodeIdChanged: function(newValue) {
+      this.__currentNodeButton.setValue(false);
+    },
+
+    currectNodeClicked: function(checked) {
+      const currentNodeId = this.getCurrentNodeId();
+      if (checked && currentNodeId !== "root") {
+        this.__nodeSelected(currentNodeId);
+      } else {
+        this.__nodeSelected();
+      }
+    },
+
+    __nodeSelected: function(nodeId) {
       const workbench = this.getWorkbench();
       const node = workbench.getNode(nodeId);
       if (node) {
@@ -240,10 +263,6 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     error: function(nodeId, msg = "") {
       this.__addLogs(nodeId, [msg], LOG_LEVEL.error);
-    },
-
-    clearLogger: function() {
-      this.__logModel.clearTable();
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {

@@ -153,7 +153,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     iFrame: {
       check: "qxapp.component.widget.PersistentIframe",
-      init: null
+      init: null,
+      nullable: true
     },
 
     restartIFrameButton: {
@@ -182,6 +183,20 @@ qx.Class.define("qxapp.data.model.Node", {
   events: {
     "updatePipeline": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
+  },
+
+  statics: {
+    isDynamic: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "dynamic");
+    },
+
+    isComputational: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "computational");
+    },
+
+    isRealService: function(metaData) {
+      return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
+    }
   },
 
   members: {
@@ -227,17 +242,15 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isDynamic: function() {
-      const metaData = this.getMetaData();
-      return (metaData && metaData.type && metaData.type === "dynamic");
+      return qxapp.data.model.Node.isDynamic(this.getMetaData());
     },
 
     isComputational: function() {
-      const metaData = this.getMetaData();
-      return (metaData && metaData.type && metaData.type === "computational");
+      return qxapp.data.model.Node.isComputational(this.getMetaData());
     },
 
     isRealService: function() {
-      return (this.isInKey("simcore/services/dynamic") || this.isInKey("simcore/services/comp"));
+      return qxapp.data.model.Node.isRealService(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -682,7 +695,9 @@ qx.Class.define("qxapp.data.model.Node", {
       let progressTimer = new qx.event.Timer(interval);
       progressTimer.addListener("interval", () => {
         if (this.getServiceUrl() === null) {
-          const newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          let newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
+          newProgress = Math.min(newProgress, 100);
+          newProgress = Math.max(newProgress, 0);
           this.setProgress(newProgress);
           if (newProgress === 100) {
             increment = false;
@@ -760,8 +775,6 @@ qx.Class.define("qxapp.data.model.Node", {
         // FIXME: this is temporary until the reverse proxy works for these services
         if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
           srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
-        } else if (this.getKey().includes("3d-viewer")) {
-          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
         }
 
         this.__serviceReadyIn(srvUrl);
@@ -791,7 +804,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__stopInteractiveNode();
+      this.stopInteractiveService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -803,12 +816,19 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __stopInteractiveNode: function() {
+    removeIFrame: function() {
+      let iFrame = this.getIFrame();
+      if (iFrame) {
+        iFrame.destroy();
+        this.setIFrame(null);
+      }
+    },
+
+    stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        let url = "/running_interactive_services";
-        let query = "/"+encodeURIComponent(this.getNodeId());
-        let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
-        request.send();
+        const store = qxapp.data.Store.getInstance();
+        store.stopInteractiveService(this.getNodeId());
+        this.removeIFrame();
       }
     },
 

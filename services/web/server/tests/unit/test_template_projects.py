@@ -33,11 +33,12 @@ async def project_specs(loop, project_schema_file: Path) -> Dict:
 def fake_db():
     Fake.reset()
     Fake.load_template_projects()
+    yield Fake
+    Fake.reset()
 
 async def test_validate_templates(loop, project_specs: Dict, fake_db):
-    for pid, project in Fake.projects.items():
+    for pid, project in fake_db.projects.items():
         try:
             validate_instance(project.data, project_specs)
         except ValidationError:
             pytest.fail("validation of project {} failed".format(pid))
-

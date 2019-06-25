@@ -11,6 +11,7 @@ from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
+from utils import has_datcore_tokens, USER_ID, BUCKET_NAME
 
 
 def parse_db(dsm_mockup_db):
@@ -30,11 +31,15 @@ def parse_db(dsm_mockup_db):
 def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service, osparc_api_specs_dir):
     app = web.Application()
 
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+
     main_cfg = {
         'port': aiohttp_unused_port(),
         'host': 'localhost',
         'python2': python27_path,
-        "max_workers" : 4
+        "max_workers" : 4,
+        "test_datcore" : { 'api_token' : api_token, 'api_secret' : api_secret}
     }
     rest_cfg = {
         'oas_repo': str(osparc_api_specs_dir), #'${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs',
@@ -59,7 +64,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
     setup_dsm(app)
     setup_s3(app)
 
-
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=main_cfg) )
     return cli
 
@@ -78,9 +82,11 @@ async def test_health_check(client):
     assert data['name'] == 'simcore_service_storage'
     assert data['status'] == 'SERVICE_RUNNING'
 
-@pytest.mark.travis
 async def test_locations(client):
-    user_id = "0"
+    if not has_datcore_tokens():
+        return
+
+    user_id = USER_ID
 
     resp = await client.get("/v0/locations?user_id={}".format(user_id))
 
@@ -153,8 +159,9 @@ async def test_upload_link(client, dsm_mockup_db):
         assert not error
         assert data
 
-@pytest.mark.travis
 async def test_copy(client, dsm_mockup_db, datcore_testbucket):
+    if not has_datcore_tokens():
+        return
     # copy N files
     N = 2
     counter = 0
@@ -176,8 +183,8 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
             break
 
     # list files for every user
-    user_id = "0"
-    resp = await client.get("/v0/locations/1/files/metadata?user_id={}".format(user_id))
+    user_id = USER_ID
+    resp = await client.get("/v0/locations/1/files/metadata?user_id={}&uuid_filter={}".format(user_id, BUCKET_NAME))
     payload = await resp.json()
     assert resp.status == 200, str(payload)
 

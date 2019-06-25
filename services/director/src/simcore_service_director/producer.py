@@ -57,24 +57,25 @@ async def _check_setting_correctness(setting: Dict):
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-async def _read_service_settings(key: str, tag: str) -> Dict:
+async def _read_service_settings(app: aiohttp.web.Application, key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
+    image_labels = await registry_proxy.get_image_labels(app, key, tag)
     runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS]) if SERVICE_RUNTIME_SETTINGS in image_labels else {}
     log.debug("Retrieved service runtime settings: %s", runtime_parameters)
     return runtime_parameters
 
 
-async def _get_service_boot_parameters_labels(key: str, tag: str) -> Dict:
+async def _get_service_boot_parameters_labels(app: aiohttp.web.Application, key: str, tag: str) -> Dict:
     # pylint: disable=C0103
-    image_labels = await registry_proxy.retrieve_labels_of_image(key, tag)
+    image_labels = await registry_proxy.get_image_labels(app, key, tag)
     boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS]) if SERVICE_RUNTIME_BOOTSETTINGS in image_labels else {}
     log.debug("Retrieved service boot settings: %s", boot_params)
     return boot_params
 
 
 # pylint: disable=too-many-branches
-async def _create_docker_service_params(client: aiodocker.docker.Docker,
+async def _create_docker_service_params(app: aiohttp.web.Application, 
+                                        client: aiodocker.docker.Docker,
                                         service_key: str,
                                         service_tag: str,
                                         main_service: bool,
@@ -84,7 +85,7 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
                                         node_base_path: str,
                                         internal_network_id: str) -> Dict:
 
-    service_parameters_labels = await _read_service_settings(service_key, service_tag)
+    service_parameters_labels = await _read_service_settings(app, service_key, service_tag)
 
     log.debug("Converting labels to docker runtime parameters")
     container_spec = {
@@ -94,7 +95,8 @@ async def _create_docker_service_params(client: aiodocker.docker.Docker,
             "SIMCORE_USER_ID": user_id,
             "SIMCORE_NODE_UUID": node_uuid,
             "SIMCORE_PROJECT_ID": project_id,
-            "SIMCORE_NODE_BASEPATH": node_base_path or ""
+            "SIMCORE_NODE_BASEPATH": node_base_path or "",
+            "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX)
     }
@@ -315,10 +317,10 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
     log.debug("Waited for service %s to start", service_name)
 
 
-async def _get_repos_from_key(service_key: str) -> List[Dict]:
+async def _get_repos_from_key(app: aiohttp.web.Application, service_key: str) -> List[Dict]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
-        service_key: await registry_proxy.retrieve_list_of_image_tags(service_key)
+        service_key: await registry_proxy.list_image_tags(app, service_key)
     }
     log.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:
@@ -330,11 +332,11 @@ async def _get_repos_from_key(service_key: str) -> List[Dict]:
     return list_of_images
 
 
-async def _get_dependant_repos(service_key: str, service_tag: str) -> Dict:
-    list_of_images = await _get_repos_from_key(service_key)
+async def _get_dependant_repos(app: aiohttp.web.Application, service_key: str, service_tag: str) -> Dict:
+    list_of_images = await _get_repos_from_key(app, service_key)
     tag = await _find_service_tag(list_of_images, service_key, service_tag)
     # look for dependencies
-    dependent_repositories = await registry_proxy.list_interactive_service_dependencies(service_key, tag)
+    dependent_repositories = await registry_proxy.list_interactive_service_dependencies(app, service_key, tag)
     return dependent_repositories
 
 
@@ -354,7 +356,8 @@ async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag:
     log.debug("Service tag found is %s ", service_tag)
     return tag
 
-async def _start_docker_service(client: aiodocker.docker.Docker,
+async def _start_docker_service(app: aiohttp.web.Application, 
+                                client: aiodocker.docker.Docker,
                                 user_id: str,
                                 project_id: str,
                                 service_key: str,
@@ -364,7 +367,7 @@ async def _start_docker_service(client: aiodocker.docker.Docker,
                                 node_base_path: str,
                                 internal_network_id: str
                                 ) -> Dict:  # pylint: disable=R0913
-    service_parameters = await _create_docker_service_params(client, service_key, service_tag, main_service,
+    service_parameters = await _create_docker_service_params(app, client, service_key, service_tag, main_service,
                                                                 user_id, node_uuid, project_id, node_base_path, internal_network_id)
     log.debug("Starting docker service %s:%s using parameters %s", service_key, service_tag, service_parameters)
     # lets start the service
@@ -385,7 +388,7 @@ async def _start_docker_service(client: aiodocker.docker.Docker,
         service = await client.services.inspect(service["ID"])
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
-        service_boot_parameters_labels = await _get_service_boot_parameters_labels(service_key, service_tag)
+        service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
         service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
             await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels)
@@ -420,7 +423,8 @@ async def _silent_service_cleanup(node_uuid):
         pass
 
 
-async def _create_node(client: aiodocker.docker.Docker,
+async def _create_node(app: aiohttp.web.Application, 
+                        client: aiodocker.docker.Docker,
                         user_id: str,
                         project_id: str,
                         list_of_services: List[Dict],
@@ -440,7 +444,8 @@ async def _create_node(client: aiodocker.docker.Docker,
 
     containers_meta_data = list()
     for service in list_of_services:
-        service_meta_data = await _start_docker_service(client, user_id,
+        service_meta_data = await _start_docker_service(app,
+                                                        client, user_id,
                                                         project_id,
                                                         service["key"],
                                                         service["tag"],
@@ -454,24 +459,24 @@ async def _create_node(client: aiodocker.docker.Docker,
     return containers_meta_data
 
 
-async def start_service(user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
+async def start_service(app: aiohttp.web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
     # pylint: disable=C0103
     log.debug("starting service %s:%s using uuid %s, basepath %s",
               service_key, service_tag, node_uuid, node_base_path)
     # first check the uuid is available
     async with _docker_client() as client: # pylint: disable=not-async-context-manager
         await _check_node_uuid_available(client, node_uuid)
-        list_of_images = await _get_repos_from_key(service_key)
+        list_of_images = await _get_repos_from_key(app, service_key)
         service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
         log.debug("Found service to start %s:%s", service_key, service_tag)
         list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
         # find the service dependencies
-        list_of_dependencies = await _get_dependant_repos(service_key, service_tag)
+        list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
         log.debug("Found service dependencies: %s", list_of_dependencies)
         if list_of_dependencies:
             list_of_services_to_start.extend(list_of_dependencies)
 
-        containers_meta_data = await _create_node(client, user_id, project_id,
+        containers_meta_data = await _create_node(app, client, user_id, project_id,
                                                    list_of_services_to_start,
                                                    node_uuid, node_base_path)
         node_details = containers_meta_data[0]
@@ -497,7 +502,7 @@ async def _get_service_basepath_from_docker_service(service: Dict) -> str:
         x.split("=") for x in envs_list)}
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
-async def get_service_details(node_uuid: str) -> Dict:
+async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> Dict:
     async with _docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
@@ -514,7 +519,7 @@ async def get_service_details(node_uuid: str) -> Dict:
             service_key, service_tag = await _get_service_key_version_from_docker_service(service)
 
             # get boot parameters
-            service_boot_parameters_labels = await _get_service_boot_parameters_labels(service_key, service_tag)
+            service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
             service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
             service_basepath = await _get_service_basepath_from_docker_service(service)
             service_name =  service["Spec"]["Name"]

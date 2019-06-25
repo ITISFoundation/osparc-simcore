@@ -105,14 +105,16 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
       this.__messages.remove(message);
       this.__messageContainer.resetDecorator();
       this.__messageContainer.add(message);
-      const {width} = message.getSizeHint();
+      const {
+        width
+      } = message.getSizeHint();
       if (this.__displayedMessagesCount === 0 || width > this.__messageContainer.getWidth()) {
         this.__updateContainerPosition(width);
       }
       this.__displayedMessagesCount++;
 
       const wordCount = message.getMessage().split(" ").length;
-      const readingTime = Math.max(4500, wordCount*330); // An average reader takes 300ms to read a word
+      const readingTime = Math.max(5500, wordCount*370); // An average reader takes 300ms to read a word
       qx.event.Timer.once(() => this.__removeMessage(message), this, readingTime);
     },
 
