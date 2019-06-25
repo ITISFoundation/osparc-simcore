@@ -78,9 +78,12 @@ async def create_invitation(host:Dict, guest:str, db:AsyncpgStorage):
     return confirmation
 
 async def check_invitation(invitation:str, db):
-    confirmation = await validate_confirmation_code(invitation, db)
+    confirmation = None
+    if invitation:
+        confirmation = await validate_confirmation_code(invitation, db)
+
     if confirmation:
-        #TODO check if action=invitation??
+        #FIXME: check if action=invitation??
         log.info("Invitation code used. Deleting %s", pformat(get_confirmation_info(confirmation)))
         await db.delete_confirmation(confirmation)
     else:

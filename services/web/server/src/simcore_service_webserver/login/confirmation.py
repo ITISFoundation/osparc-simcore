@@ -15,10 +15,9 @@ log = logging.getLogger(__name__)
 
 async def validate_confirmation_code(code, db):
     confirmation = await db.get_confirmation({'code': code})
-    has_expired = is_confirmation_expired(confirmation)
-    if confirmation and has_expired:
+    if confirmation and is_confirmation_expired(confirmation):
         log.info("Confirmation code '%s' %s. Deleting ...", code,
-            "expired" if has_expired else "consumed")
+            "consumed" if confirmation else "expired")
         await db.delete_confirmation(confirmation)
         confirmation = None
     return confirmation
