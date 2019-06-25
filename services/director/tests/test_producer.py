@@ -13,9 +13,13 @@ import pytest
 
 from simcore_service_director import config, exceptions, producer
 
+@pytest.fixture
+async def aiohttp_mock_app(loop, mocker):
+    aiohttp_app = mocker.patch('aiohttp.web.Application')
+    return aiohttp_mock_app
 
 @pytest.fixture
-async def run_services(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+async def run_services(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn, dependant=False):
         pushed_services = push_services(number_comp, number_dyn, inter_dependent_services=dependant)
@@ -28,9 +32,9 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             service_uuid = str(uuid.uuid1())
             service_basepath = "/my/base/path"
             with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-                await producer.get_service_details(service_uuid)
+                await producer.get_service_details(aiohttp_mock_app, service_uuid)
             # start the service
-            started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
+            started_service = await producer.start_service(aiohttp_mock_app, user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
             if service_description["type"] == "dynamic":
                 assert started_service["published_port"]
@@ -48,7 +52,7 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
             assert "service_basepath" in started_service
             assert started_service["service_basepath"] == service_basepath
             # should not throw
-            node_details = await producer.get_service_details(service_uuid)
+            node_details = await producer.get_service_details(aiohttp_mock_app, service_uuid)
             assert node_details == started_service
             started_services.append(started_service)
         return started_services
@@ -60,7 +64,7 @@ async def run_services(loop, configure_registry_access, configure_schemas_locati
         service_uuid = service["service_uuid"]
         await producer.stop_service(service_uuid)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-            await producer.get_service_details(service_uuid)
+            await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
 
 async def test_start_stop_service(run_services):
@@ -133,17 +137,17 @@ async def test_dependent_services_have_common_network(run_services):
         assert len(list_of_services) == 2
 
 @pytest.mark.skip(reason="needs a real registry for testing auth")
-async def test_authentication(loop, docker_swarm):
+async def test_authentication(aiohttp_mock_app, docker_swarm):
     #this needs to be filled up
     config.REGISTRY_URL = ""
     config.REGISTRY_USER = ""
     config.REGISTRY_PW = ""
     config.REGISTRY_SSL = True
     config.REGISTRY_AUTH = True
-    service = await producer.start_service("someuser", "project", "simcore/services/comp/itis/sleeper", "latest", "node", None)
+    service = await producer.start_service(aiohttp_mock_app, "someuser", "project", "simcore/services/comp/itis/sleeper", "latest", "node", None)
 
 @pytest.mark.skip(reason="slow test and not necessary to repeat")
-async def test_performance_async(loop, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+async def test_performance_async(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     number_of_services = 1
     pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
     assert len(pushed_services) == 2 * number_of_services
@@ -158,11 +162,11 @@ async def test_performance_async(loop, configure_registry_access, configure_sche
         for i in range(10):
             service_uuid = str(uuid.uuid1())
             with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-                await producer.get_service_details(service_uuid)
-            started_service = await producer.start_service(user_id, project_id, service_key, service_version, service_uuid, service_basepath)
+                await producer.get_service_details(aiohttp_mock_app, service_uuid)
+            started_service = await producer.start_service(aiohttp_mock_app, user_id, project_id, service_key, service_version, service_uuid, service_basepath)
 
 @pytest.mark.skip(reason="slow test and not necessary to repeat")
-async def test_performance_pure_docker_api_calls(loop, configure_registry_access, docker_registry, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+async def test_performance_pure_docker_api_calls(aiohttp_mock_app, configure_registry_access, docker_registry, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     number_of_services = 1
     pushed_services = push_services(number_of_services, number_of_services, inter_dependent_services=False)
     assert len(pushed_services) == 2 * number_of_services
@@ -179,7 +183,7 @@ async def test_performance_pure_docker_api_calls(loop, configure_registry_access
         for i in range(10):
             service_uuid = str(uuid.uuid1())
             with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-                await producer.get_service_details(service_uuid)
+                await producer.get_service_details(aiohttp_mock_app, service_uuid)
             started_service = client.services.create("{}/{}:{}".format(docker_registry, service_key, service_version))
             # wait for the task to start
             while True:

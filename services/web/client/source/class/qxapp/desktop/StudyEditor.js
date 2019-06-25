@@ -199,10 +199,34 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         this.__nodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
-      let widget = this.__getWidgetForNode(nodeId);
-      this.showInMainView(widget, nodeId);
+      const widget = this.__getWidgetForNode(nodeId);
+      const workbench = this.getStudy().getWorkbench();
+      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
+        // open file picker in window
+        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+          layout: new qx.ui.layout.Grow(),
+          contentPadding: 0,
+          width: 570,
+          height: 450,
+          appearance: "service-window",
+          showMinimize: false,
+          modal: true
+        });
+        const showParentWorkbench = () => {
+          const node = widget.getNode();
+          this.nodeSelected(node.getParentNodeId() || "root");
+        };
+        filePicker.add(widget);
+        qx.core.Init.getApplication().getRoot().add(filePicker);
+        filePicker.show();
+        filePicker.center();
+
+        widget.addListener("finished", () => filePicker.close(), this);
+        filePicker.addListener("close", () => showParentWorkbench());
+      } else {
+        this.showInMainView(widget, nodeId);
+      }
       if (widget === this.__workbenchUI) {
-        const workbench = this.getStudy().getWorkbench();
         if (nodeId === "root") {
           this.__workbenchUI.loadModel(workbench);
         } else {
@@ -234,22 +258,12 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           if (widget === null) {
             widget = this.__workbenchUI;
           }
+        } else if (node.isInKey("file-picker")) {
+          widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
         } else {
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
-          if (node.isInKey("file-picker")) {
-            widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
-            widget.addListener("finished", function() {
-              let loadNodeId = "root";
-              const filePicker = widget.getNode();
-              if (filePicker.isPropertyInitialized("parentNodeId")) {
-                loadNodeId = filePicker.getParentNodeId();
-              }
-              this.nodeSelected(loadNodeId);
-            }, this);
-          } else {
-            widget = this.__nodeView;
-          }
+          widget = this.__nodeView;
         }
       }
       return widget;
@@ -291,7 +305,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
         return;
       }
-      this.__workbenchUI.openServicesCatalogue();
+      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {
@@ -579,6 +593,10 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    closeStudy: function() {
+      this.getStudy().closeStudy();
     },
 
     __attachEventHandlers: function() {
