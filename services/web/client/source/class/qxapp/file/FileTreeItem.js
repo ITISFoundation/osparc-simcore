@@ -63,7 +63,7 @@ qx.Class.define("qxapp.file.FileTreeItem", {
 
     lastModified : {
       check : "String",
-      event: "changeSize",
+      event: "changeLastModified",
       nullable : true
     },
 
@@ -92,8 +92,30 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         flex: 1
       });
 
+      // Add lastModified
+      const lastModifiedWidget = new qx.ui.basic.Label().set({
+        width: 100,
+        maxWidth: 100,
+        textAlign: "right"
+      });
+      this.bind("lastModified", lastModifiedWidget, "value", {
+        converter: function(value) {
+          if (value === null) {
+            return "";
+          }
+
+          // create a date format like "Oct. 19, 2018 11:31 AM"
+          const dateFormat = new qx.util.format.DateFormat(
+            qx.locale.Date.getDateFormat("medium") + " " +
+            qx.locale.Date.getTimeFormat("short")
+          );
+          return dateFormat.format(value);
+        }
+      });
+      this.addWidget(lastModifiedWidget);
+
       // Add size
-      var sizeWidget = new qx.ui.basic.Label().set({
+      const sizeWidget = new qx.ui.basic.Label().set({
         width: 70,
         maxWidth: 70,
         textAlign: "right"
