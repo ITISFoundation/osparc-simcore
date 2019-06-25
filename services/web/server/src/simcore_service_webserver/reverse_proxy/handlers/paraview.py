@@ -19,7 +19,8 @@ from yarl import URL
 
 from ..settings import APP_SOCKETS_KEY
 
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/3d-viewer"
+SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/3d-viewer",
+                        "simcore/services/dynamic/3d-viewer-gpu"]
 SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
