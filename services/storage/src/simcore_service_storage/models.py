@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Tuple
 
 import attr
-import sqlalchemy as sa
+from simcore_postgres_database.storage_models import (file_meta_data, metadata,
+                                                      tokens)
 
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
@@ -17,32 +18,6 @@ from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
 
 #FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
 #pylint: disable=R0902
-
-metadata = sa.MetaData()
-
-# File meta data
-file_meta_data = sa.Table(
-    "file_meta_data", metadata,
-    sa.Column("file_uuid", sa.String, primary_key=True),
-    sa.Column("location_id", sa.String),
-    sa.Column("location", sa.String),
-    sa.Column("bucket_name", sa.String),
-    sa.Column("object_name", sa.String),
-    sa.Column("project_id", sa.String),
-    sa.Column("project_name", sa.String),
-    sa.Column("node_id", sa.String),
-    sa.Column("node_name", sa.String),
-    sa.Column("file_name", sa.String),
-    sa.Column("user_id", sa.String),
-    sa.Column("user_name", sa.String),
-    sa.Column("file_id", sa.String),
-    sa.Column("raw_file_path", sa.String),
-    sa.Column("display_file_path", sa.String),
-    sa.Column("created_at", sa.String),
-    sa.Column("last_modified", sa.String),
-    sa.Column("file_size", sa.Integer)
-#    sa.Column("state", sa.String())
-)
 
 
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
@@ -91,7 +66,6 @@ def _location_from_str(location : str) ->str:
     return intstr
 
 
-@attr.s(auto_attribs=True)
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
         It is actually an overkill
@@ -112,43 +86,32 @@ class FileMetaData:
 
             bucket_name/project_id/node_id/file_name = /bucket_name/object_name
 
+        file_id         : unique uuid for the file
 
+            simcore.s3: uuid created upon insertion
+            datcore: datcore uuid
+
+        raw_file_path   : raw path to file
+
+            simcore.s3: proj_id/node_id/filename.ending
+            emailaddress/...
+            datcore: dataset/collection/filename.ending
+
+        display_file_path: human readlable  path to file
+
+            simcore.s3: proj_name/node_name/filename.ending
+            my_documents/...
+            datcore: dataset/collection/filename.ending
+
+        created_at          : time stamp
+        last_modified       : time stamp
+        file_size           : size in bytes
+
+        TODO:
         state:  on of OK, UPLOADING, DELETED
 
         """
-    file_uuid: str=""
-    location_id: str=""
-    location: str=""
-    bucket_name: str=""
-    object_name: str=""
-    project_id: str=""
-    project_name: str=""
-    node_id: str=""
-    node_name: str=""
-    file_name: str=""
-    user_id: str=""
-    user_name: str=""
-
-    # unique uuid for the file
-    # simcore.s3: uuid created upon insertion
-    # datcore: datcore uuid
-    #
-    file_id: str = "" # unique uuid for the file
-
-    # raw path to file
-    # simcore.s3: proj_id/node_id/filename.ending
-    #             emailaddress/...
-    # datcore: dataset/collection/filename.ending
-    raw_file_path: str = ""
-    # human readlable  path to file
-    # simcore.s3: proj_name/node_name/filename.ending
-    #              my_documents/...
-    # datcore: dataset/collection/filename.ending
-    display_file_path: str = "" # human readlable file path : , my_documents/folder/filename.ending,
-    created_at: str = ""
-    last_modified: str =""
-    file_size: int = 0
-
+    #pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
         assert len(parts) == 3
@@ -174,3 +137,17 @@ class FileMetaData:
         for _d in d:
             _str += "  {0: <25}: {1}\n".format(_d, str(d[_d]))
         return _str
+
+
+attr.s(
+    these={c.name:attr.ib(default=None) for c in file_meta_data.c},
+    init=True,
+    kw_only=True)(FileMetaData)
+
+
+__all__ = [
+    "file_meta_data",
+    "tokens",
+    "metadata",
+    "FileMetaData"
+]
