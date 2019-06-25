@@ -41,10 +41,10 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     for name in jupyter.SUPPORTED_IMAGE_NAME:
         chooser.register_handler(jupyter.handler,
                              image_name=name)
-        
 
-    chooser.register_handler(paraview.handler,
-                             image_name=paraview.SUPPORTED_IMAGE_NAME)
+
+    for name in paraview.SUPPORTED_IMAGE_NAME:
+        chooser.register_handler(paraview.handler, image_name=name)
 
     # /x/{serviceId}/{proxyPath:.*}
     app.router.add_route(method='*', path=URL_PATH,
