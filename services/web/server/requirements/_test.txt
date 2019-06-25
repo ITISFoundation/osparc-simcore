@@ -10,8 +10,8 @@ aiohttp-jinja2==1.1.1
 aiohttp-security==0.4.0
 aiohttp==3.5.4
 aiopg[sa]==0.16.0
-aiosmtplib==1.0.5
-amqp==2.4.2
+aiosmtplib==1.0.6
+amqp==2.5.0
 asset==0.6.12
 astroid==2.2.5            # via pylint
 async-timeout==3.0.1
@@ -20,14 +20,13 @@ atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
 billiard==3.6.0.0
 celery==4.3.0
-certifi==2019.3.9         # via requests
+certifi==2019.6.16        # via requests
 change-case==0.5.2
 chardet==3.0.4
 codecov==2.0.15
 coverage==4.5.3           # via codecov, coveralls, pytest-cov
-coveralls==1.7.0
-docker-pycreds==0.4.0     # via docker
-docker==3.7.2
+coveralls==1.8.1
+docker==4.0.2
 docopt==0.6.2             # via coveralls
 faker==1.0.7
 globre==0.1.5
@@ -37,53 +36,54 @@ importlib-metadata==0.18  # via pluggy, pytest
 isort==4.3.20             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
-jsondiff==1.1.2
-jsonschema==2.6.0
-kombu==4.5.0
-lazy-object-proxy==1.4.1
+jsondiff==1.2.0
+jsonschema==3.0.1         # via openapi-spec-validator
+kombu==4.6.3
+lazy-object-proxy==1.4.1  # via astroid
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2
-openapi-core==0.8.0
-openapi-spec-validator==0.2.6
+openapi-spec-validator==0.2.7
 packaging==19.0           # via pytest
 passlib==1.7.1
 passwordmeter==0.1.8
-pathlib==1.0.1
 pika==0.10.0
 pluggy==0.12.0            # via pytest
-psycopg2-binary==2.8.2
+psycopg2-binary==2.8.3
 py==1.8.0                 # via pytest
 pylint==2.3.1
 pyparsing==2.4.0          # via packaging
+pyrsistent==0.15.2        # via jsonschema
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
 pytest-mock==1.10.4
-pytest-runner==4.4
+pytest-runner==5.1
 pytest==4.6.3
 python-dateutil==2.8.0    # via faker
-python-engineio==3.5.1
-python-socketio==4.0.1
+python-engineio==3.8.1
+python-socketio==4.1.0
 pytz==2019.1
-pyyaml==5.1
+pyyaml==5.1.1
 requests==2.22.0          # via codecov, coveralls, docker
 semantic-version==2.6.0
 shortuuid==0.5.0
 six==1.12.0
-sqlalchemy[postgresql_psycopg2binary]==1.3.3
-strict-rfc3339==0.7
+sqlalchemy[postgresql_psycopg2binary]==1.3.5
 tenacity==5.0.4
 text-unidecode==1.2       # via faker
 trafaret-config==2.0.2
 trafaret==1.2.0
-typed-ast==1.3.5          # via astroid
-typing-extensions==3.7.2
-urllib3==1.24.3           # via requests
+typed-ast==1.4.0          # via astroid
+typing-extensions==3.7.4
+urllib3==1.25.3           # via requests
 vine==1.3.0
 wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0  # via docker
-wrapt==1.11.1             # via astroid
+wrapt==1.11.2             # via astroid
 yarl==1.3.0
 zipp==0.5.1               # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools==41.0.1        # via jsonschema
