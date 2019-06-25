@@ -323,6 +323,7 @@ async def email_confirmation(request: web.Request):
             await db.update_user(user, {'status': ACTIVE})
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
+            redirect_url = redirect_url.with_fragment("?registered=true")
             #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
         elif action == CHANGE_EMAIL:

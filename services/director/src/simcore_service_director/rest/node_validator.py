@@ -19,8 +19,8 @@ def is_service_valid(service):
             validate(service, schema)
             log.debug("service [%s] validated", service["key"])
             return True
-        except ValidationError:
-            log.exception("Node validation error:")
+        except ValidationError as exc:
+            log.debug("Node validation error: %s", exc.message)
             return False
         except SchemaError:
             log.exception("Schema error:")
