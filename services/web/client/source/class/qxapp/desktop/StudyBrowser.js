@@ -517,9 +517,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
       const canDeleteTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.delete");
+      const isMyTemplate = studyData["prjOwner"] === qxapp.data.Permissions.getInstance().getLogin();
 
       const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = (isTemplate && !canUpdateTemplate) ? [] : ["name", "description", "thumbnail"];
+      const itemsToBeModified = (isTemplate && !(canUpdateTemplate && isMyTemplate)) ? [] : ["name", "description", "thumbnail"];
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {
@@ -571,7 +572,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       // buttons
       let saveButton = new qx.ui.form.Button(this.tr("Save"));
       saveButton.setMinWidth(70);
-      saveButton.setEnabled(!isTemplate || canUpdateTemplate);
+      saveButton.setEnabled(!isTemplate || (canUpdateTemplate && isMyTemplate));
       saveButton.addListener("execute", e => {
         for (let i=0; i<itemsToBeModified.length; i++) {
           const key = itemsToBeModified[i];
@@ -613,7 +614,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
       let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
       deleteButton.setMinWidth(70);
-      deleteButton.setEnabled(!isTemplate || canDeleteTemplate);
+      deleteButton.setEnabled(!isTemplate || (canDeleteTemplate && isMyTemplate));
       deleteButton.addListener("execute", e => {
         let win = this.__createConfirmWindow();
         win.center();
