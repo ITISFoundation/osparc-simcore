@@ -8,11 +8,13 @@ import logging
 
 import asyncpg
 from aiohttp import web
+
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..db import DSN
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
+from ..rest_config import CONFIG_SECTION_NAME as REST_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
@@ -37,7 +39,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=app.loop)
+    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=asyncio.get_event_loop())
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
 
     # config
@@ -64,7 +66,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     yield
 
     try:
-        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS, loop=app.loop)
+        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS)
     except asyncio.TimeoutError:
         log.exception("Failed to close login storage loop")
 
@@ -79,7 +81,7 @@ def setup(app: web.Application):
 
     log.debug("Setting up %s ...", __name__)
 
-    # TODO: requires rest ready!
+    assert REST_SECTION in app[APP_CONFIG_KEY]
     assert SMTP_SECTION in app[APP_CONFIG_KEY]
     assert DB_SECTION in app[APP_CONFIG_KEY]
 

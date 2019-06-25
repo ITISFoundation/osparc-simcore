@@ -51,4 +51,3 @@ This pages is for testing purposes for issue [#715](https://github.com/ITISFound
 - [weedI0YvR6tMA7XEpaxgJZT2Z8SCUy](https://staging.osparc.io/#/registration/?invitation=weedI0YvR6tMA7XEpaxgJZT2Z8SCUy)
 - [Q9m5C98ALYZDr1BjilkaaXWSMKxU21](https://staging.osparc.io/#/registration/?invitation=Q9m5C98ALYZDr1BjilkaaXWSMKxU21)
 - [jvhSQfoAAfin4htKgvvRYi3pkYdPhM](https://staging.osparc.io/#/registration/?invitation=jvhSQfoAAfin4htKgvvRYi3pkYdPhM)
-
