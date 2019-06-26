@@ -113,8 +113,10 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     __initToolbar: function() {
       const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
       const titlePart = new qx.ui.toolbar.Part();
+      const infoPart = new qx.ui.toolbar.Part();
       const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
       toolbar.add(titlePart);
+      toolbar.add(infoPart);
       toolbar.addSpacer();
 
       const title = this.__title = new qx.ui.basic.Atom().set({
@@ -122,30 +124,15 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       });
       titlePart.add(title);
 
+      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
+      infoPart.add(infoBtn);
+
       const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
       buttonsPart.add(filesBtn);
 
-      filesBtn.addListener("execute", function() {
-        const nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
-        const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-          layout: new qx.ui.layout.Canvas(),
-          contentPadding: 0,
-          showMinimize: false,
-          width: 900,
-          height: 600,
-          appearance: "service-window"
-        });
-        win.add(nodeDataManager, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
-
-        win.center();
-        win.open();
-      }, this);
+      infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
 
       return toolbar;
     },
@@ -278,6 +265,36 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
       this.__buttonContainer.add(this.__filesButton);
       this.__toolbar.add(this.__buttonContainer);
+    },
+
+    __openNodeDataManager: function() {
+      const nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 0,
+        showMinimize: false,
+        width: 900,
+        height: 600,
+        appearance: "service-window"
+      });
+      win.add(nodeDataManager);
+
+      win.center();
+      win.open();
+    },
+
+    __openServiceInfo: function() {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 0,
+        showMinimize: false,
+        appearance: "service-window"
+      });
+      win.add(new qxapp.component.metadata.ServiceInfo(this.getNode()));
+
+      win.center();
+      win.open();
     },
 
     __attachEventHandlers: function() {

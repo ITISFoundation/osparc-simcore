@@ -36,15 +36,23 @@ qx.Class.define("qxapp.component.widget.JsonTreeWidget", {
     * @param elemId {String} Element id to set it as dom attribute
   */
   construct: function(data, elemId) {
-    this.base();
+    this.base(arguments);
 
-    this.addListenerOnce("appear", () => {
-      let elem = this.getContentElement().getDomElement();
-      qx.bom.element.Attribute.set(elem, "id", elemId);
-      let jsonTreeViewer = qxapp.wrapper.JsonTreeViewer.getInstance();
+    const jsonTreeViewer = qxapp.wrapper.JsonTreeViewer.getInstance();
+    const container = new qx.html.Element();
+    container.setAttribute("id", elemId);
+    container.insertInto(this.getContentElement());
+    container.connectWidget(this);
+
+    this.addListener("appear", () => {
       if (jsonTreeViewer.getLibReady()) {
-        jsonTreeViewer.print(data, elem);
+        jsonTreeViewer.print(data, container.getDomElement());
       }
-    });
+      const jsonEl = qx.bom.Selector.query(".jsontree_tree", container.getDomElement())[0];
+      const height = qx.bom.element.Dimension.getHeight(jsonEl);
+      this.set({
+        height
+      });
+    }, this);
   }
 });
