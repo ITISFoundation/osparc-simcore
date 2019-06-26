@@ -518,8 +518,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "prjOwner", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = fromTemplate ? [] : ["name", "description"];
+      const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
+      const itemsToBeModified = fromTemplate ? [] : ["name", "description", "thumbnail"];
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {
@@ -532,6 +532,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             case "description":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Description"));
+              break;
+            case "thumbnail":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Thumbnail"));
               break;
             case "prjOwner":
               control = new qx.ui.form.TextField();
