@@ -445,7 +445,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               const uuid = item.getModel();
               if (uuid) {
                 if (data) {
-                  return "qxapp/"+ data;
+                  return data;
                 }
                 const thumbnailId = that.__uuidToNumber(uuid); // eslint-disable-line no-underscore-dangle
                 return "qxapp/img"+ thumbnailId +".jpg";
