@@ -23,7 +23,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesTreePopulator = new qxapp.file.FilesTreePopulator(tree);
+ *   const filesTreePopulator = new qxapp.file.FilesTreePopulator(tree);
  *   filesTreePopulator.populateNodeFiles(nodeId);
  * </pre>
  */
@@ -35,17 +35,42 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     this.__tree = tree;
   },
 
+  statics: {
+    addLoadingChild: function(parent) {
+      const loadingData = {
+        label: "Loading...",
+        location: null,
+        path: null,
+        icon: "qxapp/loading.gif"
+      };
+      const loadingModel = qx.data.marshal.Json.createModel(loadingData, true);
+      parent.getChildren().append(loadingModel);
+    },
+
+    removeLoadingChild: function(parent) {
+      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
+        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
+          parent.getChildren().toArray()
+            .splice(i, 1);
+        }
+      }
+    }
+  },
+
   members: {
     __tree: null,
 
     populateNodeFiles: function(nodeId) {
       const treeName = "Node files";
       this.__resetTree(treeName);
+      const rootModel = this.__tree.getModel();
+      qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      let store = qxapp.data.Store.getInstance();
+      const store = qxapp.data.Store.getInstance();
       store.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
-        this.__filesToTree(files);
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__filesToRoot(newChildren);
       }, this);
       store.getNodeFiles(nodeId);
     },
@@ -53,33 +78,56 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     populateMyData: function() {
       const treeName = "My Data";
       this.__resetTree(treeName);
+      const rootModel = this.__tree.getModel();
+      rootModel.getChildren().removeAll();
+      qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      let locationsAdded = [];
-      let store = qxapp.data.Store.getInstance();
-      store.addListener("myDocuments", e => {
+      const store = qxapp.data.Store.getInstance();
+      store.addListenerOnce("myLocations", e => {
+        const locations = e.getData();
+        this.__locationsToRoot(locations);
+
+        for (let i=0; i<locations.length; i++) {
+          const locationId = locations[i]["id"];
+          this.populateMyLocation(locationId);
+        }
+      }, this);
+      store.getMyLocations();
+    },
+
+    populateMyLocation: function(locationId = null) {
+      if (locationId) {
+        const locationModel = this.__getLocationModel(locationId);
+        if (locationModel) {
+          locationModel.getChildren().removeAll();
+          qxapp.file.FilesTreePopulator.addLoadingChild(locationModel);
+        }
+      }
+
+      const store = qxapp.data.Store.getInstance();
+      store.addListener("myDocuments", ev => {
         const {
           location,
           files
-        } = e.getData();
-        if (!locationsAdded.includes(location)) {
-          locationsAdded.push(location);
-          this.__filesToTree(files);
-        }
+        } = ev.getData();
+        this.__filesToLocation(files, location);
       }, this);
-      store.getMyDocuments();
+
+      store.getFilesByLocation(locationId);
     },
 
     __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
-      let data = {
+      const rootData = {
         label: treeName,
         location: null,
         path: null,
         children: []
       };
-      let emptyModel = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(emptyModel);
+      const root = qx.data.marshal.Json.createModel(rootData, true);
+
+      this.__tree.setModel(root);
       this.__tree.setDelegate({
         createItem: () => new qxapp.file.FileTreeItem(),
         bindItem: (c, item, id) => {
@@ -87,19 +135,59 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
           c.bindProperty("fileId", "fileId", null, item, id);
           c.bindProperty("location", "location", null, item, id);
           c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
+          c.bindProperty("icon", "icon", null, item, id);
         }
       });
     },
 
-    __filesToTree: function(files) {
-      const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-      this.__addTreeData(newChildren);
+    __getLocationModel: function(locationId) {
+      const rootModel = this.__tree.getModel();
+      const locationModels = rootModel.getChildren();
+      for (let i=0; i<locationModels.length; i++) {
+        const locationModel = locationModels.toArray()[i];
+        if (locationModel.getLocation() === locationId) {
+          return locationModel;
+        }
+      }
+      return null;
     },
 
-    __addTreeData: function(data) {
-      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      let currentModel = this.__tree.getModel();
+    __locationsToRoot: function(locations) {
+      const rootModel = this.__tree.getModel();
+      rootModel.getChildren().removeAll();
+      for (let i=0; i<locations.length; i++) {
+        const location = locations[i];
+        const locationData = qxapp.data.Converters.createDirEntry(
+          location.name,
+          location.id,
+          ""
+        );
+        const locationModel = qx.data.marshal.Json.createModel(locationData, true);
+        rootModel.getChildren().append(locationModel);
+      }
+    },
+
+    __filesToLocation: function(files, locationId) {
+      const locationModel = this.__getLocationModel(locationId);
+      if (locationModel) {
+        locationModel.getChildren().removeAll();
+        if (files.length>0) {
+          const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          for (let j=0; j<filesData[0].children.length; j++) {
+            const filesModel = qx.data.marshal.Json.createModel(filesData[0].children[j], true);
+            locationModel.getChildren().append(filesModel);
+          }
+        }
+      }
+    },
+
+    __filesToRoot: function(data) {
+      const currentModel = this.__tree.getModel();
+      qxapp.file.FilesTreePopulator.removeLoadingChild(currentModel);
+
+      const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
       currentModel.getChildren().append(newModelToAdd);
       this.__tree.setModel(currentModel);
       this.__tree.fireEvent("modelChanged");

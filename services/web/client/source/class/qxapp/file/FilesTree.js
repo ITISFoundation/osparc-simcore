@@ -99,10 +99,12 @@ qx.Class.define("qxapp.file.FilesTree", {
   members: {
     __tree: null,
 
-    populateTree: function(nodeId = null) {
+    populateTree: function(nodeId = null, locationId = null) {
       let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
       if (nodeId) {
         filesTreePopulator.populateNodeFiles(nodeId);
+      } else if (locationId) {
+        filesTreePopulator.populateMyLocation(locationId);
       } else {
         filesTreePopulator.populateMyData();
       }

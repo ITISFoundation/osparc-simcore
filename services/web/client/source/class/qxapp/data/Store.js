@@ -40,13 +40,14 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   events: {
-    "servicesRegistered": "qx.event.type.Event",
-    // "fakeFiles": "qx.event.type.Event",
-    "myDocuments": "qx.event.type.Event",
-    "nodeFiles": "qx.event.type.Event",
-    "presignedLink": "qx.event.type.Event",
-    "fileCopied": "qx.event.type.Event",
-    "deleteFile": "qx.event.type.Event"
+    "servicesRegistered": "qx.event.type.Data",
+    // "fakeFiles": "qx.event.type.Data",
+    "myLocations": "qx.event.type.Data",
+    "myDocuments": "qx.event.type.Data",
+    "nodeFiles": "qx.event.type.Data",
+    "presignedLink": "qx.event.type.Data",
+    "fileCopied": "qx.event.type.Data",
+    "deleteFile": "qx.event.type.Data"
   },
 
   members: {
@@ -1326,66 +1327,76 @@ qx.Class.define("qxapp.data.Store", {
         if (files && files.length>0) {
           this.fireDataEvent("nodeFiles", files);
         }
+        this.fireDataEvent("nodeFiles", []);
       }, this);
 
       reqFiles.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
+        this.fireDataEvent("nodeFiles", []);
         console.error("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
     },
 
-    getMyDocuments: function() {
+    getMyLocations: function() {
       // Get available storage locations
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
-        for (let i=0; i<locations.length; i++) {
-          const locationId = locations[i]["id"];
-          if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-            continue;
-          }
-          // Get list of file meta data
-          const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-          const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-          reqFiles.addListener("success", eFiles => {
-            const files = eFiles.getTarget().getResponse()
-              .data;
-            console.log("My Files", files);
-            if (files && files.length>0) {
-              const data = {
-                location: locationId,
-                files: files
-              };
-              this.fireDataEvent("myDocuments", data);
-            }
-          }, this);
-
-          reqFiles.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            console.error("Failed getting Files list", error);
-          });
-
-          reqFiles.send();
-        }
+        this.fireDataEvent("myLocations", locations);
       }, this);
 
       reqLoc.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
+        this.fireDataEvent("myLocations", []);
         console.error("Failed getting Storage Locations", error);
       });
 
       reqLoc.send();
+    },
+
+    getFilesByLocation: function(locationId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of file meta data
+      const endPoint = "/storage/locations/" + locationId + "/files/metadata";
+      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        console.log("My Files", files);
+        const data = {
+          location: locationId,
+          files: []
+        };
+        if (files && files.length>0) {
+          data.files = files;
+        }
+        this.fireDataEvent("myDocuments", data);
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          files: []
+        };
+        this.fireDataEvent("myDocuments", data);
+        console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
@@ -1445,9 +1456,11 @@ qx.Class.define("qxapp.data.Store", {
       let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
 
       req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
+        const data = {
+          data: e.getTarget().getResponse(),
+          locationId: toLoc,
+          fileUuid: pathId
+        };
         this.fireDataEvent("fileCopied", data);
       }, this);
 
@@ -1457,6 +1470,7 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.error(error);
         console.error("Failed copying file", fileUuid, "to", pathId);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
         this.fireDataEvent("fileCopied", null);
       });
 
@@ -1476,9 +1490,11 @@ qx.Class.define("qxapp.data.Store", {
       let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
 
       req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
+        const data = {
+          data: e.getTarget().getResponse(),
+          locationId: locationId,
+          fileUuid: fileUuid
+        };
         this.fireDataEvent("deleteFile", data);
       }, this);
 
@@ -1487,6 +1503,7 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.error("Failed deleting file", error);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
         this.fireDataEvent("deleteFile", null);
       });
 
