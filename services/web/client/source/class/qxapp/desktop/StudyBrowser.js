@@ -613,7 +613,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           });
           resources.postSaveAsTemplate({
             "study_id": studyId
-          });
+          }, studyData);
         }, this);
 
         form.addButton(saveAsButton);
