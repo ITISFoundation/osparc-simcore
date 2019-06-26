@@ -37,7 +37,7 @@ rabbit:
 login:
   enabled: True
   registration_invitation_required: False
-  registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
+  registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
@@ -56,5 +56,5 @@ storage:
   port: ${STORAGE_PORT}
   version: v0
 session:
-  secret_key: "TODO: Replace with a key of at least length 32"
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
 ...
