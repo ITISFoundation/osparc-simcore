@@ -138,7 +138,6 @@ class DatcoreWrapper:
         json_meta = ""
         if meta_data:
             json_meta = json.dumps(attr.asdict(meta_data))
-
         try:
             ds = self.d_client.get_dataset(dataset)
             str_meta = json_meta

@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+import datetime
 import filecmp
 import io
 import json
@@ -104,9 +105,14 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     # create file and upload
     filename = os.path.basename(tmp_file)
     project_id = "22"
+    project_name = "battlestar"
+    node_name = "galactica"
     node_id = "1006"
     file_name = filename
     file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
+    display_name = os.path.join(str(project_name), str(node_name), str(file_name))
+    created_at = str(datetime.datetime.now())
+    file_size = 1234
 
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_name)),
             'bucket_name' : bucket_name,
@@ -114,11 +120,18 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
             'user_id' : USER_ID,
             'user_name' : "starbucks",
             'location' : SIMCORE_S3_STR,
+            'location_id' : SIMCORE_S3_ID,
             'project_id' : project_id,
-            'project_name' : "battlestar",
+            'project_name' : project_name,
             'node_id' : node_id,
-            'node_name' : "this is the name of the node",
-            'file_uuid' : file_uuid
+            'node_name' : node_name,
+            'file_uuid' : file_uuid,
+            'file_id' : str(uuid.uuid4()),
+            'raw_file_path' : file_uuid,
+            'display_file_path' : display_name,
+            'created_at' : created_at,
+            'last_modified' : created_at,
+            'file_size' : file_size
         }
 
     fmd = FileMetaData(**d)
