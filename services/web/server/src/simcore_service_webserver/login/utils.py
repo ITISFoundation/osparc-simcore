@@ -1,13 +1,17 @@
 import random
 import string
-from datetime import datetime, timedelta
+
 from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 
 import aiosmtplib
+import attr
 import passlib.hash
+from aiohttp import web
 from aiohttp_jinja2 import render_string
+
+from servicelib.rest_models import LogMessageType
 
 from ..resources import resources
 from .cfg import cfg  # TODO: remove this singleton!!!
@@ -31,40 +35,6 @@ def get_random_string(min_len, max_len=None):
     max_len = max_len or min_len
     size = random.randint(min_len, max_len)
     return ''.join(random.choice(CHARS) for x in range(size))
-
-
-async def make_confirmation_link(request, confirmation):
-    link = request.app.router['auth_confirmation'].url_for(code=confirmation['code'])
-    return '{}://{}{}'.format(request.scheme, request.host, link)
-
-
-async def is_confirmation_allowed(user, action):
-    db = cfg.STORAGE
-    confirmation = await db.get_confirmation({'user': user, 'action': action})
-    if not confirmation:
-        return True
-    if is_confirmation_expired(confirmation):
-        await db.delete_confirmation(confirmation)
-        return True
-
-
-def is_confirmation_expired(confirmation):
-    age = datetime.utcnow() - confirmation['created_at']
-    lifetime = get_confirmation_lifetime(confirmation)
-    return age > lifetime
-
-
-def get_confirmation_lifetime(confirmation):
-    lifetime_days = cfg['{}_CONFIRMATION_LIFETIME'.format(
-        confirmation['action'].upper())]
-    lifetime = timedelta(days=lifetime_days)
-    return lifetime
-
-
-def get_expiration_date(confirmation):
-    lifetime = get_confirmation_lifetime(confirmation)
-    estimated_expiration = confirmation['created_at'] + lifetime
-    return estimated_expiration
 
 
 def get_client_ip(request):
@@ -118,3 +88,10 @@ def themed(template):
 
 def common_themed(template):
     return resources.get_path(join(cfg.COMMON_THEME, template))
+
+def flash_response(msg: str, level: str="INFO"):
+    response = web.json_response(data={
+        'data': attr.asdict(LogMessageType(msg, level)),
+        'error': None
+    })
+    return response
