@@ -19,6 +19,7 @@ from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.application_config import create_schema
 
+from helpers.utils_dockerenv import load_environment
 
 @pytest.fixture("session")
 def app_config_schema():
@@ -43,20 +44,15 @@ def services_docker_compose_file(osparc_simcore_root_dir):
 def devel_environ(env_devel_file):
     env_devel = {}
     with env_devel_file.open() as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                key, value = line.split("=")
-                env_devel[key] = value
+        env_devel = load_environment(f)
     return env_devel
-
 
 @pytest.fixture("session")
 def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
     """ Creates a dict with the environment variables
         inside of a webserver container
     """
-    dc = dict()
+    docker_compose_dir = services_docker_compose_file.parent.resolve()
     with services_docker_compose_file.open() as f:
         dc = yaml.safe_load(f)
 
@@ -65,6 +61,14 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
         'OSPARC_SIMCORE_REPO_ROOTDIR': str(osparc_simcore_root_dir) # defined if pip install --edit (but not in travis!)
     }
 
+    # environment defined in env_file
+    for env_file in dc["services"]["webserver"].get("env_file", list()):
+        env_file_path = (docker_compose_dir / env_file).resolve()
+        with env_file_path.open() as fh:
+            environ_dikt = load_environment(fh)
+            container_environ.update(environ_dikt)
+
+    # explicit environment [overrides env_file]
     environ_items = dc["services"]["webserver"]["environment"]
     MATCH = re.compile(r'\$\{(\w+)+')
 
