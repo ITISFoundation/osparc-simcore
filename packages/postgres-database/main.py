@@ -79,7 +79,8 @@ def discover():
 
         click.echo(f"{url} responded")
         with open(DISCOVERED, 'w') as fh:
-            json.dump(fh, cfg, sort_keys=True, indent=4)
+            json.dump(cfg, fh, sort_keys=True, indent=4)
+
     except RuntimeError:
         os.remove(DISCOVERED)
         click.echo("database not found")
@@ -98,14 +99,14 @@ def get_config():
 
 
 @cli.command()
-@cli.option('-m', 'message')
+@click.option('-m', 'message')
 def revision(message):
     """Auto-generates a new revison
 
         alembic revision --autogenerate -m "first tables"
     """
     click.echo('Auto-generates revision based on changes ')
-
+    import pdb; pdb.set_trace()
     config = get_config()
     alembic.command.revision(config, message,
         autogenerate=True, sql=False,
@@ -114,13 +115,14 @@ def revision(message):
 
 
 @cli.command()
-@cli.argument('revision', 'revision_', default='head')
-def upgrade(revision_="head"):
+@click.argument('revision', default='head')
+def upgrade(revision):
     """Upgrades target database to a given revision"""
     click.echo('Upgrading database')
 
+    import pdb; pdb.set_trace()
     config = get_config()
-    alembic.command.upgrade(config, revision_, sql=False, tag=None)
+    alembic.command.upgrade(config, revision, sql=False, tag=None)
 
 
 
