@@ -285,16 +285,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __openServiceInfo: function() {
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 0,
-        showMinimize: false,
-        appearance: "info-service-window",
-        resizable: false,
-        modal: true
-      });
-      win.add(new qxapp.component.metadata.ServiceInfo(this.getNode().getMetaData()));
-
+      const win = new qxapp.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
       win.center();
       win.open();
     },

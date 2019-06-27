@@ -146,7 +146,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "service-window",
       alias: "service-window",
       style: state => ({
-        maxHeight: state.maximized ? null : 450
+        maxHeight: state.maximized ? null : 500
       })
     },
     /*
