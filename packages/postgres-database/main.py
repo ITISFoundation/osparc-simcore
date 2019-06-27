@@ -1,15 +1,28 @@
 import json
 import logging
+import os
+import sys
 from copy import deepcopy
+from pathlib import Path
 
+import alembic.command
 import click
-import sqlalchemy as sa
-
 import docker
+import sqlalchemy as sa
+from alembic import __version__ as __alembic_version__
+from alembic.config import Config as AlembicConfig
+from alembic.util import CommandError
+
 from simcore_postgres_database.settings import DSN, db_config, sqlalchemy_url
 
+alembic_version = tuple([int(v) for v in __alembic_version__.split('.')[0:3]])
 log = logging.getLogger(__name__)
 
+here = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
+
+DISCOVERED = ".discovered-ignore.json"
+default_ini = here / 'alembic.ini'
+migration_dir = here / 'migration'
 
 #@retry(wait=wait_fixed(0.1), stop=stop_after_delay(60))
 def ping(url):
@@ -22,7 +35,6 @@ def ping(url):
         log.error("Something went south ...")
         return False
     return True
-
 
 def get_service_published_port(service_name: str) -> int:
     client = docker.from_env()
@@ -45,43 +57,70 @@ def cli():
 
     """
 
+
+
+
 @cli.command()
 def discover():
     """ Discovers active databases """
     click.echo('Discovering database ...')
-
-    cfg = deepcopy(db_config)
-
-    url = DSN.format(**cfg)
-    if not ping(url):
-        log.error("%s does not respond", url)
-        log.info("Discovering host '%s' in swarm ...", cfg['host'])
-        try:
+    try:
+        # db_config comes from configuration variables
+        cfg = deepcopy(db_config)
+        url = DSN.format(**cfg)
+        if not ping(url):
             service_name = cfg['host']
             cfg['port'] = get_service_published_port(service_name)
-        except RuntimeError:
-            log.exception("Probably service does not")
-        else:
             cfg['host'] = "127.0.0.1"
             url = DSN.format(**cfg)
-            if not ping(url):
-                log.error("%s does not respond", url)
-            else:
-                click.echo(f"{url} responded")
 
-    print( json.dumps(cfg, sort_keys=True, indent=4) )
+            if not ping(url):
+                raise RuntimeError
+
+        click.echo(f"{url} responded")
+        with open(DISCOVERED, 'w') as fh:
+            json.dump(fh, cfg, sort_keys=True, indent=4)
+    except RuntimeError:
+        os.remove(DISCOVERED)
+        click.echo("database not found")
+
+
+def get_config():
+    with open(DISCOVERED) as fh:
+        cfg = json.load(fh)
+
+    with open(default_ini) as fh:
+        config = AlembicConfig(fh)
+
+    config.set_main_option('script_location', str(migration_dir))
+    config.set_main_option('sqlalchemy.url', DSN.format(**cfg))
+    return config
 
 
 @cli.command()
-def revision():
-    """Auto-generates a new revison """
+@cli.option('-m', 'message')
+def revision(message):
+    """Auto-generates a new revison
+
+        alembic revision --autogenerate -m "first tables"
+    """
     click.echo('Auto-generates revision based on changes ')
 
+    config = get_config()
+    alembic.command.revision(config, message,
+        autogenerate=True, sql=False,
+        head='head', splice=False, branch_label=None, version_path=None,
+        rev_id=None)
+
 
 @cli.command()
-def upgrade():
+@cli.argument('revision', 'revision_', default='head')
+def upgrade(revision_="head"):
     """Upgrades target database to a given revision"""
     click.echo('Upgrading database')
+
+    config = get_config()
+    alembic.command.upgrade(config, revision_, sql=False, tag=None)
 
 
 
