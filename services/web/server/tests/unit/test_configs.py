@@ -19,7 +19,7 @@ from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.application_config import create_schema
 
-from helpers.utils_dockerenv import load_environment
+from utils_environs import load_env
 
 @pytest.fixture("session")
 def app_config_schema():
@@ -44,7 +44,7 @@ def services_docker_compose_file(osparc_simcore_root_dir):
 def devel_environ(env_devel_file):
     env_devel = {}
     with env_devel_file.open() as f:
-        env_devel = load_environment(f)
+        env_devel = load_env(f)
     return env_devel
 
 @pytest.fixture("session")
@@ -63,9 +63,11 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 
     # environment defined in env_file
     for env_file in dc["services"]["webserver"].get("env_file", list()):
+        if env_file == "../.env":
+            env_file += "-devel"
         env_file_path = (docker_compose_dir / env_file).resolve()
         with env_file_path.open() as fh:
-            environ_dikt = load_environment(fh)
+            environ_dikt = load_env(fh)
             container_environ.update(environ_dikt)
 
     # explicit environment [overrides env_file]

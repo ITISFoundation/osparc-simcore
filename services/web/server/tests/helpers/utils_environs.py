@@ -1,11 +1,11 @@
+
 from typing import Dict
 
 
-
-
-def load_environment(file_handler) -> Dict:
+def load_env(file_handler) -> Dict:
     """
-        Loads a file like .env-devel and produces a key-value map
+        Loads environment files like .env-devel and
+        returns a key-value map of the environment
     """
     environ = {}
     for line in file_handler:
@@ -22,7 +22,9 @@ import re
 
 VARIABLE_PATTERN = re.compile(r'\$\{(\w+)+')
 
-def load_service_environment(docker_compose_path:Path, service_name:str, host_environ: Dict=None, image_environ: Dict=None) -> Dict:
+def load_service_environment(docker_compose_path:Path, service_name:str,
+    host_environ: Dict=None,
+    image_environ: Dict=None) -> Dict:
 
     docker_compose_dir = docker_compose_path.parent.resolve()
     with docker_compose_path.open() as f:
@@ -41,7 +43,7 @@ def load_service_environment(docker_compose_path:Path, service_name:str, host_en
     for env_file in service.get("env_file", list()):
         env_file_path = (docker_compose_dir / env_file).resolve()
         with env_file_path.open() as fh:
-            file_environ = load_environment(fh)
+            file_environ = load_env(fh)
             service_environ.update(file_environ)
 
     # explicit environment [overrides env_file]
