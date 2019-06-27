@@ -19,7 +19,7 @@ from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.application_config import create_schema
 
-from utils_environs import load_env
+from utils_environs import load_env, eval_service_environ
 
 @pytest.fixture("session")
 def app_config_schema():
@@ -48,41 +48,20 @@ def devel_environ(env_devel_file):
     return env_devel
 
 @pytest.fixture("session")
-def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
+def service_webserver_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
     """ Creates a dict with the environment variables
         inside of a webserver container
     """
-    docker_compose_dir = services_docker_compose_file.parent.resolve()
-    with services_docker_compose_file.open() as f:
-        dc = yaml.safe_load(f)
-
-    container_environ = {
+    host_environ = devel_environ
+    image_environ = {
         'SIMCORE_WEB_OUTDIR': 'home/scu/services/web/client',  # defined in Dockerfile
         'OSPARC_SIMCORE_REPO_ROOTDIR': str(osparc_simcore_root_dir) # defined if pip install --edit (but not in travis!)
     }
 
-    # environment defined in env_file
-    for env_file in dc["services"]["webserver"].get("env_file", list()):
-        if env_file == "../.env":
-            env_file += "-devel"
-        env_file_path = (docker_compose_dir / env_file).resolve()
-        with env_file_path.open() as fh:
-            environ_dikt = load_env(fh)
-            container_environ.update(environ_dikt)
+    webserver_environ = eval_service_environ(services_docker_compose_file, "webserver",
+        host_environ, image_environ, use_env_devel=True)
 
-    # explicit environment [overrides env_file]
-    environ_items = dc["services"]["webserver"]["environment"]
-    MATCH = re.compile(r'\$\{(\w+)+')
-
-    for item in environ_items:
-        key, value = item.split("=")
-        m = MATCH.match(value)
-        if m:
-            envkey = m.groups()[0]
-            value = devel_environ[envkey]
-        container_environ[key] = value
-
-    return container_environ
+    return webserver_environ
 
 
 # TESTS ----------------------------------------------------------------------
@@ -90,10 +69,10 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 @pytest.mark.parametrize("configfile", [str(n)
                                         for n in resources.listdir("config")
                                         ])
-def test_correctness_under_environ(configfile, container_environ):
+def test_correctness_under_environ(configfile, service_webserver_environ):
     parser = setup_parser(argparse.ArgumentParser("test-parser"))
 
-    with mock.patch('os.environ', container_environ):
+    with mock.patch('os.environ', service_webserver_environ):
         cmd = ["-c", configfile]
         config = parse(cmd, parser)
 
