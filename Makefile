@@ -161,7 +161,7 @@ down-swarm:
 # Cache
 
 .PHONY: pull-cache
-pull-cache:
+pull-cache: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
@@ -204,7 +204,7 @@ push:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
-pull:
+pull: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
