@@ -2,6 +2,7 @@
 # pylint: disable=bare-except
 # pylint:disable=redefined-outer-name
 
+
 import logging
 import sys
 from copy import deepcopy
@@ -18,7 +19,6 @@ from tenacity import after_log, retry, stop_after_attempt, wait_fixed
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
-from utils_environs import replace_environs_in_docker_compose_service
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
@@ -46,6 +46,8 @@ def webserver_environ(request, devel_environ, services_docker_compose, docker_st
     """ Environment variables for the webserver application
 
     """
+    from utils_environs import replace_environs_in_docker_compose_service
+
     dockerfile_environ = {'SIMCORE_WEB_OUTDIR': "undefined" } # TODO: parse webserver dockerfile ??
 
     docker_compose_section = deepcopy(services_docker_compose['services']['webserver'])
