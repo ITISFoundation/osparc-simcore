@@ -142,6 +142,13 @@ qx.Theme.define("qxapp.theme.Appearance", {
         decorator: "workbench-small-cap-captionbar"
       })
     },
+    "info-service-window": {
+      include: "service-window",
+      alias: "service-window",
+      style: state => ({
+        maxHeight: state.maximized ? null : 450
+      })
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView

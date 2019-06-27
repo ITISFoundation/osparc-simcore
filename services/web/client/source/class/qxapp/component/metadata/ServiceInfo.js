@@ -74,8 +74,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     },
 
     __createExtraInfo: function() {
-      const layout = new qx.ui.layout.Grow();
-      const container = new qx.ui.container.Composite(layout);
+      const container = new qx.ui.container.Scroll();
       container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
       return container;
     }

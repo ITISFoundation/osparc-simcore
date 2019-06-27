@@ -289,7 +289,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
         showMinimize: false,
-        appearance: "service-window"
+        appearance: "info-service-window",
+        resizable: false
       });
       win.add(new qxapp.component.metadata.ServiceInfo(this.getNode()));
 
