@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     this.__settingsLayout.setLayout(new qx.ui.layout.VBox());
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    
+
     mainLayout.add(this.__initToolbar());
 
     this.__attachEventHandlers();
@@ -293,7 +293,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         resizable: false,
         modal: true
       });
-      win.add(new qxapp.component.metadata.ServiceInfo(this.getNode()));
+      win.add(new qxapp.component.metadata.ServiceInfo(this.getNode().getMetaData()));
 
       win.center();
       win.open();

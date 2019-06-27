@@ -7,7 +7,7 @@
 
 qx.Class.define("qxapp.component.metadata.ServiceInfo", {
   extend: qx.ui.core.Widget,
-  construct: function(service) {
+  construct: function(metadata) {
     this.base(arguments);
 
     this.set({
@@ -16,8 +16,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this.__service = service;
-    this.__metadata = service.getMetaData();
+    this.__metadata = metadata;
 
     const main = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
     main.add(this.__createServiceThumbnail());
@@ -25,7 +24,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       flex: 1
     });
     this._add(main);
-    
+
     const extraInfo = this.__createExtraInfo();
     const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), extraInfo).set({
       caretSize: 14,
@@ -51,12 +50,12 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         rich: true
       });
       container.add(title);
-  
+
       const description = new qx.ui.basic.Label(this.__metadata.description).set({
         rich: true
       });
       container.add(description);
-  
+
       const author = new qx.ui.basic.Label(this.tr("Contact") + ": <b>" + this.__metadata.contact + "</b>").set({
         rich: true
       });
@@ -66,7 +65,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     },
 
     __createServiceThumbnail: function() {
-      return new qx.ui.basic.Image(this.__service.getThumbnail() || qxapp.utils.Utils.getThumbnailFromUuid(this.__service.getNodeId())).set({
+      return new qx.ui.basic.Image(this.__metadata.thumbnail || qxapp.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
         scale: true,
         width: 200,
         height: 120
