@@ -122,7 +122,10 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     service_names += services_docker_compose["services"]
     service_names += tools_docker_compose["services"]
 
-    assert set(service_names) == set("service_"+ s.name for s in running_services)
+    assert len(service_names) == len(running_services)
+
+    for name in service_names:
+        assert any( name in s.name for s in running_services ), f"{name} not in {running_services}"
 
 
 async def test_core_service_running(core_service_name, docker_client, loop):
