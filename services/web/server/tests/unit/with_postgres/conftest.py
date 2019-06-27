@@ -1,5 +1,6 @@
-""" Tests functionality that requires login users
+""" Fixtures for this folder's tests
 
+Notice that fixtures in ../conftest.py are also accessible here
 
 """
 # pylint:disable=wildcard-import
@@ -55,7 +56,6 @@ def osparc_simcore_root_dir(here):
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
-
 
 @pytest.fixture(scope="session")
 def app_cfg(here, osparc_simcore_root_dir):

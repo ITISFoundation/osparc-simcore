@@ -56,4 +56,5 @@ storage:
   host: storage
   port: 11111
 session:
-  secret_key: "TODO: Replace with a key of at least length 32"
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+...
