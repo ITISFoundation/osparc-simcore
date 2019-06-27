@@ -52,4 +52,5 @@ projects:
   enabled: False
   location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 session:
-  secret_key: "TODO: Replace Thirty  two  length  bytes  key."
+  # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
+  secret_key: 'tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs='

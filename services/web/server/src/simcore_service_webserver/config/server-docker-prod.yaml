@@ -35,7 +35,7 @@ rabbit:
 login:
   enabled: True
   registration_invitation_required: True
-  registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
+  registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
@@ -53,5 +53,6 @@ rest:
 projects:
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 session:
-  secret_key: "TODO: Replace with a key of at least length 32"
+  # python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
 ...
