@@ -27,13 +27,13 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
 
     const extraInfo = this.__createExtraInfo();
     const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), extraInfo).set({
-      caretSize: 14,
-      collapsed: true
-    });;
-    more.getChildControl("title").setFont("text-12");
+      caretSize: 14
+    });
     this._add(more, {
       flex: 1
     });
+    more.setCollapsed(true);
+    more.getChildControl("title").setFont("text-12");
   },
 
   members: {
