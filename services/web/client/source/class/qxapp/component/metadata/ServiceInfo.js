@@ -25,8 +25,11 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     });
     this._add(main);
 
-    const extraInfo = this.__createExtraInfo();
-    const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), extraInfo).set({
+    const authors = this.__createAuthors();
+    this._add(authors);
+
+    const rawMetadata = this.__createRawMetadata();
+    const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
       caretSize: 14
     });
     this._add(more, {
@@ -72,9 +75,22 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       });
     },
 
-    __createExtraInfo: function() {
+    __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
       container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
+      return container;
+    },
+
+    __createAuthors: function() {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      container.add(new qx.ui.basic.Label(this.tr("Authors")).set({
+        font: "title-14"
+      }));
+      for (let i in this.__metadata.authors) {
+        const author = this.__metadata.authors[i];
+        const authorLine = `${author.name} · ${author.affiliation} · ${author.email}`;
+        container.add(new qx.ui.basic.Label(authorLine));
+      }
       return container;
     }
   }

@@ -168,7 +168,8 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         height: 24,
         padding: [0, 5],
-        alignY: "middle"
+        alignY: "middle",
+        cursor: "pointer"
       })
     },
     "panelview-content": {
