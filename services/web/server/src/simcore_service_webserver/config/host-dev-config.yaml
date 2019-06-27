@@ -55,3 +55,5 @@ projects:
 storage:
   host: storage
   port: 11111
+session:
+  secret_key: "TODO: Replace with a key of at least length 32"
