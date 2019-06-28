@@ -13,6 +13,8 @@ from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 #from alembic.util import CommandError
 
+import tempfile
+
 from simcore_postgres_database.settings import DSN, db_config, sqlalchemy_url
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split('.')[0:3]])
@@ -20,9 +22,9 @@ log = logging.getLogger(__name__)
 
 here = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
 
-DISCOVERED = ".discovered-ignore.json"
 default_ini = here / 'alembic.ini'
 migration_dir = here / 'migration'
+discovered_cache = os.path.join( tempfile.mkdtemp(__name__), ".discovered_cache-ignore.json")
 
 def safe(if_fails_return=False):
     def decorate(func):
@@ -66,14 +68,14 @@ def get_service_published_port(service_name: str) -> int:
 
 
 @click.group()
-def cli():
+def main():
     """ Wraps alembic CLI to simplify database migration
 
     """
 
 
 
-@cli.command()
+@main.command()
 def discover():
     """ Discovers active databases
 
@@ -98,19 +100,19 @@ def discover():
                 raise RuntimeError
 
         dumps = json.dumps(cfg, sort_keys=True, indent=4)
-        click.echo(f"Responded. \nDiscovered config: {dumps}")
+        click.echo(f"Responded. \ndiscovered_cache config: {dumps}")
 
-        with open(DISCOVERED, 'w') as fh:
+        with open(discovered_cache, 'w') as fh:
             fh.write(dumps)
 
     except RuntimeError:
-        if os.path.exists(DISCOVERED):
-            os.remove(DISCOVERED)
+        if os.path.exists(discovered_cache):
+            os.remove(discovered_cache)
         click.echo("Database not found")
 
 
 def get_config():
-    with open(DISCOVERED) as fh:
+    with open(discovered_cache) as fh:
         cfg = json.load(fh)
 
     config = AlembicConfig(default_ini)
@@ -120,7 +122,7 @@ def get_config():
     return config
 
 
-@cli.command()
+@main.command()
 @click.option('-m', 'message')
 def review(message):
     """Auto-generates a new revison
@@ -136,7 +138,7 @@ def review(message):
         rev_id=None)
 
 
-@cli.command()
+@main.command()
 @click.argument('revision', default='head')
 def upgrade(revision):
     """Upgrades target database to a given revision"""
@@ -145,5 +147,7 @@ def upgrade(revision):
     alembic.command.upgrade(config, revision, sql=False, tag=None)
 
 
+
+
 if __name__ == '__main__':
-    cli()
+    main()
