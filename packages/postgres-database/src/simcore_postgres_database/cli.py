@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import sys
-import tempfile
 from logging.config import fileConfig
 from pathlib import Path
 
@@ -25,7 +24,7 @@ alembic_version = tuple([int(v) for v in __alembic_version__.split('.')[0:3]])
 here = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
 default_ini = here / 'alembic.ini'
 migration_dir = here / 'migration'
-discovered_cache = os.path.join( tempfile.mkdtemp(__name__), "discovered_cache.json")
+discovered_cache = os.path.expanduser("~/.simcore_postgres_database_cache.json")
 
 log = logging.getLogger('root')
 fileConfig(default_ini)
@@ -40,18 +39,16 @@ def safe(if_fails_return=False):
                 log.info("%s failed:  %s", func.__name__, str(err))
             except Exception:
                 log.info("%s failed unexpectedly", func.__name__, exc_info=True)
-            return if_fails_return
+            return deepcopy(if_fails_return) # avoid issues with default mutables
         return safe_func
     return decorate
 
 #@retry(wait=wait_fixed(0.1), stop=stop_after_delay(60))
-@safe()
 def _ping(url):
     """checks whether database is responsive"""
     engine = sa.create_engine(str(url))
     conn = engine.connect()
     conn.close()
-    return True
 
 
 @safe(if_fails_return=None)
@@ -68,80 +65,113 @@ def _get_service_published_port(service_name: str) -> int:
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
     return int(published_port)
 
-def _get_config():
+def _get_alembic_config(cfg=None):
     try:
-        with open(discovered_cache) as fh:
-            cfg = json.load(fh)
-
+        if cfg is None:
+            cfg = _load_cache() or {}
         url = build_url(**cfg)
     except Exception:
         click.echo("Invalid database config, please run discover", err=True)
+        _reset_cache()
+        return dict()
 
     config = AlembicConfig(default_ini)
     config.set_main_option('script_location', str(migration_dir))
     config.set_main_option('sqlalchemy.url', str(url))
     return config
 
+@safe()
+def _load_cache():
+    with open(discovered_cache) as fh:
+        cfg = json.load(fh)
+    return cfg
+
 def _reset_cache():
     if os.path.exists(discovered_cache):
         os.remove(discovered_cache)
         click.echo("Removed %s" % discovered_cache)
 
-
 # CLI -----------------------------------------------
+DEFAULT_HOST = 'postgres'
+DEFAULT_PORT = 5432
+DEFAULT_DB = 'simcoredb'
 
 @click.group()
 def main():
     """ Simplified CLI for database migration with alembic"""
     click.echo("Using alembic {}.{}.{}".format(*alembic_version))
 
-@main.command()
-@click.option('--user', '-u', default=os.getenv('POSTGRES_USER'))
-@click.option('--password', '-p', default=os.getenv('POSTGRES_PASSWORD'))
-@click.option('--host', default=os.getenv('POSTGRES_HOST', 'postgres'))
-@click.option('--port', default=os.getenv('POSTGRES_PORT', 5432))
-@click.option('--database', default=os.getenv('POSTGRES_DB', 'simcoredb'))
-def discover(user, password, host, port, database):
-    """ Discovers active databases and stores valid urls"""
-    click.echo(f'Discovering database ...')
+from copy import deepcopy
 
+@main.command()
+@click.option('--user', '-u')
+@click.option('--password', '-p')
+@click.option('--host')
+@click.option('--port', type=int)
+@click.option('--database')
+def discover(**cli_inputs):
+    """ Discovers active databases and stores valid urls"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
+    click.echo(f'Discovering database ...')
     # TODO: if multiple candidates online, then query user to select
 
-    try:
-        # First guess is via environ variables
-        url = build_url(host, port, database, user, password)
+    cli_cfg = {key:value for key, value in cli_inputs.items() if value is not None}
 
-        click.echo("Trying url from environs: %s ..." % url)
+    def test_cached():
+        """Tests cached configuration """
+        cfg = _load_cache() or {}
+        if cfg:
+            cfg.update(cli_cfg) # overrides
+        return cfg
 
-        if not _ping(url):
-            port = _get_service_published_port(host)
-            host = "127.0.0.1"
-            url = build_url(host, port, database, user, password)
-
-            click.echo("Trying published port in swarm: %s ..." % url)
-            if port is None or not _ping(url):
-                raise RuntimeError()
-
-        click.secho(f"{url} is online",blink=True, bold=True)
-        dumps = json.dumps({
-            'user':user,
-            'password':password,
-            'host':host,
-            'port':port,
-            'database':database
-            }, sort_keys=True, indent=4)
-
-        with open(discovered_cache, 'w') as fh:
-            fh.write(dumps)
-        click.echo(f"Saved config: {dumps}")
+    def test_env():
+        """Tests environ variables """
+        cfg = {
+            'user': os.getenv('POSTGRES_USER'),
+            'password': os.getenv('POSTGRES_PASSWORD'),
+            'host': os.getenv('POSTGRES_HOST', DEFAULT_HOST),
+            'port': int(os.getenv('POSTGRES_PORT') or DEFAULT_PORT),
+            'database': os.getenv('POSTGRES_DB', DEFAULT_DB)
+        }
+        cfg.update(cli_cfg)
+        return cfg
 
 
-    except Exception as err:
-        _reset_cache()
-        click.echo("Nothing found. {}".format(err), err=True)
-        click.secho("Sorry, database not found !!", blink=True,
-            bold=True, fg="red")
+    def test_swarm():
+        """Tests published port in swarm from host """
+        cfg = deepcopy(cli_cfg)
+        cfg['host'] = "127.0.0.1"
+        cfg['port'] = _get_service_published_port(cli_cfg.get('host', DEFAULT_HOST))
+        cfg.setdefault('database', DEFAULT_DB)
+        return cfg
+
+
+    for test in [test_cached, test_env, test_swarm]:
+        try:
+            click.echo("{0.__name__}: {0.__doc__}".format(test))
+
+            cfg = test()
+            url = build_url(**cfg)
+
+            click.echo("ping {0.__name__}: {1} ...".format(test, url))
+
+            _ping(url)
+
+            click.secho(f"{test.__name__} responded: {url} is online",blink=True, bold=True)
+
+            with open(discovered_cache, 'w') as fh:
+                json.dump(cfg, fh, sort_keys=True, indent=4)
+
+            click.echo(f"Saved config at{discovered_cache}: {cfg}")
+            return
+
+        except Exception as err:
+            inline_msg = str(err).replace('\n','. ')
+            click.echo("{0.__name__} failed : {1}".format(test, inline_msg))
+
+    _reset_cache()
+    click.secho("Sorry, database not found !!", blink=True,
+        bold=True, fg="red")
 
 @main.command()
 @click.option('-m', 'message')
@@ -152,7 +182,7 @@ def review(message):
     """
     click.echo('Auto-generates revision based on changes ')
 
-    config = _get_config()
+    config = _get_alembic_config()
     alembic.command.revision(config, message,
         autogenerate=True, sql=False,
         head='head', splice=False, branch_label=None, version_path=None,
@@ -163,13 +193,28 @@ def review(message):
 def upgrade(revision):
     """Upgrades target database to a given revision"""
     click.echo(f'Upgrading database to {revision} ...')
-    config = _get_config()
+    config = _get_alembic_config()
     alembic.command.upgrade(config, revision, sql=False, tag=None)
 
 @main.command()
 def clean():
     """ Resets discover cache """
     _reset_cache()
+
+@main.command()
+def info():
+    """ Displays discovered config and  """
+
+    cfg = _load_cache()
+    click.echo(f"Saved config: {cfg} @ {discovered_cache}")
+    config = _get_alembic_config(cfg)
+
+    click.echo("Current version:")
+    alembic.command.current(config, verbose=True)
+
+    click.echo("Revisions history")
+    alembic.command.history(config)
+
 
 if __name__ == '__main__':
     main()
