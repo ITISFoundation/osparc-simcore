@@ -84,7 +84,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     __createAuthors: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       container.add(new qx.ui.basic.Label(this.tr("Authors")).set({
-        font: "title-14"
+        font: "title-12"
       }));
       for (let i in this.__metadata.authors) {
         const author = this.__metadata.authors[i];
