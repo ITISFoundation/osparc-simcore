@@ -1,11 +1,15 @@
 import logging
 import os
+from pathlib import Path
 
+import pandas as pd
 import pytest
 import requests
 import sqlalchemy as sa
+import sys
 
-from simcore_service_storage.models import FileMetaData, file_meta_data
+from simcore_service_storage.models import (FileMetaData, file_meta_data,
+                                            projects, user_to_projects, users)
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +23,12 @@ SECRET_KEY = '12345678'
 
 BUCKET_NAME ="simcore-testing"
 USER_ID = '0'
+
+def current_dir():
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+def data_dir():
+    return current_dir() / Path("data")
 
 def has_datcore_tokens()->bool:
     token = os.environ.get("BF_API_KEY", "none")
@@ -91,3 +101,51 @@ def insert_metadata(url: str, fmd: FileMetaData):
     engine = sa.create_engine(url)
     conn = engine.connect()
     conn.execute(ins)
+
+def create_full_tables(url):
+    meta = sa.MetaData()
+    engine = sa.create_engine(url)
+
+    meta.drop_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])
+    meta.create_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])
+
+    for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+        filename = t + ".csv"
+        csv_file = str(data_dir() / Path(filename))
+        with open(csv_file, 'r') as file:
+            data_df = pd.read_csv(file)
+            data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
+
+    # Leave here as a reference
+    # import psycopg2
+    # conn = psycopg2.connect(url)
+    # cur = conn.cursor()
+    # columns = [["file_uuid","location_id","location","bucket_name","object_name","project_id","project_name","node_id","node_name","file_name","user_id","user_name"],[],[],[]]
+    # if False:
+    #     import pdb; pdb.set_trace()
+    #     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+    #         filename = t + ".sql"
+    #         sqlfile = str(data_dir() / Path(filename))
+    #         cur.execute(open(sqlfile, "r").read())
+    # else:
+    #     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+    #         filename = t + ".csv"
+    #         csv_file = str(data_dir() / Path(filename))
+    #         if False:
+    #             with open(csv_file, 'r') as file:
+    #                 next(file)
+    #                 if t == "file_meta_data":
+    #                     cur.copy_from(file, t, sep=',', columns=columns[0])
+    #                 else:
+    #                     cur.copy_from(file, t, sep=',')
+    #                 conn.commit()
+    #         else:
+    #             with open(csv_file, 'r') as file:
+    #                 data_df = pd.read_csv(file)
+    #                 data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
+
+def drop_all_tables(url):
+    meta = sa.MetaData()
+    engine = sa.create_engine(url)
+
+    meta.drop_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])

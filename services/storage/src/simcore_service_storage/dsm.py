@@ -9,6 +9,7 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import aiobotocore
 import aiofiles
 import aiohttp
 import attr
@@ -19,10 +20,11 @@ from sqlalchemy.sql import and_
 from yarl import URL
 
 from s3wrapper.s3_client import S3Client
+from servicelib.aiopg_utils import DBAPIError
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
-                     file_meta_data)
+                     file_meta_data, projects, user_to_projects)
 from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
@@ -159,6 +161,8 @@ class DataStorageManager:
         return False
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
@@ -180,6 +184,61 @@ class DataStorageManager:
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
                     data.append(d)
+
+            uuid_name_dict = {}
+            # now parse the project to search for node/project names
+            try:
+                async with self.engine.acquire() as conn:
+                    joint_table = user_to_projects.join(projects)
+                    query = sa.select([projects]).select_from(joint_table)\
+                        .where(user_to_projects.c.user_id == user_id)
+
+                    async for row in conn.execute(query):
+                        proj_data = {key:value for key,value in row.items()}
+
+                        uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                        wb = proj_data['workbench']
+                        for node in wb.keys():
+                            uuid_name_dict[node] = wb[node]['label']
+            except DBAPIError as _err:
+                logger.exception("Error querying database for project names")
+
+            if uuid_name_dict:
+                for d in data:
+                    update = False
+                    if d.project_id in uuid_name_dict:
+                        if d.project_name != uuid_name_dict[d.project_id]:
+                            d.project_name = uuid_name_dict[d.project_id]
+                            update = True
+                    if d.node_id in uuid_name_dict:
+                        if d.node_name != uuid_name_dict[d.node_id]:
+                            d.node_name = uuid_name_dict[d.node_id]
+                            update = True
+
+                    if update:
+                        d.display_file_path = str(Path(d.project_name) / Path(d.node_name) / Path(d.file_name))
+                        d.raw_file_path = str(Path(d.project_id) / Path(d.node_id) / Path(d.file_name))
+                        async with self.engine.acquire() as conn:
+                            query = file_meta_data.update().\
+                            where(and_(file_meta_data.c.node_id==d.node_id,
+                                    file_meta_data.c.user_id==d.user_id)).\
+                            values(project_name=d.project_name,
+                                    node_name = d.node_name,
+                                    raw_file_path=d.raw_file_path,
+                                    display_file_path=d.display_file_path)
+                        await conn.execute(query)
+
+                # MaG: This is inefficient: Do this automatically when file is modified
+                _loop = asyncio.get_event_loop()
+                session = aiobotocore.get_session(loop=_loop)
+                async with session.create_client('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
+                     aws_secret_access_key=self.s3_client.secret_key) as client:
+                    r = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
+                    for resp in r:
+                        d.file_size = resp['Contents'][0]['Size']
+                        d.last_modified = str(resp['Contents'][0]['LastModified'])
+                        print(d)
+
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)

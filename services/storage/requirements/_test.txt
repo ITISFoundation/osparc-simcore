@@ -4,17 +4,20 @@
 #
 #    pip-compile --output-file=_test.txt _test.in
 #
+aioboto3==6.4.1
+aiobotocore[boto3]==0.10.2
 aiofiles==0.4.0
 aiohttp==3.5.4
 aiopg[sa]==0.15.0
 apipkg==1.5
 astroid==2.2.5            # via pylint
+async-generator==1.10
 async-timeout==3.0.1
 atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
 blackfynn==2.11.1
-boto3==1.9.153
-botocore==1.12.153
+boto3==1.9.91
+botocore==1.12.91
 certifi==2019.3.9
 chardet==3.0.4
 codecov==2.0.15
@@ -71,3 +74,6 @@ wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0
 wrapt==1.11.1
 yarl==1.3.0
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools==41.0.1        # via protobuf, pytest

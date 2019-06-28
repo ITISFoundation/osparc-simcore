@@ -96,6 +96,7 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     assert len(dsm_mockup_db) == new_size + len(bobs_biostromy_files)
     assert len(dsm_mockup_db) == new_size + len(bobs_biostromy_files)
 
+
 def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     utils.create_tables(url=postgres_url)
     bucket_name = BUCKET_NAME
@@ -349,3 +350,16 @@ def test_fmd_build():
     assert fmd.location == SIMCORE_S3_STR
     assert fmd.location_id == SIMCORE_S3_ID
     assert fmd.bucket_name == "test-bucket"
+
+
+async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
+    dsm = dsm_fixture
+    _id = "21"
+    data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
+
+    assert len(data) == 2
+    for d in data:
+        assert d.display_file_path
+        assert d.node_name
+        assert d.project_name
+        assert d.raw_file_path

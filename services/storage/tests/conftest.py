@@ -179,6 +179,22 @@ def mock_files_factory(tmpdir_factory):
         return filepaths
     return _create_files
 
+@pytest.fixture(scope="function")
+def dsm_mockup_complete_db(postgres_service_url, s3_client):
+    utils.create_full_tables(url=postgres_service_url)
+    bucket_name = BUCKET_NAME
+    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    f = utils.data_dir() /Path("outputController.dat")
+    object_name = "161b8782-b13e-5840-9ae2-e2250c231001/ad9bda7f-1dc5-5480-ab22-5fef4fc53eac/outputController.dat"
+    s3_client.upload_file(bucket_name, object_name, f)
+
+    f = utils.data_dir() /Path("notebooks.zip")
+    object_name = "161b8782-b13e-5840-9ae2-e2250c231001/a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8/notebooks.zip"
+    s3_client.upload_file(bucket_name, object_name, f)
+    yield
+    utils.drop_all_tables(url=postgres_service_url)
+
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
@@ -249,6 +265,7 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         # pylint: disable=no-member
         utils.insert_metadata(postgres_service_url,
                               data[object_name])
+
 
     total_count = 0
     for _obj in s3_client.list_objects_v2(bucket_name, recursive=True):
