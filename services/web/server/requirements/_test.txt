@@ -8,10 +8,12 @@ aadict==0.2.3
 aio-pika==2.9.0
 aiohttp-jinja2==1.1.1
 aiohttp-security==0.4.0
+aiohttp-session[secure]==2.7.0
 aiohttp==3.5.4
 aiopg[sa]==0.16.0
 aiosmtplib==1.0.5
 amqp==2.4.2
+asn1crypto==0.24.0
 asset==0.6.12
 astroid==2.2.5            # via pylint
 async-timeout==3.0.1
@@ -21,18 +23,20 @@ attrs==19.1.0
 billiard==3.6.0.0
 celery==4.3.0
 certifi==2019.3.9         # via requests
+cffi==1.12.3
 change-case==0.5.2
 chardet==3.0.4
 codecov==2.0.15
 coverage==4.5.3           # via codecov, coveralls, pytest-cov
 coveralls==1.7.0
-docker-pycreds==0.4.0     # via docker
-docker==3.7.2
+cryptography==2.6.1
+docker==4.0.1
 docopt==0.6.2             # via coveralls
 faker==1.0.7
 globre==0.1.5
 idna-ssl==1.1.0
 idna==2.8
+importlib-metadata==0.16  # via pluggy
 isort==4.3.20             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
@@ -45,31 +49,31 @@ mccabe==0.6.1             # via pylint
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2
 openapi-core==0.8.0
-openapi-spec-validator==0.2.6
+openapi-spec-validator==0.2.7
 passlib==1.7.1
 passwordmeter==0.1.8
-pathlib==1.0.1
 pika==0.10.0
-pluggy==0.11.0            # via pytest
+pluggy==0.12.0            # via pytest
 psycopg2-binary==2.8.2
 py==1.8.0                 # via pytest
+pycparser==2.19
 pylint==2.3.1
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
 pytest-mock==1.10.4
-pytest-runner==4.4
+pytest-runner==5.1
 pytest==4.5.0
 python-dateutil==2.8.0    # via faker
-python-engineio==3.5.1
-python-socketio==4.0.1
+python-engineio==3.7.0
+python-socketio==4.0.3
 pytz==2019.1
 pyyaml==5.1
 requests==2.22.0          # via codecov, coveralls, docker
 semantic-version==2.6.0
 shortuuid==0.5.0
 six==1.12.0
-sqlalchemy[postgresql_psycopg2binary]==1.3.3
+sqlalchemy[postgresql_psycopg2binary]==1.3.4
 strict-rfc3339==0.7
 tenacity==5.0.4
 text-unidecode==1.2       # via faker
@@ -77,9 +81,10 @@ trafaret-config==2.0.2
 trafaret==1.2.0
 typed-ast==1.3.5          # via astroid
 typing-extensions==3.7.2
-urllib3==1.24.3           # via requests
+urllib3==1.25.3           # via requests
 vine==1.3.0
 wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0  # via docker
 wrapt==1.11.1             # via astroid
 yarl==1.3.0
+zipp==0.5.1               # via importlib-metadata
