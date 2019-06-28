@@ -46,7 +46,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'simcore-postgres-database=simcore_postgres_database.cli:main',
-            'sc-postgres-db=simcore_postgres_database.cli:main',
+            'sc-pg=simcore_postgres_database.cli:main',
         ]
     },
     zip_safe=False

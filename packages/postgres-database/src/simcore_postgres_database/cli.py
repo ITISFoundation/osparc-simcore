@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+from copy import deepcopy
 from logging.config import fileConfig
 from pathlib import Path
 
@@ -67,20 +68,20 @@ def _get_service_published_port(service_name: str) -> int:
 
 def _get_alembic_config(cfg=None):
     try:
-        if cfg is None:
+        if not cfg:
             cfg = _load_cache() or {}
         url = build_url(**cfg)
     except Exception:
         click.echo("Invalid database config, please run discover", err=True)
         _reset_cache()
-        return dict()
+        return {}
 
     config = AlembicConfig(default_ini)
     config.set_main_option('script_location', str(migration_dir))
     config.set_main_option('sqlalchemy.url', str(url))
     return config
 
-@safe()
+@safe(if_fails_return={})
 def _load_cache():
     with open(discovered_cache) as fh:
         cfg = json.load(fh)
@@ -98,10 +99,7 @@ DEFAULT_DB = 'simcoredb'
 
 @click.group()
 def main():
-    """ Simplified CLI for database migration with alembic"""
-    click.echo("Using alembic {}.{}.{}".format(*alembic_version))
-
-from copy import deepcopy
+    """ Simplified CLI for database migration with alembic """
 
 @main.command()
 @click.option('--user', '-u')
@@ -110,11 +108,12 @@ from copy import deepcopy
 @click.option('--port', type=int)
 @click.option('--database')
 def discover(**cli_inputs):
-    """ Discovers active databases and stores valid urls"""
+    """ Discovers databases and stores configs in ~/.simcore_postgres_database.json """
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
-    click.echo(f'Discovering database ...')
     # TODO: if multiple candidates online, then query user to select
 
+
+    click.echo(f'Discovering database ...')
     cli_cfg = {key:value for key, value in cli_inputs.items() if value is not None}
 
     def test_cached():
@@ -148,30 +147,55 @@ def discover(**cli_inputs):
 
     for test in [test_cached, test_env, test_swarm]:
         try:
-            click.echo("{0.__name__}: {0.__doc__}".format(test))
+            click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
             cfg = test()
             url = build_url(**cfg)
 
-            click.echo("ping {0.__name__}: {1} ...".format(test, url))
+            click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
             _ping(url)
-
-            click.secho(f"{test.__name__} responded: {url} is online",blink=True, bold=True)
 
             with open(discovered_cache, 'w') as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
             click.echo(f"Saved config at{discovered_cache}: {cfg}")
+            click.secho(f"{test.__name__} succeeded: {url} is online",
+                blink=True, bold=True, fg='green')
+
             return
 
         except Exception as err:
             inline_msg = str(err).replace('\n','. ')
-            click.echo("{0.__name__} failed : {1}".format(test, inline_msg))
+            click.echo("<- {0.__name__} failed : {1}".format(test, inline_msg))
 
     _reset_cache()
     click.secho("Sorry, database not found !!", blink=True,
         bold=True, fg="red")
+
+@main.command()
+def info():
+    """ Displays discovered config and other alembic infos"""
+    click.echo("Using alembic {}.{}.{}".format(*alembic_version))
+
+    cfg = _load_cache()
+    click.echo(f"Saved config: {cfg} @ {discovered_cache}")
+    config = _get_alembic_config(cfg)
+    if config:
+        click.echo("Current version:")
+        alembic.command.current(config, verbose=True)
+
+        click.echo("Revisions history")
+        alembic.command.history(config)
+
+@main.command()
+def clean():
+    """ Resets discover cache """
+    _reset_cache()
+
+
+# Bypasses alembic CLI into a reduced version  ------------
+# TODO: systematic bypass??
 
 @main.command()
 @click.option('-m', 'message')
@@ -184,8 +208,12 @@ def review(message):
 
     config = _get_alembic_config()
     alembic.command.revision(config, message,
-        autogenerate=True, sql=False,
-        head='head', splice=False, branch_label=None, version_path=None,
+        autogenerate=True,
+        sql=False,
+        head='head',
+        splice=False,
+        branch_label=None,
+        version_path=None,
         rev_id=None)
 
 @main.command()
@@ -195,26 +223,3 @@ def upgrade(revision):
     click.echo(f'Upgrading database to {revision} ...')
     config = _get_alembic_config()
     alembic.command.upgrade(config, revision, sql=False, tag=None)
-
-@main.command()
-def clean():
-    """ Resets discover cache """
-    _reset_cache()
-
-@main.command()
-def info():
-    """ Displays discovered config and  """
-
-    cfg = _load_cache()
-    click.echo(f"Saved config: {cfg} @ {discovered_cache}")
-    config = _get_alembic_config(cfg)
-
-    click.echo("Current version:")
-    alembic.command.current(config, verbose=True)
-
-    click.echo("Revisions history")
-    alembic.command.history(config)
-
-
-if __name__ == '__main__':
-    main()
