@@ -524,7 +524,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const isMyTemplate = studyData["prjOwner"] === qxapp.data.Permissions.getInstance().getLogin();
 
       const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = (isTemplate && !(canUpdateTemplate && isMyTemplate))  ? [] : ["name", "description", "thumbnail"];
+      const itemsToBeModified = (isTemplate && !(canUpdateTemplate && isMyTemplate)) ? [] : ["name", "description", "thumbnail"];
 
       let form = new qx.ui.form.Form();
       let control;
