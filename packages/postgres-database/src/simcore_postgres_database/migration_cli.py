@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sys
-from copy import deepcopy
+import tempfile
 from pathlib import Path
 
 import alembic.command
@@ -11,17 +11,15 @@ import docker
 import sqlalchemy as sa
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
-#from alembic.util import CommandError
 
-import tempfile
+from simcore_postgres_database.settings import DSN
 
-from simcore_postgres_database.settings import DSN, db_config, sqlalchemy_url
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split('.')[0:3]])
+
 log = logging.getLogger(__name__)
 
 here = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
-
 default_ini = here / 'alembic.ini'
 migration_dir = here / 'migration'
 discovered_cache = os.path.join( tempfile.mkdtemp(__name__), ".discovered_cache-ignore.json")
@@ -64,33 +62,48 @@ def get_service_published_port(service_name: str) -> int:
     published_port = service_endpoint["Ports"][0]["PublishedPort"]
     return int(published_port)
 
+def get_config():
+    with open(discovered_cache) as fh:
+        cfg = json.load(fh)
 
+    config = AlembicConfig(default_ini)
+    config.set_main_option('script_location', str(migration_dir))
+    config.set_main_option('sqlalchemy.url', DSN.format(**cfg))
+    return config
 
+# CLI -----------------------------------------------
 
 @click.group()
 def main():
-    """ Wraps alembic CLI to simplify database migration
-
-    """
-
+    """ Simplified CLI for database migration with alembic"""
 
 
 @main.command()
+def clean():
+    if os.path.exists(discovered_cache):
+        os.remove(discovered_cache)
+        click.echo("Removed %s" % discovered_cache)
+
+@main.command()
 def discover():
-    """ Discovers active databases
-
-        - dumps first match
-        -
-    """
+    """ Discovers active databases """
     click.echo('Discovering database ...')
+    # TODO: add guess via CLI params, e.g. user and password
+    # TODO: if multiple candidates online, then query user to select
 
+    # First guess is via environ variables
+    cfg = dict(
+        user = os.getenv('POSTGRES_USER'),
+        password = os.getenv('POSTGRES_PASSWORD'),
+        host = os.getenv('POSTGRES_HOST'),
+        port = os.getenv('POSTGRES_PORT'),
+        database = os.getenv('POSTGRES_DB')
+    )
+    url = DSN.format(**cfg)
     try:
-        # db_config comes from configuration variables
-        cfg = deepcopy(db_config)
-        url = DSN.format(**cfg)
-
         click.echo("Trying %s ..." % url)
-        if not ping(url):
+
+        if not all(cfg.values()) or not ping(url):
             cfg['port'] = port = get_service_published_port(cfg['host'])
             cfg['host'] = "127.0.0.1"
             url = DSN.format(**cfg)
@@ -106,20 +119,11 @@ def discover():
             fh.write(dumps)
 
     except RuntimeError:
-        if os.path.exists(discovered_cache):
-            os.remove(discovered_cache)
+        clean()
         click.echo("Database not found")
 
 
-def get_config():
-    with open(discovered_cache) as fh:
-        cfg = json.load(fh)
 
-    config = AlembicConfig(default_ini)
-
-    config.set_main_option('script_location', str(migration_dir))
-    config.set_main_option('sqlalchemy.url', DSN.format(**cfg))
-    return config
 
 
 @main.command()

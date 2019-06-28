@@ -45,8 +45,8 @@ setup(
     },
     entry_points = {
         'console_scripts': [
-            'simcore-postgres-database-migration=simcore_postgres_database.migration_cli:main',
-            'postgres-db=simcore_postgres_database.migration_cli:main',
+            'simcore-postgres-database=simcore_postgres_database.migration_cli:main',
+            'sc-postgres-db=simcore_postgres_database.migration_cli:main',
         ]
     },
     zip_safe=False
