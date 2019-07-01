@@ -130,7 +130,9 @@ async def get_project_progress(request: web.Request):
     # TODO: SAN Implementation needed
     project_uuid = request.match_info.get("project_id")
     log.info("get_project_progress %s...", project_uuid)
-    pogresses = []
+    pogresses = {
+        nodes: {}
+    }
 
     return {
         'data': pogresses
