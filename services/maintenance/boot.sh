@@ -1,3 +1,1 @@
-
-yes ${MAINTENANCE_PASSWORD} | jupyter notebook password -y
-start-notebook.sh
+exec start-notebook.sh --NotebookApp.password=$(python -c "from notebook.auth import passwd; print(passwd('${MAINTENANCE_PASSWORD}'))")
