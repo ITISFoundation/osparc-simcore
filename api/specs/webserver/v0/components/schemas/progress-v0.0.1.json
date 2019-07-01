@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://simcore.io/api/specs/webserver/v0/components/schemas/progress-v0.0.1.json",
+  "title": "node progress/status",
+  "description": "Progress related to the status of the files retrieving of each input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "nodes"
+  ],
+  "properties": {
+    "nodes": {
+      "type": "object",
+      "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inputs"
+          ],
+          "properties": {
+            "inputs": {
+              "patternProperties": {
+                "^[-_a-zA-Z0-9]+$": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "progress"
+                  ],
+                  "properties": {
+                    "progress": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 1.0,
+                      "description": "the transfering progress/status",
+                      "examples": [
+                        "0.0",
+                        "0.5",
+                        "1.0"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -123,7 +123,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/project_progress.yaml#/components/schemas/ProjectProgressEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProgressEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -150,6 +150,18 @@ components:
           type: array
           items:
             $ref: './openapi-projects.yaml#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null
+    Progress:
+      $ref: './components/schemas/progress-v0.0.1-converted.yaml'
+    ProgressEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: './openapi-projects.yaml#/components/schemas/Progress'
         error:
           nullable: true
           default: null
