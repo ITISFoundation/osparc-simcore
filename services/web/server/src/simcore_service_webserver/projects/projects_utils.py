@@ -20,8 +20,7 @@ def clone_project_data(project: Dict) -> Dict:
 
     def _replace_uuids(node):
         if isinstance(node, str):
-            if node in nodes_map:
-                node = nodes_map[node]
+            node = nodes_map.get(node, node)
         elif isinstance(node, list):
             node = [_replace_uuids(item) for item in node]
         elif isinstance(node, dict):
