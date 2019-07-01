@@ -221,3 +221,12 @@ def upgrade(revision):
     click.echo(f'Upgrading database to {revision} ...')
     config = _get_alembic_config()
     alembic.command.upgrade(config, revision, sql=False, tag=None)
+
+
+@main.command()
+@click.argument('revision', default='head')
+def stamp(revision):
+    """Stamps the database with a given revision; does not run any migration"""
+    click.echo(f'Stamps db to {revision} ...')
+    config = _get_alembic_config()
+    alembic.command.stamp(config, revision, sql=False, tag=None)
