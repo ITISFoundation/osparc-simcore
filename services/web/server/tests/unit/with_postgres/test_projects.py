@@ -127,6 +127,8 @@ def assert_replaced(current_project, update_data):
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_list_projects(client, logged_user, user_project, template_project, expected):
+    #TODO: GET /v0/projects?start=0&count=3
+
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -147,6 +149,7 @@ async def test_list_projects(client, logged_user, user_project, template_project
         assert data[0] == user_project
 
     #GET /v0/projects?type=template
+    # instead /v0/projects/templates ??
     resp = await client.get(url.with_query(type='template'))
     data, errors = await assert_status(resp, expected)
     if not errors:
@@ -154,12 +157,6 @@ async def test_list_projects(client, logged_user, user_project, template_project
         assert data[0] == template_project
 
 
-@pytest.mark.skip("TODO")
-async def test_list_templates_only(client, logged_user, user_project, expected):
-    #TODO: GET /v0/projects?type=template
-    #TODO: GET /v0/projects/templates/
-    #TODO: GET /v0/projects?type=template&start=0&count=3
-    pass
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
