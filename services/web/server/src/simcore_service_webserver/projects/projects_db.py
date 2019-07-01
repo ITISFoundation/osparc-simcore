@@ -94,7 +94,7 @@ class ProjectDBAPI:
             uuids.append(prj_uuid)
         return uuids
 
-    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False) -> str:
+    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False, force_as_template=False) -> str:
         """  Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - If user_id is None, then project is added as template.
@@ -119,10 +119,10 @@ class ProjectDBAPI:
             })
             kargs = _convert_to_db_names(prj)
             kargs.update({
-                "type": ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
+                "type": ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD,
             })
 
-            # validate uuid
+            # must be valid uuid
             try:
                 uuidlib.UUID(kargs.get('uuid'))
             except ValueError:
