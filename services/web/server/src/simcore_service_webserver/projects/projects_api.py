@@ -6,8 +6,6 @@
         - return data and successful HTTP responses (or raise them)
         - upon failure raise errors that can be also HTTP reponses
 """
-import uuid as uuidlib
-from copy import deepcopy
 from typing import Dict
 
 from aiohttp import web
@@ -19,6 +17,7 @@ from ..security_api import check_permission
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
+
 
 def validate_project(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]

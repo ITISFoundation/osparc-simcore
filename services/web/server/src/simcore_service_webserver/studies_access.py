@@ -121,6 +121,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     from .projects.projects_utils import clone_project_data
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
+    # TODO: move to project_api and add access layer
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # assign id to copy
