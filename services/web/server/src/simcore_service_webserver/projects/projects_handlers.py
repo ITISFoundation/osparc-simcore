@@ -7,7 +7,7 @@ from jsonschema import ValidationError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import create_data_from_template, validate_project
+from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
@@ -48,7 +48,7 @@ async def create_projects(request: web.Request):
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
-            project = create_data_from_template(template_prj, user_id)
+            project = clone_project_data(template_prj)
 
         # overrides with body
         if request.has_body:

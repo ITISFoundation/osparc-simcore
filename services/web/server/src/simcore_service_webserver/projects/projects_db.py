@@ -95,13 +95,20 @@ class ProjectDBAPI:
         return uuids
 
     async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False, force_as_template=False) -> str:
-        """  Inserts a new project in the database and, if a user is specified, it assigns ownership
+        """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
-        - If user_id is None, then project is added as template.
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :raises ProjectInvalidRightsError: Assigning project to an unregistered user
+        :param prj: schema-compliant project data
+        :type prj: Dict
+        :param user_id: database's user identifier
+        :type user_id: str
+        :param force_project_uuid: enforces valid uuid, defaults to False
+        :type force_project_uuid: bool, optional
+        :param force_as_template: adds data as template, defaults to False
+        :type force_as_template: bool, optional
+        :raises ProjectInvalidRightsError: ssigning project to an unregistered user
         :return: newly assigned project UUID
         :rtype: str
         """
