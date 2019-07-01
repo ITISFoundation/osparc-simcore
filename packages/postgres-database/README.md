@@ -33,7 +33,7 @@ A typical workflow:
 ### Review
 
 ```console
-  simcore-postgres-database review
+  simcore-postgres-database review -m "some message about changes"
 ```
 Auto-generates some scripts under [migration/versions](packages/postgres-database/migration/versions). The migration script **needs to be reviewed and edited**, as Alembic currently does not detect every change you
 make to your models. In particular, Alembic is currently unable to detect:
