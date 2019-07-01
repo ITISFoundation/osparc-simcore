@@ -4,8 +4,8 @@
 #
 #    pip-compile --output-file=_migration.txt _migration.in
 #
-alembic==1.0.10
-certifi==2019.6.16        # via requests
+alembic==1.0.8
+certifi==2019.3.9
 chardet==3.0.4            # via requests
 click==7.0
 docker==4.0.2

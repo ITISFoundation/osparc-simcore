@@ -13,7 +13,7 @@ and to call the CLI use
 
   # or a short alias
 
-  sm-pg --help
+  sc-pg --help
 ```
 This entrypoing wraps calls to [alembic] commands and customizes it for ``simcore_postgres_database`` models and `postgres` online database.
 

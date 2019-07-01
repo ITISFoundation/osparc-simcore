@@ -35,13 +35,21 @@ setup(
     license="MIT license",
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    include_package_data=True,
     test_suite='tests',
     install_requires=install_requirements,
     tests_require=test_requirements,
     extras_require= {
         'migration': migration_requirements,
         'test': test_requirements
+    },
+    include_package_data=True,
+    package_data={
+        '': [
+            '*.ini',
+            'migration/*.py',
+            'migration/*.mako',
+            'migration/versions/*.py',
+         ]
     },
     entry_points = {
         'console_scripts': [

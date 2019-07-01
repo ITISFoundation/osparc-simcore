@@ -200,9 +200,7 @@ def clean():
 @main.command()
 @click.option('-m', 'message')
 def review(message):
-    """Auto-generates a new revison
-
-        alembic revision --autogenerate -m "first tables"
+    """Auto-generates a new revison. Equivalent to `alembic revision --autogenerate -m "first tables"`
     """
     click.echo('Auto-generates revision based on changes ')
 
