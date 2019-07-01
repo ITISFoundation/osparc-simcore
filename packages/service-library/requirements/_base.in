@@ -9,11 +9,7 @@ openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered
 
 aiohttp
 aiopg[sa]
-cryptography
 ujson
 werkzeug
 jsonschema
-
-# TODO: these two shall be optional!
-aiohttp_session[secure] # TODO: eliminate this dependency or make it optional!
 prometheus_client  # TODO: add as optional service-library[monitoring]

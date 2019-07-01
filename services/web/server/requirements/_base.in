@@ -13,11 +13,13 @@ jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 (used in tests) requi
 aio-pika==2.9.0     # TODO: upgrade code before !!
 aiohttp
 aiohttp_jinja2
+aiohttp_session[secure]
 aiohttp_security
 aiopg[sa]
 aiosmtplib
 asyncpg
 celery
+cryptography
 change_case
 jinja_app_loader
 passlib

@@ -55,3 +55,6 @@ projects:
 storage:
   host: storage
   port: 11111
+session:
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+...

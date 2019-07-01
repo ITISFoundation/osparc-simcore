@@ -35,7 +35,7 @@ rabbit:
 login:
   enabled: True
   registration_invitation_required: True
-  registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
+  registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
@@ -52,4 +52,7 @@ rest:
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+session:
+  # python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
 ...
