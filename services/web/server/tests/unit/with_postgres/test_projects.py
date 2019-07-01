@@ -328,6 +328,39 @@ async def test_new_project_from_template_with_body(client, logged_user, template
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPForbidden),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_new_template_from_project(client, logged_user, user_project, expected):
+    # POST /v0/projects?as_template_from={user_uuid}
+    url = client.app.router["create_projects"].url_for().\
+        with_query(as_template=user_project["uuid"])
+
+    resp = await client.post(url)
+    data, error = assert_status(resp, expected)
+
+    if not error:
+        template_project = data
+        
+        url = client.app.router["list_templates"].url_for().with_query(type="template")
+        resp = await client.get(url)
+        templates, _ = assert_status(resp, expected)
+
+        assert len(templates) == 1
+        assert templates[0] == template_project
+
+        # identical in all fields except UUIDs?
+        # api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+        assert_replaced(user_project, template_project)
+
+        # TODO: workbench nodes should not have progress??
+        # TODO: check in detail all fields in a node
+
+
+
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -414,6 +447,17 @@ async def test_delete_project(client, logged_user, user_project, expected):
     await assert_status(resp, expected)
 
 
+def test_dev():
+    from pathlib import Path
+    import json
+    import jsonschema
+
+
+    schema_path = Path(
+        '/Users/pcrespo/devp/osparc-simcore/api/specs/webserver/v0/components/schemas/project-v0.0.1.json')
+    with schema_path.open() as fh:
+        schema_data = json.load(fh)
+    
 
 # ######## DEVELOPMENT ###################################################
 # import uuid
