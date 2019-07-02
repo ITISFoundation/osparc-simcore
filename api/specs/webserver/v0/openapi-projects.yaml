@@ -116,7 +116,7 @@ paths:
           type: string
     get:
       summary: Gets progress of the node inputs of the given project
-      operationId: get_project_progress
+      # operationId: get_project_progress
       responses:
         '200':
           description: got detailed project
