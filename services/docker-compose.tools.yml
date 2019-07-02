@@ -2,22 +2,12 @@ version: '3.4'
 services:
   # Maintenance services
   #--------------------------------------------------------------------
-  # By default disabled: celery workers monitor
-  flower:
-    image: ondrejit/flower:latest
-    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
-    ports:
-      - 5555:5555
-    depends_on:
-      - rabbit
-  #--------------------------------------------------------------------
-  # monitors databases
   adminer:
     image: adminer
     ports:
       - 18080:8080
-    depends_on:
-      - postgres
+    #depends_on:
+    #  - postgres
   #--------------------------------------------------------------------
   portainer:
     image: portainer/portainer
@@ -40,11 +30,23 @@ services:
         target: /etc/prometheus/prometheus.yml
       - source: prometheus_rules
         target: /etc/prometheus/prometheus-rules.yml
+  # https://hub.docker.com/r/grafana/grafana/tags
+  grafana:
+    image: grafana/grafana:6.2.5
     depends_on:
-      - webserver
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    # FIXME: setup proper grafana config
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=z43
+      - GF_USERS_ALLOW_SIGN_UP=false  
 volumes:
   portainer_data:
   prometheus_data:
+  grafana_data:
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
