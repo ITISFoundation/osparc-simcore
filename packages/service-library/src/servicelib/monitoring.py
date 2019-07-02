@@ -27,10 +27,16 @@ def middleware_factory(app_name):
 
             resp = await handler(request)
 
+        except web.HTTPException as ee:
+            # Captures raised reponses (success/failures accounted with resp.status)
+            resp = ee
+            raise
+        finally:
+            # metrics on the same request
             resp_time = time.time() - request['start_time']
             request.app['REQUEST_LATENCY'].labels(
                 app_name, request.path).observe(resp_time)
-        finally:
+
             request.app['REQUEST_IN_PROGRESS'].labels(
                 app_name, request.path, request.method).dec()
 
@@ -49,6 +55,9 @@ async def metrics(_request):
 
 
 def setup_monitoring(app, app_name):
+
+    # NOTE: prometheus_client registers metrics in globals
+    # tests might fail when fixtures get re-created
 
     # Total number of requests processed
     app['REQUEST_COUNT'] = Counter(
