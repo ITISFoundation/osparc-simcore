@@ -296,6 +296,20 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return false;
     },
 
+    setRetrieveStatus: function(retrieveStatus) {
+      const nodeIds = Object.keys(retrieveStatus);
+      if (nodeIds.length > 0) {
+        const allNodes = this.getNodes(true);
+        const nodes = Object.values(allNodes);
+        for (const node of nodes) {
+          const nodeId = node.getNodeId();
+          if (nodeIds.includes(nodeId)) {
+            node.setRetrieveStatus(retrieveStatus[nodeId]);
+          }
+        }
+      }
+    },
+
     clearProgressData: function() {
       const allNodes = this.getNodes(true);
       const nodes = Object.values(allNodes);

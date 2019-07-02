@@ -129,6 +129,12 @@ qx.Class.define("qxapp.data.model.Study", {
       }
     },
 
+    setRetrieveStatus: function(retrieveStatus) {
+      if (this.isPropertyInitialized("workbench")) {
+        this.getWorkbench().setRetrieveStatus(retrieveStatus);
+      }
+    },
+
     closeStudy: function() {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {

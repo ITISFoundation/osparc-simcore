@@ -631,6 +631,10 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
+    setRetrieveStatus: function(retrieveStatus) {
+      console.log(retrieveStatus);
+    },
+
     __retrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },

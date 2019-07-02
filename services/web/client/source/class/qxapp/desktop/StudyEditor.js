@@ -49,7 +49,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     this.initDefault();
     this.connectEvents();
 
-    this.__startAutoSaveTimer();
+    this.__startTimers();
     this.__attachEventHandlers();
   },
 
@@ -78,12 +78,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __nodeView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+    __autoRetrieveTimer: null,
 
     /**
      * Destructor
      */
     destruct: function() {
       this.__stopAutoSaveTimer();
+      this.__stopAutoRetrieveTimer();
     },
 
     initDefault: function() {
@@ -546,6 +548,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getStudy().getWorkbench().clearProgressData();
     },
 
+    __startTimers: function() {
+      this.__startAutoSaveTimer();
+      this.__startAutoRetrieveTimer();
+    },
+
     __startAutoSaveTimer: function() {
       let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
@@ -569,10 +576,31 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       timer.start();
     },
 
+    __startAutoRetrieveTimer: function() {
+      const createStudyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
+      // Save every 2 seconds
+      const interval = 2000;
+      let timer = this.__autoRetrieveTimer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        const progress = createStudyResources.getProgress();
+        if ("nodes" in progress) {
+          this.getStudy().setRetrieveStatus(progress["nodes"]);
+        }
+      }, this);
+      timer.start();
+    },
+
     __stopAutoSaveTimer: function() {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    __stopAutoRetrieveTimer: function() {
+      if (this.__autoRetrieveTimer && this.__autoRetrieveTimer.isEnabled()) {
+        this.__autoRetrieveTimer.stop();
+        this.__autoRetrieveTimer.setEnabled(false);
       }
     },
 
