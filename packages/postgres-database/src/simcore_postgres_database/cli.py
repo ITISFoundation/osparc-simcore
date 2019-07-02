@@ -112,7 +112,6 @@ def discover(**cli_inputs):
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
 
-
     click.echo(f'Discovering database ...')
     cli_cfg = {key:value for key, value in cli_inputs.items() if value is not None}
 
@@ -150,6 +149,7 @@ def discover(**cli_inputs):
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
             cfg = test()
+            cfg.update(cli_cfg) # CLI always overrides
             url = build_url(**cfg)
 
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
@@ -182,15 +182,15 @@ def info():
     click.echo(f"Saved config: {cfg} @ {discovered_cache}")
     config = _get_alembic_config(cfg)
     if config:
-        click.echo("Current version:")
+        click.echo("Revisions history ------------")
+        alembic.command.history(config)
+        click.echo("Current version: -------------")
         alembic.command.current(config, verbose=True)
 
-        click.echo("Revisions history")
-        alembic.command.history(config)
 
 @main.command()
 def clean():
-    """ Resets discover cache """
+    """ Clears discovered database """
     _reset_cache()
 
 
@@ -217,11 +217,42 @@ def review(message):
 @main.command()
 @click.argument('revision', default='head')
 def upgrade(revision):
-    """Upgrades target database to a given revision"""
+    """Upgrades target database to a given revision
+
+        Say we have revision ae1027a6acf
+
+        Absolute migration:
+            sc-pg upgrade ae10
+
+        Relative to current:
+            sc-pg upgrade +2
+            sc-pg downgrade -- -1
+            sc-pg upgrade ae10+2
+
+    """
     click.echo(f'Upgrading database to {revision} ...')
     config = _get_alembic_config()
     alembic.command.upgrade(config, revision, sql=False, tag=None)
 
+@main.command()
+@click.argument('revision', default='-1')
+def downgrade(revision):
+    """Revert target database to a given revision
+
+        Say we have revision ae1027a6acf
+
+        Absolute migration:
+            sc-pg upgrade ae10
+
+        Relative to current:
+            sc-pg upgrade +2
+            sc-pg downgrade -- -1
+            sc-pg upgrade ae10+2
+    """
+    # https://click.palletsprojects.com/en/3.x/arguments/#argument-like-options
+    click.echo(f'Downgrading database to current-{revision} ...')
+    config = _get_alembic_config()
+    alembic.command.downgrade(config, str(revision), sql=False, tag=None)
 
 @main.command()
 @click.argument('revision', default='head')
