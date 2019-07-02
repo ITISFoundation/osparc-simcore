@@ -633,6 +633,14 @@ qx.Class.define("qxapp.data.model.Node", {
 
     setRetrieveStatus: function(retrieveStatus) {
       console.log(retrieveStatus);
+      if ("inputs" in retrieveStatus) {
+        const inputs = retrieveStatus["inputs"];
+        for (const portId in inputs) {
+          if ("progress" in inputs) {
+            this.getPropsWidget().setRetrieveStatus(portId, inputs["progress"]);
+          }
+        }
+      }
     },
 
     __retrieveInputs: function() {

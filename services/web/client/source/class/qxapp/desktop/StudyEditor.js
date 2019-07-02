@@ -577,15 +577,22 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __startAutoRetrieveTimer: function() {
-      const createStudyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
+      const studyId = this.getStudy().getUuid();
       // Save every 2 seconds
       const interval = 2000;
       let timer = this.__autoRetrieveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
-        const progress = createStudyResources.getProgress();
-        if ("nodes" in progress) {
-          this.getStudy().setRetrieveStatus(progress["nodes"]);
-        }
+        const study = this.__studyResources.project;
+        study.addListener("getProgressSuccess", e => {
+          const data = e.getData();
+          console.log(data);
+          if ("nodes" in data) {
+            this.getStudy().setRetrieveStatus(data["nodes"]);
+          }
+        }, this);
+        study.getProgress({
+          "project_id": studyId
+        });
       }, this);
       timer.start();
     },

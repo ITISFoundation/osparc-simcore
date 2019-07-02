@@ -156,6 +156,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
+
           const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
@@ -168,6 +169,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           }, this);
           hBox.add(unlinkBtn);
           hBox.key = portId;
+
           this._addAt(hBox, i, {
             row: layoutProps.row,
             column: this._gridPos.entryField
@@ -183,9 +185,30 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
+
           this._addAt(this._form.getControl(portId), i, {
             row: layoutProps.row,
             column: this._gridPos.entryentryField
+          });
+        }
+      }
+    },
+
+    setRetrieveStatus: function(portId, status) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        if ("key" in child && child.key === portId) {
+          const layoutProps = child.getLayoutProperties();
+          // this._remove(child);
+
+          const statusField = new qx.ui.form.TextField(status).set({
+            enabled: false
+          });
+
+          this._addAt(statusField, i, {
+            row: layoutProps.row,
+            column: this._gridPos.status
           });
         }
       }
