@@ -222,19 +222,20 @@ endif
 # target: push – Pushes images into a registry
 push:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-intr.yml \
+										-f services/docker-compose-inst.yml \
 										push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
 pull: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-intr.yml \
+										-f services/docker-compose-inst.yml \
 					 					pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-intr.yml \
+										-f services/docker-compose-inst.yml \
+										-f services/docker-compose-tools.yml \
 										config > $(output_file)
 
 ## -------------------------------
