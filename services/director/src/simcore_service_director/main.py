@@ -14,7 +14,9 @@ def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
     app = routing.create_web_app(api_spec_path.parent, api_spec_path.name)
     registry_cache_task.setup(app)
-    setup_monitoring(app, "simcore_service_director")
+    # TODO: temporary disabled until service is updated
+    if False: #pylint: disable=using-constant-test
+        setup_monitoring(app, "simcore_service_director")
     return app
 
 def main():
