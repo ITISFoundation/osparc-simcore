@@ -149,6 +149,7 @@ def discover(**cli_inputs):
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
             cfg = test()
+            cfg.update(cli_cfg) # CLI always overrides
             url = build_url(**cfg)
 
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
@@ -225,7 +226,7 @@ def upgrade(revision):
 
         Relative to current:
             sc-pg upgrade +2
-            sc-pg downgrade -1
+            sc-pg downgrade -- -1
             sc-pg upgrade ae10+2
 
     """
@@ -235,7 +236,7 @@ def upgrade(revision):
 
 @main.command()
 @click.argument('revision', default='-1')
-def downgrade(revision='-1'):
+def downgrade(revision):
     """Revert target database to a given revision
 
         Say we have revision ae1027a6acf
@@ -245,12 +246,13 @@ def downgrade(revision='-1'):
 
         Relative to current:
             sc-pg upgrade +2
-            sc-pg downgrade -1
+            sc-pg downgrade -- -1
             sc-pg upgrade ae10+2
     """
+    # https://click.palletsprojects.com/en/3.x/arguments/#argument-like-options
     click.echo(f'Downgrading database to current-{revision} ...')
     config = _get_alembic_config()
-    alembic.command.downgrade(config, revision, sql=False, tag=None)
+    alembic.command.downgrade(config, str(revision), sql=False, tag=None)
 
 @main.command()
 @click.argument('revision', default='head')
