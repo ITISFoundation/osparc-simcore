@@ -85,7 +85,14 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
       });
 
       this.__node.bind("progress", this.__label, "value", {
-        converter: progress => progress === 100 ? node.getOutputValues().outFile.path : this.tr("Select a file")
+        converter: progress => {
+          if (progress === 100) {
+            const file = node.getOutputValues().outFile.path;
+            const splitFilename = file.split("/");
+            return splitFilename[splitFilename.length-1];
+          }
+          return this.tr("Select a file");
+        }
       });
     }
   }
