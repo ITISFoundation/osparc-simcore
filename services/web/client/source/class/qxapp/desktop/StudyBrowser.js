@@ -603,8 +603,12 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         saveAsButton.setMinWidth(70);
 
         saveAsButton.addListener("execute", e => {
-          const studyId = studyData["uuid"];
-          console.log("Save study as template", studyId);
+          for (let i=0; i<itemsToBeModified.length; i++) {
+            const key = itemsToBeModified[i];
+            let getter = "get" + qx.lang.String.firstUp(key);
+            let newVal = model[getter]();
+            studyData[key] = newVal;
+          }
 
           const resources = this.__studyResources.projects;
 
@@ -616,7 +620,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             console.error(ev);
           });
           resources.postSaveAsTemplate({
-            "study_id": studyId
+            "study_id": studyData["uuid"]
           }, studyData);
         }, this);
 
