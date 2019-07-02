@@ -83,3 +83,8 @@ def light_test_configfile(mock_dir):
 def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
+
+
+@pytest.fixture
+def project_schema_file(api_specs_dir: Path) -> Path:
+    return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
