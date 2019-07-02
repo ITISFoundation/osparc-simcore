@@ -121,7 +121,7 @@ async def get_project(request: web.Request):
         'data': project
     }
 
-
+'''
 @login_required
 async def get_project_progress(request: web.Request):
     """ Returns the progress of the data retrieval of each input in each node
@@ -134,7 +134,7 @@ async def get_project_progress(request: web.Request):
     pogresses = {'nodes': nodes}
 
     return {'data': pogresses}
-
+'''
 
 @login_required
 async def replace_project(request: web.Request):
