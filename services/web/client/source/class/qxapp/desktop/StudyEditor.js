@@ -583,7 +583,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       let timer = this.__autoRetrieveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const study = this.__studyResources.project;
-        study.addListener("getProgressSuccess", e => {
+        study.addListenerOnce("getProgressSuccess", e => {
           const data = e.getData();
           console.log(data);
           if ("nodes" in data) {

@@ -199,17 +199,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       for (let i=0; i<children.length; i++) {
         let child = children[i];
         if ("key" in child && child.key === portId) {
-          const layoutProps = child.getLayoutProperties();
-          // this._remove(child);
-
-          const statusField = new qx.ui.form.TextField(status).set({
-            enabled: false
-          });
-
-          this._addAt(statusField, i, {
-            row: layoutProps.row,
-            column: this._gridPos.status
-          });
+          console.log(portId, status);
         }
       }
     },
