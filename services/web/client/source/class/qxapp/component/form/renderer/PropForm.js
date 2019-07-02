@@ -61,15 +61,21 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     }
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    _gridPos: {
+      label: 0,
+      entryField: 1,
+      status: 2
+    },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
       if (title !== null) {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: 0,
-            colSpan: 3
+            column: this._gridPos.label,
+            colSpan: Object.keys(this._gridPos).length
           }
         );
         this._row++;
@@ -81,12 +87,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let label = this._createLabel(names[i], item);
         this._add(label, {
           row: this._row,
-          column: 0
+          column: this._gridPos.label
         });
         label.setBuddy(item);
         this._add(item, {
           row: this._row,
-          column: 1
+          column: this._gridPos.entryField
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -164,7 +170,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           hBox.key = portId;
           this._addAt(hBox, i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryField
           });
         }
       }
@@ -179,7 +185,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           this._remove(child);
           this._addAt(this._form.getControl(portId), i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryentryField
           });
         }
       }
