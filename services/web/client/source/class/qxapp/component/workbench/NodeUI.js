@@ -114,8 +114,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.setThumbnail(this.getNode().getThumbnail());
       }
 
-      this.add(this.__createChipContainer());
-
       let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this.add(inputsOutputsLayout, {
         flex: 1
@@ -136,6 +134,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       inputsOutputsLayout.add(this.__outputPortLayout, {
         width: "50%"
       });
+
+      this.add(this.__createChipContainer());
 
       if (this.getNode().getMetaData().category === "Solver") {
         this.__progressBar = new qx.ui.indicator.ProgressBar().set({
