@@ -2,8 +2,9 @@
 from logging.config import fileConfig
 
 from alembic import context
-from simcore_postgres_database.settings import target_metadatas, sqlalchemy_url
 from sqlalchemy import engine_from_config, pool
+
+from simcore_postgres_database.settings import target_metadatas
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -35,9 +36,10 @@ def run_migrations_offline():
     script output.
 
     """
-    # url = config.get_main_option("sqlalchemy.url")
+    # pylint: disable=no-member
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=sqlalchemy_url, target_metadata=target_metadata, literal_binds=True
+        url=url, target_metadata=target_metadata, literal_binds=True
     )
 
     with context.begin_transaction():
@@ -51,11 +53,9 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    config_dict = config.get_section(config.config_ini_section)
-    config_dict['sqlalchemy.url'] = sqlalchemy_url
-
+    # pylint: disable=no-member
     connectable = engine_from_config(
-        config_dict,
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -69,6 +69,7 @@ def run_migrations_online():
             context.run_migrations()
 
 
+# pylint: disable=no-member
 if context.is_offline_mode():
     run_migrations_offline()
 else:

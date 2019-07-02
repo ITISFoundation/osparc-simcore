@@ -1,0 +1,29 @@
+# Instrumentation stack
+version: '3.7'
+services:
+  #--------------------------------------------------------------------
+  maintenance:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    build:
+      context: ../
+      dockerfile: services/maintenance/Dockerfile
+      cache_from:
+        - ${DOCKER_REGISTRY:-itisfoundation}/maintenance:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+    ports:
+      - "9009:8888"
+    env_file:
+      - ../.env
+    depends_on:
+      - postgres
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
