@@ -83,6 +83,7 @@ qx.Class.define("qxapp.data.Permissions", {
 
   members: {
     __userRole: null,
+    __userLogin: null,
 
     getRole() {
       return this.__userRole;
@@ -93,6 +94,10 @@ qx.Class.define("qxapp.data.Permissions", {
         return;
       }
       this.__userRole = role;
+    },
+
+    getLogin() {
+      return this.__userLogin;
     },
 
     getChildrenRoles(role) {
@@ -151,7 +156,10 @@ qx.Class.define("qxapp.data.Permissions", {
           "preferences.role.update",
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
-          "study.logger.debug.read"
+          "study.logger.debug.read",
+          "studies.template.create",
+          "studies.template.update",
+          "studies.template.delete"
         ],
         "admin": []
       };
@@ -215,6 +223,7 @@ qx.Class.define("qxapp.data.Permissions", {
       profile.addListenerOnce("getSuccess", e => {
         let profileData = e.getRequest().getResponse().data;
         this.__userRole = profileData.role;
+        this.__userLogin = profileData.login;
         this.fireDataEvent("userProfileRecieved", true);
       }, this);
       profile.addListenerOnce("getError", e => {
