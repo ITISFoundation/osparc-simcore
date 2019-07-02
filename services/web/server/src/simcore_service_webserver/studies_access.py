@@ -27,7 +27,6 @@ from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
 
-TEMPLATE_PREFIX = "template-uuid"
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
@@ -101,7 +100,7 @@ def compose_uuid(template_uuid, user_id) -> str:
     """ Creates a new uuid composing a project's and user ids such that
         any template pre-assigned to a user
 
-        LIMITATION: a user cannot have multiple copies of the same template
+        Enforces a constraint: a user CANNOT have multiple copies of the same template
         TODO: cache results
     """
     new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
@@ -119,8 +118,10 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_api import create_data_from_template
+    from .projects.projects_utils import clone_project_data
 
+    # FIXME: ONLY projects should have access to db since it avoids access layer
+    # TODO: move to project_api and add access layer
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # assign id to copy
@@ -132,7 +133,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = create_data_from_template(template_project, user["id"])
+        project = clone_project_data(template_project)
 
         project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)

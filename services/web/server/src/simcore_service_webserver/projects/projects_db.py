@@ -94,14 +94,21 @@ class ProjectDBAPI:
             uuids.append(prj_uuid)
         return uuids
 
-    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False) -> str:
-        """  Inserts a new project in the database and, if a user is specified, it assigns ownership
+    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False, force_as_template=False) -> str:
+        """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
-        - If user_id is None, then project is added as template.
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :raises ProjectInvalidRightsError: Assigning project to an unregistered user
+        :param prj: schema-compliant project data
+        :type prj: Dict
+        :param user_id: database's user identifier
+        :type user_id: str
+        :param force_project_uuid: enforces valid uuid, defaults to False
+        :type force_project_uuid: bool, optional
+        :param force_as_template: adds data as template, defaults to False
+        :type force_as_template: bool, optional
+        :raises ProjectInvalidRightsError: ssigning project to an unregistered user
         :return: newly assigned project UUID
         :rtype: str
         """
@@ -119,10 +126,10 @@ class ProjectDBAPI:
             })
             kargs = _convert_to_db_names(prj)
             kargs.update({
-                "type": ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
+                "type": ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD,
             })
 
-            # validate uuid
+            # must be valid uuid
             try:
                 uuidlib.UUID(kargs.get('uuid'))
             except ValueError:
