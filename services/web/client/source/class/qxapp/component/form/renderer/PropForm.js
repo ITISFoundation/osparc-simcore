@@ -156,11 +156,11 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
-          let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          let unlinkBtn = new qx.ui.form.Button().set({
+          const unlinkBtn = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
