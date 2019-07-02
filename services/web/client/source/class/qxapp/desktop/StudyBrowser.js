@@ -583,7 +583,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         let resource = this.__studyResources.project;
 
         resource.addListenerOnce("putSuccess", ev => {
-          this.reloadUserStudies();
+          if (isTemplate) {
+            this.reloadTemplateStudies();
+          } else {
+            this.reloadUserStudies();
+          }
         }, this);
 
         resource.put({
@@ -635,7 +639,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            this.__deleteStudy(studyData);
+            this.__deleteStudy(studyData, isTemplate);
           }
         }, this);
       }, this);
@@ -644,13 +648,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
     },
 
-    __deleteStudy: function(studyData) {
+    __deleteStudy: function(studyData, isTemplate = false) {
       this.__stopInteractiveServicesInStudy(studyData);
 
       let resource = this.__studyResources.project;
 
       resource.addListenerOnce("delSuccess", ev => {
-        this.reloadUserStudies();
+        if (isTemplate) {
+          this.reloadTemplateStudies();
+        } else {
+          this.reloadUserStudies();
+        }
       }, this);
 
       resource.del({
