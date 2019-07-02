@@ -326,7 +326,9 @@ qx.Class.define("qxapp.utils.Utils", {
 
     stringHash: str => {
       // Based on https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
-      let hash=0, i, chr;
+      let hash = 0;
+      let i;
+      let chr;
       if (str.length === 0) return hash;
       for (i=0; i<str.length; i++) {
         chr = str.charCodeAt(i);

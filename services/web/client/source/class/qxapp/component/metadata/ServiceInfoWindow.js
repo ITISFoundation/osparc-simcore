@@ -8,7 +8,6 @@
 qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
   extend: qx.ui.window.Window,
   construct: function(metadata) {
-
     this.base(arguments, this.tr("Service information") + " · " + metadata.name);
 
     this.set({

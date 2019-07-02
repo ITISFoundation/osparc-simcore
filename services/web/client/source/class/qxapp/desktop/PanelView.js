@@ -33,7 +33,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     })).set({
-      appearance: "panelview-titlebar",
+      appearance: "panelview-titlebar"
     });
     this._add(this.__titleBar);
 
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __layoutFlex: null,
     __minHeight: null,
     __contentMinHeight: null,
-    
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -206,7 +206,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
       this.__caret.setSource(this.__getCaretId(this.getCollapsed()));
     },
 
-    __getCaretId(collapsed) {
+    __getCaretId: function(collapsed) {
       const caretSize = this.getCaretSize();
       const moreCaret = this.self().MORE_CARET;
       const lessCaret = this.self().LESS_CARET;

@@ -24,12 +24,12 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
       flex: 1
     });
     this._add(main);
-    
+
     const extraInfo = this.__createExtraInfo();
     const more = new qxapp.desktop.PanelView(this.tr("more information"), extraInfo).set({
       caretSize: 14,
       collapsed: true
-    });;
+    });
     more.getChildControl("title").setFont("text-12");
     this._add(more);
   },
@@ -47,12 +47,12 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
         rich: true
       });
       container.add(title);
-  
+
       const description = new qx.ui.basic.Label(this.__study.getDescription()).set({
         rich: true
       });
       container.add(description);
-  
+
       const author = new qx.ui.basic.Label(this.tr("Owner") + ": <b>" + this.__study.getPrjOwner() + "</b>").set({
         rich: true
       });
@@ -76,9 +76,7 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
 
       const container = new qx.ui.container.Composite(layout);
 
-      const dateFormatter = (date) => {
-        return date.toLocaleString();
-      };
+      const dateFormatter = date => date.toLocaleString();
 
       container.add(new qx.ui.basic.Label(this.tr("Creation date")), {
         column: 0,
