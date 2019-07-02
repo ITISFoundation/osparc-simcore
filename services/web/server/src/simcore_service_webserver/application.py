@@ -28,8 +28,9 @@ from .users import setup_users
 
 log = logging.getLogger(__name__)
 
+from typing import Dict
 
-def create_application(config: dict):
+def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
@@ -43,12 +44,12 @@ def create_application(config: dict):
             json.dumps(config, indent=2, sort_keys=True))
 
     testing = config["main"].get("testing", False)
-
+    monitoring = config["main"]["monitoring_enabled"]
     # TODO: create dependency mechanism and compute setup order
 
-    # TODO: activate optionaly?
     # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
-    setup_monitoring(app, "simcore_service_webserver")
+    if monitoring:
+        setup_monitoring(app, "simcore_service_webserver")
     setup_statics(app)
     setup_db(app)
     setup_session(app)

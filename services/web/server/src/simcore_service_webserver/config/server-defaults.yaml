@@ -6,6 +6,7 @@ main:
   port: 8080
   testing: true
   studies_access_enabled: True
+  monitoring_enabled: False
 director:
   host: director
   port: 8001

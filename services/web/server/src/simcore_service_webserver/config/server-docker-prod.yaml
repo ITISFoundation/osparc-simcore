@@ -8,6 +8,7 @@ main:
   log_level: INFO
   testing: False
   studies_access_enabled: False
+  monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
