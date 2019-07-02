@@ -23,7 +23,7 @@ import trafaret as T
 from servicelib import application_keys  # pylint:disable=unused-import
 
 from . import (computation_config, db_config, email_config, rest_config,
-               storage_config)
+               storage_config, session_config)
 from .director import config as director_config
 from .login import config as login_config
 from .projects import config as projects_config
@@ -54,7 +54,8 @@ def create_schema():
         email_config.CONFIG_SECTION_NAME: email_config.schema,
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
         storage_config.CONFIG_SECTION_NAME: storage_config.schema,
-        T.Key(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema
+        T.Key(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
+        session_config.CONFIG_SECTION_NAME: session_config.schema,
         #s3_config.CONFIG_SECTION_NAME: s3_config.schema
         #TODO: enable when sockets are refactored
     })

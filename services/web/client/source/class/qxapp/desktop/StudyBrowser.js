@@ -389,13 +389,19 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return list;
     },
 
+    __uuidToNumber: function(uuid) {
+      const nThumbnails = 25;
+      const lastCharacters = uuid.substr(uuid.length-10);
+      const aNumber = parseInt(lastCharacters, 16);
+      return aNumber%nThumbnails;
+    },
+
     /**
      * Delegates appearance and binding of each study item
      */
     __getDelegate: function(fromTemplate, list) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
-      const nThumbnails = 25;
       let that = this;
       let delegate = {
         // Item's Layout
@@ -433,12 +439,15 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         },
         // Item's data binding
         bindItem: function(controller, item, id) {
-          controller.bindProperty("uuid", "icon", {
+          controller.bindProperty("uuid", "model", null, item, id);
+          controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              if (data) {
-                const lastCharacters = data.substr(data.length-10);
-                const aNumber = parseInt(lastCharacters, 16);
-                const thumbnailId = aNumber%nThumbnails;
+              const uuid = item.getModel();
+              if (uuid) {
+                if (data) {
+                  return data;
+                }
+                const thumbnailId = that.__uuidToNumber(uuid); // eslint-disable-line no-underscore-dangle
                 return "qxapp/img"+ thumbnailId +".jpg";
               }
               return "@FontAwesome5Solid/plus-circle/80";
@@ -457,11 +466,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           controller.bindProperty("lastChangeDate", "lastChangeDate", {
             converter: function(data) {
               return data ? new Date(data) : null;
-            }
-          }, item, id);
-          controller.bindProperty("uuid", "model", {
-            converter: function(data) {
-              return data;
             }
           }, item, id);
         },
@@ -521,6 +525,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
       const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
       const itemsToBeModified = (isTemplate && !(canUpdateTemplate && isMyTemplate)) ? [] : ["name", "description", "thumbnail"];
+
       let form = new qx.ui.form.Form();
       let control;
       for (const dataId in studyData) {

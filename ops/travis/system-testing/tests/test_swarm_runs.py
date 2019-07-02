@@ -118,9 +118,14 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     """
     running_services = docker_client.services.list()
 
-    assert (len(services_docker_compose["services"]) + len(tools_docker_compose["services"])) == len(running_services)
+    service_names = []
+    service_names += services_docker_compose["services"]
+    service_names += tools_docker_compose["services"]
 
-    # TODO: check names instead
+    assert len(service_names) == len(running_services)
+
+    for name in service_names:
+        assert any( name in s.name for s in running_services ), f"{name} not in {running_services}"
 
 
 async def test_core_service_running(core_service_name, docker_client, loop):
@@ -187,4 +192,3 @@ async def test_check_serve_root(docker_client, services_docker_compose, tools_do
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
     except urllib.error.URLError as e:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
-
