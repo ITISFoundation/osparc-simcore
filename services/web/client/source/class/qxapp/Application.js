@@ -21,6 +21,7 @@
  * This is the main application class of "qxapp"
  *
  * @asset(qxapp/*)
+ * @asset(common/common.css)
  */
 
 qx.Class.define("qxapp.Application", {
@@ -68,7 +69,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__initRouting();
-      this.__loadHintCss();
+      this.__loadCommonCss();
     },
 
     __initRouting: function() {
@@ -203,9 +204,9 @@ qx.Class.define("qxapp.Application", {
       }
     },
 
-    __loadHintCss: function() {
-      const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
-      qx.module.Css.includeStylesheet(hintCssUri);
+    __loadCommonCss: function() {
+      const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
+      qx.module.Css.includeStylesheet(commonCssUri);
     }
   }
 });

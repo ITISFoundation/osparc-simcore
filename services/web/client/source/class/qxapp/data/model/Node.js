@@ -149,7 +149,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     serviceUrl: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeServiceUrl"
     },
 
     iFrame: {
@@ -687,25 +688,7 @@ qx.Class.define("qxapp.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      const interval = 50;
-      let increment = true;
-      let progressTimer = new qx.event.Timer(interval);
-      progressTimer.addListener("interval", () => {
-        if (this.getServiceUrl() === null) {
-          let newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
-          newProgress = Math.min(newProgress, 100);
-          newProgress = Math.max(newProgress, 0);
-          this.setProgress(newProgress);
-          if (newProgress === 100) {
-            increment = false;
-          } else if (newProgress === 0) {
-            increment = true;
-          }
-        } else {
-          progressTimer.stop();
-        }
-      }, this);
-      progressTimer.start();
+      this.setProgress(0);
 
       const prjId = this.getWorkbench().getStudy()
         .getUuid();

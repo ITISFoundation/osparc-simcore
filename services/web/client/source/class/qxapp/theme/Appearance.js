@@ -357,7 +357,30 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "hint": {
       style: state => ({
         backgroundColor: "background-main-lighter+",
-        decorator: "hint"
+        decorator: "hint",
+        padding: 5
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Chip
+    ---------------------------------------------------------------------------
+    */
+    "chip": {
+      include: "atom",
+      alias: "atom",
+      style: state => ({
+        decorator: "chip",
+        backgroundColor: "background-main-lighter",
+        padding: [3, 5]
+      })
+    },
+
+    "chip/label": {
+      include: "atom/label",
+      style: state => ({
+        font: "text-10"
       })
     }
   }

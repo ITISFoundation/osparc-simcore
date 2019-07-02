@@ -17,8 +17,7 @@ qx.Class.define("qxapp.ui.hint.Hint", {
 
     this.__hintContainer = new qx.ui.container.Composite(new qx.ui.layout.Basic());
     this.__hintContainer.set({
-      appearance: "hint",
-      padding: 5
+      appearance: "hint"
     });
 
     this.__caret = new qx.ui.container.Composite().set({

@@ -141,6 +141,12 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         radius: 3
       }
+    },
+
+    "chip": {
+      style: {
+        radius: 9
+      }
     }
   }
 });

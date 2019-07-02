@@ -76,6 +76,9 @@
       },
       {
         "uri": "resource/hint/hint.css"
+      },
+      {
+        "uri": "resource/common/common.css"
       }
     ],
     "add-script": [
