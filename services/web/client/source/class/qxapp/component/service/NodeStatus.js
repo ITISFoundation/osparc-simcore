@@ -72,21 +72,21 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
     },
 
     __setupFilepicker: function() {
-      this.__icon.setSource("@FontAwesome5Solid/file/12");
-      this.__label.setValue(this.tr("Select a file"));
-      // this.__node.bind("outputValues", this.__label, "value", {
-      //   converter: outputs => outputs.outputFile ? outputs.outputFile.path : this.tr("Select a file")
-      // });
-      // this.__node.bind("outputValues", this.__icon, "source", {
-      //   converter: outputs => outputs.outputFile ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/file/12",
-      //   onUpdate: (source, target) => {
-      //     if (outputs.outputFile) {
-      //       target.setTextColor("ready-green");
-      //     } else {
-      //       target.resetTextColor();
-      //     }
-      //   }
-      // });
+      const node = this.__node;
+      this.__node.bind("progress", this.__icon, "source", {
+        converter: progress => progress === 100 ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/file/12",
+        onUpdate: (source, target) => {
+          if (source.getProgress() === 100) {
+            target.setTextColor("ready-green");
+          } else {
+            target.resetTextColor();
+          }
+        }
+      });
+
+      this.__node.bind("progress", this.__label, "value", {
+        converter: progress => progress === 100 ? node.getOutputValues().outFile.path : this.tr("Select a file")
+      });
     }
   }
 })
