@@ -44,7 +44,7 @@ def _services_docker_compose(osparc_simcore_root_dir: Path) -> Dict[str, str]:
     # https://github.com/docker/compose/blob/master/compose/cli/main.py#L328
     osparc_simcore_services_dir = osparc_simcore_root_dir / "services"
     compose = {}
-    for name in ["docker-compose.yml", "docker-compose-inst.yml"]:
+    for name in ["docker-compose.yml", ]:
         content = _load_yaml(osparc_simcore_services_dir / name)
         compose.update(content)
     return compose
