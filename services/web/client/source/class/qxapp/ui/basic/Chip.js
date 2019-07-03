@@ -5,17 +5,17 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
- qx.Class.define("qxapp.ui.basic.Chip", {
-   extend: qx.ui.basic.Atom,
+qx.Class.define("qxapp.ui.basic.Chip", {
+  extend: qx.ui.basic.Atom,
 
-   construct: function(label, icon) {
-     this.base(arguments, label, icon);
-   },
+  construct: function(label, icon) {
+    this.base(arguments, label, icon);
+  },
 
-   properties: {
-     appearance: {
-       init: "chip",
-       refine: true
-     }
-   }
- })
+  properties: {
+    appearance: {
+      init: "chip",
+      refine: true
+    }
+  }
+});

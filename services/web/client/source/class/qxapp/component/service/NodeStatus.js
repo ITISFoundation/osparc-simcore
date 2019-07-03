@@ -54,11 +54,11 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
 
     __setupInteractive: function() {
       this.__node.bind("serviceUrl", this.__label, "value", {
-        converter: url => url ? this.tr("Ready") : this.tr("Loading...")
+        converter: url => (url ? this.tr("Ready") : this.tr("Loading..."))
       });
 
       this.__node.bind("serviceUrl", this.__icon, "source", {
-        converter: url => url ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/circle-notch/12",
+        converter: url => (url ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/circle-notch/12"),
         onUpdate: (source, target) => {
           if (source.getServiceUrl()) {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
     __setupFilepicker: function() {
       const node = this.__node;
       this.__node.bind("progress", this.__icon, "source", {
-        converter: progress => progress === 100 ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/file/12",
+        converter: progress => (progress === 100 ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/file/12"),
         onUpdate: (source, target) => {
           if (source.getProgress() === 100) {
             target.setTextColor("ready-green");
@@ -96,4 +96,4 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
       });
     }
   }
-})
+});

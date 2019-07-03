@@ -713,7 +713,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        progressTimer.stop();
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -722,7 +721,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
-        progressTimer.stop();
       }, this);
       request.send();
     },
