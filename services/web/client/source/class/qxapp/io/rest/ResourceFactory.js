@@ -132,6 +132,11 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         postFromTemplate: {
           method: "POST",
           url: basePath+"/projects?from_template={template_id}"
+        },
+
+        postSaveAsTemplate: {
+          method: "POST",
+          url: basePath+"/projects?as_template={study_id}"
         }
       });
 
