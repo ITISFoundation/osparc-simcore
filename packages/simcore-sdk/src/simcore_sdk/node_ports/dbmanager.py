@@ -55,6 +55,7 @@ def _get_node_from_db(node_uuid: str, session: sqlalchemy.orm.session.Session) -
     log.debug("Reading from database for node uuid %s", node_uuid)
     try:
         # project id should be also defined but was not the case before
+        # pylint: disable=no-member
         criteria = (NodeModel.node_id == node_uuid if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == node_uuid, NodeModel.project_id == config.PROJECT_ID))
         return session.query(NodeModel).filter(criteria).one()
     except exc.NoResultFound:
@@ -66,6 +67,7 @@ class DBManager:
     def __init__(self):
         self._db_settings = DbSettings()
         with session_scope(self._db_settings.Session) as session:
+            # pylint: disable=no-member
             # project id should be also defined but was not the case before
             criteria = (NodeModel.node_id == config.NODE_UUID if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID))
             node = session.query(NodeModel).filter(criteria).one()
@@ -78,6 +80,7 @@ class DBManager:
 
         node_configuration = json.loads(json_configuration)
         with session_scope(self._db_settings.Session) as session:
+            # pylint: disable=no-member
             updated_node = NodeModel(schema=node_configuration["schema"], inputs=node_configuration["inputs"], outputs=node_configuration["outputs"])
             node = _get_node_from_db(node_uuid=node_uuid, session=session)
 

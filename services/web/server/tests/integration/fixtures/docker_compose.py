@@ -26,7 +26,7 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
 
 @pytest.fixture("session")
 def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.tools.yml"
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-tools.yml"
     assert docker_compose_path.exists()
 
     content = {}
@@ -82,8 +82,7 @@ def tools_docker_compose_file(request, temp_folder, tools_docker_compose, devel_
 
     """
     tool_services = getattr(request.module, 'tool_services', [])
-    docker_compose_path = temp_folder / 'docker-compose.tools.yml'
-    # docker_compose_path = tmp_path / 'docker-compose.tools.yml'
+    docker_compose_path = temp_folder / 'docker-compose-tools.yml'
     _recreate_compose_file(tool_services, tools_docker_compose, docker_compose_path, devel_environ)
 
     yield Path(docker_compose_path)

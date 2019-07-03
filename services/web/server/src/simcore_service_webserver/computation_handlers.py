@@ -11,16 +11,15 @@ from typing import Dict
 
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
-from aiopg.sa import Engine
-from celery import Celery
 from sqlalchemy import and_
 
+from aiopg.sa import Engine
+from celery import Celery
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
+from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as rabbit_config
-from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
-                                                ComputationalTask)
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_sdk
@@ -159,14 +158,15 @@ async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: d
 
 async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_adjacency_list: Dict):
     async with db_engine.acquire() as conn:
-        query = sa.select([ComputationalPipeline]).\
-                    where(ComputationalPipeline.__table__.c.project_id==project_id)
+        query = sa.select([comp_pipeline]).\
+                    where(comp_pipeline.c.project_id==project_id)
         result = await conn.execute(query)
         pipeline = await result.first()
 
         if pipeline is None:
+            # pylint: disable=no-value-for-parameter
             # let's create one then
-            query = ComputationalPipeline.__table__.insert().\
+            query = comp_pipeline.insert().\
                     values(project_id=project_id,
                             dag_adjacency_list=dag_adjacency_list,
                             state=0)
@@ -175,36 +175,40 @@ async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_
         else:
             # let's modify it
             log.debug("Pipeline object found")
-            query = ComputationalPipeline.__table__.update().\
-                        where(ComputationalPipeline.__table__.c.project_id == project_id).\
+            #pylint: disable=no-value-for-parameter
+            query = comp_pipeline.update().\
+                        where(comp_pipeline.c.project_id == project_id).\
                         values(state=0,
                                 dag_adjacency_list=dag_adjacency_list)
         await conn.execute(query)
 
 async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict):
     async with db_engine.acquire() as conn:
-        query = sa.select([ComputationalTask]).\
-                where(ComputationalTask.__table__.c.project_id == project_id)
+        query = sa.select([comp_tasks]).\
+                where(comp_tasks.c.project_id == project_id)
         result = await conn.execute(query)
         tasks_db = await result.fetchall()
         # delete tasks that were deleted from the db
         for task_db in tasks_db:
             if not task_db.node_id in tasks:
-                query = ComputationalTask.__table__.delete().\
-                        where(and_(ComputationalTask.__table__.c.project_id == project_id,
-                                    ComputationalTask.__table__.c.node_id == task_db.node_id))
+                #pylint: disable=no-value-for-parameter
+                query = comp_tasks.delete().\
+                        where(and_(comp_tasks.c.project_id == project_id,
+                                    comp_tasks.c.node_id == task_db.node_id))
                 await conn.execute(query)
         internal_id = 1
         for node_id in tasks:
             task = tasks[node_id]
-            query = sa.select([ComputationalTask]).\
-                    where(and_(ComputationalTask.__table__.c.project_id == project_id,
-                                ComputationalTask.__table__.c.node_id == node_id))
+            #pylint: disable=no-value-for-parameter
+            query = sa.select([comp_tasks]).\
+                    where(and_(comp_tasks.c.project_id == project_id,
+                                comp_tasks.c.node_id == node_id))
             result = await conn.execute(query)
             comp_task = await result.fetchone()
             if comp_task is None:
                 # add a new one
-                query = ComputationalTask.__table__.insert().\
+                #pylint: disable=no-value-for-parameter
+                query = comp_tasks.insert().\
                         values(project_id=project_id,
                                 node_id=node_id,
                                 internal_id=internal_id,
@@ -215,9 +219,10 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 submit = datetime.datetime.utcnow())
                 internal_id = internal_id+1
             else:
-                query = ComputationalTask.__table__.update().\
-                        where(and_(ComputationalTask.__table__.c.project_id==project_id,
-                                ComputationalTask.__table__.c.node_id==node_id)).\
+                #pylint: disable=no-value-for-parameter
+                query = comp_tasks.update().\
+                        where(and_(comp_tasks.c.project_id==project_id,
+                                comp_tasks.c.node_id==node_id)).\
                         values(job_id = None,
                                 state = 0,
                                 image = task["image"],

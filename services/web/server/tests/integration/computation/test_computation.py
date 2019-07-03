@@ -21,7 +21,7 @@ from yarl import URL
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_sdk.models.pipeline_models import (
-    SUCCESS, ComputationalPipeline, ComputationalTask)
+    SUCCESS, ComputationalPipeline, ComputationalTask) # uses legacy TODO: upgrade test
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
