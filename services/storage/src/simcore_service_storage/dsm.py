@@ -226,7 +226,7 @@ class DataStorageManager:
                                     node_name = d.node_name,
                                     raw_file_path=d.raw_file_path,
                                     display_file_path=d.display_file_path)
-                        await conn.execute(query)
+                            await conn.execute(query)
 
                 # MaG: This is inefficient: Do this automatically when file is modified
                 _loop = asyncio.get_event_loop()
@@ -237,7 +237,13 @@ class DataStorageManager:
                     for resp in r:
                         d.file_size = resp['Contents'][0]['Size']
                         d.last_modified = str(resp['Contents'][0]['LastModified'])
-                        print(d)
+                        async with self.engine.acquire() as conn:
+                            query = file_meta_data.update().\
+                            where(and_(file_meta_data.c.node_id==d.node_id,
+                                    file_meta_data.c.user_id==d.user_id)).\
+                            values(file_size=d.file_size,
+                                    last_modified=d.last_modified)
+                            await conn.execute(query)
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
