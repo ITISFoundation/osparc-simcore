@@ -39,12 +39,14 @@ def _load_yaml(path: Path) -> Dict:
     return content
 
 
-def _services_docker_compose(osparc_simcore_services_dir) -> Dict[str, str]:
+def _services_docker_compose(osparc_simcore_root_dir: Path) -> Dict[str, str]:
     # TODO: pip install docker-compose and use
     # https://github.com/docker/compose/blob/master/compose/cli/main.py#L328
-    compose = _load_yaml(osparc_simcore_services_dir / "docker-compose.yml")
-    compose.update(_load_yaml(
-        osparc_simcore_services_dir / "docker-compose-inst.yml"))
+    osparc_simcore_services_dir = osparc_simcore_root_dir / "services"
+    compose = {}
+    for name in ["docker-compose.yml", "docker-compose-inst.yml"]:
+        content = _load_yaml(osparc_simcore_services_dir / name)
+        compose.update(content)
     return compose
 
 def get_tasks_summary(tasks):
