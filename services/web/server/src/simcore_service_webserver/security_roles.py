@@ -60,6 +60,7 @@ ROLES_PERMISSIONS = {
   },
   UserRole.TESTER: {
       "can": [
+          "project.template.create",
       ],
       "inherits": [UserRole.USER]
   }
