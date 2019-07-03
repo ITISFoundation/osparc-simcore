@@ -1,6 +1,9 @@
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Mapping
+
+import logging
+log = logging.getLogger(__name__)
 
 def clone_project_data(project: Dict) -> Dict:
     project_copy = deepcopy(project)
@@ -35,3 +38,40 @@ def clone_project_data(project: Dict) -> Dict:
 
     project_copy['workbench'] = _replace_uuids(project_copy.get('workbench', {}))
     return project_copy
+
+import re
+
+variable_pattern = re.compile(r"^{\W*(\w+)\W*}$")
+
+
+
+
+def substitute_parameterized_inputs(project: Dict, parameters: Dict) -> Dict:
+    """ Substitutes parameterized r/w inputs
+
+    """
+    # TODO: optimize thie
+    def _num(s):
+        try:
+            return int(s)
+        except ValueError:
+            return float(s)
+
+    def _normalize_value(s):
+        try:
+            return _num(s)
+        except ValueError:
+            return s
+
+    for node in project['workbench'].values():
+        inputs = node.get('inputs', {})
+        access = node.get('inputAccess', {})
+        new_inputs = {}
+        for name, value in inputs.items():
+            if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
+                m = variable_pattern.match(value)
+                if m:
+                    value = m.group(1)
+                    if value in parameters:
+                        new_inputs[name] = _normalize_value(parameters[value])
+        inputs.update(new_inputs)

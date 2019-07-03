@@ -15,10 +15,10 @@ TODO: THIS IS A PROTOTYPE!!!
 import json
 import logging
 import uuid
-from typing import Dict
+from functools import lru_cache
+from typing import Dict, Mapping
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .login.decorators import login_required
@@ -97,6 +97,7 @@ async def get_authorized_user(request: web.Request) -> Dict:
     return user
 
 # Creation of projects from templates ---
+@lru_cache()
 def compose_uuid(template_uuid, user_id) -> str:
     """ Creates a new uuid composing a project's and user ids such that
         any template pre-assigned to a user
@@ -106,7 +107,6 @@ def compose_uuid(template_uuid, user_id) -> str:
     """
     new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
     return new_uuid
-
 
 # TODO: from .projects import ...?
 async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
@@ -119,11 +119,12 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import clone_project_data
+    from .projects.projects_utils import clone_project_data, substitute_parameterized_inputs
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
     db = request.config_dict[APP_PROJECT_DBAPI]
+    template_parameters = dict(request.query)
 
     # assign id to copy
     project_uuid = compose_uuid(template_project["uuid"], user["id"])
@@ -135,6 +136,8 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     except ProjectNotFoundError:
         # new project from template
         project = clone_project_data(template_project)
+
+        substitute_parameterized_inputs(project, template_parameters)
 
         project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)
@@ -154,7 +157,7 @@ async def access_study(request: web.Request) -> web.Response:
     """
     study_id = request.match_info["id"]
 
-    log.debug("Requested a copy of study '%s' ...", study_id)
+    log.debug("Requested a copy of study '%s' with params %s ... ", study_id, template_params)
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
     if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
@@ -179,10 +182,9 @@ async def access_study(request: web.Request) -> web.Response:
     msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
     log.debug("Copying %s ...", msg_tail)
 
-    copied_project_id = await copy_study_to_account(request, template_project, user)
+    copied_project_id = await copy_study_to_account(request, template_project, user, template_params)
 
     log.debug("Copied %s as %s", msg_tail, copied_project_id)
-
 
     try:
         loc = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
