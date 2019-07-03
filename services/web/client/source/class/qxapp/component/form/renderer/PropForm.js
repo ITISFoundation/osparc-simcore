@@ -61,15 +61,21 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     }
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    _gridPos: {
+      label: 0,
+      entryField: 1,
+      status: 2
+    },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
       if (title !== null) {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: 0,
-            colSpan: 3
+            column: this._gridPos.label,
+            colSpan: Object.keys(this._gridPos).length
           }
         );
         this._row++;
@@ -81,12 +87,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let label = this._createLabel(names[i], item);
         this._add(label, {
           row: this._row,
-          column: 0
+          column: this._gridPos.label
         });
         label.setBuddy(item);
         this._add(item, {
           row: this._row,
-          column: 1
+          column: this._gridPos.entryField
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -150,11 +156,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
-          let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+          const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          let unlinkBtn = new qx.ui.form.Button().set({
+          const unlinkBtn = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
@@ -162,9 +169,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           }, this);
           hBox.add(unlinkBtn);
           hBox.key = portId;
+
           this._addAt(hBox, i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryField
           });
         }
       }
@@ -177,10 +185,21 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
+
           this._addAt(this._form.getControl(portId), i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryentryField
           });
+        }
+      }
+    },
+
+    setRetrieveStatus: function(portId, status) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        if ("key" in child && child.key === portId) {
+          console.log(portId, status);
         }
       }
     },

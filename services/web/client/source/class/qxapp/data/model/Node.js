@@ -631,6 +631,19 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
+    setRetrieveStatus: function(retrieveStatus) {
+      console.log(retrieveStatus);
+      if ("inputs" in retrieveStatus) {
+        const inputs = retrieveStatus["inputs"];
+        for (const portId in inputs) {
+          const portStatus = inputs[portId];
+          if ("progress" in portStatus) {
+            this.getPropsWidget().setRetrieveStatus(portId, portStatus["progress"]);
+          }
+        }
+      }
+    },
+
     __retrieveInputs: function() {
       this.fireDataEvent("updatePipeline", this);
     },
