@@ -68,6 +68,8 @@ async def create_projects(request: web.Request):
 
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
+        from ..computation_handlers import _update_pipeline_db
+        await _update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
@@ -187,6 +189,8 @@ async def replace_project(request: web.Request):
         validate_project(request.app, new_project)
 
         await db.update_user_project(new_project, user_id, project_uuid)
+        from ..computation_handlers import _update_pipeline_db
+        await _update_pipeline_db(request.app, project_uuid, new_project["workbench"])
 
     except ValidationError:
         raise web.HTTPBadRequest
