@@ -91,8 +91,7 @@ build: .env .tmp-webclient-build
 build-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
 										-f services/docker-compose.devel.yml \
-										-f services/docker-compose-inst.yml \
-										-f services/docker-compose-inst.devel.yml \
+										-f services/docker-compose-inst.yml
 										build --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
@@ -144,7 +143,7 @@ up-swarm: .env docker-swarm-check
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml \
-										-f services/docker-compose-inst.yml -f services/docker-compose-inst.devel.yml \
+										-f services/docker-compose-inst.yml\
 										-f services/docker-compose-tools.yml \
 										config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
