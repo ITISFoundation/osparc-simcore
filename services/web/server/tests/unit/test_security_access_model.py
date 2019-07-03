@@ -170,7 +170,7 @@ async def test_permissions_inheritance(access_model):
 @pytest.mark.skip(reason="REVIEW")
 async def test_checked_permissions(access_model):
     R = UserRole # alias
-    MOCKPATH = 'data/fake-template-projects.isan.old.json'
+    MOCKPATH = 'data/fake-template-projects.json'
 
     with resources.stream(MOCKPATH) as fh:
         data = json.load(fh)
