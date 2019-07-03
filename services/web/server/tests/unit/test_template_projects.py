@@ -16,10 +16,6 @@ from simcore_service_webserver.projects.projects_fakes import Fake
 
 
 @pytest.fixture
-def project_schema_file(api_specs_dir: Path) -> Path:
-    return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
-
-@pytest.fixture
 async def project_specs(loop, project_schema_file: Path) -> Dict:
     # should not raise any exception
     try:

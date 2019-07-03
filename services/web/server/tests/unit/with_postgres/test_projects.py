@@ -127,6 +127,8 @@ def assert_replaced(current_project, update_data):
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_list_projects(client, logged_user, user_project, template_project, expected):
+    #TODO: GET /v0/projects?start=0&count=3
+
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -147,6 +149,7 @@ async def test_list_projects(client, logged_user, user_project, template_project
         assert data[0] == user_project
 
     #GET /v0/projects?type=template
+    # instead /v0/projects/templates ??
     resp = await client.get(url.with_query(type='template'))
     data, errors = await assert_status(resp, expected)
     if not errors:
@@ -154,12 +157,6 @@ async def test_list_projects(client, logged_user, user_project, template_project
         assert data[0] == template_project
 
 
-
-@pytest.mark.skip("TODO")
-async def test_list_templates_only(client, logged_user, user_project, expected):
-    #TODO: GET /v0/projects?type=template
-    #TODO: GET /v0/projects?type=template&start=0&count=3
-    pass
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -328,6 +325,39 @@ async def test_new_project_from_template_with_body(client, logged_user, template
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPForbidden),
+    (UserRole.TESTER, web.HTTPCreated),
+])
+async def test_new_template_from_project(client, logged_user, user_project, expected):
+    # POST /v0/projects?as_template={user_uuid}
+    url = client.app.router["create_projects"].url_for().\
+        with_query(as_template=user_project["uuid"])
+
+    resp = await client.post(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        template_project = data
+
+        url = client.app.router["list_projects"].url_for().with_query(type="template")
+        resp = await client.get(url)
+        templates, _ = await assert_status(resp, web.HTTPOk)
+
+        assert len(templates) == 1
+        assert templates[0] == template_project
+
+        # identical in all fields except UUIDs?
+        # api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+        # assert_replaced(user_project, template_project)
+
+        # TODO: workbench nodes should not have progress??
+        # TODO: check in detail all fields in a node
+
+
+
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -412,64 +442,3 @@ async def test_delete_project(client, logged_user, user_project, expected):
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
-
-
-
-# ######## DEVELOPMENT ###################################################
-# import uuid
-# from simcore_service_webserver.projects.projects_models import projects as projects_tbl
-# from simcore_service_webserver.db_models import users as users_tbl
-# from sqlalchemy import select
-
-# from change_case import ChangeCase
-# from aiopg.sa.exc import Error as DbError
-# from psycopg2.errors import UniqueViolation
-
-
-# @pytest.mark.skip("DEV")
-# @pytest.mark.parametrize("user_role,expected", [
-#     (UserRole.USER, web.HTTPOk),
-# ])
-# async def test_it(client, logged_user, user_project, expected):
-
-#     db_engine = client.app[APP_DB_ENGINE_KEY]
-#     tbl = projects_tbl
-
-
-#     new_uuid = user_project["uuid"]
-#     async with db_engine.acquire() as conn:
-#         import pdb; pdb.set_trace()
-
-#         try:
-#             ins = tbl.insert().values({ChangeCase.camel_to_snake(k):v for k,v in user_project.items() if k!='id'})
-#             await conn.execute(ins)
-#         except UniqueViolation as ee:
-#             import pdb; pdb.set_trace()
-#         except DbError as ee:
-#             import pdb; pdb.set_trace()
-
-#         # try until found a unique uuid
-#         while True:
-#             result = await conn.execute(select([tbl.c.id])\
-#                 .where(tbl.c.uuid==new_uuid))
-#             found = await result.first()
-#             if found:
-#                 new_uuid = str(uuid.uuid1())
-#             else: # is unique
-#                 break
-
-#         result = await conn.execute(select([users_tbl.c.email]).where(users_tbl.c.id==logged_user["id"]))
-#         user_email = await result.first()
-#         import pdb; pdb.set_trace()
-#         assert user_email[0] == logged_user["email"]
-
-#         result = await conn.execute(select([tbl]).where(tbl.c.uuid==user_project["uuid"]))
-#         row = await result.first()
-#         assert row
-#         assert row[tbl.c.uuid] == user_project["uuid"]
-
-#         result = await conn.execute(select([tbl]).where(tbl.c.uuid==new_uuid))
-#         row = await result.first()
-#         row = await result.fetchone()
-
-#     # retrieve project
