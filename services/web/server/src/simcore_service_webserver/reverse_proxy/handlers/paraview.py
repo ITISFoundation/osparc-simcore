@@ -70,7 +70,7 @@ async def handle_web_request(request: web.Request, target_url: URL, mount_point:
         del headers['content-length']
         body = await res.read()
         if proxy_path == 'Visualizer.js':
-            body = body.replace(b'"https"===window.location.protocol', b'location.protocol.startsWith("https")')
+            body = body.replace(b'"https"===window.location.protocol', b'window.location.protocol.startsWith("https")')
             body = body.replace(b'"/ws"', b'"%s/ws"' %
                                 mount_point.encode(), 1)
             body = body.replace(
