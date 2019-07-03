@@ -3,7 +3,8 @@ description: Progress related to the status of each node inputs/outputs
 type: object
 additionalProperties: false
 required:
-  - nodes
+  - uuid
+  - workbench
 properties:
   uuid:
     type: string

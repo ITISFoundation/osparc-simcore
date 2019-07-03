@@ -6,7 +6,8 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "nodes"
+    "uuid",
+    "workbench"
   ],
   "properties": {
     "uuid": {
