@@ -31,15 +31,13 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
 
 @pytest.mark.skip(reason="Under dev")
 def test_users_projects_db(client):
-
     # given schema, an easy way to produce projects?
     # a language to emulate UI??
     # See https://github.com/cwacek/python-jsonschema-objects
     #
     # api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # create_project(client.app, )
-
-
+    pass
 
 
 
