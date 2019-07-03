@@ -82,6 +82,8 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
         this.addListener("mouseout", () => this.__field.resetPaddingRight(), this);
         this.__infoButton.addListener("mouseover", () => this.__hint = new qxapp.ui.hint.Hint(this.__infoButton, this.__hintText), this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
+
+        this.__field.bind("visibility", this, "visibility");
       }
     },
 
