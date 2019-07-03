@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(hint/hint.css)
+ */
+
 qx.Class.define("qxapp.component.form.FieldWHint", {
   extend: qx.ui.core.Widget,
 
@@ -26,6 +30,9 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
   construct: function(value, hint, field) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Canvas());
+
+    const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
+    qx.module.Css.includeStylesheet(hintCssUri);
 
     this.__field = field || new qx.ui.form.TextField();
     if (value) {
@@ -73,7 +80,7 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
       if (this.__hintText) {
         this.addListener("mouseover", () => this.__field.setPaddingRight(18), this);
         this.addListener("mouseout", () => this.__field.resetPaddingRight(), this);
-        this.__infoButton.addListener("mouseover", () => this.__hint = qxapp.component.hint.HintManager.getHint(this.__infoButton, this.__hintText), this);
+        this.__infoButton.addListener("mouseover", () => this.__hint = new qxapp.ui.hint.Hint(this.__infoButton, this.__hintText), this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
       }
     },
