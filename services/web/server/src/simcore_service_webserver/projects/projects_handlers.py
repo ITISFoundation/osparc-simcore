@@ -7,12 +7,14 @@ from jsonschema import ValidationError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import create_data_from_template, validate_project
+from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
+from .projects_utils import clone_project_data
 
 log = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -22,17 +24,31 @@ async def create_projects(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     db = request.config_dict[APP_PROJECT_DBAPI]
+
     template_uuid = request.query.get('from_template')
+    as_template = request.query.get('as_template')
 
     try:
         project = {}
-        if template_uuid:
-            # create from template
+        if as_template: # create template from
+            await check_permission(request, "project.template.create")
+
+            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+            from .projects_api import get_project_for_user
+
+            source_project = await get_project_for_user(request,
+                project_uuid=as_template,
+                user_id=request[RQT_USERID_KEY],
+                include_templates=False
+            )
+            project = clone_project_data(source_project)
+
+        elif template_uuid: # create from template
             template_prj = await db.get_template_project(template_uuid)
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
-            project = create_data_from_template(template_prj, user_id)
+            project = clone_project_data(template_prj)
 
         # overrides with body
         if request.has_body:
@@ -51,7 +67,7 @@ async def create_projects(request: web.Request):
         validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        await db.add_project(project, user_id)
+        await db.add_project(project, user_id, force_as_template=as_template is not None)
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
