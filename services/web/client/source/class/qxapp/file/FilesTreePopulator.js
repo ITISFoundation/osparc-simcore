@@ -116,6 +116,11 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       store.getFilesByLocation(locationId);
     },
 
+    addFileEntryToTree: function(fileEntry) {
+      const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel([fileEntry]);
+      this.__fileToTree(filesData[0]);
+    },
+
     __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
@@ -147,7 +152,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       const locationModels = rootModel.getChildren();
       for (let i=0; i<locationModels.length; i++) {
         const locationModel = locationModels.toArray()[i];
-        if (locationModel.getLocation() === locationId) {
+        if (locationModel.getLocation() === locationId || String(locationModel.getLocation()) === locationId) {
           return locationModel;
         }
       }
@@ -191,6 +196,31 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       currentModel.getChildren().append(newModelToAdd);
       this.__tree.setModel(currentModel);
       this.__tree.fireEvent("modelChanged");
+    },
+
+    __fileToTree: function(data) {
+      if ("location" in data) {
+        const locationModel = this.__getLocationModel(data["location"]);
+        if (locationModel && "children" in data && data["children"].length>0) {
+          this.__addRecursively(locationModel.getChildren(), data["children"][0]);
+        }
+      }
+    },
+
+    __addRecursively: function(one, two) {
+      let newDir = true;
+      const oneArray = one.toArray();
+      for (let i=0; i<oneArray.length; i++) {
+        if ("getPath" in oneArray[i] && oneArray[i].getPath() === two.path) {
+          newDir = false;
+          if ("children" in two) {
+            this.__addRecursively(oneArray[i].getChildren(), two.children[0]);
+          }
+        }
+      }
+      if (oneArray.length === 0 || "fileId" in two || newDir) {
+        one.append(qx.data.marshal.Json.createModel(two, true));
+      }
     }
   }
 });

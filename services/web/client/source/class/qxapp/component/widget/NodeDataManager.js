@@ -69,9 +69,9 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       this.__selectionChanged("user");
     }, this);
     userFilesTree.addListener("fileCopied", e => {
-      if (e) {
-        const data = e.getData();
-        this.__reloadUserTree(data.locationId);
+      const fileMetadata = e.getData();
+      if (fileMetadata) {
+        this.__userFilesTree.addFileEntry(fileMetadata["fileUuid"]);
       }
     }, this);
     treesLayout.add(userFilesTree, {

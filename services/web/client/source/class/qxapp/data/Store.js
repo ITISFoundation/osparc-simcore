@@ -1459,7 +1459,7 @@ qx.Class.define("qxapp.data.Store", {
         const data = {
           data: e.getTarget().getResponse(),
           locationId: toLoc,
-          fileUuid: pathId
+          fileUuid: pathId + "/" + fileName
         };
         this.fireDataEvent("fileCopied", data);
       }, this);
