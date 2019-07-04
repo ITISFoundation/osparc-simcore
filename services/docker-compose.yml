@@ -255,9 +255,6 @@ services:
     build:
       context: ../
       dockerfile: services/maintenance/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/maintenance:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
