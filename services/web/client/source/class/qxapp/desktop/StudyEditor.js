@@ -417,6 +417,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __updatePipeline: function(node) {
+      this.updateStudyDocument();
+      /*
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -427,6 +429,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       console.log("updating pipeline: " + url);
       console.log(data);
+      */
 
       req.addListener("success", e => {
         this.getLogger().debug(null, "Pipeline successfully updated");
