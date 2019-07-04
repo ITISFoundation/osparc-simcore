@@ -19,10 +19,9 @@ if utils.has_datcore_tokens():
 
     files =  []
     if True:
-        dataset = client.get_dataset("simcore-testing")
+        dataset = client.get_dataset("mag")
         client.list_dataset_files_recursively(files, dataset, Path(dataset.name))
     else:
         files = client.list_files_recursively()
 
-    for f in files:
-        print(f)
+    dest = "mag/level1/level2/3"
