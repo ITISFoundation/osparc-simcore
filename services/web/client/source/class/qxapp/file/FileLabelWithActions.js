@@ -137,6 +137,10 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         console.log("Delete ", selection);
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
+        if (locationId !== 0 && locationId !== "0") {
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
+          return false;
+        }
         let store = qxapp.data.Store.getInstance();
         store.addListenerOnce("deleteFile", e => {
           if (e) {
