@@ -82,17 +82,13 @@ endif
 .PHONY: build
 # target: build: – Builds all core service images.
 build: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-inst.yml \
-										build --parallel ${SERVICES_LIST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST}
 
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
 build-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
 										-f services/docker-compose.devel.yml \
-										-f services/docker-compose-inst.yml \
-										-f services/docker-compose-inst.devel.yml \
 										build --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
@@ -136,7 +132,6 @@ up-devel: up-swarm-devel
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-inst.yml \
 										-f services/docker-compose-tools.yml \
 										config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
@@ -144,7 +139,6 @@ up-swarm: .env docker-swarm-check
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml \
-										-f services/docker-compose-inst.yml -f services/docker-compose-inst.devel.yml \
 										-f services/docker-compose-tools.yml \
 										config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
@@ -222,20 +216,16 @@ endif
 # target: push – Pushes images into a registry
 push:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-inst.yml \
 										push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
 pull: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-inst.yml \
 					 					pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose-inst.yml \
-										-f services/docker-compose-tools.yml \
 										config > $(output_file)
 
 ## -------------------------------
