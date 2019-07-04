@@ -1,4 +1,5 @@
-FROM python:3.6-alpine as base
+#FROM python:3.6-alpine as base
+FROM itisfoundation/python-with-pandas:3.6-alpine as base
 #
 #  USAGE:
 #     cd sercices/storage
