@@ -12,6 +12,7 @@
 # installs this repo's packages
 -e ../../services/storage/client-sdk/python/
 -e ../../packages/s3wrapper/
+-e ../../packages/postgres-database/
 -e ../../packages/simcore-sdk/
 
 # installs current package

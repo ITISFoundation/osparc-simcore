@@ -18,7 +18,7 @@
 /**
  * Widget that provides access to the data belonging to the active user.
  * - On the left side: myData FilesTree with the FileLabelWithActions
- * - On the right side: a pie chart reflecting the data resources consumed
+ * - On the right side: a pie chart reflecting the data resources consumed (hidden until there is real info)
  *
  * *Example*
  *
@@ -46,12 +46,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
   },
 
   members: {
-    __tree: null,
+    __filesTree: null,
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function() {
-      this.__tree.populateTree();
+    __initResources: function(locationId = null) {
+      this.__filesTree.populateTree(null, locationId);
     },
 
     __createDataManagerLayout: function() {
@@ -89,8 +89,11 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      const chartLayout = this.__createChartLayout();
-      dataManagerLayout.add(chartLayout);
+      const showPieChart = false;
+      if (showPieChart) {
+        const chartLayout = this.__createChartLayout();
+        dataManagerLayout.add(chartLayout);
+      }
 
       this._add(dataManagerMainLayout);
     },
@@ -98,7 +101,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const filesTree = this.__tree = new qxapp.file.FilesTree().set({
+      const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true,
         minHeight: 600
@@ -120,13 +123,15 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
       const addBtn = new qxapp.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
-        this.__initResources();
+        const fileMetadata = e.getData();
+        this.__initResources(fileMetadata["locationId"]);
       }, this);
       treeLayout.add(addBtn);
 
       const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
-      selectedFileLayout.addListener("fileDeleted", () => {
-        this.__initResources();
+      selectedFileLayout.addListener("fileDeleted", e => {
+        const fileMetadata = e.getData();
+        this.__initResources(fileMetadata["locationId"]);
       }, this);
       treeLayout.add(selectedFileLayout);
 
@@ -162,8 +167,8 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __selectionChanged: function() {
-      this.__tree.resetSelection();
-      const selectionData = this.__tree.getSelectedFile();
+      this.__filesTree.resetSelection();
+      const selectionData = this.__filesTree.getSelectedFile();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
@@ -183,7 +188,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
     __getDataInfo: function(pathId) {
       const context = pathId || "/";
-      const children = this.__tree.getModel().getChildren();
+      const children = this.__filesTree.getModel().getChildren();
 
       let data = {
         "ids": [],
