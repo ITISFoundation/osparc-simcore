@@ -38,7 +38,7 @@ PY_FILES := $(strip $(shell find services packages -iname '*.py' \
 TEMPCOMPOSE := $(shell mktemp)
 
 SERVICES_LIST := apihub director sidecar storage webserver maintenance
-CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
+CACHED_SERVICES_LIST := apihub director sidecar storage webserver webclient
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
@@ -166,9 +166,7 @@ down-swarm:
 
 .PHONY: pull-cache
 pull-cache: .env
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose.cache.yml \
-										pull
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
