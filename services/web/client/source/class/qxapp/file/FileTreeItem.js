@@ -40,55 +40,37 @@
  */
 
 qx.Class.define("qxapp.file.FileTreeItem", {
-  extend: qx.ui.tree.VirtualTreeItem,
+  extend : qx.ui.tree.VirtualTreeItem,
 
-  construct: function() {
-    this.base(arguments);
-
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium") + " " +
-      qx.locale.Date.getTimeFormat("short")
-    );
-  },
-
-  properties: {
-    fileId: {
-      check: "String",
+  properties : {
+    fileId : {
+      check : "String",
       event: "changeFileId",
-      nullable: true
+      nullable : true
     },
 
-    path: {
-      check: "String",
+    path : {
+      check : "String",
       event: "changePath",
-      nullable: true
+      nullable : true
     },
 
-    location: {
-      check: "String",
+    location : {
+      check : "String",
       event: "changePath",
-      nullable: true
+      nullable : true
     },
 
-    lastModified: {
-      check: "String",
-      event: "changeLastModified",
-      nullable: true
-    },
-
-    size: {
-      check: "String",
+    size : {
+      check : "String",
       event: "changeSize",
-      nullable: true
+      nullable : true
     }
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _dateFormat: null,
-
+  members : {
     // overridden
-    _addWidgets: function() {
+    _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
       this.addOpenButton();
@@ -104,26 +86,8 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         flex: 1
       });
 
-      // Add lastModified
-      const lastModifiedWidget = new qx.ui.basic.Label().set({
-        width: 120,
-        maxWidth: 120,
-        textAlign: "right"
-      });
-      let that = this;
-      this.bind("lastModified", lastModifiedWidget, "value", {
-        converter: function(value) {
-          if (value === null) {
-            return "";
-          }
-          const date = new Date(value);
-          return that._dateFormat.format(date); // eslint-disable-line no-underscore-dangle
-        }
-      });
-      this.addWidget(lastModifiedWidget);
-
       // Add size
-      const sizeWidget = new qx.ui.basic.Label().set({
+      var sizeWidget = new qx.ui.basic.Label().set({
         width: 70,
         maxWidth: 70,
         textAlign: "right"
@@ -162,10 +126,5 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         this.addWidget(fileIdWidget);
       }
     }
-  },
-
-  destruct: function() {
-    this._dateFormat.dispose();
-    this._dateFormat = null;
   }
 });

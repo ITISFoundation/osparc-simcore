@@ -54,35 +54,33 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       flex: 1
     });
 
-    let nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
-    nodeFilesTree.setDragMechnism(true);
-    nodeFilesTree.addListener("selectionChanged", () => {
+    let nodeTree = this.__nodeTree = this._createChildControlImpl("nodeTree");
+    nodeTree.setDragMechnism(true);
+    nodeTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
     }, this);
-    treesLayout.add(nodeFilesTree, {
+    treesLayout.add(nodeTree, {
       flex: 1
     });
 
-    let userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
-    userFilesTree.setDropMechnism(true);
-    userFilesTree.addListener("selectionChanged", () => {
+    let userTree = this.__userTree = this._createChildControlImpl("userTree");
+    userTree.setDropMechnism(true);
+    userTree.addListener("selectionChanged", () => {
       this.__selectionChanged("user");
     }, this);
-    userFilesTree.addListener("fileCopied", e => {
-      const fileMetadata = e.getData();
-      if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata["fileUuid"]);
+    userTree.addListener("fileCopied", e => {
+      if (e) {
+        this.__reloadUserTree();
       }
     }, this);
-    treesLayout.add(userFilesTree, {
+    treesLayout.add(userTree, {
       flex: 1
     });
 
     let selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
-    selectedFileLayout.addListener("fileDeleted", e => {
-      const fileMetadata = e.getData();
+    selectedFileLayout.addListener("fileDeleted", () => {
       this.__reloadNodeTree();
-      this.__reloadUserTree(fileMetadata["locationId"]);
+      this.__reloadUserTree();
     }, this);
 
     this.__reloadNodeTree();
@@ -96,8 +94,8 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
   },
 
   members: {
-    __nodeFilesTree: null,
-    __userFilesTree: null,
+    __nodeTree: null,
+    __userTree: null,
     __selectedFileLayout: null,
 
     _createChildControlImpl: function(id) {
@@ -119,21 +117,21 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     },
 
     __reloadNodeTree: function() {
-      this.__nodeFilesTree.populateTree(this.getNode().getNodeId());
+      this.__nodeTree.populateTree(this.getNode().getNodeId());
     },
 
-    __reloadUserTree: function(locationId = null) {
-      this.__userFilesTree.populateTree(null, locationId);
+    __reloadUserTree: function() {
+      this.__userTree.populateTree();
     },
 
     __selectionChanged: function(selectedTree) {
       let selectionData = null;
       if (selectedTree === "user") {
-        this.__nodeFilesTree.resetSelection();
-        selectionData = this.__userFilesTree.getSelectedFile();
+        this.__nodeTree.resetSelection();
+        selectionData = this.__userTree.getSelectedFile();
       } else {
-        this.__userFilesTree.resetSelection();
-        selectionData = this.__nodeFilesTree.getSelectedFile();
+        this.__userTree.resetSelection();
+        selectionData = this.__nodeTree.getSelectedFile();
       }
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);

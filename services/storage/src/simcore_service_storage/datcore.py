@@ -6,14 +6,8 @@
 # pylint: skip-file
 import os
 import urllib
-from pathlib import Path
-from typing import List
 
 from blackfynn import Blackfynn
-from blackfynn.models import BaseCollection, Collection, DataPackage
-
-from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 #FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
 #from blackfynn.api.transfers import IOAPI
@@ -21,6 +15,7 @@ from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 #FIXME: W0212:Access to a protected member _api of a client class
 # pylint: disable=W0212
+
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
@@ -51,52 +46,10 @@ class DatcoreClient(object):
 
         return ds
 
-    def list_files_recursively(self):
+
+    def list_files(self):
         files = []
-        for dataset in self.client.datasets():
-            self.list_dataset_files_recursively(files, dataset, Path(dataset.name))
-
-        return files
-
-    def list_dataset_files_recursively(self, files: List[FileMetaData], base: BaseCollection, current_root: Path):
-        for item in base:
-            if isinstance(item, Collection):
-                _current_root = current_root  / Path(item.name)
-                self.list_dataset_files_recursively(files, item, _current_root)
-            else:
-                parts = current_root.parts
-                bucket_name = parts[0]
-                file_name = item.name
-                file_size = 0
-                # lets assume we have only one file
-                if item.files:
-                    file_name = Path(item.files[0].as_dict()['content']['s3key']).name
-                    file_size = item.files[0].as_dict()['content']['size']
-                # if this is in the root directory, the object_name is the filename only
-                if len(parts) > 1:
-                    object_name = str(Path(*list(parts)[1:])/ Path(file_name))
-                else:
-                    object_name = str(Path(file_name))
-
-                file_uuid = str(Path(bucket_name) / Path(object_name))
-                file_id = item.id
-                created_at = item.created_at
-                last_modified = item.updated_at
-                fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
-                        location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
-                        raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
-                        last_modified=last_modified, file_size=file_size)
-                files.append(fmd)
-
-
-    def list_files(self, dataset: str =""):
-        files = []
-        if not dataset:
-            for ds in self.client.datasets():
-                for item in ds:
-                    files.append(os.path.join(ds.name, item.name))
-        else:
-            ds = self.get_dataset(dataset)
+        for ds in self.client.datasets():
             for item in ds:
                 files.append(os.path.join(ds.name, item.name))
 
@@ -239,8 +192,9 @@ class DatcoreClient(object):
         """
 
         # pylint: disable = E1101
+
         for item in source:
-            if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+            if item.name == filename:
                 file_desc = self.client._api.packages.get_sources(item.id)[0]
                 url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
                 return url
@@ -289,18 +243,8 @@ class DatcoreClient(object):
         """
         source.update()
         for item in source:
-            if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+            if item.name == filename:
                 self.client.delete(item)
-                return
-
-    def delete_file_by_id(self, id: str):
-        """
-        Deletes file by id
-
-        Args:
-            datcore id for the file
-        """
-        self.client.delete(id)
 
     def delete_files(self, source):
         """
