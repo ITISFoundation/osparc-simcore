@@ -87,9 +87,7 @@ build: .env .tmp-webclient-build
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
 build-devel: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose.devel.yml \
-										build --parallel
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
 
 # TODO: fixes having services_webclient:build present for services_webserver:production when
 # targeting services_webserver:development and
@@ -175,21 +173,16 @@ pull-cache: .env
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose.cache.yml \
-										build --parallel ${CACHED_SERVICES_LIST}
+	# WARNING: first all except webserver and then webserver
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient maintenance
 	${DOCKER} tag ${DOCKER_REGISTRY}/webclient:cache services_webclient:build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose.cache.yml \
-										build webserver
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 
 .PHONY: push-cache
 push-cache:
 # target: push-cache – Pushes service images tagged as 'cache' into the registry
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										-f services/docker-compose.cache.yml \
-										push ${CACHED_SERVICES_LIST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 
 
