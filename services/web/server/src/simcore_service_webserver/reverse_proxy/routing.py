@@ -15,7 +15,7 @@ import attr
 from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
-from .handlers.jupyter import handler as default_handler #TODO: jupyter shall be the generic one
+from .handlers.generic import handler as default_handler
 from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class ReverseChooser:
 
         # FIXME: add version as well
         handler = self.handlers.get(image_name, default_handler)
+
 
         response = await handler(request, service_url,
                                  mount_point=mountpoint,
