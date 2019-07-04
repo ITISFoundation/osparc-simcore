@@ -1,0 +1,14 @@
+#
+# Specifies dependencies required to run tests on 'simcore-postgres-database'
+#
+
+# frozen specs
+-r _base.txt
+
+# testing
+pytest
+pytest-cov
+
+# tools
+pylint
+coveralls

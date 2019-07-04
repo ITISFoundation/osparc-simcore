@@ -1,6 +1,6 @@
-version: '3.4'
+# Tooling stack
+version: '3.7'
 services:
-  # Maintenance services
   #--------------------------------------------------------------------
   adminer:
     image: adminer
@@ -42,7 +42,7 @@ services:
     # FIXME: setup proper grafana config
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=z43
-      - GF_USERS_ALLOW_SIGN_UP=false  
+      - GF_USERS_ALLOW_SIGN_UP=false
 volumes:
   portainer_data:
   prometheus_data:
