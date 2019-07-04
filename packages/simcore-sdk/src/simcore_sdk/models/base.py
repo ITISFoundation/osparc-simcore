@@ -1,7 +1,5 @@
-from sqlalchemy.ext.declarative import declarative_base
+from simcore_postgres_database.models.base import metadata
 
-# TODO: avoid inheriting from Base. Use instead explicit table definitions
-# See https://docs.sqlalchemy.org/en/latest/orm/mapping_styles.html#classical-mappings
-Base = declarative_base()
-
-metadata = Base.metadata
+__all__ = [
+    "metadata"
+]

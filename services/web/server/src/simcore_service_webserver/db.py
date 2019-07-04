@@ -14,7 +14,6 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 from servicelib.aiopg_utils import DBAPIError
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
-# from .computation_api import init_database as _init_db
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
 
@@ -50,7 +49,7 @@ async def pg_engine(app: web.Application):
         if cfg.get("init_tables"):
             # TODO: get keys from __name__ (see notes in servicelib.application_keys)
             await __create_tables(**params)
-        
+
         engine = await create_engine(**params)
 
     except DBAPIError:
