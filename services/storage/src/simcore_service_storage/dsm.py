@@ -289,7 +289,7 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await _dcw.list_files
+            data = [] #await _dcw.list_file(file_uuid)
             return data
 
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
@@ -318,15 +318,14 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            dataset, filename = _parse_datcore(file_uuid)
-#            return await dcw.delete_file(dataset=dataset, filename=filename)
-            return await dcw.delete_file(dataset, filename)
+            destination, filename = _parse_datcore(file_uuid)
+            return await dcw.delete_file(destination, filename)
 
-    async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
+    async def upload_file_to_datcore(self, user_id: str, local_file_path: str, destination: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = self._get_datcore_tokens(user_id)
         dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        await dcw.upload_file(datcore_bucket, local_file_path, fmd)
+        await dcw.upload_file(destination, local_file_path, fmd)
 
         # actually we have to query the master db
     async def upload_link(self, user_id: str, file_uuid: str):
@@ -351,10 +350,9 @@ class DataStorageManager:
                 # source is s3, get link and copy to datcore
                 bucket_name = self.simcore_bucket_name
                 object_name = source_uuid
-                datcore_bucket, file_path = _parse_datcore(dest_uuid)
-                filename = file_path.split("/")[-1]
+                destination, filename = _parse_datcore(dest_uuid)
                 tmp_dirpath = tempfile.mkdtemp()
-                local_file_path = os.path.join(tmp_dirpath,filename)
+                local_file_path = os.path.join(tmp_dirpath, filename)
                 url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
@@ -364,7 +362,7 @@ class DataStorageManager:
                             await f.close()
                             # and then upload
                             await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
-                                datcore_bucket=datcore_bucket)
+                                destination=destination)
                 shutil.rmtree(tmp_dirpath)
             elif dest_location == SIMCORE_S3_STR:
                 # source is s3, location is s3
@@ -413,6 +411,6 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            dataset, filename = _parse_datcore(file_uuid)
-            link = await dcw.download_link(dataset, filename)
+            destination, filename = _parse_datcore(file_uuid)
+            link = await dcw.download_link(destination, filename)
         return link
