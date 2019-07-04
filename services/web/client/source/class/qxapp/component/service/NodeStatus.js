@@ -55,13 +55,19 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
     __setupInteractive: function() {
       this.__node.bind("serviceUrl", this.__label, "value", {
         converter: url => {
-          return url ? this.tr("Ready") : this.tr("Loading...");
+          if (url) {
+            return this.tr("Ready");
+          }
+          return this.tr("Loading...");
         }
       });
 
       this.__node.bind("serviceUrl", this.__icon, "source", {
         converter: url => {
-          return url ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/circle-notch/12";
+          if (url) {
+            return "@FontAwesome5Solid/check/12";
+          }
+          return "@FontAwesome5Solid/circle-notch/12";
         },
         onUpdate: (source, target) => {
           if (source.getServiceUrl()) {
@@ -79,7 +85,10 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
       const node = this.__node;
       this.__node.bind("progress", this.__icon, "source", {
         converter: progress => {
-          return progress === 100 ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/file/12"
+          if (progress === 100) {
+            return "@FontAwesome5Solid/check/12";
+          }
+          return "@FontAwesome5Solid/file/12";
         },
         onUpdate: (source, target) => {
           if (source.getProgress() === 100) {
