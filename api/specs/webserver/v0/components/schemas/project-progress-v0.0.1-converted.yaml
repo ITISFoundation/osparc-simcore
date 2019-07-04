@@ -1,0 +1,65 @@
+title: project progress/status
+description: Progress related to the status of each node inputs/outputs
+type: object
+additionalProperties: false
+required:
+  - uuid
+  - workbench
+properties:
+  uuid:
+    type: string
+    description: project unique identifier
+    example:
+      - 07640335-a91f-468c-ab69-a374fa82078d
+      - 9bcf8feb-c1b1-41b6-b201-639cd6ccdba8
+  workbench:
+    type: object
+    x-patternProperties:
+      ^\S+$:
+        type: object
+        additionalProperties: false
+        required:
+          - inputs
+        properties:
+          inputs:
+            type: object
+            description: progress of input properties
+            patternProperties:
+              '^[-_a-zA-Z0-9]+$':
+                type: object
+                additionalProperties: false
+                required:
+                  - progress
+                properties:
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                    description: >-
+                      indicates the progress of data transfer of the input to
+                      the node
+                    example:
+                      - '0.0'
+                      - '0.5'
+                      - '1.0'
+          outputs:
+            type: object
+            patternProperties:
+              '^[-_a-zA-Z0-9]+$':
+                type: object
+                additionalProperties: false
+                required:
+                  - progress
+                properties:
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                    description: >-
+                      indicates the progress of data transfer of the input to
+                      the node
+                    example:
+                      - '0.0'
+                      - '0.5'
+                      - '1.0'
+    additionalProperties: true

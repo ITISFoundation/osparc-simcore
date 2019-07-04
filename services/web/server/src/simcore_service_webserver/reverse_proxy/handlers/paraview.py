@@ -26,6 +26,7 @@ SUPPORTED_IMAGE_TAG = "==1.0.5"
 logger = logging.getLogger(__name__)
 
 def check_ws_in_headers(request):
+    logger.debug("request headers %s", request.headers)
     return request.headers.get('connection', '').lower() == 'upgrade' and \
            request.headers.get('upgrade', '').lower() == 'websocket' and \
            request.method == 'GET'
@@ -85,6 +86,7 @@ async def handle_web_request(request: web.Request, target_url: URL, mount_point:
 
 async def handler(request: web.Request, service_url: str, mount_point: str, proxy_path: str, **_kargs):
     logger.debug("handling request %s, using service url %s", request, service_url)
+    
     target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
     ws_available = False
     if check_ws_in_headers(request):
