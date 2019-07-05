@@ -407,18 +407,18 @@ async def _start_docker_service(app: aiohttp.web.Application,
 
     except exceptions.ServiceStartTimeoutError as err:
         log.exception("Service failed to start")
-        await _silent_service_cleanup(node_uuid)
+        await _silent_service_cleanup(app, node_uuid)
         raise
     except aiodocker.exceptions.DockerError as err:
         log.exception("Unexpected error")
-        await _silent_service_cleanup(node_uuid)
+        await _silent_service_cleanup(app, node_uuid)
         raise exceptions.ServiceNotAvailableError(
             service_key, service_tag) from err
 
 
-async def _silent_service_cleanup(node_uuid):
+async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
     try:
-        await stop_service(node_uuid)
+        await stop_service(app, node_uuid)
     except exceptions.DirectorException:
         pass
 
@@ -544,7 +544,8 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
                 "Error while accessing container", err) from err
 
 
-async def stop_service(node_uuid: str):
+async def stop_service(app: aiohttp.web.Application, node_uuid: str):
+    log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
     async with _docker_client() as client: # pylint: disable=not-async-context-manager
         try:
@@ -557,11 +558,33 @@ async def stop_service(node_uuid: str):
         # error if no service with such an id exists
         if not list_running_services_with_uuid:
             raise exceptions.ServiceUUIDNotFoundError(node_uuid)
+        log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
+        # save the state of the main service if it can        
+        service_details = await get_service_details(app, node_uuid)
+        service_host_name = "{}:{}{}".format(service_details["service_host"], 
+                                            service_details["service_port"] if service_details["service_port"] else "80",
+                                            service_details["service_basepath"])
+        log.debug("saving state of service %s...", service_host_name)
+        try:
+            async with aiohttp.ClientSession() as session:
+                service_url = "http://" + service_host_name + "/" + "state"
+                async with session.post(service_url) as response:
+                    if 199 < response.status < 300:
+                        log.debug("service %s successfully saved its state", service_host_name)                    
+                    else:
+                        log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
+        except aiohttp.ClientConnectionError:
+            log.exception("service %s could not be contacted, state not saved")
+        
+                    
         # remove the services
         try:
+            log.debug("removing services...")
             for service in list_running_services_with_uuid:
                 await client.services.delete(service["Spec"]["Name"])
+            log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:
             raise exceptions.GenericDockerError("Error while removing services", err)
         # remove network(s)
         await _remove_overlay_network_of_swarm(client, node_uuid)
+        log.debug("removed network")

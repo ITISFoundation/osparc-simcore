@@ -79,7 +79,7 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
 
 @pytest.fixture("session")
 def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.tools.yml"
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-tools.yml"
     return _load_docker_compose(docker_compose_path)
 
 

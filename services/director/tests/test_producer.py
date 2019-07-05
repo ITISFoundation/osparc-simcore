@@ -62,7 +62,7 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
     #teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
-        await producer.stop_service(service_uuid)
+        await producer.stop_service(aiohttp_mock_app, service_uuid)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
