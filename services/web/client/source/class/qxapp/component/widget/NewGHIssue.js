@@ -55,6 +55,8 @@ qx.Class.define("qxapp.component.widget.NewGHIssue", {
 ## Steps to reproduce
 <!-- Please describe steps to reproduce the issue. -->
 
+Note: your environment was attached but will not be displayed
+<!--
 ## Your environment
 `;
     }
