@@ -152,14 +152,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("updatePipeline", e => {
+      workbench.addListener("retrieveInputs", e => {
         let node = e.getData();
-        this.__updatePipeline(node);
+        this.__updatePipelineAndRetrieve(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -416,7 +416,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
       this.updateStudyDocument();
       /*
       let currentPipeline = this.__getCurrentPipeline();
@@ -430,6 +429,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       console.log("updating pipeline: " + url);
       console.log(data);
       */
+    __updatePipelineAndRetrieve: function(node) {
 
       req.addListener("success", e => {
         this.getLogger().debug(null, "Pipeline successfully updated");

@@ -181,7 +181,7 @@ qx.Class.define("qxapp.data.model.Node", {
   },
 
   events: {
-    "updatePipeline": "qx.event.type.Data",
+    "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -645,7 +645,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __retrieveInputs: function() {
-      this.fireDataEvent("updatePipeline", this);
+      this.fireDataEvent("retrieveInputs", this);
     },
 
     retrieveInputs: function() {

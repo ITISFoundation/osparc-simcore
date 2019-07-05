@@ -63,7 +63,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
   events: {
     "workbenchChanged": "qx.event.type.Event",
-    "updatePipeline": "qx.event.type.Data",
+    "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -205,8 +205,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
         node.addListener("showInLogger", e => {
           this.fireDataEvent("showInLogger", e.getData());
         }, this);
-        node.addListener("updatePipeline", e => {
-          this.fireDataEvent("updatePipeline", e.getData());
+        node.addListener("retrieveInputs", e => {
+          this.fireDataEvent("retrieveInputs", e.getData());
         }, this);
       }
     },

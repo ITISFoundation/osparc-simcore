@@ -43,7 +43,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
   events: {
     "startPipeline": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event",
-    "retrieveInputs": "qx.event.type.Event"
+    "retrieveInputsBtn": "qx.event.type.Event"
   },
 
   members: {
@@ -95,7 +95,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
       let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
 
       retrieveBtn.addListener("execute", () => {
-        this.fireEvent("retrieveInputs");
+        this.fireEvent("retrieveInputsBtn");
       }, this);
       return retrieveBtn;
     }
