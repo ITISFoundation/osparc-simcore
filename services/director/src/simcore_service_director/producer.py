@@ -575,8 +575,7 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
                         log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
         except aiohttp.ClientConnectionError:
             log.exception("service %s could not be contacted, state not saved")
-        
-                    
+
         # remove the services
         try:
             log.debug("removing services...")

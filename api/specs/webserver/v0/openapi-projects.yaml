@@ -120,15 +120,15 @@ paths:
         schema:
           type: string
     get:
-      summary: Gets progress of the node inputs of the given project
-      # operationId: get_project_progress
+      summary: Gets progress of each node inputs of the given project
+      operationId: get_project_progress
       responses:
         '200':
-          description: got detailed project
+          description: got detailed project progress
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProgressEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectProgressEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -159,14 +159,14 @@ components:
           nullable: true
           default: null
     Progress:
-      $ref: './components/schemas/progress-v0.0.1-converted.yaml'
-    ProgressEnveloped:
+      $ref: './components/schemas/project-progress-v0.0.1-converted.yaml'
+    ProjectProgressEnveloped:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: './openapi-projects.yaml#/components/schemas/Progress'
+          $ref: './openapi-projects.yaml#/components/schemas/ProjectProgress'
         error:
           nullable: true
           default: null
