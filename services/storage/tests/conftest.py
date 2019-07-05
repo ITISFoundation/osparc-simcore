@@ -299,14 +299,6 @@ async def datcore_testbucket(loop, mock_files_factory):
     for f in tmp_files:
         await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
 
-    # ready = False
-    # counter = 0
-    # while not ready and counter < 5:
-    #     data = await dcw.list_files()
-    #     ready = len(data) == 2
-    #     await asyncio.sleep(10)
-    #     counter = counter + 1
-
     yield BUCKET_NAME
 
     await dcw.delete_test_dataset(BUCKET_NAME)
