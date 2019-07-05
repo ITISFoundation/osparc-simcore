@@ -1,5 +1,8 @@
-# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
-version: '3.4'
+# Overrides docker-compose.yml for development mode
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
+#
+version: '3.7'
 services:
   apihub:
     image: services_apihub:dev
@@ -62,3 +65,8 @@ services:
       - ../packages:/devel/packages
     stdin_open: true
     tty: true
+  #--------------------------------------------------------------------
+  maintenance:
+    image: services_maintenance:dev
+    volumes:
+      - ./maintenance/notebooks:/home/jovyan/work
