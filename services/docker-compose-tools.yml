@@ -26,13 +26,14 @@ services:
     volumes:
       - prometheus_data:/prometheus-data
     configs:
-      - source: promet;heus_config
+      - source: prometheus_config
         target: /etc/prometheus/prometheus.yml
-      - source: prometheus_rules
-        target: /etc/prometheus/prometheus-rules.yml
+      #- source: prometheus_rules
+      #  target: /etc/prometheus/prometheus-rules.yml
   # https://hub.docker.com/r/grafana/grafana/tags
   grafana:
     image: grafana/grafana:6.2.5
+    restart: unless-stopped
     depends_on:
       - prometheus
     ports:
@@ -43,6 +44,30 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=z43
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=myrul.com
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${SMTP_HOST}:${SMTP_PORT}
+      #- GF_SMTP_USER=myadrress@gmail.com
+      #- GF_SMTP_PASSWORD=mypassword
+      #- GF_SMTP_FROM_ADDRESS=myaddress@gmail.com
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: monitoring_node_exporter
+    restart: unless-stopped
+    expose:
+      - 9100
+
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: monitoring_cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    expose:
+      - 8080
 volumes:
   portainer_data:
   prometheus_data:
@@ -50,5 +75,5 @@ volumes:
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
-  prometheus_rules:
-    file: ./prometheus/config/prometheus-rules.yml
+  #prometheus_rules:
+  #  file: ./prometheus/config/prometheus-rules.yml
