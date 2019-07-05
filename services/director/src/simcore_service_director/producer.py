@@ -561,16 +561,21 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
         # save the state of the main service if it can        
         service_details = await get_service_details(app, node_uuid)
-        service_host_name = "{}:{}{}".format(service_details["service_host"], service_details["service_port"], service_details["service_basepath"])
+        service_host_name = "{}:{}{}".format(service_details["service_host"], 
+                                            service_details["service_port"] if service_details["service_port"] else "80",
+                                            service_details["service_basepath"])
         log.debug("saving state of service %s...", service_host_name)
-        async with aiohttp.ClientSession() as session:
-            service_url = "http://" + service_host_name + "/" + "state"
-            async with session.post(service_url) as response:
-                if 199 < response.status < 300:
-                    log.debug("service %s successfully saved its state", service_host_name)                    
-                else:
-                    log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
-                    
+        try:
+            async with aiohttp.ClientSession() as session:
+                service_url = "http://" + service_host_name + "/" + "state"
+                async with session.post(service_url) as response:
+                    if 199 < response.status < 300:
+                        log.debug("service %s successfully saved its state", service_host_name)                    
+                    else:
+                        log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
+        except aiohttp.ClientConnectionError:
+            log.exception("service %s could not be contacted, state not saved")
+
         # remove the services
         try:
             log.debug("removing services...")
