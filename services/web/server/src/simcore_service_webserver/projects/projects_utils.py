@@ -4,6 +4,8 @@ import uuid as uuidlib
 from copy import deepcopy
 from typing import Dict
 
+from servicelib.decorators import safe_return
+
 log = logging.getLogger(__name__)
 variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
@@ -42,11 +44,15 @@ def clone_project_data(project: Dict) -> Dict:
     return project_copy
 
 
-def substitute_parameterized_inputs(project: Dict, parameters: Dict) -> Dict:
+@safe_return(if_fails_return=False, logger=log)
+def substitute_parameterized_inputs(parameterized_project: Dict, parameters: Dict) -> Dict:
     """ Substitutes parameterized r/w inputs
 
+        NOTE: project is is changed
     """
-    # TODO: optimize thie
+    project = deepcopy(parameterized_project)
+
+    # TODO: optimize value normalization
     def _num(s):
         try:
             return int(s)
@@ -65,9 +71,14 @@ def substitute_parameterized_inputs(project: Dict, parameters: Dict) -> Dict:
         new_inputs = {}
         for name, value in inputs.items():
             if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
+                # TODO: use jinja2 to interpolate expressions?
                 m = variable_pattern.match(value)
                 if m:
                     value = m.group(1)
                     if value in parameters:
                         new_inputs[name] = _normalize_value(parameters[value])
+                    else:
+                        log.warning("Could not resolve parameter %s. No value provided in %s", value, parameters)
         inputs.update(new_inputs)
+
+    return project

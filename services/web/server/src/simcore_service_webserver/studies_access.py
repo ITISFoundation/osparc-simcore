@@ -137,7 +137,10 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
         # new project from template
         project = clone_project_data(template_project)
 
-        substitute_parameterized_inputs(project, template_parameters)
+        # check project inputs and substitute template_parameters
+        if template_parameters:
+            log.info("Substituting parameters '%s' in template", template_parameters)
+            project = substitute_parameterized_inputs(project, template_parameters) or project
 
         project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)
@@ -182,7 +185,7 @@ async def access_study(request: web.Request) -> web.Response:
     msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
     log.debug("Copying %s ...", msg_tail)
 
-    copied_project_id = await copy_study_to_account(request, template_project, user, template_params)
+    copied_project_id = await copy_study_to_account(request, template_project, user)
 
     log.debug("Copied %s as %s", msg_tail, copied_project_id)
 
