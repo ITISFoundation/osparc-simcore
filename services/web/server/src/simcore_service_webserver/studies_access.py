@@ -16,7 +16,7 @@ import json
 import logging
 import uuid
 from functools import lru_cache
-from typing import Dict, Mapping
+from typing import Dict
 
 from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -159,8 +159,6 @@ async def access_study(request: web.Request) -> web.Response:
         -
     """
     study_id = request.match_info["id"]
-
-    log.debug("Requested a copy of study '%s' with params %s ... ", study_id, template_params)
 
     # FIXME: if identified user, then he can access not only to template but also his own projects!
     if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
