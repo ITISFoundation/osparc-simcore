@@ -40,9 +40,9 @@
         "cAMKII": "Invisible"
       },
       "inputs": {
-        "Na": "{my_Na}",
+        "Na": "{{my_Na}}",
         "Kr": 0,
-        "BCL": "{my_BCL}",
+        "BCL": "{{my_BCL}}",
         "NBeats": 5,
         "Ligand": 0,
         "cAMKII": "WT",

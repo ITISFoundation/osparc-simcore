@@ -1,9 +1,11 @@
+import logging
+import re
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict, Mapping
+from typing import Dict
 
-import logging
 log = logging.getLogger(__name__)
+variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
 def clone_project_data(project: Dict) -> Dict:
     project_copy = deepcopy(project)
@@ -38,12 +40,6 @@ def clone_project_data(project: Dict) -> Dict:
 
     project_copy['workbench'] = _replace_uuids(project_copy.get('workbench', {}))
     return project_copy
-
-import re
-
-variable_pattern = re.compile(r"^{\W*(\w+)\W*}$")
-
-
 
 
 def substitute_parameterized_inputs(project: Dict, parameters: Dict) -> Dict:
