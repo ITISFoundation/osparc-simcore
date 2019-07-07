@@ -26,7 +26,6 @@ class ProjectType(enum.Enum):
 projects = sa.Table("projects", metadata,
     sa.Column("id", sa.BigInteger, nullable=False, primary_key=True),
     sa.Column("type", sa.Enum(ProjectType), nullable=False, default=ProjectType.STANDARD),
-
     sa.Column("uuid", sa.String, nullable=False, unique=True),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
@@ -34,5 +33,6 @@ projects = sa.Table("projects", metadata,
     sa.Column("prj_owner", sa.String, nullable=False),
     sa.Column("creation_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column("last_change_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
-    sa.Column("workbench", sa.JSON, nullable=False)
+    sa.Column("workbench", sa.JSON, nullable=False),
+    sa.Column("published", sa.Boolean, nullable=False, default=False)
 )

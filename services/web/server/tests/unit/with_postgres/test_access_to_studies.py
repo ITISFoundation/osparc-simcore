@@ -107,10 +107,11 @@ async def logged_user(client): #, role: UserRole):
         await delete_all_projects(client.app)
 
 @pytest.fixture
-async def template_project(client, fake_project):
+async def published_project(client, fake_project):
     project_data = deepcopy(fake_project)
-    project_data["name"] = "Fake template project"
+    project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
+    project_data["published"] = True
 
     async with NewProject(
         project_data,
@@ -118,9 +119,22 @@ async def template_project(client, fake_project):
         user_id=None,
         clear_all=True
     ) as template_project:
-        print("-----> added template project", template_project["name"])
         yield template_project
-        print("<----- removed template project", template_project["name"])
+
+@pytest.fixture
+async def unpublished_project(client, fake_project):
+    project_data = deepcopy(fake_project)
+    project_data["name"] = "Tempalte Unpublished project"
+    project_data["uuid"] = "'b134a337-a74f-40ff-a127-b36a1ccbede6"
+    project_data["published"] = False
+
+    async with NewProject(
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True
+    ) as template_project:
+        yield template_project
 
 
 async def _get_user_projects(client):
@@ -144,18 +158,17 @@ def _assert_same_projects(got: Dict, expected: Dict):
 
 
 # TESTS --------------------------------------
-async def test_access_to_invalid_study(client, template_project):
+async def test_access_to_invalid_study(client, published_project):
     resp = await client.get("/study/SOME_INVALID_UUID")
     content = await resp.text()
 
     assert resp.status == web.HTTPNotFound.status_code, str(content)
 
 
-@pytest.mark.skip(reason="UNDER DEV: marked as shared")
-async def test_access_to_forbidden_study(client, template_project):
+async def test_access_to_forbidden_study(client, unpublished_project):
     app = client.app
 
-    valid_but_not_sharable = template_project["uuid"]
+    valid_but_not_sharable = unpublished_project["uuid"]
 
     resp = await client.get("/study/%s" % valid_but_not_sharable)
     content = await resp.text()
@@ -164,7 +177,7 @@ async def test_access_to_forbidden_study(client, template_project):
         "STANDARD studies are NOT sharable: %s" % content
 
 
-async def test_access_study_anonymously(client, qx_client_outdir, template_project):
+async def test_access_study_anonymously(client, qx_client_outdir, published_project):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
@@ -195,12 +208,12 @@ async def test_access_study_anonymously(client, qx_client_outdir, template_proje
     guest_project = projects[0]
 
     assert real_url.endswith("#/study/%s" % guest_project["uuid"])
-    _assert_same_projects(guest_project, template_project)
+    _assert_same_projects(guest_project, published_project)
 
     assert guest_project['prjOwner'] == data['login']
 
 
-async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir, template_project):
+async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir, published_project):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
@@ -226,6 +239,6 @@ async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir
     # TODO: check redirects to /#/study/{uuid}
     assert real_url.endswith("#/study/%s" % user_project["uuid"])
 
-    _assert_same_projects(user_project, template_project)
+    _assert_same_projects(user_project, published_project)
 
     assert user_project['prjOwner'] == logged_user['email']

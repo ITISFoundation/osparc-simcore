@@ -30,7 +30,7 @@ from .projects_models import ProjectType, projects, user_to_projects
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI  = __name__ + '.ProjectDBAPI'
-
+DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_data: Dict) -> Dict:
@@ -42,7 +42,7 @@ def _convert_to_db_names(project_data: Dict) -> Dict:
 def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
     converted_args = {}
     for key, value in project_db_data.items():
-        if key in ["type", "id"]:
+        if key in DB_EXCLUSIVE_COLUMNS:
             continue
         converted_value = value
         if isinstance(value, datetime):
@@ -191,15 +191,19 @@ class ProjectDBAPI:
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def load_template_projects(self) -> List[Dict]:
+    async def load_template_projects(self, *, only_published=False) -> List[Dict]:
         log.info("Loading template projects")
+        # TODO:
         # TODO: eliminate this and use mock to replace get_user_project instead
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
-            query = select([projects]).\
-                where(projects.c.type == ProjectType.TEMPLATE)
+            if only_published:
+                expression = and_( projects.c.type == ProjectType.TEMPLATE, projects.c.published == True)
+            else:
+                expression = projects.c.type == ProjectType.TEMPLATE
 
+            query = select([projects]).where(expression)
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
                 log.debug("found project: %s", result_dict)
@@ -236,7 +240,7 @@ class ProjectDBAPI:
                 raise ProjectNotFoundError(project_uuid)
             return _convert_to_schema_names(row)
 
-    async def get_template_project(self, project_uuid: str) -> Dict:
+    async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
         prj = Fake.projects.get(project_uuid)
         if prj and prj.template:
@@ -244,10 +248,18 @@ class ProjectDBAPI:
 
         template_prj = None
         async with self.engine.acquire() as conn:
-            query = select([projects]).where(
-                and_(projects.c.type == ProjectType.TEMPLATE,
-                     projects.c.uuid == project_uuid)
-            )
+            if only_published:
+                condition = and_(
+                    projects.c.type == ProjectType.TEMPLATE,
+                    projects.c.uuid == project_uuid,
+                    projects.c.published==True)
+            else:
+                condition = and_(
+                    projects.c.type == ProjectType.TEMPLATE,
+                    projects.c.uuid == project_uuid)
+
+            query = select([projects]).where(condition)
+
             result = await conn.execute(query)
             row = await result.first()
             if row:

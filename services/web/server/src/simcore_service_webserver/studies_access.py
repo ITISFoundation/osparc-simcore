@@ -12,7 +12,6 @@ FIXME: reduce modules coupling! See all TODO: .``from ...`` comments
 TODO: THIS IS A PROTOTYPE!!!
 
 """
-import json
 import logging
 import uuid
 from functools import lru_cache
@@ -22,19 +21,12 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .login.decorators import login_required
-from .resources import resources
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 
 log = logging.getLogger(__name__)
 
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-
-def load_isan_template_uuids():
-    with resources.stream('data/fake-template-projects.isan.json') as fp:
-        data = json.load(fp)
-    return [prj['uuid'] for prj in data]
 
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
@@ -44,13 +36,8 @@ async def get_template_project(app: web.Application, project_uuid: str):
     db = app[APP_PROJECT_DBAPI]
 
     # TODO: user search queries in DB instead
-    # BUG: ensure items in project_list have unique UUIDs
-    projects_list = await db.load_template_projects()
-
-    for prj in projects_list:
-        if prj.get('uuid') == project_uuid:
-            return prj
-    return None
+    prj = await db.get_template_project(project_uuid, only_published=True)
+    return prj
 
 # TODO: from .users import create_temporary_user
 async def create_temporary_user(request: web.Request):
