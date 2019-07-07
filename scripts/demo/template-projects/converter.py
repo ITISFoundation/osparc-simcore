@@ -47,8 +47,9 @@ def load_projects(csv_path:Path ):
             prj['workbench'] = json.loads(dump)
         except json.decoder.JSONDecodeError as err:
             print(err)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
+        # TODO: validate against project schema!!
 
         _projects.append(prj)
 
@@ -61,8 +62,6 @@ def main():
     """
     for db_csv_export in current_dir.glob("template*.csv"):
         data_projects = load_projects(db_csv_export)
-
-
         json_path = db_csv_export.with_suffix('.json')
         with open(json_path, 'w') as fh:
             json.dump(data_projects, fh, indent=2)

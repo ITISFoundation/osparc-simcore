@@ -36,8 +36,6 @@ def load_isan_template_uuids():
         data = json.load(fp)
     return [prj['uuid'] for prj in data]
 
-SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
-
 # TODO: from .projects import get_template_project
 async def get_template_project(app: web.Application, project_uuid: str):
     # TODO: remove projects_ prefix from name
@@ -160,11 +158,9 @@ async def access_study(request: web.Request) -> web.Response:
     """
     study_id = request.match_info["id"]
 
-    # FIXME: if identified user, then he can access not only to template but also his own projects!
-    if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
-        raise web.HTTPNotFound(reason="This study was not shared [{}]".format(study_id))
-
     # TODO: should copy **any** type of project is sharable -> get_sharable_project
+
+    # FIXME: should be template marked as shared!
     template_project = await get_template_project(request.app, study_id)
     if not template_project:
         raise web.HTTPNotFound(reason="Invalid study [{}]".format(study_id))
