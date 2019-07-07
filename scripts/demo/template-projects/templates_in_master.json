@@ -1,0 +1,655 @@
+[
+  {
+    "uuid": "template-uuid-5203-915e-1ae8ae0c9991",
+    "name": "Sleepers",
+    "description": "5 sleepers interconnected",
+    "thumbnail": "",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:34:19.631",
+    "lastChangeDate": "2019-06-06 14:34:28.647",
+    "workbench": {
+      "template-uuid-5f7e-92b0-5a14e84401e9": {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "1.0.0",
+        "label": "sleeper 0",
+        "inputs": {
+          "in_2": 2
+        },
+        "inputAccess": {
+          "in_1": "Invisible",
+          "in_2": "ReadOnly"
+        },
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 50,
+          "y": 300
+        }
+      },
+      "template-uuid-5d8a-812c-44dacf56840e": {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "1.0.0",
+        "label": "sleeper 1",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "template-uuid-5f7e-92b0-5a14e84401e9",
+            "output": "out_1"
+          },
+          "in_2": 2
+        },
+        "inputNodes": [
+          "template-uuid-5f7e-92b0-5a14e84401e9"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 200
+        }
+      },
+      "template-uuid-5706-b741-4073a4454f0d": {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "1.0.0",
+        "label": "sleeper 2",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "template-uuid-5d8a-812c-44dacf56840e",
+            "output": "out_1"
+          },
+          "in_2": {
+            "nodeUuid": "template-uuid-5d8a-812c-44dacf56840e",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5d8a-812c-44dacf56840e"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 550,
+          "y": 200
+        }
+      },
+      "template-uuid-5065-a079-a5a0476e3c10": {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "1.0.0",
+        "label": "sleeper 3",
+        "inputs": {
+          "in_2": {
+            "nodeUuid": "template-uuid-5f7e-92b0-5a14e84401e9",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5f7e-92b0-5a14e84401e9"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 420,
+          "y": 400
+        }
+      },
+      "template-uuid-559d-aa19-dc9293e10e4c": {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "1.0.0",
+        "label": "sleeper 4",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "template-uuid-5706-b741-4073a4454f0d",
+            "output": "out_1"
+          },
+          "in_2": {
+            "nodeUuid": "template-uuid-5065-a079-a5a0476e3c10",
+            "output": "out_2"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5706-b741-4073a4454f0d",
+          "template-uuid-5065-a079-a5a0476e3c10"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 800,
+          "y": 300
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-54fd-a9d2-d40fcfb89c5f",
+    "name": "Kember use case",
+    "description": "Kember Cordiac Model with PostPro Viewer",
+    "thumbnail": "",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:34:41.832",
+    "lastChangeDate": "2019-06-06 14:34:44.981",
+    "workbench": {
+      "template-uuid-5f7f-af9c-e91b64c4989e": {
+        "key": "simcore/services/comp/kember-cardiac-model",
+        "version": "1.0.0",
+        "label": "Kember cardiac model",
+        "inputs": {
+          "dt": 0.01,
+          "T": 1000,
+          "forcing_factor": 0
+        },
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 50,
+          "y": 100
+        }
+      },
+      "template-uuid-50b8-8ae7-b2a10131cc8f": {
+        "key": "simcore/services/dynamic/kember-viewer",
+        "version": "2.9.0",
+        "label": "kember-viewer",
+        "inputs": {
+          "outputController": {
+            "nodeUuid": "template-uuid-5f7f-af9c-e91b64c4989e",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5f7f-af9c-e91b64c4989e"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 10,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 100
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-59c3-a22d-ce2979b88313",
+    "name": "UCDavis use cases: 1D, 2D",
+    "description": "Colleen Clancy 1D and 2D use cases with a file picker and PostPro viewers",
+    "thumbnail": "",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:34:52.882",
+    "lastChangeDate": "2019-06-06 14:34:54.863",
+    "workbench": {
+      "template-uuid-5d51-b24e-5f9a34f0478f": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 1&2 D",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 50,
+          "y": 300
+        }
+      },
+      "template-uuid-547e-8e94-2229dcd0b912": {
+        "key": "simcore/services/frontend/nodes-group",
+        "version": "1.0.0",
+        "label": "CC 1D",
+        "inputs": {},
+        "inputNodes": [
+          "template-uuid-5d51-b24e-5f9a34f0478f"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 200
+        }
+      },
+      "template-uuid-5b74-aa0b-f646fd835066": {
+        "key": "simcore/services/frontend/nodes-group",
+        "version": "1.0.0",
+        "label": "CC 2D",
+        "inputs": {},
+        "inputNodes": [
+          "template-uuid-5d51-b24e-5f9a34f0478f",
+          "template-uuid-547e-8e94-2229dcd0b912"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 550,
+          "y": 400
+        }
+      },
+      "template-uuid-5b4b-8cdf-ff7770a9f98e": {
+        "key": "simcore/services/comp/ucdavis-1d-cardiac-model",
+        "version": "1.0.0",
+        "label": "DBP-Clancy-Rabbit-1-D solver",
+        "inputs": {
+          "Na": 0,
+          "Kr": 0,
+          "BCL": 10,
+          "NBeats": 1,
+          "Ligand": 0,
+          "cAMKII": "WT",
+          "tw": 5,
+          "tl": 200,
+          "homogeneity": "heterogeneous",
+          "in_10": {
+            "nodeUuid": "template-uuid-5d51-b24e-5f9a34f0478f",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5d51-b24e-5f9a34f0478f"
+        ],
+        "outputNode": true,
+        "outputs": {},
+        "parent": "template-uuid-547e-8e94-2229dcd0b912",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 350
+        }
+      },
+      "template-uuid-5bb1-9ce9-8a7be6b86b63": {
+        "key": "simcore/services/dynamic/cc-1d-viewer",
+        "version": "2.8.0",
+        "label": "cc-1d-viewer",
+        "inputs": {
+          "ECGs": {
+            "nodeUuid": "template-uuid-5b4b-8cdf-ff7770a9f98e",
+            "output": "out_1"
+          },
+          "y_1D": {
+            "nodeUuid": "template-uuid-5b4b-8cdf-ff7770a9f98e",
+            "output": "out_3"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5b4b-8cdf-ff7770a9f98e"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-547e-8e94-2229dcd0b912",
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 200
+        }
+      },
+      "template-uuid-56e8-90f3-d0df529a0016": {
+        "key": "simcore/services/comp/ucdavis-2d-cardiac-model",
+        "version": "1.0.0",
+        "label": "DBP-Clancy-Rabbit-2-D solver",
+        "inputs": {
+          "Na": 0,
+          "Kr": 0,
+          "BCL": 10,
+          "Ligand": 0,
+          "cAMKII": "WT",
+          "tw": 5,
+          "tl": 200,
+          "homogeneity": "heterogeneous"
+        },
+        "inputNodes": [
+          "template-uuid-5d51-b24e-5f9a34f0478f",
+          "template-uuid-547e-8e94-2229dcd0b912"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-5b74-aa0b-f646fd835066",
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 350
+        }
+      },
+      "template-uuid-5b92-be80-a7fa7c25a69b": {
+        "key": "simcore/services/dynamic/cc-2d-viewer",
+        "version": "2.8.0",
+        "label": "cc-2d-viewer",
+        "inputs": {
+          "ap": {
+            "nodeUuid": "template-uuid-56e8-90f3-d0df529a0016",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-56e8-90f3-d0df529a0016"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-5b74-aa0b-f646fd835066",
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 200
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-518d-a25d-8887bcae93f8",
+    "name": "ISAN2019: 3D Paraview",
+    "description": "3D Paraview viewer with two inputs",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168939-073a5580-9806-11e9-8dad-8a7caa3eb5ab.png",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:33:43.065",
+    "lastChangeDate": "2019-06-06 14:33:44.747",
+    "workbench": {
+      "template-uuid-5753-af37-e6aec8120bf2": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 1",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/HField_Big.vtk"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      "template-uuid-522c-a377-dd8d7cd1265b": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 2",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/bunny.vtk"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 250
+        }
+      },
+      "template-uuid-9b0f-67677a20996c": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "2.10.0",
+        "label": "3D ParaViewer",
+        "inputs": {
+          "A": {
+            "nodeUuid": "template-uuid-5753-af37-e6aec8120bf2",
+            "output": "outFile"
+          },
+          "B": {
+            "nodeUuid": "template-uuid-522c-a377-dd8d7cd1265b",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5753-af37-e6aec8120bf2",
+          "template-uuid-522c-a377-dd8d7cd1265b"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 85,
+        "thumbnail": "",
+        "position": {
+          "x": 400,
+          "y": 175
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-5a9e-9580-c53d92d18803",
+    "name": "ISAN: MattWard use case",
+    "description": "MattWard Solver/PostPro viewer",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168942-073a5580-9806-11e9-9162-3683dcff0711.png",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:33:58.681",
+    "lastChangeDate": "2019-06-06 14:34:01.617",
+    "workbench": {
+      "template-uuid-523c-8caa-4ca36c927ca2": {
+        "key": "simcore/services/dynamic/mattward-viewer",
+        "version": "2.9.0",
+        "label": "MattWard",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 55,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      }
+    }
+  },
+  {
+    "uuid": "154fb4ad-4913-478f-af04-19725db901a7",
+    "name": "ISAN2019 - opencor-py model",
+    "description": "Computes the cardiac myocyte action potential for the sympathetic drive input setting on the MAP-Core portal.",
+    "thumbnail": "https://opencor.ws/res/pics/logo.png",
+    "prjOwner": "crespo@itis.swiss",
+    "creationDate": "2019-06-18 15:20:16.567",
+    "lastChangeDate": "2019-06-18 15:59:21.708",
+    "workbench": {
+      "template-uuid-4179-bc47-0905e6726758": {
+        "key": "simcore/services/comp/osparc-opencor",
+        "version": "0.2.1",
+        "label": "osparc-opencor",
+        "inputs": {
+          "stimulation_period": "{{stimulation_period_secs}}"
+        },
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 314,
+          "y": 263
+        }
+      },
+      "template-uuid-4f4e-a1ae-429146d466b8": {
+        "key": "simcore/services/dynamic/jupyter-base-notebook",
+        "version": "2.10.0",
+        "label": "jupyter-base-notebook",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4179-bc47-0905e6726758",
+            "output": "membrane_potential_json"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4179-bc47-0905e6726758"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 100,
+        "thumbnail": "https://opencor.ws/res/pics/logo.png",
+        "position": {
+          "x": 631,
+          "y": 259
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-5716-bedd-b409bb021760",
+    "name": "ISAN: 2D Plot",
+    "description": "2D RawGraphs viewer with one input",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168938-06a1bf00-9806-11e9-99ff-20c52d851add.png",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:33:34.008",
+    "lastChangeDate": "2019-06-06 14:33:35.825",
+    "workbench": {
+      "template-uuid-58e5-884e-2690b3d54f11": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/Height-Weight"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      "template-uuid-58a5-83d7-57d0feffbfea": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.8.0",
+        "label": "2D plot",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-58e5-884e-2690b3d54f11",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-58e5-884e-2690b3d54f11"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 90,
+        "thumbnail": "",
+        "position": {
+          "x": 400,
+          "y": 100
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-5d82-b08d-d39c436ca738",
+    "name": "ISAN: UCDavis use case: 0D",
+    "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168940-073a5580-9806-11e9-9a44-ae5266eeb020.png",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:33:51.94",
+    "lastChangeDate": "2019-06-06 14:33:54.329",
+    "workbench": {
+      "template-uuid-59d6-b1a5-6e7b2773636b": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 0D",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/initial_WStates"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 50,
+          "y": 150
+        }
+      },
+      "template-uuid-562f-afd1-cca5105c8844": {
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
+        "version": "1.0.0",
+        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+        "inputs": {
+          "Na": 0,
+          "Kr": 0,
+          "BCL": 200,
+          "NBeats": 5,
+          "Ligand": 0,
+          "cAMKII": "WT",
+          "initfile": {
+            "nodeUuid": "template-uuid-59d6-b1a5-6e7b2773636b",
+            "output": "outFile"
+          }
+        },
+        "inputAccess": {
+          "Na": "ReadAndWrite",
+          "Kr": "ReadOnly",
+          "BCL": "ReadAndWrite",
+          "NBeats": "ReadOnly",
+          "Ligand": "Invisible",
+          "cAMKII": "Invisible"
+        },
+        "inputNodes": [
+          "template-uuid-59d6-b1a5-6e7b2773636b"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 150
+        }
+      },
+      "template-uuid-5fdd-9daa-cb03c51d8138": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.8.0",
+        "label": "cc-0d-viewer",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-562f-afd1-cca5105c8844"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 20,
+        "thumbnail": "",
+        "position": {
+          "x": 550,
+          "y": 150
+        }
+      }
+    }
+  }
+]
