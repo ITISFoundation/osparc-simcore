@@ -55,6 +55,7 @@ def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
 # TODO: is user_id str or int?
 # TODO: systemaic user_id, project
 # TODO: rename add_projects by create_projects
+# FIXME: not clear when data is schema-compliant and db-compliant
 
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
