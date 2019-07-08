@@ -35,23 +35,26 @@ def load_projects(csv_path:Path ):
 
     # process
     for db_prj in db_projects:
-        prj = _convert_to_schema_names(db_prj)
+        if int(db_prj['published'])==1:
+            prj = _convert_to_schema_names(db_prj)
 
-        # jsonifies
-        dump = prj['workbench']
-        # TODO: use Encoder instead?
-        dump = dump.replace("False", 'false') \
-            .replace("True", 'true') \
-            .replace("None", 'null')
-        try:
-            prj['workbench'] = json.loads(dump)
-        except json.decoder.JSONDecodeError as err:
-            print(err)
-            # import pdb; pdb.set_trace()
+            # jsonifies
+            dump = prj['workbench']
+            # TODO: use Encoder instead?
+            dump = dump.replace("False", 'false') \
+                .replace("True", 'true') \
+                .replace("None", 'null')
+            try:
+                prj['workbench'] = json.loads(dump)
+            except json.decoder.JSONDecodeError as err:
+                print(err)
+                # import pdb; pdb.set_trace()
 
-        # TODO: validate against project schema!!
+            # TODO: validate against project schema!!
 
-        _projects.append(prj)
+            _projects.append(prj)
+        else:
+            print("skipping {}".format(db_prj['name']))
 
     return _projects
 
