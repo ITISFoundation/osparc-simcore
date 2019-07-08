@@ -8,14 +8,15 @@ import argparse
 import json
 import logging
 import sys
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from simcore_service_webserver.login.registration import (URL,
-                                                          get_invitation_url)
+from yarl import URL
+
+from simcore_service_webserver.login.registration import get_invitation_url
 from simcore_service_webserver.login.utils import get_random_string
-from contextlib import contextmanager
-from simcore_service_webserver.resources import resources
+#from simcore_service_webserver.resources import resources
 
 CONFIRMATIONS_FILENAME = "confirmations-invitations.csv"
 
@@ -42,6 +43,8 @@ current_dir = current_path.parent
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+params = {}
+params["154fb4ad-4913-478f-af04-19725db901a7"] = {'stimulation_period_secs': '1200'}
 
 @contextmanager
 def _open(filepath):
@@ -54,17 +57,22 @@ def _open(filepath):
 
 
 def write_list(hostname, url, data, fh):
+    origin = URL(url)
+
     print("## studies available @{}".format(hostname), file=fh)
     print("", file=fh)
     for prj in data:
-        print("- [{name}]({base_url}/study/{uuid})".format(base_url=url, **prj), file=fh)
+        study_url = origin.with_path("study/{uuid}".format(**prj))
+        if prj['uuid'] in params:
+            study_url = study_url.with_query(**params[prj['uuid']])
+        print("- [{name}]({study_url})".format(study_url=str(study_url), **prj), file=fh)
     print("", file=fh)
 
 
 def main(mock_codes):
     data = {}
-    with resources.stream('data/fake-template-projects.isan.json') as fp:
-        data['localhost'] = json.load(fp)
+    #with resources.stream('data/fake-template-projects.isan.json') as fp:
+    #    data['localhost'] = json.load(fp)
 
     with open(current_dir / "template-projects/templates_in_master.json") as fp:
         data['master'] = json.load(fp)
