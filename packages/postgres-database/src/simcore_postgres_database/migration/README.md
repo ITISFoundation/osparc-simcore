@@ -67,3 +67,21 @@ alembic stamp head # stamps the revision database with the given revision but do
 alembic revision --autogenerate -m "Added column to file_meta_data"
 alembic upgrade head
 ```
+
+
+## Use cases
+**A table has been altered*
+
+We create a revision script for the change by using the local db as follows:
+
+```bash
+pip install -r packages/postgres-database/requirements/dev.txt # install sc-pg package
+docker-compose -f services/docker-compose.yml -f services/docker-compose-tools.yml up adminer # bring db and ui up
+docker ps # find the published port for the db
+sc-pg discover -u simcore -p simcore --port=32787 # discover the db
+sp-pg info # what revision are we at?
+sc-pg upgrade head # to to latest if necessary
+sc-pg review -m "Altered_table_why" # create a revision, note: the string will be part of the script
+sc-pg upgrade head # apply the revision
+sc-pg downgrade -- -1 # go back to old revision if sth went banana
+```
