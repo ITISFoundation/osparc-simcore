@@ -211,7 +211,8 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
 
         # stop the service
         web_response = await client.delete("/v0/running_interactive_services/{}".format(params["service_uuid"]))
-        assert web_response.status == 204
+        text = await web_response.text()
+        assert web_response.status == 204, text
         assert web_response.content_type == "application/json"
         data = await web_response.json()
         assert data is None

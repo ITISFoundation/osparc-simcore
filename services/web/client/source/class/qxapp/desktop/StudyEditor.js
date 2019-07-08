@@ -72,7 +72,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __sidePanel: null,
     __scrollContainer: null,
     __workbenchUI: null,
-    __treeView: null,
+    __nodesTree: null,
     __extraView: null,
     __loggerView: null,
     __nodeView: null,
@@ -89,7 +89,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const treeView = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -168,7 +168,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
 
       [
-        this.__treeView,
+        this.__nodesTree,
         this.__workbenchUI
       ].forEach(wb => {
         wb.addListener("nodeDoubleClicked", e => {
@@ -178,7 +178,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__treeView;
+      const treeView = this.__nodesTree;
       treeView.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
@@ -237,7 +237,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       this.__switchExtraView(nodeId);
 
-      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
+      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
@@ -335,8 +335,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __workbenchChanged: function() {
-      this.__treeView.populateTree();
-      this.__treeView.nodeSelected(this.__currentNodeId);
+      this.__nodesTree.populateTree();
+      this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
     showInMainView: function(widget, nodeId) {
