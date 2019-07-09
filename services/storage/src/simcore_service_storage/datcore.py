@@ -22,15 +22,29 @@ from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 #FIXME: W0212:Access to a protected member _api of a client class
 # pylint: disable=W0212
 
+def _get_collection_id(folder: BaseCollection, _collections: List[str], collection_id: str)-> str:
+    if not len(_collections):
+        return collection_id
+
+    current = _collections.pop(0)
+    found = False
+    for item in folder:
+        if isinstance(item, Collection) and item.name == current:
+            collection_id = item.id
+            folder = item
+            found = True
+            break
+
+    if found:
+        return _get_collection_id(folder, _collections, collection_id)
+
+    return ""
+
+
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
         self.client = Blackfynn(profile=None, api_token=api_token, api_secret=api_secret,
                                 host=host, streaming_host=streaming_host)
-    def _context(self):
-        """
-        Returns current organizational context
-        """
-        return self.client.context
 
     def profile(self):
         """
@@ -38,23 +52,34 @@ class DatcoreClient(object):
         """
         return self.client.profile
 
-    def organization(self):
-        """
-        Returns organization name
-        """
-        return self.client.context.name
+    def _collection_from_destination(self, destination: str):
+        destination_path = Path(destination)
+        parts = destination_path.parts
 
-    def list_datasets(self):
-        ds = []
-        for item in self.client.datasets():
-            ds.append(item.name)
+        dataset_name = parts[0]
+        dataset = self.get_dataset(dataset_name)
+        if dataset is None:
+            return None, None
 
-        return ds
+        collection_id = dataset.id
+        collection = dataset
+        collections = []
+        if len(parts) > 1:
+            object_path = Path(*parts[1:])
+            collections = list(object_path.parent.parts)
+            collection_id = ""
+            collection_id = _get_collection_id(dataset, collections, collection_id)
+            collection = self.client.get(collection_id)
 
-    def list_files_recursively(self):
+        return collection, collection_id
+
+
+    def list_files_recursively(self, dataset_filter: str=""):
         files = []
+
         for dataset in self.client.datasets():
-            self.list_dataset_files_recursively(files, dataset, Path(dataset.name))
+            if not dataset_filter or dataset_filter in dataset.name:
+                self.list_dataset_files_recursively(files, dataset, Path(dataset.name))
 
         return files
 
@@ -88,19 +113,6 @@ class DatcoreClient(object):
                         last_modified=last_modified, file_size=file_size)
                 files.append(fmd)
 
-
-    def list_files(self, dataset: str =""):
-        files = []
-        if not dataset:
-            for ds in self.client.datasets():
-                for item in ds:
-                    files.append(os.path.join(ds.name, item.name))
-        else:
-            ds = self.get_dataset(dataset)
-            for item in ds:
-                files.append(os.path.join(ds.name, item.name))
-
-        return files
 
     def create_dataset(self, ds_name, force_delete=False):
         """
@@ -170,9 +182,9 @@ class DatcoreClient(object):
         ds = self.get_dataset(ds_name)
         return ds is not None
 
-    def upload_file(self, dataset, filepath, meta_data = None):
+    def upload_file(self, destination: str, filepath: str, meta_data = None):
         """
-        Uploads a file to a given dataset given its filepath on the host. Optionally
+        Uploads a file to a given dataset/collection given its filepath on the host. Optionally
         adds some meta data
 
         Args:
@@ -182,23 +194,27 @@ class DatcoreClient(object):
 
         Note:
             Blackfynn postprocesses data based on filendings. If it can do that
-            the filenames on the server change. This makes it difficult to retrieve
-            them back by name (see get_sources below). Also, for now we assume we have
-            only single file data.
+            the filenames on the server change.
         """
+        # parse the destination and try to find the package_id to upload to
+        collection, collection_id = self._collection_from_destination(destination)
 
-
+        if collection is None:
+            return False
 
         files = [filepath]
         # pylint: disable = E1101
-        self.client._api.io.upload_files(dataset, files, display_progress=True)
-        dataset.update()
+        self.client._api.io.upload_files(collection, files, display_progress=True)
+        collection.update()
 
         if meta_data is not None:
-            filename = os.path.basename(filepath)
-            package = self.get_package(dataset, filename)
-            if package is not None:
-                self._update_meta_data(package, meta_data)
+            for f in files:
+                filename = os.path.basename(f)
+                package = self.get_package(collection, filename)
+                if package is not None:
+                    self._update_meta_data(package, meta_data)
+
+        return True
 
     def _update_meta_data(self, package, meta_data):
         """
@@ -233,35 +249,19 @@ class DatcoreClient(object):
             return True
         return False
 
-    def download_link(self, source, filename):
+    def download_link(self, destination, filename):
         """
-            returns presigned url for download, source is a dataset
+            returns presigned url for download, destination is a dataset or collection
         """
-
+        collection, collection_id = self._collection_from_destination(destination)
         # pylint: disable = E1101
-        for item in source:
+        for item in collection:
             if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
                 file_desc = self.client._api.packages.get_sources(item.id)[0]
                 url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
                 return url
 
         return ""
-
-    def exists_file(self, source, filename):
-        """
-        Checks if file exists in source
-
-        Args:
-            source (dataset/collection): The dataset or collection to donwload from
-            filename (str): Name of the file
-        """
-
-        source.update()
-        for item in source:
-            if item.name == filename:
-                return True
-
-        return False
 
     def get_package(self, source, filename):
         """
@@ -279,19 +279,26 @@ class DatcoreClient(object):
 
         return None
 
-    def delete_file(self, source, filename):
+    def delete_file(self, destination, filename):
         """
-        Deletes file by name from source by name
+        Deletes file by name from destination by name
 
         Args:
-            source (dataset/collection): The dataset or collection to donwload from
+            destination (dataset/collection): The dataset or collection to delete from
             filename (str): Name of the file
         """
-        source.update()
-        for item in source:
+        collection, collection_id = self._collection_from_destination(destination)
+
+        if collection is None:
+            return False
+
+        collection.update()
+        for item in collection:
             if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
                 self.client.delete(item)
-                return
+                return True
+
+        return False
 
     def delete_file_by_id(self, id: str):
         """
@@ -302,16 +309,21 @@ class DatcoreClient(object):
         """
         self.client.delete(id)
 
-    def delete_files(self, source):
+    def delete_files(self, destination):
         """
-        Deletes all files in source
+        Deletes all files in destination
 
         Args:
-            source (dataset/collection): The dataset or collection to donwload from
+            destination (dataset/collection): The dataset or collection to delete
         """
 
-        source.update()
-        for item in source:
+        collection, collection_id = self._collection_from_destination(destination)
+
+        if collection is None:
+            return False
+
+        collection.update()
+        for item in collection:
             self.client.delete(item)
 
     def update_meta_data(self, dataset, filename, meta_data):
