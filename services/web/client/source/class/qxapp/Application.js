@@ -21,6 +21,7 @@
  * This is the main application class of "qxapp"
  *
  * @asset(qxapp/*)
+ * @asset(common/common.css)
  */
 
 qx.Class.define("qxapp.Application", {
@@ -68,6 +69,7 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__initRouting();
+      this.__loadCommonCss();
     },
 
     __initRouting: function() {
@@ -200,6 +202,11 @@ qx.Class.define("qxapp.Application", {
           "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       }
+    },
+
+    __loadCommonCss: function() {
+      const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
+      qx.module.Css.includeStylesheet(commonCssUri);
     }
   }
 });
