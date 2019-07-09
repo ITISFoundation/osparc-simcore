@@ -1,4 +1,4 @@
-""" handles access to studies
+""" handles access to *public* studies
 
     Handles a request to share a given sharable study via '/study/{id}'
 
@@ -8,20 +8,17 @@
     - access to security
     - access to login
 
-FIXME: reduce modules coupling! See all TODO: .``from ...`` comments
-TODO: THIS IS A PROTOTYPE!!!
-
+FIXME: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
-import json
 import logging
 import uuid
+from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 
-from .resources import resources
+from .login.decorators import login_required
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 
@@ -29,29 +26,27 @@ log = logging.getLogger(__name__)
 
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
+@lru_cache()
+def compose_uuid(template_uuid, user_id) -> str:
+    """ Creates a new uuid composing a project's and user ids such that
+        any template pre-assigned to a user
 
-def load_isan_template_uuids():
-    with resources.stream('data/fake-template-projects.isan.json') as fp:
-        data = json.load(fp)
-    return [prj['uuid'] for prj in data]
+        Enforces a constraint: a user CANNOT have multiple copies of the same template
+    """
+    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
+    return new_uuid
 
-SHARABLE_TEMPLATE_STUDY_IDS = load_isan_template_uuids()
 
-# TODO: from .projects import get_template_project
-async def get_template_project(app: web.Application, project_uuid: str):
-    # TODO: remove projects_ prefix from name
+# TODO: from .projects import get_public_project
+async def get_public_project(app: web.Application, project_uuid: str):
+    """
+        Returns project if project_uuid is a template and is marked as published, otherwise None
+    """
     from .projects.projects_db import APP_PROJECT_DBAPI
 
     db = app[APP_PROJECT_DBAPI]
-
-    # TODO: user search queries in DB instead
-    # BUG: ensure items in project_list have unique UUIDs
-    projects_list = await db.load_template_projects()
-
-    for prj in projects_list:
-        if prj.get('uuid') == project_uuid:
-            return prj
-    return None
+    prj = await db.get_template_project(project_uuid, only_published=True)
+    return prj
 
 # TODO: from .users import create_temporary_user
 async def create_temporary_user(request: web.Request):
@@ -95,34 +90,22 @@ async def get_authorized_user(request: web.Request) -> Dict:
     user = await db.get_user({'id': userid})
     return user
 
-# Creation of projects from templates ---
-def compose_uuid(template_uuid, user_id) -> str:
-    """ Creates a new uuid composing a project's and user ids such that
-        any template pre-assigned to a user
-
-        Enforces a constraint: a user CANNOT have multiple copies of the same template
-        TODO: cache results
-    """
-    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
-    return new_uuid
-
-
 # TODO: from .projects import ...?
 async def copy_study_to_account(request: web.Request, template_project: Dict, user: Dict):
     """
         Creates a copy of the study to a given project in user's account
 
-        Contrains of this method:
-            - Avoids multiple copies of the same template on each account
+        - Replaces template parameters by values passed in query
+        - Avoids multiple copies of the same template on each account
     """
-
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import clone_project_data
+    from .projects.projects_utils import clone_project_data, substitute_parameterized_inputs
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
     db = request.config_dict[APP_PROJECT_DBAPI]
+    template_parameters = dict(request.query)
 
     # assign id to copy
     project_uuid = compose_uuid(template_project["uuid"], user["id"])
@@ -131,9 +114,16 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
         # Avoids multiple copies of the same template on each account
         await db.get_user_project(user["id"], project_uuid)
 
+        # FIXME: if template is parametrized and user has already a copy, then delete it and create a new one??
+
     except ProjectNotFoundError:
         # new project from template
         project = clone_project_data(template_project)
+
+        # check project inputs and substitute template_parameters
+        if template_parameters:
+            log.info("Substituting parameters '%s' in template", template_parameters)
+            project = substitute_parameterized_inputs(project, template_parameters) or project
 
         project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)
@@ -141,28 +131,19 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     return project_uuid
 
 
-# -----------------------------------------------
-
+# HANDLERS --------------------------------------------------------
 async def access_study(request: web.Request) -> web.Response:
     """
-        Handles requests to access a study in a given user's account
+        Handles requests to get and open a public study
 
-        - study must be a template
-        - if user is not registered, it creates a temporary account (has an expiration date)
-        -
+        - public studies are templates that are marked as published in the database
+        - if user is not registered, it creates a temporary guest account with limited resources and expiration
     """
     study_id = request.match_info["id"]
 
-    log.debug("Requested a copy of study '%s' ...", study_id)
-
-    # FIXME: if identified user, then he can access not only to template but also his own projects!
-    if study_id not in SHARABLE_TEMPLATE_STUDY_IDS:
-        raise web.HTTPNotFound(reason="This study was not shared [{}]".format(study_id))
-
-    # TODO: should copy **any** type of project is sharable -> get_sharable_project
-    template_project = await get_template_project(request.app, study_id)
+    template_project = await get_public_project(request.app, study_id)
     if not template_project:
-        raise web.HTTPNotFound(reason="Invalid study [{}]".format(study_id))
+        raise web.HTTPNotFound(reason="Invalid public study [{}]".format(study_id))
 
     user = None
     is_anonymous_user = await is_anonymous(request)
@@ -175,20 +156,18 @@ async def access_study(request: web.Request) -> web.Response:
     if not user:
         raise RuntimeError("Unable to start user session")
 
-    msg_tail = "study {} to {} account ...".format(template_project.get('name'), user.get("email"))
-    log.debug("Copying %s ...", msg_tail)
+    log.debug("Granted access to study '%d' for user %s. Copying study over ...", template_project.get('name'), user.get('email'))
 
     copied_project_id = await copy_study_to_account(request, template_project, user)
 
-    log.debug("Copied %s as %s", msg_tail, copied_project_id)
-
+    log.debug("Study %s copied", copied_project_id)
 
     try:
-        loc = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
+        redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
     except KeyError:
         raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
 
-    response = web.HTTPFound(location=loc)
+    response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user['email']
@@ -196,21 +175,21 @@ async def access_study(request: web.Request) -> web.Response:
 
     raise response
 
-
 def setup(app: web.Application):
 
     cfg = app[APP_CONFIG_KEY]["main"]
+    # TODO: temporarily used to toggle to logged users
+    study_handler = access_study
     if not cfg["studies_access_enabled"]:
-        log.warning("'%s' setup explicitly disabled in config", __name__)
-        return False
+        study_handler = login_required(access_study)
+        log.warning("'%s' config explicitly disables anonymous users from this feature", __name__)
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes([
-        web.get(r"/study/{id}", access_study, name="study"),
+        web.get(r"/study/{id}", study_handler, name="study"),
     ])
 
     return True
-
 
 # alias
 setup_studies_access = setup
