@@ -204,6 +204,8 @@ class DataStorageManager:
                 logger.exception("Error querying database for project names")
 
             if uuid_name_dict:
+                # only keep files from non-deleted project --> This needs to be fixed
+                clean_data = []
                 for d in data:
                     update = False
                     if d.project_id in uuid_name_dict:
@@ -227,7 +229,9 @@ class DataStorageManager:
                                     raw_file_path=d.raw_file_path,
                                     display_file_path=d.display_file_path)
                             await conn.execute(query)
+                            clean_data.append(d)
 
+                data = clean_data
                 # MaG: This is inefficient: Do this automatically when file is modified
                 _loop = asyncio.get_event_loop()
                 session = aiobotocore.get_session(loop=_loop)
@@ -235,15 +239,16 @@ class DataStorageManager:
                      aws_secret_access_key=self.s3_client.secret_key) as client:
                     responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
                     for d, resp in zip(data, responses):
-                        d.file_size = resp['Contents'][0]['Size']
-                        d.last_modified = str(resp['Contents'][0]['LastModified'])
-                        async with self.engine.acquire() as conn:
-                            query = file_meta_data.update().\
-                            where(and_(file_meta_data.c.node_id==d.node_id,
-                                    file_meta_data.c.user_id==d.user_id)).\
-                            values(file_size=d.file_size,
-                                    last_modified=d.last_modified)
-                            await conn.execute(query)
+                        if 'Contents' in resp:
+                            d.file_size = resp['Contents'][0]['Size']
+                            d.last_modified = str(resp['Contents'][0]['LastModified'])
+                            async with self.engine.acquire() as conn:
+                                query = file_meta_data.update().\
+                                where(and_(file_meta_data.c.node_id==d.node_id,
+                                        file_meta_data.c.user_id==d.user_id)).\
+                                values(file_size=d.file_size,
+                                        last_modified=d.last_modified)
+                                await conn.execute(query)
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
