@@ -1,7 +1,7 @@
 """Adds published columns in projects table
 
 Revision ID: add5f60f0f67
-Revises: 99db5efc4548
+Revises: 20ec678d7dad
 Create Date: 2019-07-07 19:04:09.502576+00:00
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add5f60f0f67'
-down_revision = '99db5efc4548'
+down_revision = '20ec678d7dad'
 branch_labels = None
 depends_on = None
 
