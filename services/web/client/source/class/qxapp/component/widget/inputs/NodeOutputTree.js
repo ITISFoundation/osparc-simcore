@@ -50,7 +50,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       ports,
       decorator: "service-tree",
       hideRoot: true,
-      contentPadding: 0
+      contentPadding: 0,
+      padding: 0,
+      minHeight: 0
     });
 
     const self = this;

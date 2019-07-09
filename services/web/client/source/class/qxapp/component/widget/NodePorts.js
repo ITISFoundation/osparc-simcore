@@ -42,11 +42,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
 
     this._setLayout(new qx.ui.layout.Grow());
 
-    const nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-      appearance: "node-ports"
-    });
-
-    this.base(arguments, node.getLabel(), nodeUIPorts);
+    this.base(arguments, node.getLabel());
 
     node.bind("label", this, "title");
   },
@@ -65,7 +61,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
   },
 
   members: {
-    __nodeUIPorts: null,
 
     getNodeId: function() {
       return this.getNode().getNodeId();
@@ -76,7 +71,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     },
 
     populatePortsData: function() {
-      this.__nodeUIPorts.removeAll();
       const metaData = this.getNode().getMetaData();
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
@@ -93,10 +87,10 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       if (ports.defaultNeuromanModels) {
         // Maintaining NodeOutputListIcon for Neuroman
         const nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
-        this.__nodeUIPorts.add(nodeOutputList.getOutputWidget());
+        this.setContent(nodeOutputList.getOutputWidget());
       } else {
         const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
-        this.__nodeUIPorts.add(portTree);
+        this.setContent(portTree);
       }
     }
   }

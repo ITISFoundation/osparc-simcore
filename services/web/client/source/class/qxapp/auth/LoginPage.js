@@ -32,7 +32,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
     this.base(arguments);
 
     // Layout guarantees it gets centered in parent's page
-    let layout = new qx.ui.layout.Grid();
+    const layout = new qx.ui.layout.Grid();
     layout.setRowFlex(0, 1);
     layout.setColumnFlex(0, 1);
     this._setLayout(layout);
