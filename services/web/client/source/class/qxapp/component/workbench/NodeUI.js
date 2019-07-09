@@ -137,13 +137,13 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
       this.add(this.__createChipContainer());
 
-      if (this.getNode().getMetaData().category === "Solver") {
+      if (this.getNode().isComputational()) {
         this.__progressBar = new qx.ui.indicator.ProgressBar().set({
           height: 10,
           margin: 4
         });
         this.add(this.__progressBar);
-      } else if (this.getNode().getMetaData().type === "dynamic") {
+      } else if (this.getNode().isDynamic()) {
         this.add(this.__createStatusContainer());
       }
     },
@@ -161,7 +161,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
-      if (node.getMetaData().category === "Solver") {
+      if (node.isComputational()) {
         node.bind("progress", this.__progressBar, "value");
       }
     },
@@ -255,8 +255,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       const chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3, "center")).set({
         margin: [3, 4]
       });
-      const category = qxapp.statics.Node.getCategory(this.getNode().getMetaData().category);
-      const type = qxapp.statics.Node.getType(this.getNode().getMetaData().type);
+      const category = qxapp.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
+      const type = qxapp.statics.NodeStatics.getType(this.getNode().getMetaData().type);
       if (type) {
         chipContainer.add(new qxapp.ui.basic.Chip(type.label, type.icon + "12"));
       }
