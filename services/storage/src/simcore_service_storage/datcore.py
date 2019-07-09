@@ -256,10 +256,11 @@ class DatcoreClient(object):
         collection, collection_id = self._collection_from_destination(destination)
         # pylint: disable = E1101
         for item in collection:
-            if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
-                file_desc = self.client._api.packages.get_sources(item.id)[0]
-                url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
-                return url
+            if isinstance(item, DataPackage):
+                if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+                    file_desc = self.client._api.packages.get_sources(item.id)[0]
+                    url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
+                    return url
 
         return ""
 
@@ -294,9 +295,10 @@ class DatcoreClient(object):
 
         collection.update()
         for item in collection:
-            if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
-                self.client.delete(item)
-                return True
+            if isinstance(item, DataPackage):
+                if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+                    self.client.delete(item)
+                    return True
 
         return False
 

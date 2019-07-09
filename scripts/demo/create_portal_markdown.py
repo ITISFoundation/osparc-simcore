@@ -8,15 +8,15 @@ import argparse
 import json
 import logging
 import sys
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from simcore_service_webserver.login.registration import (URL,
-                                                          get_invitation_url)
-from simcore_service_webserver.login.utils import get_random_string
-from simcore_service_webserver.resources import resources
-from contextlib import contextmanager
+from yarl import URL
 
+from simcore_service_webserver.login.registration import get_invitation_url
+from simcore_service_webserver.login.utils import get_random_string
+#from simcore_service_webserver.resources import resources
 
 CONFIRMATIONS_FILENAME = "confirmations-invitations.csv"
 
@@ -38,10 +38,13 @@ MOCK_CODES = [
 ]
 
 current_path = Path( sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-logging.basicConfig(level=logging.INFO)
+current_dir = current_path.parent
 
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+params = {}
+params["154fb4ad-4913-478f-af04-19725db901a7"] = {'stimulation_period_secs': '1200'}
 
 @contextmanager
 def _open(filepath):
@@ -54,17 +57,25 @@ def _open(filepath):
 
 
 def write_list(hostname, url, data, fh):
+    origin = URL(url)
+
     print("## studies available @{}".format(hostname), file=fh)
     print("", file=fh)
     for prj in data:
-        print("- [{name}]({base_url}/study/{uuid})".format(base_url=url, **prj), file=fh)
+        study_url = origin.with_path("study/{uuid}".format(**prj))
+        if prj['uuid'] in params:
+            study_url = study_url.with_query(**params[prj['uuid']])
+        print("- [{name}]({study_url})".format(study_url=str(study_url), **prj), file=fh)
     print("", file=fh)
 
 
 def main(mock_codes):
+    data = {}
+    #with resources.stream('data/fake-template-projects.isan.json') as fp:
+    #    data['localhost'] = json.load(fp)
 
-    with resources.stream('data/fake-template-projects.isan.json') as fp:
-        data = json.load(fp)
+    with open(current_dir / "template-projects/templates_in_master.json") as fp:
+        data['master'] = json.load(fp)
 
     file_path = str(current_path.with_suffix(".md")).replace("create_", "")
     with _open(file_path) as fh:
@@ -72,7 +83,7 @@ def main(mock_codes):
         print("# THE PORTAL Emulator\n", file=fh)
         print("This pages is for testing purposes for issue [#{1}]({0}{1})\n".format(ISSUE, 715), file=fh)
         for hostname, url in HOST_URLS_MAPS:
-            write_list(hostname, url, data, fh)
+            write_list(hostname, url, data.get(hostname, []), fh)
 
         print("---", file=fh)
 
