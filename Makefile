@@ -84,6 +84,12 @@ endif
 build: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST}
 
+.PHONY: rebuild
+# target: build: – Builds all core service images.
+rebuild: .env .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache --parallel ${SERVICES_LIST}
+
+
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
 build-devel: .env .tmp-webclient-build
