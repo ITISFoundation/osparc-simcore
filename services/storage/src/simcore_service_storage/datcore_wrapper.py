@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from pathlib import Path
@@ -11,7 +10,6 @@ import attr
 
 from .datcore import DatcoreClient
 from .models import FileMetaData
-from .settings import DATCORE_ID, DATCORE_STR
 
 FileMetaDataVec = List[FileMetaData]
 
@@ -52,33 +50,6 @@ class DatcoreWrapper:
                 host='https://api.blackfynn.io')
 
     @make_async
-    def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
-        try:
-            files = self.d_client.list_files()
-        except Exception as e:
-            logger.exception("Error listing datcore files %s", e)
-
-        data = []
-        for f in files:
-            # extract bucket name, object name and filename
-            parts = f.strip("/").split("/")
-            file_name = parts[-1]
-            if len(parts) > 1:
-                bucket_name = parts[0]
-                object_name = "/".join(parts[1:])
-            else:
-                bucket_name = ""
-                object_name = file_name
-
-            file_uuid = os.path.join(bucket_name, object_name)
-            # at the moment, no metadata there
-            fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
-             location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid)
-            data.append(fmd)
-
-        return data
-
-    @make_async
     def list_files_recursively(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
         files = []
         try:
@@ -89,23 +60,18 @@ class DatcoreWrapper:
         return files
 
     @make_async
-    def delete_file(self, dataset: str, filename: str):
+    def delete_file(self, destination: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
         try:
-            ds = self.d_client.get_dataset(dataset)
-            if ds is not None:
-                self.d_client.delete_file(ds, filename)
+            self.d_client.delete_file(destination, filename)
         except Exception as e:
             logger.exception("Error deleting datcore file %s", e)
 
     @make_async
-    def download_link(self, dataset: str, filename: str):
+    def download_link(self, destination: str, filename: str):
         url = ""
         try:
-            ds = self.d_client.get_dataset(dataset)
-            url = ""
-            if ds is not None:
-                url = self.d_client.download_link(ds, filename)
+            url = self.d_client.download_link(destination, filename)
         except Exception as e:
             logger.exception("Error getting datcore download link %s", e)
 
@@ -117,7 +83,7 @@ class DatcoreWrapper:
         try:
             ds = self.d_client.get_dataset(dataset)
             if ds is not None:
-                self.d_client.delete_files(ds)
+                self.d_client.delete_files(dataset)
             else:
                 self.d_client.create_dataset(dataset)
         except Exception as e:
@@ -129,24 +95,24 @@ class DatcoreWrapper:
         try:
             ds = self.d_client.get_dataset(dataset)
             if ds is not None:
-                self.d_client.delete_files(ds)
+                self.d_client.delete_files(dataset)
         except Exception as e:
             logger.exception("Error deleting test dataset %s", e)
 
     @make_async
-    def upload_file(self, dataset: str, local_path: str, meta_data: FileMetaData = None):
+    def upload_file(self, destination: str, local_path: str, meta_data: FileMetaData = None):
         json_meta = ""
         if meta_data:
             json_meta = json.dumps(attr.asdict(meta_data))
         try:
-            ds = self.d_client.get_dataset(dataset)
             str_meta = json_meta
+            result = False
             if str_meta :
                 meta_data = json.loads(str_meta)
-                self.d_client.upload_file(ds, local_path, meta_data)
+                result = self.d_client.upload_file(destination, local_path, meta_data)
             else:
-                self.d_client.upload_file(ds, local_path)
-            return True
+                result = self.d_client.upload_file(destination, local_path)
+            return result
         except Exception as e:
             logger.exception("Error uploading file to datcore %s", e)
             return False

@@ -60,9 +60,11 @@ if utils.has_datcore_tokens():
             return _get_collection_id(folder, _collections, collection_id)
 
         my_id = ""
-        import pdb; pdb.set_trace()
         my_id =_get_collection_id(destination, collections, my_id)
+        package = client.client.get(my_id)
+        client.upload_file(package, path)
         print(my_id)
+        import pdb; pdb.set_trace()
 
     finally:
         os.remove(path)

@@ -242,7 +242,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
-    await dsm.upload_file_to_datcore(user_id, tmp_file2, datcore_testbucket, fmd)
+    await dsm.upload_file_to_datcore(user_id=user_id, local_file_path=tmp_file2, destination=datcore_testbucket, fmd=fmd)
 
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
 
