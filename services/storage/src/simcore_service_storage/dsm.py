@@ -207,12 +207,7 @@ class DataStorageManager:
                 # only keep files from non-deleted project --> This needs to be fixed
                 clean_data = []
                 for d in data:
-                    update = False
                     if d.project_id in uuid_name_dict:
-                        update = True
-
-
-                    if update:
                         d.project_name = uuid_name_dict[d.project_id]
                         if d.node_id in uuid_name_dict:
                             d.node_name = uuid_name_dict[d.node_id]
