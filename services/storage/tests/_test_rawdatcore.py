@@ -18,7 +18,21 @@ api_secret = os.environ.get("BF_API_SECRET")
 
 if utils.has_datcore_tokens():
     client = DatcoreClient(api_token=api_token, api_secret=api_secret)
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+    destination = str(Path("MaG/level1/level2"))
+    fd, path = tempfile.mkstemp()
 
+    try:
+        with os.fdopen(fd, 'w') as tmp:
+            # do stuff with temp file
+            tmp.write('stuff')
+
+        f = client.upload_file(destination, path)
+        f = client.delete_file(destination,Path(path).name)
+    finally:
+        os.remove(path)
+
+    aa
     files =  []
     if True:
         dataset = client.get_dataset("mag")
@@ -64,7 +78,6 @@ if utils.has_datcore_tokens():
         package = client.client.get(my_id)
         client.upload_file(package, path)
         print(my_id)
-        import pdb; pdb.set_trace()
 
     finally:
         os.remove(path)
