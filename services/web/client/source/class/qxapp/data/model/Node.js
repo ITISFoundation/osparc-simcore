@@ -467,6 +467,10 @@ qx.Class.define("qxapp.data.model.Node", {
         const changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
       }, this);
+      propsWidget.addListener("dataFieldModified", e => {
+        // const changedDataField = e.getData();
+        this.__retrieveInputs();
+      }, this);
     },
 
     getOutputWidget: function() {

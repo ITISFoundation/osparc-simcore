@@ -360,7 +360,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __updatePipelineAndRetrieve: function(node) {
-      this.updateStudyDocument(null, this.__pipelineSuccessfullyUpdated(node), this.__pipelineUnsuccessfullyUpdated);
+      this.updateStudyDocument(
+        null,
+        this.__pipelineSuccessfullyUpdated.bind(this, node),
+        this.__pipelineUnsuccessfullyUpdated.bind(this)
+      );
       this.getLogger().debug(null, "Updating pipeline");
     },
 
