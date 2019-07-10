@@ -287,9 +287,17 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (oldThumbnail !== null) {
         this.removeAt(0);
       }
-      this.__thumbnail = new qx.ui.embed.Html(thumbnail).set({
-        height: 100
-      });
+      if (qxapp.utils.Utils.isUrl(thumbnail)) {
+        this.__thumbnail = new qx.ui.basic.Image(thumbnail).set({
+          height: 100,
+          allowShrinkX: true,
+          scale: true
+        });
+      } else {
+        this.__thumbnail = new qx.ui.embed.Html(thumbnail).set({
+          height: 100
+        });
+      }
       this.addAt(this.__thumbnail, 0);
     },
 
