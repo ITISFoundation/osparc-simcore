@@ -38,6 +38,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, postgres_service, minio_se
         'port': aiohttp_unused_port(),
         'host': 'localhost',
         "max_workers" : 4,
+        "testing" : True,
         "test_datcore" : { 'api_token' : api_token, 'api_secret' : api_secret}
     }
     rest_cfg = {
