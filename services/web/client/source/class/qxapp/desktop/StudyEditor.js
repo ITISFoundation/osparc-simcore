@@ -78,7 +78,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __nodeView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
-    __autoRetrieveTimer: null,
+    __retrieveProgressTimer: null,
 
     /**
      * Destructor
@@ -484,7 +484,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __startTimers: function() {
       this.__startAutoSaveTimer();
-      this.__startAutoRetrieveTimer();
+      // this.__startGetRetrieveProgressTimer();
     },
 
     __startAutoSaveTimer: function() {
@@ -510,11 +510,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       timer.start();
     },
 
-    __startAutoRetrieveTimer: function() {
+    __startGetRetrieveProgressTimer: function() {
       const studyId = this.getStudy().getUuid();
       // Save every 2 seconds
       const interval = 2000;
-      let timer = this.__autoRetrieveTimer = new qx.event.Timer(interval);
+      let timer = this.__retrieveProgressTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const study = this.__studyResources.project;
         study.addListenerOnce("getProgressSuccess", e => {
@@ -539,9 +539,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __stopAutoRetrieveTimer: function() {
-      if (this.__autoRetrieveTimer && this.__autoRetrieveTimer.isEnabled()) {
-        this.__autoRetrieveTimer.stop();
-        this.__autoRetrieveTimer.setEnabled(false);
+      if (this.__retrieveProgressTimer && this.__retrieveProgressTimer.isEnabled()) {
+        this.__retrieveProgressTimer.stop();
+        this.__retrieveProgressTimer.setEnabled(false);
       }
     },
 
