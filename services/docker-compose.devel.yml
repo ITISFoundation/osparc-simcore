@@ -63,6 +63,10 @@ services:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
+    environment:
+      - SC_BOOT_MODE=debug
+    ports:
+      - "3000:3000"
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------

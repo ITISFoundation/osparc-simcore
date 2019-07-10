@@ -12,6 +12,9 @@ from .rest import setup_rest
 from .settings import APP_CONFIG_KEY
 from .dsm import setup_dsm
 
+import ptvsd
+ptvsd.enable_attach(address=('0.0.0.0', 3000), redirect_output=True)
+
 log = logging.getLogger(__name__)
 
 def create(config):
