@@ -90,7 +90,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           column: this._gridPos.label
         });
         label.setBuddy(item);
-        this._add(item, {
+        this._add(new qxapp.component.form.FieldWHint(null, item.description, item), {
           row: this._row,
           column: this._gridPos.entryField
         });
@@ -153,7 +153,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children[i];
-        if ("key" in child && child.key === portId) {
+        if (child.getField && child.getField().key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
 
@@ -161,9 +161,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          const unlinkBtn = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/unlink/16"
-          });
+          let unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
           unlinkBtn.addListener("execute", function() {
             this.fireDataEvent("removeLink", portId);
           }, this);
@@ -185,10 +183,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
-
-          this._addAt(this._form.getControl(portId), i, {
+          this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
             row: layoutProps.row,
-            column: this._gridPos.entryentryField
+            column: this._gridPos.entryField
           });
         }
       }
@@ -257,22 +254,22 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.nodeId && this.__arePortsCompatible(output.nodeId, output.portId, child.nodeId, child.portId));
+      return this._getChildren().filter(child => child.getField && this.__arePortsCompatible(output.nodeId, output.portId, child.getField().nodeId, child.getField().portId));
     },
 
     __highlightCompatibles: function(output) {
       const inputs = this.__getCompatibleInputs(output);
       for (let i in inputs) {
-        const input = inputs[i];
+        const input = inputs[i].getField();
         input.setDecorator("material-textfield-focused");
       }
     },
 
     __unhighlightAll: function() {
-      const inputs = this._getChildren().filter(child => child.nodeId);
+      const inputs = this._getChildren().filter(child => child.getField);
       for (let i in inputs) {
         const input = inputs[i];
-        input.resetDecorator();
+        input.getField().resetDecorator();
       }
     },
 

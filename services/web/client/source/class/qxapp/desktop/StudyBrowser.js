@@ -389,13 +389,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return list;
     },
 
-    __uuidToNumber: function(uuid) {
-      const nThumbnails = 25;
-      const lastCharacters = uuid.substr(uuid.length-10);
-      const aNumber = parseInt(lastCharacters, 16);
-      return aNumber%nThumbnails;
-    },
-
     /**
      * Delegates appearance and binding of each study item
      */
@@ -447,8 +440,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
                 if (data) {
                   return data;
                 }
-                const thumbnailId = that.__uuidToNumber(uuid); // eslint-disable-line no-underscore-dangle
-                return "qxapp/img"+ thumbnailId +".jpg";
+                return qxapp.utils.Utils.getThumbnailFromUuid(uuid);
               }
               return "@FontAwesome5Solid/plus-circle/80";
             }

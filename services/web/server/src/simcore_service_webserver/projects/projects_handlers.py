@@ -49,6 +49,7 @@ async def create_projects(request: web.Request):
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
             project = clone_project_data(template_prj)
+            #FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
         if request.has_body:
