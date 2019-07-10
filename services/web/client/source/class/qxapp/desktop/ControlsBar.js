@@ -73,7 +73,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createStartButton: function() {
-      let startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/16");
+      let startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
 
       startButton.addListener("execute", () => {
         this.fireEvent("startPipeline");
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createStopButton: function() {
-      let stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/16");
+      let stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
 
       stopButton.addListener("execute", () => {
         this.fireEvent("stopPipeline");
@@ -92,7 +92,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createRetrieveButton: function() {
-      let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/16");
+      let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
 
       retrieveBtn.addListener("execute", () => {
         this.fireEvent("retrieveInputsBtn");

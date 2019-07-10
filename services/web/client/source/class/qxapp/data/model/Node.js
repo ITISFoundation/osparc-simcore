@@ -39,6 +39,7 @@
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
 
   /**
     * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
@@ -148,7 +149,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     serviceUrl: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeServiceUrl"
     },
 
     iFrame: {
@@ -448,7 +450,7 @@ qx.Class.define("qxapp.data.model.Node", {
      * Add settings widget with those inputs that can be represented in a form
      *
      */
-    __addSetttings: function(inputs) {
+    __addSettings: function(inputs) {
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
@@ -491,7 +493,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSetttings(filteredInputs);
+      this.__addSettings(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
@@ -669,18 +671,14 @@ qx.Class.define("qxapp.data.model.Node", {
 
     startInteractiveNode: function() {
       if (this.isDynamic() && this.isRealService()) {
-        let retrieveBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/spinner/32"
-        });
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
         retrieveBtn.setEnabled(false);
         this.setRetrieveIFrameButton(retrieveBtn);
 
-        let restartBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/redo-alt/32"
-        });
+        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);
@@ -703,25 +701,7 @@ qx.Class.define("qxapp.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      const interval = 50;
-      let increment = true;
-      let progressTimer = new qx.event.Timer(interval);
-      progressTimer.addListener("interval", () => {
-        if (this.getServiceUrl() === null) {
-          let newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
-          newProgress = Math.min(newProgress, 100);
-          newProgress = Math.max(newProgress, 0);
-          this.setProgress(newProgress);
-          if (newProgress === 100) {
-            increment = false;
-          } else if (newProgress === 0) {
-            increment = true;
-          }
-        } else {
-          progressTimer.stop();
-        }
-      }, this);
-      progressTimer.start();
+      this.setProgress(0);
 
       const prjId = this.getWorkbench().getStudy()
         .getUuid();
@@ -746,7 +726,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        progressTimer.stop();
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -755,7 +734,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
-        progressTimer.stop();
       }, this);
       request.send();
     },
