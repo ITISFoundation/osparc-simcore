@@ -46,7 +46,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   events: {
-    "removeLink" : "qx.event.type.Data"
+    "removeLink": "qx.event.type.Data",
+    "dataFieldModified": "qx.event.type.Data"
   },
 
   properties: {
@@ -171,6 +172,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             row: layoutProps.row,
             column: this._gridPos.entryField
           });
+
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
@@ -186,6 +189,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             row: layoutProps.row,
             column: this._gridPos.entryField
           });
+
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
