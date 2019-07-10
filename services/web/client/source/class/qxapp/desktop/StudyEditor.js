@@ -416,42 +416,26 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-      this.updateStudyDocument();
-      /*
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
-      let req = new qxapp.io.request.ApiRequest(url, "PUT");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("updating pipeline: " + url);
-      console.log(data);
-      */
     __updatePipelineAndRetrieve: function(node) {
-
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline successfully updated");
-        if (node) {
-          node.retrieveInputs();
-        } else {
-          const workbench = this.getStudy().getWorkbench();
-          const allNodes = workbench.getNodes(true);
-          Object.values(allNodes).forEach(node2 => {
-            node2.retrieveInputs();
-          }, this);
-        }
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error updating pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed updating pipeline");
-      }, this);
-      req.send();
-
+      this.updateStudyDocument(null, this.__pipelineSuccessfullyUpdated(node), this.__pipelineUnsuccessfullyUpdated);
       this.getLogger().debug(null, "Updating pipeline");
+    },
+
+    __pipelineSuccessfullyUpdated: function(node) {
+      this.getLogger().debug(null, "Retrieveing inputs");
+      if (node) {
+        node.retrieveInputs();
+      } else {
+        const workbench = this.getStudy().getWorkbench();
+        const allNodes = workbench.getNodes(true);
+        Object.values(allNodes).forEach(node2 => {
+          node2.retrieveInputs();
+        }, this);
+      }
+    },
+
+    __pipelineUnsuccessfullyUpdated: function() {
+      this.getLogger().error(null, "Error updating pipeline");
     },
 
     __startPipeline: function() {
@@ -614,7 +598,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cb) {
+    updateStudyDocument: function(newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -624,8 +608,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cb) {
-          cb.call(this);
+        if (cbSuccess) {
+          cbSuccess.call(this);
+        }
+      }, this);
+      resource.addListenerOnce("putError", ev => {
+        if (cbError) {
+          cbError.call(this);
         }
       }, this);
       resource.put({
