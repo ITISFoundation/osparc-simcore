@@ -65,8 +65,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   members: {
     _gridPos: {
       label: 0,
-      entryField: 1,
-      status: 2
+      entryField: 1
     },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
