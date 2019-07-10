@@ -91,15 +91,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
-      nodesTree.addListener("addNode", () => {
+      const treeView = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
-      nodesTree.addListener("removeNode", e => {
+      treeView.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
       const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
@@ -235,7 +235,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
+      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 

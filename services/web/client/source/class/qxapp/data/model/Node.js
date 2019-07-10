@@ -451,25 +451,21 @@ qx.Class.define("qxapp.data.model.Node", {
      *
      */
     __addSettings: function(inputs) {
-      const form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
-        const changedField = e.getData();
+        let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
       }, this);
       form.addListener("linkRemoved", e => {
-        const changedField = e.getData();
+        let changedField = e.getData();
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      const propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
-        const changedField = e.getData();
+        let changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
-      }, this);
-      propsWidget.addListener("dataFieldModified", e => {
-        // const changedDataField = e.getData();
-        this.__retrieveInputs();
       }, this);
     },
 
