@@ -15,7 +15,7 @@ import attr
 from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
-from .handlers.generic import handler as default_handler
+from .handlers.jupyter import handler as default_handler #TODO: jupyter shall be the generic one
 from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 
 logger = logging.getLogger(__name__)
@@ -91,6 +91,6 @@ class ReverseChooser:
 
 
         response = await handler(request, service_url,
-                                 mountpoint=mountpoint,
+                                 mount_point=mountpoint,
                                  proxy_path=proxy_path)
         return response

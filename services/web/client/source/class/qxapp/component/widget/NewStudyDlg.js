@@ -23,7 +23,7 @@
  *   {
  *     prjTitle: title,
  *     prjDescription: desc,
- *     prjTemplate: templ
+ *     prjTemplateId: templ
  *   };
  * </pre>
  *
@@ -40,13 +40,13 @@
 qx.Class.define("qxapp.component.widget.NewStudyDlg", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(template=null) {
     this.base(arguments);
 
     let newPrjLayout = new qx.ui.layout.Canvas();
     this._setLayout(newPrjLayout);
 
-    this.__createForm();
+    this.__createForm(template);
   },
 
   events: {
@@ -54,11 +54,12 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
   },
 
   members: {
-    __createForm: function() {
+    __createForm: function(template) {
       const prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const studyTitle = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Study Title")
+        placeholder: this.tr("Study Title"),
+        value: template ? template.name : ""
       });
       this.addListener("appear", () => {
         studyTitle.activate();
@@ -66,33 +67,26 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
       });
       prjFormLayout.add(studyTitle);
 
-      prjFormLayout.add(new qx.ui.core.Spacer(5));
-
       const description = new qx.ui.form.TextArea().set({
         minHeight: 150,
-        placeholder: this.tr("Describe your study...")
+        placeholder: this.tr("Describe your study..."),
+        value: template ? template.description : ""
       });
       prjFormLayout.add(description, {
         flex: 1
       });
 
-      prjFormLayout.add(new qx.ui.core.Spacer(5));
+      if (template) {
+        const templateLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        const label1 = new qx.ui.basic.Label(this.tr("Selected template: "));
+        const label2 = new qx.ui.basic.Label(template.name);
+        templateLayout.add(label1);
+        templateLayout.add(label2);
+        prjFormLayout.add(templateLayout);
+      }
 
-      const templatesList = new qx.ui.form.List().set({
-        minHeight: 200
-      });
-      const blankItem = new qx.ui.form.ListItem(this.tr("Blank Study"));
-      templatesList.add(blankItem);
-      templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
-      templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
-      templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Thermal")));
-      templatesList.setSelection([blankItem]);
-      prjFormLayout.add(new qx.ui.basic.Label(this.tr("Categories / Templates")));
-      prjFormLayout.add(templatesList, {
-        flex: 1
-      });
-
-      prjFormLayout.add(new qx.ui.core.Spacer(5));
+      const createBtn = new qx.ui.form.Button(this.tr("Create"));
+      prjFormLayout.add(createBtn);
 
       // create the form manager
       const manager = new qx.ui.form.validation.Manager();
@@ -114,24 +108,19 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
         }
         const title = studyTitle.getValue();
         const desc = description.getValue();
-        const sele = templatesList.getSelection();
-        let templ = "";
-        if (sele && sele.length > 0) {
-          templ = sele[0].getLabel().getMessageId();
-        }
         const data = {
           prjTitle: title,
-          prjDescription: desc ? desc : "",
-          prjTemplate: templ
+          prjDescription: desc ? desc : ""
         };
+        if (template) {
+          data["prjTemplateId"] = template.uuid;
+        }
         this.fireDataEvent("createStudy", data);
       }, this);
 
-      const createBtn = new qx.ui.form.Button(this.tr("Create"));
       createBtn.addListener("execute", function() {
         manager.validate();
       }, this);
-      prjFormLayout.add(createBtn);
 
       this._add(prjFormLayout, {
         top: 10,

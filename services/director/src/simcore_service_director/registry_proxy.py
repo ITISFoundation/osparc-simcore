@@ -1,34 +1,199 @@
 #pylint: disable=C0111
+import asyncio
+import enum
 import json
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
-import aiohttp
+from aiohttp import BasicAuth, ClientSession, web
+from yarl import URL
 
-from . import config, exceptions
+from simcore_service_director import config, exceptions
+from simcore_service_director.cache_request_decorator import cache_requests
 
-INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
-COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
+
+NUMBER_OF_RETRIEVED_REPOS = 50
+NUMBER_OF_RETRIEVED_TAGS = 50
 
 _logger = logging.getLogger(__name__)
 
-async def list_computational_services() -> List[List[Dict]]:
-    return await __list_services(COMPUTATIONAL_SERVICES_PREFIX)
+class ServiceType(enum.Enum):
+    ALL = ""
+    COMPUTATIONAL = "comp"
+    DYNAMIC = "dynamic"
 
-async def list_interactive_services() -> List[List[Dict]]:
-    return await __list_services(INTERACTIVE_SERVICES_PREFIX)
+async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> Tuple[Dict, Dict]:
+    if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
+        raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
+    # auth issue let's try some authentication get the auth type
+    auth_type = None
+    auth_details = None
+    for key in auth_headers:
+        if str(key).lower() == "www-authenticate":
+            auth_type, auth_details = str(auth_headers[key]).split(" ", 1)
+            auth_details = {x.split("=")[0]:x.split("=")[1].strip('"') for x in auth_details.split(",")}
+            break
+    if not auth_type:
+        raise exceptions.RegistryConnectionError("Unknown registry type: cannot deduce authentication method!")
+    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
 
-async def get_service_details(service_key: str, service_version: str) -> List[Dict]:
-    return await __get_repo_version_details(service_key, service_version)
+    # bearer type, it needs a token with all communications
+    if auth_type == "Bearer":
+        async with ClientSession() as session:
+            # get the token
+            token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
+            async with session.get(token_url, auth=auth) as token_resp:
+                if not token_resp.status == 200:
+                    raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
+                bearer_code = (await token_resp.json())["token"]
+                headers = {"Authorization": "Bearer {}".format(bearer_code)}
+                async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
+                    if resp_wtoken.status == 404:
+                        _logger.exception("path to registry not found: %s", url)
+                        raise exceptions.ServiceNotAvailableError(url)
+                    if resp_wtoken.status > 399:
+                        _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
+                        raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                    resp_data = await resp_wtoken.json(content_type=None)
+                    resp_headers = resp_wtoken.headers
+                    return (resp_data, resp_headers)
+    elif auth_type == "Basic":
+        async with ClientSession() as session:
+            # basic authentication
+            async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+                if resp_wbasic.status == 404:
+                    _logger.exception("path to registry not found: %s", url)
+                    raise exceptions.ServiceNotAvailableError(url)
+                if resp_wbasic.status > 399:
+                    _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
+                    raise exceptions.RegistryConnectionError(str(resp_wbasic))
+                resp_data = await resp_wbasic.json(content_type=None)
+                resp_headers = resp_wbasic.headers
+                return (resp_data, resp_headers)
+    raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
 
-async def retrieve_list_of_images_in_repo(repository_name: str):
-    request_result = await __registry_request(repository_name + '/tags/list')
-    _logger.debug("retrieved list of images in %s: %s",repository_name, request_result)
-    return request_result
 
-async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
-    image_labels = await retrieve_labels_of_image(service_key, service_tag)
+@cache_requests
+async def _registry_request(_: web.Application, path: URL, method: str ="GET") -> Tuple[Dict, Dict]:    
+    if not config.REGISTRY_URL:
+        raise exceptions.DirectorException("URL to registry is not defined")
+    url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
+                                url=config.REGISTRY_URL))
+    url = url.join(path)
+    # try the registry with basic authentication first, spare 1 call
+    resp_data = {}
+    resp_headers = {}
+    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
+        if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
+            else None
+    async with ClientSession() as session:
+        async with getattr(session, method.lower())(url, auth=auth) as response:
+            if response.status == 404:
+                _logger.exception("path to registry not found: %s", url)
+                raise exceptions.ServiceNotAvailableError(path)
+            if response.status == 401:
+                resp_data, resp_headers = await _auth_registry_request(url, method, response.headers)
+            elif response.status > 399:
+                _logger.exception("Unknown error while accessing registry: %s", str(response))
+                raise exceptions.RegistryConnectionError(str(response))
+            else:
+                # registry that does not need an auth
+                resp_data = await response.json(content_type=None)
+                resp_headers = response.headers
+
+            return (resp_data, resp_headers)
+
+async def _list_repositories(app: web.Application) -> List[str]:
+    _logger.debug("listing repositories")
+    # if there are more repos, the Link will be available in the response headers until none available
+    path = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
+    repos_list = []
+    while True:
+        result, headers = await _registry_request(app, path)
+        if result["repositories"]:
+            repos_list.extend(result["repositories"])
+        if "Link" not in headers:
+            break
+        path = URL(str(headers["Link"]).split(";")[0].strip("<>"))
+    _logger.debug("listed %s repositories", len(repos_list))
+    return repos_list
+
+async def list_image_tags(app: web.Application, image_key: str) -> List[Dict]:
+    _logger.debug("listing image tags in %s", image_key)
+    image_tags = []
+    # get list of image tags
+    path = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
+    while True:
+        tags, headers = await _registry_request(app, path)
+        if tags["tags"]:
+            image_tags.extend(tags["tags"])
+        if "Link" not in headers:
+            break
+        path = URL(str(headers["Link"]).split(";")[0].strip("<>"))
+    _logger.debug("Found %s image tags in %s", len(image_tags), image_key)
+    return image_tags
+
+async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
+    _logger.debug("getting image labels of %s:%s", image, tag)
+    path = URL("v2/{}/manifests/{}".format(image, tag))
+    request_result, _ = await _registry_request(app, path)
+    labels = json.loads(request_result["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
+    return labels
+
+async def get_image_details(app: web.Application, image_key: str, image_tag: str) -> Dict:
+    image_tags = {}
+    labels = await get_image_labels(app, image_key, image_tag)
+    if not labels:
+        return image_tags
+    for key in labels:
+        if not key.startswith("io.simcore."):
+            continue
+        try:
+            label_data = json.loads(labels[key])
+            for label_key in label_data.keys():
+                image_tags[label_key] = label_data[label_key]
+        except json.decoder.JSONDecodeError:
+            logging.exception("Error while decoding json formatted data from %s:%s", image_key, image_tag)
+            # silently skip this repo
+            return {}
+
+    return image_tags
+
+async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
+    repo_details = []
+    image_tags = await list_image_tags(app, image_key)
+    tasks = [get_image_details(app, image_key, tag) for tag in image_tags]
+    results = await asyncio.gather(*tasks)
+    for image_details in results:
+        if image_details:
+            repo_details.append(image_details)
+    return repo_details
+
+async def list_services(app: web.Application, service_type: ServiceType) -> List[Dict]:
+    _logger.debug("getting list of services")
+    repos = await _list_repositories(app)
+    # get the services repos
+    prefixes = []
+    if service_type in [ServiceType.DYNAMIC, ServiceType.ALL]:
+        prefixes.append(_get_prefix(ServiceType.DYNAMIC))
+    if service_type in [ServiceType.COMPUTATIONAL, ServiceType.ALL]:
+        prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
+    repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
+    _logger.debug("retrieved list of repos : %s", repos)
+
+    # only list as service if it actually contains the necessary labels
+    tasks = [get_repo_details(app, repo) for repo in repos]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    services = []
+    for repo_details in results:
+        if repo_details and isinstance(repo_details, list):
+            services.extend(repo_details)
+    return services
+
+async def list_interactive_service_dependencies(app: web.Application, service_key: str, service_tag: str) -> List[Dict]:
+    image_labels = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
@@ -40,114 +205,27 @@ async def list_interactive_service_dependencies(service_key: str, service_tag: s
 
     return dependency_keys
 
-async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
-    request_result = await __registry_request(image + '/manifests/' + tag)
-    labels = json.loads(request_result["history"][0]["v1Compatibility"])[
-        "container_config"]["Labels"]
-    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
-    return labels
+def _get_prefix(service_type: ServiceType) -> str:
+    return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
 
-def get_service_first_name(repository_name: str) -> str:
-    if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
-    elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(COMPUTATIONAL_SERVICES_PREFIX):]
+def get_service_first_name(image_key: str) -> str:
+    if str(image_key).startswith(_get_prefix(ServiceType.DYNAMIC)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.DYNAMIC)):]
+    elif str(image_key).startswith(_get_prefix(ServiceType.COMPUTATIONAL)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.COMPUTATIONAL)):]
     else:
         return "invalid service"
 
-    _logger.debug("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
+    _logger.debug("retrieved service name from repo %s : %s", image_key, service_name_suffixes)
     return service_name_suffixes.split('/')[0]
 
-def get_service_last_names(repository_name: str) -> str:
-    if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
-    elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
-        service_name_suffixes = str(repository_name)[len(COMPUTATIONAL_SERVICES_PREFIX):]
+def get_service_last_names(image_key: str) -> str:
+    if str(image_key).startswith(_get_prefix(ServiceType.DYNAMIC)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.DYNAMIC)):]
+    elif str(image_key).startswith(_get_prefix(ServiceType.COMPUTATIONAL)):
+        service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.COMPUTATIONAL)):]
     else:
         return "invalid service"
     service_last_name = str(service_name_suffixes).replace("/", "_")
-    _logger.debug("retrieved service last name from repo %s : %s", repository_name, service_last_name)
+    _logger.debug("retrieved service last name from repo %s : %s", image_key, service_last_name)
     return service_last_name
-
-async def __registry_request(path: str, method: str ="GET") -> str:
-    if not config.REGISTRY_URL:
-        raise exceptions.DirectorException("URL to registry is not defined")
-
-    if config.REGISTRY_SSL:
-        api_url = 'https://' + config.REGISTRY_URL + '/v2/' + path
-    else:
-        api_url = 'http://' + config.REGISTRY_URL + '/v2/' + path
-
-    auth = None
-    if config.REGISTRY_AUTH:
-        _logger.debug("Authentifying registry...")
-        if not config.REGISTRY_USER:
-            raise exceptions.DirectorException("User to access to registry is not defined")
-        if not config.REGISTRY_PW:
-            raise exceptions.DirectorException("PW to access to registry is not defined")
-        _logger.debug("Session authorization complete")
-        auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
-
-    async with aiohttp.ClientSession(auth=auth) as session:
-        async with getattr(session, method.lower())(api_url, ssl=False) as response:
-            if response.status == 404:
-                _logger.exception("path not found")
-                raise exceptions.ServiceNotAvailableError(path, None)
-            if response.status > 399:
-                _logger.exception("Error while connecting to docker registry")
-                raise exceptions.DirectorException(await response.text())
-            return await response.json(content_type=None)
-
-async def __retrieve_list_of_repositories() -> List[str]:
-    result_json = await __registry_request('_catalog')
-    result_json = result_json['repositories']
-    _logger.debug("retrieved list of repos: %s", result_json)
-    return result_json
-
-async def __get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
-    image_tags = {}
-    label_data = await __registry_request(repo_key + '/manifests/' + repo_tag)
-    labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-    if labels:
-        for key in labels.keys():
-            if key.startswith("io.simcore."):
-                try:
-                    label_data = json.loads(labels[key])
-                    for label_key in label_data.keys():
-                        image_tags[label_key] = label_data[label_key]
-                except json.decoder.JSONDecodeError:
-                    logging.exception("Error while decoding json formatted data from %s:%s", repo_key, repo_tag)
-                    # silently skip this repo
-                    return {}
-
-    return image_tags
-
-async def __get_repo_details(repo: str) -> List[Dict]:
-    #pylint: disable=too-many-nested-blocks
-    current_repo = []
-    if "/comp/" in repo or "/dynamic/" in repo:
-        # get list of repo versions
-        im_data = await __registry_request(repo + '/tags/list')
-        tags = im_data['tags']
-        if tags:
-            for tag in tags:
-                image_tags = await __get_repo_version_details(repo, tag)
-                if image_tags:
-                    current_repo.append(image_tags)
-
-    return current_repo
-
-async def __list_services(service_prefix: str) -> List[List[Dict]]:
-    _logger.debug("getting list of computational services")
-    list_all_repos = await __retrieve_list_of_repositories()
-    # get the services repos
-    list_of_specific_repos = [repo for repo in list_all_repos if str(repo).startswith(service_prefix)]
-    _logger.debug("retrieved list of computational repos : %s", list_of_specific_repos)
-    repositories = []
-    # or each repo get all tags details
-    for repo in list_of_specific_repos:
-        details = await __get_repo_details(repo)
-        for repo_detail in details:
-            repositories.append(repo_detail)
-
-    return repositories

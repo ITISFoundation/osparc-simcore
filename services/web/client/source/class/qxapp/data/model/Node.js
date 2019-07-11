@@ -39,12 +39,13 @@
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
 
   /**
     * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
-    * @param key {String} key of the service represented by the node (not needed for Containers)
-    * @param version {String} version of the service represented by the node (not needed for Containers)
-    * @param uuid {String} uuid of the service represented by the node (not needed fpr new Nodes)
+    * @param key {String} key of the service represented by the node
+    * @param version {String} version of the service represented by the node
+    * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
   construct: function(workbench, key, version, uuid) {
     this.setWorkbench(workbench);
@@ -58,7 +59,9 @@ qx.Class.define("qxapp.data.model.Node", {
     this.__outputs = {};
 
     this.set({
-      nodeId: uuid || qxapp.utils.Utils.uuidv4()
+      nodeId: uuid || qxapp.utils.Utils.uuidv4(),
+      key,
+      version
     });
 
     if (key && version) {
@@ -161,12 +164,14 @@ qx.Class.define("qxapp.data.model.Node", {
 
     serviceUrl: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeServiceUrl"
     },
 
     iFrame: {
       check: "qxapp.component.widget.PersistentIframe",
-      init: null
+      init: null,
+      nullable: true
     },
 
     restartIFrameButton: {
@@ -195,6 +200,20 @@ qx.Class.define("qxapp.data.model.Node", {
   events: {
     "updatePipeline": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
+  },
+
+  statics: {
+    isDynamic: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "dynamic");
+    },
+
+    isComputational: function(metaData) {
+      return (metaData && metaData.type && metaData.type === "computational");
+    },
+
+    isRealService: function(metaData) {
+      return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
+    }
   },
 
   members: {
@@ -241,19 +260,15 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isDynamic: function() {
-      const metaData = this.getMetaData();
-      if (metaData && metaData.type && metaData.type === "dynamic") {
-        return true;
-      }
-      return false;
+      return qxapp.data.model.Node.isDynamic(this.getMetaData());
     },
 
     isComputational: function() {
-      const metaData = this.getMetaData();
-      if (metaData && metaData.type && metaData.type === "computational") {
-        return true;
-      }
-      return false;
+      return qxapp.data.model.Node.isComputational(this.getMetaData());
+    },
+
+    isRealService: function() {
+      return qxapp.data.model.Node.isRealService(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -451,7 +466,7 @@ qx.Class.define("qxapp.data.model.Node", {
      * Add settings widget with those inputs that can be represented in a form
      *
      */
-    __addSetttings: function(inputs) {
+    __addSettings: function(inputs) {
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
@@ -494,7 +509,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSetttings(filteredInputs);
+      this.__addSettings(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
@@ -523,7 +538,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     // post edge creation routine
     edgeAdded: function(edge) {
-      if (this.isInKey("dash-plot")) {
+      if (this.isInKey("multi-plot")) {
         const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
@@ -639,35 +654,34 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     retrieveInputs: function() {
-      if (this.isDynamic()) {
+      if (this.isDynamic() && this.isRealService()) {
         if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
           return;
         }
-        let urlUpdate = this.getServiceUrl() + "/retrieve";
-        urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-        let updReq = new qx.io.request.Xhr();
-        updReq.set({
-          url: urlUpdate,
-          method: "GET"
-        });
-        updReq.send();
+        const srvUrl = this.getServiceUrl();
+        if (srvUrl) {
+          let urlUpdate = srvUrl + "/retrieve";
+          urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+          let updReq = new qx.io.request.Xhr();
+          updReq.set({
+            url: urlUpdate,
+            method: "GET"
+          });
+          updReq.send();
+        }
       }
     },
 
     startInteractiveNode: function() {
-      if (this.isDynamic()) {
-        let retrieveBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/spinner/32"
-        });
+      if (this.isDynamic() && this.isRealService()) {
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
         retrieveBtn.setEnabled(false);
         this.setRetrieveIFrameButton(retrieveBtn);
 
-        let restartBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/redo-alt/32"
-        });
+        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);
@@ -690,23 +704,7 @@ qx.Class.define("qxapp.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      const interval = 50;
-      let increment = true;
-      let progressTimer = new qx.event.Timer(interval);
-      progressTimer.addListener("interval", () => {
-        if (this.getServiceUrl() === null) {
-          const newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
-          this.setProgress(newProgress);
-          if (newProgress === 100) {
-            increment = false;
-          } else if (newProgress === 0) {
-            increment = true;
-          }
-        } else {
-          progressTimer.stop();
-        }
-      }, this);
-      progressTimer.start();
+      this.setProgress(0);
 
       const prjId = this.getWorkbench().getStudy()
         .getUuid();
@@ -731,7 +729,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        progressTimer.stop();
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -740,7 +737,6 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: failMsg
         };
         this.fireDataEvent("showInLogger", failMsgData);
-        progressTimer.stop();
       }, this);
       request.send();
     },
@@ -773,8 +769,6 @@ qx.Class.define("qxapp.data.model.Node", {
         // FIXME: this is temporary until the reverse proxy works for these services
         if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
           srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
-        } else if (this.getKey().includes("3d-viewer")) {
-          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
         }
 
         this.__serviceReadyIn(srvUrl);
@@ -804,7 +798,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__stopInteractiveNode();
+      this.stopInteractiveService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -816,12 +810,19 @@ qx.Class.define("qxapp.data.model.Node", {
       }
     },
 
-    __stopInteractiveNode: function() {
-      if (this.isDynamic()) {
-        let url = "/running_interactive_services";
-        let query = "/"+encodeURIComponent(this.getNodeId());
-        let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
-        request.send();
+    removeIFrame: function() {
+      let iFrame = this.getIFrame();
+      if (iFrame) {
+        iFrame.destroy();
+        this.setIFrame(null);
+      }
+    },
+
+    stopInteractiveService: function() {
+      if (this.isDynamic() && this.isRealService()) {
+        const store = qxapp.data.Store.getInstance();
+        store.stopInteractiveService(this.getNodeId());
+        this.removeIFrame();
       }
     },
 

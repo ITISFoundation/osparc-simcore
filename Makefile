@@ -37,9 +37,8 @@ PY_FILES := $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*web/server*"))
 TEMPCOMPOSE := $(shell mktemp)
 
-SERVICES_LIST := apihub director sidecar storage webserver
-CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
-DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
+SERVICES_LIST := apihub director sidecar storage webserver maintenance
+CACHED_SERVICES_LIST := apihub director sidecar storage webserver webclient
 CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
@@ -83,7 +82,13 @@ endif
 .PHONY: build
 # target: build: – Builds all core service images.
 build: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST};
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST}
+
+.PHONY: rebuild
+# target: build: – Builds all core service images.
+rebuild: .env .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache --parallel ${SERVICES_LIST}
+
 
 .PHONY: build-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development.
@@ -130,12 +135,16 @@ up-devel: up-swarm-devel
 
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
+	${DOCKER_COMPOSE} -f services/docker-compose.yml \
+										-f services/docker-compose-tools.yml \
+										config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml \
+										-f services/docker-compose-tools.yml \
+										config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 .PHONY: up-webclient-devel
@@ -158,44 +167,18 @@ down: down-swarm
 down-swarm:
 	${DOCKER} swarm leave -f
 
-
-.PHONY: build-dynamic-services push-dynamic-services
-# target: build-dynamic-services: – Builds all dynamic service images (i.e. non-core services)
-build-dynamic-services:
-ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
-endif
-ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
-endif
-	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
-		cd $$i && ${MAKE} build; \
-	done
-
-# target: push-dynamic-services: – Builds images from dynamic services (i.e. non-core services) into registry
-push-dynamic-services:
-ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
-endif
-ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
-endif
-	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
-		cd $$i && ${MAKE} push_service_images; \
-	done
-
-
 ## -------------------------------
 # Cache
 
 .PHONY: pull-cache
-pull-cache:
+pull-cache: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
+	# WARNING: first all except webserver and then webserver
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient maintenance
 	${DOCKER} tag ${DOCKER_REGISTRY}/webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
@@ -229,15 +212,18 @@ endif
 
 # target: push – Pushes images into a registry
 push:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml \
+										push ${SERVICES_LIST}
 
 # target: pull – Pulls images from a registry
-pull:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull ${SERVICES_LIST}
+pull: .env
+	${DOCKER_COMPOSE} -f services/docker-compose.yml \
+					 					pull ${SERVICES_LIST}
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
+	${DOCKER_COMPOSE} -f services/docker-compose.yml \
+										config > $(output_file)
 
 ## -------------------------------
 # Tools
@@ -300,12 +286,6 @@ setup-check: .env .vscode/settings.json
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
 	.venv/bin/pip3 install pylint autopep8 virtualenv pip-tools
 	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
-
-.venv27: .venv
-# target: .venv27 – Creates a python2.7 virtual environment with dev tools
-	@python2 --version
-	.venv/bin/virtualenv --python=python2 .venv27
-	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/Scripts/activate.bat' (WIN)"
 
 
 ## -------------------------------

@@ -20,7 +20,7 @@
 qx.Class.define("qxapp.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(study, isNew) {
+  construct: function(study) {
     this.base(arguments, "horizontal");
 
     qxapp.utils.UuidToName.getInstance().setStudy(study);
@@ -49,11 +49,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     this.initDefault();
     this.connectEvents();
 
-    if (isNew) {
-      this.createStudyDocument();
-    } else {
-      this.updateStudyDocument();
-    }
     this.__startAutoSaveTimer();
     this.__attachEventHandlers();
   },
@@ -77,7 +72,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __sidePanel: null,
     __scrollContainer: null,
     __workbenchUI: null,
-    __treeView: null,
+    __nodesTree: null,
     __extraView: null,
     __loggerView: null,
     __nodeView: null,
@@ -94,7 +89,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const treeView = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -104,10 +99,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
 
-      const extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
-        collapsed: true
-      }), 1);
+      const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
       const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
@@ -153,16 +146,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", this.startPipeline, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.updatePipeline, this);
+      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
-        this.updatePipeline(node);
+        this.__updatePipeline(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -173,7 +166,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
 
       [
-        this.__treeView,
+        this.__nodesTree,
         this.__workbenchUI
       ].forEach(wb => {
         wb.addListener("nodeDoubleClicked", e => {
@@ -183,7 +176,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__treeView;
+      const treeView = this.__nodesTree;
       treeView.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
@@ -197,17 +190,41 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {
       if (!nodeId) {
-        this.__loggerView.nodeSelected();
+        this.__loggerView.setCurrentNodeId();
         return;
       }
       if (this.__nodeView) {
         this.__nodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
-      let widget = this.__getWidgetForNode(nodeId);
-      this.showInMainView(widget, nodeId);
+      const widget = this.__getWidgetForNode(nodeId);
+      const workbench = this.getStudy().getWorkbench();
+      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
+        // open file picker in window
+        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+          layout: new qx.ui.layout.Grow(),
+          contentPadding: 0,
+          width: 570,
+          height: 450,
+          appearance: "service-window",
+          showMinimize: false,
+          modal: true
+        });
+        const showParentWorkbench = () => {
+          const node = widget.getNode();
+          this.nodeSelected(node.getParentNodeId() || "root");
+        };
+        filePicker.add(widget);
+        qx.core.Init.getApplication().getRoot().add(filePicker);
+        filePicker.show();
+        filePicker.center();
+
+        widget.addListener("finished", () => filePicker.close(), this);
+        filePicker.addListener("close", () => showParentWorkbench());
+      } else {
+        this.showInMainView(widget, nodeId);
+      }
       if (widget === this.__workbenchUI) {
-        const workbench = this.getStudy().getWorkbench();
         if (nodeId === "root") {
           this.__workbenchUI.loadModel(workbench);
         } else {
@@ -216,10 +233,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__switchExtraView(nodeId);
-
       this.__treeView.nodeSelected(nodeId, openNodeAndParents);
-      this.__loggerView.nodeSelected(nodeId);
+      this.__loggerView.setCurrentNodeId(nodeId);
     },
 
     __getWidgetForNode: function(nodeId) {
@@ -232,71 +247,29 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
           if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
-            if (node.isInKey("dash-plot")) {
+            if (node.isInKey("multi-plot")) {
               widget = new qxapp.component.widget.DashGrid(node);
             }
           }
           if (widget === null) {
             widget = this.__workbenchUI;
           }
+        } else if (node.isInKey("file-picker")) {
+          widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
         } else {
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
-          if (node.isInKey("file-picker")) {
-            widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
-            widget.addListener("finished", function() {
-              let loadNodeId = "root";
-              const filePicker = widget.getNode();
-              if (filePicker.isPropertyInitialized("parentNodeId")) {
-                loadNodeId = filePicker.getParentNodeId();
-              }
-              this.nodeSelected(loadNodeId);
-            }, this);
-          } else {
-            widget = this.__nodeView;
-          }
+          widget = this.__nodeView;
         }
       }
       return widget;
-    },
-
-    __switchExtraView: function(nodeId) {
-      // Show screenshots in the ExtraView
-      if (nodeId === "root") {
-        this.showScreenshotInExtraView("workbench");
-      } else {
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        if (node.isContainer()) {
-          if (node.isInKey("dash-plot")) {
-            this.showScreenshotInExtraView("dash-plot");
-          } else {
-            this.showScreenshotInExtraView("container");
-          }
-        } else if (node.isInKey("file-picker")) {
-          this.showScreenshotInExtraView("file-picker");
-        } else if (node.isInKey("modeler")) {
-          this.showScreenshotInExtraView("modeler");
-        } else if (node.isInKey("3d-viewer")) {
-          this.showScreenshotInExtraView("postpro");
-        } else if (node.isInKey("viewer")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("jupyter")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("Grid")) {
-          this.showScreenshotInExtraView("grid");
-        } else if (node.isInKey("Voxel")) {
-          this.showScreenshotInExtraView("voxels");
-        } else {
-          this.showScreenshotInExtraView("form");
-        }
-      }
     },
 
     __addNode: function() {
       if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
         return;
       }
-      this.__workbenchUI.openServicesCatalogue();
+      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {
@@ -326,8 +299,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __workbenchChanged: function() {
-      this.__treeView.populateTree();
-      this.__treeView.nodeSelected(this.__currentNodeId);
+      this.__nodesTree.populateTree();
+      this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
     showInMainView: function(widget, nodeId) {
@@ -362,27 +335,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
-    showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget).set({
-        collapsed: true
-      }), 1);
-    },
-
-    showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
-        scale: true,
-        allowShrinkX: true,
-        allowShrinkY: true
-      });
-      const container = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
-        height: 300
-      });
-      container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container).set({
-        collapsed: true
-      }), 1);
-    },
-
     getLogger: function() {
       return this.__loggerView;
     },
@@ -405,7 +357,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    updatePipeline: function(node) {
+    __updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -440,14 +392,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    startPipeline: function() {
+    __startPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
         return false;
       }
 
+      return this.updateStudyDocument(null, this.__doStartPipeline);
+    },
+
+    __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
-      let socket = qxapp.wrapper.WebSocket.getInstance();
+      const socket = qxapp.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -476,17 +432,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
-      let req = new qxapp.io.request.ApiRequest(url, "POST");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("starting pipeline: " + url);
-      console.log(data);
-
+      const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
+      const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
@@ -500,7 +447,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return true;
     },
 
-    stopPipeline: function() {
+    __stopPipeline: function() {
       if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
         return false;
       }
@@ -572,20 +519,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    createStudyDocument: function(newObj) {
-      if (newObj === undefined) {
-        newObj = this.getStudy().serializeStudy();
-      }
-      let resources = this.__studyResources.projects;
-      resources.addListenerOnce("postSuccess", ev => {
-        console.log("Study replaced");
-        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-      }, this);
-      resources.post(null, newObj);
-    },
-
-    updateStudyDocument: function(newObj) {
-      if (newObj === undefined) {
+    updateStudyDocument: function(newObj, cb) {
+      if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
       const prjUuid = this.getStudy().getUuid();
@@ -594,10 +529,17 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        if (cb) {
+          cb.call(this);
+        }
       }, this);
       resource.put({
         "project_id": prjUuid
       }, newObj);
+    },
+
+    closeStudy: function() {
+      this.getStudy().closeStudy();
     },
 
     __attachEventHandlers: function() {

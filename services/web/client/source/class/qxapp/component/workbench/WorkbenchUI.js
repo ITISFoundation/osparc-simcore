@@ -88,6 +88,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
+    this.__startHint = new qx.ui.basic.Label(this.tr("Double click on this area to start")).set({
+      font: "workbench-start-hint",
+      textColor: "workbench-start-hint",
+      visibility: "excluded"
+    });
+    this.__desktopCanvas.add(this.__startHint);
+
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -156,7 +163,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        this.openServicesCatalogue();
+        this.openServiceCatalog();
       }, this);
       return plusButton;
     },
@@ -195,13 +202,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       return unlinkBtn;
     },
 
-    openServicesCatalogue: function() {
-      let srvCat = this.__createServicesCatalogue();
+    openServiceCatalog: function() {
+      let srvCat = this.__createServiceCatalog();
       srvCat.open();
     },
 
-    __createServicesCatalogue: function(pos) {
-      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+    __createServiceCatalog: function(pos) {
+      let srvCat = new qxapp.component.workbench.ServiceCatalog();
       if (pos) {
         srvCat.moveTo(pos.x, pos.y);
       } else {
@@ -214,12 +221,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         srvCat.moveTo(workbenchUICenter.x - 200, workbenchUICenter.y - 200);
       }
       srvCat.addListener("addService", ev => {
-        this.__addServiceFromCatalogue(ev, pos);
+        this.__addServiceFromCatalog(ev, pos);
       }, this);
       return srvCat;
     },
 
-    __addServiceFromCatalogue: function(e, pos) {
+    __addServiceFromCatalog: function(e, pos) {
       const data = e.getData();
       const service = data.service;
       let nodeAId = data.contextNodeId;
@@ -291,6 +298,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
 
       qx.ui.core.queue.Layout.flush();
+
+      this.__updateHint();
     },
 
     __createNodeUI: function(nodeId) {
@@ -448,7 +457,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
             x: posX,
             y: posY
           };
-          let srvCat = this.__createServicesCatalogue(pos);
+          let srvCat = this.__createServiceCatalog(pos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -719,6 +728,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
       }
+      this.__updateHint();
     },
 
     __clearAllNodes: function() {
@@ -873,9 +883,27 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
           x: x,
           y: y
         };
-        let srvCat = this.__createServicesCatalogue(pos);
+        let srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
       }, this);
+
+      this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
+    },
+
+    __updateHint: function() {
+      const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
+      this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
+      if (isEmptyWorkspace) {
+        const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
+        const {
+          height,
+          width
+        } = this.__desktopCanvas.getBounds();
+        this.__startHint.setLayoutProperties({
+          top: Math.round((height - hintBounds.height) / 2),
+          left: Math.round((width - hintBounds.width) / 2)
+        });
+      }
     }
   }
 });

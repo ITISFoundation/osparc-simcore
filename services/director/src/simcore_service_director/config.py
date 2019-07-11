@@ -11,12 +11,16 @@ logging.basicConfig(
 
 API_VERSION = "v0"
 API_ROOT = "oas3"
+REGISTRY_CACHING = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
+REGISTRY_CACHING_TTL = os.environ.get("REGISTRY_CACHING_TTL", 15*60)
+APP_REGISTRY_CACHE_DATA_KEY = __name__ + "_registry_cache_data"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True", True]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL = os.environ.get("REGISTRY_URL", "")
 REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True) in ["true", "True", True]
+
 EXTRA_HOSTS_SUFFIX = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
@@ -30,6 +34,10 @@ SERVICES_DEFAULT_ENVS = {
 
 # some services need to know the published host to be functional (paraview)
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
+# used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
     "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))
+# used to find the right network name
 SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME")
+# useful when developing with an alternative registry namespace
+SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")

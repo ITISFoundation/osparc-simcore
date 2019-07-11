@@ -5,6 +5,7 @@ main:
   log_level: DEBUG
   port: 8080
   testing: true
+  studies_access_enabled: True
 director:
   host: director
   port: 8001
@@ -53,3 +54,5 @@ rest:
     - http://localhost:9081
 projects:
   location: http://localhost:8043/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+session:
+  secret_key: "TODO: Replace with a key of at least length 32"

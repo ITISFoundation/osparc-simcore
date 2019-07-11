@@ -51,7 +51,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
     },
 
     "window-small-cap": {
-      include: "window",
+      include: "service-window",
       style: {
         width: 0,
         radius: 3,
@@ -61,9 +61,34 @@ qx.Theme.define("qxapp.theme.Decoration", {
       }
     },
 
+    "window-small-cap-maximized": {
+      include: "service-window-maximized",
+      style: {
+        width: 0,
+        transitionProperty: "opacity",
+        transitionDuration: "0.05s",
+        transitionTimingFunction: "ease-in"
+      }
+    },
+
     "workbench-small-cap-captionbar": {
       style: {
         width: 0
+      }
+    },
+
+    "service-window": {
+      include: "window",
+      style: {
+        radius: 3,
+        width: 1
+      }
+    },
+
+    "service-window-maximized": {
+      include: "window",
+      style: {
+        width: 1
       }
     },
 
@@ -79,7 +104,6 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
     "service-browser": {
       style: {
-        width: 1,
         color: "material-button-background"
       }
     },
@@ -104,6 +128,24 @@ qx.Theme.define("qxapp.theme.Decoration", {
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "no-border": {
+      style: {
+        width: 0
+      }
+    },
+
+    "hint": {
+      style: {
+        radius: 3
+      }
+    },
+
+    "chip": {
+      style: {
+        radius: 9
       }
     }
   }

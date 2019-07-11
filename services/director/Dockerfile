@@ -21,14 +21,14 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
-# TODO: update environs
-ENV REGISTRY_AUTH = ''
-ENV REGISTRY_USER = ''
-ENV REGISTRY_PW = ''
-ENV REGISTRY_URL = ''
-ENV PUBLISHED_HOST_NAME=''
-ENV SWARM_STACK_NAME = ''
-ENV EXTRA_HOSTS_SUFFIX = 'undefined'
+ENV REGISTRY_AUTH = '' \
+    REGISTRY_USER = '' \
+    REGISTRY_PW = '' \
+    REGISTRY_URL = '' \
+    REGISTRY_VERSION = 'v2' \
+    PUBLISHED_HOST_NAME='' \
+    SWARM_STACK_NAME = '' \
+    EXTRA_HOSTS_SUFFIX = 'undefined'
 
 
 EXPOSE 8080

@@ -1,21 +1,20 @@
 import logging
 
-import attr
 import passwordmeter
 from aiohttp import web
 from yarl import URL
 
-from servicelib.rest_models import LogMessageType
 from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
-from ..security import check_password, encrypt_password, forget, remember
+from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .config import get_login_config
+from .confirmation import (is_confirmation_allowed, make_confirmation_link,
+                            validate_confirmation_code)
 from .decorators import RQT_USERID_KEY, login_required
-from .storage import AsyncpgStorage
-from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
-                    is_confirmation_expired, make_confirmation_link,
+from .registration import check_invitation, check_registration
+from .utils import (common_themed, flash_response, get_client_ip,
                     render_and_send_mail, themed)
 
  # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
@@ -23,13 +22,20 @@ from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
 log = logging.getLogger(__name__)
 
 
-# FIXME: with asyncpg need to user NAMES
-CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name
-                                for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
-ANONYMOUS, USER, TESTER, MODERATOR, ADMIN = [getattr(UserRole, att).name
-                                for att in 'ANONYMOUS USER TESTER MODERATOR ADMIN'.split()]
-REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = [getattr(ConfirmationAction, att).name
-                                for att in 'REGISTRATION RESET_PASSWORD CHANGE_EMAIL'.split()]
+def to_names(enum_cls, names):
+    """ ensures names are in enum be retrieving each of them """
+    # FIXME: with asyncpg need to user NAMES
+    return [getattr(enum_cls, att).name for att in names.split()]
+
+
+CONFIRMATION_PENDING, ACTIVE, BANNED = to_names(UserStatus, \
+    'CONFIRMATION_PENDING ACTIVE BANNED')
+
+ANONYMOUS, GUEST, USER, TESTER= to_names(UserRole, \
+    'ANONYMOUS GUEST USER TESTER')
+
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(ConfirmationAction, \
+    'REGISTRATION RESET_PASSWORD CHANGE_EMAIL')
 
 
 async def register(request: web.Request):
@@ -95,6 +101,8 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
+    # TODO: ANONYMOUS user cannot login!!
+
     db = get_storage(request.app)
     email = body.email
     password = body.password
@@ -104,12 +112,12 @@ async def login(request: web.Request):
         raise web.HTTPUnauthorized(reason=cfg.MSG_UNKNOWN_EMAIL,
                 content_type='application/json')
 
-    if not check_password(password, user['password_hash']):
-        raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
+    if user['status'] == BANNED or user['role'] == ANONYMOUS:
+        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
                 content_type='application/json')
 
-    if user['status'] == BANNED:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
+    if not check_password(password, user['password_hash']):
+        raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json')
 
     if user['status'] == CONFIRMATION_PENDING:
@@ -315,6 +323,7 @@ async def email_confirmation(request: web.Request):
             await db.update_user(user, {'status': ACTIVE})
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
+            redirect_url = redirect_url.with_fragment("?registered=true")
             #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
         elif action == CHANGE_EMAIL:
@@ -400,62 +409,3 @@ async def check_password_strength(request: web.Request):
     if improvements:
         data['improvements'] = improvements
     return data
-
-
-
-# helpers -----------------------------------------------------------------
-async def check_invitation(invitation:str, db):
-    confirmation = await validate_confirmation_code(invitation, db)
-    if confirmation is None:
-        raise web.HTTPForbidden(reason="Request requires invitation or invitation expired")
-
-
-async def validate_confirmation_code(code, db):
-    confirmation = await db.get_confirmation({'code': code})
-    if confirmation and is_confirmation_expired(confirmation):
-        await db.delete_confirmation(confirmation)
-        confirmation = None
-    return confirmation
-
-
-def flash_response(msg: str, level: str="INFO"):
-    response = web.json_response(data={
-        'data': attr.asdict(LogMessageType(msg, level)),
-        'error': None
-    })
-    return response
-
-
-async def check_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
-    # email : required & formats
-    # password: required & secure[min length, ...]
-
-    # If the email field is missing, return a 400 - HTTPBadRequest
-    if email is None or password is None:
-        raise web.HTTPBadRequest(reason="Email and password required",
-                                    content_type='application/json')
-
-    if confirm and password != confirm:
-        raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
-                               content_type='application/json')
-
-    # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity
-    # TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
-    # TODO: use passwordmeter to enforce good passwords, but first create helper in front-end
-
-    user = await db.get_user({'email': email})
-    if user:
-        # Resets pending confirmation if re-registers?
-        if user['status'] == CONFIRMATION_PENDING:
-            _confirmation = await db.get_confirmation({'user': user, 'action': REGISTRATION})
-
-            if is_confirmation_expired(_confirmation):
-                await db.delete_confirmation(_confirmation)
-                await db.delete_user(user)
-                return
-
-        # If the email is already taken, return a 409 - HTTPConflict
-        raise web.HTTPConflict(reason=cfg.MSG_EMAIL_EXISTS,
-                               content_type='application/json')
-
-    log.debug("Registration data validated")

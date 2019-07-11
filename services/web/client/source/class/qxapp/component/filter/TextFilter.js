@@ -49,6 +49,9 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
   members: {
     __textField: null,
 
+    /**
+     * Function that resets the field and dispatches the update.
+     */
     reset: function() {
       this.__textField.resetValue();
       this.__textField.fireDataEvent("input", "");

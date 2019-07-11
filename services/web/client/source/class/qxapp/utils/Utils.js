@@ -51,27 +51,21 @@ qx.Class.define("qxapp.utils.Utils", {
 
     compareVersionNumbers: function(v1, v2) {
       // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
-      let v1parts = v1.split(".");
-      let v2parts = v2.split(".");
+      // - a number < 0 if a < b
+      // - a number > 0 if a > b
+      // - 0 if a = b
+      const regExStrip0 = /(\.0+)+$/;
+      const segmentsA = v1.replace(regExStrip0, "").split(".");
+      const segmentsB = v2.replace(regExStrip0, "").split(".");
+      const l = Math.min(segmentsA.length, segmentsB.length);
 
-      for (let i = 0; i < v1parts.length; ++i) {
-        if (v2parts.length === i) {
-          return 1;
+      for (let i = 0; i < l; i++) {
+        const diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+        if (diff) {
+          return diff;
         }
-        if (v1parts[i] === v2parts[i]) {
-          continue;
-        }
-        if (v1parts[i] > v2parts[i]) {
-          return 1;
-        }
-        return -1;
       }
-
-      if (v1parts.length != v2parts.length) {
-        return -1;
-      }
-
-      return 0;
+      return segmentsA.length - segmentsB.length;
     },
 
     // deep clone of nested objects
@@ -319,6 +313,31 @@ qx.Class.define("qxapp.utils.Utils", {
         }
       }
       return parsedFragment;
+    },
+
+    getThumbnailFromUuid: uuid => {
+      const lastCharacters = uuid.substr(uuid.length-10);
+      const aNumber = parseInt(lastCharacters, 16);
+      const thumbnailId = aNumber%25;
+      return "qxapp/img"+ thumbnailId +".jpg";
+    },
+
+    getThumbnailFromString: str => "qxapp/img" + Math.abs(this.self().stringHash(str)%25) + ".jpg",
+
+    stringHash: str => {
+      // Based on https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+      let hash = 0;
+      let i;
+      let chr;
+      if (str.length === 0) {
+        return hash;
+      }
+      for (i=0; i<str.length; i++) {
+        chr = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return hash;
     }
   }
 });

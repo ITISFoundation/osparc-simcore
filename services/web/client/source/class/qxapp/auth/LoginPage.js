@@ -32,7 +32,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
     this.base(arguments);
 
     // Layout guarantees it gets centered in parent's page
-    let layout = new qx.ui.layout.Grid();
+    const layout = new qx.ui.layout.Grid();
     layout.setRowFlex(0, 1);
     layout.setColumnFlex(0, 1);
     this._setLayout(layout);
@@ -72,6 +72,8 @@ qx.Class.define("qxapp.auth.LoginPage", {
       } else if (urlFragment.nav[0] === "reset-password") {
         pages.setSelection([reset]);
       }
+    } else if (urlFragment.params && urlFragment.params.registered) {
+      qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
     }
 
     // Transitions between pages

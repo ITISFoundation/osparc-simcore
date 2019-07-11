@@ -36,7 +36,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         let style = {
           decorator: null,
-          padding: [0, 0],
+          padding: 0,
           backgroundColor: "transparent"
         };
         if (states.hovered) {
@@ -60,7 +60,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           backgroundColor: "background-selected-dark",
-          decorator: "window-small-cap"
+          decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
     },
@@ -131,33 +131,45 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "service-window": {
       include: "window",
       alias: "window",
-      style: (state, styles) => {
-        styles.decorator = "window-small-cap";
-        return styles;
-      }
+      style: state => ({
+        decorator: state.maximized ? "service-window-maximized" : "service-window"
+      })
     },
     "service-window/captionbar": {
       include: "window/captionbar",
-      style: (state, styles) => {
-        styles.backgroundColor = "material-button-background";
-        styles.decorator = "workbench-small-cap-captionbar";
-        return styles;
-      }
+      style: state => ({
+        backgroundColor: "material-button-background",
+        decorator: "workbench-small-cap-captionbar"
+      })
+    },
+    "info-service-window": {
+      include: "service-window",
+      alias: "service-window",
+      style: state => ({
+        maxHeight: state.maximized ? null : 500
+      })
     },
     /*
     ---------------------------------------------------------------------------
       PanelView
     ---------------------------------------------------------------------------
     */
+    "panelview": {
+      style: state => ({
+        decorator: "panelview"
+      })
+    },
+    "panelview/title": {
+      style: state => ({
+        font: "title-14"
+      })
+    },
     "panelview-titlebar": {
       style: state => ({
         height: 24,
-        padding: [0, 5]
-      })
-    },
-    "panelview-titlebar-label": {
-      style: state => ({
-        marginTop: 4
+        padding: [0, 5],
+        alignY: "middle",
+        cursor: "pointer"
       })
     },
     "panelview-content": {
@@ -209,6 +221,14 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "toolbar-progressbar": {
+      include: "progressbar",
+      alias: "progressbar",
+      style: () => ({
+        margin: [7, 10]
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       SidePanel
@@ -250,10 +270,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "jumbo": {
       include: "material-button",
       alias: "material-button",
-      style: (state, styles) => {
-        styles.padding = [7, 8, 5, 8];
-        return styles;
-      }
+      style: state => ({
+        padding: [7, 8, 5, 8]
+      })
     },
 
     /*
@@ -275,16 +294,11 @@ qx.Theme.define("qxapp.theme.Appearance", {
     */
     "link-button": {
       include: "material-button",
-      style: (state, style) => {
-        const ret = Object.assign({}, style);
-        ret.decorator = "link-button";
-        ret.backgroundColor = "transparent";
-        ret.textColor = "text-darker";
-        if (state.hovered) {
-          ret.textColor = "text";
-        }
-        return ret;
-      }
+      style: state => ({
+        decorator: "link-button",
+        backgroundColor: "transparent",
+        textColor: state.hovered ? "text" : "text-darker"
+      })
     },
 
     /*
@@ -302,6 +316,71 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "flash/badge": {
       style: state => ({
         decorator: "flash-badge"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      IFrame
+    ---------------------------------------------------------------------------
+    */
+    "iframe": {},
+
+    /*
+    ---------------------------------------------------------------------------
+      GroupBox
+    ---------------------------------------------------------------------------
+    */
+    "settings-groupbox": {
+      include: "groupbox",
+      alias: "groupbox"
+    },
+    "settings-groupbox/frame": {
+      include: "groupbox/frame",
+      style: state => ({
+        decorator: "no-border"
+      })
+    },
+    "settings-groupbox/legend": {
+      alias: "atom",
+      include: "groupbox/legend",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Hints
+    ---------------------------------------------------------------------------
+    */
+    "hint": {
+      style: state => ({
+        backgroundColor: "background-main-lighter+",
+        decorator: "hint",
+        padding: 5
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Chip
+    ---------------------------------------------------------------------------
+    */
+    "chip": {
+      include: "atom",
+      alias: "atom",
+      style: state => ({
+        decorator: "chip",
+        backgroundColor: "background-main-lighter",
+        padding: [3, 5]
+      })
+    },
+
+    "chip/label": {
+      include: "atom/label",
+      style: state => ({
+        font: "text-10"
       })
     }
   }

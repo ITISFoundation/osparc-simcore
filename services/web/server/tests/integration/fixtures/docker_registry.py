@@ -7,12 +7,17 @@
 import docker
 import pytest
 import tenacity
+import time
 
 @pytest.fixture(scope="session")
 def docker_registry():
     # run the registry outside of the stack
     docker_client = docker.from_env()
-    container = docker_client.containers.run("registry:2", ports={"5000":"5000"}, restart_policy={"Name":"always"}, detach=True)
+    container = docker_client.containers.run("registry:2",
+        ports={"5000":"5000"},
+        restart_policy={"Name":"always"},
+        detach=True
+    )
     host = "127.0.0.1"
     port = 5000
     url = "{host}:{port}".format(host=host, port=port)
@@ -40,6 +45,9 @@ def docker_registry():
     yield url
 
     container.stop()
+
+    while docker_client.containers.list(filters={"name": container.name}):
+        time.sleep(1)
 
 @tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
 def _wait_till_registry_is_responsive(url):
