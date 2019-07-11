@@ -308,7 +308,7 @@ async def datcore_testbucket(loop, mock_files_factory):
 def dsm_fixture(s3_client, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
     dsm_fixture = DataStorageManager(
-        s3_client, postgres_engine, loop, pool, BUCKET_NAME)
+        s3_client, postgres_engine, loop, pool, BUCKET_NAME, False)
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")

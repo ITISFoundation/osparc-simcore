@@ -355,6 +355,7 @@ def test_fmd_build():
 async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
     dsm = dsm_fixture
     _id = "21"
+    dsm.has_project_db = True
     data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
 
     assert len(data) == 2
