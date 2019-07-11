@@ -144,7 +144,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         });
         this.add(this.__progressBar);
       } else if (this.getNode().isDynamic()) {
-        this.add(this.__createStatusContainer());
+        this.__addStatusIndicator();
       }
     },
 
@@ -252,7 +252,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     __createChipContainer: function() {
-      const chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3, "center")).set({
+      const chipContainer = this.__chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
         margin: [3, 4]
       });
       const category = qxapp.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
@@ -266,13 +266,9 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       return chipContainer;
     },
 
-    __createStatusContainer: function() {
+    __addStatusIndicator: function() {
       this.__status = new qxapp.component.service.NodeStatus(this.getNode());
-      const container = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3, "center")).set({
-        margin: [3, 4]
-      });
-      container.add(this.__status);
-      return container;
+      this.__chipContainer.add(this.__status);
     },
 
     // override qx.ui.window.Window "move" event listener

@@ -37,6 +37,10 @@
  * </pre>
  */
 
+/**
+ * @asset(canvg/canvg.min.js)
+ */
+
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
   include: qx.locale.MTranslation,
@@ -622,6 +626,18 @@ qx.Class.define("qxapp.data.model.Node", {
             arg = "/" + arg;
           }
           this.getIFrame().setSource(srvUrl + arg);
+        } else if (this.getKey().includes("raw-graphs")) {
+          this.getIFrame().setSource("http://localhost:4000");
+          // Listen to the postMessage from RawGraphs, posting a new graph
+          window.addEventListener("message", e => {
+            const {
+              id,
+              svg
+            } = e.data;
+            if (svg && id === "svgChange") {
+              this.__setThumbnailFromSvg(svg);
+            }
+          }, false);
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
@@ -857,6 +873,24 @@ qx.Class.define("qxapp.data.model.Node", {
       }
 
       return filteredNodeEntry;
+    },
+
+    __setThumbnailFromSvg: function(svg) {
+      const scriptLoader = new qx.util.DynamicScriptLoader("canvg/canvg.min.js");
+      scriptLoader.addListenerOnce("ready", e => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 200;
+        canvas.height = 100;
+        canvg(canvas, svg, {
+          scaleWidth: 200,
+          scaleHeight: 100,
+          ignoreDimensions: true
+        });
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL();
+        this.setThumbnail(img.outerHTML);
+      }, this);
+      scriptLoader.start();
     }
   }
 });
