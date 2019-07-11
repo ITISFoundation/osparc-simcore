@@ -66,7 +66,7 @@ class DatcoreClient(object):
         collections = []
         if len(parts) > 1:
             object_path = Path(*parts[1:])
-            collections = list(object_path.parent.parts)
+            collections = list(object_path.parts)
             collection_id = ""
             collection_id = _get_collection_id(dataset, collections, collection_id)
             collection = self.client.get(collection_id)

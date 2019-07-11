@@ -27,13 +27,13 @@ log = logging.getLogger(__name__)
 BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 @lru_cache()
-def compose_uuid(template_uuid, user_id) -> str:
+def compose_uuid(template_uuid, user_id, query="") -> str:
     """ Creates a new uuid composing a project's and user ids such that
         any template pre-assigned to a user
 
         Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
-    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id)) )
+    new_uuid = str( uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query)) )
     return new_uuid
 
 
@@ -108,7 +108,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     template_parameters = dict(request.query)
 
     # assign id to copy
-    project_uuid = compose_uuid(template_project["uuid"], user["id"])
+    project_uuid = compose_uuid(template_project["uuid"], user["id"], str(template_parameters))
 
     try:
         # Avoids multiple copies of the same template on each account
