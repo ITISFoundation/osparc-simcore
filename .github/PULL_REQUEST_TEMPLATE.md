@@ -10,6 +10,11 @@
 <!-- Please add #issues -->
 
 
+## How to test
+
+<!-- Please explain how this can be tested. Also state wether this PR needs a full rebuild, database changes, etc. -->
+
+
 ## Checklist
 
 - [ ] I think the code is well written

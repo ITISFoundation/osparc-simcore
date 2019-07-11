@@ -12,7 +12,7 @@ from typing import Dict
 
 from aiohttp import web
 
-from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
+from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI, DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.resources import resources
 
 fake_template_resources = ['data/'+name for name in resources.listdir('data')
@@ -44,9 +44,12 @@ async def create_project(app: web.Application, params: Dict=None, user_id=None, 
 
     db = app[APP_PROJECT_DBAPI]
 
-
     project_uuid = await db.add_project(project_data, user_id, force_project_uuid=force_uuid)
     assert project_uuid == project_data["uuid"]
+
+    for key in DB_EXCLUSIVE_COLUMNS:
+        project_data.pop(key, None)
+
     return project_data
 
 

@@ -75,6 +75,7 @@ def setup_sleepers(url):
     pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
     db_session.add(pipeline)
     db_session.flush()
+    # pylint: disable=no-member
     project_id = pipeline.project_id
 
     node_id_1 = "e609a68c-d743-4a12-9745-f31734d1b911"
@@ -83,29 +84,29 @@ def setup_sleepers(url):
     node_schema = {
         "inputs":{
             "in_1":{
-                "label": "Number of seconds to sleep", 
-                "description": "Number of seconds to sleep", 
+                "label": "Number of seconds to sleep",
+                "description": "Number of seconds to sleep",
                 "displayOrder":0,
                 "type": "data:*/*"
             },
             "in_2": {
-                "label": "Number of seconds to sleep", 
-                "description": "Number of seconds to sleep", 
+                "label": "Number of seconds to sleep",
+                "description": "Number of seconds to sleep",
                 "displayOrder":1,
-                "type": "integer", 
+                "type": "integer",
                 "defaultValue": 4
             }
         },
         "outputs":{
             "out_1":{
-                "label": "Number of seconds to sleep", 
-                "description": "Number of seconds to sleep", 
+                "label": "Number of seconds to sleep",
+                "description": "Number of seconds to sleep",
                 "displayOrder":0,
                 "type": "data:*/*"
             },
             "out_2": {
-                "label": "Number of seconds to sleep", 
-                "description": "Number of seconds to sleep", 
+                "label": "Number of seconds to sleep",
+                "description": "Number of seconds to sleep",
                 "displayOrder":1,
                 "type": "integer"
             }

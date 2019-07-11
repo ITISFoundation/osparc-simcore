@@ -83,7 +83,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)
     try:
-        await producer.stop_service(service_uuid)
+        await producer.stop_service(request.app, service_uuid)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:

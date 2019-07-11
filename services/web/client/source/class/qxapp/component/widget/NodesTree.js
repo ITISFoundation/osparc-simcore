@@ -100,7 +100,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     },
 
     __buildToolbar: function() {
-      const iconSize = 16;
+      const iconSize = 14;
       let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
       let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));

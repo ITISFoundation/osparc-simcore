@@ -142,20 +142,34 @@ qx.Theme.define("qxapp.theme.Appearance", {
         decorator: "workbench-small-cap-captionbar"
       })
     },
+    "info-service-window": {
+      include: "service-window",
+      alias: "service-window",
+      style: state => ({
+        maxHeight: state.maximized ? null : 500
+      })
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView
     ---------------------------------------------------------------------------
     */
+    "panelview": {
+      style: state => ({
+        decorator: "panelview"
+      })
+    },
+    "panelview/title": {
+      style: state => ({
+        font: "title-14"
+      })
+    },
     "panelview-titlebar": {
       style: state => ({
         height: 24,
-        padding: [0, 5]
-      })
-    },
-    "panelview-titlebar-label": {
-      style: state => ({
-        marginTop: 4
+        padding: [0, 5],
+        alignY: "middle",
+        cursor: "pointer"
       })
     },
     "panelview-content": {
@@ -256,10 +270,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "jumbo": {
       include: "material-button",
       alias: "material-button",
-      style: (state, styles) => {
-        styles.padding = [7, 8, 5, 8];
-        return styles;
-      }
+      style: state => ({
+        padding: [7, 8, 5, 8]
+      })
     },
 
     /*
@@ -303,6 +316,71 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "flash/badge": {
       style: state => ({
         decorator: "flash-badge"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      IFrame
+    ---------------------------------------------------------------------------
+    */
+    "iframe": {},
+
+    /*
+    ---------------------------------------------------------------------------
+      GroupBox
+    ---------------------------------------------------------------------------
+    */
+    "settings-groupbox": {
+      include: "groupbox",
+      alias: "groupbox"
+    },
+    "settings-groupbox/frame": {
+      include: "groupbox/frame",
+      style: state => ({
+        decorator: "no-border"
+      })
+    },
+    "settings-groupbox/legend": {
+      alias: "atom",
+      include: "groupbox/legend",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Hints
+    ---------------------------------------------------------------------------
+    */
+    "hint": {
+      style: state => ({
+        backgroundColor: "background-main-lighter+",
+        decorator: "hint",
+        padding: 5
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Chip
+    ---------------------------------------------------------------------------
+    */
+    "chip": {
+      include: "atom",
+      alias: "atom",
+      style: state => ({
+        decorator: "chip",
+        backgroundColor: "background-main-lighter",
+        padding: [3, 5]
+      })
+    },
+
+    "chip/label": {
+      include: "atom/label",
+      style: state => ({
+        font: "text-10"
       })
     }
   }

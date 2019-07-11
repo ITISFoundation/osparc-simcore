@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -6,12 +7,12 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
+import aiobotocore
 import aiofiles
 import aiohttp
 import attr
-import asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
@@ -19,15 +20,15 @@ from sqlalchemy.sql import and_
 from yarl import URL
 
 from s3wrapper.s3_client import S3Client
+from servicelib.aiopg_utils import DBAPIError
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
-                     file_meta_data)
+                     file_meta_data, projects, user_to_projects)
+from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
                        SIMCORE_S3_STR)
-
-from .s3 import get_config_s3
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -42,10 +43,8 @@ FileMetaDataVec = List[FileMetaData]
 
 async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
-    main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
-    python27_exec = Path(main_cfg["python2"])
 
     engine = app.get(APP_DB_ENGINE_KEY)
     loop = asyncio.get_event_loop()
@@ -57,7 +56,8 @@ async def _setup_dsm(app: web.Application):
     s3_cfg = get_config_s3(app)
     bucket_name = s3_cfg["bucket_name"]
 
-    dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool, bucket_name)
+    testing = main_cfg["testing"]
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing)
 
     app[APP_DSM_KEY] = dsm
 
@@ -108,11 +108,12 @@ class DataStorageManager:
             https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
     s3_client: S3Client
-    python27_exec: Path
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
+    has_project_db: bool
+
     datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
 
@@ -155,13 +156,15 @@ class DataStorageManager:
         api_token, api_secret = self._get_datcore_tokens(user_id)
         logger.info("token: %s, secret %s", api_token, api_secret)
         if api_token:
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             profile = await dcw.ping()
             if profile:
                 return True
         return False
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
@@ -183,10 +186,81 @@ class DataStorageManager:
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
                     data.append(d)
+
+            if self.has_project_db:
+                uuid_name_dict = {}
+                # now parse the project to search for node/project names
+                try:
+                    async with self.engine.acquire() as conn:
+                        joint_table = user_to_projects.join(projects)
+                        query = sa.select([projects]).select_from(joint_table)\
+                            .where(user_to_projects.c.user_id == user_id)
+
+                        async for row in conn.execute(query):
+                            proj_data = {key:value for key,value in row.items()}
+
+                            uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                            wb = proj_data['workbench']
+                            for node in wb.keys():
+                                uuid_name_dict[node] = wb[node]['label']
+                except DBAPIError as _err:
+                    logger.exception("Error querying database for project names")
+
+                if not uuid_name_dict:
+                    # there seems to be no project whatsoever for user_id
+                    return []
+
+                # only keep files from non-deleted project --> This needs to be fixed
+                clean_data = []
+                for d in data:
+                    if d.project_id in uuid_name_dict:
+                        d.project_name = uuid_name_dict[d.project_id]
+                        if d.node_id in uuid_name_dict:
+                            d.node_name = uuid_name_dict[d.node_id]
+
+                        d.raw_file_path = str(Path(d.project_id) / Path(d.node_id) / Path(d.file_name))
+                        d.display_file_path = d.raw_file_path
+                        if d.node_name and d.project_name:
+                            d.display_file_path = str(Path(d.project_name) / Path(d.node_name) / Path(d.file_name))
+                        async with self.engine.acquire() as conn:
+                            query = file_meta_data.update().\
+                            where(and_(file_meta_data.c.node_id==d.node_id,
+                                    file_meta_data.c.user_id==d.user_id)).\
+                            values(project_name=d.project_name,
+                                    node_name = d.node_name,
+                                    raw_file_path=d.raw_file_path,
+                                    display_file_path=d.display_file_path)
+                            await conn.execute(query)
+                            clean_data.append(d)
+
+                data = clean_data
+
+                # same as above, make sure file is physically present on s3
+                clean_data = []
+                # MaG: This is inefficient: Do this automatically when file is modified
+                _loop = asyncio.get_event_loop()
+                session = aiobotocore.get_session(loop=_loop)
+                async with session.create_client('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
+                        aws_secret_access_key=self.s3_client.secret_key) as client:
+                    responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
+                    for d, resp in zip(data, responses):
+                        if 'Contents' in resp:
+                            clean_data.append(d)
+                            d.file_size = resp['Contents'][0]['Size']
+                            d.last_modified = str(resp['Contents'][0]['LastModified'])
+                            async with self.engine.acquire() as conn:
+                                query = file_meta_data.update().\
+                                where(and_(file_meta_data.c.node_id==d.node_id,
+                                        file_meta_data.c.user_id==d.user_id)).\
+                                values(file_size=d.file_size,
+                                        last_modified=d.last_modified)
+                                await conn.execute(query)
+                data = clean_data
+
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            data = await dcw.list_files()
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            data = await dcw.list_files_recursively()
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))
@@ -226,8 +300,8 @@ class DataStorageManager:
                     return d
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            data = await _dcw.list_files
+            _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            data = [] #await _dcw.list_file(file_uuid)
             return data
 
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
@@ -255,16 +329,15 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            dataset, filename = _parse_datcore(file_uuid)
-#            return await dcw.delete_file(dataset=dataset, filename=filename)
-            return await dcw.delete_file(dataset, filename)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            destination, filename = _parse_datcore(file_uuid)
+            return await dcw.delete_file(destination, filename)
 
-    async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
+    async def upload_file_to_datcore(self, user_id: str, local_file_path: str, destination: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-        await dcw.upload_file(datcore_bucket, local_file_path, fmd)
+        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+        await dcw.upload_file(destination, local_file_path, fmd)
 
         # actually we have to query the master db
     async def upload_link(self, user_id: str, file_uuid: str):
@@ -289,10 +362,9 @@ class DataStorageManager:
                 # source is s3, get link and copy to datcore
                 bucket_name = self.simcore_bucket_name
                 object_name = source_uuid
-                datcore_bucket, file_path = _parse_datcore(dest_uuid)
-                filename = file_path.split("/")[-1]
+                destination, filename = _parse_datcore(dest_uuid)
                 tmp_dirpath = tempfile.mkdtemp()
-                local_file_path = os.path.join(tmp_dirpath,filename)
+                local_file_path = os.path.join(tmp_dirpath, filename)
                 url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
@@ -302,7 +374,7 @@ class DataStorageManager:
                             await f.close()
                             # and then upload
                             await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
-                                datcore_bucket=datcore_bucket)
+                                destination=destination)
                 shutil.rmtree(tmp_dirpath)
             elif dest_location == SIMCORE_S3_STR:
                 # source is s3, location is s3
@@ -350,7 +422,7 @@ class DataStorageManager:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            dataset, filename = _parse_datcore(file_uuid)
-            link = await dcw.download_link(dataset, filename)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            destination, filename = _parse_datcore(file_uuid)
+            link = await dcw.download_link(destination, filename)
         return link

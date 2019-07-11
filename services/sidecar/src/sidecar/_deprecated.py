@@ -95,8 +95,11 @@ class Sidecar:
                 other_task = None
                 _session = self._db.Session()
                 try:
-                    other_task =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
-                                    ComputationalTask.project_id==self._task.project_id)).one()
+                    # pylint: disable=no-member
+                    other_task =_session.query(ComputationalTask).filter(
+                        and_( ComputationalTask.node_id==other_node_id,
+                              ComputationalTask.project_id==self._task.project_id )
+                    ).one()
                 except exc.SQLAlchemyError:
                     log.exception("Could not find other task")
                     _session.rollback()
@@ -392,8 +395,13 @@ class Sidecar:
                 do_process = True
                 # find the for the current node_id, skip if there is already a job_id around
                 # pylint: disable=assignment-from-no-return
-                query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
-                    ComputationalTask.project_id==project_id, ComputationalTask.job_id==None))
+                # pylint: disable=no-member
+                query =_session.query(ComputationalTask).filter(
+                    and_(
+                        ComputationalTask.node_id==node_id,
+                        ComputationalTask.project_id==project_id,
+                        ComputationalTask.job_id==None)
+                    )
                 # Use SELECT FOR UPDATE TO lock the row
                 query.with_for_update()
                 task = query.one()

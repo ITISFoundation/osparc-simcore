@@ -28,7 +28,7 @@ def parse_db(dsm_mockup_db):
     return id_file_count, id_name_map
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service, osparc_api_specs_dir):
+def client(loop, aiohttp_unused_port, aiohttp_client, postgres_service, minio_service, osparc_api_specs_dir):
     app = web.Application()
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -37,8 +37,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
     main_cfg = {
         'port': aiohttp_unused_port(),
         'host': 'localhost',
-        'python2': python27_path,
         "max_workers" : 4,
+        "testing" : True,
         "test_datcore" : { 'api_token' : api_token, 'api_secret' : api_secret}
     }
     rest_cfg = {

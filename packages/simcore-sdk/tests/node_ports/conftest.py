@@ -159,6 +159,7 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path, proje
     postgres.commit()
 
 def _create_new_pipeline(session, project:str)->str:
+    # pylint: disable=no-member
     new_Pipeline = ComputationalPipeline(project_id=project)
     session.add(new_Pipeline)
     session.commit()

@@ -31,7 +31,7 @@
  * </pre>
  */
 
-const nodeWidth = 180;
+const nodeWidth = 200;
 const portHeight = 16;
 
 qx.Class.define("qxapp.component.workbench.NodeUI", {
@@ -46,7 +46,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     this.base();
 
     this.set({
-      appearance: "window-small-cap",
       showMinimize: false,
       showMaximize: false,
       showClose: false,
@@ -75,6 +74,10 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       check: "String",
       nullable: true,
       apply: "_applyThumbnail"
+    },
+    appearance: {
+      init: "window-small-cap",
+      refine: true
     }
   },
 
@@ -93,6 +96,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __outputPort: null,
     __progressBar: null,
     __thumbnail: null,
+    __status: null,
+
 
     getNodeId: function() {
       return this.getNode().getNodeId();
@@ -130,11 +135,17 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         width: "50%"
       });
 
-      this.__progressBar = new qx.ui.indicator.ProgressBar().set({
-        height: 10,
-        margin: 4
-      });
-      this.add(this.__progressBar);
+      this.add(this.__createChipContainer());
+
+      if (this.getNode().isComputational()) {
+        this.__progressBar = new qx.ui.indicator.ProgressBar().set({
+          height: 10,
+          margin: 4
+        });
+        this.add(this.__progressBar);
+      } else if (this.getNode().isDynamic()) {
+        this.add(this.__createStatusContainer());
+      }
     },
 
     populateNodeLayout: function() {
@@ -150,7 +161,9 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
-      node.bind("progress", this.__progressBar, "value");
+      if (node.isComputational()) {
+        node.bind("progress", this.__progressBar, "value");
+      }
     },
 
     getInputPort: function() {
@@ -236,6 +249,30 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         }
       }
       return bounds;
+    },
+
+    __createChipContainer: function() {
+      const chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3, "center")).set({
+        margin: [3, 4]
+      });
+      const category = qxapp.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
+      const type = qxapp.statics.NodeStatics.getType(this.getNode().getMetaData().type);
+      if (type) {
+        chipContainer.add(new qxapp.ui.basic.Chip(type.label, type.icon + "12"));
+      }
+      if (category) {
+        chipContainer.add(new qxapp.ui.basic.Chip(category.label, category.icon + "12"));
+      }
+      return chipContainer;
+    },
+
+    __createStatusContainer: function() {
+      this.__status = new qxapp.component.service.NodeStatus(this.getNode());
+      const container = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3, "center")).set({
+        margin: [3, 4]
+      });
+      container.add(this.__status);
+      return container;
     },
 
     // override qx.ui.window.Window "move" event listener
