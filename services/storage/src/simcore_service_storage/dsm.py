@@ -43,7 +43,6 @@ FileMetaDataVec = List[FileMetaData]
 
 async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
-    main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
 
@@ -57,7 +56,8 @@ async def _setup_dsm(app: web.Application):
     s3_cfg = get_config_s3(app)
     bucket_name = s3_cfg["bucket_name"]
 
-    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name)
+    testing = main_cfg["testing"]
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing)
 
     app[APP_DSM_KEY] = dsm
 
@@ -112,6 +112,8 @@ class DataStorageManager:
     loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
+    has_project_db: bool
+
     datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
 
@@ -185,25 +187,29 @@ class DataStorageManager:
                     d = FileMetaData(**result_dict)
                     data.append(d)
 
-            uuid_name_dict = {}
-            # now parse the project to search for node/project names
-            try:
-                async with self.engine.acquire() as conn:
-                    joint_table = user_to_projects.join(projects)
-                    query = sa.select([projects]).select_from(joint_table)\
-                        .where(user_to_projects.c.user_id == user_id)
+            if self.has_project_db:
+                uuid_name_dict = {}
+                # now parse the project to search for node/project names
+                try:
+                    async with self.engine.acquire() as conn:
+                        joint_table = user_to_projects.join(projects)
+                        query = sa.select([projects]).select_from(joint_table)\
+                            .where(user_to_projects.c.user_id == user_id)
 
-                    async for row in conn.execute(query):
-                        proj_data = {key:value for key,value in row.items()}
+                        async for row in conn.execute(query):
+                            proj_data = {key:value for key,value in row.items()}
 
-                        uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
-                        wb = proj_data['workbench']
-                        for node in wb.keys():
-                            uuid_name_dict[node] = wb[node]['label']
-            except DBAPIError as _err:
-                logger.exception("Error querying database for project names")
+                            uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                            wb = proj_data['workbench']
+                            for node in wb.keys():
+                                uuid_name_dict[node] = wb[node]['label']
+                except DBAPIError as _err:
+                    logger.exception("Error querying database for project names")
 
-            if uuid_name_dict:
+                if not uuid_name_dict:
+                    # there seems to be no project whatsoever for user_id
+                    return []
+
                 # only keep files from non-deleted project --> This needs to be fixed
                 clean_data = []
                 for d in data:
@@ -228,8 +234,6 @@ class DataStorageManager:
                             clean_data.append(d)
 
                 data = clean_data
-                for d in data:
-                    logger.info(d)
 
                 # same as above, make sure file is physically present on s3
                 clean_data = []
@@ -237,7 +241,7 @@ class DataStorageManager:
                 _loop = asyncio.get_event_loop()
                 session = aiobotocore.get_session(loop=_loop)
                 async with session.create_client('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
-                     aws_secret_access_key=self.s3_client.secret_key) as client:
+                        aws_secret_access_key=self.s3_client.secret_key) as client:
                     responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
                     for d, resp in zip(data, responses):
                         if 'Contents' in resp:
