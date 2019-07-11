@@ -20,3 +20,4 @@ trafaret
 trafaret_config
 tenacity
 semantic_version
+ptvsd

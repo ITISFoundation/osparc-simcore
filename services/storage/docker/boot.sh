@@ -39,12 +39,14 @@ if [[ ${SC_BOOT_MODE} == "debug" ]]
 then
   echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
   echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-  #python -c "import pdb, simcore_service_storage.cli; \
-  #           pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
- # python -c "import ptvsd; ptvsd.enable_attach(address=('0.0.0.0', 3000), redirect_output=True)ptvsd
+  python -c "import pdb, simcore_service_storage.cli; \
+             pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
 
+elif [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
+then
+  echo "PTVSD Debugger initializing"
+  echo "Running:python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG"
   python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG
-
 else
   simcore-service-storage --config $APP_CONFIG
 fi

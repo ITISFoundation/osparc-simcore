@@ -36,3 +36,31 @@ npm install babel-eslint
  - [vscode] interactive testing does not work if pytest config fails. Moving ``pytest.ini`` in the root and add setting searching paths for testing folders solves the problem
 
 [vscode]:(https://code.visualstudio.com/)
+
+
+## Debugging
+
+### PTVSD Remote Debugging using VS code
+
+Your service needs to be started accordingly. See for example ``services/storage/docker/boot.sh``. For an example ``launch.json`` configuration, check the template in this folder. Add environment variables and published ports in the docker-compose.devel.yml file. For example
+
+```yml
+#--------------------------------------------------------------------
+  storage:
+    image: services_storage:dev
+    build:
+      target: development
+    volumes:
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+```
+
+This can also be done via Portainer in a running swarm. For production images, make sure to verify the location of the installed packages.
+
+**Usage**: Run the debug config ``Python: Remote Attach storage`` and set some breakpoints.
