@@ -77,7 +77,7 @@ async def create_invitation(host:Dict, guest:str, db:AsyncpgStorage):
     )
     return confirmation
 
-async def check_invitation(invitation:str, db):
+async def check_invitation(invitation:str, db:AsyncpgStorage):
     confirmation = None
     if invitation:
         confirmation = await validate_confirmation_code(invitation, db)
