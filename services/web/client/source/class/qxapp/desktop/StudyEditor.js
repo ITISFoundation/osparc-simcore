@@ -233,7 +233,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
+      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
