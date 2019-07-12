@@ -273,6 +273,64 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
+  /folders/{folder_id}:
+    post:
+      tags:
+        - users
+      summary: Copies files from one project to another
+      operationId: copy_project_files
+      parameters:
+      - name: folder_Id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/Project'
+      responses:
+        '201':
+          description: project created
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - users
+      summary: Deletes File
+      operationId: delete_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OK_NoContent_204'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
 components:
   responses:
     OK_NoContent_204:
