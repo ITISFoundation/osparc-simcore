@@ -623,7 +623,6 @@ qx.Class.define("qxapp.data.model.Node", {
           }
           this.getIFrame().setSource(srvUrl + arg);
         } else {
-          this.setServiceUrl("http://localhost:4000");
           this.getIFrame().setSource(this.getServiceUrl());
         }
 
