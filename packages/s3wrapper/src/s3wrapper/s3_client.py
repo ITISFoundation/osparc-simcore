@@ -19,6 +19,8 @@ class S3Client:
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
+        self.secure = secure
+        self.endpoint_url = ("https://" if secure else "http://") + endpoint
         try:
             self.client = Minio(endpoint,
                 access_key=access_key,
