@@ -89,15 +89,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const treeView = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
-      treeView.addListener("addNode", () => {
+      const nodesTree = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
-      treeView.addListener("removeNode", e => {
+      nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
       const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
@@ -148,14 +148,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve.bind(this, null), this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("updatePipeline", e => {
+      workbench.addListener("retrieveInputs", e => {
         let node = e.getData();
-        this.__updatePipeline(node);
+        this.__updatePipelineAndRetrieve(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -176,15 +176,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__nodesTree;
-      treeView.addListener("changeSelectedNode", e => {
+      const nodesTree = this.__nodesTree;
+      nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
           node.setActive(true);
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        treeView.nodeSelected(e.getData());
+        nodesTree.nodeSelected(e.getData());
       });
     },
 
@@ -233,7 +233,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
+      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
@@ -357,39 +357,30 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
-      let req = new qxapp.io.request.ApiRequest(url, "PUT");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("updating pipeline: " + url);
-      console.log(data);
-
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline successfully updated");
-        if (node) {
-          node.retrieveInputs();
-        } else {
-          const workbench = this.getStudy().getWorkbench();
-          const allNodes = workbench.getNodes(true);
-          Object.values(allNodes).forEach(node2 => {
-            node2.retrieveInputs();
-          }, this);
-        }
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error updating pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed updating pipeline");
-      }, this);
-      req.send();
-
+    __updatePipelineAndRetrieve: function(node) {
+      this.updateStudyDocument(
+        null,
+        this.__pipelineSuccessfullyUpdated.bind(this, node),
+        this.__pipelineUnsuccessfullyUpdated.bind(this)
+      );
       this.getLogger().debug(null, "Updating pipeline");
+    },
+
+    __pipelineSuccessfullyUpdated: function(node) {
+      this.getLogger().debug(null, "Retrieveing inputs");
+      if (node) {
+        node.retrieveInputs();
+      } else {
+        const workbench = this.getStudy().getWorkbench();
+        const allNodes = workbench.getNodes(true);
+        Object.values(allNodes).forEach(node2 => {
+          node2.retrieveInputs();
+        }, this);
+      }
+    },
+
+    __pipelineUnsuccessfullyUpdated: function() {
+      this.getLogger().error(null, "Error updating pipeline");
     },
 
     __startPipeline: function() {
@@ -519,7 +510,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cb) {
+    updateStudyDocument: function(newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -529,8 +520,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cb) {
-          cb.call(this);
+        if (cbSuccess) {
+          cbSuccess.call(this);
+        }
+      }, this);
+      resource.addListenerOnce("putError", ev => {
+        if (cbError) {
+          cbError.call(this);
         }
       }, this);
       resource.put({
