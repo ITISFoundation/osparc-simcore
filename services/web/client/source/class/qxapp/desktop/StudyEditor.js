@@ -360,13 +360,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __updatePipelineAndRetrieve: function(node) {
       this.updateStudyDocument(
         null,
-        this.__pipelineSuccessfullyUpdated.bind(this, node),
+        this.__retrieveInputs.bind(this, node),
         this.__pipelineUnsuccessfullyUpdated.bind(this)
       );
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    __pipelineSuccessfullyUpdated: function(node) {
+    __retrieveInputs: function(node) {
       this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
         node.retrieveInputs();
@@ -377,10 +377,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           node2.retrieveInputs();
         }, this);
       }
-    },
-
-    __pipelineUnsuccessfullyUpdated: function() {
-      this.getLogger().error(null, "Error updating pipeline");
     },
 
     __startPipeline: function() {
@@ -525,9 +521,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }, this);
       resource.addListenerOnce("putError", ev => {
-        if (cbError) {
-          cbError.call(this);
-        }
+        this.getLogger().error(null, "Error updating pipeline");
       }, this);
       resource.put({
         "project_id": prjUuid
