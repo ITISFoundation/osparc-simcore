@@ -11,18 +11,7 @@ import pytest
 import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 
-
-async def test_datcore_list_files(loop):
-    if not utils.has_datcore_tokens():
-        return
-
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
-    pool = ThreadPoolExecutor(2)
-    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
-    f = await dcw.list_files()
-    assert len(f)
-
+from pathlib import Path
 
 async def test_datcore_ping(loop):
     if not utils.has_datcore_tokens():
@@ -45,3 +34,18 @@ async def test_datcore_list_files_recursively(loop):
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
     f = await dcw.list_files_recursively()
     assert len(f)
+
+
+async def test_datcore_nested_download_link(loop):
+    if not utils.has_datcore_tokens():
+        return
+
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+    pool = ThreadPoolExecutor(2)
+    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+    destination = str(Path("Shared Data/ISAN/UCDavis use case 0D/inputs/"))
+    filename = "initial_WTstates.txt"
+
+    f = await dcw.download_link(destination, filename)
+    assert(f)

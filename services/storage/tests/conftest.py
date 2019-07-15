@@ -295,18 +295,9 @@ async def datcore_testbucket(loop, mock_files_factory):
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
     await dcw.create_test_dataset(BUCKET_NAME)
-
     tmp_files = mock_files_factory(2)
     for f in tmp_files:
         await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
-
-    ready = False
-    counter = 0
-    while not ready and counter < 5:
-        data = await dcw.list_files()
-        ready = len(data) == 2
-        await asyncio.sleep(10)
-        counter = counter + 1
 
     yield BUCKET_NAME
 
@@ -317,7 +308,7 @@ async def datcore_testbucket(loop, mock_files_factory):
 def dsm_fixture(s3_client, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
     dsm_fixture = DataStorageManager(
-        s3_client, postgres_engine, loop, pool, BUCKET_NAME)
+        s3_client, postgres_engine, loop, pool, BUCKET_NAME, False)
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
