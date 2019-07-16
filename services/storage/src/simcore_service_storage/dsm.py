@@ -240,7 +240,7 @@ class DataStorageManager:
                 # MaG: This is inefficient: Do this automatically when file is modified
                 _loop = asyncio.get_event_loop()
                 session = aiobotocore.get_session(loop=_loop)
-                async with session.create_client('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
+                async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
                         aws_secret_access_key=self.s3_client.secret_key) as client:
                     responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
                     for d, resp in zip(data, responses):
