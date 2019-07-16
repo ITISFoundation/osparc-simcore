@@ -1,20 +1,28 @@
-# pylint: disable=R0913
-# pylint: disable=W0621
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
+import json
 import os
+import sys
+from copy import deepcopy
+from pathlib import Path
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
-from yarl import URL
-
 
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from utils import has_datcore_tokens, USER_ID, BUCKET_NAME
+from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
+from utils_assert import assert_status
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 def parse_db(dsm_mockup_db):
     id_name_map = {}
@@ -243,25 +251,47 @@ async def test_action_check(client):
     assert data['query_value'] == QUERY
 
 
-async def test_create_folders_from_project(client, dsm_mockup_db):
-    default_project = {
-        "uuid": "0000000-invalid-uuid",
-        "name": "Minimal name",
-        "description": "this description should not change",
-        "prjOwner": "me but I will be removed anyway",
-        "creationDate": "today",
-        "lastChangeDate": "tomorrow",
-        "thumbnail": "",
-        "workbench": {}
-    }
 
-    folder_id = "asdf"
-    url = URL("/v0/folders/{}".format(folder_id)).with_query(user_id="1")
-    import pdb; pdb.set_trace()
+def get_project_with_data():
+    projects = []
+    with open(current_dir / "data/projects_with_data.json") as fp:
+        projects = json.load(fp)
 
-    resp = await client.post(url, json=default_project)
+    # TODO: add schema validation
+    return projects
 
-    payload = await resp.json()
-    import pdb; pdb.set_trace()
 
-    data, error = tuple( payload.get(k) for k in ('data', 'error') )
+from utils_project import clone_project_data
+
+@pytest.mark.parametrize("project_name,project", [ (prj['name'], prj) for prj in get_project_with_data()])
+async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, project_name, project):
+    source_project = project
+    destination_project, nodes_map = clone_project_data(source_project)
+
+    # CREATING
+    url = client.app.router["copy_folders_from_project"].url_for().with_query(user_id="1")
+    resp = await client.post(url, json={
+        'source':source_project,
+        'destination': destination_project,
+        'nodes_map': nodes_map
+    })
+
+    data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
+
+
+    for key in data:
+        if key!="workbench":
+            assert data[key] == destination_project['project']
+
+    # TODO: check that data is actually in s3
+    # TODO: assert
+
+
+
+
+    # DELETING
+    project_id = data['uuid']
+    url = client.app.router["delete_folders_of_project"].url_for(folder_id=project_id).with_query(user_id="1")
+    resp = await client.delete(url)
+
+    await assert_status(resp, expected_cls=web.HTTPNoContent)

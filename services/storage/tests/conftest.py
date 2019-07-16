@@ -29,11 +29,12 @@ from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
 from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
                    USER_ID)
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+sys.path.append(str(current_dir / 'helpers'))
 
 @pytest.fixture(scope='session')
 def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
+    return current_dir
 
 @pytest.fixture(scope='session')
 def package_dir(here):

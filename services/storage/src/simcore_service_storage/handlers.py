@@ -1,3 +1,4 @@
+import json
 import logging
 
 import attr
@@ -160,7 +161,6 @@ async def update_file_meta_data(request: web.Request):
     _location = dsm.location_from_id(location_id)
 
 
-
 async def download_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -247,28 +247,41 @@ async def delete_file(request: web.Request):
 
 
 async def create_folders_from_project(request: web.Request):
-    import pdb; pdb.set_trace()
+    #FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
+    # params, query, body = await extract_and_validate(request)
 
-    params, query, body = await extract_and_validate(request)
+    user_id = request.query.get("user_id")
 
-    assert params, "params %s" % params
-    assert query, "query %s" % query
-    assert body, "body %s" % body
+    body = await request.json()
+    source_project = body.get('source', {})
+    destination_project = body.get('destination', {})
+    nodes_map = body.get('nodes_map', {})
 
-    assert params["folder_id"]
-    assert query["user_id"]
+    # TODO: remove this for production
+    assert set(nodes_map.keys()) == set(source_project['workbench'].keys())
+    assert set(nodes_map.values()) == set(destination_project['workbench'].keys())
 
-    #user_id = query["user_id"]
-    folder_id = params["folder_id"]
-    source_project = body["source_project"]
-    dest_project = body["dest_project"]
-    dsm = await _prepare_storage_manager(params, query, request)
+    # TODO: validate project with jsonschema instead??
+
+
+    # TODO: implement
+    # dsm = await _prepare_storage_manager(params, request.query, request)
     #_discard = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
 
-    return {
-        'error': None,
-        'data': dest_project
-        }
+    raise web.HTTPCreated(text=json.dumps(destination_project),
+                                content_type='application/json')
+
+async def delete_folders_of_project(request: web.Request):
+    folder_id = request.match_info['folder_id']
+    user_id = request.query.get("user_id")
+
+    # TODO: implement
+
+    raise web.HTTPNoContent(content_type='application/json')
+
+
+
+
 
 # HELPERS -----------------------------------------------------
 INIT_STR = "init"
