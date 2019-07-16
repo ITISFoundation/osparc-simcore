@@ -17,6 +17,7 @@ from pprint import pprint
 
 import attr
 import pytest
+import copy
 
 import utils
 from simcore_service_storage.dsm import DataStorageManager
@@ -364,3 +365,74 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.node_name
         assert d.project_name
         assert d.raw_file_path
+
+
+async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client):
+    dsm = dsm_fixture
+
+
+    user_id = "1"
+
+    source_project =  {
+        "uuid": "template-uuid-4d5e-b80e-401c8066782f",
+        "name": "ISAN: 2D Plot",
+        "description": "2D RawGraphs viewer with one input",
+        "thumbnail": "",
+        "prjOwner": "maiz",
+        "creationDate": "2019-05-24T10:36:57.813Z",
+        "lastChangeDate": "2019-05-24T11:36:12.015Z",
+        "workbench": {
+          "template-uuid-48eb-a9d2-aaad6b72400a": {
+            "key": "simcore/services/frontend/file-picker",
+            "version": "1.0.0",
+            "label": "File Picker",
+            "inputs": {},
+            "inputNodes": [],
+            "outputNode": False,
+            "outputs": {
+              "outFile": {
+                "store": 1,
+                "path": "Shared Data/Height-Weight"
+              }
+            },
+            "progress": 100,
+            "thumbnail": "",
+            "position": {
+              "x": 100,
+              "y": 100
+            }
+          },
+          "template-uuid-4c63-a705-03a2c339646c": {
+            "key": "simcore/services/dynamic/raw-graphs",
+            "version": "2.8.0",
+            "label": "2D plot",
+            "inputs": {
+              "input_1": {
+                "nodeUuid": "template-uuid-48eb-a9d2-aaad6b72400a",
+                "output": "outFile"
+              }
+            },
+            "inputNodes": [
+              "template-uuid-48eb-a9d2-aaad6b72400a"
+            ],
+            "outputNode": False,
+            "outputs": {},
+            "progress": 0,
+            "thumbnail": "",
+            "position": {
+              "x": 400,
+              "y": 100
+            }
+          }
+        }
+    }
+    destination_project = copy.deepcopy(source_project)
+    destination_project["uuid"] = source_project["uuid"].replace("template", "deep-copy")
+    destination_project["workbench"] = {}
+    for node_id, node in source_project["workbench"].items():
+        key = node_id.replace("template", "deep-copy")
+        destination_project["workbench"][key] = node
+
+    import pdb; pdb.set_trace()
+
+    status = await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project)

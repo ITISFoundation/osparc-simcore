@@ -426,3 +426,23 @@ class DataStorageManager:
             destination, filename = _parse_datcore(file_uuid)
             link = await dcw.download_link(destination, filename)
         return link
+
+    async def deep_copy_project_simcore_s3(self, user_id: str, source_project, destination_project):
+        """ Parses a given source project and copies all related files to the destination project
+
+            Since all files are organized as
+
+                project_id/node_id/filename or links to datcore
+
+            this function creates a new folder structure
+
+                project_id/node_id/filename
+
+            and copies all files to the corresponding places.
+
+            Additionally, all external files from datcore are being copied and the paths in the destination
+            project are adapted accordingly
+        """
+        # read the source_project
+        source_folder = source_project["uuid"]
+        dest_folder = dest_project["uuid"]
