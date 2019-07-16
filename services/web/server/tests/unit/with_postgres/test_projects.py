@@ -204,8 +204,8 @@ async def test_new_project(client, logged_user, expected):
         "name": "Minimal name",
         "description": "this description should not change",
         "prjOwner": "me but I will be removed anyway",
-        "creationDate": now_str(),
-        "lastChangeDate": now_str(),
+        "creationDate": "today",
+        "lastChangeDate": "tomorrow",
         "thumbnail": "",
         "workbench": {}
     }

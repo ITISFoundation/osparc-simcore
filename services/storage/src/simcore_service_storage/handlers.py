@@ -246,6 +246,30 @@ async def delete_file(request: web.Request):
         }
 
 
+async def create_folders_from_project(request: web.Request):
+    import pdb; pdb.set_trace()
+
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert body, "body %s" % body
+
+    assert params["folder_id"]
+    assert query["user_id"]
+
+    #user_id = query["user_id"]
+    folder_id = params["folder_id"]
+    source_project = body["source_project"]
+    dest_project = body["dest_project"]
+    dsm = await _prepare_storage_manager(params, query, request)
+    #_discard = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
+
+    return {
+        'error': None,
+        'data': dest_project
+        }
+
 # HELPERS -----------------------------------------------------
 INIT_STR = "init"
 

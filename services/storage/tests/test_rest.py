@@ -5,6 +5,8 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from yarl import URL
+
 
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
@@ -239,3 +241,27 @@ async def test_action_check(client):
 
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
+
+
+async def test_create_folders_from_project(client, dsm_mockup_db):
+    default_project = {
+        "uuid": "0000000-invalid-uuid",
+        "name": "Minimal name",
+        "description": "this description should not change",
+        "prjOwner": "me but I will be removed anyway",
+        "creationDate": "today",
+        "lastChangeDate": "tomorrow",
+        "thumbnail": "",
+        "workbench": {}
+    }
+
+    folder_id = "asdf"
+    url = URL("/v0/folders/{}".format(folder_id)).with_query(user_id="1")
+    import pdb; pdb.set_trace()
+
+    resp = await client.post(url, json=default_project)
+
+    payload = await resp.json()
+    import pdb; pdb.set_trace()
+
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )

@@ -64,5 +64,9 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations['put'].operation_id
     routes.append( web.put(BASEPATH+path, handle, name=operation_id) )
 
+    path, handle = '/folders/{folder_id}', handlers.create_folders_from_project
+    operation_id = specs.paths[path].operations['post'].operation_id
+    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+
 
     return routes
