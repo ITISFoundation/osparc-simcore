@@ -299,7 +299,7 @@ async def datcore_testbucket(loop, mock_files_factory):
     for f in tmp_files:
         await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
 
-    yield BUCKET_NAME
+    yield BUCKET_NAME, tmp_files[0], tmp_files[1]
 
     await dcw.delete_test_dataset(BUCKET_NAME)
 

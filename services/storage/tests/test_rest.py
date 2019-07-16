@@ -170,7 +170,7 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
         source_uuid = fmd.file_uuid
-        datcore_uuid = os.path.join(datcore_testbucket, fmd.file_name)
+        datcore_uuid = os.path.join(datcore_testbucket[0], fmd.file_name)
         resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
             fmd.user_id, SIMCORE_S3_ID, quote(source_uuid, safe='')))
         payload = await resp.json()

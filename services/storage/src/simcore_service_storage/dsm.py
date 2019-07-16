@@ -427,7 +427,7 @@ class DataStorageManager:
             link = await dcw.download_link(destination, filename)
         return link
 
-    async def deep_copy_project_simcore_s3(self, user_id: str, source_project, destination_project):
+    async def deep_copy_project_simcore_s3(self, user_id: str, source_project, destination_project, node_mapping):
         """ Parses a given source project and copies all related files to the destination project
 
             Since all files are organized as
@@ -443,6 +443,81 @@ class DataStorageManager:
             Additionally, all external files from datcore are being copied and the paths in the destination
             project are adapted accordingly
         """
-        # read the source_project
         source_folder = source_project["uuid"]
-        dest_folder = dest_project["uuid"]
+        dest_folder = destination_project["uuid"]
+
+        # build up naming map based on labels
+        uuid_name_dict = {}
+        uuid_name_dict[dest_folder] = destination_project["name"]
+        for src_node_id, src_node in source_project['workbench'].items():
+            new_node_id = node_mapping.get(src_node_id)
+            if new_node_id is not None:
+                uuid_name_dict[new_node_id] = src_node['label']
+
+        # Step 1: List all objects for this project replace them with the destination object name and do a copy at the same time collect some names
+        _loop = asyncio.get_event_loop()
+        session = aiobotocore.get_session(loop=_loop)
+        async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key) as client:
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=source_folder)
+
+            if "Contents" in response:
+                for f in response['Contents']:
+                    source_object_name = f['Key']
+                    source_object_parts = Path(source_object_name).parts
+
+                    if len(source_object_parts) == 3:
+                        old_node_id = source_object_parts[1]
+                        new_node_id = node_mapping.get(old_node_id)
+                        if new_node_id is not None:
+                            old_filename = source_object_parts[2]
+                            dest_object_name = str(Path(dest_folder) / Path(new_node_id) / Path(old_filename))
+                            copy_source = {'Bucket' : self.simcore_bucket_name, 'Key': source_object_name}
+                            response = await client.copy_object(CopySource=copy_source, Bucket=self.simcore_bucket_name, Key=dest_object_name)
+
+
+            # Step 2: List all references in outputs that point to datcore and copy over
+            for node_id, node in destination_project['workbench'].items():
+                outputs = node.get("outputs")
+                if outputs is not None:
+                    for _output_key, output in outputs.items():
+                        if "store" in output and output["store"]==1:
+                            src = output["path"]
+                            dest = str(Path(dest_folder) / Path(node_id) / Path(src).name)
+                            print("Need to copy {} to {}".format(output["path"], dest ))
+                            await self.copy_file(user_id, SIMCORE_S3_STR, dest, DATCORE_STR, src)
+                            # and change the dest project accordingly
+                            output["store"] = 0
+                            output['path'] = dest
+
+        # step 3: list files first to create fmds
+        session = aiobotocore.get_session(loop=_loop)
+        fmds = []
+        async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key) as client:
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=dest_folder)
+            for f in response['Contents']:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(f["Key"], self.simcore_bucket_name)
+                fmd.project_name = uuid_name_dict.get(dest_folder, "Untitled")
+                fmd.node_name = uuid_name_dict.get(fmd.node_id, "Untitled")
+                fmd.raw_file_path = fmd.file_uuid
+                fmd.display_file_path = str(Path(fmd.project_name) / fmd.node_name / fmd.file_name)
+                fmd.user_id = user_id
+                fmd.file_size = f['Size']
+                fmd.last_modified = str(f['LastModified'])
+                fmds.append(fmd)
+
+
+        # step 4 sync db
+        async with self.engine.acquire() as conn:
+            for fmd in fmds:
+                query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == fmd.file_uuid)
+                # if file already exists, we might w
+                rows = await conn.execute(query)
+                exists = await rows.scalar()
+                if exists:
+                    delete_me = file_meta_data.delete().where(file_meta_data.c.file_uuid == fmd.file_uuid)
+                    await conn.execute(delete_me)
+                ins = file_meta_data.insert().values(**vars(fmd))
+                await conn.execute(ins)

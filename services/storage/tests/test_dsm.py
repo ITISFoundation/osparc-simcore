@@ -243,7 +243,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
-    await dsm.upload_file_to_datcore(user_id=user_id, local_file_path=tmp_file2, destination=datcore_testbucket, fmd=fmd)
+    await dsm.upload_file_to_datcore(user_id=user_id, local_file_path=tmp_file2, destination=datcore_testbucket[0], fmd=fmd)
 
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
 
@@ -328,7 +328,7 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
             pass
 
     #now copy to datcore
-    dat_core_uuid = os.path.join(datcore_testbucket, fmd.file_name)
+    dat_core_uuid = os.path.join(datcore_testbucket[0], fmd.file_name)
 
     await dsm.copy_file(user_id=user_id, dest_location=DATCORE_STR, dest_uuid=dat_core_uuid, source_location=SIMCORE_S3_STR,
         source_uuid=fmd.file_uuid)
@@ -367,11 +367,14 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.raw_file_path
 
 
-async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client):
+async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_testbucket):
     dsm = dsm_fixture
+    utils.create_full_tables(url=postgres_service_url)
 
-
-    user_id = "1"
+    datcore_file = Path(datcore_testbucket[1]).name
+    datcore_bucket = Path(datcore_testbucket[0])
+    path_in_datcore = str(datcore_bucket/datcore_file)
+    user_id = USER_ID
 
     source_project =  {
         "uuid": "template-uuid-4d5e-b80e-401c8066782f",
@@ -392,7 +395,7 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client):
             "outputs": {
               "outFile": {
                 "store": 1,
-                "path": "Shared Data/Height-Weight"
+                "path": "Shared Data/Height-Weight.csv"
               }
             },
             "progress": 100,
@@ -426,13 +429,35 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client):
           }
         }
     }
+
+    bucket_name = BUCKET_NAME
+    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    source_project["workbench"]["template-uuid-48eb-a9d2-aaad6b72400a"]["outputs"]["outFile"]["path"] = path_in_datcore
+
     destination_project = copy.deepcopy(source_project)
-    destination_project["uuid"] = source_project["uuid"].replace("template", "deep-copy")
+    source_project_id = source_project["uuid"]
+    destination_project["uuid"] = source_project_id.replace("template", "deep-copy")
     destination_project["workbench"] = {}
+
+    node_mapping = {}
+
     for node_id, node in source_project["workbench"].items():
+        object_name = str(Path(source_project_id) / Path(node_id) / Path(node_id + ".dat"))
+        f = utils.data_dir() / Path("notebooks.zip")
+        s3_client.upload_file(bucket_name, object_name, f)
         key = node_id.replace("template", "deep-copy")
         destination_project["workbench"][key] = node
+        node_mapping[node_id] = key
 
-    import pdb; pdb.set_trace()
+    status = await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project, node_mapping)
+    new_path = destination_project["workbench"]["deep-copy-uuid-48eb-a9d2-aaad6b72400a"]["outputs"]["outFile"]["path"]
+    assert new_path != path_in_datcore
+    files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(files) == 3
+    found = False
+    for f in files:
+        if f.file_uuid == new_path:
+            found = True
 
-    status = await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project)
+    assert found
