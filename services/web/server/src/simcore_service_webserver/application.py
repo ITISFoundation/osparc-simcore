@@ -6,9 +6,6 @@ import logging
 
 from aiohttp import web
 
-
-
-
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .application_proxy import setup_app_proxy
@@ -25,8 +22,8 @@ from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
-from .users import setup_users
 from .studies_access import setup_studies_access
+from .users import setup_users
 
 log = logging.getLogger(__name__)
 

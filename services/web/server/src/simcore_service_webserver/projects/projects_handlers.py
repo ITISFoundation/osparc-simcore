@@ -5,6 +5,7 @@ import logging
 from aiohttp import web
 from jsonschema import ValidationError
 
+from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from .projects_api import validate_project
@@ -21,6 +22,7 @@ log = logging.getLogger(__name__)
 async def create_projects(request: web.Request):
     # pylint: disable=too-many-branches
     await check_permission(request, "project.create")
+    await check_permission(request, "services.pipeline.*") # due to update_pipeline_db
 
     user_id = request[RQT_USERID_KEY]
     db = request.config_dict[APP_PROJECT_DBAPI]
@@ -69,8 +71,9 @@ async def create_projects(request: web.Request):
 
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
-        from ..computation_handlers import _update_pipeline_db
-        await _update_pipeline_db(request.app, project["uuid"], project["workbench"])
+
+        # Every change in projects workbench needs to be reflected in the pipeline db
+        await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
@@ -140,20 +143,20 @@ async def get_project(request: web.Request):
         'data': project
     }
 
-'''
-@login_required
-async def get_project_progress(request: web.Request):
-    """ Returns the progress of the data retrieval of each input in each node
 
-    """
-    # TODO: SAN Implementation needed
-    project_uuid = request.match_info.get("project_id")
-    log.info("get_project_progress %s...", project_uuid)
-    nodes = {}
-    pogresses = {'nodes': nodes}
+# TODO: SAN Implementation needed (keep as a draft)
+# @login_required
+# async def get_project_progress(request: web.Request):
+#     """ Returns the progress of the data retrieval of each input in each node
 
-    return {'data': pogresses}
-'''
+#     """
+#     project_uuid = request.match_info.get("project_id")
+#     log.info("get_project_progress %s...", project_uuid)
+#     nodes = {}
+#     pogresses = {'nodes': nodes}
+
+#     return {'data': pogresses}
+
 
 @login_required
 async def replace_project(request: web.Request):
@@ -171,13 +174,14 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
+    await check_permission(request, "services.pipeline.*") # due to update_pipeline_db
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     new_project = await request.json()
 
-    db = request.config_dict[APP_PROJECT_DBAPI]
 
+    db = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(request, "project.update | project.workbench.node.inputs.update",
     context={
         'dbapi': db,
@@ -190,8 +194,9 @@ async def replace_project(request: web.Request):
         validate_project(request.app, new_project)
 
         await db.update_user_project(new_project, user_id, project_uuid)
-        from ..computation_handlers import _update_pipeline_db
-        await _update_pipeline_db(request.app, project_uuid, new_project["workbench"])
+
+        # Every change in projects workbench needs to be reflected in the pipeline db
+        await update_pipeline_db(request.app, project_uuid, new_project["workbench"])
 
     except ValidationError:
         raise web.HTTPBadRequest
@@ -223,8 +228,13 @@ async def delete_project(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
-        # TODO: this should also delete all the dynamic services used by this project when this happens.
+        # TODO: delete all the dynamic services used by this project when this happens.
+
+
+        # TODO: delete pipeline db tasks
+
         await db.delete_user_project(user_id, project_uuid)
+
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
