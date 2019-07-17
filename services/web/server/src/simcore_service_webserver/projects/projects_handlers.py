@@ -143,20 +143,20 @@ async def get_project(request: web.Request):
         'data': project
     }
 
-'''
-@login_required
-async def get_project_progress(request: web.Request):
-    """ Returns the progress of the data retrieval of each input in each node
 
-    """
-    # TODO: SAN Implementation needed
-    project_uuid = request.match_info.get("project_id")
-    log.info("get_project_progress %s...", project_uuid)
-    nodes = {}
-    pogresses = {'nodes': nodes}
+# TODO: SAN Implementation needed (keep as a draft)
+# @login_required
+# async def get_project_progress(request: web.Request):
+#     """ Returns the progress of the data retrieval of each input in each node
 
-    return {'data': pogresses}
-'''
+#     """
+#     project_uuid = request.match_info.get("project_id")
+#     log.info("get_project_progress %s...", project_uuid)
+#     nodes = {}
+#     pogresses = {'nodes': nodes}
+
+#     return {'data': pogresses}
+
 
 @login_required
 async def replace_project(request: web.Request):
@@ -229,6 +229,8 @@ async def delete_project(request: web.Request):
 
     try:
         # TODO: delete all the dynamic services used by this project when this happens.
+
+
         # TODO: delete pipeline db tasks
 
         await db.delete_user_project(user_id, project_uuid)
