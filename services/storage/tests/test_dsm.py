@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+import copy
 import datetime
 import filecmp
 import io
@@ -12,12 +13,12 @@ import json
 import os
 import urllib
 import uuid
+from asyncio import Future
 from pathlib import Path
 from pprint import pprint
 
 import attr
 import pytest
-import copy
 
 import utils
 from simcore_service_storage.dsm import DataStorageManager
@@ -368,6 +369,8 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
 
 
 async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_testbucket):
+    if not has_datcore_tokens():
+        return
     dsm = dsm_fixture
     utils.create_full_tables(url=postgres_service_url)
 
@@ -461,3 +464,18 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
             found = True
 
     assert found
+
+    response = await dsm.delete_project_simcore_s3(user_id, destination_project["uuid"])
+    print(response)
+
+    files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(files) == 0
+
+async def test_mock(mocker, dsm_fixture):
+    mock_dsm = mocker.patch.object(dsm_fixture,"copy_file")
+    mock_dsm.return_value = Future()
+    mock_dsm.return_value.set_result("Howdie")
+
+    res = await dsm_fixture.copy_file(user_id ="1", dest_location ="", dest_uuid ="", source_location="", source_uuid ="")
+
+    assert res == "Howdie"

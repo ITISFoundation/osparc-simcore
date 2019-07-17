@@ -10,7 +10,7 @@ from . import __version__
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
-from .settings import APP_DSM_KEY, DATCORE_STR
+from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID
 
 log = logging.getLogger(__name__)
 
@@ -263,10 +263,10 @@ async def create_folders_from_project(request: web.Request):
 
     # TODO: validate project with jsonschema instead??
 
-
-    # TODO: implement
-    # dsm = await _prepare_storage_manager(params, request.query, request)
-    #_discard = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
+    params = { "location_id" : SIMCORE_S3_ID }
+    query = { "user_id": user_id}
+    dsm = await _prepare_storage_manager(params, query, request)
+    await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project, nodes_map)
 
     raise web.HTTPCreated(text=json.dumps(destination_project),
                                 content_type='application/json')
@@ -276,6 +276,10 @@ async def delete_folders_of_project(request: web.Request):
     user_id = request.query.get("user_id")
 
     # TODO: implement
+    params = { "location_id" : SIMCORE_S3_ID }
+    query = { "user_id": user_id}
+    dsm = await _prepare_storage_manager(params, query, request)
+    await dsm.delete_project_simcore_s3(user_id, folder_id)
 
     raise web.HTTPNoContent(content_type='application/json')
 

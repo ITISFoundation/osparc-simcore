@@ -442,6 +442,8 @@ class DataStorageManager:
 
             Additionally, all external files from datcore are being copied and the paths in the destination
             project are adapted accordingly
+
+            Lastly, the meta data db is kept in sync
         """
         source_folder = source_project["uuid"]
         dest_folder = destination_project["uuid"]
@@ -484,7 +486,7 @@ class DataStorageManager:
                         if "store" in output and output["store"]==1:
                             src = output["path"]
                             dest = str(Path(dest_folder) / Path(node_id) / Path(src).name)
-                            print("Need to copy {} to {}".format(output["path"], dest ))
+                            logger.info("Need to copy %s to %s", src, dest)
                             await self.copy_file(user_id, SIMCORE_S3_STR, dest, DATCORE_STR, src)
                             # and change the dest project accordingly
                             output["store"] = 0
@@ -495,18 +497,19 @@ class DataStorageManager:
         fmds = []
         async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
             aws_secret_access_key=self.s3_client.secret_key) as client:
-            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=dest_folder)
-            for f in response['Contents']:
-                fmd = FileMetaData()
-                fmd.simcore_from_uuid(f["Key"], self.simcore_bucket_name)
-                fmd.project_name = uuid_name_dict.get(dest_folder, "Untitled")
-                fmd.node_name = uuid_name_dict.get(fmd.node_id, "Untitled")
-                fmd.raw_file_path = fmd.file_uuid
-                fmd.display_file_path = str(Path(fmd.project_name) / fmd.node_name / fmd.file_name)
-                fmd.user_id = user_id
-                fmd.file_size = f['Size']
-                fmd.last_modified = str(f['LastModified'])
-                fmds.append(fmd)
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=dest_folder+"/")
+            if 'Contents' in response:
+                for f in response['Contents']:
+                    fmd = FileMetaData()
+                    fmd.simcore_from_uuid(f["Key"], self.simcore_bucket_name)
+                    fmd.project_name = uuid_name_dict.get(dest_folder, "Untitled")
+                    fmd.node_name = uuid_name_dict.get(fmd.node_id, "Untitled")
+                    fmd.raw_file_path = fmd.file_uuid
+                    fmd.display_file_path = str(Path(fmd.project_name) / fmd.node_name / fmd.file_name)
+                    fmd.user_id = user_id
+                    fmd.file_size = f['Size']
+                    fmd.last_modified = str(f['LastModified'])
+                    fmds.append(fmd)
 
 
         # step 4 sync db
@@ -521,3 +524,26 @@ class DataStorageManager:
                     await conn.execute(delete_me)
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
+
+    async def delete_project_simcore_s3(self, user_id: str, project_id):
+        """ Deletes all files from a given project in simcore.s3 and updated db accordingly
+        """
+
+        async with self.engine.acquire() as conn:
+            delete_me = file_meta_data.delete().where(and_(file_meta_data.c.user_id == user_id,
+                file_meta_data.c.project_id == project_id))
+            await conn.execute(delete_me)
+
+        _loop = asyncio.get_event_loop()
+        session = aiobotocore.get_session(loop=_loop)
+        async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key) as client:
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=project_id+"/")
+            if "Contents" in response:
+                objects_to_delete = []
+                for f in response['Contents']:
+                    objects_to_delete.append( { 'Key': f['Key'] })
+
+                if objects_to_delete:
+                    response = await client.delete_objects(Bucket=self.simcore_bucket_name, Delete={'Objects' : objects_to_delete})
+                    return response

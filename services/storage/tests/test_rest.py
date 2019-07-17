@@ -3,10 +3,12 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
 
 import json
 import os
 import sys
+from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from urllib.parse import quote
@@ -15,12 +17,14 @@ import pytest
 from aiohttp import web
 
 from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import setup_dsm
+from simcore_service_storage.dsm import (APP_DSM_KEY, DataStorageManager,
+                                         setup_dsm)
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
 from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 from utils_assert import assert_status
+from utils_project import clone_project_data
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -261,12 +265,17 @@ def get_project_with_data():
     return projects
 
 
-from utils_project import clone_project_data
 
 @pytest.mark.parametrize("project_name,project", [ (prj['name'], prj) for prj in get_project_with_data()])
-async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, project_name, project):
+async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, project_name, project, mocker):
     source_project = project
     destination_project, nodes_map = clone_project_data(source_project)
+
+    dsm = client.app[APP_DSM_KEY]
+    mock_dsm = mocker.patch.object(dsm,"copy_file")
+    mock_dsm.return_value = Future()
+    mock_dsm.return_value.set_result("Howdie")
+
 
     # CREATING
     url = client.app.router["copy_folders_from_project"].url_for().with_query(user_id="1")
@@ -278,16 +287,16 @@ async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, pro
 
     data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
 
-
+    # data should be equal to the destination project, and all store entries should point to simcore.s3
     for key in data:
         if key!="workbench":
-            assert data[key] == destination_project['project']
-
-    # TODO: check that data is actually in s3
-    # TODO: assert
-
-
-
+            assert data[key] == destination_project[key]
+        else:
+            for _node_id, node in data[key].items():
+                if 'outputs' in node:
+                    for _o_id, o in node['outputs'].items():
+                        if 'store' in o:
+                            assert o['store'] == SIMCORE_S3_ID
 
     # DELETING
     project_id = data['uuid']
