@@ -6,8 +6,8 @@ import os
 import trafaret_config
 import trafaret_config.commandline as commandline
 
-from .resources import RSC_CONFIG_DIR_KEY, resources
 from .config_schema import schema
+from .resources import RSC_CONFIG_DIR_KEY, resources
 from .settings import DEFAULT_CONFIG
 
 log = logging.getLogger(__name__)

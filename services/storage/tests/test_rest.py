@@ -1,18 +1,32 @@
-# pylint: disable=R0913
-# pylint: disable=W0621
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+
+import json
 import os
+import sys
+from asyncio import Future
+from copy import deepcopy
+from pathlib import Path
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
 
 from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import setup_dsm
+from simcore_service_storage.dsm import (APP_DSM_KEY, DataStorageManager,
+                                         setup_dsm)
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from utils import has_datcore_tokens, USER_ID, BUCKET_NAME
+from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
+from utils_assert import assert_status
+from utils_project import clone_project_data
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 def parse_db(dsm_mockup_db):
     id_name_map = {}
@@ -168,7 +182,7 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
         source_uuid = fmd.file_uuid
-        datcore_uuid = os.path.join(datcore_testbucket, fmd.file_name)
+        datcore_uuid = os.path.join(datcore_testbucket[0], fmd.file_name)
         resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
             fmd.user_id, SIMCORE_S3_ID, quote(source_uuid, safe='')))
         payload = await resp.json()
@@ -239,3 +253,54 @@ async def test_action_check(client):
 
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
+
+
+
+def get_project_with_data():
+    projects = []
+    with open(current_dir / "data/projects_with_data.json") as fp:
+        projects = json.load(fp)
+
+    # TODO: add schema validation
+    return projects
+
+
+
+@pytest.mark.parametrize("project_name,project", [ (prj['name'], prj) for prj in get_project_with_data()])
+async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, project_name, project, mocker):
+    source_project = project
+    destination_project, nodes_map = clone_project_data(source_project)
+
+    dsm = client.app[APP_DSM_KEY]
+    mock_dsm = mocker.patch.object(dsm,"copy_file")
+    mock_dsm.return_value = Future()
+    mock_dsm.return_value.set_result("Howdie")
+
+
+    # CREATING
+    url = client.app.router["copy_folders_from_project"].url_for().with_query(user_id="1")
+    resp = await client.post(url, json={
+        'source':source_project,
+        'destination': destination_project,
+        'nodes_map': nodes_map
+    })
+
+    data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
+
+    # data should be equal to the destination project, and all store entries should point to simcore.s3
+    for key in data:
+        if key!="workbench":
+            assert data[key] == destination_project[key]
+        else:
+            for _node_id, node in data[key].items():
+                if 'outputs' in node:
+                    for _o_id, o in node['outputs'].items():
+                        if 'store' in o:
+                            assert o['store'] == SIMCORE_S3_ID
+
+    # DELETING
+    project_id = data['uuid']
+    url = client.app.router["delete_folders_of_project"].url_for(folder_id=project_id).with_query(user_id="1")
+    resp = await client.delete(url)
+
+    await assert_status(resp, expected_cls=web.HTTPNoContent)

@@ -5,7 +5,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.monitoring import setup_monitoring
 
 from .db import setup_db

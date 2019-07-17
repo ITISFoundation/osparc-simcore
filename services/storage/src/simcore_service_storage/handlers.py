@@ -1,3 +1,4 @@
+import json
 import logging
 
 import attr
@@ -9,7 +10,7 @@ from . import __version__
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
-from .settings import APP_DSM_KEY, DATCORE_STR
+from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID
 
 log = logging.getLogger(__name__)
 
@@ -160,7 +161,6 @@ async def update_file_meta_data(request: web.Request):
     _location = dsm.location_from_id(location_id)
 
 
-
 async def download_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -244,6 +244,47 @@ async def delete_file(request: web.Request):
         'error': None,
         'data': None
         }
+
+
+async def create_folders_from_project(request: web.Request):
+    #FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
+    # params, query, body = await extract_and_validate(request)
+
+    user_id = request.query.get("user_id")
+
+    body = await request.json()
+    source_project = body.get('source', {})
+    destination_project = body.get('destination', {})
+    nodes_map = body.get('nodes_map', {})
+
+    # TODO: remove this for production
+    assert set(nodes_map.keys()) == set(source_project['workbench'].keys())
+    assert set(nodes_map.values()) == set(destination_project['workbench'].keys())
+
+    # TODO: validate project with jsonschema instead??
+
+    params = { "location_id" : SIMCORE_S3_ID }
+    query = { "user_id": user_id}
+    dsm = await _prepare_storage_manager(params, query, request)
+    await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project, nodes_map)
+
+    raise web.HTTPCreated(text=json.dumps(destination_project),
+                                content_type='application/json')
+
+async def delete_folders_of_project(request: web.Request):
+    folder_id = request.match_info['folder_id']
+    user_id = request.query.get("user_id")
+
+    # TODO: implement
+    params = { "location_id" : SIMCORE_S3_ID }
+    query = { "user_id": user_id}
+    dsm = await _prepare_storage_manager(params, query, request)
+    await dsm.delete_project_simcore_s3(user_id, folder_id)
+
+    raise web.HTTPNoContent(content_type='application/json')
+
+
+
 
 
 # HELPERS -----------------------------------------------------
