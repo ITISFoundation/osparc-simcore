@@ -232,41 +232,42 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 submit = datetime.datetime.utcnow())
             await conn.execute(query)
 
-async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):
-    db_engine = app[APP_DB_ENGINE_KEY]
-
-    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
-    await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
-    await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
-    log.debug("END OF ROUTINE.")
-
-async def _pre_update_pipeline(request):
-    await check_permission(request, "services.pipeline.*")
-
+async def _process_request(request):
     # TODO: PC->SAN why validation is commented???
     # params, query, body = await extract_and_validate(request)
     project_id = request.match_info.get("project_id", None)
     if project_id is None:
         raise web.HTTPBadRequest
 
-
     user_id = request[RQT_USERID_KEY]
 
-    project = await get_project_for_user(request, project_id, user_id)
-    pipeline_data = project["workbench"]
-
-    # update pipeline
-    await _update_pipeline_db(request.app, project_id, pipeline_data)
-
     return user_id, project_id
+
+# API ------------------------------------------
+
+async def update_pipeline_db(app: web.Application, project_id, pipeline_data):
+    db_engine = app[APP_DB_ENGINE_KEY]
+
+    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
+
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
+    await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
+    await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
+
+    log.debug("END OF ROUTINE.")
+
 
 # HANDLERS ------------------------------------------
 
 @login_required
 async def update_pipeline(request: web.Request) -> web.Response:
-    await _pre_update_pipeline(request)
+    await check_permission(request, "services.pipeline.*")
+
+    user_id, project_id = await _process_request(request)
+
+    project = await get_project_for_user(request, project_id, user_id)
+    await update_pipeline_db(request.app, project_id, project["workbench"])
 
     raise web.HTTPNoContent()
 
@@ -276,7 +277,12 @@ async def start_pipeline(request: web.Request) -> web.Response:
     """ Starts pipeline described in the workbench section of a valid project
         already at the server side
     """
-    user_id, project_id = await _pre_update_pipeline(request)
+    await check_permission(request, "services.pipeline.*")
+
+    user_id, project_id = await _process_request(request)
+
+    project = await get_project_for_user(request, project_id, user_id)
+    await update_pipeline_db(request.app, project_id, project["workbench"])
 
     # commit the tasks to celery
     _ = get_celery(request.app).send_task("comp.task", args=(user_id, project_id,), kwargs={})
