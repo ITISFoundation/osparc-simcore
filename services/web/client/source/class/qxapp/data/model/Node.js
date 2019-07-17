@@ -183,7 +183,7 @@ qx.Class.define("qxapp.data.model.Node", {
   },
 
   events: {
-    "updatePipeline": "qx.event.type.Data",
+    "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -451,21 +451,25 @@ qx.Class.define("qxapp.data.model.Node", {
      *
      */
     __addSettings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
+      const form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
       }, this);
       form.addListener("linkRemoved", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
+      }, this);
+      propsWidget.addListener("dataFieldModified", e => {
+        // const changedDataField = e.getData();
+        this.__retrieveInputs();
       }, this);
     },
 
@@ -633,8 +637,21 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
+    setRetrieveStatus: function(retrieveStatus) {
+      console.log(retrieveStatus);
+      if ("inputs" in retrieveStatus) {
+        const inputs = retrieveStatus["inputs"];
+        for (const portId in inputs) {
+          const portStatus = inputs[portId];
+          if ("progress" in portStatus) {
+            this.getPropsWidget().setRetrieveStatus(portId, portStatus["progress"]);
+          }
+        }
+      }
+    },
+
     __retrieveInputs: function() {
-      this.fireDataEvent("updatePipeline", this);
+      this.fireDataEvent("retrieveInputs", this);
     },
 
     retrieveInputs: function() {

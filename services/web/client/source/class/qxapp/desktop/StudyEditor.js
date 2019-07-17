@@ -49,7 +49,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     this.initDefault();
     this.connectEvents();
 
-    this.__startAutoSaveTimer();
+    this.__startTimers();
     this.__attachEventHandlers();
   },
 
@@ -78,12 +78,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __nodeView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+    __retrieveProgressTimer: null,
 
     /**
      * Destructor
      */
     destruct: function() {
       this.__stopAutoSaveTimer();
+      this.__stopAutoRetrieveTimer();
     },
 
     initDefault: function() {
@@ -148,14 +150,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
+      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("updatePipeline", e => {
+      workbench.addListener("retrieveInputs", e => {
         let node = e.getData();
-        this.__updatePipeline(node);
+        this.__updatePipelineAndRetrieve(node);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -357,39 +359,30 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
-      let req = new qxapp.io.request.ApiRequest(url, "PUT");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("updating pipeline: " + url);
-      console.log(data);
-
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline successfully updated");
-        if (node) {
-          node.retrieveInputs();
-        } else {
-          const workbench = this.getStudy().getWorkbench();
-          const allNodes = workbench.getNodes(true);
-          Object.values(allNodes).forEach(node2 => {
-            node2.retrieveInputs();
-          }, this);
-        }
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error updating pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed updating pipeline");
-      }, this);
-      req.send();
-
+    __updatePipelineAndRetrieve: function(node) {
+      this.updateStudyDocument(
+        null,
+        this.__pipelineSuccessfullyUpdated.bind(this, node),
+        this.__pipelineUnsuccessfullyUpdated.bind(this)
+      );
       this.getLogger().debug(null, "Updating pipeline");
+    },
+
+    __pipelineSuccessfullyUpdated: function(node) {
+      this.getLogger().debug(null, "Retrieveing inputs");
+      if (node) {
+        node.retrieveInputs();
+      } else {
+        const workbench = this.getStudy().getWorkbench();
+        const allNodes = workbench.getNodes(true);
+        Object.values(allNodes).forEach(node2 => {
+          node2.retrieveInputs();
+        }, this);
+      }
+    },
+
+    __pipelineUnsuccessfullyUpdated: function() {
+      this.getLogger().error(null, "Error updating pipeline");
     },
 
     __startPipeline: function() {
@@ -489,6 +482,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getStudy().getWorkbench().clearProgressData();
     },
 
+    __startTimers: function() {
+      this.__startAutoSaveTimer();
+      // this.__startGetRetrieveProgressTimer();
+    },
+
     __startAutoSaveTimer: function() {
       let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
@@ -512,6 +510,27 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       timer.start();
     },
 
+    __startGetRetrieveProgressTimer: function() {
+      const studyId = this.getStudy().getUuid();
+      // Save every 2 seconds
+      const interval = 2000;
+      let timer = this.__retrieveProgressTimer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        const study = this.__studyResources.project;
+        study.addListenerOnce("getProgressSuccess", e => {
+          const data = e.getData();
+          console.log(data);
+          if ("nodes" in data) {
+            this.getStudy().setRetrieveStatus(data["nodes"]);
+          }
+        }, this);
+        study.getProgress({
+          "project_id": studyId
+        });
+      }, this);
+      timer.start();
+    },
+
     __stopAutoSaveTimer: function() {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
@@ -519,7 +538,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cb) {
+    __stopAutoRetrieveTimer: function() {
+      if (this.__retrieveProgressTimer && this.__retrieveProgressTimer.isEnabled()) {
+        this.__retrieveProgressTimer.stop();
+        this.__retrieveProgressTimer.setEnabled(false);
+      }
+    },
+
+    updateStudyDocument: function(newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -529,8 +555,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cb) {
-          cb.call(this);
+        if (cbSuccess) {
+          cbSuccess.call(this);
+        }
+      }, this);
+      resource.addListenerOnce("putError", ev => {
+        if (cbError) {
+          cbError.call(this);
         }
       }, this);
       resource.put({

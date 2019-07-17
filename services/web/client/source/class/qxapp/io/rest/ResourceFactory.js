@@ -104,6 +104,12 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         del: {
           method: "DELETE",
           url: basePath+"/projects/{project_id}"
+        },
+
+        // Retrieve study
+        getProgress: {
+          method: "GET",
+          url: basePath+"/projects/{project_id}/progress"
         }
       });
 
