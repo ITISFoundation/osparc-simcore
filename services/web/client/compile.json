@@ -105,9 +105,6 @@
       },
       {
         "uri": "resource/qxapp/loading/*"
-      },
-      {
-        "uri": "resource/canvg/canvg.min.js"
       }
     ]
   },
