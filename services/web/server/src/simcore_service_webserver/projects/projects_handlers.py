@@ -5,7 +5,7 @@ import logging
 from aiohttp import web
 from jsonschema import ValidationError
 
-from ..computation_handlers import update_pipeline_db
+from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from .projects_api import validate_project
