@@ -109,6 +109,7 @@ async def template_project(client, fake_project):
 def computational_system_mock(mocker):
     mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
     mock_fun.return_value.set_result("")
+    return mock_fun
 
 
 
