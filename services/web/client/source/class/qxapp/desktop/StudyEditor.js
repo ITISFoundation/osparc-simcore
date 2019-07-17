@@ -178,15 +178,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__nodesTree;
-      treeView.addListener("changeSelectedNode", e => {
+      const nodesTree = this.__nodesTree;
+      nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
           node.setActive(true);
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        treeView.nodeSelected(e.getData());
+        nodesTree.nodeSelected(e.getData());
       });
     },
 
