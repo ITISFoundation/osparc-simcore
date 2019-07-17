@@ -83,6 +83,65 @@ class DatcoreClient(object):
 
         return files
 
+    def list_files_raw(self, dataset_filter: str=""):
+        data = {}
+        _files = []
+
+        api = self.client._api.datasets
+        for dataset in self.client.datasets():
+            dataset_id = dataset.id
+            files = []
+
+            cursor = ''
+            page_size = 1000
+            while True:
+                resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id, cursor=cursor, pageSize=page_size, includeSourceFiles=True))
+                for package in resp['packages']:
+                    id = package['content']['id']
+                    data[id] = package
+                    files.append(package)
+                cursor = resp.get('cursor')
+                if cursor is None:
+                    break
+                else:
+                    print("Getting next page with cursor", cursor)
+                print(len(files))
+
+            for f in files:
+                if f['content']['packageType'] != 'Collection':
+                    filename = f['content']['name']
+                    file_path = ""# filename
+                    file_id = "id"
+                    _f = f
+                    while 'parentId' in _f['content'].keys():
+                        parentid = _f['content']['parentId']
+                        _f = data[parentid]
+                        file_path =  _f['content']['name'] +"/" + file_path
+
+                    #file_path = dataset.name + "/" + file_path
+
+                    parts = Path(file_path).parts
+                    bucket_name = dataset.name
+                    file_name = filename
+                    file_size = 0
+
+                    if len(parts) > 1:
+                        object_name = str(Path(*list(parts)[1:])/ Path(file_name))
+                    else:
+                        object_name = str(Path(file_name))
+
+                    file_uuid = str(Path(bucket_name) / Path(object_name))
+                    created_at = "n/a"
+                    last_modified = "n/a"
+                    fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
+                            location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
+                            raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
+                            last_modified=last_modified, file_size=file_size)
+
+                    _files.append(fmd)
+
+        return _files
+
     def list_dataset_files_recursively(self, files: List[FileMetaData], base: BaseCollection, current_root: Path):
         for item in base:
             if isinstance(item, Collection):

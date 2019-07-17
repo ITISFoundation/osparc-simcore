@@ -60,6 +60,16 @@ class DatcoreWrapper:
         return files
 
     @make_async
+    def list_files_raw(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
+        files = []
+        try:
+            files = self.d_client.list_files_raw()
+        except Exception as e:
+            logger.exception("Error listing datcore files %s", e)
+
+        return files
+
+    @make_async
     def delete_file(self, destination: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
         try:
