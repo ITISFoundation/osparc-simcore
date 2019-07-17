@@ -120,7 +120,12 @@ qx.Class.define("qxapp.data.Store", {
             type: "data:*/*"
           }
         }
-      }, {
+      }];
+      return builtInServices;
+    },
+
+    getBuiltInServices2: function() {
+      const builtInServices = [{
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
