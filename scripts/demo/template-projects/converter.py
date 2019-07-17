@@ -35,7 +35,7 @@ def load_projects(csv_path:Path ):
 
     # process
     for db_prj in db_projects:
-        if int(db_prj['published'])==1:
+        if int(db_prj.get('published', 0) or 0)==1:
             prj = _convert_to_schema_names(db_prj)
 
             # jsonifies
