@@ -41,30 +41,45 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   construct: function() {
     this.base(arguments);
 
-    const inputNodesLayout = this.__inputNodesLayout = new qxapp.desktop.SidePanel();
-    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-    let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
-      font: navBarLabelFont,
-      alignX: "center"
-    });
-    inputNodesLayout.add(inputLabel);
-
-    const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
+    const inputPanel = this.__inputPanel = new qxapp.desktop.SidePanel().set({
       minWidth: 300
     });
-    scroll.add(inputNodesLayout);
-    this.add(scroll, 0);
+    const titleBar = new qx.ui.toolbar.ToolBar();
+    const titlePart = new qx.ui.toolbar.Part();
+    const buttonPart = new qx.ui.toolbar.Part();
+    titleBar.add(titlePart);
+    titleBar.addSpacer();
+    titleBar.add(buttonPart);
+    this.add(titleBar, 0);
+    titlePart.add(new qx.ui.basic.Atom(this.tr("Inputs")).set({
+      font: "title-18"
+    }));
+    const collapseBtn = this.__collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
+    buttonPart.add(collapseBtn);
+    inputPanel.add(titleBar);
 
-    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-      alignX: "center",
-      padding: [0, 40]
+    const scroll = this.__scrollContainer = new qx.ui.container.Scroll();
+    const inputContainer = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    scroll.add(inputContainer);
+    inputPanel.add(scroll, {
+      flex: 1
     });
+
+    this.add(inputPanel, 0);
+
+    const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.add(mainLayout, 1);
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(18));
+    this.__settingsLayout = new qx.ui.groupbox.GroupBox(this.tr("Settings")).set({
+      appearance: "settings-groupbox",
+      maxWidth: 500,
+      alignX: "center"
+    });
+    this.__settingsLayout.setLayout(new qx.ui.layout.VBox());
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__initButtons();
+    this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+
+    mainLayout.add(this.__initToolbar());
 
     this.__attachEventHandlers();
   },
@@ -76,54 +91,50 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     node: {
-      check: "qxapp.data.model.Node"
+      check: "qxapp.data.model.Node",
+      apply: "_applyNode"
     }
   },
 
   members: {
     __mainLayout: null,
     __scrollContainer: null,
+    __inputPanel: null,
     __inputNodesLayout: null,
     __settingsLayout: null,
     __mapperLayout: null,
     __iFrameLayout: null,
-    __buttonsLayout: null,
-    __openFolder: null,
+    __toolbar: null,
+    __title: null,
+    __buttonContainer: null,
+    __filesButton: null,
+    __collapseBtn: null,
 
-    __initButtons: function() {
-      let box = new qx.ui.layout.HBox();
-      box.set({
-        spacing: 10,
-        alignX: "right"
+    __initToolbar: function() {
+      const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
+      const titlePart = new qx.ui.toolbar.Part();
+      const infoPart = new qx.ui.toolbar.Part();
+      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
+      toolbar.add(titlePart);
+      toolbar.add(infoPart);
+      toolbar.addSpacer();
+
+      const title = this.__title = new qx.ui.basic.Atom().set({
+        font: "title-18"
       });
-      let buttonsLayout = this.__buttonsLayout = new qx.ui.container.Composite(box);
+      titlePart.add(title);
 
-      let openFolder = this.__openFolder = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/folder-open/32"
-      });
-      openFolder.addListener("execute", function() {
-        let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
+      infoPart.add(infoBtn);
 
-        let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-          layout: new qx.ui.layout.Canvas(),
-          contentPadding: 0,
-          showMinimize: false,
-          width: 900,
-          height: 600,
-          appearance: "service-window"
-        });
-        win.add(nodeDataManager, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
+      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      buttonsPart.add(filesBtn);
 
-        win.center();
-        win.open();
-      }, this);
+      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
-      buttonsLayout.add(openFolder);
+      infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+
+      return toolbar;
     },
 
     buildLayout: function() {
@@ -135,7 +146,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __addInputPortsUIs: function() {
-      this.__clearInputPortsUIs();
+      this.__inputNodesLayout.removeAll();
 
       // Add the default inputs if any
       if (Object.keys(this.getNode().getInputsDefault()).length > 0) {
@@ -157,13 +168,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __clearInputPortsUIs: function() {
-      // remove all but the title
-      while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
-      }
-    },
-
     __createInputPortsUI: function(inputNode, isInputModel = true) {
       let nodePorts = null;
       if (isInputModel) {
@@ -172,8 +176,11 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         nodePorts = inputNode.getInputsDefaultWidget();
       }
       if (nodePorts) {
-        this.__inputNodesLayout.add(nodePorts);
+        this.__inputNodesLayout.add(nodePorts, {
+          flex: 1
+        });
       }
+      nodePorts.setCollapsed(false);
       return nodePorts;
     },
 
@@ -181,20 +188,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       const propsWidget = this.getNode().getPropsWidget();
       this.__settingsLayout.removeAll();
       if (propsWidget) {
-        let box = new qx.ui.layout.HBox();
-        box.set({
-          spacing: 10,
-          alignX: "center"
-        });
-        let titleBox = new qx.ui.container.Composite(box);
-        let settLabel = new qx.ui.basic.Label(this.tr("Settings")).set({
-          font: "nav-bar-label"
-        });
-        titleBox.add(settLabel);
-
-        this.__settingsLayout.add(titleBox);
         this.__settingsLayout.add(propsWidget);
-
         this.__mainLayout.add(this.__settingsLayout);
       } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__settingsLayout)) {
         this.__mainLayout.remove(this.__settingsLayout);
@@ -243,7 +237,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__inputNodesLayout.setVisibility(othersStatus);
       this.__settingsLayout.setVisibility(othersStatus);
       this.__mapperLayout.setVisibility(othersStatus);
-      this.__buttonsLayout.setVisibility(othersStatus);
+      this.__toolbar.setVisibility(othersStatus);
     },
 
     hasIFrame: function() {
@@ -260,27 +254,50 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __addButtons: function() {
-      this.__buttonsLayout.removeAll();
+      this.__buttonContainer.removeAll();
       let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
       if (retrieveIFrameButton) {
-        this.__buttonsLayout.add(retrieveIFrameButton);
+        this.__buttonContainer.add(retrieveIFrameButton);
       }
       let restartIFrameButton = this.getNode().getRestartIFrameButton();
       if (restartIFrameButton) {
-        this.__buttonsLayout.add(restartIFrameButton);
+        this.__buttonContainer.add(restartIFrameButton);
       }
-      this.__buttonsLayout.add(this.__openFolder);
-      this.__mainLayout.add(this.__buttonsLayout);
+      this.__buttonContainer.add(this.__filesButton);
+      this.__toolbar.add(this.__buttonContainer);
+    },
+
+    __openNodeDataManager: function() {
+      const nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 0,
+        showMinimize: false,
+        width: 900,
+        height: 600,
+        appearance: "service-window"
+      });
+      win.add(nodeDataManager);
+
+      win.center();
+      win.open();
+    },
+
+    __openServiceInfo: function() {
+      const win = new qxapp.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
+      win.center();
+      win.open();
     },
 
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__inputNodesLayout.toggleCollapsed.bind(this.__inputNodesLayout));
+      this.__blocker.addListener("tap", this.__inputPanel.toggleCollapsed.bind(this.__inputPanel));
 
       const maximizeIframeCb = msg => {
         this.__blocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
-        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+        this.__inputPanel.setVisibility(msg.getData() ? "excluded" : "visible");
       };
 
       this.addListener("appear", () => {
@@ -290,6 +307,16 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+
+      this.__collapseBtn.addListener("execute", () => {
+        this.__inputNodesLayout.getChildren().forEach(node => {
+          node.setCollapsed(true);
+        });
+      }, this);
+    },
+
+    _applyNode: function(node) {
+      this.__title.setLabel(node.getLabel());
     }
   }
 });

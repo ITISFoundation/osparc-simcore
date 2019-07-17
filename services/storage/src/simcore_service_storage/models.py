@@ -21,18 +21,13 @@ from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
 
 
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have 12/123123123/111.txt
+    # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
 
-    object_name = "invalid"
-    dataset_name = "invalid"
+    file_path = Path(file_uuid)
+    destination = file_path.parent
+    file_name = file_path.name
 
-    parts = file_uuid.split("/")
-
-    if len(parts) > 1:
-        dataset_name = parts[0]
-        object_name = "/".join(parts[1:])
-
-    return dataset_name, object_name
+    return destination, file_name
 
 def _locations():
     # TODO: so far this is hardcoded

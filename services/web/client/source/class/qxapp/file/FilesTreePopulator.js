@@ -96,7 +96,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     },
 
     populateMyLocation: function(locationId = null) {
-      if (locationId) {
+      if (locationId !== null) {
         const locationModel = this.__getLocationModel(locationId);
         if (locationModel) {
           locationModel.getChildren().removeAll();

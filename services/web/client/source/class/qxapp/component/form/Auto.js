@@ -573,6 +573,7 @@ qx.Class.define("qxapp.component.form.Auto", {
         control.set(s.set);
       }
       control.key = key;
+      control.description = s.description;
       this.__ctrlMap[key] = control;
 
       let controlLink = new qx.ui.form.TextField().set({

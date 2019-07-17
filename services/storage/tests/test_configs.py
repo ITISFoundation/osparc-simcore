@@ -54,7 +54,6 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 
     container_environ = create_environ(skip_system_environ=True)
     container_environ.update({
-        'VENV2': '/home/scu/.venv27/', # defined in Dockerfile
         'OSPARC_SIMCORE_REPO_ROOTDIR':str(osparc_simcore_root_dir)
     })
 
