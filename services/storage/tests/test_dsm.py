@@ -458,24 +458,10 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
     assert new_path != path_in_datcore
     files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(files) == 3
-    found = False
-    for f in files:
-        if f.file_uuid == new_path:
-            found = True
-
-    assert found
+    assert any(f.file_uuid == new_path for f in files)
 
     response = await dsm.delete_project_simcore_s3(user_id, destination_project["uuid"])
     print(response)
 
     files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(files) == 0
-
-async def test_mock(mocker, dsm_fixture):
-    mock_dsm = mocker.patch.object(dsm_fixture,"copy_file")
-    mock_dsm.return_value = Future()
-    mock_dsm.return_value.set_result("Howdie")
-
-    res = await dsm_fixture.copy_file(user_id ="1", dest_location ="", dest_uuid ="", source_location="", source_uuid ="")
-
-    assert res == "Howdie"
