@@ -39,8 +39,8 @@ async def test_datcore_list_files_raw(loop):
     if not utils.has_datcore_tokens():
         return
 
-    api_token = os.environ.get("BF_API_KEY_NIH", "none")
-    api_secret = os.environ.get("BF_API_SECRET_NIH", "none")
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
     f = await dcw.list_files_raw()

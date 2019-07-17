@@ -95,7 +95,8 @@ class DatcoreClient(object):
             cursor = ''
             page_size = 1000
             while True:
-                resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id, cursor=cursor, pageSize=page_size, includeSourceFiles=True))
+                resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id,
+                    cursor=cursor, pageSize=page_size, includeSourceFiles=False))
                 for package in resp['packages']:
                     id = package['content']['id']
                     data[id] = package
@@ -111,7 +112,7 @@ class DatcoreClient(object):
                 if f['content']['packageType'] != 'Collection':
                     filename = f['content']['name']
                     file_path = ""# filename
-                    file_id = "id"
+                    file_id = f['content']['nodeId']
                     _f = f
                     while 'parentId' in _f['content'].keys():
                         parentid = _f['content']['parentId']
@@ -131,8 +132,8 @@ class DatcoreClient(object):
                         object_name = str(Path(file_name))
 
                     file_uuid = str(Path(bucket_name) / Path(object_name))
-                    created_at = "n/a"
-                    last_modified = "n/a"
+                    created_at = f['content']['createdAt']
+                    last_modified = f['content']['updatedAt']
                     fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
                             location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
                             raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
