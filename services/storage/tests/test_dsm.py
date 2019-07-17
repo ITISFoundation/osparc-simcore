@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+import copy
 import datetime
 import filecmp
 import io
@@ -12,6 +13,7 @@ import json
 import os
 import urllib
 import uuid
+from asyncio import Future
 from pathlib import Path
 from pprint import pprint
 
@@ -242,7 +244,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
-    await dsm.upload_file_to_datcore(user_id=user_id, local_file_path=tmp_file2, destination=datcore_testbucket, fmd=fmd)
+    await dsm.upload_file_to_datcore(user_id=user_id, local_file_path=tmp_file2, destination=datcore_testbucket[0], fmd=fmd)
 
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
 
@@ -327,7 +329,7 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
             pass
 
     #now copy to datcore
-    dat_core_uuid = os.path.join(datcore_testbucket, fmd.file_name)
+    dat_core_uuid = os.path.join(datcore_testbucket[0], fmd.file_name)
 
     await dsm.copy_file(user_id=user_id, dest_location=DATCORE_STR, dest_uuid=dat_core_uuid, source_location=SIMCORE_S3_STR,
         source_uuid=fmd.file_uuid)
@@ -364,3 +366,116 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.node_name
         assert d.project_name
         assert d.raw_file_path
+
+
+async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_testbucket):
+    if not has_datcore_tokens():
+        return
+    dsm = dsm_fixture
+    utils.create_full_tables(url=postgres_service_url)
+
+    datcore_file = Path(datcore_testbucket[1]).name
+    datcore_bucket = Path(datcore_testbucket[0])
+    path_in_datcore = str(datcore_bucket/datcore_file)
+    user_id = USER_ID
+
+    source_project =  {
+        "uuid": "template-uuid-4d5e-b80e-401c8066782f",
+        "name": "ISAN: 2D Plot",
+        "description": "2D RawGraphs viewer with one input",
+        "thumbnail": "",
+        "prjOwner": "maiz",
+        "creationDate": "2019-05-24T10:36:57.813Z",
+        "lastChangeDate": "2019-05-24T11:36:12.015Z",
+        "workbench": {
+          "template-uuid-48eb-a9d2-aaad6b72400a": {
+            "key": "simcore/services/frontend/file-picker",
+            "version": "1.0.0",
+            "label": "File Picker",
+            "inputs": {},
+            "inputNodes": [],
+            "outputNode": False,
+            "outputs": {
+              "outFile": {
+                "store": 1,
+                "path": "Shared Data/Height-Weight.csv"
+              }
+            },
+            "progress": 100,
+            "thumbnail": "",
+            "position": {
+              "x": 100,
+              "y": 100
+            }
+          },
+          "template-uuid-4c63-a705-03a2c339646c": {
+            "key": "simcore/services/dynamic/raw-graphs",
+            "version": "2.8.0",
+            "label": "2D plot",
+            "inputs": {
+              "input_1": {
+                "nodeUuid": "template-uuid-48eb-a9d2-aaad6b72400a",
+                "output": "outFile"
+              }
+            },
+            "inputNodes": [
+              "template-uuid-48eb-a9d2-aaad6b72400a"
+            ],
+            "outputNode": False,
+            "outputs": {},
+            "progress": 0,
+            "thumbnail": "",
+            "position": {
+              "x": 400,
+              "y": 100
+            }
+          }
+        }
+    }
+
+    bucket_name = BUCKET_NAME
+    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    source_project["workbench"]["template-uuid-48eb-a9d2-aaad6b72400a"]["outputs"]["outFile"]["path"] = path_in_datcore
+
+    destination_project = copy.deepcopy(source_project)
+    source_project_id = source_project["uuid"]
+    destination_project["uuid"] = source_project_id.replace("template", "deep-copy")
+    destination_project["workbench"] = {}
+
+    node_mapping = {}
+
+    for node_id, node in source_project["workbench"].items():
+        object_name = str(Path(source_project_id) / Path(node_id) / Path(node_id + ".dat"))
+        f = utils.data_dir() / Path("notebooks.zip")
+        s3_client.upload_file(bucket_name, object_name, f)
+        key = node_id.replace("template", "deep-copy")
+        destination_project["workbench"][key] = node
+        node_mapping[node_id] = key
+
+    status = await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project, node_mapping)
+    new_path = destination_project["workbench"]["deep-copy-uuid-48eb-a9d2-aaad6b72400a"]["outputs"]["outFile"]["path"]
+    assert new_path != path_in_datcore
+    files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(files) == 3
+    found = False
+    for f in files:
+        if f.file_uuid == new_path:
+            found = True
+
+    assert found
+
+    response = await dsm.delete_project_simcore_s3(user_id, destination_project["uuid"])
+    print(response)
+
+    files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(files) == 0
+
+async def test_mock(mocker, dsm_fixture):
+    mock_dsm = mocker.patch.object(dsm_fixture,"copy_file")
+    mock_dsm.return_value = Future()
+    mock_dsm.return_value.set_result("Howdie")
+
+    res = await dsm_fixture.copy_file(user_id ="1", dest_location ="", dest_uuid ="", source_location="", source_uuid ="")
+
+    assert res == "Howdie"

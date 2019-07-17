@@ -32,7 +32,6 @@ if utils.has_datcore_tokens():
     finally:
         os.remove(path)
 
-    aa
     files =  []
     if True:
         dataset = client.get_dataset("mag")
