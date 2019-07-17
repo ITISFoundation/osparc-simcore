@@ -39,9 +39,8 @@ def create_application(config: Dict) -> web.Application:
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
-    if config['main'].get('testing'):
-        log.debug("Config:\n%s",
-            json.dumps(config, indent=2, sort_keys=True))
+    log.debug("Config:\n%s",
+        json.dumps(config, indent=2, sort_keys=True))
 
     testing = config["main"].get("testing", False)
     monitoring = config["main"]["monitoring_enabled"]

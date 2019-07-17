@@ -21,7 +21,7 @@ scrape_configs:
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
     static_configs:
-         - targets: ['webserver:8080', 'localhost:9090','cadvisor:8080','node-exporter:9100', 'nginx-exporter:9113']
+         - targets: ['webserver:8080', ]
 
   #- job_name: 'director'
   #  scrape_interval: 5s

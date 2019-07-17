@@ -17,7 +17,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
-  #----------------------------------------------
+  #-------------------------------------------
   # https://hub.docker.com/r/prom/prometheus
   prometheus:
     image: prom/prometheus:v2.10.0
@@ -50,28 +50,10 @@ services:
       #- GF_SMTP_USER=myadrress@gmail.com
       #- GF_SMTP_PASSWORD=mypassword
       #- GF_SMTP_FROM_ADDRESS=myaddress@gmail.com
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: monitoring_node_exporter
-    restart: unless-stopped
-    expose:
-      - 9100
-
-  cadvisor:
-    image: google/cadvisor:latest
-    container_name: monitoring_cadvisor
-    restart: unless-stopped
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    expose:
-      - 8080
 volumes:
-  portainer_data:
-  prometheus_data:
-  grafana_data:
+  portainer_data: {}
+  prometheus_data: {}
+  grafana_data: {}
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
