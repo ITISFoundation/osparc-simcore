@@ -89,20 +89,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const treeView = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
-      treeView.addListener("addNode", () => {
+      const nodesTree = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
-      treeView.addListener("removeNode", e => {
+      nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
-      const extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
-        collapsed: true
-      }), 1);
+      const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
       const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
@@ -178,15 +176,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__nodesTree;
-      treeView.addListener("changeSelectedNode", e => {
+      const nodesTree = this.__nodesTree;
+      nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
           node.setActive(true);
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        treeView.nodeSelected(e.getData());
+        nodesTree.nodeSelected(e.getData());
       });
     },
 
@@ -235,8 +233,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__switchExtraView(nodeId);
-
       this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
@@ -267,38 +263,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
       return widget;
-    },
-
-    __switchExtraView: function(nodeId) {
-      // Show screenshots in the ExtraView
-      if (nodeId === "root") {
-        this.showScreenshotInExtraView("workbench");
-      } else {
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        if (node.isContainer()) {
-          if (node.isInKey("multi-plot")) {
-            this.showScreenshotInExtraView("multi-plot");
-          } else {
-            this.showScreenshotInExtraView("container");
-          }
-        } else if (node.isInKey("file-picker")) {
-          this.showScreenshotInExtraView("file-picker");
-        } else if (node.isInKey("modeler")) {
-          this.showScreenshotInExtraView("modeler");
-        } else if (node.isInKey("3d-viewer")) {
-          this.showScreenshotInExtraView("postpro");
-        } else if (node.isInKey("viewer")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("jupyter")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("Grid")) {
-          this.showScreenshotInExtraView("grid");
-        } else if (node.isInKey("Voxel")) {
-          this.showScreenshotInExtraView("voxels");
-        } else {
-          this.showScreenshotInExtraView("form");
-        }
-      }
     },
 
     __addNode: function() {
@@ -369,27 +333,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
       let nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
-    },
-
-    showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget).set({
-        collapsed: true
-      }), 1);
-    },
-
-    showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
-        scale: true,
-        allowShrinkX: true,
-        allowShrinkY: true
-      });
-      const container = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
-        height: 300
-      });
-      container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container).set({
-        collapsed: true
-      }), 1);
     },
 
     getLogger: function() {

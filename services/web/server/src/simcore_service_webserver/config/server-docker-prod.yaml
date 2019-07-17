@@ -35,7 +35,7 @@ rabbit:
 #   bucket_name: ${S3_BUCKET_NAME}
 login:
   enabled: True
-  registration_invitation_required: True
+  registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
   registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'

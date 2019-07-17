@@ -43,7 +43,6 @@ FileMetaDataVec = List[FileMetaData]
 
 async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
-    main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
 
@@ -57,7 +56,8 @@ async def _setup_dsm(app: web.Application):
     s3_cfg = get_config_s3(app)
     bucket_name = s3_cfg["bucket_name"]
 
-    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name)
+    testing = main_cfg["testing"]
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing)
 
     app[APP_DSM_KEY] = dsm
 
@@ -112,6 +112,8 @@ class DataStorageManager:
     loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
+    has_project_db: bool
+
     datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
 
@@ -185,39 +187,41 @@ class DataStorageManager:
                     d = FileMetaData(**result_dict)
                     data.append(d)
 
-            uuid_name_dict = {}
-            # now parse the project to search for node/project names
-            try:
-                async with self.engine.acquire() as conn:
-                    joint_table = user_to_projects.join(projects)
-                    query = sa.select([projects]).select_from(joint_table)\
-                        .where(user_to_projects.c.user_id == user_id)
+            if self.has_project_db:
+                uuid_name_dict = {}
+                # now parse the project to search for node/project names
+                try:
+                    async with self.engine.acquire() as conn:
+                        joint_table = user_to_projects.join(projects)
+                        query = sa.select([projects]).select_from(joint_table)\
+                            .where(user_to_projects.c.user_id == user_id)
 
-                    async for row in conn.execute(query):
-                        proj_data = {key:value for key,value in row.items()}
+                        async for row in conn.execute(query):
+                            proj_data = {key:value for key,value in row.items()}
 
-                        uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
-                        wb = proj_data['workbench']
-                        for node in wb.keys():
-                            uuid_name_dict[node] = wb[node]['label']
-            except DBAPIError as _err:
-                logger.exception("Error querying database for project names")
+                            uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                            wb = proj_data['workbench']
+                            for node in wb.keys():
+                                uuid_name_dict[node] = wb[node]['label']
+                except DBAPIError as _err:
+                    logger.exception("Error querying database for project names")
 
-            if uuid_name_dict:
+                if not uuid_name_dict:
+                    # there seems to be no project whatsoever for user_id
+                    return []
+
+                # only keep files from non-deleted project --> This needs to be fixed
+                clean_data = []
                 for d in data:
-                    update = False
                     if d.project_id in uuid_name_dict:
-                        if d.project_name != uuid_name_dict[d.project_id]:
-                            d.project_name = uuid_name_dict[d.project_id]
-                            update = True
-                    if d.node_id in uuid_name_dict:
-                        if d.node_name != uuid_name_dict[d.node_id]:
+                        d.project_name = uuid_name_dict[d.project_id]
+                        if d.node_id in uuid_name_dict:
                             d.node_name = uuid_name_dict[d.node_id]
-                            update = True
 
-                    if update:
-                        d.display_file_path = str(Path(d.project_name) / Path(d.node_name) / Path(d.file_name))
                         d.raw_file_path = str(Path(d.project_id) / Path(d.node_id) / Path(d.file_name))
+                        d.display_file_path = d.raw_file_path
+                        if d.node_name and d.project_name:
+                            d.display_file_path = str(Path(d.project_name) / Path(d.node_name) / Path(d.file_name))
                         async with self.engine.acquire() as conn:
                             query = file_meta_data.update().\
                             where(and_(file_meta_data.c.node_id==d.node_id,
@@ -227,23 +231,31 @@ class DataStorageManager:
                                     raw_file_path=d.raw_file_path,
                                     display_file_path=d.display_file_path)
                             await conn.execute(query)
+                            clean_data.append(d)
 
+                data = clean_data
+
+                # same as above, make sure file is physically present on s3
+                clean_data = []
                 # MaG: This is inefficient: Do this automatically when file is modified
                 _loop = asyncio.get_event_loop()
                 session = aiobotocore.get_session(loop=_loop)
-                async with session.create_client('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
-                     aws_secret_access_key=self.s3_client.secret_key) as client:
+                async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
+                        aws_secret_access_key=self.s3_client.secret_key) as client:
                     responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
                     for d, resp in zip(data, responses):
-                        d.file_size = resp['Contents'][0]['Size']
-                        d.last_modified = str(resp['Contents'][0]['LastModified'])
-                        async with self.engine.acquire() as conn:
-                            query = file_meta_data.update().\
-                            where(and_(file_meta_data.c.node_id==d.node_id,
-                                    file_meta_data.c.user_id==d.user_id)).\
-                            values(file_size=d.file_size,
-                                    last_modified=d.last_modified)
-                            await conn.execute(query)
+                        if 'Contents' in resp:
+                            clean_data.append(d)
+                            d.file_size = resp['Contents'][0]['Size']
+                            d.last_modified = str(resp['Contents'][0]['LastModified'])
+                            async with self.engine.acquire() as conn:
+                                query = file_meta_data.update().\
+                                where(and_(file_meta_data.c.node_id==d.node_id,
+                                        file_meta_data.c.user_id==d.user_id)).\
+                                values(file_size=d.file_size,
+                                        last_modified=d.last_modified)
+                                await conn.execute(query)
+                data = clean_data
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
