@@ -16,15 +16,15 @@ import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
+from blackfynn.base import UnauthorizedException
 from sqlalchemy.sql import and_
 from yarl import URL
-from blackfynn.base import UnauthorizedException
 
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import (FileMetaData, _location_from_id,
+from .models import (DatasetMetaData, FileMetaData, _location_from_id,
                      file_meta_data, projects, user_to_projects)
 from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 FileMetaDataVec = List[FileMetaData]
+DatasetMetaDataVec = List[DatasetMetaData]
 
 async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
@@ -290,6 +291,48 @@ class DataStorageManager:
                         filtered_data.append(d)
                         break
             return filtered_data
+
+        return data
+
+    async def list_files_dataset(self, user_id: str, location: str, dataset_id: str)->FileMetaDataVec:
+        # this is a cheap shot, needs fixing once storage/db is in sync
+        data = []
+        if location == SIMCORE_S3_STR:
+            data = await self.list_files(user_id, location, uuid_filter=dataset_id+"/")
+        elif location == DATCORE_STR:
+            api_token, api_secret = self._get_datcore_tokens(user_id)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            data = await dcw.list_files_raw_dataset(dataset_id)
+
+        return data
+
+    async def list_datasets(self, user_id: str, location: str) -> DatasetMetaDataVec:
+        """ Returns a list of top level datasets
+
+            Works for simcore.s3 and datcore
+
+        """
+        data = []
+
+        if location == SIMCORE_S3_STR:
+            # get lis of all projects belonging to user
+            if self.has_project_db:
+                try:
+                    async with self.engine.acquire() as conn:
+                        joint_table = user_to_projects.join(projects)
+                        query = sa.select([projects]).select_from(joint_table)\
+                                .where(user_to_projects.c.user_id == user_id)
+                        async for row in conn.execute(query):
+                            proj_data = {key:value for key,value in row.items()}
+                            dmd = DatasetMetaData(dataset_id=proj_data["uuid"],
+                                display_name=proj_data["name"])
+                            data.append(dmd)
+                except DBAPIError as _err:
+                    logger.exception("Error querying database for project names")
+        elif location == DATCORE_STR:
+            api_token, api_secret = self._get_datcore_tokens(user_id)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            data = await dcw.list_datasets()
 
         return data
 

@@ -60,6 +60,11 @@ def _location_from_str(location : str) ->str:
 
     return intstr
 
+@attr.s(auto_attribs=True)
+class DatasetMetaData:
+    dataset_id: str=""
+    display_name: str=""
+
 
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.

@@ -302,3 +302,19 @@ async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, pro
     resp = await client.delete(url)
 
     await assert_status(resp, expected_cls=web.HTTPNoContent)
+
+async def test_s3_datasets_metadata(client):
+    url = client.app.router["get_datasets_metadata"].url_for(location_id=str(SIMCORE_S3_ID)).with_query(user_id="21")
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, str(payload)
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
+    assert not error
+
+async def test_s3_files_datasets_metadata(client):
+    url = client.app.router["get_files_metadata_dataset"].url_for(location_id=str(SIMCORE_S3_ID), dataset_id="aa").with_query(user_id="21")
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, str(payload)
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
+    assert not error

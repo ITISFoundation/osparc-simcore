@@ -70,6 +70,16 @@ class DatcoreWrapper:
         return files
 
     @make_async
+    def list_files_raw_dataset(self, dataset_id: str)->FileMetaDataVec: #pylint: disable=W0613
+        files = []
+        try:
+            files = self.d_client.list_files_raw_dataset(dataset_id)
+        except Exception:
+            logger.exception("Error listing datcore files")
+
+        return files
+
+    @make_async
     def delete_file(self, destination: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
         try:
@@ -165,6 +175,15 @@ class DatcoreWrapper:
         except Exception:
             logger.exception("Error creating collection in datcore")
         return _id
+
+    @make_async
+    def list_datasets(self):
+        data = []
+        try:
+            data = self.d_client.list_datasets()
+        except Exception:
+            logger.exception("Error creating collection in datcore")
+        return data
 
     @make_async
     def ping(self):

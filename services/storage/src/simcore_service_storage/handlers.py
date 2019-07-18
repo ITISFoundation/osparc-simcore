@@ -97,7 +97,7 @@ async def get_datasets_metadata(request: web.Request):
 
     location = dsm.location_from_id(location_id)
     # To implement
-    data = [] #await dsm.datasets(user_id, location)
+    data = await dsm.list_datasets(user_id, location)
 
     return {
         'error': None,
@@ -154,16 +154,15 @@ async def get_files_metadata_dataset(request: web.Request):
 
     location_id = params["location_id"]
     user_id = query["user_id"]
-    dataset_id = query["dataset_id"]
+    dataset_id = params["dataset_id"]
 
     dsm = await _prepare_storage_manager(params, query, request)
+
     location = dsm.location_from_id(location_id)
 
     log.debug("list files %s %s %s", user_id, location, dataset_id)
 
-    # TO IMPLEMENT
-    data = []
-    # data = await dsm.list_files(user_id=user_id, location=location, uuid_filter=uuid_filter)
+    data = await dsm.list_files_dataset(user_id=user_id, location=location, dataset_id=dataset_id)
 
     data_as_dict = []
     for d in data:

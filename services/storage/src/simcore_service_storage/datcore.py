@@ -13,10 +13,12 @@ from typing import List
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
 
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import DatasetMetaData, FileMetaData
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 logger = logging.getLogger(__name__)
+
+DatasetMetaDataVec = List[DatasetMetaData]
 
 
 #FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
@@ -93,17 +95,17 @@ class DatcoreClient(object):
 
         return files
 
-    def list_files_raw(self, dataset_filter: str=""):
-        data = {}
-        _files = []
+    def list_files_raw_dataset(self, dataset_id: str)->List[FileMetaData]:
+        files = [] # raw packages
+        _files = [] # fmds
+        data = {} # map to keep track of parents-child
 
+        cursor = ''
+        page_size = 1000
         api = self.client._api.datasets
-        for dataset in self.client.datasets():
-            dataset_id = dataset.id
-            files = []
 
-            cursor = ''
-            page_size = 1000
+        dataset = self.client.get_dataset(dataset_id)
+        if dataset is not None:
             while True:
                 resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id,
                     cursor=cursor, pageSize=page_size, includeSourceFiles=False))
@@ -144,6 +146,15 @@ class DatcoreClient(object):
                             raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
                             last_modified=last_modified, file_size=file_size)
                     _files.append(fmd)
+
+        return _files
+
+    def list_files_raw(self, dataset_filter: str="")->List[FileMetaData]:
+        _files = []
+
+        for dataset in self.client.datasets():
+            dataset_id = dataset.id
+            _files = _files + self.list_files_raw_dataset(dataset_id)
 
         return _files
 
@@ -525,3 +536,11 @@ class DatcoreClient(object):
         _id = new_collection.id
 
         return _id
+
+    def list_datasets(self)->DatasetMetaDataVec:
+        data = []
+        for dataset in self.client.datasets():
+            dmd = DatasetMetaData(dataset_id=dataset.id, display_name=dataset.name)
+            data.append(dmd)
+
+        return data

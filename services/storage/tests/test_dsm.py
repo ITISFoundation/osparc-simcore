@@ -464,3 +464,47 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
 
     files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(files) == 0
+
+async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
+    dsm_fixture.has_project_db = True
+
+    datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
+
+    assert len(datasets) == 2
+    assert any("Kember" in d.display_name for d in datasets)
+
+async def test_dsm_list_datasets_datcore(dsm_fixture, datcore_structured_testbucket):
+    if not has_datcore_tokens():
+        return
+
+    datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
+
+    assert len(datasets)
+    assert any(BUCKET_NAME in d.display_name for d in datasets)
+
+async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
+    dsm_fixture.has_project_db = True
+
+    datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
+    assert len(datasets) == 2
+    assert any("Kember" in d.display_name for d in datasets)
+    for d in datasets:
+        files = await dsm_fixture.list_files_dataset(user_id="21", location=SIMCORE_S3_STR, dataset_id=d.dataset_id)
+        if "Kember" in d.display_name:
+            assert len(files) == 2
+        else:
+            assert len(files) == 0
+
+async def test_dsm_list_dataset_files_datcore(dsm_fixture, datcore_structured_testbucket):
+    if not has_datcore_tokens():
+        return
+
+    datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
+
+    assert len(datasets)
+    assert any(BUCKET_NAME in d.display_name for d in datasets)
+
+    for d in datasets:
+        files = await dsm_fixture.list_files_dataset(user_id=USER_ID, location=DATCORE_STR, dataset_id=d.dataset_id)
+        if BUCKET_NAME in d.display_name:
+            assert len(files) == 3
