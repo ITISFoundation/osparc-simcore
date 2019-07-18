@@ -221,12 +221,19 @@ async def delete_project(request: web.Request):
         await db.delete_user_project(user_id, project_uuid)
 
     except ProjectNotFoundError:
+        # TODO: add flag in query to determine whether to respond if error?
         raise web.HTTPNotFound
 
     # requests storage to delete all project's stored data (fire & forget)
     delete_folders_of_project(request.app, project_uuid, user_id)
 
-    # TODO: delete all the dynamic services used by this project when this happens (fire & forget)
 
+    # TODO: delete all the dynamic services used by this project when this happens (fire & forget) #
+    # import asyncio
+    # from ..director.director_api import stop_service
+    # project = await db.pop_project(project_uuid)
+    # tasks = [ stop_service(request.app, service_uuid) for service_uuid in  project.get('workbench',[]) ]
+    # await asyncio.gather(**tasks)
+    # TODO: fire&forget???
 
     raise web.HTTPNoContent(content_type='application/json')

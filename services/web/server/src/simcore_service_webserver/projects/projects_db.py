@@ -303,6 +303,12 @@ class ProjectDBAPI:
                     where(projects.c.id == row[projects.c.id])
             await conn.execute(query)
 
+
+    async def pop_project(self, project_uuid) -> Dict:
+        # TODO: delete projects and returns a copy
+        pass
+
+
     async def delete_user_project(self, user_id: int, project_uuid: str):
         """ deletes a project from a user
 
