@@ -110,6 +110,7 @@ class DatcoreClient(object):
 
             for f in files:
                 if f['content']['packageType'] != 'Collection':
+
                     filename = f['content']['name']
                     file_path = ""# filename
                     file_id = f['content']['nodeId']
@@ -119,26 +120,19 @@ class DatcoreClient(object):
                         _f = data[parentid]
                         file_path =  _f['content']['name'] +"/" + file_path
 
-                    #file_path = dataset.name + "/" + file_path
-
-                    parts = Path(file_path).parts
                     bucket_name = dataset.name
                     file_name = filename
                     file_size = 0
+                    object_name = str(Path(file_path) / file_name)
 
-                    if len(parts) > 1:
-                        object_name = str(Path(*list(parts)[1:])/ Path(file_name))
-                    else:
-                        object_name = str(Path(file_name))
-
-                    file_uuid = str(Path(bucket_name) / Path(object_name))
+                    file_uuid = str(Path(bucket_name) / object_name)
+                    #file_uuid = file_id
                     created_at = f['content']['createdAt']
                     last_modified = f['content']['updatedAt']
                     fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
                             location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
                             raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
                             last_modified=last_modified, file_size=file_size)
-
                     _files.append(fmd)
 
         return _files
