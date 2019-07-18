@@ -1,8 +1,8 @@
-import tenacity
-from yarl import URL
-from aiohttp import ClientSession
-
 import logging
+
+import tenacity
+from aiohttp import ClientSession
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
