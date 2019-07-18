@@ -105,9 +105,8 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({
-            rich: true,
-            allowGrowY: false,
-            margin: [5, 0]
+            margin: [5, 0],
+            font: "title-14"
           });
           this._add(control);
           break;
