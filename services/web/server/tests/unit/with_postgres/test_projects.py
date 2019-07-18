@@ -112,27 +112,6 @@ def computational_system_mock(mocker):
     return mock_fun
 
 
-@pytest.fixture
-async def storage_subsystem_mock(loop, mocker):
-    """
-        Patches client calls to storage service
-
-        Patched functions are exposed within projects but call storage subsystem
-    """
-    # requests storage to copy data
-    mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_from_project')
-    async def _mock_copy_data_from_project(app, src, dest, nodesmap):
-        return dest
-
-    mock.side_effect = _mock_copy_data_from_project
-
-    # requests storage to delete data
-    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_folders_of_project', return_value=None)
-    return mock, mock1
-
-
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k:dikt[k] for k in keys}

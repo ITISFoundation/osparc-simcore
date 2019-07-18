@@ -36,7 +36,7 @@ def project_schema(project_schema_file):
 def test_clone_project_document(name, project, project_schema):
 
     source = deepcopy(project)
-    clone = clone_project_document(source)
+    clone, _ = clone_project_document(source)
 
     # was not modified by clone_project_document
     assert source == project
