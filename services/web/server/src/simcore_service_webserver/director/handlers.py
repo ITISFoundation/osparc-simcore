@@ -138,7 +138,8 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     # forward to director API
     session = get_client_session(request.app)
     # FIXME: composing url might be url = endpoint instead of url = endpoint.with_query()
-    url = endpoint.with_query(service_uuid)
+    # TODO: use instead stop_service from
+    url = endpoint
     async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()
         if resp.status < 400 or resp.status == 404:
