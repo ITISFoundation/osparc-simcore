@@ -1,12 +1,12 @@
 import logging
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
 import pytest
 import requests
 import sqlalchemy as sa
-import sys
 
 from simcore_service_storage.models import (FileMetaData, file_meta_data,
                                             projects, user_to_projects, users)
