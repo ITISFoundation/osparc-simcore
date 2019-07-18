@@ -36,7 +36,7 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
             shell=True,
             cwd=docker_compose_file.parent
         )
-    assert process.returncode == 0, "Error in '{}'".format(cmd)
+    assert process.returncode == 0, "Error in '{}'. Typically service dependencies missing. Check stdout/err for more details.".format(cmd)
 
     cmd = "docker stack deploy -c {} services".format(docker_compose_ignore_file.name)
     process = subprocess.run(
