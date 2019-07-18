@@ -101,22 +101,15 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
           {
             control = new qx.ui.basic.Image(this.getIcon());
             this._add(control);
-            let dummyProgress = new qx.ui.indicator.ProgressBar().set({
-              height: 10,
-              maximum: 100,
-              value: Math.floor(Math.random() * 101)
-            });
-            this._add(dummyProgress);
           }
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({
             rich: true,
-            allowGrowY: false
+            allowGrowY: false,
+            margin: [5, 0]
           });
-          this._add(new qx.ui.core.Spacer(null, 5));
           this._add(control);
-          this._add(new qx.ui.core.Spacer(null, 5));
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({

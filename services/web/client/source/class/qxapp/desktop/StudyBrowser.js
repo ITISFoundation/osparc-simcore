@@ -382,8 +382,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
-        height: 200,
-        alignY: "middle",
         appearance: "pb-list"
       });
       return list;
