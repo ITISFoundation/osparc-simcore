@@ -1,3 +1,8 @@
+""" Handlers exposed by storage subsystem
+
+    Mostly resolves and redirect to storage API
+"""
+
 from aiohttp import web
 from yarl import URL
 
