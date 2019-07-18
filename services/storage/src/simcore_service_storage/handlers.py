@@ -10,7 +10,7 @@ from . import __version__
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
-from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID
+from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
 
@@ -178,8 +178,10 @@ async def download_file(request: web.Request):
 
     dsm = await _prepare_storage_manager(params, query, request)
     location = dsm.location_from_id(location_id)
-
-    link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+    if location == SIMCORE_S3_STR:
+        link = await dsm.download_link_s3(file_uuid=file_uuid)
+    else:
+        link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
 
     return {
         'error': None,
@@ -207,7 +209,6 @@ async def upload_file(request: web.Request):
         source_uuid = query["extra_source"]
         source_id = query["extra_location"]
         source_location = dsm.location_from_id(source_id)
-
         link = await dsm.copy_file(user_id=user_id, dest_location=location,
             dest_uuid=file_uuid, source_location=source_location, source_uuid=source_uuid)
     else:

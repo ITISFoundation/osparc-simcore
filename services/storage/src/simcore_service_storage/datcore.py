@@ -3,6 +3,7 @@
     requires Blackfynn, check Makefile env2
 
 """
+import logging
 # pylint: skip-file
 import os
 import urllib
@@ -14,6 +15,9 @@ from blackfynn.models import BaseCollection, Collection, DataPackage
 
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
+
+logger = logging.getLogger(__name__)
+
 
 #FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
 #from blackfynn.api.transfers import IOAPI
@@ -73,6 +77,12 @@ class DatcoreClient(object):
 
         return collection, collection_id
 
+    def _destination_from_id(self, destination_id: str):
+        destination = self.client.get(destination_id)
+        if destination is None:
+            destination = self.client.get_dataset(destination_id)
+
+        return destination
 
     def list_files_recursively(self, dataset_filter: str=""):
         files = []
@@ -318,6 +328,21 @@ class DatcoreClient(object):
 
         return ""
 
+    def download_link_by_id(self, file_id):
+        """
+            returns presigned url for download of a file given its file_id
+        """
+        url = ""
+        filename = ""
+        package = self.client.get(file_id)
+        if package is not None:
+            filename = Path(package.files[0].as_dict()['content']['s3key']).name
+
+        file_desc = self.client._api.packages.get_sources(file_id)[0]
+        url = self.client._api.packages.get_presigned_url_for_file(file_id, file_desc.id)
+
+        return url, filename
+
     def get_package(self, source, filename):
         """
         Returns package from source by name if exists
@@ -363,7 +388,8 @@ class DatcoreClient(object):
         Args:
             datcore id for the file
         """
-        self.client.delete(id)
+        package = self.client.get(id)
+        package.delete()
 
     def delete_files(self, destination):
         """
@@ -447,3 +473,55 @@ class DatcoreClient(object):
             max_count (int): Max number of results to return
         """
         return self.client.search(what, max_count)
+
+    def upload_file_to_id(self, destination_id: str, filepath: str):
+        """
+        Uploads file to a given dataset/collection by id given its filepath on the host
+        adds some meta data.
+
+        Returns the id for the newly created resource
+
+        Note: filepath could be an array
+
+        Args:
+            destination_id : The dataset/collection id into which the file shall be uploaded
+            filepath (path): Full path to the file
+        """
+        _id = ""
+        destination = self._destination_from_id(destination_id)
+        if destination is None:
+            return _id
+
+        files = [filepath]
+
+        try:
+            result = self.client._api.io.upload_files(destination, files, display_progress=True)
+            if result and result[0] and 'package' in result[0][0]:
+                _id = result[0][0]['package']['content']['id']
+
+        except Exception:
+            logger.exception("Error uploading file to datcore")
+
+
+        return _id
+
+    def create_collection(self, destination_id: str, collection_name: str):
+        """
+        Create a empty collection within destination
+        Args:
+            destination_id : The dataset/collection id into which the file shall be uploaded
+            filepath (path): Full path to the file
+        """
+        destination = self._destination_from_id(destination_id)
+        _id = ""
+
+        if destination is None:
+            return _id
+
+        new_collection = Collection(collection_name)
+        destination.add(new_collection)
+        new_collection.update()
+        destination.update()
+        _id = new_collection.id
+
+        return _id

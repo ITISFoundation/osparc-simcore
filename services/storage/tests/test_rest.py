@@ -97,9 +97,6 @@ async def test_health_check(client):
     assert data['status'] == 'SERVICE_RUNNING'
 
 async def test_locations(client):
-    if not has_datcore_tokens():
-        return
-
     user_id = USER_ID
 
     resp = await client.get("/v0/locations?user_id={}".format(user_id))
@@ -109,7 +106,8 @@ async def test_locations(client):
 
     data, error = tuple( payload.get(k) for k in ('data', 'error') )
 
-    assert len(data) == 2
+    _locs = 2 if has_datcore_tokens() else  1
+    assert len(data) == _locs
     assert not error
 
 
@@ -173,7 +171,7 @@ async def test_upload_link(client, dsm_mockup_db):
         assert not error
         assert data
 
-async def test_copy(client, dsm_mockup_db, datcore_testbucket):
+async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
     if not has_datcore_tokens():
         return
     # copy N files
@@ -182,8 +180,8 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
         source_uuid = fmd.file_uuid
-        datcore_uuid = os.path.join(datcore_testbucket[0], fmd.file_name)
-        resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+        datcore_id = datcore_structured_testbucket['coll1_id']
+        resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_id, safe=''),
             fmd.user_id, SIMCORE_S3_ID, quote(source_uuid, safe='')))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
@@ -204,7 +202,7 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
 
     data, error = tuple( payload.get(k) for k in ('data', 'error') )
     assert not error
-    assert len(data) == 2 + N
+    assert len(data) > N
 
 async def test_delete_file(client, dsm_mockup_db):
     id_file_count, _id_name_map = parse_db(dsm_mockup_db)
@@ -272,7 +270,7 @@ async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, pro
     destination_project, nodes_map = clone_project_data(source_project)
 
     dsm = client.app[APP_DSM_KEY]
-    mock_dsm = mocker.patch.object(dsm,"copy_file")
+    mock_dsm = mocker.patch.object(dsm,"copy_file_datcore_s3")
     mock_dsm.return_value = Future()
     mock_dsm.return_value.set_result("Howdie")
 

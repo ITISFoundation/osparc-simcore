@@ -107,6 +107,7 @@ class FileMetaData:
         state:  on of OK, UPLOADING, DELETED
 
         """
+
     #pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
@@ -120,7 +121,7 @@ class FileMetaData:
             self.project_id = parts[0]
             self.node_id = parts[1]
             self.file_uuid = file_uuid
-            self.file_id = str(uuid.uuid4())
+            self.file_id = file_uuid
             self.raw_file_path = self.file_uuid
             self.display_file_path = str(Path("not") / Path("yet") / Path("implemented"))
             self.created_at = str(datetime.datetime.now())
