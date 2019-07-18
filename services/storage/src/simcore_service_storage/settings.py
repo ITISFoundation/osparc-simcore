@@ -23,7 +23,6 @@ from servicelib import application_keys
 #   DO NOT IMPORT ANYTHING from . (except for __version__)
 from .__version__ import get_version_object
 
-
 log = logging.getLogger(__name__)
 
 

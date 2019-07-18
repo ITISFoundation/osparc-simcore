@@ -14,12 +14,12 @@ Why does this file exist, and why not put this in __main__?
 """
 import argparse
 import logging
-import sys
 import os
+import sys
 
-from . import application, cli_config
 from servicelib.utils import search_osparc_repo_dir
 
+from . import application, cli_config
 
 log = logging.getLogger(__name__)
 
