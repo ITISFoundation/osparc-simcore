@@ -275,7 +275,6 @@ async def delete_folders_of_project(request: web.Request):
     folder_id = request.match_info['folder_id']
     user_id = request.query.get("user_id")
 
-    # TODO: implement
     params = { "location_id" : SIMCORE_S3_ID }
     query = { "user_id": user_id}
     dsm = await _prepare_storage_manager(params, query, request)
