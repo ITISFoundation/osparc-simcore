@@ -61,19 +61,19 @@ def setup_monitoring(app, app_name):
 
     # Total number of requests processed
     app['REQUEST_COUNT'] = Counter(
-        'simcore_requests_total', 'Total Request Count',
+        'http_requests_total', 'Total Request Count',
         ['app_name', 'method', 'endpoint', 'http_status']
     )
 
     # Latency of a request in seconds
     app['REQUEST_LATENCY'] = Histogram(
-        'simcore_request_latency_seconds', 'Request latency',
+        'http_request_latency_seconds', 'Request latency',
         ['app_name', 'endpoint']
     )
 
     # Number of requests in progress
     app['REQUEST_IN_PROGRESS']=Gauge(
-        'simcore_requests_in_progress_total', 'Requests in progress',
+        'http_requests_in_progress_total', 'Requests in progress',
         ['app_name', 'endpoint', 'method']
     )
 
