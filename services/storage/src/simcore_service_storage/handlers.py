@@ -78,6 +78,32 @@ async def get_storage_locations(request: web.Request):
         }
 
 
+async def get_datasets_metadata(request: web.Request):
+    log.debug("GET METADATA DATASETS %s %s",request.path, request.url)
+
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
+
+    assert params["location_id"]
+    assert query["user_id"]
+
+    location_id = params["location_id"]
+    user_id = query["user_id"]
+
+    dsm = await _prepare_storage_manager(params, query, request)
+
+    location = dsm.location_from_id(location_id)
+    # To implement
+    data = [] #await dsm.datasets(user_id, location)
+
+    return {
+        'error': None,
+        'data': data
+        }
+
 async def get_files_metadata(request: web.Request):
     log.debug("GET FILES METADATA %s %s",request.path, request.url)
 
@@ -100,6 +126,44 @@ async def get_files_metadata(request: web.Request):
     log.debug("list files %s %s %s", user_id, location, uuid_filter)
 
     data = await dsm.list_files(user_id=user_id, location=location, uuid_filter=uuid_filter)
+
+    data_as_dict = []
+    for d in data:
+        log.info("DATA %s",attr.asdict(d))
+        data_as_dict.append(attr.asdict(d))
+
+    envelope = {
+        'error': None,
+        'data': data_as_dict
+        }
+
+    return envelope
+
+async def get_files_metadata_dataset(request: web.Request):
+    log.debug("GET FILES METADATA DATASET %s %s",request.path, request.url)
+
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
+
+    assert params["location_id"]
+    assert params["dataset_id"]
+    assert query["user_id"]
+
+    location_id = params["location_id"]
+    user_id = query["user_id"]
+    dataset_id = query["dataset_id"]
+
+    dsm = await _prepare_storage_manager(params, query, request)
+    location = dsm.location_from_id(location_id)
+
+    log.debug("list files %s %s %s", user_id, location, dataset_id)
+
+    # TO IMPLEMENT
+    data = []
+    # data = await dsm.list_files(user_id=user_id, location=location, uuid_filter=uuid_filter)
 
     data_as_dict = []
     for d in data:

@@ -24,7 +24,7 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import (FileMetaData, _location_from_id, _parse_datcore,
+from .models import (FileMetaData, _location_from_id,
                      file_meta_data, projects, user_to_projects)
 from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,

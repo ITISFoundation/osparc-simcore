@@ -22,6 +22,12 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
+
+  /storage/locations/{location_id}/datasets:
+
+  /storage/locations/{location_id}/datasets/{dataset_id}/files/metadata:
+
+
   /storage/locations/{location_id}/files/metadata:
     get:
       summary: Get list of file meta data
