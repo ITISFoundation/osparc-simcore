@@ -274,8 +274,8 @@ services:
           - node.platform.os == linux
           - node.role == manager
 volumes:
-  input:
-  output:
-  log:
-  postgres:
-  minio:
+  input: {}
+  output: {}
+  log: {}
+  postgres: {}
+  minio: {}

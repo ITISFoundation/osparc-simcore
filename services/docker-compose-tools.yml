@@ -42,11 +42,10 @@ services:
       - grafana_data:/var/lib/grafana
     # FIXME: setup proper grafana config
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=z43
+      - GF_SECURITY_ADMIN_PASSWORD=secret
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_DOMAIN=myrul.com
       - GF_SMTP_ENABLED=true
-      - GF_SMTP_HOST=${SMTP_HOST}:${SMTP_PORT}
+      - GF_SMTP_HOST=mail.speag.com:25
       #- GF_SMTP_USER=myadrress@gmail.com
       #- GF_SMTP_PASSWORD=mypassword
       #- GF_SMTP_FROM_ADDRESS=myaddress@gmail.com

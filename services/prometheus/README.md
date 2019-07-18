@@ -12,12 +12,19 @@
 
 
 - [osparc website](http://127.0.0.1:9081)
+  - [osparc restAPI](http://127.0.0.1:9081/v0)
 - [adminer website](http://127.0.0.1:18080): postgres database view
 - [portainer](http://127.0.0.1:9000): swarm monitoring
 - [prometheus website](http://127.0.0.1:9090): scraps metrics
+  - [status targets](http://127.0.0.1:9090/targets)
 - [graphana website](http://127.0.0.1:3000): dashboards to visualize metrics
 
 
 
+```
+http_requests_total{endpoint=~"/v0/.*"}
+
+
+```
 
 [prometheus]:https://prometheus.io/docs
