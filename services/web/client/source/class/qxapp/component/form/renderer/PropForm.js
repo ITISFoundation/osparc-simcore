@@ -46,7 +46,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   events: {
-    "removeLink" : "qx.event.type.Data"
+    "removeLink" : "qx.event.type.Data",
+    "dataFieldModified": "qx.event.type.Data"
   },
 
   properties: {
@@ -61,15 +62,20 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     }
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    _gridPos: {
+      label: 0,
+      entryField: 1
+    },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
       if (title !== null) {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: 0,
-            colSpan: 3
+            column: this._gridPos.label,
+            colSpan: Object.keys(this._gridPos).length
           }
         );
         this._row++;
@@ -81,12 +87,12 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let label = this._createLabel(names[i], item);
         this._add(label, {
           row: this._row,
-          column: 0
+          column: this._gridPos.label
         });
         label.setBuddy(item);
         this._add(new qxapp.component.form.FieldWHint(null, item.description, item), {
           row: this._row,
-          column: 1
+          column: this._gridPos.entryField
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -150,20 +156,25 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (child.getField && child.getField().key === portId) {
           const layoutProps = child.getLayoutProperties();
           this._remove(child);
-          let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+          const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          let unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+
+          const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
           unlinkBtn.addListener("execute", function() {
             this.fireDataEvent("removeLink", portId);
           }, this);
           hBox.add(unlinkBtn);
+
           hBox.key = portId;
           this._addAt(hBox, i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryField
           });
+
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
@@ -177,8 +188,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           this._remove(child);
           this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
             row: layoutProps.row,
-            column: 1
+            column: this._gridPos.entryField
           });
+
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
