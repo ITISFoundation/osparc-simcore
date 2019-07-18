@@ -15,7 +15,7 @@ from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
 from ..security_api import check_permission
-from ..storage_api import copy_data_from_project
+from ..storage_api import copy_data_from_project # mocked in unit-tests
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError

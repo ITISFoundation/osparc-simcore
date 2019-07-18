@@ -112,6 +112,20 @@ def computational_system_mock(mocker):
     return mock_fun
 
 
+@pytest.fixture
+async def storage_subsystem_mock(loop, mocker):
+    """
+        Patches client calls to storage service
+    """
+    mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_from_project')
+    async def _mock_copy_data_from_project(app, src, dest, nodesmap):
+        return dest
+
+    mock.side_effect = _mock_copy_data_from_project
+    return mock
+
+
+
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
@@ -124,6 +138,8 @@ def assert_replaced(current_project, update_data):
 
     k = "lastChangeDate"
     assert to_datetime(update_data[k]) < to_datetime(current_project[k])
+
+
 
 
 # GET --------
@@ -200,7 +216,8 @@ async def test_get_project(client, logged_user, user_project, template_project, 
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project(client, logged_user, expected, computational_system_mock):
+async def test_new_project(client, logged_user, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -248,7 +265,8 @@ async def test_new_project(client, logged_user, expected, computational_system_m
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project_from_template(client, logged_user, template_project, expected, computational_system_mock):
+async def test_new_project_from_template(client, logged_user, template_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?from_template={template_uuid}
     url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
 
@@ -284,7 +302,8 @@ async def test_new_project_from_template(client, logged_user, template_project, 
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project_from_template_with_body(client, logged_user, template_project, expected, computational_system_mock):
+async def test_new_project_from_template_with_body(client, logged_user, template_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?from_template={template_uuid}
     url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
 
@@ -338,7 +357,8 @@ async def test_new_project_from_template_with_body(client, logged_user, template
     (UserRole.USER, web.HTTPForbidden),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_template_from_project(client, logged_user, user_project, expected, computational_system_mock):
+async def test_new_template_from_project(client, logged_user, user_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?as_template={user_uuid}
     url = client.app.router["create_projects"].url_for().\
         with_query(as_template=user_project["uuid"])

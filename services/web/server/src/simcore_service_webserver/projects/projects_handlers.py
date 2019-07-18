@@ -8,7 +8,7 @@ from jsonschema import ValidationError
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import validate_project, clone_project
+from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 @login_required
 async def create_projects(request: web.Request):
+    from .projects_api import clone_project # TODO: keep here since is async and parser thinks it is a handler
+
     # pylint: disable=too-many-branches
     await check_permission(request, "project.create")
     await check_permission(request, "services.pipeline.*") # due to update_pipeline_db

@@ -27,7 +27,6 @@ def _get_storage_client(app: web.Application):
 
 async def copy_data_from_project(app, source_project, destination_project, nodes_map):
     # TODO: optimize if project has actualy data or not before doing the call
-
     client, endpoint = _get_storage_client(app)
 
     url = endpoint / "simcore-s3/folders"
