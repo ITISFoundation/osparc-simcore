@@ -1,4 +1,7 @@
 
+""" Handlers for CRUD operations on /projects/
+
+"""
 import json
 import logging
 
@@ -15,7 +18,6 @@ from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 
 log = logging.getLogger(__name__)
-
 
 
 @login_required
@@ -122,7 +124,6 @@ async def list_projects(request: web.Request):
             continue
 
     return {'data': validated_projects}
-
 
 
 @login_required

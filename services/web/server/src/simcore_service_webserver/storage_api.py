@@ -34,7 +34,7 @@ async def copy_data_from_project(app, source_project, destination_project, nodes
         'source':source_project,
         'destination': destination_project,
         'nodes_map': nodes_map
-    }) as resp:
+    }, ssl=False) as resp:
         payload = await resp.json()
         updated_project, error = unwrap_envelope(payload)
         if error:
@@ -51,7 +51,7 @@ def delete_folders_of_project(app, project_id, user_id):
 
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
     async def _fire_and_forget():
-        with client.delete(url):
+        with client.delete(url, ssl=False):
             # NOTE: context will automatically close connection
             pass
     asyncio.ensure_future(_fire_and_forget())
