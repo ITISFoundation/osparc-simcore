@@ -7,11 +7,10 @@ from jsonschema import ValidationError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from .projects_api import validate_project
+from .projects_api import validate_project, clone_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
-from .projects_utils import clone_project_data
 
 log = logging.getLogger(__name__)
 
@@ -41,14 +40,14 @@ async def create_projects(request: web.Request):
                 user_id=request[RQT_USERID_KEY],
                 include_templates=False
             )
-            project = clone_project_data(source_project)
+            project = await clone_project(request, source_project)
 
         elif template_uuid: # create from template
             template_prj = await db.get_template_project(template_uuid)
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
-            project = clone_project_data(template_prj)
+            project = await clone_project(request, template_prj)
             #FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body

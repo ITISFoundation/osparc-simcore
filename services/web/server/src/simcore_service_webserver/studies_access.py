@@ -100,7 +100,8 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import clone_project_data, substitute_parameterized_inputs
+    from .projects.projects_utils import substitute_parameterized_inputs
+    from .projects.projects_api import clone_project
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
@@ -118,7 +119,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = clone_project_data(template_project)
+        project = await clone_project(request, template_project)
 
         # check project inputs and substitute template_parameters
         if template_parameters:

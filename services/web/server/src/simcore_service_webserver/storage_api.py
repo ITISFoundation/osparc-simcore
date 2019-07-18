@@ -1,12 +1,16 @@
 
-from .storage_config import get_client_session, get_config
+import asyncio
+import logging
+from pprint import pformat
+
 from aiohttp import web
 from yarl import URL
-import logging
 
+from servicelib.rest_responses import unwrap_envelope
+
+from .storage_config import get_client_session, get_config
 
 log = logging.getLogger(__name__)
-
 
 
 def _get_storage_client(app: web.Application):
@@ -17,13 +21,13 @@ def _get_storage_client(app: web.Application):
                          host=cfg['host'],
                          port=cfg['port']).with_path(cfg["version"])
 
-    client = get_client_session(app)
-    return client, endpoint
-
-from servicelib.rest_resources import unwrap_envelope
+    session = get_client_session(app)
+    return session, endpoint
 
 
 async def copy_data_from_project(app, source_project, destination_project, nodes_map):
+    # TODO: optimize if project has actualy data or not before doing the call
+
     client, endpoint = _get_storage_client(app)
 
     url = endpoint / "simcore-s3/folders"
@@ -33,8 +37,21 @@ async def copy_data_from_project(app, source_project, destination_project, nodes
         'nodes_map': nodes_map
     }) as resp:
         payload = await resp.json()
-        data, error = unwrap_envelope(payload)
+        updated_project, error = unwrap_envelope(payload)
         if error:
-            log.error(error)
+            msg = "Cannot copy project data in storage: %s" % pformat(error)
+            log.error(msg)
+            # TODO: should reconstruct error and rethrow same exception as storage service?
+            raise web.HTTPServiceUnavailable(reason=msg)
 
-    return data
+        return updated_project
+
+
+async def delete_folders_of_project(app, project_id, user_id):
+    client, endpoint = _get_storage_client(app)
+
+    url = (endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id)
+    async def _fire_and_forget():
+        with client.delete(url):
+            return
+    asyncio.ensure_future(_fire_and_forget())
