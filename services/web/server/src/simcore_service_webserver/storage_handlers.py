@@ -57,7 +57,6 @@ async def _request_storage(request: web.Request, method: str):
 @login_required
 async def get_storage_locations(request: web.Request):
     await check_permission(request, "storage.locations.*")
-
     payload = await _request_storage(request, 'GET')
     return payload
 
@@ -95,6 +94,7 @@ async def upload_file(request: web.Request):
     await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'PUT')
     return payload
+
 
 @login_required
 async def delete_file(request: web.Request):
