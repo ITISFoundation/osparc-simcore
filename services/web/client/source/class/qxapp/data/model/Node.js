@@ -468,8 +468,8 @@ qx.Class.define("qxapp.data.model.Node", {
         this.__settingsForm.removeLink(changedField);
       }, this);
       propsWidget.addListener("dataFieldModified", e => {
-        // const changedDataField = e.getData();
-        this.__retrieveInputs();
+        const portId = e.getData();
+        this.__retrieveInputs(portId);
       }, this);
     },
 
@@ -637,11 +637,15 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
-    __retrieveInputs: function() {
-      this.fireDataEvent("retrieveInputs", this);
+    __retrieveInputs: function(portKey) {
+      const data = {
+        node: this,
+        portKey
+      };
+      this.fireDataEvent("retrieveInputs", data);
     },
 
-    retrieveInputs: function() {
+    retrieveInputs: function(portKey = null) {
       if (this.isDynamic() && this.isRealService()) {
         if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
           return;
@@ -650,10 +654,14 @@ qx.Class.define("qxapp.data.model.Node", {
         if (srvUrl) {
           let urlUpdate = srvUrl + "/retrieve";
           urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-          let updReq = new qx.io.request.Xhr();
+          const updReq = new qx.io.request.Xhr();
+          const data = {
+            "port_keys": portKey ? [portKey] : []
+          };
           updReq.set({
             url: urlUpdate,
-            method: "GET"
+            method: "POST",
+            requestData: qx.util.Serializer.toJson(data)
           });
           updReq.send();
         }

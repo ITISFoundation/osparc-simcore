@@ -154,8 +154,10 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("retrieveInputs", e => {
-        let node = e.getData();
-        this.__updatePipelineAndRetrieve(node);
+        const data = e.getData();
+        const node = data["node"];
+        const portKey = data["portKey"];
+        this.__updatePipelineAndRetrieve(node, portKey);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -357,18 +359,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipelineAndRetrieve: function(node) {
+    __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(
         null,
-        this.__retrieveInputs.bind(this, node)
+        this.__retrieveInputs.bind(this, node, portKey)
       );
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    __retrieveInputs: function(node) {
+    __retrieveInputs: function(node, portKey = null) {
       this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
-        node.retrieveInputs();
+        node.retrieveInputs(portKey);
       } else {
         const workbench = this.getStudy().getWorkbench();
         const allNodes = workbench.getNodes(true);
