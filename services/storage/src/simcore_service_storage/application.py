@@ -6,11 +6,11 @@ import logging
 
 from aiohttp import web
 
-from .s3 import setup_s3
 from .db import setup_db
-from .rest import setup_rest
-from .settings import APP_CONFIG_KEY
 from .dsm import setup_dsm
+from .rest import setup_rest
+from .s3 import setup_s3
+from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
