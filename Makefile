@@ -291,6 +291,11 @@ setup-check: .env .vscode/settings.json
 ## -------------------------------
 # Auxiliary targets.
 
+.PHONY: reset
+# target: reset – Restart docker daemon
+reset:
+	sudo systemctl restart docker
+
 .PHONY: clean
 # target: clean – Cleans all unversioned files in project
 clean: remove-intermediate-file

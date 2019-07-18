@@ -44,7 +44,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 params = {}
-params["154fb4ad-4913-478f-af04-19725db901a7"] = {'stimulation_period_secs': '1200'}
+params["194bb264-a717-11e9-9dff-02420aff2767"] = {'stimulation_mode': '1', 'stimulation_level': '0.5'}
 
 @contextmanager
 def _open(filepath):
@@ -62,10 +62,13 @@ def write_list(hostname, url, data, fh):
     print("## studies available @{}".format(hostname), file=fh)
     print("", file=fh)
     for prj in data:
+        prj['msg'] = ''
         study_url = origin.with_path("study/{uuid}".format(**prj))
         if prj['uuid'] in params:
-            study_url = study_url.with_query(**params[prj['uuid']])
-        print("- [{name}]({study_url})".format(study_url=str(study_url), **prj), file=fh)
+            prj_params = params[prj['uuid']]
+            study_url = study_url.with_query(**prj_params)
+            prj['msg'] = 'with ' + "and ".join([f"{k}={v} " for k,v in prj_params.items()])
+        print("- [{name}]({study_url}) {msg}".format(study_url=str(study_url), **prj), file=fh)
     print("", file=fh)
 
 

@@ -78,77 +78,52 @@
     }
   },
   {
-    "uuid": "template-uuid-5a9e-9580-c53d92d18803",
-    "name": "ISAN: MattWard use case",
-    "description": "MattWard Solver/PostPro viewer",
-    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168942-073a5580-9806-11e9-9162-3683dcff0711.png",
-    "prjOwner": "maiz@itis.swiss",
-    "creationDate": "2019-06-06 14:33:58.681",
-    "lastChangeDate": "2019-06-06 14:34:01.617",
-    "workbench": {
-      "template-uuid-523c-8caa-4ca36c927ca2": {
-        "key": "simcore/services/dynamic/mattward-viewer",
-        "version": "2.9.0",
-        "label": "MattWard",
-        "inputs": {},
-        "inputNodes": [],
-        "outputNode": false,
-        "outputs": {},
-        "progress": 55,
-        "thumbnail": "",
-        "position": {
-          "x": 100,
-          "y": 100
-        }
-      }
-    }
-  },
-  {
-    "uuid": "154fb4ad-4913-478f-af04-19725db901a7",
-    "name": "ISAN2019 - opencor-py model",
-    "description": "Computes the cardiac myocyte action potential for the sympathetic drive input setting on the MAP-Core portal.",
-    "thumbnail": "https://opencor.ws/res/pics/logo.png",
+    "uuid": "194bb264-a717-11e9-9dff-02420aff2767",
+    "name": "ISAN: osparc-opencor",
+    "description": "We are using the Fabbri et al (2017) sinoatrial cell model: https://models.physiomeproject.org/e/568\n\nThe model includes autonomic modulation via inclusion of the effects of ACh on If, ICaL, SR calcium uptake, and IK,ACh; and the effect of isoprenaline on If, ICaL, INaK, maximal Ca uptake, and IKs. We are varying the concentration of ACh according to the stimulation level, while isoprenaline is encoded to be \"on\" or \"off\" only (we use the \"on\" version in this exemplar). The range of ACh we're allowing is beyond what has been presented in the paper.",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/61133437-be4cf700-a4bd-11e9-8b2a-c6425e15abea.png",
     "prjOwner": "crespo@itis.swiss",
-    "creationDate": "2019-06-18 15:20:16.567",
-    "lastChangeDate": "2019-06-18 15:59:21.708",
+    "creationDate": "2019-07-15 15:42:06.208",
+    "lastChangeDate": "2019-07-15 15:42:06.208",
     "workbench": {
-      "template-uuid-4179-bc47-0905e6726758": {
+      "f631a142-d3b6-435d-abfb-8ad4acb91a70": {
         "key": "simcore/services/comp/osparc-opencor",
-        "version": "0.2.1",
+        "version": "0.3.0",
         "label": "osparc-opencor",
         "inputs": {
-          "stimulation_period": "{{stimulation_period_secs}}"
+          "stimulation_mode": "{{stimulation_mode}}",
+          "stimulation_level": "{{stimulation_level}}"
         },
         "inputNodes": [],
         "outputNode": false,
         "outputs": {},
-        "progress": 100,
+        "progress": 0,
         "thumbnail": "",
         "position": {
-          "x": 314,
-          "y": 263
+          "x": 587,
+          "y": 279
         }
       },
-      "template-uuid-4f4e-a1ae-429146d466b8": {
-        "key": "simcore/services/dynamic/jupyter-base-notebook",
-        "version": "2.10.0",
-        "label": "jupyter-base-notebook",
+      "744c9209-0450-4272-8357-4a08cf7f8458": {
+        "key": "simcore/services/dynamic/raw-graphs",
+        "version": "2.10.2",
+        "label": "2D plot",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-4179-bc47-0905e6726758",
-            "output": "membrane_potential_json"
+            "nodeUuid": "f631a142-d3b6-435d-abfb-8ad4acb91a70",
+            "output": "membrane_potential_csv"
           }
         },
         "inputNodes": [
-          "template-uuid-4179-bc47-0905e6726758"
+          "f631a142-d3b6-435d-abfb-8ad4acb91a70"
         ],
         "outputNode": false,
         "outputs": {},
         "progress": 100,
-        "thumbnail": "https://opencor.ws/res/pics/logo.png",
+        "thumbnail": "",
         "position": {
-          "x": 631,
-          "y": 259
+          "x": 933,
+          "y": 228
         }
       }
     }
@@ -295,6 +270,32 @@
         "position": {
           "x": 550,
           "y": 150
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-5a9e-9580-c53d92d18803",
+    "name": "ISAN: MattWard use case",
+    "description": "MattWard Solver/PostPro viewer",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168942-073a5580-9806-11e9-9162-3683dcff0711.png",
+    "prjOwner": "maiz@itis.swiss",
+    "creationDate": "2019-06-06 14:33:58.681",
+    "lastChangeDate": "2019-06-06 14:34:01.617",
+    "workbench": {
+      "template-uuid-523c-8caa-4ca36c927ca2": {
+        "key": "simcore/services/dynamic/mattward-viewer",
+        "version": "2.9.0",
+        "label": "MattWard",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "progress": 55,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 100
         }
       }
     }
