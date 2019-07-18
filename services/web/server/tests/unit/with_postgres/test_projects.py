@@ -116,13 +116,19 @@ def computational_system_mock(mocker):
 async def storage_subsystem_mock(loop, mocker):
     """
         Patches client calls to storage service
+
+        Patched functions are exposed within projects but call storage subsystem
     """
+    # requests storage to copy data
     mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_from_project')
     async def _mock_copy_data_from_project(app, src, dest, nodesmap):
         return dest
 
     mock.side_effect = _mock_copy_data_from_project
-    return mock
+
+    # requests storage to delete data
+    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_folders_of_project', return_value=None)
+    return mock, mock1
 
 
 
@@ -463,7 +469,7 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_delete_project(client, logged_user, user_project, expected):
+async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock):
     # DELETE /v0/projects/{project_id}
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 

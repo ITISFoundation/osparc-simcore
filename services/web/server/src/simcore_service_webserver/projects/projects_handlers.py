@@ -8,6 +8,7 @@ from jsonschema import ValidationError
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
+from ..storage_api import delete_folders_of_project
 from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
@@ -215,12 +216,16 @@ async def delete_project(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
-        # TODO: delete all the dynamic services used by this project when this happens.
         # TODO: delete pipeline db tasks
-
         await db.delete_user_project(user_id, project_uuid)
 
     except ProjectNotFoundError:
         raise web.HTTPNotFound
+
+    # requests storage to delete all project's stored data (fire & forget)
+    delete_folders_of_project(request.app, project_uuid, user_id)
+
+    # TODO: delete all the dynamic services used by this project when this happens (fire & forget)
+
 
     raise web.HTTPNoContent(content_type='application/json')

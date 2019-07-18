@@ -27,9 +27,9 @@ def _get_storage_client(app: web.Application):
 
 async def copy_data_from_project(app, source_project, destination_project, nodes_map):
     # TODO: optimize if project has actualy data or not before doing the call
-    client, endpoint = _get_storage_client(app)
+    client, api_endpoint = _get_storage_client(app)
 
-    url = endpoint / "simcore-s3/folders"
+    url = api_endpoint / "simcore-s3/folders"
     async with client.post( url , json={
         'source':source_project,
         'destination': destination_project,
@@ -46,11 +46,12 @@ async def copy_data_from_project(app, source_project, destination_project, nodes
         return updated_project
 
 
-async def delete_folders_of_project(app, project_id, user_id):
-    client, endpoint = _get_storage_client(app)
+def delete_folders_of_project(app, project_id, user_id):
+    client, api_endpoint = _get_storage_client(app)
 
-    url = (endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id)
+    url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
     async def _fire_and_forget():
         with client.delete(url):
-            return
+            # NOTE: context will automatically close connection
+            pass
     asyncio.ensure_future(_fire_and_forget())
