@@ -17,6 +17,9 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
 
+OVERRIDABLE_DOCUMENT_KEYS = ['name', 'description', 'thumbnail', 'prjOwner']
+# TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+
 log = logging.getLogger(__name__)
 
 
@@ -44,17 +47,17 @@ async def create_projects(request: web.Request):
 
             source_project = await get_project_for_user(request,
                 project_uuid=as_template,
-                user_id=request[RQT_USERID_KEY],
+                user_id=user_id,
                 include_templates=False
             )
-            project = await clone_project(request, source_project)
+            project = await clone_project(request, source_project, user_id)
 
         elif template_uuid: # create from template
             template_prj = await db.get_template_project(template_uuid)
             if not template_prj:
                 raise web.HTTPNotFound(reason="Invalid template uuid {}".format(template_uuid))
 
-            project = await clone_project(request, template_prj)
+            project = await clone_project(request, template_prj, user_id)
             #FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
@@ -62,10 +65,10 @@ async def create_projects(request: web.Request):
             predefined = await request.json()
 
             if project:
-                # TODO: this is only first level replacemnet!
-                for key, value in predefined.items():
-                    if value and "uuid" not in key:
-                        project[key] = value
+                for key in OVERRIDABLE_DOCUMENT_KEYS:
+                    non_null_value = predefined.get(key)
+                    if non_null_value:
+                        project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
                 project = predefined

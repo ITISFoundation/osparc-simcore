@@ -119,7 +119,7 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = await clone_project(request, template_project)
+        project = await clone_project(request, template_project, user["id"])
 
         # check project inputs and substitute template_parameters
         if template_parameters:

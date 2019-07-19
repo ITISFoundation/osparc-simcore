@@ -56,7 +56,7 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id, *, i
         raise web.HTTPNotFound(reason="Project not found")
 
 
-async def clone_project(request: web.Request, project: Dict) -> Dict:
+async def clone_project(request: web.Request, project: Dict, user_id) -> Dict:
     """Clones both document and data folders of a project
 
     - document
@@ -65,6 +65,8 @@ async def clone_project(request: web.Request, project: Dict) -> Dict:
         - folder name composes as project_uuid/node_uuid
         - data is deep-copied to new folder corresponding to new identifiers
         - managed by storage uservice
+
+    TODO: request to application
 
     :param request: http request
     :type request: web.Request
@@ -75,6 +77,7 @@ async def clone_project(request: web.Request, project: Dict) -> Dict:
     """
     cloned_project, nodes_map = clone_project_document(project)
 
-    updated_project = await copy_data_folders_from_project(request.app, project, cloned_project, nodes_map)
+    updated_project = await copy_data_folders_from_project(request.app,
+        project, cloned_project, nodes_map, user_id)
 
     return updated_project

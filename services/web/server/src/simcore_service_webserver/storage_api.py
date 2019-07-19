@@ -25,11 +25,12 @@ def _get_storage_client(app: web.Application):
     return session, endpoint
 
 
-async def copy_data_folders_from_project(app, source_project, destination_project, nodes_map):
+async def copy_data_folders_from_project(app, source_project, destination_project, nodes_map, user_id):
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
 
-    url = api_endpoint / "simcore-s3/folders"
+    # /simcore-s3/folders:
+    url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
     async with client.post( url , json={
         'source':source_project,
         'destination': destination_project,
@@ -49,9 +50,14 @@ async def copy_data_folders_from_project(app, source_project, destination_projec
 def delete_data_folders_of_project(app, project_id, user_id):
     client, api_endpoint = _get_storage_client(app)
 
+    # SEE api/specs/storage/v0/openapi.yaml
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
-    async def _fire_and_forget():
-        with client.delete(url, ssl=False):
+
+    async def _fire_and_forget(target_url):
+        async with client.delete(target_url, ssl=False) as resp:
+            log.info("delete_data_folders_of_project request responded with status %s", resp.status_code )
             # NOTE: context will automatically close connection
-            pass
-    asyncio.ensure_future(_fire_and_forget())
+
+    #asyncio.ensure_future(_fire_and_forget(url))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_fire_and_forget(url))
