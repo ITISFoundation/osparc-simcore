@@ -25,7 +25,7 @@ def _get_storage_client(app: web.Application):
     return session, endpoint
 
 
-async def copy_data_from_project(app, source_project, destination_project, nodes_map):
+async def copy_data_folders_from_project(app, source_project, destination_project, nodes_map):
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
 
@@ -46,7 +46,7 @@ async def copy_data_from_project(app, source_project, destination_project, nodes
         return updated_project
 
 
-def delete_folders_of_project(app, project_id, user_id):
+def delete_data_folders_of_project(app, project_id, user_id):
     client, api_endpoint = _get_storage_client(app)
 
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)

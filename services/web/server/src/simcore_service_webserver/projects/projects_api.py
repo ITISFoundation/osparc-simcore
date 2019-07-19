@@ -15,7 +15,7 @@ from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
 from ..security_api import check_permission
-from ..storage_api import copy_data_from_project # mocked in unit-tests
+from ..storage_api import copy_data_folders_from_project # mocked in unit-tests
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
@@ -57,10 +57,14 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id, *, i
 
 
 async def clone_project(request: web.Request, project: Dict) -> Dict:
-    """Clones both document and data in a project
+    """Clones both document and data folders of a project
 
-    - Cloned document get new identifiers
-    - Data is deep-copied to new location
+    - document
+        - get new identifiers for project and nodes
+    - data folders
+        - folder name composes as project_uuid/node_uuid
+        - data is deep-copied to new folder corresponding to new identifiers
+        - managed by storage uservice
 
     :param request: http request
     :type request: web.Request
@@ -71,6 +75,6 @@ async def clone_project(request: web.Request, project: Dict) -> Dict:
     """
     cloned_project, nodes_map = clone_project_document(project)
 
-    updated_project = await copy_data_from_project(request.app, project, cloned_project, nodes_map)
+    updated_project = await copy_data_folders_from_project(request.app, project, cloned_project, nodes_map)
 
     return updated_project
