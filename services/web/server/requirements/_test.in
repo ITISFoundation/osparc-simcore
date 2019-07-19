@@ -26,3 +26,4 @@ docker          # for integration tests
 pylint
 coveralls
 codecov
+ptvsd

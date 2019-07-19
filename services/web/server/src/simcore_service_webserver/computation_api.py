@@ -3,17 +3,17 @@
 """
 import datetime
 import logging
+from pprint import pformat
 from typing import Dict
 
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
-from sqlalchemy import and_
-
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_postgres_database.webserver_models import (comp_pipeline,
                                                         comp_tasks)
+from sqlalchemy import and_
 
 from .director import director_sdk
 
@@ -115,7 +115,7 @@ async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: d
             log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
             continue
         node_details = await _get_node_details(node_key, node_version, app)
-        log.debug("node %s:%s has schema:\n %s",node_key, node_version, node_details)
+        log.debug("node %s:%s has schema:\n %s",node_key, node_version, pformat(node_details))
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
         log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 

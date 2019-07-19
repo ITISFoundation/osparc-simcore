@@ -2,14 +2,14 @@ import logging
 import re
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Tuple
 
 from servicelib.decorators import safe_return
 
 log = logging.getLogger(__name__)
 variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
-def clone_project_data(project: Dict) -> Dict:
+def clone_project_document(project: Dict) -> Tuple[Dict, Dict]:
     project_copy = deepcopy(project)
 
     # Update project id
@@ -41,7 +41,7 @@ def clone_project_data(project: Dict) -> Dict:
         return node
 
     project_copy['workbench'] = _replace_uuids(project_copy.get('workbench', {}))
-    return project_copy
+    return project_copy, nodes_map
 
 
 @safe_return(if_fails_return=False, logger=log)
