@@ -8,27 +8,14 @@ from typing import Dict, List, Tuple
 import aiodocker
 import aiohttp
 import tenacity
-from asyncio_extras import async_contextmanager
 
-from . import config, exceptions, registry_proxy
+from . import config, exceptions, registry_proxy, docker_utils
 from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
 
 log = logging.getLogger(__name__)
-
-
-@async_contextmanager
-async def _docker_client() -> aiodocker.docker.Docker:
-    try:
-        client = aiodocker.Docker()
-        yield client
-    except aiodocker.exceptions.DockerError:
-        log.exception(msg="Unexpected error with docker client")
-        raise
-    finally:
-        await client.close()
 
 
 async def _create_auth() -> Dict:
@@ -74,7 +61,7 @@ async def _get_service_boot_parameters_labels(app: aiohttp.web.Application, key:
 
 
 # pylint: disable=too-many-branches
-async def _create_docker_service_params(app: aiohttp.web.Application, 
+async def _create_docker_service_params(app: aiohttp.web.Application,
                                         client: aiodocker.docker.Docker,
                                         service_key: str,
                                         service_tag: str,
@@ -107,7 +94,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
-                "Constraints": []
+                "Constraints": [
+                    "node.role==worker" if await docker_utils.swarm_has_worker_nodes() else ""
+                ]
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
@@ -356,7 +345,7 @@ async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag:
     log.debug("Service tag found is %s ", service_tag)
     return tag
 
-async def _start_docker_service(app: aiohttp.web.Application, 
+async def _start_docker_service(app: aiohttp.web.Application,
                                 client: aiodocker.docker.Docker,
                                 user_id: str,
                                 project_id: str,
@@ -423,7 +412,7 @@ async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
         pass
 
 
-async def _create_node(app: aiohttp.web.Application, 
+async def _create_node(app: aiohttp.web.Application,
                         client: aiodocker.docker.Docker,
                         user_id: str,
                         project_id: str,
@@ -459,31 +448,6 @@ async def _create_node(app: aiohttp.web.Application,
     return containers_meta_data
 
 
-async def start_service(app: aiohttp.web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
-    # pylint: disable=C0103
-    log.debug("starting service %s:%s using uuid %s, basepath %s",
-              service_key, service_tag, node_uuid, node_base_path)
-    # first check the uuid is available
-    async with _docker_client() as client: # pylint: disable=not-async-context-manager
-        await _check_node_uuid_available(client, node_uuid)
-        list_of_images = await _get_repos_from_key(app, service_key)
-        service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
-        log.debug("Found service to start %s:%s", service_key, service_tag)
-        list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
-        # find the service dependencies
-        list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
-        log.debug("Found service dependencies: %s", list_of_dependencies)
-        if list_of_dependencies:
-            list_of_services_to_start.extend(list_of_dependencies)
-
-        containers_meta_data = await _create_node(app, client, user_id, project_id,
-                                                   list_of_services_to_start,
-                                                   node_uuid, node_base_path)
-        node_details = containers_meta_data[0]
-        # we return only the info of the main service
-        return node_details
-
-
 async def _get_service_key_version_from_docker_service(service: Dict) -> Tuple[str, str]:
     # docker_image = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
     service_full_name = str(
@@ -502,8 +466,32 @@ async def _get_service_basepath_from_docker_service(service: Dict) -> str:
         x.split("=") for x in envs_list)}
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
+async def start_service(app: aiohttp.web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
+    # pylint: disable=C0103
+    log.debug("starting service %s:%s using uuid %s, basepath %s",
+              service_key, service_tag, node_uuid, node_base_path)
+    # first check the uuid is available
+    async with docker_utils.docker_client() as client: # pylint: disable=not-async-context-manager
+        await _check_node_uuid_available(client, node_uuid)
+        list_of_images = await _get_repos_from_key(app, service_key)
+        service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
+        log.debug("Found service to start %s:%s", service_key, service_tag)
+        list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
+        # find the service dependencies
+        list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
+        log.debug("Found service dependencies: %s", list_of_dependencies)
+        if list_of_dependencies:
+            list_of_services_to_start.extend(list_of_dependencies)
+
+        containers_meta_data = await _create_node(app, client, user_id, project_id,
+                                                   list_of_services_to_start,
+                                                   node_uuid, node_base_path)
+        node_details = containers_meta_data[0]
+        # we return only the info of the main service
+        return node_details
+
 async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> Dict:
-    async with _docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
                 filters={'label': ['uuid=' + node_uuid, "type=main"]})
@@ -547,7 +535,7 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
 async def stop_service(app: aiohttp.web.Application, node_uuid: str):
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
-    async with _docker_client() as client: # pylint: disable=not-async-context-manager
+    async with docker_utils.docker_client() as client: # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
                 filters={'label': 'uuid=' + node_uuid})
@@ -559,9 +547,9 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
         if not list_running_services_with_uuid:
             raise exceptions.ServiceUUIDNotFoundError(node_uuid)
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
-        # save the state of the main service if it can        
+        # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
-        service_host_name = "{}:{}{}".format(service_details["service_host"], 
+        service_host_name = "{}:{}{}".format(service_details["service_host"],
                                             service_details["service_port"] if service_details["service_port"] else "80",
                                             service_details["service_basepath"])
         log.debug("saving state of service %s...", service_host_name)
@@ -570,13 +558,13 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
                 service_url = "http://" + service_host_name + "/" + "state"
                 async with session.post(service_url) as response:
                     if 199 < response.status < 300:
-                        log.debug("service %s successfully saved its state", service_host_name)                    
+                        log.debug("service %s successfully saved its state", service_host_name)
                     else:
                         log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
         except aiohttp.ClientConnectionError:
             log.exception("service %s could not be contacted, state not saved")
-        
-                    
+
+
         # remove the services
         try:
             log.debug("removing services...")
