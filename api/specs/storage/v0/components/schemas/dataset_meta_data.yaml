@@ -22,3 +22,8 @@ components:
       example:
         dataset_uuid: 'N:id-aaaa'
         display_name: "simcore-testing"
+
+    DatasetMetaDataArray:
+      type: array
+      items:
+        $ref: './dataset_meta_data.yaml#/components/schemas/DatasetMetaDataType'

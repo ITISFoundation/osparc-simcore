@@ -56,9 +56,20 @@ async def get_storage_locations(request: web.Request):
     payload = await _request_storage(request, 'GET')
     return payload
 
+@login_required
+async def get_datasets_metadata(request: web.Request):
+    await check_permission(request, "storage.files.*")
+    payload = await _request_storage(request, 'GET')
+    return payload
 
 @login_required
 async def get_files_metadata(request: web.Request):
+    await check_permission(request, "storage.files.*")
+    payload = await _request_storage(request, 'GET')
+    return payload
+
+@login_required
+async def get_files_metadata_dataset(request: web.Request):
     await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, 'GET')
     return payload
