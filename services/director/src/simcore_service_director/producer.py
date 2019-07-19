@@ -94,9 +94,7 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
-                "Constraints": [
-                    "node.role==worker" if await docker_utils.swarm_has_worker_nodes() else ""
-                ]
+                "Constraints": ["node.role==worker"] if await docker_utils.swarm_has_worker_nodes() else []
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
