@@ -71,8 +71,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, postgres_service, minio_se
         'rest': rest_cfg
     }
 
-    #app.middlewares.append(dsm_middleware)
-
     setup_db(app)
     setup_rest(app)
     setup_dsm(app)
@@ -228,7 +226,6 @@ async def test_delete_file(client, dsm_mockup_db):
         assert not error
         assert len(data) == 0
 
-
 async def test_action_check(client):
     QUERY = 'mguidon'
     ACTION = 'echo'
@@ -254,8 +251,6 @@ async def test_action_check(client):
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
 
-
-
 def get_project_with_data():
     projects = []
     with open(current_dir / "data/projects_with_data.json") as fp:
@@ -263,8 +258,6 @@ def get_project_with_data():
 
     # TODO: add schema validation
     return projects
-
-
 
 @pytest.mark.parametrize("project_name,project", [ (prj['name'], prj) for prj in get_project_with_data()])
 async def test_create_and_delete_folders_from_project(client, dsm_mockup_db, project_name, project, mocker):
