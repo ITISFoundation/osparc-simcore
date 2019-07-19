@@ -212,6 +212,7 @@ async def replace_project(request: web.Request):
 
 @login_required
 async def delete_project(request: web.Request):
+
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
@@ -227,8 +228,9 @@ async def delete_project(request: web.Request):
         # TODO: add flag in query to determine whether to respond if error?
         raise web.HTTPNotFound
 
-    # requests storage to delete all project's stored data (fire & forget)
-    delete_data_folders_of_project(request.app, project_uuid, user_id)
+    # requests storage to delete all project's stored data
+    # TODO: fire & forget
+    await delete_data_folders_of_project(request.app, project_uuid, user_id)
 
 
     # TODO: delete all the dynamic services used by this project when this happens (fire & forget) #

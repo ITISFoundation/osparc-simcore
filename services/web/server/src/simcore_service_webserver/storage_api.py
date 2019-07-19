@@ -47,17 +47,18 @@ async def copy_data_folders_from_project(app, source_project, destination_projec
         return updated_project
 
 
-def delete_data_folders_of_project(app, project_id, user_id):
-    client, api_endpoint = _get_storage_client(app)
+async def _delete(session, target_url):
+    async with session.delete(target_url, ssl=False) as resp:
+        log.info("delete_data_folders_of_project request responded with status %s", resp.status )
+        # NOTE: context will automatically close connection
 
+async def delete_data_folders_of_project(app, project_id, user_id):
     # SEE api/specs/storage/v0/openapi.yaml
+    session, api_endpoint = _get_storage_client(app)
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
 
-    async def _fire_and_forget(target_url):
-        async with client.delete(target_url, ssl=False) as resp:
-            log.info("delete_data_folders_of_project request responded with status %s", resp.status_code )
-            # NOTE: context will automatically close connection
 
-    #asyncio.ensure_future(_fire_and_forget(url))
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(_fire_and_forget(url))
+    await _delete(session, url)
+    #asyncio.ensure_future(_delete(session, url))
+    #loop = asyncio.get_event_loop()
+    #loop.run_until_complete(_delete(session, url))
