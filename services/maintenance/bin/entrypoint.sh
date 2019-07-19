@@ -1,31 +1,31 @@
-#!/bin/sh
 
-# This entrypoint script:
-#
-# - Executes *inside* of the container upon start as --user [default root]
-# - Notice that the container *starts* as --user [default root] but
-#   *runs* as non-root user [scu]
-#
-echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+#!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+
+echo "Booting application ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
+echo "  cmd : $@"
 
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
 
-stat $DOCKER_MOUNT &> /dev/null
-if [[ $? -eq 0 ]]
+if [[ -e $DOCKER_MOUNT ]]
 then
     GROUPID=$(stat -c %g $DOCKER_MOUNT)
-    GROUPNAME=docker
+    GROUPNAME=scdocker
 
-    addgroup -g $GROUPID $GROUPNAME &> /dev/null
+    addgroup --gid $GROUPID $GROUPNAME &> /dev/null
     if [[ $? -gt 0 ]]
     then
         # if group already exists in container, then reuse name
         GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
     fi
-    addgroup jovyan $GROUPNAME
+    adduser jovyan $GROUPNAME
 fi
 
-su-exec jovyan "$@"
+echo "su --preserve-environment --command $@ jovyan"
+su --command "export PATH=${PATH}; $@" jovyan
