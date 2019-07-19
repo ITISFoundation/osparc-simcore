@@ -9,12 +9,13 @@ This is a schematic of how services are interconnected:
 [![service-web](../docs/img/service-web.svg)](http://interactive.blockdiag.com/?compression=deflate&src=eJxdjs0KwjAQhO99imXPFtNbpcYXkR7ys2hw6UqSKiK-uymxiF7nm28Yy-IuPpgTPBsAvJPdOg40ZYRjOpsr6UkyjUOB_tEmirfgKH0YaEDHMnsshX993x5qsEgUyx4bS6x3qu824IQlastz3f4pFtGHSC5LXCXsleqw3ljRUvteGprXG1PtQR0)
 
 
-### localhost deploy
+### localhost deploy (dev)
 
 - [web](http://127.0.0.1:9081/)
-- [portainer](http://127.0.0.1:9000/#/auth): monitors and manages swarm
-- [adminer](http://127.0.0.1:18080): monitors and manages database content
-
+- [portainer](http://127.0.0.1:9000/#/auth): swarm (you set your own pass)
+- [adminer](http://127.0.0.1:18080/?pgsql=postgres&username=simcore&db=simcoredb&ns=): database content
+- [minio](http://127.0.0.1:9001): storage management
+  - ``user=12345678, password=12345678``
 
 ----
 
