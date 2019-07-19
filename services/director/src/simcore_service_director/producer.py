@@ -103,12 +103,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             },
             "Resources": {
                 "Limits": {
-                    "NanoCPUs": 4 * pow(10, 9),
-                    "MemoryBytes": 16 * pow(1024, 3)
+                    "NanoCPUs": 2 * pow(10, 9),
+                    "MemoryBytes": 1 * pow(1024, 3)
                 },
                 "Reservation": {
-                    "NanoCPUs": 0,
-                    "MemoryBytes": 0
+                    "NanoCPUs": .1 * pow(10, 9),
+                    "MemoryBytes": 1 * pow(1024, 3)
                 }
             }
         },
