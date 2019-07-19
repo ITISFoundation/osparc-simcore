@@ -364,6 +364,7 @@ class DataStorageManager:
             For datcore we need the full path
         """
         if location == SIMCORE_S3_STR:
+            to_delete = []
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
                 async for row in conn.execute(query):
@@ -373,7 +374,11 @@ class DataStorageManager:
                     if d.user_id == user_id:
                         if self.s3_client.remove_objects(d.bucket_name, [d.object_name]):
                             stmt = file_meta_data.delete().where(file_meta_data.c.file_uuid == file_uuid)
-                            await conn.execute(stmt)
+                            to_delete.append(stmt)
+
+            async with self.engine.acquire() as conn:
+                for stmt in to_delete:
+                    await conn.execute(stmt)
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
