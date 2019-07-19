@@ -42,8 +42,7 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
 
   events: {
     "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event",
-    "retrieveInputsBtn": "qx.event.type.Event"
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -89,15 +88,6 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
         this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
-    },
-
-    __createRetrieveButton: function() {
-      let retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
-
-      retrieveBtn.addListener("execute", () => {
-        this.fireEvent("retrieveInputsBtn");
-      }, this);
-      return retrieveBtn;
     }
   }
 });

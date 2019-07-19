@@ -148,7 +148,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve.bind(this, null), this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -371,12 +370,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
         node.retrieveInputs(portKey);
-      } else {
-        const workbench = this.getStudy().getWorkbench();
-        const allNodes = workbench.getNodes(true);
-        Object.values(allNodes).forEach(node2 => {
-          node2.retrieveInputs();
-        }, this);
       }
     },
 

@@ -640,7 +640,7 @@ qx.Class.define("qxapp.data.model.Node", {
     __retrieveInputs: function(portKey) {
       const data = {
         node: this,
-        portKey
+        portKey: portKey
       };
       this.fireDataEvent("retrieveInputs", data);
     },
