@@ -267,11 +267,17 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
     helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
-    check_config_valid(PORTS, config_dict)    
+    check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
 
+    # let's get it a second time to see if replacing works
+    file_path = await PORTS.inputs["in_1"].get()
+    assert isinstance(file_path, item_pytype)
+    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
+
+    # now set
     invalid_alias = Path("invalid_alias.fjfj")
     with pytest.raises(exceptions.PortNotFound):
         await PORTS.set_file_by_keymap(invalid_alias)
