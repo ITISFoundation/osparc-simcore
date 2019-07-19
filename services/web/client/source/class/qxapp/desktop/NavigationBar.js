@@ -87,7 +87,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
-    this._add(new qxapp.ui.form.LinkButton(this.tr("Create issue"), qxapp.component.widget.NewGHIssue.getNewIssueUrl()).set({
+    this._add(new qxapp.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
       appearance: "link-button"
     }));
 
@@ -114,6 +114,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       check: "qxapp.data.model.Study",
       nullable: true
     }
+  },
+
+  statics: {
+    FEEDBACK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link"
   },
 
   members: {
@@ -190,6 +194,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
       menu.add(helpBtn);
+
+      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
+      newIssueBtn.addListener("execute", () => window.open(qxapp.component.widget.NewGHIssue.getNewIssueUrl()));
+      menu.add(newIssueBtn);
 
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
