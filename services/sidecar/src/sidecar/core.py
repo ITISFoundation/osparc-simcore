@@ -312,7 +312,7 @@ class Sidecar:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
             container = self._docker.client.containers.run(docker_image, "run", 
                                                             init=True,
-                                                            detach=True, remove=True,
+                                                            detach=True, remove=False,
                                                             volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
                                                             '{}_output'.format(self._stack_name) : {'bind' : '/output'},
                                                             '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
@@ -320,7 +320,7 @@ class Sidecar:
                                                             nano_cpus=config.SERVICES_MAX_NANO_CPUS,
                                                             mem_limit=config.SERVICES_MAX_MEMORY_BYTES)
 
-            response = container.wait(timeout=config.SERVICES_TIMEOUT_SECONDS)
+            response = container.wait(timeout=int(config.SERVICES_TIMEOUT_SECONDS))
             log.info("container completed with response %s\nlogs: %s", response, container.logs())
         except requests.exceptions.ReadTimeout:
             log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
