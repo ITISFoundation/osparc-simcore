@@ -8,11 +8,17 @@ This is a schematic of how services are interconnected:
 
 [![service-web](../docs/img/service-web.svg)](http://interactive.blockdiag.com/?compression=deflate&src=eJxdjs0KwjAQhO99imXPFtNbpcYXkR7ys2hw6UqSKiK-uymxiF7nm28Yy-IuPpgTPBsAvJPdOg40ZYRjOpsr6UkyjUOB_tEmirfgKH0YaEDHMnsshX993x5qsEgUyx4bS6x3qu824IQlastz3f4pFtGHSC5LXCXsleqw3ljRUvteGprXG1PtQR0)
 
-and here follows a quick description of each service.
 
-### authentication
+### localhost deploy
 
-User login/authentication service...
+- [web](http://127.0.0.1:9081/)
+- [portainer](http://127.0.0.1:9000/#/auth): monitors and manages swarm
+- [adminer](http://127.0.0.1:18080): monitors and manages database content
+
+
+----
+
+A quick description of each service.
 
 ### director
 
