@@ -23,6 +23,7 @@
 
 ```
 http_requests_total{endpoint=~"/v0/.*"}
+http_requests_total{endpoint=~"/v0/.*", http_status=~"2[0-9]+"}
 
 
 ```

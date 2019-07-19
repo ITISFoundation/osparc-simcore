@@ -19,7 +19,7 @@ import time
 
 def middleware_factory(app_name):
     @web.middleware
-    async def middlewave_handler(request, handler):
+    async def middleware_handler(request, handler):
         try:
             request['start_time'] = time.time()
             request.app['REQUEST_IN_PROGRESS'].labels(
@@ -44,7 +44,7 @@ def middleware_factory(app_name):
                 app_name, request.method, request.path, resp.status).inc()
 
         return resp
-    return middlewave_handler
+    return middleware_handler
 
 async def metrics(_request):
     # TODO: NOT async!
