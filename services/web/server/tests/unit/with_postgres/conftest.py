@@ -13,6 +13,7 @@ Notice that fixtures in ../conftest.py are also accessible here
 import json
 import os
 import sys
+from asyncio import Future
 from pathlib import Path
 from typing import Dict
 
@@ -144,7 +145,25 @@ def client(loop, aiohttp_client, server):
     return client
 
 
+@pytest.fixture
+async def storage_subsystem_mock(loop, mocker):
+    """
+        Patches client calls to storage service
 
+        Patched functions are exposed within projects but call storage subsystem
+    """
+    # requests storage to copy data
+    mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_folders_from_project')
+    async def _mock_copy_data_from_project(*args):
+        return args[2]
+
+    mock.side_effect = _mock_copy_data_from_project
+
+    # requests storage to delete data
+    #mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
+    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=Future())
+    mock1.return_value.set_result("")
+    return mock, mock1
 
 # helpers ---------------
 def path_mail(monkeypatch):
