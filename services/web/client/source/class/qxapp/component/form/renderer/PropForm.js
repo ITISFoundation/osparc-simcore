@@ -91,7 +91,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           column: this._gridPos.label
         });
         label.setBuddy(item);
-        this._add(new qxapp.component.form.FieldWHint(null, item.description, item), {
+
+        const field = new qxapp.component.form.FieldWHint(null, item.description, item);
+        field.key = item.key;
+        this._add(field, {
           row: this._row,
           column: this._gridPos.entryField
         });
@@ -175,7 +178,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             column: this._gridPos.entryField
           });
 
-          this.__retrievePortData(portId, i, layoutProps.row);
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
@@ -188,39 +191,70 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this._gridPos.entryField) {
             this._remove(child);
-            this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
+            const field = new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
+            field.key = portId;
+            this._addAt(field, i, {
               row: layoutProps.row,
               column: layoutProps.column
             });
 
-            this.__retrievePortData(portId, i, layoutProps.row);
+            this.fireDataEvent("dataFieldModified", portId);
           }
         }
       }
     },
 
-    __retrievePortData: function(portId, i, rowIdx) {
-      const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
-      retrieving.key = portId;
-      this._addAt(retrieving, i, {
-        row: rowIdx,
-        column: this._gridPos.retrieveStatus
-      });
-
-      this.fireDataEvent("dataFieldModified", portId);
+    retrievingPortData: function(portId) {
+      for (let i = this._getChildren().length; i--;) {
+        let child = this._getChildren()[i];
+        const layoutProps = child.getLayoutProperties();
+        if (portId) {
+          if ("key" in child && child.key === portId) {
+            const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
+            retrieving.key = portId;
+            this._addAt(retrieving, i, {
+              row: layoutProps.row,
+              column: this._gridPos.retrieveStatus
+            });
+            return;
+          }
+        } else if (layoutProps.column === this._gridPos.entryField) {
+          const ctrl = this._form.getControl(child.key);
+          if (ctrl && ctrl.link) {
+            const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
+            retrieving.key = child.key;
+            this._addAt(retrieving, i, {
+              row: layoutProps.row,
+              column: this._gridPos.retrieveStatus
+            });
+          }
+        }
+      }
     },
 
     retrievedPortData: function(portId) {
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children[i];
-        if ("key" in child && child.key === portId) {
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this._gridPos.retrieveStatus) {
-            this._remove(child);
+        const layoutProps = child.getLayoutProperties();
+        if (portId) {
+          if ("key" in child && child.key === portId) {
+            if (layoutProps.column === this._gridPos.retrieveStatus) {
+              this._remove(child);
+            }
           }
+        } else if (layoutProps.column === this._gridPos.retrieveStatus) {
+          this._remove(child);
         }
       }
+    },
+
+    __isInputData: function(portId) {
+      const port = this.getNode().getInput(portId);
+      if (port) {
+        return port.type.includes("data");
+      }
+      return false;
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {

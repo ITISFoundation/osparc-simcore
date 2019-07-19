@@ -666,9 +666,7 @@ qx.Class.define("qxapp.data.model.Node", {
           updReq.addListener("success", e => {
             const resp = e.getTarget().getResponse();
             console.log(resp);
-            if (portKey) {
-              this.getPropsWidget().retrievedPortData(portKey);
-            }
+            this.getPropsWidget().retrievedPortData(portKey);
           }, this);
           updReq.addListener("fail", e => {
             const resp = e.getTarget().getResponse();
@@ -679,6 +677,8 @@ qx.Class.define("qxapp.data.model.Node", {
             console.error("error", resp);
           }, this);
           updReq.send();
+
+          this.getPropsWidget().retrievingPortData(portKey);
         }
       }
     },
