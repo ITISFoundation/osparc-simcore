@@ -154,9 +154,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         elif param["type"] == "EndpointSpec": # REST-API compatible
             docker_params["endpoint_spec"] = param["value"]
         elif param["name"] == "constraints": # python-API compatible
-            docker_params["task_template"]["Placement"]["Constraints"] = param["value"]
+            docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints": # REST-API compatible
-            docker_params["task_template"]["Placement"]["Constraints"] = param["value"]
+            docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
 
     # the service may be part of the swarm network
     if "Ports" in docker_params["endpoint_spec"]:
