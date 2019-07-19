@@ -19,11 +19,11 @@ API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, configure_schemas_location, configure_registry_access):
-    app = main.setup_app()    
+    app = main.setup_app()
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
     client = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
     return client
-    
+
 async def test_root_get(loop, client):
     web_response = await client.get("/v0/")
     assert web_response.content_type == "application/json"
@@ -74,7 +74,7 @@ async def test_services_get(docker_registry, client, push_services):
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services(created_services, services)
-    
+
     web_response = await client.get("/v0/services?service_type=blahblah")
     assert web_response.status == 400
     assert web_response.content_type == "application/json"
@@ -113,7 +113,7 @@ async def test_v0_services_conversion_to_new(client, push_v0_schema_services): #
 
 async def test_services_by_key_version_get(client, push_services): #pylint: disable=W0613, W0621
     web_response = await client.get("/v0/services/whatever/someversion")
-    assert web_response.status == 400    
+    assert web_response.status == 400
     web_response = await client.get("/v0/services/simcore/services/dynamic/something/someversion")
     assert web_response.status == 404
     web_response = await client.get("/v0/services/simcore/services/dynamic/something/1.5.2")
@@ -128,11 +128,11 @@ async def test_services_by_key_version_get(client, push_services): #pylint: disa
         # note that it is very important to remove the safe="/" from quote!!!!
         url = "/v0/services/{}/{}".format(quote(service_description["key"], safe=""), quote(service_description["version"], safe=""))
         web_response = await client.get(url)
-        
+
         assert web_response.status == 200, await web_response.text() #here the error is actually json.
         assert web_response.content_type == "application/json"
         services_enveloped = await web_response.json()
-        
+
         assert isinstance(services_enveloped["data"], list)
         services = services_enveloped["data"]
         assert len(services) == 1
@@ -161,11 +161,11 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
     web_response = await client.post("/v0/running_interactive_services", params=params)
     data = await web_response.json()
     assert web_response.status == 404, data
-    
+
     created_services = push_services(0,2)
     assert len(created_services) == 2
     for created_service in created_services:
-        service_description = created_service["service_description"]        
+        service_description = created_service["service_description"]
         params["user_id"] = user_id
         params["project_id"] = project_id
         params["service_key"] = service_description["key"]
@@ -194,7 +194,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
 
         # get the service
         web_response = await client.request("GET", "/v0/running_interactive_services/{}".format(params["service_uuid"]))
-        assert web_response.status == 200        
+        assert web_response.status == 200
         text = await web_response.text()
         assert web_response.content_type == "application/json", text
         running_service_enveloped = await web_response.json()
@@ -217,7 +217,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         data = await web_response.json()
         assert data is None
 
-
+@pytest.mark.skip(reason="docker_swarm fixture is a session fixture making it bad running together with other tests that require a swarm")
 async def test_running_services_post_and_delete_no_swarm(client, push_services, user_id, project_id): #pylint: disable=W0613, W0621
     params = {
         "user_id": "None",

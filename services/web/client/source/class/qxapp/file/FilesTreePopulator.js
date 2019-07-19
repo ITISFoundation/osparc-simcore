@@ -37,13 +37,12 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
   statics: {
     addLoadingChild: function(parent) {
-      const loadingData = {
+      const loadingModel = new qxapp.file.FileTreeItem().set({
         label: "Loading...",
         location: null,
         path: null,
-        icon: "qxapp/loading.gif"
-      };
-      const loadingModel = qx.data.marshal.Json.createModel(loadingData, true);
+        icon: "@FontAwesome5Solid/circle-notch/12"
+      });
       parent.getChildren().append(loadingModel);
     },
 

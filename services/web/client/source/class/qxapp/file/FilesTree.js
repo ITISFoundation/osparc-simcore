@@ -107,15 +107,12 @@ qx.Class.define("qxapp.file.FilesTree", {
         filesTreePopulator.populateMyData();
       }
 
-      let delegate = this.getDelegate();
-      delegate["configureItem"] = item => {
+      this.getDelegate().configureItem = item => {
         item.addListener("dbltap", e => {
           this.__itemSelected();
         }, this);
-
         this.__addDragAndDropMechanisms(item);
       };
-      this.setDelegate(delegate);
     },
 
     getSelectedFile: function() {

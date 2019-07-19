@@ -473,9 +473,12 @@ class DataStorageManager:
                         new_node_id = node_mapping.get(old_node_id)
                         if new_node_id is not None:
                             old_filename = source_object_parts[2]
-                            dest_object_name = str(Path(dest_folder) / Path(new_node_id) / Path(old_filename))
+                            dest_object_name = str(Path(dest_folder) / new_node_id / old_filename)
                             copy_source = {'Bucket' : self.simcore_bucket_name, 'Key': source_object_name}
                             response = await client.copy_object(CopySource=copy_source, Bucket=self.simcore_bucket_name, Key=dest_object_name)
+                    else:
+                        # This may happen once we have shared/home folders
+                        logger.info("len(object.parts != 3")
 
 
             # Step 2: List all references in outputs that point to datcore and copy over
@@ -483,7 +486,7 @@ class DataStorageManager:
                 outputs = node.get("outputs")
                 if outputs is not None:
                     for _output_key, output in outputs.items():
-                        if "store" in output and output["store"]==1:
+                        if "store" in output and output["store"]==DATCORE_ID:
                             src = output["path"]
                             dest = str(Path(dest_folder) / Path(node_id) / Path(src).name)
                             logger.info("Need to copy %s to %s", src, dest)
