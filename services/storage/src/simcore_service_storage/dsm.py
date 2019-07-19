@@ -5,7 +5,6 @@ import re
 import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
-from operator import itemgetter
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -24,8 +23,9 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import (DatasetMetaData, FileMetaData, _location_from_id,
-                     file_meta_data, projects, user_to_projects)
+from .models import (DatasetMetaData, FileMetaData, FileMetaDataEx,
+                     _location_from_id, file_meta_data, projects,
+                     user_to_projects)
 from .s3 import get_config_s3
 from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 FileMetaDataVec = List[FileMetaData]
+FileMetaDataExVec = List[FileMetaDataEx]
 DatasetMetaDataVec = List[DatasetMetaData]
 
 async def _setup_dsm(app: web.Application):
@@ -169,7 +170,7 @@ class DataStorageManager:
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
-    async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
+    async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="") -> FileMetaDataExVec:
         """ Returns a list of file paths
 
             Works for simcore.s3 and datcore
@@ -177,10 +178,6 @@ class DataStorageManager:
             Can filter on uuid: useful to filter on project_id/node_id
 
             Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
-
-            Can sort results by key [assumes that sortby is actually a key in the FileMetaData]
-
-            order is: sort by key, filter by uuid or regex
         """
         data = []
         if location == SIMCORE_S3_STR:
@@ -189,7 +186,8 @@ class DataStorageManager:
                 async for row in conn.execute(query):
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
-                    data.append(d)
+                    dex = FileMetaDataEx(fmd=d, parent_id="")
+                    data.append(dex)
 
             if self.has_project_db:
                 uuid_name_dict = {}
@@ -216,7 +214,8 @@ class DataStorageManager:
 
                 # only keep files from non-deleted project --> This needs to be fixed
                 clean_data = []
-                for d in data:
+                for dx in data:
+                    d = dx.fmd
                     if d.project_id in uuid_name_dict:
                         d.project_name = uuid_name_dict[d.project_id]
                         if d.node_id in uuid_name_dict:
@@ -237,7 +236,7 @@ class DataStorageManager:
                                     file_id=d.file_id,
                                     display_file_path=d.display_file_path)
                             await conn.execute(query)
-                            clean_data.append(d)
+                            clean_data.append(dx)
 
                 data = clean_data
 
@@ -248,10 +247,11 @@ class DataStorageManager:
                 session = aiobotocore.get_session(loop=_loop)
                 async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
                         aws_secret_access_key=self.s3_client.secret_key) as client:
-                    responses = await asyncio.gather(*[client.list_objects_v2(Bucket=d.bucket_name, Prefix=_d) for _d in [__d.object_name for __d in data]])
-                    for d, resp in zip(data, responses):
+                    responses = await asyncio.gather(*[client.list_objects_v2(Bucket=_d.bucket_name, Prefix=_d.object_name) for _d in [__d.fmd for __d in data]])
+                    for dx, resp in zip(data, responses):
                         if 'Contents' in resp:
-                            clean_data.append(d)
+                            clean_data.append(dx)
+                            d = dx.fmd
                             d.file_size = resp['Contents'][0]['Size']
                             d.last_modified = str(resp['Contents'][0]['LastModified'])
                             async with self.engine.acquire() as conn:
@@ -268,27 +268,25 @@ class DataStorageManager:
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             data = await dcw.list_files_raw()
 
-        if sortby:
-            data = sorted(data, key=itemgetter(sortby))
-
-
         if uuid_filter:
             _query = re.compile(uuid_filter, re.IGNORECASE)
             filtered_data = []
-            for d in data:
+            for dx in data:
+                d = dx.fmd
                 if _query.search(d.file_uuid):
-                    filtered_data.append(d)
+                    filtered_data.append(dx)
 
             return filtered_data
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
             filtered_data = []
-            for d in data:
+            for dx in data:
+                d = dx.fmd
                 _vars = vars(d)
                 for v in _vars.keys():
                     if _query.search(v) or _query.search(str(_vars[v])):
-                        filtered_data.append(d)
+                        filtered_data.append(dx)
                         break
             return filtered_data
 
@@ -336,7 +334,7 @@ class DataStorageManager:
 
         return data
 
-    async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaData:
+    async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaDataEx:
         if location == SIMCORE_S3_STR:
             # TODO: get engine from outside
             async with self.engine.acquire() as conn:
@@ -345,7 +343,8 @@ class DataStorageManager:
                 async for row in conn.execute(query):
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
-                    return d
+                    dx = FileMetaDataEx(fmd=d, parent_id="")
+                    return dx
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)

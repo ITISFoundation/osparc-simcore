@@ -13,7 +13,8 @@ from typing import List
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
 
-from simcore_service_storage.models import DatasetMetaData, FileMetaData
+from simcore_service_storage.models import (DatasetMetaData, FileMetaData,
+                                            FileMetaDataEx)
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ class DatcoreClient(object):
 
         return files
 
-    def list_files_raw_dataset(self, dataset_id: str)->List[FileMetaData]:
+    def list_files_raw_dataset(self, dataset_id: str)->List[FileMetaDataEx]:
         files = [] # raw packages
         _files = [] # fmds
         data = {} # map to keep track of parents-child
@@ -124,7 +125,7 @@ class DatcoreClient(object):
                 if f['content']['packageType'] != 'Collection':
 
                     filename = f['content']['name']
-                    file_path = ""# filename
+                    file_path = ""
                     file_id = f['content']['nodeId']
                     _f = f
                     while 'parentId' in _f['content'].keys():
@@ -141,15 +142,20 @@ class DatcoreClient(object):
                     #file_uuid = file_id
                     created_at = f['content']['createdAt']
                     last_modified = f['content']['updatedAt']
+                    parent_id = ""
+                    if 'parentId' in _f['content']:
+                        parent_id = _f['content']['parentId']
+
                     fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
                             location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
                             raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
                             last_modified=last_modified, file_size=file_size)
-                    _files.append(fmd)
+                    fmdx = FileMetaDataEx(fmd=fmd, parent_id=parent_id)
+                    _files.append(fmdx)
 
         return _files
 
-    def list_files_raw(self, dataset_filter: str="")->List[FileMetaData]:
+    def list_files_raw(self, dataset_filter: str="")->List[FileMetaDataEx]:
         _files = []
 
         for dataset in self.client.datasets():

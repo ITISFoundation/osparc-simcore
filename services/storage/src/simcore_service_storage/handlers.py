@@ -129,8 +129,8 @@ async def get_files_metadata(request: web.Request):
 
     data_as_dict = []
     for d in data:
-        log.info("DATA %s",attr.asdict(d))
-        data_as_dict.append(attr.asdict(d))
+        log.info("DATA %s",attr.asdict(d.fmd))
+        data_as_dict.append({**attr.asdict(d.fmd), 'parent_id': d.parent_id})
 
     envelope = {
         'error': None,
@@ -166,8 +166,8 @@ async def get_files_metadata_dataset(request: web.Request):
 
     data_as_dict = []
     for d in data:
-        log.info("DATA %s",attr.asdict(d))
-        data_as_dict.append(attr.asdict(d))
+        log.info("DATA %s",attr.asdict(d.fmd))
+        data_as_dict.append({**attr.asdict(d.fmd), 'parent_id': d.parent_id})
 
     envelope = {
         'error': None,
@@ -199,7 +199,7 @@ async def get_file_metadata(request: web.Request):
 
     envelope = {
         'error': None,
-        'data': attr.asdict(data)
+        'data': {**attr.asdict(data.fmd), 'parent_id': data.parent_id}
         }
 
     return envelope

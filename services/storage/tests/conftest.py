@@ -347,6 +347,7 @@ async def datcore_structured_testbucket(loop, mock_files_factory):
         'coll1_id' : collection_id1, 'coll2_id' : collection_id2,
         'file_id1' : file_id1, 'filename1' : tmp_files[0],
         'file_id2' : file_id2, 'filename2' : tmp_files[1],
-        'file_id3' : file_id3, 'filename3' : tmp_files[2] }
+        'file_id3' : file_id3, 'filename3' : tmp_files[2],
+        'dcw' : dcw }
 
     await dcw.delete_test_dataset(BUCKET_NAME)

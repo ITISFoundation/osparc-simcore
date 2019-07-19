@@ -65,7 +65,6 @@ class DatasetMetaData:
     dataset_id: str=""
     display_name: str=""
 
-
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
         It is actually an overkill
@@ -111,7 +110,6 @@ class FileMetaData:
         state:  on of OK, UPLOADING, DELETED
 
         """
-
     #pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
@@ -146,11 +144,19 @@ attr.s(
     kw_only=True)(FileMetaData)
 
 
+@attr.s(auto_attribs=True)
+class FileMetaDataEx():
+    """Extend the base type by some additional attributes that shall not end up in the db
+    """
+    fmd: FileMetaData
+    parent_id: str=""
+
 __all__ = [
     "file_meta_data",
     "tokens",
     "metadata",
     "FileMetaData",
+    "FileMetaDataEx",
     "projects",
     "users",
     "user_to_projects"

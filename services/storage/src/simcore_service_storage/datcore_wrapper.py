@@ -9,9 +9,10 @@ from typing import List
 import attr
 
 from .datcore import DatcoreClient
-from .models import FileMetaData
+from .models import FileMetaData, FileMetaDataEx
 
 FileMetaDataVec = List[FileMetaData]
+FileMetaDataExVec = List[FileMetaDataEx]
 
 CURRENT_DIR = Path(__file__).resolve().parent
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class DatcoreWrapper:
                 host='https://api.blackfynn.io')
 
     @make_async
-    def list_files_recursively(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
+    def list_files_recursively(self)->FileMetaDataVec: #pylint: disable=W0613
         files = []
         try:
             files = self.d_client.list_files_recursively()
@@ -60,7 +61,7 @@ class DatcoreWrapper:
         return files
 
     @make_async
-    def list_files_raw(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
+    def list_files_raw(self)->FileMetaDataExVec: #pylint: disable=W0613
         files = []
         try:
             files = self.d_client.list_files_raw()
@@ -70,7 +71,7 @@ class DatcoreWrapper:
         return files
 
     @make_async
-    def list_files_raw_dataset(self, dataset_id: str)->FileMetaDataVec: #pylint: disable=W0613
+    def list_files_raw_dataset(self, dataset_id: str)->FileMetaDataExVec: #pylint: disable=W0613
         files = []
         try:
             files = self.d_client.list_files_raw_dataset(dataset_id)

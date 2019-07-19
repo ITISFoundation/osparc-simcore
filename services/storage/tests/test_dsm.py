@@ -16,13 +16,14 @@ import uuid
 from asyncio import Future
 from pathlib import Path
 from pprint import pprint
+from shutil import copyfile
 
 import attr
 import pytest
 
 import utils
 from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import FileMetaData, FileMetaDataEx
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
 from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -53,7 +54,8 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
         data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
         assert len(data) == id_file_count[_id]
         if write_data:
-            for d in data:
+            for dx in data:
+                d = dx.fmd
                 data_as_dict.append(attr.asdict(d))
 
     if write_data:
@@ -84,9 +86,10 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
 
     uuid_filter = os.path.join(bobs_biostromy_files[0].project_id, bobs_biostromy_files[0].node_id)
     filtered_data = await dsm.list_files(user_id=bob_id, location=SIMCORE_S3_STR, uuid_filter=str(uuid_filter))
-    assert filtered_data[0] == bobs_biostromy_files[0]
+    assert filtered_data[0].fmd == bobs_biostromy_files[0]
 
-    for d in data:
+    for dx in data:
+        d = dx.fmd
         await dsm.delete_file(user_id=d.user_id, location=SIMCORE_S3_STR, file_uuid=d.file_uuid)
 
     # now we should have less items
@@ -207,13 +210,12 @@ async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_structured
     utils.create_tables(url=postgres_service_url)
     dsm = dsm_fixture
     user_id = "0"
-
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME)
     # the fixture creates two files
     assert len(data) == 3
 
     # delete the first one
-    fmd_to_delete = data[0]
+    fmd_to_delete = data[0].fmd
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
     await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
 
@@ -362,7 +364,8 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
     data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
 
     assert len(data) == 2
-    for d in data:
+    for dx in data:
+        d = dx.fmd
         assert d.display_file_path
         assert d.node_name
         assert d.project_name
@@ -458,7 +461,7 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
     files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(files) == 3
     # one of the files in s3 should be the dowloaded one from datcore
-    assert any(f.file_name == Path(datcore_structured_testbucket["filename3"]).name for f in files)
+    assert any(f.fmd.file_name == Path(datcore_structured_testbucket["filename3"]).name for f in files)
 
     response = await dsm.delete_project_simcore_s3(user_id, destination_project["uuid"])
 
@@ -508,3 +511,26 @@ async def test_dsm_list_dataset_files_datcore(dsm_fixture, datcore_structured_te
         files = await dsm_fixture.list_files_dataset(user_id=USER_ID, location=DATCORE_STR, dataset_id=d.dataset_id)
         if BUCKET_NAME in d.display_name:
             assert len(files) == 3
+
+@pytest.mark.skip(reason="develop only")
+async def test_download_links(datcore_structured_testbucket, s3_client, mock_files_factory):
+    s3_client.create_bucket(BUCKET_NAME, delete_contents_if_exists=True)
+    _file = mock_files_factory(count=1)[0]
+
+    s3_client.upload_file(BUCKET_NAME, "test.txt", _file)
+    link = s3_client.create_presigned_get_url(BUCKET_NAME, "test.txt")
+    print(link)
+
+    dcw = datcore_structured_testbucket['dcw']
+
+    endings = ['txt', 'json', 'zip', 'dat', 'mat']
+    counter = 1
+    for e in endings:
+        file_name = "test{}.{}".format(counter, e)
+        file2 = str(Path(_file).parent / file_name)
+        copyfile(_file, file_name)
+        dataset_id = datcore_structured_testbucket['dataset_id']
+        file_id = await dcw.upload_file_to_id(dataset_id, file_name)
+        link, _file_name = await dcw.download_link_by_id(file_id)
+        print(_file_name, link)
+        os.remove(file_name)
