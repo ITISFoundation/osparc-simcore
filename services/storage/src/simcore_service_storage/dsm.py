@@ -186,7 +186,8 @@ class DataStorageManager:
                 async for row in conn.execute(query):
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
-                    dex = FileMetaDataEx(fmd=d, parent_id="")
+                    parent_id = str(Path(d.object_name).parent)
+                    dex = FileMetaDataEx(fmd=d, parent_id=parent_id)
                     data.append(dex)
 
             if self.has_project_db:
