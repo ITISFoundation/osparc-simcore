@@ -179,7 +179,7 @@ class Sidecar:
 
         def _log_accumulated_logs(new_log: str, acc_logs: List[str], time_logs_sent: float):
             # do not overload broker with messages, we log once every 1sec
-            TIME_BETWEEN_LOGS_S = 1.0
+            TIME_BETWEEN_LOGS_S = 2.0
             acc_logs.append(new_log)
             now = time.monotonic()
             if (now - time_logs_sent) > TIME_BETWEEN_LOGS_S:
@@ -329,30 +329,43 @@ class Sidecar:
 
         log.debug('DONE Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
-    def run(self):
-        connection = pika.BlockingConnection(self._pika.parameters)
 
+    @contextmanager
+    def safe_log_channel(self):
+        connection = pika.BlockingConnection(self._pika.parameters)
         channel = connection.channel()
         channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
+        try:
+            yield channel
+        finally:
+            connection.close()
 
-        msg = "Preprocessing start..."
-        self._log(channel, msg)
+    def run(self):
+        with self.safe_log_channel() as channel:
+            msg = "Preprocessing start..."
+            self._log(channel, msg)
+
         self.preprocess()
-        msg = "...preprocessing end"
-        self._log(channel, msg)
 
-        msg = "Processing start..."
-        self._log(channel, msg)
+        with self.safe_log_channel() as channel:
+            msg = "...preprocessing end"
+            self._log(channel, msg)
+            msg = "Processing start..."
+            self._log(channel, msg)
+
         self.process()
-        msg = "...processing end"
-        self._log(channel, msg)
 
-        msg = "Postprocessing start..."
-        self._log(channel, msg)
+        with self.safe_log_channel() as channel:
+            msg = "...processing end"
+            self._log(channel, msg)
+            msg = "Postprocessing start..."
+            self._log(channel, msg)
+
         self.postprocess()
-        msg = "...postprocessing end"
-        self._log(channel, msg)
-        connection.close()
+
+        with self.safe_log_channel() as channel:
+            msg = "...postprocessing end"
+            self._log(channel, msg)
 
 
     def postprocess(self):

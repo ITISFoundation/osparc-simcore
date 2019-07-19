@@ -88,6 +88,9 @@ class Item:
                     file_name = next(iter(self._schema.fileToKeyMap))
 
                 file_path = data_items_utils.create_file_path(self.key, file_name)
+                if value == file_path:
+                    # this can happen in case 
+                    return value
                 if file_path.exists():
                     file_path.unlink()
                 file_path.parent.mkdir(parents=True, exist_ok=True)

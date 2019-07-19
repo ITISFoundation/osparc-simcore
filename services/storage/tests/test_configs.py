@@ -11,7 +11,7 @@ import unittest.mock as mock
 import pytest
 import yaml
 
-from simcore_service_storage.cli import parse, setup_parser
+from simcore_service_storage.cli import create_environ, parse, setup_parser
 from simcore_service_storage.resources import resources
 
 THIS_SERVICE = 'storage'
@@ -41,7 +41,6 @@ def devel_environ(env_devel_file):
                 env_devel[key] = value
     return env_devel
 
-from simcore_service_storage.cli import create_environ
 
 @pytest.fixture("session")
 def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):

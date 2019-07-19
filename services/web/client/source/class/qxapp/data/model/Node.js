@@ -183,7 +183,7 @@ qx.Class.define("qxapp.data.model.Node", {
   },
 
   events: {
-    "updatePipeline": "qx.event.type.Data",
+    "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -451,21 +451,25 @@ qx.Class.define("qxapp.data.model.Node", {
      *
      */
     __addSettings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
+      const form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
       }, this);
       form.addListener("linkRemoved", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
+      }, this);
+      propsWidget.addListener("dataFieldModified", e => {
+        const portId = e.getData();
+        this.__retrieveInputs(portId);
       }, this);
     },
 
@@ -633,11 +637,15 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
-    __retrieveInputs: function() {
-      this.fireDataEvent("updatePipeline", this);
+    __retrieveInputs: function(portKey) {
+      const data = {
+        node: this,
+        portKey
+      };
+      this.fireDataEvent("retrieveInputs", data);
     },
 
-    retrieveInputs: function() {
+    retrieveInputs: function(portKey = null) {
       if (this.isDynamic() && this.isRealService()) {
         if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
           return;
@@ -646,10 +654,14 @@ qx.Class.define("qxapp.data.model.Node", {
         if (srvUrl) {
           let urlUpdate = srvUrl + "/retrieve";
           urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-          let updReq = new qx.io.request.Xhr();
+          const updReq = new qx.io.request.Xhr();
+          const data = {
+            "port_keys": portKey ? [portKey] : []
+          };
           updReq.set({
             url: urlUpdate,
-            method: "GET"
+            method: "POST",
+            requestData: qx.util.Serializer.toJson(data)
           });
           updReq.send();
         }

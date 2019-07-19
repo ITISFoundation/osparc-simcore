@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     this.__createInitMsg();
 
-    this.__textfield.addListener("changeValue", this.__applyFilters, this);
+    this.__textFilterField.addListener("changeValue", this.__applyFilters, this);
   },
 
   events: {},
@@ -137,7 +137,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
   members: {
     __currentNodeButton: null,
-    __textfield: null,
+    __textFilterField: null,
     __logModel: null,
     __logView: null,
     __messengerColors: null,
@@ -155,12 +155,12 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       toolbar.add(currentNodeButton);
 
       toolbar.add(new qx.ui.toolbar.Separator());
-      this.__textfield = new qx.ui.form.TextField().set({
+      const textFilterField = this.__textFilterField = new qx.ui.form.TextField().set({
         appearance: "toolbar-textfield",
         liveUpdate: true,
         placeholder: this.tr("Filter")
       });
-      toolbar.add(this.__textfield, {
+      toolbar.add(textFilterField, {
         flex: 1
       });
 
@@ -239,9 +239,9 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       const workbench = this.getWorkbench();
       const node = workbench.getNode(nodeId);
       if (node) {
-        this.__textfield.setValue(node.getLabel());
+        this.__textFilterField.setValue(node.getLabel());
       } else {
-        this.__textfield.setValue("");
+        this.__textFilterField.setValue("");
       }
     },
 
@@ -321,7 +321,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         return;
       }
 
-      this.__logModel.setFilterString(this.__textfield.getValue());
+      this.__logModel.setFilterString(this.__textFilterField.getValue());
       this.__logModel.setFilterLogLevel(this.getLogLevel());
       this.__logModel.reloadData();
     },
