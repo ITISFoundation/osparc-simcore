@@ -50,12 +50,29 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       qx.locale.Date.getDateFormat("medium") + " " +
       qx.locale.Date.getTimeFormat("short")
     );
+
+    this.addListener("changeOpen", e => {
+      if (e.getData() && this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
+        this.setLoaded(true);
+        const locationId = this.getLocation();
+        const datasetId = this.getPath();
+        const data = {
+          locationId,
+          datasetId
+        };
+        this.fireDataEvent("requestFiles", data);
+      }
+    }, this);
+  },
+
+  events: {
+    "requestFiles": "qx.event.type.Data"
   },
 
   properties: {
-    fileId: {
+    location: {
       check: "String",
-      event: "changeFileId",
+      event: "changePath",
       nullable: true
     },
 
@@ -65,9 +82,23 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       nullable: true
     },
 
-    location: {
+    isDataset: {
+      check: "Boolean",
+      event: "changeIsDataset",
+      init: false,
+      nullable: false
+    },
+
+    loaded: {
+      check: "Boolean",
+      event: "changeLoaded",
+      init: true,
+      nullable: false
+    },
+
+    fileId: {
       check: "String",
-      event: "changePath",
+      event: "changeFileId",
       nullable: true
     },
 

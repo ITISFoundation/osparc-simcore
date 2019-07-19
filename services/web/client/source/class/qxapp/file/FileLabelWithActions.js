@@ -111,7 +111,10 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
           const presignedLinkData = e.getData();
           console.log(presignedLinkData.presignedLink);
           if (presignedLinkData.presignedLink) {
-            qxapp.utils.Utils.downloadLink(presignedLinkData.presignedLink.link, fileName);
+            const link = presignedLinkData.presignedLink.link;
+            const fileNameFromLink = qxapp.utils.Utils.fileNameFromPresignedLink(link);
+            fileName = fileNameFromLink ? fileNameFromLink : fileName;
+            qxapp.utils.Utils.downloadLink(link, fileName);
           }
         }, this);
         const download = true;
