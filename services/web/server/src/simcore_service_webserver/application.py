@@ -62,7 +62,7 @@ def create_application(config: Dict) -> web.Application:
     setup_s3(app)
     setup_storage(app)
     setup_users(app)
-    setup_projects(app)
+    setup_projects(app) # needs storage
     setup_studies_access(app)
 
     if config['director']["enabled"]:
