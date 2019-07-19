@@ -5,13 +5,13 @@
 
 import os
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 
 import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 
-from pathlib import Path
 
 async def test_datcore_ping(loop):
     if not utils.has_datcore_tokens():
