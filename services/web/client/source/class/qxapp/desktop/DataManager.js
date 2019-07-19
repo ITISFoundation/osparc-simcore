@@ -121,21 +121,35 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
+      const actionsToolbar = this.__createActionsToolbar();
+      treeLayout.add(actionsToolbar);
+
+      return treeLayout;
+    },
+
+    __createActionsToolbar: function() {
+      const actionsToolbar = new qx.ui.toolbar.ToolBar();
+      const fileActions = new qx.ui.toolbar.Part();
+      const addFile = new qx.ui.toolbar.Part();
+      actionsToolbar.add(fileActions);
+      actionsToolbar.addSpacer();
+      actionsToolbar.add(addFile);
+
       const addBtn = new qxapp.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
-      treeLayout.add(addBtn);
+      addFile.add(addBtn);
 
       const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
-      treeLayout.add(selectedFileLayout);
+      fileActions.add(selectedFileLayout);
 
-      return treeLayout;
+      return actionsToolbar;
     },
 
     __createChartLayout: function() {

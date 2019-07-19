@@ -161,6 +161,22 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         this.bind("fileId", fileIdWidget, "value");
         this.addWidget(fileIdWidget);
       }
+    },
+
+    // override
+    _applyIcon: function(value, old) {
+      this.base(arguments, value, old);
+      // HACKY: make the loading icon turn
+      const icon = this.getChildControl("icon", true);
+      if (icon && value === "@FontAwesome5Solid/circle-notch/12") {
+        icon.setPadding(0);
+        icon.setMarginRight(4);
+        icon.getContentElement().addClass("rotate");
+      } else {
+        icon.resetPadding();
+        icon.resetMargin();
+        icon.getContentElement().removeClass("rotate");
+      }
     }
   },
 
