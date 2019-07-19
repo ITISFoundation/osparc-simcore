@@ -150,14 +150,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve, this);
+      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve.bind(this, null), this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("retrieveInputs", e => {
-        let node = e.getData();
-        this.__updatePipelineAndRetrieve(node);
+        const data = e.getData();
+        const node = data["node"];
+        const portKey = data["portKey"];
+        this.__updatePipelineAndRetrieve(node, portKey);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -359,19 +361,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipelineAndRetrieve: function(node) {
+    __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(
         null,
-        this.__pipelineSuccessfullyUpdated.bind(this, node),
-        this.__pipelineUnsuccessfullyUpdated.bind(this)
+        this.__retrieveInputs.bind(this, node, portKey)
       );
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    __pipelineSuccessfullyUpdated: function(node) {
+    __retrieveInputs: function(node, portKey = null) {
       this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
-        node.retrieveInputs();
+        node.retrieveInputs(portKey);
       } else {
         const workbench = this.getStudy().getWorkbench();
         const allNodes = workbench.getNodes(true);
@@ -379,10 +380,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           node2.retrieveInputs();
         }, this);
       }
-    },
-
-    __pipelineUnsuccessfullyUpdated: function() {
-      this.getLogger().error(null, "Error updating pipeline");
     },
 
     __startPipeline: function() {
@@ -563,6 +560,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         if (cbError) {
           cbError.call(this);
         }
+      }, this);
+      resource.addListenerOnce("putError", ev => {
+        this.getLogger().error(null, "Error updating pipeline");
       }, this);
       resource.put({
         "project_id": prjUuid

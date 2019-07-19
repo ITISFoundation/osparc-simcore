@@ -161,11 +161,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           hBox.add(this._form.getControlLink(portId), {
             flex: 1
           });
-          let unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+
+          const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
           unlinkBtn.addListener("execute", function() {
             this.fireDataEvent("removeLink", portId);
           }, this);
           hBox.add(unlinkBtn);
+
           hBox.key = portId;
 
           this._addAt(hBox, i, {

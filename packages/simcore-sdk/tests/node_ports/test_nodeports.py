@@ -225,8 +225,32 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, project
     filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
 
+@pytest.mark.parametrize("item_type, item_value, item_alias, item_pytype", [
+    ("data:*/*", __file__, Path(__file__).name, Path),
+    ("data:*/*", __file__, "some funky name.txt", Path),
+    ("data:text/*", __file__, "some funky name without extension", Path),
+    ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
+])
+async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, session, item_type, item_value, item_alias, item_pytype):
+    config_dict, _, this_node_uuid = special_2nodes_configuration(prev_node_outputs=[("in_15", item_type, store_link(item_value, project_id, node_uuid))],
+                                                    inputs=[("in_15", item_type, node_link("in_15"))],
+                                                    project_id=project_id, previous_node_id=node_uuid)
+    PORTS = node_ports.ports()
+    check_config_valid(PORTS, config_dict)
+    # add a filetokeymap
+    config_dict["schema"]["inputs"]["in_15"]["fileToKeyMap"] = {item_alias:"in_15"}
+    helpers.update_configuration(session, project_id, this_node_uuid, config_dict) #pylint: disable=E1101
+    check_config_valid(PORTS, config_dict)
+    file_path = await PORTS.inputs["in_15"].get()
+    assert isinstance(file_path, item_pytype)
+    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_15", item_alias)
+    assert file_path.exists()
+    filecmp.clear_cache()
+    assert filecmp.cmp(file_path, item_value)
+
 
 @pytest.mark.parametrize("item_type, item_value, item_alias, item_pytype", [
+    ("data:*/*", __file__, Path(__file__).name, Path),
     ("data:*/*", __file__, "some funky name.txt", Path),
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
@@ -243,7 +267,7 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
     helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
-    check_config_valid(PORTS, config_dict)
+    check_config_valid(PORTS, config_dict)    
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)

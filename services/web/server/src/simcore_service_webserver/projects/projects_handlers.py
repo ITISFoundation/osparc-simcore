@@ -229,10 +229,7 @@ async def delete_project(request: web.Request):
 
     try:
         # TODO: delete all the dynamic services used by this project when this happens.
-
-
         # TODO: delete pipeline db tasks
-
         await db.delete_user_project(user_id, project_uuid)
 
     except ProjectNotFoundError:

@@ -7,15 +7,15 @@ from typing import Dict
 
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
+from aiopg.sa import Engine
 from sqlalchemy import and_
 
-from aiopg.sa import Engine
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_director_sdk.rest import ApiException
-from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+from simcore_postgres_database.webserver_models import (comp_pipeline,
+                                                        comp_tasks)
 
 from .director import director_sdk
-
 
 log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
