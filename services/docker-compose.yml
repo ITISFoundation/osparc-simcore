@@ -132,6 +132,12 @@ services:
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+    deploy:
+      mode: replicated
+      resources:
+        reservations:
+          cpus: '0.1'
+          memory: '100M'
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
