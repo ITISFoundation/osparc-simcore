@@ -103,12 +103,13 @@ async def list_projects(request: web.Request):
     ptype = request.query.get('type', 'all') # TODO: get default for oaspecs
     db = request.config_dict[APP_PROJECT_DBAPI]
 
+    # TODO: improve dbapi to list project
     projects_list = []
     if ptype in ("template", "all"):
         projects_list += await db.load_template_projects()
 
-    if ptype in ("user", "all"):
-        projects_list += await db.load_user_projects(user_id=user_id)
+    if ptype in ("user", "all"): # standard only (notice that templates will only)
+        projects_list += await db.load_user_projects(user_id=user_id, exclude_templates=True)
 
     start = int(request.query.get('start', 0))
     count = int(request.query.get('count',len(projects_list)))

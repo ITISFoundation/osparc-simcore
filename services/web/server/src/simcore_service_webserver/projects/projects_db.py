@@ -175,17 +175,21 @@ class ProjectDBAPI:
             prj["uuid"] = kargs["uuid"]
             return prj["uuid"]
 
-    async def load_user_projects(self, user_id: str) -> List[Dict]:
+    async def load_user_projects(self, user_id: str, *, exclude_templates=True) -> List[Dict]:
         """ loads a project for a user
 
         """
         log.info("Loading projects for user %s", user_id)
         projects_list = []
-        async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table)\
-                .where(user_to_projects.c.user_id == user_id)
 
+        condition = user_to_projects.c.user_id == user_id
+        if exclude_templates:
+            condition = and_(condition,  projects.c.type != ProjectType.TEMPLATE )
+
+        joint_table = user_to_projects.join(projects)
+        query = select([projects]).select_from(joint_table).where(condition)
+
+        async with self.engine.acquire() as conn:
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
                 log.debug("found project: %s", result_dict)
