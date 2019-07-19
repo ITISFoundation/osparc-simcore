@@ -66,7 +66,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   members: {
     _gridPos: {
       label: 0,
-      entryField: 1
+      entryField: 1,
+      retrieveStatus: 2
     },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
@@ -174,7 +175,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             column: this._gridPos.entryField
           });
 
-          this.fireDataEvent("dataFieldModified", portId);
+          this.__retrievePortData(portId, i, layoutProps.row);
         }
       }
     },
@@ -185,13 +186,39 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let child = children[i];
         if ("key" in child && child.key === portId) {
           const layoutProps = child.getLayoutProperties();
-          this._remove(child);
-          this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
-            row: layoutProps.row,
-            column: this._gridPos.entryField
-          });
+          if (layoutProps.column === this._gridPos.entryField) {
+            this._remove(child);
+            this._addAt(new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId)), i, {
+              row: layoutProps.row,
+              column: layoutProps.column
+            });
 
-          this.fireDataEvent("dataFieldModified", portId);
+            this.__retrievePortData(portId, i, layoutProps.row);
+          }
+        }
+      }
+    },
+
+    __retrievePortData: function(portId, i, rowIdx) {
+      const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
+      retrieving.key = portId;
+      this._addAt(retrieving, i, {
+        row: rowIdx,
+        column: this._gridPos.retrieveStatus
+      });
+
+      this.fireDataEvent("dataFieldModified", portId);
+    },
+
+    retrievedPortData: function(portId) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        if ("key" in child && child.key === portId) {
+          const layoutProps = child.getLayoutProperties();
+          if (layoutProps.column === this._gridPos.retrieveStatus) {
+            this._remove(child);
+          }
         }
       }
     },

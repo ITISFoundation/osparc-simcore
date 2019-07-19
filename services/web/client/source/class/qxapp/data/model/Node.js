@@ -663,6 +663,21 @@ qx.Class.define("qxapp.data.model.Node", {
             method: "POST",
             requestData: qx.util.Serializer.toJson(data)
           });
+          updReq.addListener("success", e => {
+            const resp = e.getTarget().getResponse();
+            console.log(resp);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey);
+            }
+          }, this);
+          updReq.addListener("fail", e => {
+            const resp = e.getTarget().getResponse();
+            console.error("fail", resp);
+          }, this);
+          updReq.addListener("error", e => {
+            const resp = e.getTarget().getResponse();
+            console.error("error", resp);
+          }, this);
           updReq.send();
         }
       }
