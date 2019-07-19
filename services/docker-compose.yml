@@ -263,11 +263,11 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - "8888"
+      - "9002:8888"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ../.env
-    depends_on:
-      - postgres
     deploy:
       placement:
         constraints:
