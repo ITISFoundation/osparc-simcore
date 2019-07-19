@@ -87,6 +87,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
+    this._add(new qxapp.ui.form.LinkButton(this.tr("Docs"), "https://docs.osparc.io").set({
+      appearance: "link-button"
+    }));
+
     this._add(new qxapp.ui.form.LinkButton(this.tr("Create issue"), qxapp.component.widget.NewGHIssue.getNewIssueUrl()).set({
       appearance: "link-button"
     }));
