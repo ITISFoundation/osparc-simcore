@@ -117,13 +117,10 @@ class DatcoreClient(object):
                 cursor = resp.get('cursor')
                 if cursor is None:
                     break
-                else:
-                    print("Getting next page with cursor", cursor)
-                print(len(files))
+
 
             for f in files:
                 if f['content']['packageType'] != 'Collection':
-
                     filename = f['content']['name']
                     file_path = ""
                     file_id = f['content']['nodeId']
@@ -139,12 +136,12 @@ class DatcoreClient(object):
                     object_name = str(Path(file_path) / file_name)
 
                     file_uuid = str(Path(bucket_name) / object_name)
-                    #file_uuid = file_id
                     created_at = f['content']['createdAt']
                     last_modified = f['content']['updatedAt']
-                    parent_id = ""
-                    if 'parentId' in _f['content']:
-                        parent_id = _f['content']['parentId']
+                    parent_id = dataset_id
+                    if 'parentId' in f['content']:
+                        parentId = f['content']['parentId']
+                        parent_id = data[parentId]['content']['nodeId']
 
                     fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
                             location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,

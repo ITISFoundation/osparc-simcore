@@ -151,6 +151,12 @@ class FileMetaDataEx():
     fmd: FileMetaData
     parent_id: str=""
 
+    def __str__(self):
+        _str = str(self.fmd)
+        _str += "  {0: <25}: {1}\n".format("parent_id", str(self.parent_id))
+        return _str
+
+
 __all__ = [
     "file_meta_data",
     "tokens",
