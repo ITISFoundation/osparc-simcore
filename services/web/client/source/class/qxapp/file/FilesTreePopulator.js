@@ -33,6 +33,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
   construct: function(tree) {
     this.__tree = tree;
+    this.__tree.downloadedDatasets = [];
   },
 
   statics: {
@@ -115,27 +116,6 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       store.getDatasetsByLocation(locationId);
     },
 
-    populateMyDatasets: function(locationId = null, datasetId) {
-      if (locationId !== null) {
-        const locationModel = this.__getLocationModel(locationId);
-        if (locationModel) {
-          locationModel.getChildren().removeAll();
-          qxapp.file.FilesTreePopulator.addLoadingChild(locationModel);
-        }
-      }
-
-      const store = qxapp.data.Store.getInstance();
-      store.addListener("myDocuments", ev => {
-        const {
-          location,
-          files
-        } = ev.getData();
-        this.__filesToLocation(location, files);
-      }, this);
-
-      store.getFilesByLocation(locationId);
-    },
-
     addFileEntryToTree: function(fileEntry) {
       const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel([fileEntry]);
       this.__fileToTree(filesData[0]);
@@ -144,6 +124,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
+      this.__tree.downloadedDatasets = [];
       const rootData = {
         label: treeName,
         location: null,
@@ -161,6 +142,12 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
               locationId,
               datasetId
             } = e.getData();
+
+            if (this.__tree.downloadedDatasets.indexOf(datasetId) !== -1) {
+              return;
+            }
+            this.__tree.downloadedDatasets.push(datasetId);
+
             const store = qxapp.data.Store.getInstance();
             store.addListener("myDocuments", ev => {
               const {

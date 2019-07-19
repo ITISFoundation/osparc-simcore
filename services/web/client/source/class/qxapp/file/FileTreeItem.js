@@ -51,15 +51,16 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    this.addListener("changeOpen", e => {
-      if (e.getData() && this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
-        this.setLoaded(true);
+    const openButton = this.getChildControl("open");
+    openButton.addListener("tap", e => {
+      if (this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
         const locationId = this.getLocation();
         const datasetId = this.getPath();
         const data = {
           locationId,
           datasetId
         };
+        this.setLoaded(true);
         this.fireDataEvent("requestFiles", data);
       }
     }, this);
