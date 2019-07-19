@@ -159,7 +159,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       let data = {
         label: this.getStudyName(),
         children: this.__convertModel(topLevelNodes),
-        nodeId: this.getWorkbench().getStudy().getUuid(),
+        nodeId: "root",
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);

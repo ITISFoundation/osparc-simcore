@@ -43,7 +43,7 @@ qx.Class.define("qxapp.statics.NodeStatics", {
         icon: "@FontAwesome5Solid/mouse-pointer/"
       },
       container: {
-        label: "Group",
+        label: "Group of nodes",
         icon: "@FontAwesome5Solid/box-open/"
       }
     },
