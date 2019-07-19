@@ -177,7 +177,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
         "STANDARD studies are NOT sharable: %s" % content
 
 
-async def test_access_study_anonymously(client, qx_client_outdir, published_project):
+async def test_access_study_anonymously(client, qx_client_outdir, published_project, storage_subsystem_mock):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
@@ -213,7 +213,7 @@ async def test_access_study_anonymously(client, qx_client_outdir, published_proj
     assert guest_project['prjOwner'] == data['login']
 
 
-async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir, published_project):
+async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir, published_project, storage_subsystem_mock):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
