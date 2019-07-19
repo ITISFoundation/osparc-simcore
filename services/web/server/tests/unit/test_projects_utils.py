@@ -6,12 +6,13 @@
 
 import json
 from copy import deepcopy
+
 import jsonschema
+import pytest
 from jsonschema import ValidationError
 
-import pytest
 from simcore_service_webserver.projects.projects_utils import \
-    clone_project_data
+    clone_project_document
 from simcore_service_webserver.resources import resources
 
 
@@ -32,12 +33,12 @@ def project_schema(project_schema_file):
 
 @pytest.mark.parametrize("name,project",
     [(p['name'], p) for p in load_template_projects()] )
-def test_clone_project_data(name, project, project_schema):
+def test_clone_project_document(name, project, project_schema):
 
     source = deepcopy(project)
-    clone = clone_project_data(source)
+    clone, _ = clone_project_document(source)
 
-    # was not modified by clone_project_data
+    # was not modified by clone_project_document
     assert source == project
 
     # valid clone
