@@ -338,6 +338,8 @@ qx.Class.define("qxapp.utils.Utils", {
         hash |= 0; // Convert to 32bit integer
       }
       return hash;
-    }
+    },
+
+    isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url)
   }
 });

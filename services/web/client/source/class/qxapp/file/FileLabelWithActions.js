@@ -42,8 +42,6 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
     let fileLabelWithActionsLayout = new qx.ui.layout.HBox(5);
     this._setLayout(fileLabelWithActionsLayout);
 
-    this.__selectedLabel = this._createChildControlImpl("selectedLabel");
-
     let downloadBtn = this._createChildControlImpl("downloadBtn");
     downloadBtn.addListener("execute", e => {
       this.__retrieveURLAndDownload();
@@ -53,6 +51,8 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
     deleteBtn.addListener("execute", e => {
       this.__deleteFile();
     }, this);
+
+    this.__selectedLabel = this._createChildControlImpl("selectedLabel");
   },
 
   events: {
@@ -66,26 +66,15 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
       let control;
       switch (id) {
         case "selectedLabel":
-          control = new qx.ui.basic.Label().set({
-            decorator: "main",
-            backgroundColor: "white",
-            allowGrowX: true,
-            height: 24
-          });
-          this._add(control, {
-            flex: 1
-          });
+          control = new qxapp.ui.toolbar.Label();
+          this._add(control);
           break;
         case "downloadBtn":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/cloud-download-alt/24"
-          });
+          control = new qx.ui.toolbar.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
           this._add(control);
           break;
         case "deleteBtn":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/trash-alt/24"
-          });
+          control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash-alt/16");
           this._add(control);
           break;
       }
