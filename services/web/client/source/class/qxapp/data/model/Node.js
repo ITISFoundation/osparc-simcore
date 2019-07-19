@@ -629,6 +629,21 @@ qx.Class.define("qxapp.data.model.Node", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
+
+        if (this.getKey().includes("raw-graphs")) {
+          // Listen to the postMessage from RawGraphs, posting a new graph
+          window.addEventListener("message", e => {
+            const {
+              id,
+              imgData
+            } = e.data;
+            if (imgData && id === "svgChange") {
+              const img = document.createElement("img");
+              img.src = imgData;
+              this.setThumbnail(img.outerHTML);
+            }
+          }, false);
+        }
       }
     },
 
