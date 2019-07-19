@@ -3,6 +3,7 @@ version: '3.7'
 services:
   apihub:
     image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
@@ -24,6 +25,7 @@ services:
 #--------------------------------------------------------------------
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/director/Dockerfile
@@ -71,6 +73,7 @@ services:
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
+    init: true
     restart: on-failure
     build:
       context: ./web/client/
@@ -94,6 +97,7 @@ services:
 
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/web/Dockerfile
@@ -132,6 +136,7 @@ services:
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     deploy:
       mode: replicated
       resources:
@@ -184,6 +189,7 @@ services:
   #--------------------------------------------------------------------
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -229,6 +235,7 @@ services:
 #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
+    init: true
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
@@ -238,6 +245,7 @@ services:
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
+    init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -249,6 +257,7 @@ services:
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
+    init: true
     environment:
       - MINIO_ACCESS_KEY=12345678
       - MINIO_SECRET_KEY=12345678
@@ -260,6 +269,7 @@ services:
   #--------------------------------------------------------------------
   maintenance:
     image: ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/maintenance/Dockerfile
