@@ -12,6 +12,7 @@
 
 import json
 import sys
+from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -39,7 +40,7 @@ API_VERSION = "v0"
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
     'apihub',
-    'postgres'
+    'postgres',
 ]
 
 tool_services = [
@@ -127,6 +128,16 @@ async def logged_user(client): #, role: UserRole):
         yield user
         await delete_all_projects(client.app)
 
+
+@pytest.fixture
+def computational_system_mock(mocker):
+    # director needs access to service registry which unfortunately cannot be provided for testing. For that reason we need to mock
+    # interaction with director
+    mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
+    mock_fun.return_value.set_result("")
+    return mock_fun
+
+
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects
 
@@ -172,7 +183,7 @@ async def _request_delete(client, pid):
 
 
 
-async def test_workflow(client, fake_project_data, logged_user):
+async def test_workflow(client, fake_project_data, logged_user, computational_system_mock):
     # empty list
     projects = await _request_list(client)
     assert not projects
