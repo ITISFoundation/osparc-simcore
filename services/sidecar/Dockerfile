@@ -21,8 +21,11 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
-# used for finding the volumes
-ENV SWARM_STACK_NAME = ''
+# environment variables
+ENV SWARM_STACK_NAME = '' \
+      SERVICES_MAX_NANO_CPUS = '4000000000' \
+      SERVICES_MAX_MEMORY_BYTES = '2147483648' \
+      SERVICES_TIMEOUT_SECONDS = '900'
 
 EXPOSE 8080
 

@@ -321,14 +321,15 @@ class Sidecar:
                                                             mem_limit=config.SERVICES_MAX_MEMORY_BYTES)
 
             response = container.wait(timeout=config.SERVICES_TIMEOUT_SECONDS)
-            log.info("container completed with response %s", response)
+            log.info("container completed with response %s\nlogs: %s", response, container.logs())
         except requests.exceptions.ReadTimeout:
-            log.exception("Running container timed-out after %ss and will be killed now", config.SERVICES_TIMEOUT_SECONDS)
-            container.remove(force=True)
+            log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
         except docker.errors.ImageNotFound as _e:
             log.exception("Run container: Image not found")
         except docker.errors.APIError as _e:
             log.exception("Run Container: Server returns error")
+        finally:
+            container.remove(force=True)
 
 
         time.sleep(1)
