@@ -3,6 +3,7 @@
     requires Blackfynn, check Makefile env2
 
 """
+import logging
 # pylint: skip-file
 import os
 import urllib
@@ -12,8 +13,14 @@ from typing import List
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
 
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import (DatasetMetaData, FileMetaData,
+                                            FileMetaDataEx)
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
+
+logger = logging.getLogger(__name__)
+
+DatasetMetaDataVec = List[DatasetMetaData]
+
 
 #FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
 #from blackfynn.api.transfers import IOAPI
@@ -73,6 +80,12 @@ class DatcoreClient(object):
 
         return collection, collection_id
 
+    def _destination_from_id(self, destination_id: str):
+        destination = self.client.get(destination_id)
+        if destination is None:
+            destination = self.client.get_dataset(destination_id)
+
+        return destination
 
     def list_files_recursively(self, dataset_filter: str=""):
         files = []
@@ -82,6 +95,70 @@ class DatcoreClient(object):
                 self.list_dataset_files_recursively(files, dataset, Path(dataset.name))
 
         return files
+
+    def list_files_raw_dataset(self, dataset_id: str)->List[FileMetaDataEx]:
+        files = [] # raw packages
+        _files = [] # fmds
+        data = {} # map to keep track of parents-child
+
+        cursor = ''
+        page_size = 1000
+        api = self.client._api.datasets
+
+        dataset = self.client.get_dataset(dataset_id)
+        if dataset is not None:
+            while True:
+                resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id,
+                    cursor=cursor, pageSize=page_size, includeSourceFiles=False))
+                for package in resp.get('packages', list()):
+                    id = package['content']['id']
+                    data[id] = package
+                    files.append(package)
+                cursor = resp.get('cursor')
+                if cursor is None:
+                    break
+
+
+            for f in files:
+                if f['content']['packageType'] != 'Collection':
+                    filename = f['content']['name']
+                    file_path = ""
+                    file_id = f['content']['nodeId']
+                    _f = f
+                    while 'parentId' in _f['content'].keys():
+                        parentid = _f['content']['parentId']
+                        _f = data[parentid]
+                        file_path =  _f['content']['name'] +"/" + file_path
+
+                    bucket_name = dataset.name
+                    file_name = filename
+                    file_size = 0
+                    object_name = str(Path(file_path) / file_name)
+
+                    file_uuid = str(Path(bucket_name) / object_name)
+                    created_at = f['content']['createdAt']
+                    last_modified = f['content']['updatedAt']
+                    parent_id = dataset_id
+                    if 'parentId' in f['content']:
+                        parentId = f['content']['parentId']
+                        parent_id = data[parentId]['content']['nodeId']
+
+                    fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
+                            location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
+                            raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
+                            last_modified=last_modified, file_size=file_size)
+                    fmdx = FileMetaDataEx(fmd=fmd, parent_id=parent_id)
+                    _files.append(fmdx)
+
+        return _files
+
+    def list_files_raw(self, dataset_filter: str="")->List[FileMetaDataEx]:
+        _files = []
+
+        for dataset in self.client.datasets():
+            _files = _files + self.list_files_raw_dataset(dataset.id)
+
+        return _files
 
     def list_dataset_files_recursively(self, files: List[FileMetaData], base: BaseCollection, current_root: Path):
         for item in base:
@@ -264,6 +341,21 @@ class DatcoreClient(object):
 
         return ""
 
+    def download_link_by_id(self, file_id):
+        """
+            returns presigned url for download of a file given its file_id
+        """
+        url = ""
+        filename = ""
+        package = self.client.get(file_id)
+        if package is not None:
+            filename = Path(package.files[0].as_dict()['content']['s3key']).name
+
+        file_desc = self.client._api.packages.get_sources(file_id)[0]
+        url = self.client._api.packages.get_presigned_url_for_file(file_id, file_desc.id)
+
+        return url, filename
+
     def get_package(self, source, filename):
         """
         Returns package from source by name if exists
@@ -309,7 +401,8 @@ class DatcoreClient(object):
         Args:
             datcore id for the file
         """
-        self.client.delete(id)
+        package = self.client.get(id)
+        package.delete()
 
     def delete_files(self, destination):
         """
@@ -393,3 +486,63 @@ class DatcoreClient(object):
             max_count (int): Max number of results to return
         """
         return self.client.search(what, max_count)
+
+    def upload_file_to_id(self, destination_id: str, filepath: str):
+        """
+        Uploads file to a given dataset/collection by id given its filepath on the host
+        adds some meta data.
+
+        Returns the id for the newly created resource
+
+        Note: filepath could be an array
+
+        Args:
+            destination_id : The dataset/collection id into which the file shall be uploaded
+            filepath (path): Full path to the file
+        """
+        _id = ""
+        destination = self._destination_from_id(destination_id)
+        if destination is None:
+            return _id
+
+        files = [filepath]
+
+        try:
+            result = self.client._api.io.upload_files(destination, files, display_progress=True)
+            if result and result[0] and 'package' in result[0][0]:
+                _id = result[0][0]['package']['content']['id']
+
+        except Exception:
+            logger.exception("Error uploading file to datcore")
+
+
+        return _id
+
+    def create_collection(self, destination_id: str, collection_name: str):
+        """
+        Create a empty collection within destination
+        Args:
+            destination_id : The dataset/collection id into which the file shall be uploaded
+            filepath (path): Full path to the file
+        """
+        destination = self._destination_from_id(destination_id)
+        _id = ""
+
+        if destination is None:
+            return _id
+
+        new_collection = Collection(collection_name)
+        destination.add(new_collection)
+        new_collection.update()
+        destination.update()
+        _id = new_collection.id
+
+        return _id
+
+    def list_datasets(self)->DatasetMetaDataVec:
+        data = []
+        for dataset in self.client.datasets():
+            dmd = DatasetMetaData(dataset_id=dataset.id, display_name=dataset.name)
+            data.append(dmd)
+
+        return data
