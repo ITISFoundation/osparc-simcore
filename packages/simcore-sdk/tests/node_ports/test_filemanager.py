@@ -17,10 +17,10 @@ async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, u
     store = s3_simcore_location
     await filemanager.upload_file(store_id=store, s3_object=file_id, local_file_path=file_path)
 
-    download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
-    await filemanager.download_file(store_id=store, s3_object=file_id, local_file_path=download_file_path)
+    download_folder = Path(tmpdir) / "downloads"
+    download_file_path = await filemanager.download_file(store_id=store, s3_object=file_id, local_folder=download_folder)
     assert download_file_path.exists()
-
+    assert download_file_path.name == "test.test"
     assert filecmp.cmp(download_file_path, file_path)
 
 
@@ -35,9 +35,9 @@ async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_file(store_id=store, s3_object=file_id, local_file_path=Path(tmpdir)/"some other file.txt")
 
-    download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
+    download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.S3InvalidPathError):
-        await filemanager.download_file(store_id=store, s3_object=file_id, local_file_path=download_file_path)
+        await filemanager.download_file(store_id=store, s3_object=file_id, local_folder=download_folder)
 
 
 async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id, s3_simcore_location):
@@ -51,11 +51,11 @@ async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id,
     with pytest.raises(exceptions.StorageServerIssue):
         await filemanager.upload_file(store_id=store, s3_object="file_id", local_file_path=file_path)
 
-    download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
+    download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.StorageInvalidCall):
-        await filemanager.download_file(store_id=store, s3_object="", local_file_path=download_file_path)
+        await filemanager.download_file(store_id=store, s3_object="", local_folder=download_folder)
     with pytest.raises(exceptions.S3InvalidPathError):
-        await filemanager.download_file(store_id=store, s3_object="file_id", local_file_path=download_file_path)
+        await filemanager.download_file(store_id=store, s3_object="file_id", local_folder=download_folder)
 
 
 async def test_invalid_store(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
@@ -68,10 +68,6 @@ async def test_invalid_store(tmpdir, bucket, storage, filemanager_cfg, user_id, 
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_file(store_name=store, s3_object=file_id, local_file_path=file_path)
 
-    download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
+    download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.S3InvalidStore):
-        await filemanager.download_file(store_name=store, s3_object=file_id, local_file_path=download_file_path)
-
-
-async def test_storage_sdk_client(storage):
-    pass
+        await filemanager.download_file(store_name=store, s3_object=file_id, local_folder=download_folder)
