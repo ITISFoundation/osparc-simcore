@@ -16,13 +16,16 @@ services:
     build:
       target: development
     environment:
-      REGISTRY_CACHING=False
+      - REGISTRY_CACHING=False
+      - SC_BOOT_MODE=debug-ptvsd
     volumes:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
       - ../api:/devel/services/api
     stdin_open: true
     tty: true
+    ports:
+      - "3004:3000"
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:dev
