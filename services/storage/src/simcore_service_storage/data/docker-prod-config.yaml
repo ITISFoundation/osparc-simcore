@@ -1,7 +1,7 @@
 version: '1.0'
 main:
   host: 0.0.0.0
-  log_level: INFO
+  log_level: ${STORAGE_LOGLEVEL}
   port: 8080
   testing: False
   monitoring_enabled: ${STORAGE_MONITORING_ENABLED}
