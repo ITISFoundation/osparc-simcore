@@ -110,7 +110,7 @@ class DatcoreClient(object):
             while True:
                 resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id,
                     cursor=cursor, pageSize=page_size, includeSourceFiles=False))
-                for package in resp['packages']:
+                for package in resp.get('packages', list()):
                     id = package['content']['id']
                     data[id] = package
                     files.append(package)
@@ -156,8 +156,7 @@ class DatcoreClient(object):
         _files = []
 
         for dataset in self.client.datasets():
-            dataset_id = dataset.id
-            _files = _files + self.list_files_raw_dataset(dataset_id)
+            _files = _files + self.list_files_raw_dataset(dataset.id)
 
         return _files
 
