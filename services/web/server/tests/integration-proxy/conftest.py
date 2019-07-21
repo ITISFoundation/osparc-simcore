@@ -41,7 +41,6 @@ core_services = [
 
 tool_services = [
     'adminer',
-    'flower',
     'portainer'
 ]
 
