@@ -62,12 +62,28 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     }
   },
 
+  statics: {
+    getRetrievingAtom: function() {
+      return new qx.ui.basic.Atom("", "qxapp/loading.gif");
+    },
+
+    getRetrievedAtom: function(success) {
+      const icon = success ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/times/12";
+      return new qx.ui.basic.Atom("", icon);
+    }
+  },
+
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
     _gridPos: {
       label: 0,
       entryField: 1,
       retrieveStatus: 2
+    },
+    _retrieveStatus: {
+      failed: 0,
+      retrieving: 1,
+      succeed: 2
     },
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
@@ -205,28 +221,19 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     retrievingPortData: function(portId) {
+      const status = this._retrieveStatus.retrieving;
       for (let i = this._getChildren().length; i--;) {
         let child = this._getChildren()[i];
         const layoutProps = child.getLayoutProperties();
         if (portId) {
           if ("key" in child && child.key === portId) {
-            const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
-            retrieving.key = portId;
-            this._addAt(retrieving, i, {
-              row: layoutProps.row,
-              column: this._gridPos.retrieveStatus
-            });
+            this.__setRetrievingStatus(status, portId, i, layoutProps.row);
             return;
           }
         } else if (layoutProps.column === this._gridPos.entryField) {
           const ctrl = this._form.getControl(child.key);
           if (ctrl && ctrl.link) {
-            const retrieving = new qx.ui.basic.Atom("", "qxapp/loading.gif");
-            retrieving.key = child.key;
-            this._addAt(retrieving, i, {
-              row: layoutProps.row,
-              column: this._gridPos.retrieveStatus
-            });
+            this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
           }
         }
       }
@@ -244,9 +251,29 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             }
           }
         } else if (layoutProps.column === this._gridPos.retrieveStatus) {
+
+    __setRetrievingStatus: function(status, portId, idx, row) {
+      let icon;
+      switch (status) {
+        case this._retrieveStatus.failed:
+          icon = qxapp.component.form.renderer.PropForm.getRetrievedAtom(false);
+          break;
+        case this._retrieveStatus.retrieving:
+          icon = qxapp.component.form.renderer.PropForm.getRetrievingAtom();
+          break;
+        case this._retrieveStatus.succeed:
+          icon = qxapp.component.form.renderer.PropForm.getRetrievedAtom(true);
+          break;
+      }
+      icon.key = portId;
           this._remove(child);
         }
       }
+
+      this._addAt(icon, idx, {
+        row: row,
+        column: this._gridPos.retrieveStatus
+      });
     },
 
     __isInputData: function(portId) {
