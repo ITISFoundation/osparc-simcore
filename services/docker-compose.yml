@@ -74,7 +74,6 @@ services:
   webclient:
     image: services_webclient:build
     init: true
-    restart: on-failure
     build:
       context: ./web/client/
       dockerfile: Dockerfile

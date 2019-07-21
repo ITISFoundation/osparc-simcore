@@ -31,7 +31,6 @@ services:
   # https://hub.docker.com/r/grafana/grafana/tags
   grafana:
     image: grafana/grafana:6.2.5
-    restart: unless-stopped
     depends_on:
       - prometheus
     ports:
