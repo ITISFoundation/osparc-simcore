@@ -10,7 +10,7 @@ from . import __version__
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
-from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID
+from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +78,32 @@ async def get_storage_locations(request: web.Request):
         }
 
 
+async def get_datasets_metadata(request: web.Request):
+    log.debug("GET METADATA DATASETS %s %s",request.path, request.url)
+
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
+
+    assert params["location_id"]
+    assert query["user_id"]
+
+    location_id = params["location_id"]
+    user_id = query["user_id"]
+
+    dsm = await _prepare_storage_manager(params, query, request)
+
+    location = dsm.location_from_id(location_id)
+    # To implement
+    data = await dsm.list_datasets(user_id, location)
+
+    return {
+        'error': None,
+        'data': data
+        }
+
 async def get_files_metadata(request: web.Request):
     log.debug("GET FILES METADATA %s %s",request.path, request.url)
 
@@ -103,8 +129,45 @@ async def get_files_metadata(request: web.Request):
 
     data_as_dict = []
     for d in data:
-        log.info("DATA %s",attr.asdict(d))
-        data_as_dict.append(attr.asdict(d))
+        log.info("DATA %s",attr.asdict(d.fmd))
+        data_as_dict.append({**attr.asdict(d.fmd), 'parent_id': d.parent_id})
+
+    envelope = {
+        'error': None,
+        'data': data_as_dict
+        }
+
+    return envelope
+
+async def get_files_metadata_dataset(request: web.Request):
+    log.debug("GET FILES METADATA DATASET %s %s",request.path, request.url)
+
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
+
+    assert params["location_id"]
+    assert params["dataset_id"]
+    assert query["user_id"]
+
+    location_id = params["location_id"]
+    user_id = query["user_id"]
+    dataset_id = params["dataset_id"]
+
+    dsm = await _prepare_storage_manager(params, query, request)
+
+    location = dsm.location_from_id(location_id)
+
+    log.debug("list files %s %s %s", user_id, location, dataset_id)
+
+    data = await dsm.list_files_dataset(user_id=user_id, location=location, dataset_id=dataset_id)
+
+    data_as_dict = []
+    for d in data:
+        log.info("DATA %s",attr.asdict(d.fmd))
+        data_as_dict.append({**attr.asdict(d.fmd), 'parent_id': d.parent_id})
 
     envelope = {
         'error': None,
@@ -136,7 +199,7 @@ async def get_file_metadata(request: web.Request):
 
     envelope = {
         'error': None,
-        'data': attr.asdict(data)
+        'data': {**attr.asdict(data.fmd), 'parent_id': data.parent_id}
         }
 
     return envelope
@@ -178,8 +241,10 @@ async def download_file(request: web.Request):
 
     dsm = await _prepare_storage_manager(params, query, request)
     location = dsm.location_from_id(location_id)
-
-    link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+    if location == SIMCORE_S3_STR:
+        link = await dsm.download_link_s3(file_uuid=file_uuid)
+    else:
+        link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
 
     return {
         'error': None,
@@ -207,7 +272,6 @@ async def upload_file(request: web.Request):
         source_uuid = query["extra_source"]
         source_id = query["extra_location"]
         source_location = dsm.location_from_id(source_id)
-
         link = await dsm.copy_file(user_id=user_id, dest_location=location,
             dest_uuid=file_uuid, source_location=source_location, source_uuid=source_uuid)
     else:
