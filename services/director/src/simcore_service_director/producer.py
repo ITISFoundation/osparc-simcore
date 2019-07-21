@@ -140,7 +140,7 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
                 docker_params["task_template"]["Resources"]["Reservations"]["NanoCPUs"] = param["value"]["cpu_reservation"]
             # REST-API compatible
             if "Limits" in param["value"] or "Reservations" in param["value"]:
-                docker_params["task_template"]["Resources"] += param["value"]
+                docker_params["task_template"]["Resources"].update(param["value"])
 
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
