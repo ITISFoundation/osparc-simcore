@@ -682,22 +682,22 @@ qx.Class.define("qxapp.data.model.Node", {
             const {
               data
             } = e.getTarget().getResponse();
-            console.log(data);
             this.getPropsWidget().retrievedPortData(portKey, true);
+            console.log(data);
           }, this);
           updReq.addListener("fail", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            console.error("fail", error);
             this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("fail", error);
           }, this);
           updReq.addListener("error", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            console.error("error", error);
             this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("error", error);
           }, this);
           updReq.send();
 
