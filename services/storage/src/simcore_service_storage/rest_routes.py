@@ -43,7 +43,15 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
+    path, handle = '/locations/{location_id}/datasets', handlers.get_datasets_metadata
+    operation_id = specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+
     path, handle = '/locations/{location_id}/files/{fileId}/metadata', handlers.get_file_metadata
+    operation_id = specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+
+    path, handle = '/locations/{location_id}/datasets/{dataset_id}/metadata', handlers.get_files_metadata_dataset
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 

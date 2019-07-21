@@ -100,6 +100,33 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
+  /locations/{location_id}/datasets:
+    get:
+      tags:
+        - users
+      summary: Get datasets metadata
+      operationId: get_datasets_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of dataset meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/dataset_meta_data_array.yaml#/components/schemas/DatasetMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
   /locations/{location_id}/files/metadata:
     get:
       tags:
@@ -120,6 +147,38 @@ paths:
         - name: uuid_filter
           in: query
           required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/datasets/{dataset_id}/metadata:
+    get:
+      tags:
+        - users
+      summary: Get Files Metadata
+      operationId: get_files_metadata_dataset
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: dataset_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
           schema:
             type: string
       responses:
