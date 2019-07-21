@@ -52,7 +52,7 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
     if resp.error:
         raise exceptions.StorageConnectionError(store, resp.error.to_str())
 
-async def _get_link(store_id:int, file_id:str, apifct):
+async def _get_link(store_id:int, file_id:str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     try:
         resp = await apifct(location_id=store_id, user_id=config.USER_ID, file_id=file_id)
@@ -62,14 +62,14 @@ async def _get_link(store_id:int, file_id:str, apifct):
         if not resp.data.link:
             raise exceptions.S3InvalidPathError(file_id)
         log.debug("Got link %s", resp.data.link)
-        return resp.data.link
+        return URL(resp.data.link)
     except ApiException as err:
         _handle_api_exception(store_id, err)
 
-async def _get_download_link(store_id:int, file_id:str, api:UsersApi):
+async def _get_download_link(store_id:int, file_id:str, api:UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.download_file)
 
-async def _get_upload_link(store_id:int, file_id:str, api:UsersApi):
+async def _get_upload_link(store_id:int, file_id:str, api:UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
 async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
@@ -98,40 +98,34 @@ async def _file_sender(file_path:Path):
 
 async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
-    # TODO: PC->SAN. what to do with this?
-    # with aiohttp.MultipartWriter() as writer:
-    #     writer.append(await aiofiles.open(file_path, 'rb'))
-
-    #     async with session.put(url, data=writer) as resp:
-    #         if resp.status > 299:
-    #             response_text = await resp.text()
-    #             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
     async with session.put(url, data=file_path.open('rb')) as resp:
         if resp.status > 299:
             response_text = await resp.text()
             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
 
-async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_file_path: Path):
-    log.debug("Trying to download: store name %s, store id %s, s3 object %s, to local file name %s",
-                    store_name, store_id, s3_object, local_file_path)
+async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_folder: Path) -> Path:
+    log.debug("Downloading from store %s:id %s, s3 object %s, to %s", store_name, store_id, s3_object, local_folder)
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
+
+    download_link = None
     with api_client() as client:
         api = UsersApi(client)
 
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(store_name, api)
         download_link = await _get_download_link(store_id, s3_object, api)
-
-        if download_link:
-            download_link = URL(download_link)
-            # remove an already existing file if present
-            # FIXME: if possible we should compare the files if the download needs to take place or not
-            if local_file_path.exists():
-                local_file_path.unlink()
-            async with aiohttp.ClientSession() as session:
-                await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
-                return
+    # the link contains the file name
+    if download_link:
+        # a download link looks something like:
+        # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
+        local_file_path = local_folder / Path(download_link.path).name
+        # remove an already existing file if present
+        if local_file_path.exists():
+            local_file_path.unlink()
+        async with aiohttp.ClientSession() as session:
+            await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
+            return local_file_path
 
     raise exceptions.S3InvalidPathError(s3_object)
 
