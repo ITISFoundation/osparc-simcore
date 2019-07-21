@@ -18,7 +18,7 @@ services:
   #-------------------------------------------
   # https://hub.docker.com/r/prom/prometheus
   prometheus:
-    image: prom/prometheus:v2.10.0
+    image: prom/prometheus:v2.11.1
     ports:
       - 9090:9090
     volumes:
@@ -26,8 +26,8 @@ services:
     configs:
       - source: prometheus_config
         target: /etc/prometheus/prometheus.yml
-      - source: prometheus_rules
-        target: /etc/prometheus/prometheus-rules.yml
+      #- source: prometheus_rules
+      #  target: /etc/prometheus/prometheus-rules.yml
   # https://hub.docker.com/r/grafana/grafana/tags
   grafana:
     image: grafana/grafana:6.2.5
@@ -43,6 +43,14 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=${GF_SMTP_HOST}
+  postgres-exporter:
+    #https://hub.docker.com/r/wrouesnel/postgres_exporter/tags
+    image: wrouesnel/postgres_exporter:v0.5.1
+    ports:
+      - 9187
+    environment:
+      - DATA_SOURCE_NAME=${POSTGRES_EXPORTER_DATA_SOURCE_NAME}
+
 volumes:
   portainer_data: {}
   prometheus_data: {}
@@ -50,5 +58,5 @@ volumes:
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
-  prometheus_rules:
-    file: ./prometheus/config/prometheus-rules.yml
+  #prometheus_rules:
+  #  file: ./prometheus/config/prometheus-rules.yml

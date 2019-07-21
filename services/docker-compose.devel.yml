@@ -77,4 +77,4 @@ services:
   maintenance:
     image: services_maintenance:dev
     volumes:
-      - ./maintenance/notebooks:/home/jovyan/work
+      - ./maintenance/work:/home/jovyan/work/devel

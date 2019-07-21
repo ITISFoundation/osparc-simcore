@@ -283,9 +283,10 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - "9002:8888"
+      - "9010:8888"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - maintenance_data:/home/jovyan/work/data
     env_file:
       - ../.env
     deploy:
@@ -299,3 +300,4 @@ volumes:
   log: {}
   postgres: {}
   minio: {}
+  maintenance_data: {}
