@@ -6,8 +6,6 @@ services:
     image: adminer
     ports:
       - 18080:8080
-    #depends_on:
-    #  - postgres
   #--------------------------------------------------------------------
   portainer:
     image: portainer/portainer
@@ -28,8 +26,8 @@ services:
     configs:
       - source: prometheus_config
         target: /etc/prometheus/prometheus.yml
-      #- source: prometheus_rules
-      #  target: /etc/prometheus/prometheus-rules.yml
+      - source: prometheus_rules
+        target: /etc/prometheus/prometheus-rules.yml
   # https://hub.docker.com/r/grafana/grafana/tags
   grafana:
     image: grafana/grafana:6.2.5
@@ -40,15 +38,11 @@ services:
       - 3000:3000
     volumes:
       - grafana_data:/var/lib/grafana
-    # FIXME: setup proper grafana config
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=secret
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SMTP_ENABLED=true
-      - GF_SMTP_HOST=mail.speag.com:25
-      #- GF_SMTP_USER=myadrress@gmail.com
-      #- GF_SMTP_PASSWORD=mypassword
-      #- GF_SMTP_FROM_ADDRESS=myaddress@gmail.com
+      - GF_SMTP_HOST=${GF_SMTP_HOST}
 volumes:
   portainer_data: {}
   prometheus_data: {}
@@ -56,5 +50,5 @@ volumes:
 configs:
   prometheus_config:
     file: ./prometheus/config/prometheus.yml
-  #prometheus_rules:
-  #  file: ./prometheus/config/prometheus-rules.yml
+  prometheus_rules:
+    file: ./prometheus/config/prometheus-rules.yml
