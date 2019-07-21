@@ -670,27 +670,33 @@ qx.Class.define("qxapp.data.model.Node", {
           let urlUpdate = srvUrl + "/retrieve";
           urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
           const updReq = new qx.io.request.Xhr();
-          const data = {
+          const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
           updReq.set({
             url: urlUpdate,
             method: "POST",
-            requestData: qx.util.Serializer.toJson(data)
+            requestData: qx.util.Serializer.toJson(reqData)
           });
           updReq.addListener("success", e => {
-            const resp = e.getTarget().getResponse();
-            console.log(resp);
+            const {
+              data
+            } = e.getTarget().getResponse();
+            console.log(data);
             this.getPropsWidget().retrievedPortData(portKey, true);
           }, this);
           updReq.addListener("fail", e => {
-            const resp = e.getTarget().getResponse();
-            console.error("fail", resp);
+            const {
+              error
+            } = e.getTarget().getResponse();
+            console.error("fail", error);
             this.getPropsWidget().retrievedPortData(portKey, false);
           }, this);
           updReq.addListener("error", e => {
-            const resp = e.getTarget().getResponse();
-            console.error("error", resp);
+            const {
+              error
+            } = e.getTarget().getResponse();
+            console.error("error", error);
             this.getPropsWidget().retrievedPortData(portKey, false);
           }, this);
           updReq.send();
