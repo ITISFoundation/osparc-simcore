@@ -73,6 +73,7 @@ components:
             * 'pulling' - The service is being pulled from the registry
             * 'starting' - The service is starting
             * 'running' - The service is running
+            * 'complete' - The service completed
             * 'failed' - The service failed to start
           type: string
           enum:
@@ -80,5 +81,11 @@ components:
             - pulling
             - starting
             - running
+            - complete
             - failed
+        service_message:
+          description: >-
+            the service message
+          type: string
+          example: no suitable node (insufficient resources on 1 node)
 
