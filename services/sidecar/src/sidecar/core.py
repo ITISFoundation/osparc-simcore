@@ -308,8 +308,10 @@ class Sidecar:
         Path(log_file).touch()
         fut = self._executor.pool.submit(self._bg_job, log_file)
 
+        start_time = time.perf_counter()
+        container = None
         try:
-            docker_image = self._docker.image_name + ":" + self._docker.image_tag
+            docker_image = self._docker.image_name + ":" + self._docker.image_tag            
             container = self._docker.client.containers.run(docker_image, "run", 
                                                             init=True,
                                                             detach=True, remove=False,
@@ -319,18 +321,23 @@ class Sidecar:
                                                             environment=self._docker.env,
                                                             nano_cpus=config.SERVICES_MAX_NANO_CPUS,
                                                             mem_limit=config.SERVICES_MAX_MEMORY_BYTES)
-
-            response = container.wait(timeout=int(config.SERVICES_TIMEOUT_SECONDS))
-            log.info("container completed with response %s\nlogs: %s", response, container.logs())
-        except requests.exceptions.ReadTimeout:
-            log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
-        except docker.errors.ImageNotFound as _e:
+        except docker.errors.ImageNotFound:
             log.exception("Run container: Image not found")
-        except docker.errors.APIError as _e:
+        except docker.errors.APIError:
             log.exception("Run Container: Server returns error")
-        finally:
-            container.remove(force=True)
 
+        if container:
+            try:
+                response = container.wait(timeout=int(config.SERVICES_TIMEOUT_SECONDS))
+                log.info("container completed with response %s\nlogs: %s", response, container.logs())        
+            except requests.exceptions.ConnectionError:
+                log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
+            except docker.errors.APIError:
+                log.exception("Run Container: Server returns error")
+            finally:
+                stop_time = time.perf_counter()
+                log.info("Running %s took %sseconds", docker_image, stop_time-start_time)
+                container.remove(force=True)
 
         time.sleep(1)
         self._executor.run_pool = False
