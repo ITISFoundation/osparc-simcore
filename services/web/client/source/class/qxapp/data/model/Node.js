@@ -681,15 +681,17 @@ qx.Class.define("qxapp.data.model.Node", {
           updReq.addListener("success", e => {
             const resp = e.getTarget().getResponse();
             console.log(resp);
-            this.getPropsWidget().retrievedPortData(portKey);
+            this.getPropsWidget().retrievedPortData(portKey, true);
           }, this);
           updReq.addListener("fail", e => {
             const resp = e.getTarget().getResponse();
             console.error("fail", resp);
+            this.getPropsWidget().retrievedPortData(portKey, false);
           }, this);
           updReq.addListener("error", e => {
             const resp = e.getTarget().getResponse();
             console.error("error", resp);
+            this.getPropsWidget().retrievedPortData(portKey, false);
           }, this);
           updReq.send();
 
