@@ -154,6 +154,7 @@ async def test_core_service_running(core_service_name, docker_client, loop):
 
     # maps service names in docker-compose with actual services
     running_services = {}
+    expected_prefix = None
     for s in docker_client.services.list():
         match = SERVICE_NAMES_PATTERN.match(s.name)
         assert match, f"Could not match service name {s.name}"
