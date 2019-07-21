@@ -328,7 +328,10 @@ class Sidecar:
 
         if container:
             try:
-                response = container.wait(timeout=int(config.SERVICES_TIMEOUT_SECONDS))
+                wait_arguments = {}
+                if config.SERVICES_TIMEOUT_SECONDS > 0:
+                    wait_arguments["timeout"] = int(config.SERVICES_TIMEOUT_SECONDS)
+                response = container.wait(**wait_arguments)
                 log.info("container completed with response %s\nlogs: %s", response, container.logs())        
             except requests.exceptions.ConnectionError:
                 log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
