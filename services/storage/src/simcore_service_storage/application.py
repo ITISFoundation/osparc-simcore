@@ -25,8 +25,9 @@ def create(config):
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app) # lastly, we expose API to the world
-    # TODO: temporary disabled until service is updated
-    if False:  # pylint: disable=using-constant-test
+
+    monitoring = config["main"]["monitoring_enabled"]
+    if monitoring:
         setup_monitoring(app, "simcore_service_storage")
 
     return app
