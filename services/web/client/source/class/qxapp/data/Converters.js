@@ -86,7 +86,7 @@ qx.Class.define("qxapp.data.Converters", {
                   [this.createFileEntry(
                     fileName,
                     file["location_id"],
-                    file["file_uuid"],
+                    file["file_id"],
                     file["last_modified"],
                     file["file_size"])
                   ]
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.data.Converters", {
           let fileInfo = this.createFileEntry(
             splitted[splitted.length-1],
             file["location_id"],
-            file["file_uuid"],
+            file["file_id"],
             file["last_modified"],
             file["file_size"]);
           parent.children.push(fileInfo);
