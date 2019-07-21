@@ -178,15 +178,19 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (layoutProps.column === this._gridPos.label &&
           child.getBuddy().key === portId) {
           row = layoutProps.row;
+          break;
         }
       }
-      if (row) {
+      if (row !== null) {
         for (let i=0; i<children.length; i++) {
           const child = children[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === column &&
-            layoutProps.column === row) {
-            return child;
+            layoutProps.row === row) {
+            return {
+              child,
+              idx: i
+            };
           }
         }
       }
@@ -202,52 +206,49 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     linkAdded: function(portId) {
-      let children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        let child = children[i];
-        if (child.getField && child.getField().key === portId) {
-          const layoutProps = child.getLayoutProperties();
-          this._remove(child);
+      let data = this.__getEntryFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        let idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        this._remove(child);
 
-          const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          hBox.add(this._form.getControlLink(portId), {
-            flex: 1
-          });
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        hBox.add(this._form.getControlLink(portId), {
+          flex: 1
+        });
 
-          const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
-          unlinkBtn.addListener("execute", function() {
-            this.fireDataEvent("removeLink", portId);
-          }, this);
-          hBox.add(unlinkBtn);
+        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+        unlinkBtn.addListener("execute", function() {
+          this.fireDataEvent("removeLink", portId);
+        }, this);
+        hBox.add(unlinkBtn);
 
-          hBox.key = portId;
-          this._addAt(hBox, i, {
-            row: layoutProps.row,
-            column: this._gridPos.entryField
-          });
+        hBox.key = portId;
+        this._addAt(hBox, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.entryField
+        });
 
-          this.fireDataEvent("dataFieldModified", portId);
-        }
+        this.fireDataEvent("dataFieldModified", portId);
       }
     },
 
     linkRemoved: function(portId) {
-      let children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        let child = children[i];
-        if ("key" in child && child.key === portId) {
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this._gridPos.entryField) {
-            this._remove(child);
-            const field = new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
-            field.key = portId;
-            this._addAt(field, i, {
-              row: layoutProps.row,
-              column: layoutProps.column
-            });
+      let data = this.__getEntryFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        let idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.entryField) {
+          this._remove(child);
+          const field = new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
+          this._addAt(field, idx, {
+            row: layoutProps.row,
+            column: layoutProps.column
+          });
 
-            this.fireDataEvent("dataFieldModified", portId);
-          }
+          this.fireDataEvent("dataFieldModified", portId);
         }
       }
     },
