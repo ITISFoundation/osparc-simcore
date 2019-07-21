@@ -16,12 +16,15 @@ def load_env(file_handler) -> Dict:
 
         Analogous to json.load
     """
+    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
+    # Works even for `POSTGRES_EXPORTER_DATA_SOURCE_NAME=postgresql://simcore:simcore@postgres:5432/simcoredb?sslmode=disable`
+
     environ = {}
     for line in file_handler:
-        line = line.strip()
-        if line and not line.startswith("#"):
-            key, value = line.split("=")
-            environ[key] = value
+        m = PATTERN_ENVIRON_EQUAL.match(line)
+        if m:
+            key, value = m.groups()
+            environ[key] = str(value)
     return environ
 
 def eval_environs_in_docker_compose(docker_compose: Dict, docker_compose_dir: Path,

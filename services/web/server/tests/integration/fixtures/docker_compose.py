@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import re
 import socket
 from copy import deepcopy
 from pathlib import Path
@@ -37,13 +38,15 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
 @pytest.fixture("session")
 def devel_environ(env_devel_file) -> Dict[str, str]:
     """ Environ dict from .env-devel """
+    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
     with env_devel_file.open() as f:
         for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                key, value = line.split("=")
+            m = PATTERN_ENVIRON_EQUAL.match(line)
+            if m:
+                key, value = m.groups()
                 env_devel[key] = str(value)
+
     # change some of the environ to accomodate the test case
     if 'REGISTRY_SSL' in env_devel:
         env_devel['REGISTRY_SSL'] = 'False'
