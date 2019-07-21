@@ -49,10 +49,4 @@ wcwidth==0.1.7            # via pytest
 werkzeug==0.15.4
 wrapt==1.11.1             # via astroid
 yarl==1.3.0
-<<<<<<< HEAD
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.0.1        # via pytest
-=======
 zipp==0.5.1               # via importlib-metadata
->>>>>>> master
