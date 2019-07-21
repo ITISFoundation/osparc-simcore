@@ -218,5 +218,5 @@ async def test_check_serve_root(docker_client, services_docker_compose, tools_do
             pytest.fail("{} not found in main index.html".format(search))
     except urllib.error.HTTPError as err:
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
-    except urllib.error.URLError as e:
+    except urllib.error.URLError as err:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
