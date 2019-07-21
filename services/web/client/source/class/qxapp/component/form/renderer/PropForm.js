@@ -169,6 +169,38 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       return filteredData;
     },
 
+    __getLayoutChild(portId, column) {
+      let row = null;
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.label &&
+          child.getBuddy().key === portId) {
+          row = layoutProps.row;
+        }
+      }
+      if (row) {
+        for (let i=0; i<children.length; i++) {
+          const child = children[i];
+          const layoutProps = child.getLayoutProperties();
+          if (layoutProps.column === column &&
+            layoutProps.column === row) {
+            return child;
+          }
+        }
+      }
+      return null;
+    },
+
+    __getEntryFieldChild(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.entryField);
+    },
+
+    __getRetrieveStatusChild(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.retrieveStatus);
+    },
+
     linkAdded: function(portId) {
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
@@ -239,7 +271,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       }
     },
 
-    retrievedPortData: function(portId) {
+    retrievedPortData: function(portId, succeed) {
+      const status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children[i];
@@ -247,10 +280,16 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (portId) {
           if ("key" in child && child.key === portId) {
             if (layoutProps.column === this._gridPos.retrieveStatus) {
-              this._remove(child);
+              // this._remove(child);
+              this.__setRetrievingStatus(status, portId, i, layoutProps.row);
             }
           }
         } else if (layoutProps.column === this._gridPos.retrieveStatus) {
+          // this._remove(child);
+          this.__setRetrievingStatus(status, portId, i, layoutProps.row);
+        }
+      }
+    },
 
     __setRetrievingStatus: function(status, portId, idx, row) {
       let icon;
@@ -266,6 +305,14 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
           break;
       }
       icon.key = portId;
+
+      // remove first if any
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.row === row &&
+          layoutProps.column === this._gridPos.retrieveStatus) {
           this._remove(child);
         }
       }
