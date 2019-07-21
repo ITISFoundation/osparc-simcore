@@ -31,6 +31,7 @@ def eval_environs_in_docker_compose(docker_compose: Dict, docker_compose_dir: Pa
     host_environ: Dict=None, *, use_env_devel=True):
     """ Resolves environments in docker compose and sets them under 'environment' section
 
+        TODO: deprecated. Use instead docker-compose config in services/web/server/tests/integration/fixtures/docker_compose.py
         SEE https://docs.docker.com/compose/environment-variables/
     """
     content = deepcopy(docker_compose)
@@ -66,16 +67,18 @@ def replace_environs_in_docker_compose_service(service_section: Dict,
 
     # explicit environment [overrides env_file]
     environ_items = service_section.get("environment", list())
-    for item in environ_items:
-        key, value = item.split("=")
+    if environ_items and isinstance(environ_items, list):
+        # TODO: use docker-compose config first
+        for item in environ_items:
+            key, value = item.split("=")
 
-        m = VARIABLE_SUBSTITUTION.match(value)
-        if m:
-            # In VAR=${FOO} matches VAR and FOO
-            #    - TODO: add to read defaults
-            envkey = m.groups()[0]
-            value = host_environ[envkey] # fails when variable in docker-compose is NOT defined
-        service_environ[key] = value
+            m = VARIABLE_SUBSTITUTION.match(value)
+            if m:
+                # In VAR=${FOO} matches VAR and FOO
+                #    - TODO: add to read defaults
+                envkey = m.groups()[0]
+                value = host_environ[envkey] # fails when variable in docker-compose is NOT defined
+            service_environ[key] = value
 
     service_section["environment"] = service_environ
 
