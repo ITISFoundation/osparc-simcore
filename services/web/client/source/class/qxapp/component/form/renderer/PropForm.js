@@ -255,18 +255,23 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
     retrievingPortData: function(portId) {
       const status = this._retrieveStatus.retrieving;
-      for (let i = this._getChildren().length; i--;) {
-        let child = this._getChildren()[i];
-        const layoutProps = child.getLayoutProperties();
-        if (portId) {
-          if ("key" in child && child.key === portId) {
-            this.__setRetrievingStatus(status, portId, i, layoutProps.row);
-            return;
-          }
-        } else if (layoutProps.column === this._gridPos.entryField) {
-          const ctrl = this._form.getControl(child.key);
-          if (ctrl && ctrl.link) {
-            this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
+      if (portId) {
+        let data = this.__getEntryFieldChild(portId);
+        if (data) {
+          let child = data.child;
+          let idx = data.idx;
+          const layoutProps = child.getLayoutProperties();
+          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
+        }
+      } else {
+        for (let i = this._getChildren().length; i--;) {
+          let child = this._getChildren()[i];
+          const layoutProps = child.getLayoutProperties();
+          if (layoutProps.column === this._gridPos.entryField) {
+            const ctrl = this._form.getControl(child.key);
+            if (ctrl && ctrl.link) {
+              this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
+            }
           }
         }
       }
@@ -274,20 +279,24 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
     retrievedPortData: function(portId, succeed) {
       const status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
-      let children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        let child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (portId) {
-          if ("key" in child && child.key === portId) {
-            if (layoutProps.column === this._gridPos.retrieveStatus) {
-              // this._remove(child);
-              this.__setRetrievingStatus(status, portId, i, layoutProps.row);
-            }
-          }
-        } else if (layoutProps.column === this._gridPos.retrieveStatus) {
+      if (portId) {
+        let data = this.__getEntryFieldChild(portId);
+        if (data) {
+          let child = data.child;
+          let idx = data.idx;
+          const layoutProps = child.getLayoutProperties();
           // this._remove(child);
-          this.__setRetrievingStatus(status, portId, i, layoutProps.row);
+          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
+        }
+      } else {
+        let children = this._getChildren();
+        for (let i=0; i<children.length; i++) {
+          let child = children[i];
+          const layoutProps = child.getLayoutProperties();
+          if (layoutProps.column === this._gridPos.retrieveStatus) {
+            // this._remove(child);
+            this.__setRetrievingStatus(status, portId, i, layoutProps.row);
+          }
         }
       }
     },
