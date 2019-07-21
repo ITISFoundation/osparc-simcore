@@ -20,6 +20,7 @@ components:
         - service_version
         - service_host
         - service_port
+        - service_state
       properties:
         published_port:
           description: The ports where the service provides its interface
@@ -65,3 +66,19 @@ components:
           type: string
           example: '/x/E1O2E-LAH'
           default: ''
+        service_state:
+          description: >
+            the service state
+            * 'pending' - The service is waiting for resources to start
+            * 'pulling' - The service is being pulled from the registry
+            * 'starting' - The service is starting
+            * 'running' - The service is running
+            * 'failed' - The service failed to start
+          type: string
+          enum:
+            - pending
+            - pulling
+            - starting
+            - running
+            - failed
+
