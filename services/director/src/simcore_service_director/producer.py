@@ -85,7 +85,8 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             "SIMCORE_NODE_BASEPATH": node_base_path or "",
             "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
         },
-        "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX)
+        "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
+        "Init": True
     }
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
@@ -94,9 +95,7 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
-                "Constraints": [
-                    "node.role==worker" if await docker_utils.swarm_has_worker_nodes() else ""
-                ]
+                "Constraints": ["node.role==worker"] if await docker_utils.swarm_has_worker_nodes() else []
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
@@ -105,12 +104,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             },
             "Resources": {
                 "Limits": {
-                    "NanoCPUs": 4 * pow(10, 9),
-                    "MemoryBytes": 16 * pow(1024, 3)
+                    "NanoCPUs": 2 * pow(10, 9),
+                    "MemoryBytes": 1 * pow(1024, 3)
                 },
-                "Reservation": {
-                    "NanoCPUs": 0,
-                    "MemoryBytes": 0
+                "Reservations": {
+                    "NanoCPUs": 1 * pow(10, 8),
+                    "MemoryBytes": 500 * pow(1024, 2)
                 }
             }
         },
@@ -136,12 +135,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             if "cpu_limit" in param["value"]:
                 docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"] = param["value"]["cpu_limit"]
             if "mem_reservation" in param["value"]:
-                docker_params["task_template"]["Resources"]["Reservation"]["MemoryBytes"] = param["value"]["mem_reservation"]
+                docker_params["task_template"]["Resources"]["Reservations"]["MemoryBytes"] = param["value"]["mem_reservation"]
             if "cpu_reservation" in param["value"]:
-                docker_params["task_template"]["Resources"]["Reservation"]["NanoCPUs"] = param["value"]["cpu_reservation"]
+                docker_params["task_template"]["Resources"]["Reservations"]["NanoCPUs"] = param["value"]["cpu_reservation"]
             # REST-API compatible
-            if "Limits" in param["value"] or "Reservation" in param["value"]:
-                docker_params["task_template"]["Resources"] = param["value"]
+            if "Limits" in param["value"] or "Reservations" in param["value"]:
+                docker_params["task_template"]["Resources"].update(param["value"])
 
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
@@ -156,9 +155,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         elif param["type"] == "EndpointSpec": # REST-API compatible
             docker_params["endpoint_spec"] = param["value"]
         elif param["name"] == "constraints": # python-API compatible
-            docker_params["task_template"]["Placement"]["Constraints"] = param["value"]
+            docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints": # REST-API compatible
-            docker_params["task_template"]["Placement"]["Constraints"] = param["value"]
+            docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
 
     # the service may be part of the swarm network
     if "Ports" in docker_params["endpoint_spec"]:
