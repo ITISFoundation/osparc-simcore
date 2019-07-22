@@ -25,6 +25,7 @@ before_script() {
 
 script() {
     # wait for a minute to let the swarm warm up...
+    docker service ls --format "table"
     pytest -v ops/travis/system-testing/tests
 }
 
