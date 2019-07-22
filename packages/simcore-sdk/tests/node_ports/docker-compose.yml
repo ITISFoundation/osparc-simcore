@@ -1,6 +1,7 @@
 version: '3.7'
 services:
   #TODO: use same integration test framework as in web server instead of fixed docker-compose file
+  #FIXME: use new config filter to generate these docker-compose. Lack of sync produces issues
   apihub:
     image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -27,6 +28,8 @@ services:
       - S3_SECURE=0
       - BF_API_SECRET="none"
       - BF_API_KEY="none"
+      - STORAGE_LOGLEVEL=INFO
+      - STORAGE_MONITORING_ENABLED=1
     restart: always
     depends_on:
       - postgres

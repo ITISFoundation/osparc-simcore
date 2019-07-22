@@ -1,5 +1,6 @@
 # sidecar
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/itisfoundation/sidecar.svg)](https://hub.docker.com/r/itisfoundation/sidecar/tags)
 [![](https://images.microbadger.com/badges/image/itisfoundation/sidecar.svg)](https://microbadger.com/images/itisfoundation/sidecar "More on service image in registry")
 [![](https://images.microbadger.com/badges/version/itisfoundation/sidecar.svg)](https://microbadger.com/images/itisfoundation/sidecar "More on service image in registry")
 [![](https://images.microbadger.com/badges/commit/itisfoundation/sidecar.svg)](https://microbadger.com/images/itisfoundation/sidecar "More on service image in registry")
