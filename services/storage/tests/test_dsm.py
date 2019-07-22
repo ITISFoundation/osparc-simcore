@@ -379,6 +379,7 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
     utils.create_full_tables(url=postgres_service_url)
 
     path_in_datcore = datcore_structured_testbucket["file_id3"]
+    file_name_in_datcore = Path(datcore_structured_testbucket["filename3"]).name
     user_id = USER_ID
 
     source_project =  {
@@ -456,8 +457,10 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
         node_mapping[node_id] = key
 
     status = await dsm.deep_copy_project_simcore_s3(user_id, source_project, destination_project, node_mapping)
+
     new_path = destination_project["workbench"]["deep-copy-uuid-48eb-a9d2-aaad6b72400a"]["outputs"]["outFile"]["path"]
     assert new_path != path_in_datcore
+    assert Path(new_path).name == file_name_in_datcore
     files = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(files) == 3
     # one of the files in s3 should be the dowloaded one from datcore
