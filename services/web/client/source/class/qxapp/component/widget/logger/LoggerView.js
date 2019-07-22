@@ -276,8 +276,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
           this.__logModel.nodeLabelChanged(nodeId, newLabel);
           this.__updateTable();
         }, this);
-      } else {
+      } else if (nodeId === "root") {
         label = "Workbench";
+      } else {
+        return;
       }
 
       const nodeColor = this.__getNodesColor(nodeId);
