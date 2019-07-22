@@ -136,13 +136,11 @@ up-devel: up-swarm-devel
 up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	@cat $(TEMPCOMPOSE).tmp-compose.yml
 	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	@cat $(TEMPCOMPOSE).tmp-compose.yml
 	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
 .PHONY: up-webclient-devel
