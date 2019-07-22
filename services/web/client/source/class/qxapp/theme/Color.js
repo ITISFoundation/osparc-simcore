@@ -34,6 +34,6 @@ qx.Theme.define("qxapp.theme.Color", {
     "tabview-pane-background": "background-main",
     "workbench-start-hint": "#505050",
     "ready-green": "#33925A",
-    "failed-red": "red"
+    "failed-red": "#FF2D2D"
   }
 });
