@@ -76,7 +76,6 @@ services:
   webclient:
     image: services_webclient:build
     init: true
-    restart: on-failure
     build:
       context: ./web/client/
       dockerfile: Dockerfile
@@ -121,6 +120,8 @@ services:
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - WEBSERVER_MONITORING_ENABLED=1
+      - WEBSERVER_LOGLEVEL=INFO
     env_file:
       - ../.env
     stdin_open: true
@@ -217,6 +218,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - STORAGE_LOGLEVEL=INFO
+      - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -281,19 +284,21 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - "8888"
+      - "9010:8888"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - maintenance_data:/home/jovyan/work/data
     env_file:
       - ../.env
-    depends_on:
-      - postgres
     deploy:
       placement:
         constraints:
           - node.platform.os == linux
           - node.role == manager
 volumes:
-  input:
-  output:
-  log:
-  postgres:
-  minio:
+  input: {}
+  output: {}
+  log: {}
+  postgres: {}
+  minio: {}
+  maintenance_data: {}
