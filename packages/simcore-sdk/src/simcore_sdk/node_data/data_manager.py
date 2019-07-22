@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from shutil import make_archive, unpack_archive
+from shutil import make_archive, unpack_archive, move
 from tempfile import TemporaryDirectory
 
 from simcore_sdk.node_ports import config, filemanager
@@ -23,7 +23,7 @@ async def _push_file(file_path: Path):
 async def push(file_or_folder: Path):
     if file_or_folder.is_file():
         return await _push_file(file_or_folder)
-    # we have a folder, so we create a compressed file    
+    # we have a folder, so we create a compressed file
     with TemporaryDirectory() as tmp_dir_name:
         log.info("compressing %s into %s...", file_or_folder.name, tmp_dir_name)
         # compress the files
@@ -34,7 +34,11 @@ async def push(file_or_folder: Path):
 async def _pull_file(file_path: Path):
     s3_object = _create_s3_object(file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
-    await filemanager.download_file(store_id=0, s3_object=s3_object, local_file_path=file_path)
+    downloaded_file = await filemanager.download_file(store_id=0, s3_object=s3_object, local_folder=file_path.parent)
+    if downloaded_file != file_path:
+        if file_path.exists():
+            file_path.unlink()
+        move(downloaded_file, file_path)
     log.info("%s successfuly pulled", file_path)
 
 async def pull(file_or_folder: Path):

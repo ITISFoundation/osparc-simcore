@@ -1,5 +1,6 @@
 # director
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/itisfoundation/director.svg)](https://hub.docker.com/r/itisfoundation/director/tags)
 [![](https://images.microbadger.com/badges/image/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")
 [![](https://images.microbadger.com/badges/version/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")
 [![](https://images.microbadger.com/badges/commit/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")

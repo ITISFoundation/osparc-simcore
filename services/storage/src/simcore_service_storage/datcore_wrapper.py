@@ -9,9 +9,10 @@ from typing import List
 import attr
 
 from .datcore import DatcoreClient
-from .models import FileMetaData
+from .models import FileMetaData, FileMetaDataEx
 
 FileMetaDataVec = List[FileMetaData]
+FileMetaDataExVec = List[FileMetaDataEx]
 
 CURRENT_DIR = Path(__file__).resolve().parent
 logger = logging.getLogger(__name__)
@@ -50,12 +51,32 @@ class DatcoreWrapper:
                 host='https://api.blackfynn.io')
 
     @make_async
-    def list_files_recursively(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
+    def list_files_recursively(self)->FileMetaDataVec: #pylint: disable=W0613
         files = []
         try:
             files = self.d_client.list_files_recursively()
-        except Exception as e:
-            logger.exception("Error listing datcore files %s", e)
+        except Exception:
+            logger.exception("Error listing datcore files")
+
+        return files
+
+    @make_async
+    def list_files_raw(self)->FileMetaDataExVec: #pylint: disable=W0613
+        files = []
+        try:
+            files = self.d_client.list_files_raw()
+        except Exception:
+            logger.exception("Error listing datcore files")
+
+        return files
+
+    @make_async
+    def list_files_raw_dataset(self, dataset_id: str)->FileMetaDataExVec: #pylint: disable=W0613
+        files = []
+        try:
+            files = self.d_client.list_files_raw_dataset(dataset_id)
+        except Exception:
+            logger.exception("Error listing datcore files")
 
         return files
 
@@ -64,19 +85,36 @@ class DatcoreWrapper:
         # the object can be found in dataset/filename <-> bucket_name/object_name
         try:
             self.d_client.delete_file(destination, filename)
-        except Exception as e:
-            logger.exception("Error deleting datcore file %s", e)
+        except Exception:
+            logger.exception("Error deleting datcore file")
+
+    @make_async
+    def delete_file_by_id(self, file_id: str):
+        try:
+            self.d_client.delete_file_by_id(file_id)
+        except Exception:
+            logger.exception("Error deleting datcore file")
 
     @make_async
     def download_link(self, destination: str, filename: str):
         url = ""
         try:
             url = self.d_client.download_link(destination, filename)
-        except Exception as e:
-            logger.exception("Error getting datcore download link %s", e)
+        except Exception:
+            logger.exception("Error getting datcore download link")
 
         return url
 
+    @make_async
+    def download_link_by_id(self, file_id: str):
+        url = ""
+        filename = ""
+        try:
+            url, filename = self.d_client.download_link_by_id(file_id)
+        except Exception:
+            logger.exception("Error getting datcore download link")
+
+        return url, filename
 
     @make_async
     def create_test_dataset(self, dataset):
@@ -85,10 +123,12 @@ class DatcoreWrapper:
             if ds is not None:
                 self.d_client.delete_files(dataset)
             else:
-                self.d_client.create_dataset(dataset)
-        except Exception as e:
-            logger.exception("Error creating test dataset %s", e)
+                ds = self.d_client.create_dataset(dataset)
+            return ds.id
+        except Exception:
+            logger.exception("Error creating test dataset")
 
+        return ""
 
     @make_async
     def delete_test_dataset(self, dataset):
@@ -96,8 +136,8 @@ class DatcoreWrapper:
             ds = self.d_client.get_dataset(dataset)
             if ds is not None:
                 self.d_client.delete_files(dataset)
-        except Exception as e:
-            logger.exception("Error deleting test dataset %s", e)
+        except Exception:
+            logger.exception("Error deleting test dataset")
 
     @make_async
     def upload_file(self, destination: str, local_path: str, meta_data: FileMetaData = None):
@@ -113,9 +153,38 @@ class DatcoreWrapper:
             else:
                 result = self.d_client.upload_file(destination, local_path)
             return result
-        except Exception as e:
-            logger.exception("Error uploading file to datcore %s", e)
+        except Exception:
+            logger.exception("Error uploading file to datcore")
             return False
+
+    @make_async
+    def upload_file_to_id(self, destination_id: str, local_path: str):
+        _id = ""
+        try:
+            _id = self.d_client.upload_file_to_id(destination_id, local_path)
+        except Exception:
+            logger.exception("Error uploading file to datcore")
+
+        return _id
+
+    @make_async
+    def create_collection(self, destination_id: str, collection_name: str):
+
+        _id = ""
+        try:
+            _id = self.d_client.create_collection(destination_id, collection_name)
+        except Exception:
+            logger.exception("Error creating collection in datcore")
+        return _id
+
+    @make_async
+    def list_datasets(self):
+        data = []
+        try:
+            data = self.d_client.list_datasets()
+        except Exception:
+            logger.exception("Error creating collection in datcore")
+        return data
 
     @make_async
     def ping(self):
@@ -123,6 +192,6 @@ class DatcoreWrapper:
             profile = self.d_client.profile()
             ok = profile is not None
             return ok
-        except Exception as e:
-            logger.exception("Error pinging %s", e)
+        except Exception:
+            logger.exception("Error pinging")
             return False

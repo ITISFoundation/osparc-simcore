@@ -29,5 +29,9 @@ def encode_file_id(file_path: Path, project_id: str, node_id: str) -> str:
     return file_id
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
+
+def create_folder_path(key: str) -> Path:
+    return Path(_INTERNAL_DIR, key)
+
 def create_file_path(key:str, name:str) -> Path:
     return Path(_INTERNAL_DIR, key, name)

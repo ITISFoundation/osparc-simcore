@@ -64,7 +64,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
     __buildMenu: function() {
       const menu = new qx.ui.menu.Menu();
 
-      this.__getServiceTypes().forEach(serviceType => {
+      qxapp.utils.Services.getTypes().forEach(serviceType => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
         button.addListener("execute", e => this.__addTag(serviceType, e.getTarget()));
         menu.add(button);
@@ -72,30 +72,12 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
 
       menu.addSeparator();
 
-      this.__getServiceCategories().forEach(serviceCategory => {
+      qxapp.utils.Services.getCategories().forEach(serviceCategory => {
         const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
         button.addListener("execute", e => this.__addTag(serviceCategory, e.getTarget()));
         menu.add(button);
       });
       return menu;
-    },
-
-    __getServiceTypes: function() {
-      return [
-        "computational",
-        "dynamic"
-      ];
-    },
-
-    __getServiceCategories: function() {
-      return [
-        "data",
-        "modeling",
-        "simulator",
-        "solver",
-        "postpro",
-        "notebook"
-      ];
     },
 
     __addTag: function(tagName, menuButton) {
