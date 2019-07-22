@@ -146,20 +146,20 @@ async def test_core_service_running(core_service_name, docker_client, loop):
         NOTE: Assumes `make up-swarm` executed
         NOTE: loop fixture makes this test async
     """
-    SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+).')
+    SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+)')
     # Matches strings as
-    # services_director.1.sohznq8in3clj6ughzad0w7yd
-    # services_postgres-exporter.1.f4sp8c86wkv7cd9a519cjf4gl
-    # services_postgres_exporter.1.f4sp8c86wkv7cd9a519cjf4gl
+    # services_director
+    # services_postgres-exporter
+    # services_postgres_exporter
 
     # maps service names in docker-compose with actual services
     running_services = {}
     expected_prefix = None
-    for s in docker_client.services.list():
-        match = SERVICE_NAMES_PATTERN.match(s.name)
-        assert match, f"Could not match service name {s.name}"
+    for service in docker_client.services.list():
+        match = SERVICE_NAMES_PATTERN.match(service.name)
+        assert match, f"Could not match service name {service.name}"
         prefix, service_name = match.groups()
-        running_services[service_name] = s
+        running_services[service_name] = service
         if expected_prefix:
             assert prefix == expected_prefix
         else:
