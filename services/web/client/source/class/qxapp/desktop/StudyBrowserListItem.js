@@ -98,10 +98,8 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       let control;
       switch (id) {
         case "icon":
-          {
-            control = new qx.ui.basic.Image(this.getIcon());
-            this._add(control);
-          }
+          control = new qx.ui.basic.Image(this.getIcon());
+          this._add(control);
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({

@@ -62,6 +62,7 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
           } else if (status === "starting") {
             return this.tr("Starting...");
           }
+          return this.tr("Idle");
         }
       });
 
@@ -74,6 +75,7 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
           } else if (status === "starting") {
             return "@FontAwesome5Solid/circle-notch/12";
           }
+          return "@FontAwesome5Solid/check/12";
         },
         onUpdate: (source, target) => {
           if (source.getInteractiveStatus() === "ready") {

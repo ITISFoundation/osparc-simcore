@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         alignY: "middle"
       }));
 
-      titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
+      const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       const title = new qx.ui.basic.Label(this.__metadata.name).set({
         font: "title-16",
         rich: true
