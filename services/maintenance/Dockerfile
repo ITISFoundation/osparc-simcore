@@ -12,14 +12,22 @@ HEALTHCHECK --interval=10s \
 # enable single-user server
 RUN unset JUPYTERHUB_API_TOKEN
 
-COPY --chown=jovyan:users packages/postgres-database $HOME/postgres-database
-RUN pip install --upgrade pip wheel setuptools && \
-    pip install $HOME/postgres-database[migration] && \
-    rm -rf $HOME/postgres-database
+COPY --chown=jovyan:users services/maintenance/bin/*.sh /usr/local/bin/
+COPY --chown=jovyan:users packages/postgres-database /tmp/postgres-database
+COPY --chown=jovyan:users services/maintenance/requirements.txt /tmp/
+
+RUN pip --no-cache install --upgrade pip wheel setuptools && \
+    pip --no-cache install /tmp/postgres-database[migration] && \
+    pip --no-cache install -r /tmp/requirements.txt &&\
+    rm -rf /tmp/postgres-database && \
+    rm /tmp/requirements.txt
+
+COPY --chown=jovyan:users services/maintenance/work/ $HOME/work
 
 WORKDIR $HOME/work
-COPY --chown=jovyan:users services/maintenance/notebooks .
-RUN jupyter trust $HOME/work/*
+RUN jupyter trust notebooks/*
 
-COPY --chown=jovyan:users services/maintenance/boot.sh /usr/local/bin/
+
+USER root
+ENTRYPOINT ["tini", "-g", "/bin/bash", "--", "entrypoint.sh"]
 CMD [ "boot.sh" ]

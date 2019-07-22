@@ -43,6 +43,7 @@ qx.Class.define("qxapp.data.Store", {
     "servicesRegistered": "qx.event.type.Data",
     // "fakeFiles": "qx.event.type.Data",
     "myLocations": "qx.event.type.Data",
+    "myDatasets": "qx.event.type.Data",
     "myDocuments": "qx.event.type.Data",
     "nodeFiles": "qx.event.type.Data",
     "presignedLink": "qx.event.type.Data",
@@ -1367,6 +1368,42 @@ qx.Class.define("qxapp.data.Store", {
       reqLoc.send();
     },
 
+    getDatasetsByLocation: function(locationId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of datasets
+      const endPoint = "/storage/locations/" + locationId + "/datasets";
+      const reqDatasets = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqDatasets.addListener("success", eFiles => {
+        const datasets = eFiles.getTarget().getResponse()
+          .data;
+        const data = {
+          location: locationId,
+          datasets: []
+        };
+        if (datasets && datasets.length>0) {
+          data.datasets = datasets;
+        }
+        this.fireDataEvent("myDatasets", data);
+      }, this);
+
+      reqDatasets.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          datasets: []
+        };
+        this.fireDataEvent("myDatasets", data);
+        console.error("Failed getting Datasets list", error);
+      });
+
+      reqDatasets.send();
+    },
+
     getFilesByLocation: function(locationId) {
       if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
@@ -1378,7 +1415,6 @@ qx.Class.define("qxapp.data.Store", {
       reqFiles.addListener("success", eFiles => {
         const files = eFiles.getTarget().getResponse()
           .data;
-        console.log("My Files", files);
         const data = {
           location: locationId,
           files: []
@@ -1395,6 +1431,41 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         const data = {
           location: locationId,
+          files: []
+        };
+        this.fireDataEvent("myDocuments", data);
+        console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
+    },
+
+    getFilesByLocationAndDataset: function(locationId, datasetId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of file meta data
+      const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
+      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        const data = {
+          location: locationId,
+          dataset: datasetId,
+          files: files && files.length>0 ? files : []
+        };
+        this.fireDataEvent("myDocuments", data);
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          dataset: datasetId,
           files: []
         };
         this.fireDataEvent("myDocuments", data);

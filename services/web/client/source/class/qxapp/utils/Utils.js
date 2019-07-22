@@ -182,6 +182,15 @@ qx.Class.define("qxapp.utils.Utils", {
       xhr.send();
     },
 
+    fileNameFromPresignedLink: function(link) {
+      // regex match /([^/]+)\?
+      const fileNames = new URL(link).pathname.split("/");
+      if (fileNames.length) {
+        return fileNames.pop();
+      }
+      return null;
+    },
+
     /**
      * Function that takes an indefinite number of strings as separated parameters, and concatenates them capitalizing the first letter.
      */

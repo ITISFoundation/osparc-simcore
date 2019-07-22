@@ -32,13 +32,14 @@ def services_docker_compose_file(osparc_simcore_root_dir):
 
 @pytest.fixture("session")
 def devel_environ(env_devel_file):
+    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
     with env_devel_file.open() as f:
         for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                key, value = line.split("=")
-                env_devel[key] = value
+            m = PATTERN_ENVIRON_EQUAL.match(line)
+            if m:
+                key, value = m.groups()
+                env_devel[key] = str(value)
     return env_devel
 
 
@@ -61,6 +62,7 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 
     for item in environ_items:
         key, value = item.split("=")
+
         m = MATCH.match(value)
         if m:
             envkey = m.groups()[0]
