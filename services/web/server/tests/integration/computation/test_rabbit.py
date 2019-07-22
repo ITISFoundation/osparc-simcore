@@ -26,7 +26,6 @@ core_services = [
 ]
 
 tool_services = [
-    'flower'
 ]
 
 @pytest.fixture(scope='session')

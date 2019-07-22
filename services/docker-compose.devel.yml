@@ -16,7 +16,7 @@ services:
     build:
       target: development
     environment:
-      REGISTRY_CACHING=False
+      - REGISTRY_CACHING=False
     volumes:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
@@ -79,4 +79,4 @@ services:
   maintenance:
     image: services_maintenance:dev
     volumes:
-      - ./maintenance/notebooks:/home/jovyan/work
+      - ./maintenance/work:/home/jovyan/work/devel
