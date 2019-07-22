@@ -256,28 +256,3 @@ async def test_check_access_expressions(access_model):
 
     #assert await check_access(access_model, R.TESTER,
     #    "study.stop & study.node.create & study.nodestree.uuid.read")
-
-
-#
-
-# async def test_it(access_model):
-
-#     res = True and bar(False)
-#     res = True and ( await foo(False) )
-
-
-#     import re
-#     R = UserRole
-
-#     reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
-
-#     tokens = reg.split("study.stop")
-
-#     import pdb; pdb.set_trace()
-
-#     tokens = reg.split("study.stop AND (study.node.create OR study.nodestree.uuid.read)")
-#     tokens = [t.strip() for t in tokens if t.strip() != '']
-#     for i, t in enumerate(tokens):
-#         if "." in t:
-#             tokens[i] = access_model.can(R.TESTER, t)
-# #

@@ -7,6 +7,7 @@
 import asyncio
 import datetime
 import logging
+import re
 import sys
 import urllib
 from pathlib import Path
@@ -140,19 +141,33 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     for name in service_names:
         assert any( name in s.name for s in running_services ), f"{name} not in {running_services}"
 
-
 async def test_core_service_running(core_service_name, docker_client, loop):
     """
         NOTE: Assumes `make up-swarm` executed
         NOTE: loop fixture makes this test async
     """
-    running_services = docker_client.services.list()
+    SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+)')
+    # Matches strings as
+    # services_director
+    # services_postgres-exporter
+    # services_postgres_exporter
+
+    # maps service names in docker-compose with actual services
+    running_services = {}
+    expected_prefix = None
+    for service in docker_client.services.list():
+        match = SERVICE_NAMES_PATTERN.match(service.name)
+        assert match, f"Could not match service name {service.name}"
+        prefix, service_name = match.groups()
+        running_services[service_name] = service
+        if expected_prefix:
+            assert prefix == expected_prefix
+        else:
+            expected_prefix = prefix
 
     # find the service
-    running_service = [s for s in running_services if core_service_name in s.name]
-    assert len(running_service) == 1
-
-    running_service = running_service[0]
+    assert core_service_name in running_services
+    running_service = running_services[core_service_name]
 
     # Every service in the fixture runs a single task, but they might have failed!
     #
@@ -203,5 +218,5 @@ async def test_check_serve_root(docker_client, services_docker_compose, tools_do
             pytest.fail("{} not found in main index.html".format(search))
     except urllib.error.HTTPError as err:
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
-    except urllib.error.URLError as e:
+    except urllib.error.URLError as err:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
