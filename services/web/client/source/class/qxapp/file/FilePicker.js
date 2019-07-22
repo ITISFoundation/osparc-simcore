@@ -68,7 +68,7 @@ qx.Class.define("qxapp.file.FilePicker", {
     addBtn.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
       if ("location" in fileMetadata && "path" in fileMetadata) {
-        this.__setOutputFile(fileMetadata["location"], fileMetadata["path"]);
+        this.__setOutputFile(fileMetadata["location"], fileMetadata["path"], fileMetadata["name"]);
       }
       this.__initResources(fileMetadata["location"]);
     }, this);
@@ -140,11 +140,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        const outputFile = this.__getOutputFile();
-        outputFile.value = {
-          store: selectedItem.getLocation(),
-          path: selectedItem.getFileId()
-        };
+        this.__setOutputFile(selectedItem.getLocation(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
@@ -156,12 +152,13 @@ qx.Class.define("qxapp.file.FilePicker", {
       return outputs["outFile"];
     },
 
-    __setOutputFile: function(store, path) {
+    __setOutputFile: function(store, path, label) {
       if (store && path) {
-        const outputs = this.getNode().getOutputs();
-        outputs["value"]["outFile"] = {
+        const outputs = this.__getOutputFile();
+        outputs["value"] = {
           store,
-          path
+          path,
+          label
         };
       }
     },

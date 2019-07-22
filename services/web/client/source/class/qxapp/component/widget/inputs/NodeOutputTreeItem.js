@@ -110,6 +110,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
       this.__valueLabel.setValue(value);
     },
     _transformValue: function(value) {
+      if (value.getLabel) {
+        return value.getLabel();
+      }
       if (value.getPath) {
         const fileName = value.getPath().split("/");
         if (fileName.length) {
