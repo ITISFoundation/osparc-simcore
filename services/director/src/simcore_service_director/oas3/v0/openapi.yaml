@@ -275,11 +275,32 @@ paths:
                         - simcore/services/dynamic/3dviewer
                         pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
                         type: string
+                      service_message:
+                        description: the service message
+                        example: no suitable node (insufficient resources on 1 node)
+                        type: string
                       service_port:
                         description: port to access the service within the network
                         example: 8081
                         minimum: 1
                         type: integer
+                      service_state:
+                        description: 'the service state * ''pending'' - The service
+                          is waiting for resources to start * ''pulling'' - The service
+                          is being pulled from the registry * ''starting'' - The service
+                          is starting * ''running'' - The service is running * ''complete''
+                          - The service completed * ''failed'' - The service failed
+                          to start
+
+                          '
+                        enum:
+                        - pending
+                        - pulling
+                        - starting
+                        - running
+                        - complete
+                        - failed
+                        type: string
                       service_uuid:
                         description: The UUID attached to this service
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -298,6 +319,7 @@ paths:
                     - service_version
                     - service_host
                     - service_port
+                    - service_state
                     type: object
                   error:
                     default: null
@@ -494,17 +516,6 @@ paths:
           type: string
       responses:
         '204':
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    default: null
-                    nullable: true
-                  error:
-                    default: null
-                    nullable: true
-                type: object
           description: Succesfully stopped and removed the service from the oSparc
             platform
         '400':
@@ -661,11 +672,32 @@ paths:
                         - simcore/services/dynamic/3dviewer
                         pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
                         type: string
+                      service_message:
+                        description: the service message
+                        example: no suitable node (insufficient resources on 1 node)
+                        type: string
                       service_port:
                         description: port to access the service within the network
                         example: 8081
                         minimum: 1
                         type: integer
+                      service_state:
+                        description: 'the service state * ''pending'' - The service
+                          is waiting for resources to start * ''pulling'' - The service
+                          is being pulled from the registry * ''starting'' - The service
+                          is starting * ''running'' - The service is running * ''complete''
+                          - The service completed * ''failed'' - The service failed
+                          to start
+
+                          '
+                        enum:
+                        - pending
+                        - pulling
+                        - starting
+                        - running
+                        - complete
+                        - failed
+                        type: string
                       service_uuid:
                         description: The UUID attached to this service
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -684,6 +716,7 @@ paths:
                     - service_version
                     - service_host
                     - service_port
+                    - service_state
                     type: object
                   error:
                     default: null
@@ -869,6 +902,7 @@ paths:
                           - The mother of all nodes, makes your numbers shine!
                           type: string
                         inputs:
+                          additionalProperties: true
                           description: definition of the inputs of this node
                           type: object
                           x-patternProperties:
@@ -906,7 +940,7 @@ paths:
                                     dir33/input2.txt: key2
                                   patternProperties:
                                     .+:
-                                      pattern: ^[_a-z0-9]+$
+                                      pattern: ^[-_a-zA-Z0-9]+$
                                       type: string
                                   type: object
                                 label:
@@ -1002,6 +1036,7 @@ paths:
                           - Fast Counter
                           type: string
                         outputs:
+                          additionalProperties: true
                           description: definition of the outputs of this node
                           type: object
                           x-patternProperties:
@@ -1030,7 +1065,7 @@ paths:
                                     dir33/input2.txt: key2
                                   patternProperties:
                                     .+:
-                                      pattern: ^[_a-z0-9]+$
+                                      pattern: ^[-_a-zA-Z0-9]+$
                                       type: string
                                   type: object
                                 label:
@@ -1248,6 +1283,7 @@ paths:
                           - The mother of all nodes, makes your numbers shine!
                           type: string
                         inputs:
+                          additionalProperties: true
                           description: definition of the inputs of this node
                           type: object
                           x-patternProperties:
@@ -1285,7 +1321,7 @@ paths:
                                     dir33/input2.txt: key2
                                   patternProperties:
                                     .+:
-                                      pattern: ^[_a-z0-9]+$
+                                      pattern: ^[-_a-zA-Z0-9]+$
                                       type: string
                                   type: object
                                 label:
@@ -1381,6 +1417,7 @@ paths:
                           - Fast Counter
                           type: string
                         outputs:
+                          additionalProperties: true
                           description: definition of the outputs of this node
                           type: object
                           x-patternProperties:
@@ -1409,7 +1446,7 @@ paths:
                                     dir33/input2.txt: key2
                                   patternProperties:
                                     .+:
-                                      pattern: ^[_a-z0-9]+$
+                                      pattern: ^[-_a-zA-Z0-9]+$
                                       type: string
                                   type: object
                                 label:
