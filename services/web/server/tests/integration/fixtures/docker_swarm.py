@@ -52,11 +52,10 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
 
     def _print_services(msg):
         from pprint import pprint
-        print("{:*^100}".format("docker services list " + msg))
+        print("{:*^100}".format("docker services running " + msg))
         for service in docker_client.services.list():
             pprint(service.attrs)
         print("-"*100)
-
 
     _print_services("[BEFORE TEST]")
 

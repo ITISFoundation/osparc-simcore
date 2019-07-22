@@ -22,6 +22,27 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
+  /storage/locations/{location_id}/datasets:
+    get:
+      summary: Get datasets metadata
+      operationId: get_datasets_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of dataset meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/datasets.yaml#DatasetMetaDataArray'
+        default:
+          $ref:  './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+
   /storage/locations/{location_id}/files/metadata:
     get:
       summary: Get list of file meta data
@@ -32,9 +53,29 @@ paths:
           required: true
           schema:
             type: string
-        - name: uuid_filter
-          in: query
-          required: false
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/files.yaml#FileMetaDataArray'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /storage/locations/{location_id}/datasets/{dataset_id}/metadata:
+    get:
+      summary: Get Files Metadata
+      operationId: get_files_metadata_dataset
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: dataset_id
+          in: path
+          required: true
           schema:
             type: string
       responses:

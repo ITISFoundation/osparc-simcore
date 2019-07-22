@@ -1,6 +1,11 @@
 # apihub
 
-## description
+[![Docker Pulls](https://img.shields.io/docker/pulls/itisfoundation/apihub.svg)](https://hub.docker.com/r/itisfoundation/apihub/tags)
+<!-- TODO: activate hook for microbadger
+[![](https://images.microbadger.com/badges/image/itisfoundation/apihub.svg)](https://microbadger.com/images/itisfoundation/apihub "More on service image in registry")
+[![](https://images.microbadger.com/badges/version/itisfoundation/apihub.svg)](https://microbadger.com/images/itisfoundation/apihub "More on service image in registry")
+[![](https://images.microbadger.com/badges/commit/itisfoundation/apihub.svg)](https://microbadger.com/images/itisfoundation/apihub "More on service image in registry")
+-->
 
 The apihub purpose is to serve api specifications to other parts of the oSparc platform.
 The file are served by default on port 8043.

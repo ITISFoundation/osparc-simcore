@@ -9,16 +9,18 @@ from typing import Dict, List, Union
 
 import docker
 import pika
+import requests
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
 from simcore_sdk import node_ports
-from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
+from simcore_sdk.node_ports import log as node_port_log
 
+from . import config
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
                     find_entry_point, is_node_ready, wrap_async_call)
@@ -282,7 +284,7 @@ class Sidecar:
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
         # stack name, should throw if not set
-        self._stack_name = os.environ["SWARM_STACK_NAME"]
+        self._stack_name = config.SWARM_STACK_NAME
 
         # config nodeports
         node_ports.node_config.USER_ID = user_id
@@ -306,21 +308,39 @@ class Sidecar:
         Path(log_file).touch()
         fut = self._executor.pool.submit(self._bg_job, log_file)
 
+        start_time = time.perf_counter()
+        container = None
         try:
-            docker_image = self._docker.image_name + ":" + self._docker.image_tag
-            self._docker.client.containers.run(docker_image, "run",
-                 detach=False, remove=True,
-                 volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
-                            '{}_output'.format(self._stack_name) : {'bind' : '/output'},
-                            '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
-                 environment=self._docker.env)
-        except docker.errors.ContainerError as _e:
-            log.exception("Run container returned non zero exit code %s", str(_e))
-        except docker.errors.ImageNotFound as _e:
+            docker_image = self._docker.image_name + ":" + self._docker.image_tag            
+            container = self._docker.client.containers.run(docker_image, "run", 
+                                                            init=True,
+                                                            detach=True, remove=False,
+                                                            volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
+                                                            '{}_output'.format(self._stack_name) : {'bind' : '/output'},
+                                                            '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
+                                                            environment=self._docker.env,
+                                                            nano_cpus=config.SERVICES_MAX_NANO_CPUS,
+                                                            mem_limit=config.SERVICES_MAX_MEMORY_BYTES)
+        except docker.errors.ImageNotFound:
             log.exception("Run container: Image not found")
-        except docker.errors.APIError as _e:
+        except docker.errors.APIError:
             log.exception("Run Container: Server returns error")
 
+        if container:
+            try:
+                wait_arguments = {}
+                if config.SERVICES_TIMEOUT_SECONDS > 0:
+                    wait_arguments["timeout"] = int(config.SERVICES_TIMEOUT_SECONDS)
+                response = container.wait(**wait_arguments)
+                log.info("container completed with response %s\nlogs: %s", response, container.logs())        
+            except requests.exceptions.ConnectionError:
+                log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
+            except docker.errors.APIError:
+                log.exception("Run Container: Server returns error")
+            finally:
+                stop_time = time.perf_counter()
+                log.info("Running %s took %sseconds", docker_image, stop_time-start_time)
+                container.remove(force=True)
 
         time.sleep(1)
         self._executor.run_pool = False

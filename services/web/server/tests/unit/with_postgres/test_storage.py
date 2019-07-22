@@ -53,7 +53,6 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
         query = request.query
         assert query
         assert "user_id" in query
-
         assert query["user_id"], "Expected user id"
         assert query["uuid_filter"], "expected a filter"
 
@@ -61,11 +60,39 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
             'data': [{"uuid_filter": query["uuid_filter"]}, ]
         })
 
+    async def _get_datasets(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+
+        return web.json_response({
+            'data': [{"dataset_id": "asdf", "display_name" : "bbb"}, ]
+        })
+
+    async def _get_datasets_meta(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+
+        return web.json_response({
+            'data': [{"dataset_id": "asdf", "display_name" : "bbb"}, ]
+        })
+
     version = cfg['version']
 
     app.router.add_get("/%s/locations" % version, _get_locs)
     app.router.add_get("/%s/locations/0/files/{file_id}/metadata" % version, _get_filemeta)
     app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
+    app.router.add_get("/%s/locations/0/datasets" % version, _get_datasets)
+    app.router.add_get("/%s/locations/0/datasets/{dataset_id}/metadata" % version, _get_datasets_meta)
 
     assert cfg['host']=='localhost'
 
@@ -108,6 +135,48 @@ async def test_get_storage_locations(client, storage_server, logged_user, role, 
         assert len(data) == 1
         assert data[0]['user_id'] == logged_user['id']
 
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_datasets_metadata(client, storage_server, logged_user, role, expected):
+    url = "/v0/storage/locations/0/datasets"
+    assert url.startswith(PREFIX)
+
+    _url = client.app.router["get_datasets_metadata"].url_for(location_id="0")
+
+    assert url==str(_url)
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert len(data) == 1
+        assert data[0]["dataset_id"] == "asdf"
+
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_get_files_metadata_dataset(client, storage_server, logged_user, role, expected):
+    url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
+    assert url.startswith(PREFIX)
+
+    _url = client.app.router["get_files_metadata_dataset"].url_for(location_id="0", dataset_id="N:asdfsdf")
+
+    assert url==str(_url)
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert len(data) == 1
+        assert data[0]["dataset_id"] == "asdf"
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),

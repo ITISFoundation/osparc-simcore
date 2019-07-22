@@ -32,6 +32,24 @@ qx.Class.define("qxapp.utils.Services", {
   type: "static",
 
   statics: {
+    getTypes: function() {
+      return [
+        "computational",
+        "dynamic"
+      ];
+    },
+
+    getCategories: function() {
+      return [
+        "data",
+        "modeling",
+        "simulator",
+        "solver",
+        "postpro",
+        "notebook"
+      ];
+    },
+
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {

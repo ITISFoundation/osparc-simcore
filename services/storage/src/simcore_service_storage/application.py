@@ -5,6 +5,7 @@
 import logging
 
 from aiohttp import web
+from servicelib.monitoring import setup_monitoring
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -24,6 +25,10 @@ def create(config):
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app) # lastly, we expose API to the world
+
+    monitoring = config["main"]["monitoring_enabled"]
+    if monitoring:
+        setup_monitoring(app, "simcore_service_storage")
 
     return app
 
