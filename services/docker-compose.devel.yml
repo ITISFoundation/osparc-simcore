@@ -16,7 +16,7 @@ services:
     build:
       target: development
     environment:
-      REGISTRY_CACHING=False
+      - REGISTRY_CACHING=False
     volumes:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
