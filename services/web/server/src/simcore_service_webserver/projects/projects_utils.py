@@ -84,16 +84,26 @@ def substitute_parameterized_inputs(parameterized_project: Dict, parameters: Dic
     return project
 
 
-def has_same_graph_topology(current_workbench: Dict, new_workbench: Dict) -> bool:
+def has_same_graph(reference_workbench: Dict, new_workbench: Dict) -> bool:
+    """ Checks whether both workbench contain the same graph
+
+        Two graphs are the same if the have the same topology (i.e. nodes and edges)
+        and the ports at each node preserve the same values
+    """
     try:
-        assert set(current_workbench.keys()) == set(new_workbench.keys())
-        for node_id, node in current_workbench.items():
+        assert set(reference_workbench.keys()) == set(new_workbench.keys())
+        for node_id, node in reference_workbench.items():
             # same nodes
             assert all(node.get(k) == new_workbench[node_id].get(k)
                 for k in ['key', 'version']
             )
             # same connectivity (edges)
             assert set(node.get('inputNodes')) == set(new_workbench[node_id].get('inputNodes'))
+
+            # same input values
+            for port_id, port in node.get("inputs", {}).items():
+                assert port == new_workbench[node_id].get("inputs", {}).get(port_id)
+
     except (AssertionError, TypeError, AttributeError):
         return False
     return True
