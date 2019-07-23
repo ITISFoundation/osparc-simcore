@@ -84,25 +84,26 @@ def substitute_parameterized_inputs(parameterized_project: Dict, parameters: Dic
     return project
 
 
-def has_same_graph(reference_workbench: Dict, new_workbench: Dict) -> bool:
+def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
     """ Checks whether both workbench contain the same graph
 
-        Two graphs are the same if the have the same topology (i.e. nodes and edges)
-        and the ports at each node preserve the same values
+        Two graphs are the same when the same topology (i.e. nodes and edges)
+        and the ports at each node have same values/connections
     """
     try:
-        assert set(reference_workbench.keys()) == set(new_workbench.keys())
-        for node_id, node in reference_workbench.items():
+        assert set(rhs_workbench.keys()) == set(lhs_workbench.keys())
+        for node_id, node in rhs_workbench.items():
             # same nodes
-            assert all(node.get(k) == new_workbench[node_id].get(k)
+            assert all(node.get(k) == lhs_workbench[node_id].get(k)
                 for k in ['key', 'version']
             )
+
             # same connectivity (edges)
-            assert set(node.get('inputNodes')) == set(new_workbench[node_id].get('inputNodes'))
+            assert set(node.get('inputNodes')) == set(lhs_workbench[node_id].get('inputNodes'))
 
             # same input values
             for port_id, port in node.get("inputs", {}).items():
-                assert port == new_workbench[node_id].get("inputs", {}).get(port_id)
+                assert port == lhs_workbench[node_id].get("inputs", {}).get(port_id)
 
     except (AssertionError, TypeError, AttributeError):
         return False
