@@ -50,12 +50,30 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       qx.locale.Date.getDateFormat("medium") + " " +
       qx.locale.Date.getTimeFormat("short")
     );
+
+    const openButton = this.getChildControl("open");
+    openButton.addListener("tap", e => {
+      if (this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
+        const locationId = this.getLocation();
+        const datasetId = this.getPath();
+        const data = {
+          locationId,
+          datasetId
+        };
+        this.setLoaded(true);
+        this.fireDataEvent("requestFiles", data);
+      }
+    }, this);
+  },
+
+  events: {
+    "requestFiles": "qx.event.type.Data"
   },
 
   properties: {
-    fileId: {
+    location: {
       check: "String",
-      event: "changeFileId",
+      event: "changePath",
       nullable: true
     },
 
@@ -65,9 +83,23 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       nullable: true
     },
 
-    location: {
+    isDataset: {
+      check: "Boolean",
+      event: "changeIsDataset",
+      init: false,
+      nullable: false
+    },
+
+    loaded: {
+      check: "Boolean",
+      event: "changeLoaded",
+      init: true,
+      nullable: false
+    },
+
+    fileId: {
       check: "String",
-      event: "changePath",
+      event: "changeFileId",
       nullable: true
     },
 
@@ -160,6 +192,22 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         });
         this.bind("fileId", fileIdWidget, "value");
         this.addWidget(fileIdWidget);
+      }
+    },
+
+    // override
+    _applyIcon: function(value, old) {
+      this.base(arguments, value, old);
+      // HACKY: make the loading icon turn
+      const icon = this.getChildControl("icon", true);
+      if (icon && value === "@FontAwesome5Solid/circle-notch/12") {
+        icon.setPadding(0);
+        icon.setMarginRight(4);
+        icon.getContentElement().addClass("rotate");
+      } else {
+        icon.resetPadding();
+        icon.resetMargin();
+        icon.getContentElement().removeClass("rotate");
       }
     }
   },

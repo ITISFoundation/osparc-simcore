@@ -7,7 +7,7 @@
 from asyncio import Future
 from filecmp import cmpfiles
 from pathlib import Path
-from shutil import make_archive, unpack_archive
+from shutil import make_archive, unpack_archive, copy
 
 import pytest
 from simcore_sdk.node_data import data_manager
@@ -123,10 +123,16 @@ async def test_pull_folder(loop, mocker, tmpdir, create_files):
     compressed_file_name = test_compression_folder / test_folder.stem
     archive_file = make_archive(compressed_file_name, "zip", root_dir=test_control_folder)
     assert Path(archive_file).exists()
-
+    # create mock downloaded folder
+    test_download_folder = Path(tmpdir) / "test_download_folder"
+    test_download_folder.mkdir()
+    assert test_download_folder.exists()
+    fake_zipped_folder = test_download_folder / Path(archive_file).name
+    copy(archive_file, fake_zipped_folder)
+    
     mock_filemanager = mocker.patch('simcore_sdk.node_data.data_manager.filemanager', spec=True)
     mock_filemanager.download_file.return_value = Future()
-    mock_filemanager.download_file.return_value.set_result("")
+    mock_filemanager.download_file.return_value.set_result(fake_zipped_folder)
     mock_config = mocker.patch('simcore_sdk.node_data.data_manager.config', spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
@@ -135,7 +141,7 @@ async def test_pull_folder(loop, mocker, tmpdir, create_files):
 
     await data_manager.pull(test_folder)
     mock_temporary_directory.assert_called_once()
-    mock_filemanager.download_file.assert_called_once_with(local_file_path=(test_compression_folder / "{}.zip".format(test_folder.stem)),
+    mock_filemanager.download_file.assert_called_once_with(local_folder=test_compression_folder,
                                                         s3_object="{}/{}/{}.zip".format(mock_config.PROJECT_ID, mock_config.NODE_UUID, test_folder.stem),
                                                         store_id=0)
 
@@ -145,20 +151,25 @@ async def test_pull_folder(loop, mocker, tmpdir, create_files):
     assert not errors
 
 async def test_pull_file(loop, mocker, tmpdir, create_files):
+    file_path = create_files(1, Path(tmpdir))[0]
+    assert file_path.exists()
+    assert file_path.is_file()
+
+    fake_download_folder = Path(tmpdir) / "download_folder"
+    fake_download_folder.mkdir()
+    fake_downloaded_file = fake_download_folder / file_path.name
+    copy(file_path, fake_downloaded_file)
+
     mock_filemanager = mocker.patch('simcore_sdk.node_data.data_manager.filemanager', spec=True)
     mock_filemanager.download_file.return_value = Future()
-    mock_filemanager.download_file.return_value.set_result("")
+    mock_filemanager.download_file.return_value.set_result(fake_downloaded_file)
     mock_config = mocker.patch('simcore_sdk.node_data.data_manager.config', spec=True)
     mock_config.PROJECT_ID = "some funky ID"
     mock_config.NODE_UUID = "another funky ID"
     mock_temporary_directory = mocker.patch('simcore_sdk.node_data.data_manager.TemporaryDirectory')
 
-    file_path = create_files(1, Path(tmpdir))[0]
-    assert file_path.exists()
-    assert file_path.is_file()
-
     await data_manager.pull(file_path)
     mock_temporary_directory.assert_not_called()
-    mock_filemanager.download_file.assert_called_once_with(local_file_path=file_path,
+    mock_filemanager.download_file.assert_called_once_with(local_folder=file_path.parent,
                                                         s3_object="{}/{}/{}".format(mock_config.PROJECT_ID, mock_config.NODE_UUID, file_path.name),
                                                         store_id=0)

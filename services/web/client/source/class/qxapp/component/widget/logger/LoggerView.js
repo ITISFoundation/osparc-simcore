@@ -266,18 +266,22 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
-      const workbench = this.getWorkbench();
-      const node = workbench.getNode(nodeId);
       let label = null;
-      if (node) {
-        label = node.getLabel();
-        node.addListener("changeLabel", e => {
-          const newLabel = e.getData();
-          this.__logModel.nodeLabelChanged(nodeId, newLabel);
-          this.__updateTable();
-        }, this);
-      } else {
+      if (nodeId === "root") {
         label = "Workbench";
+      } else {
+        const workbench = this.getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          label = node.getLabel();
+          node.addListener("changeLabel", e => {
+            const newLabel = e.getData();
+            this.__logModel.nodeLabelChanged(nodeId, newLabel);
+            this.__updateTable();
+          }, this);
+        } else {
+          return;
+        }
       }
 
       const nodeColor = this.__getNodesColor(nodeId);

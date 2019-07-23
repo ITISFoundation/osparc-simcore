@@ -629,6 +629,21 @@ qx.Class.define("qxapp.data.model.Node", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
+
+        if (this.getKey().includes("raw-graphs")) {
+          // Listen to the postMessage from RawGraphs, posting a new graph
+          window.addEventListener("message", e => {
+            const {
+              id,
+              imgData
+            } = e.data;
+            if (imgData && id === "svgChange") {
+              const img = document.createElement("img");
+              img.src = imgData;
+              this.setThumbnail(img.outerHTML);
+            }
+          }, false);
+        }
       }
     },
 
@@ -668,15 +683,38 @@ qx.Class.define("qxapp.data.model.Node", {
           let urlUpdate = srvUrl + "/retrieve";
           urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
           const updReq = new qx.io.request.Xhr();
-          const data = {
+          const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
           updReq.set({
             url: urlUpdate,
             method: "POST",
-            requestData: qx.util.Serializer.toJson(data)
+            requestData: qx.util.Serializer.toJson(reqData)
           });
+          updReq.addListener("success", e => {
+            const {
+              data
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, true);
+            console.log(data);
+          }, this);
+          updReq.addListener("fail", e => {
+            const {
+              error
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("fail", error);
+          }, this);
+          updReq.addListener("error", e => {
+            const {
+              error
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("error", error);
+          }, this);
           updReq.send();
+
+          this.getPropsWidget().retrievingPortData(portKey);
         }
       }
     },

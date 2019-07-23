@@ -182,6 +182,15 @@ qx.Class.define("qxapp.utils.Utils", {
       xhr.send();
     },
 
+    fileNameFromPresignedLink: function(link) {
+      // regex match /([^/]+)\?
+      const fileNames = new URL(link).pathname.split("/");
+      if (fileNames.length) {
+        return fileNames.pop();
+      }
+      return null;
+    },
+
     /**
      * Function that takes an indefinite number of strings as separated parameters, and concatenates them capitalizing the first letter.
      */
@@ -338,6 +347,8 @@ qx.Class.define("qxapp.utils.Utils", {
         hash |= 0; // Convert to 32bit integer
       }
       return hash;
-    }
+    },
+
+    isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url)
   }
 });
