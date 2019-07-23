@@ -86,9 +86,9 @@ def substitute_parameterized_inputs(parameterized_project: Dict, parameters: Dic
 
 def has_same_graph_topology(current_workbench: Dict, new_workbench: Dict) -> bool:
     try:
+        assert set(current_workbench.keys()) == set(new_workbench.keys())
         for node_id, node in current_workbench.items():
             # same nodes
-            assert node_id in new_workbench
             assert all(node.get(k) == new_workbench[node_id].get(k)
                 for k in ['key', 'version']
             )
