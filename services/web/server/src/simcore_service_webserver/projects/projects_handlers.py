@@ -190,7 +190,7 @@ async def replace_project(request: web.Request):
         await db.update_user_project(new_project, user_id, project_uuid)
 
         current_workbench = await db.get_project_workbench(project_uuid)
-        if has_same_graph_topology(current_workbench, new_project["workbench"]):
+        if not has_same_graph_topology(current_workbench, new_project["workbench"]):
             # Every change in pipeline's topology needs to be reflected in the pipeline db
             await update_pipeline_db(request.app, project_uuid, new_project["workbench"])
 
