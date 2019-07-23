@@ -144,7 +144,8 @@ async def access_study(request: web.Request) -> web.Response:
 
     template_project = await get_public_project(request.app, project_id)
     if not template_project:
-        raise web.HTTPNotFound(reason=f"Invalid public study [{project_id}]")
+        raise web.HTTPNotFound(reason=f"Requested study ({project_id}) has not been published.\
+             Please contact the data curators for more information.")
 
     user = None
     is_anonymous_user = await is_anonymous(request)
