@@ -272,6 +272,16 @@ class ProjectDBAPI:
 
         return template_prj
 
+    async def get_project_workbench(self, project_uuid: str):
+        async with self.engine.acquire() as conn:
+            query = select([projects.c.workbench]).where(
+                    projects.c.uuid == project_uuid
+                    )
+            result = await conn.execute(query)
+            workbench = await result.first()
+        return workbench or {}
+
+
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
 

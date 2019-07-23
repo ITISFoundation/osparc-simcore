@@ -12,6 +12,7 @@ from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from ..storage_api import delete_data_folders_of_project
+from .project_utils import has_same_graph_topology
 from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
@@ -79,6 +80,7 @@ async def create_projects(request: web.Request):
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
 
+        # This is a new project. It cannot be running.
         # Every change in projects workbench needs to be reflected in the pipeline db
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
@@ -188,8 +190,10 @@ async def replace_project(request: web.Request):
 
         await db.update_user_project(new_project, user_id, project_uuid)
 
-        # Every change in projects workbench needs to be reflected in the pipeline db
-        await update_pipeline_db(request.app, project_uuid, new_project["workbench"])
+        current_workbench = await db.get_project_workbench(project_uuid)
+        if has_same_graph_topology(current_workbench, new_project["workbench"]):
+            # Every change in pipeline's topology needs to be reflected in the pipeline db
+            await update_pipeline_db(request.app, project_uuid, new_project["workbench"])
 
     except ValidationError:
         raise web.HTTPBadRequest
