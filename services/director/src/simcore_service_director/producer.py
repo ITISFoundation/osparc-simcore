@@ -301,23 +301,26 @@ async def _get_service_state(client: aiodocker.docker.Docker, service: Dict) -> 
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
         # we are only interested in the last task which has index 0
-        if tasks:            
+        if tasks:
             last_task = tasks[0]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
+            simcore_state = ServiceState.STARTING
+            simcore_message = last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             if task_state in ("failed", "rejected"):
                 log.error("service %s failed with %s", service_name, last_task["Status"])
-                return (ServiceState.FAILED, last_task["Status"]["Err"])
+                simcore_state = ServiceState.FAILED
             elif task_state in ("pending"):
-                return (ServiceState.PENDING, last_task["Status"]["Err"])
+                simcore_state = ServiceState.PENDING
             elif task_state in ("assigned", "accepted", "preparing"):
-                return (ServiceState.PULLING, "")
+                simcore_state = ServiceState.PULLING
             elif task_state in ("ready", "starting"):
-                return (ServiceState.STARTING ,"")
+                simcore_state = ServiceState.STARTING
             elif task_state in ("running"):
-                return (ServiceState.RUNNING, "")
+                simcore_state = ServiceState.RUNNING
             elif task_state in ("complete", "shutdown"):
-                return (task_state.COMPLETE, "")
+                simcore_state = ServiceState.COMPLETE
+            return (simcore_state, simcore_message)
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_name)
@@ -409,7 +412,7 @@ async def _start_docker_service(app: aiohttp.web.Application,
         # get the full info from docker
         service = await client.services.inspect(service["ID"])
         service_name = service["Spec"]["Name"]
-        service_state, service_msg = _get_service_state(client, service)
+        service_state, service_msg = await _get_service_state(client, service)
         # wait for service to start
         # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
@@ -431,7 +434,7 @@ async def _start_docker_service(app: aiohttp.web.Application,
             "service_host": service_name,
             "service_port": target_port,
             "service_basepath": node_base_path,
-            "service_state": service_state,
+            "service_state": service_state.value,
             "service_message": service_msg
         }
         return container_meta_data
@@ -553,7 +556,7 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
             service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
             service_basepath = await _get_service_basepath_from_docker_service(service)
             service_name =  service["Spec"]["Name"]
-            service_state, service_msg = _get_service_state(client, service)
+            service_state, service_msg = await _get_service_state(client, service)
 
             # get the published port
             published_port, target_port = await _get_docker_image_port_mapping(service)
