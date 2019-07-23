@@ -12,7 +12,7 @@ from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from ..storage_api import delete_data_folders_of_project
-from .project_utils import has_same_graph_topology
+from .projects_utils import has_same_graph_topology
 from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
@@ -80,8 +80,7 @@ async def create_projects(request: web.Request):
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
 
-        # This is a new project. It cannot be running.
-        # Every change in projects workbench needs to be reflected in the pipeline db
+        # This is a new project and every new graph needs to be reflected in the pipeline db
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
     except ValidationError:
