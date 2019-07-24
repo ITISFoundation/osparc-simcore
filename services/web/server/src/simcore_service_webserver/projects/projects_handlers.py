@@ -172,6 +172,7 @@ async def replace_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    replace_pipeline = request.match_info.get("run", False)
     new_project = await request.json()
 
 
@@ -190,9 +191,7 @@ async def replace_project(request: web.Request):
         previous_workbench = await db.get_project_workbench(project_uuid)
         await db.update_user_project(new_project, user_id, project_uuid)
 
-        if not is_graph_equal(new_project["workbench"], previous_workbench):
-            # Every change in the pipeline workflow needs to be reflected in the pipeline db
-            await update_pipeline_db(request.app, project_uuid, new_project["workbench"])
+        await update_pipeline_db(request.app, project_uuid, new_project["workbench"], replace_pipeline)
 
     except ValidationError:
         raise web.HTTPBadRequest
