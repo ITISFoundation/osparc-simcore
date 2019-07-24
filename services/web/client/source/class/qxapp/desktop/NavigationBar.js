@@ -196,7 +196,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.addSeparator();
 
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
+      helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
