@@ -469,6 +469,8 @@ class DataStorageManager:
                         if resp.status > 299:
                             _response_text = await resp.text()
 
+        return dest_uuid
+
     async def copy_file(self, user_id: str, dest_location: str, dest_uuid: str, source_location: str, source_uuid: str):
         if source_location == SIMCORE_S3_STR:
             if dest_location == DATCORE_STR:
@@ -558,7 +560,7 @@ class DataStorageManager:
                             src = output["path"]
                             dest = str(Path(dest_folder) / node_id)
                             logger.info("Need to copy %s to %s", src, dest)
-                            await self.copy_file_datcore_s3(user_id=user_id, dest_uuid=dest, source_uuid=src, filename_missing=True)
+                            dest = await self.copy_file_datcore_s3(user_id=user_id, dest_uuid=dest, source_uuid=src, filename_missing=True)
                             # and change the dest project accordingly
                             output["store"] = 0
                             output['path'] = dest

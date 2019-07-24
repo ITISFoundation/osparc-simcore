@@ -25,7 +25,7 @@ RUN pip --no-cache install --upgrade pip wheel setuptools && \
 COPY --chown=jovyan:users services/maintenance/work/ $HOME/work
 
 WORKDIR $HOME/work
-RUN jupyter trust notebooks/*
+RUN jupyter trust notebooks/*; mkdir data
 
 
 USER root

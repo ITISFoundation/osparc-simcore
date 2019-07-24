@@ -9,11 +9,12 @@ from typing import Dict
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
+from sqlalchemy import and_
+
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_postgres_database.webserver_models import (comp_pipeline,
                                                         comp_tasks)
-from sqlalchemy import and_
 
 from .director import director_sdk
 
@@ -21,7 +22,8 @@ log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
-async def _get_node_details(node_key:str, node_version:str, app: web.Application)->dict:
+
+async def _get_node_details(node_key:str, node_version:str, app: web.Application) -> Dict:
     if "file-picker" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -59,7 +61,7 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
         log.exception("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=str(err))
 
-async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict, app: web.Application)->dict: # pylint: disable=too-many-arguments
+async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dict, pipeline_data:Dict, dag_adjacency_list:Dict, app: web.Application)->Dict: # pylint: disable=too-many-arguments
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 
@@ -89,7 +91,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dic
                     dag_adjacency_list[input_node_uuid].append(node_uuid)
     return dag_adjacency_list
 
-async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: disable=R0912
+async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -139,29 +141,31 @@ async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: d
     return dag_adjacency_list, tasks
 
 async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_adjacency_list: Dict):
+    query = sa.select([comp_pipeline]).\
+                where(comp_pipeline.c.project_id==project_id)
+
     async with db_engine.acquire() as conn:
-        query = sa.select([comp_pipeline]).\
-                    where(comp_pipeline.c.project_id==project_id)
         result = await conn.execute(query)
         pipeline = await result.first()
 
-        if pipeline is None:
-            # pylint: disable=no-value-for-parameter
-            # let's create one then
-            query = comp_pipeline.insert().\
-                    values(project_id=project_id,
-                            dag_adjacency_list=dag_adjacency_list,
-                            state=0)
+    if pipeline is None:
+        # pylint: disable=no-value-for-parameter
+        # let's create one then
+        query = comp_pipeline.insert().\
+                values(project_id=project_id,
+                        dag_adjacency_list=dag_adjacency_list,
+                        state=0)
+        log.debug("Pipeline object created")
+    else:
+        # let's modify it
+        log.debug("Pipeline object found")
+        #pylint: disable=no-value-for-parameter
+        query = comp_pipeline.update().\
+                    where(comp_pipeline.c.project_id == project_id).\
+                    values(state=0,
+                            dag_adjacency_list=dag_adjacency_list)
 
-            log.debug("Pipeline object created")
-        else:
-            # let's modify it
-            log.debug("Pipeline object found")
-            #pylint: disable=no-value-for-parameter
-            query = comp_pipeline.update().\
-                        where(comp_pipeline.c.project_id == project_id).\
-                        values(state=0,
-                                dag_adjacency_list=dag_adjacency_list)
+    async with db_engine.acquire() as conn:
         await conn.execute(query)
 
 async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict):
@@ -219,10 +223,11 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
 async def update_pipeline_db(app: web.Application, project_id, pipeline_data):
     db_engine = app[APP_DB_ENGINE_KEY]
 
-    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
+    log.info("Pipeline has been updated for project %s", project_id)
+    log.debug("Updating pipeline: %s", pformat(pipeline_data))
     dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
 
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
     await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
 

@@ -114,7 +114,7 @@ properties:
                       output:
                         type: string
                   - type: object
-                    additionalProperties: false
+                    additionalProperties: true
                     required:
                       - store
                       - path
@@ -124,6 +124,8 @@ properties:
                           - string
                           - integer
                       path:
+                        type: string
+                      label:
                         type: string
           inputAccess:
             description: map with key - access level pairs
@@ -159,7 +161,7 @@ properties:
                       - number
                       - 'null'
                   - type: object
-                    additionalProperties: false
+                    additionalProperties: true
                     required:
                       - store
                       - path
@@ -169,6 +171,8 @@ properties:
                           - string
                           - integer
                       path:
+                        type: string
+                      label:
                         type: string
           outputNode:
             type: boolean

@@ -45,7 +45,7 @@ def create_schema():
             "client_outdir": T.String(),
             "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
             "testing": T.Bool(),
-            "studies_access_enabled": T.Bool(),
+            T.Key("studies_access_enabled", default=False): T.Or(T.Bool(), T.Int),
             T.Key("monitoring_enabled", default=False): T.Or(T.Bool(), T.Int), # Int added to use environs
         }),
         db_config.CONFIG_SECTION_NAME: db_config.schema,
