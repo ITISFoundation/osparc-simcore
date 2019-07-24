@@ -12,7 +12,6 @@ from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from ..storage_api import delete_data_folders_of_project
-from .projects_utils import is_graph_equal
 from .projects_api import validate_project
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
@@ -188,7 +187,6 @@ async def replace_project(request: web.Request):
     try:
         validate_project(request.app, new_project)
 
-        previous_workbench = await db.get_project_workbench(project_uuid)
         await db.update_user_project(new_project, user_id, project_uuid)
 
         await update_pipeline_db(request.app, project_uuid, new_project["workbench"], replace_pipeline)
