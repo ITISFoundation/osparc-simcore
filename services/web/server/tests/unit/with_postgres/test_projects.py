@@ -373,7 +373,7 @@ async def test_new_template_from_project(client, logged_user, user_project, expe
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
@@ -420,7 +420,7 @@ async def test_replace_project_updated_inputs(client, logged_user, user_project,
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
