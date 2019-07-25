@@ -54,15 +54,19 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
             assert "service_basepath" in started_service
             assert started_service["service_basepath"] == service_basepath
             assert "service_state" in started_service
+            assert "service_message" in started_service
 
+            # wait for service to be running
+            node_details = await producer.get_service_details(aiohttp_mock_app, service_uuid)
             start_time = time.perf_counter()
             max_time = 2 * 60
-            while started_service["service_state"] != "running":
+            while node_details["service_state"] != "running":
                 asyncio.sleep(2)
                 if (time.perf_counter() - start_time) > max_time:
                     assert True, "waiting too long to start service"
-            # should not throw
-            node_details = await producer.get_service_details(aiohttp_mock_app, service_uuid)
+                node_details = await producer.get_service_details(aiohttp_mock_app, service_uuid)
+            started_service["service_state"] = node_details["service_state"]
+            started_service["service_message"] = node_details["service_message"]
             assert node_details == started_service
             started_services.append(started_service)
         return started_services
