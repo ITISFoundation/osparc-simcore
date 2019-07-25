@@ -790,7 +790,7 @@ qx.Class.define("qxapp.data.model.Node", {
         return;
       }
 
-      const serviceState = data["service_state"]
+      const serviceState = data["service_state"];
       switch (serviceState) {
         case "starting":
         case "pulling": {
@@ -799,42 +799,42 @@ qx.Class.define("qxapp.data.model.Node", {
           break;
         }
         case "pending": {
-              const interval = 10000;
-              qx.event.Timer.once(() => this.__nodeState(), this, interval);
-            break;
-            }
+          const interval = 10000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
         case "running": {
-            // const publishedPort = data["published_port"];
-            const servicePath=data["service_basepath"];
-            const entryPointD = data["entry_point"];
-            const nodeId = data["service_uuid"];
-            if (nodeId !== this.getNodeId()) {
-              return;
-            }
-            if (servicePath) {
-              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-              let srvUrl = servicePath + entryPoint;
-              // FIXME: this is temporary until the reverse proxy works for these services
-              if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
-                srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
-              }
-
-              this.__serviceReadyIn(srvUrl);
-            }
-            break;
+          // const publishedPort = data["published_port"];
+          const servicePath=data["service_basepath"];
+          const entryPointD = data["entry_point"];
+          const nodeId = data["service_uuid"];
+          if (nodeId !== this.getNodeId()) {
+            return;
           }
+          if (servicePath) {
+            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+            let srvUrl = servicePath + entryPoint;
+            // FIXME: this is temporary until the reverse proxy works for these services
+            if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+              srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+            }
+
+            this.__serviceReadyIn(srvUrl);
+          }
+          break;
+        }
         case "complete":
           break;
         case "failed": {
-            const msg = "Service failed: " + data["service_message"]
-            const msgData = {
-              nodeId: this.getNodeId(),
-              msg: msg
-            };
-            this.fireDataEvent("showInLogger", msgData);
-            return;
-            break;
-          }
+          const msg = "Service failed: " + data["service_message"]
+          const msgData = {
+            nodeId: this.getNodeId(),
+            msg: msg
+          };
+          this.fireDataEvent("showInLogger", msgData);
+          return;
+          break;
+        }
 
         default:
           break;
