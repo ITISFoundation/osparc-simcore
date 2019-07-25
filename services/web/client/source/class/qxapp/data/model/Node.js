@@ -825,9 +825,9 @@ qx.Class.define("qxapp.data.model.Node", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
             let srvUrl = servicePath + entryPoint;
             // FIXME: this is temporary until the reverse proxy works for these services
-            if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
-              srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
-            }
+            // if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+            //   srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+            // }
 
             this.__serviceReadyIn(srvUrl);
           }
@@ -836,14 +836,13 @@ qx.Class.define("qxapp.data.model.Node", {
         case "complete":
           break;
         case "failed": {
-          const msg = "Service failed: " + data["service_message"]
+          const msg = "Service failed: " + data["service_message"];
           const msgData = {
             nodeId: this.getNodeId(),
             msg: msg
           };
           this.fireDataEvent("showInLogger", msgData);
           return;
-          break;
         }
 
         default:
@@ -852,7 +851,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
     __nodeState: function() {
       const url = "/running_interactive_services/" + encodeURIComponent(this.getNodeId());
-      let request =  new qxapp.io.request.ApiRequest(url, "GET");
+      let request = new qxapp.io.request.ApiRequest(url, "GET");
       request.addListener("success", this.__onNodeState, this);
       request.addListener("error", e => {
         const errorMsg = "Error when starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
@@ -875,7 +874,7 @@ qx.Class.define("qxapp.data.model.Node", {
     __onInteractiveNodeStarted: function(e) {
       let req = e.getTarget();
       const {
-        data, error
+        error
       } = req.getResponse();
 
       if (error) {
