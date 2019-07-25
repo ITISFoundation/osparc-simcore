@@ -187,7 +187,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     __addSettings: function() {
       const propsWidget = this.getNode().getPropsWidget();
       this.__settingsLayout.removeAll();
-      if (propsWidget) {
+      if (propsWidget && Object.keys(this.getNode().getInputs()).length) {
         this.__settingsLayout.add(propsWidget);
         this.__mainLayout.add(this.__settingsLayout);
       } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__settingsLayout)) {

@@ -54,7 +54,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       flex: 1
     });
 
-    const interval = 1000;
+    const interval = 500;
     let userTimer = new qx.event.Timer(interval);
     userTimer.addListener("interval", () => {
       if (this.__userReady) {
@@ -70,6 +70,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this.__startStudy(studyData);
           }, this);
           resource.addListener("getError", ev => {
+            if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
+              // If guest fails to load study, log him out
+              qxapp.auth.Manager.getInstance().logout();
+            }
             console.error(ev);
           });
           resource.get({
@@ -382,8 +386,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
-        height: 200,
-        alignY: "middle",
         appearance: "pb-list"
       });
       return list;
@@ -399,7 +401,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let delegate = {
         // Item's Layout
         createItem: function() {
-          let item = new qxapp.desktop.StudyBrowserListItem();
+          let item = new qxapp.desktop.StudyBrowserListItem().set({
+            width: 200
+          });
           item.addListener("dbltap", e => {
             const studyId = item.getModel();
             if (studyId) {
@@ -445,11 +449,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               return "@FontAwesome5Solid/plus-circle/80";
             }
           }, item, id);
-          controller.bindProperty("name", "prjTitle", {
-            converter: function(data) {
-              return "<b>" + data + "</b>";
-            }
-          }, item, id);
+          controller.bindProperty("name", "prjTitle", null, item, id);
           controller.bindProperty("prjOwner", "creator", {
             converter: function(data) {
               return data ? "Created by: <b>" + data + "</b>" : null;

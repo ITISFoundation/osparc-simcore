@@ -38,6 +38,7 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
     if (value) {
       this.__field.setValue(value);
     }
+    this.__field.setPaddingRight(18);
     this.getContentElement().addClass("hint-input");
     this.__field.getContentElement().addClass("hint-field");
     this._add(this.__field, {
@@ -78,8 +79,6 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
 
     __attachEventHandlers: function() {
       if (this.__hintText) {
-        this.addListener("mouseover", () => this.__field.setPaddingRight(18), this);
-        this.addListener("mouseout", () => this.__field.resetPaddingRight(), this);
         this.__infoButton.addListener("mouseover", () => this.__hint = new qxapp.ui.hint.Hint(this.__infoButton, this.__hintText), this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
 

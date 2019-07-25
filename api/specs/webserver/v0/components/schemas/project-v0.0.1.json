@@ -45,7 +45,7 @@
     "creationDate": {
       "type": "string",
       "description": "project creation date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[0-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -53,7 +53,7 @@
     "lastChangeDate": {
       "type": "string",
       "description": "last save date",
-      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[0-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
       "examples": [
         "2018-07-01T11:13:43Z"
       ]
@@ -146,7 +146,7 @@
                     },
                     {
                       "type": "object",
-                      "additionalProperties": true,
+                      "additionalProperties": false,
                       "required": [
                         "store",
                         "path"
@@ -156,9 +156,6 @@
                           "type": ["string", "integer"]
                         },
                         "path": {
-                          "type": "string"
-                        },
-                        "label": {
                           "type": "string"
                         }
                       }
@@ -209,7 +206,7 @@
                     },
                     {
                       "type": "object",
-                      "additionalProperties": true,
+                      "additionalProperties": false,
                       "required": [
                         "store",
                         "path"
@@ -219,9 +216,6 @@
                           "type": ["string", "integer"]
                         },
                         "path": {
-                          "type": "string"
-                        },
-                        "label": {
                           "type": "string"
                         }
                       }
