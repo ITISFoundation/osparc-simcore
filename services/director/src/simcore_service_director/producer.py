@@ -569,7 +569,7 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
                 "service_host": service_name,
                 "service_port": target_port,
                 "service_basepath": service_basepath,
-                "service_state": service_state,
+                "service_state": service_state.value,
                 "service_message": service_msg
             }
             return node_details
