@@ -256,7 +256,7 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
 async def _connect_service_to_network(client: aiodocker.docker.Docker,
                                         service_name_or_id: str,
                                         network_id: str):
-    network = client.networks.DockerNetwork(client, network_id)
+    network = aiodocker.networks.DockerNetwork(client, network_id)
     network_config = {
         "Container": service_name_or_id,
         "EndpointConfig": {
