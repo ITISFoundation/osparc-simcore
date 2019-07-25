@@ -3,19 +3,28 @@
 import asyncio
 import json
 import logging
+from enum import Enum
 from typing import Dict, List, Tuple
 
 import aiodocker
 import aiohttp
 import tenacity
 
-from . import config, exceptions, registry_proxy, docker_utils
+from . import config, docker_utils, exceptions, registry_proxy
 from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
 
 log = logging.getLogger(__name__)
+
+class ServiceState(Enum):
+    PENDING = "pending"
+    PULLING = "pulling"
+    STARTING = "starting"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
 
 
 async def _create_auth() -> Dict:
@@ -116,6 +125,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         "endpoint_spec": {},
         "labels": {
             "uuid": node_uuid,
+            "user_id": user_id,
+            "project_id": project_id,
+            "stack_name": config.SWARM_STACK_NAME,
             "type": "main" if main_service else "dependency"
         },
         "networks": [internal_network_id] if internal_network_id else []
@@ -160,12 +172,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
 
     # the service may be part of the swarm network
-    if "Ports" in docker_params["endpoint_spec"]:
-        try:
-            swarm_network_id = (await _get_swarm_network(client))["Id"]
-            docker_params["networks"].append(swarm_network_id)
-        except exceptions.DirectorException:
-            log.exception("Could not find swarm network")
+    # if "Ports" in docker_params["endpoint_spec"]:
+    #     try:
+    #         swarm_network_id = (await _get_swarm_network(client))["Id"]
+    #         docker_params["networks"].append(swarm_network_id)
+    #     except exceptions.DirectorException:
+    #         log.exception("Could not find swarm network")
 
     log.debug("Converted labels to docker runtime parameters: %s", docker_params)
     return docker_params
@@ -241,9 +253,27 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
     return service_name + '_' + node_uuid
 
 
+async def _connect_service_to_network(client: aiodocker.docker.Docker,
+                                        service_name_or_id: str,
+                                        network_id: str):
+    network = client.networks.DockerNetwork(client, network_id)
+    network_config = {
+        "Container": service_name_or_id,
+        "EndpointConfig": {
+        }
+    }
+    try:
+        network.connect(config=network_config)
+    except aiodocker.exceptions.DockerError as err:
+        log.exception("Error while connecting %s to service network %s", service_name_or_id, network_id)
+        raise exceptions.GenericDockerError("Error while connecting {} to service network {}".format(service_name_or_id, network_id), err) from err
+
+
 async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
-                                           service_name: str,
-                                           node_uuid: str) -> str:
+                                            user_id: str,
+                                            project_id: str,
+                                            service_name: str,
+                                            node_uuid: str) -> str:
     log.debug("Creating overlay network for service %s with uuid %s", service_name, node_uuid)
     network_name = await _create_network_name(service_name, node_uuid)
     try:
@@ -251,8 +281,13 @@ async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
             "Name": network_name,
             "Driver": "overlay",
             "Labels": {
-                "uuid": node_uuid
-            }
+                "uuid": node_uuid,
+                "user_id": user_id,
+                "project_id": project_id,
+                "service_name": service_name,
+                "stack_name": config.SWARM_STACK_NAME
+            },
+            "Attachable": True
         }
         docker_network = await client.networks.create(network_config)
         log.debug("Network %s created for service %s with uuid %s", network_name, service_name, node_uuid)
@@ -281,6 +316,40 @@ async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node
         raise exceptions.GenericDockerError(
             "Error while removing networks", err) from err
 
+
+
+async def _get_service_state(client: aiodocker.docker.Docker, service: Dict) -> Tuple[ServiceState, str]:
+    # some times one has to wait until the task info is filled
+    service_name = service["Spec"]["Name"]
+    log.debug("Getting service %s state", service_name)
+    while True:
+        tasks = await client.tasks.list(filters={"service": service_name})
+        # only keep the ones with the right service ID (we're being a bit picky maybe)
+        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+        # we are only interested in the last task which has index 0
+        if tasks:
+            last_task = tasks[0]
+            task_state = last_task["Status"]["State"]
+            log.debug("%s %s", service["ID"], task_state)
+            simcore_state = ServiceState.STARTING
+            simcore_message = last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
+            if task_state in ("failed", "rejected"):
+                log.error("service %s failed with %s", service_name, last_task["Status"])
+                simcore_state = ServiceState.FAILED
+            elif task_state in ("pending"):
+                simcore_state = ServiceState.PENDING
+            elif task_state in ("assigned", "accepted", "preparing"):
+                simcore_state = ServiceState.PULLING
+            elif task_state in ("ready", "starting"):
+                simcore_state = ServiceState.STARTING
+            elif task_state in ("running"):
+                simcore_state = ServiceState.RUNNING
+            elif task_state in ("complete", "shutdown"):
+                simcore_state = ServiceState.COMPLETE
+            return (simcore_state, simcore_message)
+        # allows dealing with other events instead of wasting time here
+        await asyncio.sleep(1)  # 1s
+    log.debug("Waited for service %s to start", service_name)
 
 async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker, service: Dict, node_uuid: str):
     # some times one has to wait until the task info is filled
@@ -369,8 +438,9 @@ async def _start_docker_service(app: aiohttp.web.Application,
         # get the full info from docker
         service = await client.services.inspect(service["ID"])
         service_name = service["Spec"]["Name"]
+        service_state, service_msg = await _get_service_state(client, service)
         # wait for service to start
-        await _wait_until_service_running_or_failed(client, service, node_uuid)
+        # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
         # the docker swarm maybe opened some random port to access the service, get the latest version of the service
         service = await client.services.inspect(service["ID"])
@@ -389,7 +459,9 @@ async def _start_docker_service(app: aiohttp.web.Application,
             "service_version": service_tag,
             "service_host": service_name,
             "service_port": target_port,
-            "service_basepath": node_base_path
+            "service_basepath": node_base_path,
+            "service_state": service_state.value,
+            "service_message": service_msg
         }
         return container_meta_data
 
@@ -411,6 +483,9 @@ async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
         pass
 
 
+
+
+
 async def _create_node(app: aiohttp.web.Application,
                         client: aiodocker.docker.Docker,
                         user_id: str,
@@ -425,10 +500,18 @@ async def _create_node(app: aiohttp.web.Application,
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
-    if len(list_of_services) > 1:
-        service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
-        inter_docker_network_id = await _create_overlay_network_in_swarm(client, service_name, node_uuid)
-        log.debug("Created docker network in swarm for service %s", service_name)
+    service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
+    inter_docker_network_id = await _create_overlay_network_in_swarm(client, user_id, project_id, service_name, node_uuid)
+    log.debug("Created docker network in swarm for service %s", service_name)
+    # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
+    # after too many services are attached to the main network we run out of IP addresses
+    # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
+    await _connect_service_to_network(client, "webserver", inter_docker_network_id)
+    await _connect_service_to_network(client, "storage", inter_docker_network_id)
+    try:
+        await _connect_service_to_network(client, "postgres", inter_docker_network_id)
+    except exceptions.GenericDockerError:
+        log.warning("Could not %s attach to postgres. If postgres is in a separate stack, do not worry", service_name)
 
     containers_meta_data = list()
     for service in list_of_services:
@@ -510,6 +593,7 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
             service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
             service_basepath = await _get_service_basepath_from_docker_service(service)
             service_name =  service["Spec"]["Name"]
+            service_state, service_msg = await _get_service_state(client, service)
 
             # get the published port
             published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -521,7 +605,9 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
                 "service_version": service_tag,
                 "service_host": service_name,
                 "service_port": target_port,
-                "service_basepath": service_basepath
+                "service_basepath": service_basepath,
+                "service_state": service_state.value,
+                "service_message": service_msg
             }
             return node_details
         except aiodocker.exceptions.DockerError as err:

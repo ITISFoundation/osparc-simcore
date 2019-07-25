@@ -61,6 +61,8 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
             return this.tr("Error");
           } else if (status === "starting") {
             return this.tr("Starting...");
+          } else if (status === "pending") {
+            return this.tr("Pending...");
           }
           return this.tr("Idle");
         }
@@ -73,6 +75,8 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
           } else if (status === "failed") {
             return "@FontAwesome5Solid/exclamation-circle/12";
           } else if (status === "starting") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "pending") {
             return "@FontAwesome5Solid/circle-notch/12";
           }
           return "@FontAwesome5Solid/check/12";
