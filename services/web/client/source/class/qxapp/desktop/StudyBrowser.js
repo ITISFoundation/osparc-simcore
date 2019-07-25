@@ -54,7 +54,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       flex: 1
     });
 
-    const interval = 1000;
+    const interval = 500;
     let userTimer = new qx.event.Timer(interval);
     userTimer.addListener("interval", () => {
       if (this.__userReady) {
@@ -70,6 +70,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this.__startStudy(studyData);
           }, this);
           resource.addListener("getError", ev => {
+            if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
+              // If guest fails to load study, log him out
+              qxapp.auth.Manager.getInstance().logout();
+            }
             console.error(ev);
           });
           resource.get({
