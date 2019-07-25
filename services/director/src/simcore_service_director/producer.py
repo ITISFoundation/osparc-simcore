@@ -263,7 +263,7 @@ async def _connect_service_to_network(client: aiodocker.docker.Docker,
         }
     }
     try:
-        network.connect(config=network_config)
+        await network.connect(config=network_config)
     except aiodocker.exceptions.DockerError as err:
         log.exception("Error while connecting %s to service network %s", service_name_or_id, network_id)
         raise exceptions.GenericDockerError("Error while connecting {} to service network {}".format(service_name_or_id, network_id), err) from err
