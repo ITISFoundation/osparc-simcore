@@ -1161,13 +1161,80 @@ qx.Class.define("qxapp.data.Store", {
 
     __addCategoryToServices: function(services) {
       const cats = {
+        "simcore/services/frontend/file-picker": {
+          "category": "Data"
+        },
+        "simcore/services/dynamic/mattward-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/bornstein-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/cc-0d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-1d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-2d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/raw-graphs": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer-gpu": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/jupyter-r-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-base-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-scipy-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/comp/rabbit-ss-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/osparc-opencor": {
+          "category": "Solver"
+        },
+
+        "simcore/services/comp/itis/sleeper": {
+          "category": "Solver"
+        },
         "simcore/services/comp/itis/isolve-emlf": {
           "category": "Solver"
         },
         "simcore/services/comp/itis/neuron-isolve": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/itis/sleeper": {
           "category": "Solver"
         },
         "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
@@ -1242,31 +1309,7 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/demodec/dynamic/itis/s4l/neuroman": {
           "category": "Modeling"
         },
-        "simcore/services/dynamic/3d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-0d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-1d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-2d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/jupyter-base-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-r-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-scipy-notebook": {
-          "category": "Notebook"
-        },
         "simcore/services/dynamic/kember-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/mattward-viewer": {
           "category": "PostPro"
         },
         "simcore/services/dynamic/modeler/webserver": {
@@ -1274,12 +1317,6 @@ qx.Class.define("qxapp.data.Store", {
         },
         "simcore/services/dynamic/modeler/webserverwithrat": {
           "category": "Modeling"
-        },
-        "simcore/services/dynamic/raw-graphs": {
-          "category": "PostPro"
-        },
-        "simcore/services/frontend/file-picker": {
-          "category": "Data"
         },
         "simcore/services/frontend/multi-plot": {
           "category": "PostPro"

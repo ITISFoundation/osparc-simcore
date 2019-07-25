@@ -120,7 +120,7 @@ PREFIX = "/" + API_VERSION + "/storage"
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
@@ -137,7 +137,7 @@ async def test_get_storage_locations(client, storage_server, logged_user, role, 
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
@@ -159,7 +159,7 @@ async def test_get_datasets_metadata(client, storage_server, logged_user, role, 
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
@@ -180,7 +180,7 @@ async def test_get_files_metadata_dataset(client, storage_server, logged_user, r
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
@@ -201,7 +201,7 @@ async def test_storage_file_meta(client, storage_server, logged_user, role, expe
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])

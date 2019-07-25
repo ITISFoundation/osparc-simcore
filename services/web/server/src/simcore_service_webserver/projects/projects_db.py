@@ -33,15 +33,15 @@ APP_PROJECT_DBAPI  = __name__ + '.ProjectDBAPI'
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
 # TODO: check here how schema to model db works!?
-def _convert_to_db_names(project_data: Dict) -> Dict:
+def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
-    for key, value in project_data.items():
+    for key, value in project_document_data.items():
         converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
-def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
+def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
     converted_args = {}
-    for key, value in project_db_data.items():
+    for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
             continue
         converted_value = value
@@ -271,6 +271,18 @@ class ProjectDBAPI:
                 template_prj = _convert_to_schema_names(row)
 
         return template_prj
+
+    async def get_project_workbench(self, project_uuid: str):
+        async with self.engine.acquire() as conn:
+            query = select([projects.c.workbench]).where(
+                    projects.c.uuid == project_uuid
+                    )
+            result = await conn.execute(query)
+            row = await result.first()
+            if row:
+                return row[projects.c.workbench]
+        return {}
+
 
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
