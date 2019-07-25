@@ -18,7 +18,8 @@ pytest-runner
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
 docker
 
-# tools for CI
+# tools
 pylint
+ptvsd
 coveralls
 codecov
