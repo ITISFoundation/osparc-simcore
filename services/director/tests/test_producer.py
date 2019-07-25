@@ -6,12 +6,14 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
+import time
 import uuid
 
 import docker
 import pytest
 
 from simcore_service_director import config, exceptions, producer
+
 
 @pytest.fixture
 async def aiohttp_mock_app(loop, mocker):
@@ -51,6 +53,14 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
             assert service_uuid in started_service["service_host"]
             assert "service_basepath" in started_service
             assert started_service["service_basepath"] == service_basepath
+            assert "service_state" in started_service
+            assert started_service["service_state"] == service_basepath
+            start_time = time.perf_counter()
+            max_time = 2 * 60
+            while started_service["service_state"] != "running":
+                asyncio.sleep(2)
+                if (time.perf_counter() - start_time) > max_time:
+                    assert true, "waiting too long to start service"
             # should not throw
             node_details = await producer.get_service_details(aiohttp_mock_app, service_uuid)
             assert node_details == started_service
