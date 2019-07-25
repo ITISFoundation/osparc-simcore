@@ -26,6 +26,8 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    stdin_open: true
+    tty: true
     build:
       context: ../
       dockerfile: services/director/Dockerfile
