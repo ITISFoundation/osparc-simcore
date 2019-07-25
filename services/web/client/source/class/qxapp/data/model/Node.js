@@ -804,11 +804,13 @@ qx.Class.define("qxapp.data.model.Node", {
       switch (serviceState) {
         case "starting":
         case "pulling": {
+          this.setInteractiveStatus("starting");
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "pending": {
+          this.setInteractiveStatus("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
@@ -836,6 +838,7 @@ qx.Class.define("qxapp.data.model.Node", {
         case "complete":
           break;
         case "failed": {
+          this.setInteractiveStatus("failed");
           const msg = "Service failed: " + data["service_message"];
           const msgData = {
             nodeId: this.getNodeId(),
