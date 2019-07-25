@@ -360,6 +360,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(
+        false,
         null,
         this.__retrieveInputs.bind(this, node, portKey)
       );
@@ -378,7 +379,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         return false;
       }
 
-      return this.updateStudyDocument(null, this.__doStartPipeline);
+      return this.updateStudyDocument(true, null, this.__doStartPipeline);
     },
 
     __doStartPipeline: function() {
@@ -486,7 +487,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.updateStudyDocument(newObj);
+            this.updateStudyDocument(false, newObj);
           }
         }
       }, this);
@@ -500,7 +501,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cbSuccess, cbError) {
+    updateStudyDocument: function(run=false, newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -518,7 +519,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         this.getLogger().error("root", "Error updating pipeline");
       }, this);
       resource.put({
-        "project_id": prjUuid
+        "project_id": prjUuid,
+        run
       }, newObj);
     },
 
