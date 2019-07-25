@@ -179,6 +179,12 @@ qx.Class.define("qxapp.data.model.Node", {
       check: "String",
       nullable: true,
       init: ""
+    },
+
+    interactiveStatus: {
+      check: "String",
+      nullable: true,
+      event: "changeInteractiveStatus"
     }
   },
 
@@ -739,6 +745,7 @@ qx.Class.define("qxapp.data.model.Node", {
       this.fireDataEvent("showInLogger", msgData);
 
       this.setProgress(0);
+      this.setInteractiveStatus("starting");
 
       const prjId = this.getWorkbench().getStudy()
         .getUuid();
@@ -763,6 +770,7 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
+        this.setInteractiveStatus("failed");
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -770,6 +778,7 @@ qx.Class.define("qxapp.data.model.Node", {
           nodeId: this.getNodeId(),
           msg: failMsg
         };
+        this.setInteractiveStatus("failed");
         this.fireDataEvent("showInLogger", failMsgData);
       }, this);
       request.send();
@@ -787,6 +796,7 @@ qx.Class.define("qxapp.data.model.Node", {
           nodeId: this.getNodeId(),
           msg: msg
         };
+        this.setInteractiveStatus("failed");
         this.fireDataEvent("showInLogger", msgData);
         return;
       }
@@ -811,6 +821,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
+      this.setInteractiveStatus("ready");
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),

@@ -53,26 +53,37 @@ qx.Class.define("qxapp.component.service.NodeStatus", {
     },
 
     __setupInteractive: function() {
-      this.__node.bind("serviceUrl", this.__label, "value", {
-        converter: url => {
-          if (url) {
+      this.__node.bind("interactiveStatus", this.__label, "value", {
+        converter: status => {
+          if (status === "ready") {
             return this.tr("Ready");
+          } else if (status === "failed") {
+            return this.tr("Error");
+          } else if (status === "starting") {
+            return this.tr("Starting...");
           }
-          return this.tr("Loading...");
+          return this.tr("Idle");
         }
       });
 
-      this.__node.bind("serviceUrl", this.__icon, "source", {
-        converter: url => {
-          if (url) {
+      this.__node.bind("interactiveStatus", this.__icon, "source", {
+        converter: status => {
+          if (status === "ready") {
             return "@FontAwesome5Solid/check/12";
+          } else if (status === "failed") {
+            return "@FontAwesome5Solid/exclamation-circle/12";
+          } else if (status === "starting") {
+            return "@FontAwesome5Solid/circle-notch/12";
           }
-          return "@FontAwesome5Solid/circle-notch/12";
+          return "@FontAwesome5Solid/check/12";
         },
         onUpdate: (source, target) => {
-          if (source.getServiceUrl()) {
+          if (source.getInteractiveStatus() === "ready") {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
             target.setTextColor("ready-green");
+          } else if (source.getInteractiveStatus() === "failed") {
+            this.__removeClass(this.__icon.getContentElement(), "rotate");
+            target.setTextColor("failed-red");
           } else {
             this.__addClass(this.__icon.getContentElement(), "rotate");
             target.resetTextColor();

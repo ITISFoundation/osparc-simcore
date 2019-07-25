@@ -25,7 +25,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           decorator: null,
-          padding: [0, 0]
+          padding: 0
         };
       }
     },
