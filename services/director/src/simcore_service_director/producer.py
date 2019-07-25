@@ -508,6 +508,10 @@ async def _create_node(app: aiohttp.web.Application,
     # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
     await _connect_service_to_network(client, "webserver", inter_docker_network_id)
     await _connect_service_to_network(client, "storage", inter_docker_network_id)
+    try:
+        await _connect_service_to_network(client, "postgres", inter_docker_network_id)
+    except exceptions.GenericDockerError:
+        log.warning("Could not %s attach to postgres. If postgres is in a separate stack, do not worry", service_name)
 
     containers_meta_data = list()
     for service in list_of_services:
