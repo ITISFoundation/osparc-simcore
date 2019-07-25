@@ -157,6 +157,9 @@
                         },
                         "path": {
                           "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
                         }
                       }
                     }
@@ -216,6 +219,9 @@
                           "type": ["string", "integer"]
                         },
                         "path": {
+                          "type": "string"
+                        },
+                        "label": {
                           "type": "string"
                         }
                       }
