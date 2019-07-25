@@ -123,6 +123,9 @@ qx.Class.define("qxapp.data.Converters", {
     },
 
     createDirEntry: function(label, location, path, children = []) {
+      if (label === null || label === undefined || label === "") {
+        label = "Unknown label";
+      }
       return {
         label,
         location,
@@ -145,7 +148,7 @@ qx.Class.define("qxapp.data.Converters", {
         lastModified = (Math.floor(Math.random()*1000000)+1).toString();
       }
       if (size === undefined) {
-        size = (Math.floor(Math.random()*1000000)+1).toString();
+        size = 0;
       }
       return {
         label,

@@ -148,7 +148,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputsBtn", this.__updatePipelineAndRetrieve.bind(this, null), this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -364,19 +363,13 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         null,
         this.__retrieveInputs.bind(this, node, portKey)
       );
-      this.getLogger().debug(null, "Updating pipeline");
+      this.getLogger().debug("root", "Updating pipeline");
     },
 
     __retrieveInputs: function(node, portKey = null) {
-      this.getLogger().debug(null, "Retrieveing inputs");
+      this.getLogger().debug("root", "Retrieveing inputs");
       if (node) {
         node.retrieveInputs(portKey);
-      } else {
-        const workbench = this.getStudy().getWorkbench();
-        const allNodes = workbench.getNodes(true);
-        Object.values(allNodes).forEach(node2 => {
-          node2.retrieveInputs();
-        }, this);
       }
     },
 
@@ -424,14 +417,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error submitting pipeline");
+        this.getLogger().error("root", "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed submitting pipeline");
+        this.getLogger().error("root", "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info(null, "Starting pipeline");
+      this.getLogger().info("root", "Starting pipeline");
       return true;
     },
 
@@ -448,28 +441,28 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
+        this.getLogger().error("root", "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
+        this.getLogger().error("root", "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
+      this.getLogger().info("root", "Stopping pipeline. Not yet implemented");
       return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
+      this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__pipelineId = null;
-        this.getLogger().error(null, "Submition failed");
+        this.getLogger().error("root", "Submition failed");
       } else {
         this.__pipelineId = pipelineId;
-        this.getLogger().info(null, "Pipeline started");
+        this.getLogger().info("root", "Pipeline started");
       }
     },
 
@@ -522,7 +515,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }, this);
       resource.addListenerOnce("putError", ev => {
-        this.getLogger().error(null, "Error updating pipeline");
+        this.getLogger().error("root", "Error updating pipeline");
       }, this);
       resource.put({
         "project_id": prjUuid
