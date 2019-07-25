@@ -125,6 +125,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
         "endpoint_spec": {},
         "labels": {
             "uuid": node_uuid,
+            "user_id": user_id,
+            "project_id": project_id,
+            "stack_name": config.SWARM_STACK_NAME,
             "type": "main" if main_service else "dependency"
         },
         "networks": [internal_network_id] if internal_network_id else []
@@ -169,12 +172,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
 
     # the service may be part of the swarm network
-    if "Ports" in docker_params["endpoint_spec"]:
-        try:
-            swarm_network_id = (await _get_swarm_network(client))["Id"]
-            docker_params["networks"].append(swarm_network_id)
-        except exceptions.DirectorException:
-            log.exception("Could not find swarm network")
+    # if "Ports" in docker_params["endpoint_spec"]:
+    #     try:
+    #         swarm_network_id = (await _get_swarm_network(client))["Id"]
+    #         docker_params["networks"].append(swarm_network_id)
+    #     except exceptions.DirectorException:
+    #         log.exception("Could not find swarm network")
 
     log.debug("Converted labels to docker runtime parameters: %s", docker_params)
     return docker_params
@@ -250,9 +253,27 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
     return service_name + '_' + node_uuid
 
 
+async def _connect_service_to_network(client: aiodocker.docker.Docker,
+                                        service_name_or_id: str,
+                                        network_id: str):
+    network = client.networks.DockerNetwork(client, network_id)
+    network_config = {
+        "Container": service_name_or_id,
+        "EndpointConfig": {
+        }
+    }
+    try:
+        network.connect(config=network_config)
+    except aiodocker.exceptions.DockerError as err:
+        log.exception("Error while connecting %s to service network %s", service_name_or_id, network_id)
+        raise exceptions.GenericDockerError("Error while connecting {} to service network {}".format(service_name_or_id, network_id), err) from err
+
+
 async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
-                                           service_name: str,
-                                           node_uuid: str) -> str:
+                                            user_id: str,
+                                            project_id: str,
+                                            service_name: str,
+                                            node_uuid: str) -> str:
     log.debug("Creating overlay network for service %s with uuid %s", service_name, node_uuid)
     network_name = await _create_network_name(service_name, node_uuid)
     try:
@@ -260,8 +281,13 @@ async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
             "Name": network_name,
             "Driver": "overlay",
             "Labels": {
-                "uuid": node_uuid
-            }
+                "uuid": node_uuid,
+                "user_id": user_id,
+                "project_id": project_id,
+                "service_name": service_name,
+                "stack_name": config.SWARM_STACK_NAME
+            },
+            "Attachable": True
         }
         docker_network = await client.networks.create(network_config)
         log.debug("Network %s created for service %s with uuid %s", network_name, service_name, node_uuid)
@@ -457,6 +483,9 @@ async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
         pass
 
 
+
+
+
 async def _create_node(app: aiohttp.web.Application,
                         client: aiodocker.docker.Docker,
                         user_id: str,
@@ -471,10 +500,14 @@ async def _create_node(app: aiohttp.web.Application,
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
-    if len(list_of_services) > 1:
-        service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
-        inter_docker_network_id = await _create_overlay_network_in_swarm(client, service_name, node_uuid)
-        log.debug("Created docker network in swarm for service %s", service_name)
+    service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
+    inter_docker_network_id = await _create_overlay_network_in_swarm(client, user_id, project_id, service_name, node_uuid)
+    log.debug("Created docker network in swarm for service %s", service_name)
+    # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
+    # after too many services are attached to the main network we run out of IP addresses
+    # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
+    await _connect_service_to_network(client, "webserver", inter_docker_network_id)
+    await _connect_service_to_network(client, "storage", inter_docker_network_id)
 
     containers_meta_data = list()
     for service in list_of_services:
