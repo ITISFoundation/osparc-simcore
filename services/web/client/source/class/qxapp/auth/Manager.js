@@ -70,7 +70,7 @@ qx.Class.define("qxapp.auth.Manager", {
             errorCb.call(ctx);
           } else {
             this.__loginUser(e.getTarget().getResponse().data.login);
-            successCb.call(ctx);
+            successCb.call(ctx, e.getTarget().getResponse().data);
           }
         });
         request.addListener("statusError", e => {

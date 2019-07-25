@@ -87,6 +87,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
+    this._add(new qxapp.ui.form.LinkButton(this.tr("Docs"), "https://docs.osparc.io").set({
+      appearance: "link-button"
+    }));
+
     this._add(new qxapp.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
       appearance: "link-button"
     }));
@@ -192,7 +196,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.addSeparator();
 
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://itisfoundation.github.io"));
+      helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
