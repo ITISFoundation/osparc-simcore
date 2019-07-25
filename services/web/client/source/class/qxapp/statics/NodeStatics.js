@@ -41,6 +41,10 @@ qx.Class.define("qxapp.statics.NodeStatics", {
       dynamic: {
         label: "Interactive",
         icon: "@FontAwesome5Solid/mouse-pointer/"
+      },
+      container: {
+        label: "Group of nodes",
+        icon: "@FontAwesome5Solid/box-open/"
       }
     },
     getCategory: function(category) {

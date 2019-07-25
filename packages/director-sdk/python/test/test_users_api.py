@@ -53,7 +53,7 @@ class TestUsersApi(unittest.TestCase):
     def test_running_interactive_services_post(self):
         """Test case for running_interactive_services_post
 
-        Starts an interactive service in the oSparc platform and returns its entrypoint  # noqa: E501
+        Starts an interactive service in the oSparc platform  # noqa: E501
         """
         pass
 

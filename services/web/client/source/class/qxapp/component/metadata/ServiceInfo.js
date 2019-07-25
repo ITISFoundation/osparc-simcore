@@ -48,11 +48,17 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         alignY: "middle"
       }));
 
+      const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const title = new qx.ui.basic.Label(this.__metadata.name).set({
         font: "title-16",
         rich: true
       });
-      container.add(title);
+      const version = new qx.ui.basic.Label("v" + this.__metadata.version).set({
+        rich: true
+      });
+      titleContainer.add(title);
+      titleContainer.add(version);
+      container.add(titleContainer);
 
       const description = new qx.ui.basic.Label(this.__metadata.description).set({
         rich: true

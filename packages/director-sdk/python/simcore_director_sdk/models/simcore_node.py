@@ -35,10 +35,10 @@ class SimcoreNode(object):
         'authors': 'list[InlineResponse2001Authors]',
         'contact': 'str',
         'description': 'str',
-        'inputs': 'object',
+        'inputs': 'dict(str, object)',
         'key': 'str',
         'name': 'str',
-        'outputs': 'object',
+        'outputs': 'dict(str, object)',
         'type': 'str',
         'version': 'str'
     }
@@ -159,7 +159,7 @@ class SimcoreNode(object):
         definition of the inputs of this node  # noqa: E501
 
         :return: The inputs of this SimcoreNode.  # noqa: E501
-        :rtype: object
+        :rtype: dict(str, object)
         """
         return self._inputs
 
@@ -170,7 +170,7 @@ class SimcoreNode(object):
         definition of the inputs of this node  # noqa: E501
 
         :param inputs: The inputs of this SimcoreNode.  # noqa: E501
-        :type: object
+        :type: dict(str, object)
         """
         if inputs is None:
             raise ValueError("Invalid value for `inputs`, must not be `None`")  # noqa: E501
@@ -236,7 +236,7 @@ class SimcoreNode(object):
         definition of the outputs of this node  # noqa: E501
 
         :return: The outputs of this SimcoreNode.  # noqa: E501
-        :rtype: object
+        :rtype: dict(str, object)
         """
         return self._outputs
 
@@ -247,7 +247,7 @@ class SimcoreNode(object):
         definition of the outputs of this node  # noqa: E501
 
         :param outputs: The outputs of this SimcoreNode.  # noqa: E501
-        :type: object
+        :type: dict(str, object)
         """
         if outputs is None:
             raise ValueError("Invalid value for `outputs`, must not be `None`")  # noqa: E501

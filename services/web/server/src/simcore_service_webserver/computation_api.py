@@ -168,20 +168,22 @@ async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_
     async with db_engine.acquire() as conn:
         await conn.execute(query)
 
-async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict):
+async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict, replace_pipeline = True):
     async with db_engine.acquire() as conn:
         query = sa.select([comp_tasks]).\
                 where(comp_tasks.c.project_id == project_id)
         result = await conn.execute(query)
         tasks_db = await result.fetchall()
-        # delete tasks that were deleted from the db
-        for task_db in tasks_db:
-            if not task_db.node_id in tasks:
-                #pylint: disable=no-value-for-parameter
-                query = comp_tasks.delete().\
-                        where(and_(comp_tasks.c.project_id == project_id,
-                                    comp_tasks.c.node_id == task_db.node_id))
-                await conn.execute(query)
+
+        if replace_pipeline:
+            # delete tasks that were deleted from the db
+            for task_db in tasks_db:
+                if not task_db.node_id in tasks:
+                    #pylint: disable=no-value-for-parameter
+                    query = comp_tasks.delete().\
+                            where(and_(comp_tasks.c.project_id == project_id,
+                                        comp_tasks.c.node_id == task_db.node_id))
+                    await conn.execute(query)
         internal_id = 1
         for node_id in tasks:
             task = tasks[node_id]
@@ -205,22 +207,30 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 submit = datetime.datetime.utcnow())
                 internal_id = internal_id+1
             else:
-                #pylint: disable=no-value-for-parameter
-                query = comp_tasks.update().\
-                        where(and_(comp_tasks.c.project_id==project_id,
-                                comp_tasks.c.node_id==node_id)).\
-                        values(job_id = None,
-                                state = 0,
-                                image = task["image"],
-                                schema = task["schema"],
-                                inputs = task["inputs"],
-                                outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs,
-                                submit = datetime.datetime.utcnow())
+                if replace_pipeline:
+                    #pylint: disable=no-value-for-parameter
+                    query = comp_tasks.update().\
+                            where(and_(comp_tasks.c.project_id==project_id,
+                                    comp_tasks.c.node_id==node_id)).\
+                            values(job_id = None,
+                                    state = 0,
+                                    image = task["image"],
+                                    schema = task["schema"],
+                                    inputs = task["inputs"],
+                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs,
+                                    submit = datetime.datetime.utcnow())
+                else:
+                    #pylint: disable=no-value-for-parameter
+                    query = comp_tasks.update().\
+                            where(and_(comp_tasks.c.project_id==project_id,
+                                    comp_tasks.c.node_id==node_id)).\
+                            values(inputs = task["inputs"],
+                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs)
             await conn.execute(query)
 
 # API ------------------------------------------
 
-async def update_pipeline_db(app: web.Application, project_id, pipeline_data):
+async def update_pipeline_db(app: web.Application, project_id, pipeline_data, replace_pipeline = True):
     db_engine = app[APP_DB_ENGINE_KEY]
 
     log.info("Pipeline has been updated for project %s", project_id)
@@ -229,6 +239,6 @@ async def update_pipeline_db(app: web.Application, project_id, pipeline_data):
 
     log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
     await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
-    await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
+    await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
     log.debug("END OF ROUTINE.")
