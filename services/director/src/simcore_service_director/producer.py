@@ -252,9 +252,12 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
     return service_name + '_' + node_uuid
 
 
-async def _connect_service_to_network(service_name_or_id: str, network: str):
+async def _connect_service_to_network(service_name_or_id: str, aliases: List[str], network: str):
     network_config = {
         "Container": service_name_or_id,
+        "EndpointConfig": {
+            "Aliases": aliases
+        }
     }
     try:
         await network.connect(network_config)
@@ -524,10 +527,10 @@ async def _create_node(app: aiohttp.web.Application,
     # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
     # after too many services are attached to the main network we run out of IP addresses
     # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
-    await _connect_service_to_network(await _get_service_container_name(client, "{}_webserver".format(config.SWARM_STACK_NAME)), inter_docker_network)
-    await _connect_service_to_network(await _get_service_container_name(client, "{}_storage".format(config.SWARM_STACK_NAME)), inter_docker_network)
+    await _connect_service_to_network(await _get_service_container_name(client, "{}_webserver".format(config.SWARM_STACK_NAME)), ["webserver"], inter_docker_network)
+    await _connect_service_to_network(await _get_service_container_name(client, "{}_storage".format(config.SWARM_STACK_NAME)), ["storage"], inter_docker_network)
     try:
-        await _connect_service_to_network(await _get_service_container_name(client, "{}_postgres".format(config.SWARM_STACK_NAME)), inter_docker_network)
+        await _connect_service_to_network(await _get_service_container_name(client, "{}_postgres".format(config.SWARM_STACK_NAME)), ["postgres"], inter_docker_network)
     except exceptions.GenericDockerError:
         log.warning("Could not %s attach to postgres. If postgres is in a separate stack, do not worry", service_name)
 
