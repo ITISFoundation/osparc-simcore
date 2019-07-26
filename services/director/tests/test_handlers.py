@@ -184,7 +184,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert running_service_enveloped["data"]["service_key"] == params["service_key"]
         assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
         # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
-        assert running_service_enveloped["data"]["service_port"] == service_port
+        assert not running_service_enveloped["data"]["service_port"]
         # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
         service_entry_point = running_service_enveloped["data"]["entry_point"]
@@ -206,7 +206,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert running_service_enveloped["data"]["published_port"] == service_published_port
         assert running_service_enveloped["data"]["entry_point"] == service_entry_point
         assert running_service_enveloped["data"]["service_host"] == service_host
-        assert running_service_enveloped["data"]["service_port"] == service_port
+        assert not running_service_enveloped["data"]["service_port"]
         assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
@@ -229,7 +229,7 @@ async def test_running_services_post_and_delete_no_swarm(client, push_services, 
     data = await web_response.json()
     assert web_response.status == 500, data
 
-async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id, mock_connect, mock_get_service_id): #pylint: disable=W0613, W0621
     await _start_get_stop_services(client, push_services, user_id, project_id)
 
 
