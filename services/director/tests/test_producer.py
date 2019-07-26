@@ -41,7 +41,7 @@ async def mock_get_service_id(loop, mocker):
     return aiohttp_mock_app
 
 @pytest.fixture
-async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, mock_get_service_id, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn, dependant=False):
         pushed_services = push_services(number_comp, number_dyn, inter_dependent_services=dependant)
