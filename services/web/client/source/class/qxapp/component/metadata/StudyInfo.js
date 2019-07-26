@@ -62,7 +62,8 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
     },
 
     __createStudyThumbnail: function() {
-      return new qx.ui.basic.Image(qxapp.utils.Utils.getThumbnailFromUuid(this.__study.getUuid())).set({
+      const thumbnail = this.__study.getThumbnail() || qxapp.utils.Utils.getThumbnailFromUuid(this.__study.getUuid());
+      return new qx.ui.basic.Image(thumbnail).set({
         scale: true,
         width: 200,
         height: 120
