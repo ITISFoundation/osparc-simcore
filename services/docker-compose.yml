@@ -26,6 +26,8 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    stdin_open: true
+    tty: true
     build:
       context: ../
       dockerfile: services/director/Dockerfile
@@ -282,7 +284,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - "9010:8888"
+      - "8888"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - maintenance_data:/home/jovyan/work/data

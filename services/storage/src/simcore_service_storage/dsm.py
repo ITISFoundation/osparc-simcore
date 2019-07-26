@@ -562,7 +562,12 @@ class DataStorageManager:
                             logger.info("Need to copy %s to %s", src, dest)
                             dest = await self.copy_file_datcore_s3(user_id=user_id, dest_uuid=dest, source_uuid=src, filename_missing=True)
                             # and change the dest project accordingly
-                            output["store"] = 0
+                            output["store"] = SIMCORE_S3_ID
+                            output['path'] = dest
+                        elif "store" in output and output["store"]==SIMCORE_S3_ID:
+                            source = output['path']
+                            dest = dest = str(Path(dest_folder) / node_id / Path(source).name)
+                            output["store"] = SIMCORE_S3_ID
                             output['path'] = dest
 
         # step 3: list files first to create fmds
