@@ -29,16 +29,16 @@ async def aiodocker_mock_network(loop, mocker):
 @pytest.fixture
 async def mock_connect(loop, mocker):
     mock_connect_to_network = mocker.patch('simcore_service_director.producer._connect_service_to_network')
-    mock_connect_to_network.upload_file.return_value = Future()
-    mock_connect_to_network.upload_file.return_value.set_result("")
-    return aiohttp_mock_app
+    mock_connect_to_network.return_value = Future()
+    mock_connect_to_network.return_value.set_result("")
+    return mock_connect_to_network
 
 @pytest.fixture
 async def mock_get_service_id(loop, mocker):
-    mock_connect_to_network = mocker.patch('simcore_service_director.producer._get_service_container_id')
-    mock_connect_to_network.upload_file.return_value = Future()
-    mock_connect_to_network.upload_file.return_value.set_result("")
-    return aiohttp_mock_app
+    get_service_mock = mocker.patch('simcore_service_director.producer._get_service_container_id')
+    get_service_mock.return_value = Future()
+    get_service_mock.return_value.set_result("")
+    return get_service_mock
 
 @pytest.fixture
 async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, mock_get_service_id, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
