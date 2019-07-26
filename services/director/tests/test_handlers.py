@@ -170,7 +170,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         params["project_id"] = project_id
         params["service_key"] = service_description["key"]
         params["service_tag"] = service_description["version"]
-        service_port = created_service["internal_port"]
+        # service_port = created_service["internal_port"]
         params["service_basepath"] = ""
         params["service_uuid"] = str(uuid.uuid4())
         # start the service
