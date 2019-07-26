@@ -6,6 +6,7 @@
 import logging
 import os
 import sys
+from asyncio import Future
 from pathlib import Path
 
 import pytest
@@ -86,3 +87,30 @@ def configure_custom_registry(pytestconfig):
     config.REGISTRY_USER = pytestconfig.getoption("registry_user")
     config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
     config.REGISTRY_CACHING = False
+
+@pytest.fixture
+async def aiohttp_mock_app(loop, mocker):
+    aiohttp_mock_app = mocker.patch('aiohttp.web.Application')
+    return aiohttp_mock_app
+
+@pytest.fixture
+async def aiodocker_mock_network(loop, mocker):
+    aiodocker_mock_network = mocker.patch('aiodocker.networks.DockerNetwork')
+    aiodocker_mock_network.return_value.id = None
+    aiodocker_mock_network.return_value.delete.return_value = Future()
+    aiodocker_mock_network.return_value.delete.return_value.set_result("")
+    return aiodocker_mock_network
+
+@pytest.fixture
+async def mock_connect(loop, mocker):
+    mock_connect_to_network = mocker.patch('simcore_service_director.producer._connect_service_to_network')
+    mock_connect_to_network.return_value = Future()
+    mock_connect_to_network.return_value.set_result("")
+    return mock_connect_to_network
+
+@pytest.fixture
+async def mock_get_service_id(loop, mocker):
+    get_service_mock = mocker.patch('simcore_service_director.producer._get_service_container_name')
+    get_service_mock.return_value = Future()
+    get_service_mock.return_value.set_result("")
+    return get_service_mock
