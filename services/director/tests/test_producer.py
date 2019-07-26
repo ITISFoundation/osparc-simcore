@@ -28,14 +28,14 @@ async def aiodocker_mock_network(loop, mocker):
 
 @pytest.fixture
 async def mock_connect(loop, mocker):
-    mock_connect_to_network = mocker.patch('simcore_service_director.producer._connect_service_to_network')
+    mock_connect_to_network = mocker.patch('producer._connect_service_to_network')
     mock_connect_to_network.return_value = Future()
     mock_connect_to_network.return_value.set_result("")
     return mock_connect_to_network
 
 @pytest.fixture
 async def mock_get_service_id(loop, mocker):
-    get_service_mock = mocker.patch('simcore_service_director.producer._get_service_container_id')
+    get_service_mock = mocker.patch('producer._get_service_container_id')
     get_service_mock.return_value = Future()
     get_service_mock.return_value.set_result("")
     return get_service_mock
