@@ -87,7 +87,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
-    this._add(new qxapp.ui.form.LinkButton(this.tr("Docs"), "https://docs.osparc.io").set({
+    this._add(new qxapp.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
       appearance: "link-button"
     }));
 
