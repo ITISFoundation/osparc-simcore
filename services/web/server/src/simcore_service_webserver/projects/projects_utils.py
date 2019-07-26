@@ -9,12 +9,16 @@ from servicelib.decorators import safe_return
 log = logging.getLogger(__name__)
 variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
-def clone_project_document(project: Dict) -> Tuple[Dict, Dict]:
+def clone_project_document(project: Dict, forced_copy_project_id: str ="") -> Tuple[Dict, Dict]:
     project_copy = deepcopy(project)
 
     # Update project id
     # NOTE: this can be re-assigned by dbapi if not unique
-    project_copy_uuid = uuidlib.uuid1() # random project id
+    if forced_copy_project_id:
+        project_copy_uuid = uuidlib.UUID(forced_copy_project_id)
+    else:
+        project_copy_uuid = uuidlib.uuid1() # random project id
+        
     project_copy['uuid'] = str(project_copy_uuid)
 
     # Workbench nodes shall be unique within the project context
