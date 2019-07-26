@@ -154,18 +154,18 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
-        elif param["name"] == "ports" and param["type"] == "int": # backward comp
-            # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-            docker_params["endpoint_spec"] = {
-                "Ports": [
-                    {
-                        "TargetPort": int(param["value"]),
-                        "PublishedPort": 0
-                    }
-                ]
-            }
-        elif param["type"] == "EndpointSpec": # REST-API compatible
-            docker_params["endpoint_spec"] = param["value"]
+        # elif param["name"] == "ports" and param["type"] == "int": # backward comp
+        #     # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
+        #     docker_params["endpoint_spec"] = {
+        #         "Ports": [
+        #             {
+        #                 "TargetPort": int(param["value"]),
+        #                 "PublishedPort": 0
+        #             }
+        #         ]
+        #     }
+        # elif param["type"] == "EndpointSpec": # REST-API compatible
+        #     docker_params["endpoint_spec"] = param["value"]
         elif param["name"] == "constraints": # python-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints": # REST-API compatible
@@ -255,15 +255,13 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
 
 async def _connect_service_to_network(client: aiodocker.docker.Docker,
                                         service_name_or_id: str,
-                                        network_id: str):
-    network = aiodocker.networks.DockerNetwork(client, network_id)
+                                        network: str,
+                                        node_uuid:str):
     network_config = {
         "Container": service_name_or_id,
-        "EndpointConfig": {
-        }
     }
     try:
-        await network.connect(config=network_config)
+        await network.connect(network_config)
     except aiodocker.exceptions.DockerError as err:
         log.exception("Error while connecting %s to service network %s", service_name_or_id, network_id)
         raise exceptions.GenericDockerError("Error while connecting {} to service network {}".format(service_name_or_id, network_id), err) from err
@@ -291,7 +289,7 @@ async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
         }
         docker_network = await client.networks.create(network_config)
         log.debug("Network %s created for service %s with uuid %s", network_name, service_name, node_uuid)
-        return docker_network.id
+        return docker_network
     except aiodocker.exceptions.DockerError as err:
         log.exception(
             "Error while creating network for service %s", service_name)
@@ -484,7 +482,17 @@ async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
 
 
 
-
+async def _get_service_container_id(client: aiodocker.docker.Docker, service_name: str) ->str:
+    tasks = await client.tasks.list(filters={"service": service_name})
+    if not tasks:
+        raise exceptions.DirectorException(
+            msg="Could not find {} in configuration".format(service_name))
+    task = tasks[0]
+    container = client.containers.container(task["Status"]["ContainerStatus"]["ContainerID"])
+    container_details = await container.show()
+    container_name = container_details["Name"]
+    return container_name.lstrip("/")
+    
 
 async def _create_node(app: aiohttp.web.Application,
                         client: aiodocker.docker.Docker,
@@ -501,17 +509,10 @@ async def _create_node(app: aiohttp.web.Application,
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
     service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
-    inter_docker_network_id = await _create_overlay_network_in_swarm(client, user_id, project_id, service_name, node_uuid)
+    inter_docker_network = await _create_overlay_network_in_swarm(client, user_id, project_id, service_name, node_uuid)
+    inter_docker_network_id = inter_docker_network.id
     log.debug("Created docker network in swarm for service %s", service_name)
-    # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
-    # after too many services are attached to the main network we run out of IP addresses
-    # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
-    await _connect_service_to_network(client, "webserver", inter_docker_network_id)
-    await _connect_service_to_network(client, "storage", inter_docker_network_id)
-    try:
-        await _connect_service_to_network(client, "postgres", inter_docker_network_id)
-    except exceptions.GenericDockerError:
-        log.warning("Could not %s attach to postgres. If postgres is in a separate stack, do not worry", service_name)
+    
 
     containers_meta_data = list()
     for service in list_of_services:
@@ -526,6 +527,15 @@ async def _create_node(app: aiohttp.web.Application,
                                                         node_base_path,
                                                         inter_docker_network_id)
         containers_meta_data.append(service_meta_data)
+    # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
+    # after too many services are attached to the main network we run out of IP addresses
+    # and this prevents the services from starting (https://github.com/moby/moby/issues/30820)
+    await _connect_service_to_network(client, await _get_service_container_id(client, "services_webserver"), inter_docker_network, node_uuid)
+    await _connect_service_to_network(client, await _get_service_container_id(client, "services_storage"), inter_docker_network, node_uuid)
+    try:
+        await _connect_service_to_network(client, await _get_service_container_id(client, "services_postgres"), inter_docker_network, node_uuid)
+    except exceptions.GenericDockerError:
+        log.warning("Could not %s attach to postgres. If postgres is in a separate stack, do not worry", service_name)
 
     return containers_meta_data
 
