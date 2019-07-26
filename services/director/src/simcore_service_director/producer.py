@@ -267,7 +267,7 @@ async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
                                             user_id: str,
                                             project_id: str,
                                             service_name: str,
-                                            node_uuid: str) -> str:
+                                            node_uuid: str) -> aiodocker.docker.DockerNetwork:
     log.debug("Creating overlay network for service %s with uuid %s", service_name, node_uuid)
     network_name = await _create_network_name(service_name, node_uuid)
     try:
@@ -503,10 +503,8 @@ async def _create_node(app: aiohttp.web.Application,
     log.debug("Services %s will be started", list_of_services)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
-    inter_docker_network_id = None
     service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
     inter_docker_network = await _create_overlay_network_in_swarm(client, user_id, project_id, service_name, node_uuid)
-    inter_docker_network_id = inter_docker_network.id
     log.debug("Created docker network in swarm for service %s", service_name)
 
 
@@ -521,7 +519,7 @@ async def _create_node(app: aiohttp.web.Application,
                                                             service) == 0,
                                                         node_uuid,
                                                         node_base_path,
-                                                        inter_docker_network_id)
+                                                        inter_docker_network.id)
         containers_meta_data.append(service_meta_data)
     # we need a network with the service, webserver, storage and postgres inside to prevent having not enough IP addresses
     # after too many services are attached to the main network we run out of IP addresses
