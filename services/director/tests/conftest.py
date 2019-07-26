@@ -110,7 +110,7 @@ async def mock_connect(loop, mocker):
 
 @pytest.fixture
 async def mock_get_service_id(loop, mocker):
-    get_service_mock = mocker.patch('simcore_service_director.producer._get_service_container_id')
+    get_service_mock = mocker.patch('simcore_service_director.producer._get_service_container_name')
     get_service_mock.return_value = Future()
     get_service_mock.return_value.set_result("")
     return get_service_mock
