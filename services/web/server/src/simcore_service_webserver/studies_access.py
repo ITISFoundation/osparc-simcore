@@ -119,14 +119,13 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = await clone_project(request, template_project, user["id"])
+        project = await clone_project(request, template_project, user["id"], forced_copy_project_id=project_uuid)
 
         # check project inputs and substitute template_parameters
         if template_parameters:
             log.info("Substituting parameters '%s' in template", template_parameters)
             project = substitute_parameterized_inputs(project, template_parameters) or project
 
-        project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)
 
     return project_uuid
