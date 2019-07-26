@@ -8,7 +8,6 @@
 import asyncio
 import time
 import uuid
-from asyncio import Future
 
 import docker
 import pytest
@@ -17,7 +16,12 @@ from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
-async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, mock_get_service_id, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
+async def aiohttp_mock_app(loop, mocker):
+    aiohttp_app = mocker.patch('aiohttp.web.Application')
+    return aiohttp_mock_app
+
+@pytest.fixture
+async def run_services(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn, dependant=False):
         pushed_services = push_services(number_comp, number_dyn, inter_dependent_services=dependant)
@@ -35,7 +39,7 @@ async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, m
             started_service = await producer.start_service(aiohttp_mock_app, user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
             if service_description["type"] == "dynamic":
-                assert not started_service["published_port"] # this is now disabled
+                assert started_service["published_port"]
             assert "entry_point" in started_service
             assert "service_uuid" in started_service
             assert started_service["service_uuid"] == service_uuid
@@ -44,7 +48,7 @@ async def run_services(aiohttp_mock_app, aiodocker_mock_network, mock_connect, m
             assert "service_version" in started_service
             assert started_service["service_version"] == service_version
             assert "service_port" in started_service
-            assert not started_service["service_port"]
+            assert started_service["service_port"] == service_port
             assert "service_host" in started_service
             assert service_uuid in started_service["service_host"]
             assert "service_basepath" in started_service
@@ -114,7 +118,6 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert "SIMCORE_HOST_NAME" in envs_dict
         assert envs_dict["SIMCORE_HOST_NAME"] == docker_service.name
 
-@pytest.mark.skip(reason="no published ports anymore")
 async def test_interactive_service_published_port(run_services):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
     assert len(running_dynamic_services) == 1
