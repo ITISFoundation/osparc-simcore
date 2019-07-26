@@ -56,7 +56,7 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id, *, i
         raise web.HTTPNotFound(reason="Project not found")
 
 
-async def clone_project(request: web.Request, project: Dict, user_id) -> Dict:
+async def clone_project(request: web.Request, project: Dict, user_id, forced_copy_project_id: str ="") -> Dict:
     """Clones both document and data folders of a project
 
     - document
@@ -75,7 +75,7 @@ async def clone_project(request: web.Request, project: Dict, user_id) -> Dict:
     :return: project document with updated data links
     :rtype: Dict
     """
-    cloned_project, nodes_map = clone_project_document(project)
+    cloned_project, nodes_map = clone_project_document(project, forced_copy_project_id)
 
     updated_project = await copy_data_folders_from_project(request.app,
         project, cloned_project, nodes_map, user_id)
