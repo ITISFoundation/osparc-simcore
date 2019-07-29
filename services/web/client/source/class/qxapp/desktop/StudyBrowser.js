@@ -425,9 +425,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               });
             }
           });
-          if (item.getModel() == null) {
-            item.addListener("tap", () => that.__createStudyBtnClkd());
-          }
+          item.addListener("tap", () => {
+            if (item.getModel() == null) { // eslint-disable-null no-eq-null
+              this.__createStudyBtnClkd();
+            }
+          }, that);
           return item;
         },
         // Item's data binding
