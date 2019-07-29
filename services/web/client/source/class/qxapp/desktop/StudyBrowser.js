@@ -98,6 +98,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __userStudyList: null,
     __templateStudyList: null,
     __editStudyLayout: null,
+    __studyData: null,
     __creatingNewStudy: null,
 
     __initResources: function() {
@@ -270,7 +271,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__templateStudyList.resetSelection();
-          const selectedId = e.getData()[0].getModel();
+          const selection = e.getData();
+          const selectedId = selection[selection.length - 1].getModel();
           if (selectedId) {
             this.__itemSelected(selectedId, false);
           } else {
@@ -398,7 +400,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __getDelegate: function(fromTemplate, list) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
-      let that = this;
+      const that = this;
       let delegate = {
         // Item's Layout
         createItem: function() {
@@ -427,9 +429,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           });
           item.addListener("tap", () => {
             if (item.getModel() == null) { // eslint-disable-null no-eq-null
-              this.__createStudyBtnClkd();
+              that.__createStudyBtnClkd(); // eslint-disable-null no-underscore-dangle
             }
-          }, that);
+          });
           return item;
         },
         // Item's data binding
@@ -507,6 +509,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       while (this.__editStudyLayout.getChildren().length > 1) {
         this.__editStudyLayout.removeAt(1);
       }
+
+      // Save data
+      this.__studyData = this.__studyData || {};
+      this.__studyData[studyData.uuid] = studyData;
 
       const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
@@ -629,7 +635,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }, this);
       form.addButton(cancelButton);
 
-      let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
+      const deleteButton = this.__deleteButton = new qx.ui.form.Button();
+      deleteButton.setLabel(this.__userStudyList.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
       deleteButton.setMinWidth(70);
       deleteButton.setEnabled(!isTemplate || (canDeleteTemplate && isMyTemplate));
       deleteButton.addListener("execute", e => {
@@ -638,7 +645,12 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            this.__deleteStudy(studyData, isTemplate);
+            if (isTemplate) {
+              this.__deleteStudy([this.__studyData[studyData.uuid]], isTemplate);
+            } else {
+              const studies = this.__userStudyList.getSelection().map(study => this.__studyData[study.getModel()]);
+              this.__deleteStudy(studies, false);
+            }
           }
         }, this);
       }, this);
@@ -660,21 +672,25 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         }
       }, this);
 
-      resource.del({
-        "project_id": studyData["uuid"]
+      studyData.forEach(study => {
+        resource.del({
+          "project_id": study.uuid
+        });
       });
 
       this.__itemSelected(null);
     },
 
-    __stopInteractiveServicesInStudy: function(studyData) {
+    __stopInteractiveServicesInStudy: function(studies) {
       const store = qxapp.data.Store.getInstance();
-      for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
-        const metadata = store.getNodeMetaData(nodedata.key, nodedata.version);
-        if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
-          store.stopInteractiveService(nodeId);
+      studies.forEach(studyData => {
+        for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
+          const metadata = store.getNodeMetaData(nodedata.key, nodedata.version);
+          if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
+            store.stopInteractiveService(nodeId);
+          }
         }
-      }
+      });
     },
 
     __createConfirmWindow: function() {
