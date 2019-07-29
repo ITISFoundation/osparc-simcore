@@ -98,27 +98,32 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image(this.getIcon());
+          control = new qx.ui.basic.Image(this.getIcon()).set({
+            anonymous: true
+          });
           this._add(control);
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({
             margin: [5, 0],
-            font: "title-14"
+            font: "title-14",
+            anonymous: true
           });
           this._add(control);
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
             rich: true,
-            allowGrowY: false
+            allowGrowY: false,
+            anonymous: true
           });
           this._addAt(control);
           break;
         case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            allowGrowY: false
+            allowGrowY: false,
+            anonymous: true
           });
           this._addAt(control);
           break;

@@ -265,7 +265,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createUserStudyList: function() {
       // layout
-      let usrLst = this.__userStudyList = this.__createStudyListLayout();
+      const usrLst = this.__userStudyList = this.__createStudyListLayout();
+      usrLst.setSelectionMode("multi");
       usrLst.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           this.__templateStudyList.resetSelection();
@@ -424,14 +425,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               });
             }
           });
-          item.addListener("tap", e => {
-            const studyUuid = item.getModel();
-            if (studyUuid) {
-              list.setSelection([item]);
-            } else {
-              that.__createStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
-            }
-          });
+          if (item.getModel() == null) {
+            item.addListener("tap", () => that.__createStudyBtnClkd());
+          }
           return item;
         },
         // Item's data binding
