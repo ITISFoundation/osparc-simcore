@@ -122,13 +122,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __createStudiesLayout: function() {
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
-        center: true
-      });
-      newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
-      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
         maxWidth: 200
       });
-      buttonContainer.add(newStudyBtn);
+      newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
@@ -137,7 +133,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let userStudyList = this.__createUserStudyList();
       let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       userStudyLayout.add(myStudyLabel);
-      userStudyLayout.add(buttonContainer);
+      userStudyLayout.add(newStudyBtn);
       userStudyLayout.add(userStudyList);
 
       let tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({

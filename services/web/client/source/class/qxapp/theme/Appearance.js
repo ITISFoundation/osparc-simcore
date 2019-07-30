@@ -305,7 +305,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "material-button",
       alias: "material-button",
       style: state => ({
-        height: 50
+        height: 50,
+        maxWidth: 200,
+        center: true
       })
     },
 
