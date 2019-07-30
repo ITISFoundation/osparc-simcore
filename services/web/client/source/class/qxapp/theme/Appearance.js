@@ -396,7 +396,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     "dashboard/pane": {
       style: state => ({
-        paddingLeft: 10
+        padding: [15, 0, 0, 15]
       })
     },
 

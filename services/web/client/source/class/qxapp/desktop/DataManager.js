@@ -95,7 +95,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
         dataManagerLayout.add(chartLayout);
       }
 
-      this._add(dataManagerMainLayout);
+      this._add(dataManagerMainLayout, {
+        flex: 1
+      });
     },
 
     __createTreeLayout: function() {
@@ -103,8 +105,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
       const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
-        dropMechnism: true,
-        minHeight: 600
+        dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {
         this.__selectionChanged();

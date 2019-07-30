@@ -42,9 +42,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     this.base(arguments);
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
-    // this._projectResources.projects
-    // this._projectResources.project
-    // this._projectResources.templates
 
     let studyBrowserLayout = new qx.ui.layout.VBox(20);
     this._setLayout(studyBrowserLayout);
@@ -404,8 +401,40 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let delegate = {
         // Item's Layout
         createItem: function() {
-          let item = new qxapp.desktop.StudyBrowserListItem().set({
-            width: 200
+          return new qxapp.desktop.StudyBrowserListItem();
+        },
+        // Item's data binding
+        bindItem: function(controller, item, id) {
+          controller.bindProperty("uuid", "model", null, item, id);
+          controller.bindProperty("name", "prjTitle", null, item, id);
+          controller.bindProperty("thumbnail", "icon", {
+            converter: function(data) {
+              const uuid = item.getModel();
+              if (uuid) {
+                if (data) {
+                  return data;
+                }
+                return qxapp.utils.Utils.getThumbnailFromUuid(uuid);
+              }
+              return "@FontAwesome5Solid/plus-circle/80";
+            }
+          }, item, id);
+          controller.bindProperty("prjOwner", "creator", {
+            converter: function(data) {
+              return data ? "Created by: <b>" + data + "</b>" : null;
+            }
+          }, item, id);
+          controller.bindProperty("lastChangeDate", "lastChangeDate", {
+            converter: function(data) {
+              return data ? new Date(data) : null;
+            }
+          }, item, id);
+        },
+        configureItem: item => {
+          item.getChildControl("icon").set({
+            width: thumbnailWidth,
+            height: thumbnailHeight,
+            scale: true
           });
           item.addListener("dbltap", e => {
             const studyId = item.getModel();
@@ -431,41 +460,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             if (item.getModel() == null) { // eslint-disable-null no-eq-null
               that.__createStudyBtnClkd(); // eslint-disable-null no-underscore-dangle
             }
-          });
-          return item;
-        },
-        // Item's data binding
-        bindItem: function(controller, item, id) {
-          controller.bindProperty("uuid", "model", null, item, id);
-          controller.bindProperty("thumbnail", "icon", {
-            converter: function(data) {
-              const uuid = item.getModel();
-              if (uuid) {
-                if (data) {
-                  return data;
-                }
-                return qxapp.utils.Utils.getThumbnailFromUuid(uuid);
-              }
-              return "@FontAwesome5Solid/plus-circle/80";
-            }
-          }, item, id);
-          controller.bindProperty("name", "prjTitle", null, item, id);
-          controller.bindProperty("prjOwner", "creator", {
-            converter: function(data) {
-              return data ? "Created by: <b>" + data + "</b>" : null;
-            }
-          }, item, id);
-          controller.bindProperty("lastChangeDate", "lastChangeDate", {
-            converter: function(data) {
-              return data ? new Date(data) : null;
-            }
-          }, item, id);
-        },
-        configureItem: item => {
-          item.getChildControl("icon").set({
-            width: thumbnailWidth,
-            height: thumbnailHeight,
-            scale: true
           });
         }
       };
