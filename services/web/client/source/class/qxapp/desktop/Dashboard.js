@@ -32,25 +32,23 @@
  */
 
 qx.Class.define("qxapp.desktop.Dashboard", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.tabview.TabView,
 
   construct: function(studyId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
+    this.setBarPosition("left");
 
     qxapp.wrapper.JsonDiffPatch.getInstance().init();
     qxapp.wrapper.JsonTreeViewer.getInstance().init();
+    this.__createMainViewLayout(studyId);
+  },
 
-    let leftSpacer = new qx.ui.core.Spacer(60);
-    let mainView = this.__createMainViewLayout(studyId);
-    let rightSpacer = new qx.ui.core.Spacer(60);
-
-    this._add(leftSpacer);
-    this._add(mainView, {
-      flex: 1
-    });
-    this._add(rightSpacer);
+  properties: {
+    appearance: {
+      init: "dashboard",
+      refine: true
+    }
   },
 
   members: {
@@ -71,41 +69,37 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createMainViewLayout: function(studyId) {
-      let tabView = new qx.ui.tabview.TabView();
-
       [
         [this.tr("Studies"), this.__createStudiesView],
         [this.tr("Services"), this.__createServicesLayout],
         [this.tr("Data"), this.__createDataManagerLayout]
       ].forEach(tuple => {
-        let tabPage = new qx.ui.tabview.Page(tuple[0]);
-        tabPage.setLayout(new qx.ui.layout.VBox());
-
-        let viewLayout = tuple[1].call(this, studyId);
-        let scrollerMainView = new qx.ui.container.Scroll();
-        scrollerMainView.add(viewLayout);
-        tabPage.add(scrollerMainView, {
-          flex: 1
+        const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
+          appearance: "dashboard-page"
         });
+        tabPage.setLayout(new qx.ui.layout.Grow());
 
-        tabView.add(tabPage);
+        const viewLayout = tuple[1].call(this, studyId);
+        const scrollerMainView = new qx.ui.container.Scroll();
+        scrollerMainView.add(viewLayout);
+        tabPage.add(scrollerMainView);
+
+        this.add(tabPage);
       }, this);
-
-      return tabView;
     },
 
     __createStudiesView: function(studyId) {
-      let studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser(studyId);
+      const studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser(studyId);
       return studiesView;
     },
 
     __createServicesLayout: function() {
-      let servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
+      const servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
       return servicesView;
     },
 
     __createDataManagerLayout: function() {
-      let dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
+      const dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
       return dataManagerView;
     }
   }

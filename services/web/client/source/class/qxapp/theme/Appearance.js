@@ -382,6 +382,41 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: state => ({
         font: "text-10"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Dashboard
+    ---------------------------------------------------------------------------
+    */
+    "dashboard": {
+      include: "tabview",
+      alias: "tabview"
+    },
+
+    "dashboard/pane": {
+      style: state => ({
+        paddingLeft: 10
+      })
+    },
+
+    "dashboard/bar/content": {
+      style: state => ({
+        width: 160
+      })
+    },
+
+    "dashboard-page": {
+      include: "tabview-page",
+      alias: "tabview-page"
+    },
+
+    "dashboard-page/button": {
+      include: "tabview-page/button",
+      alias: "tabview-page/button",
+      style: state => ({
+        font: state.checked ? "title-16" : "text-16"
+      })
     }
   }
 });
