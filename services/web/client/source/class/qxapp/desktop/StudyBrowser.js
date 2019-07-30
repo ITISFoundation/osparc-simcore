@@ -457,8 +457,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             }
           });
           item.addListener("tap", () => {
-            if (item.getModel() == null) { // eslint-disable-null no-eq-null
-              that.__createStudyBtnClkd(); // eslint-disable-null no-underscore-dangle
+            if (item.getModel() == null) { // eslint-disable-line no-eq-null
+              that.__createStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
         }
