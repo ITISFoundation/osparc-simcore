@@ -301,6 +301,21 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "big-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        height: 50
+      })
+    },
+
+    "big-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       FlashMessage

@@ -38,7 +38,7 @@
 qx.Class.define("qxapp.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyId) {
+  construct: function(loadStudyId) {
     this.base(arguments);
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
@@ -60,7 +60,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         iframe.dispose();
         this.__createStudiesLayout();
         this.__createCommandEvents();
-        if (studyId) {
+        if (loadStudyId) {
           let resource = this.__studyResources.project;
           resource.addListenerOnce("getSuccess", e => {
             const studyData = e.getRequest().getResponse().data;
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             console.error(ev);
           });
           resource.get({
-            "project_id": studyId
+            "project_id": loadStudyId
           });
         }
       }
@@ -120,30 +120,37 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
+      const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
+        appearance: "big-button",
+        center: true
+      });
+      newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
+      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        maxWidth: 200
+      });
+      buttonContainer.add(newStudyBtn);
+
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
-        font: navBarLabelFont,
-        minWidth: 150
+        font: navBarLabelFont
       });
       let userStudyList = this.__createUserStudyList();
-      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       userStudyLayout.add(myStudyLabel);
+      userStudyLayout.add(buttonContainer);
       userStudyLayout.add(userStudyList);
 
       let tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
-        font: navBarLabelFont,
-        minWidth: 150
+        font: navBarLabelFont
       });
       let tempStudyList = this.__createTemplateStudyList();
-      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       tempStudyLayout.add(tempStudyLabel);
       tempStudyLayout.add(tempStudyList);
 
       let editStudyLayout = this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      editStudyLayout.setMaxWidth(800);
       let editStudyLabel = new qx.ui.basic.Label(this.tr("Edit Study")).set({
-        font: navBarLabelFont,
-        minWidth: 150
+        font: navBarLabelFont
       });
       editStudyLayout.add(editStudyLabel);
       editStudyLayout.setVisibility("excluded");
@@ -227,7 +234,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           flex: 1
         });
 
-        const interval = 1000;
+        const interval = 500;
         let servicesTimer = new qx.event.Timer(interval);
         servicesTimer.addListener("interval", () => {
           if (this.__servicesReady) {
@@ -359,13 +366,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __setStudyList: function(userStudyList) {
       const userStudyArrayModel = this.__getStudyArrayModel(userStudyList);
-      userStudyArrayModel.unshift(qx.data.marshal.Json.createModel({
-        name: this.tr("New Study"),
-        thumbnail: "@FontAwesome5Solid/plus-circle/80",
-        uuid: null,
-        lastChangeDate: null,
-        prjOwner: null
-      }));
       // controller
       const studyCtr = new qx.data.controller.List(userStudyArrayModel, this.__userStudyList, "name");
       const fromTemplate = false;
@@ -416,7 +416,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
                 }
                 return qxapp.utils.Utils.getThumbnailFromUuid(uuid);
               }
-              return "@FontAwesome5Solid/plus-circle/80";
             }
           }, item, id);
           controller.bindProperty("prjOwner", "creator", {
@@ -454,11 +453,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               resource.get({
                 "project_id": studyId
               });
-            }
-          });
-          item.addListener("tap", () => {
-            if (item.getModel() == null) { // eslint-disable-line no-eq-null
-              that.__createStudyBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
         }
