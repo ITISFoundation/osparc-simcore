@@ -30,19 +30,17 @@ qx.Theme.define("qxapp.theme.Appearance", {
       }
     },
     "pb-listitem":  {
-      // FIXME
       include: "material-button",
-      // alias:   "material-button",
       style: function(states) {
-        let style = {
-          decorator: null,
-          padding: 0,
-          backgroundColor: "transparent"
+        const style = {
+          decorator: "pb-listitem",
+          padding: 5,
+          backgroundColor: "background-main-lighter+"
         };
         if (states.hovered) {
           style.backgroundColor = "#444";
         }
-        if (states.selected) {
+        if (states.selected || states.checked) {
           style.backgroundColor = "#555";
         }
         return style;
@@ -305,8 +303,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "material-button",
       alias: "material-button",
       style: state => ({
-        height: 50,
-        maxWidth: 200,
+        minHeight: 50,
         center: true
       })
     },
@@ -413,7 +410,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     "dashboard/pane": {
       style: state => ({
-        padding: [15, 0, 0, 15]
+        padding: [0, 0, 0, 15]
       })
     },
 

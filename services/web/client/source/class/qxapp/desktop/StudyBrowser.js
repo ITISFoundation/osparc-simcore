@@ -41,13 +41,26 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
   construct: function(loadStudyId) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.HBox());
+
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
 
-    let studyBrowserLayout = new qx.ui.layout.VBox(20);
-    this._setLayout(studyBrowserLayout);
+    this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+      padding: [0, 0, 0, 15]
+    });
+    this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+      appearance: "sidepanel",
+      width: 500,
+      visibility: "excluded",
+      padding: [0, 15]
+    });
+    this._addAt(this.__studiesPane, 0, {
+      flex: 1
+    });
+    this._addAt(this.__editPane, 1);
 
     let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Studies"));
-    this._add(iframe, {
+    this.__studiesPane.add(iframe, {
       flex: 1
     });
 
@@ -56,7 +69,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     userTimer.addListener("interval", () => {
       if (this.__userReady) {
         userTimer.stop();
-        this._removeAll();
+        this.__studiesPane.removeAll();
+        this.__editPane.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
         this.__createCommandEvents();
@@ -92,11 +106,16 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __userReady: null,
     __servicesReady: null,
     __studyResources: null,
-    __userStudyList: null,
-    __templateStudyList: null,
+    __userStudyContainer: null,
+    __templateStudyContainer: null,
     __editStudyLayout: null,
     __studyData: null,
     __creatingNewStudy: null,
+    __studiesPane: null,
+    __editPane: null,
+    __sidePanel: null,
+    __userStudies: null,
+    __templateStudies: null,
 
     __initResources: function() {
       this.__getUserProfile();
@@ -122,7 +141,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __createStudiesLayout: function() {
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
-        maxWidth: 200
+        allowGrowX: false
       });
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
@@ -130,8 +149,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
         font: navBarLabelFont
       });
-      let userStudyList = this.__createUserStudyList();
-      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      let userStudyList = this.__userStudyContainer = this.__createUserStudyList();
+      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
       userStudyLayout.add(myStudyLabel);
       userStudyLayout.add(newStudyBtn);
       userStudyLayout.add(userStudyList);
@@ -139,21 +160,23 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       let tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
         font: navBarLabelFont
       });
-      let tempStudyList = this.__createTemplateStudyList();
-      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      let tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
+      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
       tempStudyLayout.add(tempStudyLabel);
       tempStudyLayout.add(tempStudyList);
 
       let editStudyLayout = this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       let editStudyLabel = new qx.ui.basic.Label(this.tr("Edit Study")).set({
-        font: navBarLabelFont
+        font: navBarLabelFont,
+        marginTop: 20
       });
       editStudyLayout.add(editStudyLabel);
-      editStudyLayout.setVisibility("excluded");
 
-      this._add(userStudyLayout);
-      this._add(tempStudyLayout);
-      this._add(this.__editStudyLayout);
+      this.__studiesPane.add(userStudyLayout);
+      this.__studiesPane.add(tempStudyLayout);
+      this.__editPane.add(this.__editStudyLayout);
     },
 
     __createCommandEvents: function() {
@@ -265,31 +288,13 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createUserStudyList: function() {
-      // layout
-      const usrLst = this.__userStudyList = this.__createStudyListLayout();
-      usrLst.setSelectionMode("multi");
-      usrLst.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          this.__templateStudyList.resetSelection();
-          const selection = e.getData();
-          const selectedId = selection[selection.length - 1].getModel();
-          if (selectedId) {
-            this.__itemSelected(selectedId, false);
-          } else {
-            // "New Study" selected
-            this.__itemSelected(null);
-          }
-        }
-      }, this);
-
+      const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
       this.reloadUserStudies();
-
       return usrLst;
     },
 
     reloadUserStudies: function() {
-      // resources
-      this.__userStudyList.removeAll();
+      this.__userStudyContainer.removeAll();
 
       const resources = this.__studyResources.projects;
 
@@ -312,24 +317,13 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createTemplateStudyList: function() {
-      // layout
-      let tempList = this.__templateStudyList = this.__createStudyListLayout();
-      tempList.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          this.__userStudyList.resetSelection();
-          const selectedId = e.getData()[0].getModel();
-          this.__itemSelected(selectedId, true);
-        }
-      }, this);
-
+      let tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       this.reloadTemplateStudies();
-
       return tempList;
     },
 
     reloadTemplateStudies: function() {
-      // resources
-      this.__templateStudyList.removeAll();
+      this.__templateStudyContainer.removeAll();
 
       const resources = this.__studyResources.templates;
 
@@ -361,142 +355,92 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __setStudyList: function(userStudyList) {
-      const userStudyArrayModel = this.__getStudyArrayModel(userStudyList);
-      // controller
-      const studyCtr = new qx.data.controller.List(userStudyArrayModel, this.__userStudyList, "name");
-      const fromTemplate = false;
-      const delegate = this.__getDelegate(fromTemplate, this.__userStudyList);
-      studyCtr.setDelegate(delegate);
+      this.__userStudies = userStudyList;
+      for (let i=0; i<userStudyList.length; i++) {
+        this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
+      }
     },
 
     __setTemplateList: function(tempStudyList) {
-      const tempStudyArrayModel = this.__getStudyArrayModel(tempStudyList);
-      // controller
-      const studyCtr = new qx.data.controller.List(tempStudyArrayModel, this.__templateStudyList, "name");
-      const fromTemplate = true;
-      const delegate = this.__getDelegate(fromTemplate, this.__templateStudyList);
-      studyCtr.setDelegate(delegate);
+      this.__templateStudies = tempStudyList;
+      for (let i=0; i<tempStudyList.length; i++) {
+        this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
+      }
     },
 
     __createStudyListLayout: function() {
-      let list = new qx.ui.form.List().set({
-        orientation: "horizontal",
-        spacing: 10,
-        appearance: "pb-list"
-      });
-      return list;
+      return new qxapp.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(8, 8));
     },
 
-    /**
-     * Delegates appearance and binding of each study item
-     */
-    __getDelegate: function(fromTemplate, list) {
+    __createStudyItem: function(study, isTemplate) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
-      const that = this;
-      let delegate = {
-        // Item's Layout
-        createItem: function() {
-          return new qxapp.desktop.StudyBrowserListItem();
-        },
-        // Item's data binding
-        bindItem: function(controller, item, id) {
-          controller.bindProperty("uuid", "model", null, item, id);
-          controller.bindProperty("name", "prjTitle", null, item, id);
-          controller.bindProperty("thumbnail", "icon", {
-            converter: function(data) {
-              const uuid = item.getModel();
-              if (uuid) {
-                if (data) {
-                  return data;
-                }
-                return qxapp.utils.Utils.getThumbnailFromUuid(uuid);
-              }
-            }
-          }, item, id);
-          controller.bindProperty("prjOwner", "creator", {
-            converter: function(data) {
-              return data ? "Created by: <b>" + data + "</b>" : null;
-            }
-          }, item, id);
-          controller.bindProperty("lastChangeDate", "lastChangeDate", {
-            converter: function(data) {
-              return data ? new Date(data) : null;
-            }
-          }, item, id);
-        },
-        configureItem: item => {
-          item.getChildControl("icon").set({
-            width: thumbnailWidth,
-            height: thumbnailHeight,
-            scale: true
-          });
-          item.addListener("dbltap", e => {
-            const studyId = item.getModel();
-            if (studyId) {
-              let resource = that.__studyResources.project; // eslint-disable-line no-underscore-dangle
-              resource.addListenerOnce("getSuccess", ev => {
-                const studyData = ev.getRequest().getResponse().data;
-                if (fromTemplate) {
-                  that.__createStudyBtnClkd(studyData); // eslint-disable-line no-underscore-dangle
-                } else {
-                  that.__startStudy(studyData); // eslint-disable-line no-underscore-dangle
-                }
-              }, that);
-              resource.addListener("getError", ev => {
-                console.error(ev);
-              });
-              resource.get({
-                "project_id": studyId
-              });
-            }
-          });
-        }
-      };
 
-      return delegate;
+      const item = new qxapp.desktop.StudyBrowserListItem();
+
+      item.setUuid(study.uuid);
+      item.setPrjTitle(study.name);
+      item.setIcon(study.thumbnail ? study.thumbnail : qxapp.utils.Utils.getThumbnailFromUuid(study.uuid));
+      item.setCreator(study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null);
+      item.setLastChangeDate(study.lastChangeDate ? new Date(study.lastChangeDate) : null);
+
+      item.getChildControl("icon").set({
+        width: thumbnailWidth,
+        height: thumbnailHeight,
+        scale: true
+      });
+
+      item.addListener("dbltap", e => {
+        const studyData = this.__getStudyData(item.getUuid(), isTemplate);
+        if (isTemplate) {
+          this.__createStudyBtnClkd(studyData); // eslint-disable-line no-underscore-dangle
+        } else {
+          this.__startStudy(studyData); // eslint-disable-line no-underscore-dangle
+        }
+      });
+
+      item.addListener("execute", e => {
+        if (item.getValue()) {
+          if (isTemplate) {
+            this.__userStudyContainer.resetSelection();
+            this.__templateStudyContainer.selectOne(item);
+          } else {
+            this.__templateStudyContainer.resetSelection();
+          }
+          this.__itemSelected(item.getUuid(), isTemplate);
+        }
+      }, this);
+
+      return item;
+    },
+
+    __getStudyData: function(id, isTemplate) {
+      const matchesId = study => study.uuid === id;
+      return isTemplate ? this.__templateStudies.find(matchesId) : this.__userStudies.find(matchesId);
     },
 
     __itemSelected: function(studyId, fromTemplate = false) {
       if (studyId === null) {
-        if (this.__userStudyList) {
-          this.__userStudyList.resetSelection();
+        if (this.__userStudyContainer) {
+          this.__userStudyContainer.resetSelection();
         }
-        if (this.__templateStudyList) {
-          this.__templateStudyList.resetSelection();
+        if (this.__templateStudyContainer) {
+          this.__templateStudyContainer.resetSelection();
         }
         if (this.__editStudyLayout) {
-          this.__editStudyLayout.setVisibility("excluded");
+          this.__editPane.setVisibility("excluded");
         }
         return;
       }
-
-      let resource = this.__studyResources.project;
-
-      resource.addListenerOnce("getSuccess", e => {
-        this.__editStudyLayout.setVisibility("visible");
-        let studyData = e.getRequest().getResponse().data;
-        this.__createForm(studyData, fromTemplate);
-        console.log(studyData);
-      }, this);
-
-      resource.addListener("getError", e => {
-        console.error(e);
-      });
-
-      resource.get({
-        "project_id": studyId
-      });
+      const studyData = this.__getStudyData(studyId, fromTemplate);
+      this.__createForm(studyData, fromTemplate);
+      this.__editPane.setVisibility("visible");
     },
 
     __createForm: function(studyData, isTemplate) {
       while (this.__editStudyLayout.getChildren().length > 1) {
         this.__editStudyLayout.removeAt(1);
       }
-
-      // Save data
-      this.__studyData = this.__studyData || {};
-      this.__studyData[studyData.uuid] = studyData;
 
       const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
@@ -620,7 +564,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       form.addButton(cancelButton);
 
       const deleteButton = this.__deleteButton = new qx.ui.form.Button();
-      deleteButton.setLabel(this.__userStudyList.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
+      deleteButton.setLabel(this.__userStudyContainer.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
       deleteButton.setMinWidth(70);
       deleteButton.setEnabled(!isTemplate || (canDeleteTemplate && isMyTemplate));
       deleteButton.addListener("execute", e => {
@@ -630,9 +574,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         win.addListener("close", () => {
           if (win["value"] === 1) {
             if (isTemplate) {
-              this.__deleteStudy([this.__studyData[studyData.uuid]], isTemplate);
+              this.__deleteStudy([this.__getStudyData(studyData.uuid, isTemplate)], isTemplate);
             } else {
-              const studies = this.__userStudyList.getSelection().map(study => this.__studyData[study.getModel()]);
+              const studies = this.__userStudyContainer.getSelection().map(button => this.__getStudyData(button.getUuid(), false));
               this.__deleteStudy(studies, false);
             }
           }

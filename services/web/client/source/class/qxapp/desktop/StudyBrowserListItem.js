@@ -25,7 +25,7 @@
  */
 
 qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.form.ToggleButton,
   implement : [qx.ui.form.IModel],
   include : [qx.ui.form.MModelProperty],
 
@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    let layout = new qx.ui.layout.VBox().set({
+    let layout = new qx.ui.layout.VBox(5).set({
       alignY: "middle"
     });
     this._setLayout(layout);
@@ -47,8 +47,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     this.addListener("pointerout", this._onPointerOut, this);
   },
 
-  events:
-  {
+  events: {
     /** (Fired by {@link qx.ui.form.List}) */
     "action" : "qx.event.type.Event"
   },
@@ -59,10 +58,8 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       init : "pb-listitem"
     },
 
-    icon: {
-      check: "String",
-      apply : "_applyIcon",
-      nullable : true
+    uuid: {
+      check: "String"
     },
 
     prjTitle: {
@@ -101,7 +98,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
           control = new qx.ui.basic.Image(this.getIcon()).set({
             anonymous: true
           });
-          this._add(control);
+          this._addAt(control, 1);
           break;
         case "prjTitle":
           control = new qx.ui.basic.Label(this.getPrjTitle()).set({
@@ -109,7 +106,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             font: "title-14",
             anonymous: true
           });
-          this._add(control);
+          this._addAt(control, 0);
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
@@ -117,7 +114,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             allowGrowY: false,
             anonymous: true
           });
-          this._addAt(control);
+          this._addAt(control, 2);
           break;
         case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
@@ -125,13 +122,14 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             allowGrowY: false,
             anonymous: true
           });
-          this._addAt(control);
+          this._addAt(control, 3);
           break;
       }
 
       return control || this.base(arguments, id);
     },
 
+    // overriden
     _applyIcon: function(value, old) {
       let icon = this.getChildControl("icon");
       icon.set({
