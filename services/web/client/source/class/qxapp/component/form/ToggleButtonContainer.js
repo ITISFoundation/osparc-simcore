@@ -41,7 +41,7 @@ qx.Class.define("qxapp.component.form.ToggleButtonContainer", {
     },
 
     selectOne: function(child) {
-      this.getChildren().map(button => button.setValue(button === child ? true : false));
+      this.getChildren().map(button => button.setValue(button === child));
     }
   }
 });
