@@ -6,7 +6,7 @@
  */
 
 /**
- * Container for StudyBrowserListItems or any other ToggleButtons, with some convenient methods. Applies a default Flow layout.
+ * Container for StudyBrowserListItems or any other ToggleButtons, with some convenient methods.
  */
 qx.Class.define("qxapp.component.form.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
@@ -32,14 +32,25 @@ qx.Class.define("qxapp.component.form.ToggleButtonContainer", {
       }
     },
 
+    /**
+     * Resets the selection so no toggle button is checked.
+     */
     resetSelection: function() {
       this.getChildren().map(button => button.setValue(false));
     },
 
+    /**
+     * Returns an array that contains all buttons that are checked.
+     */
     getSelection: function() {
       return this.getChildren().filter(button => button.getValue());
     },
 
+    /**
+     * Sets the given button's value to true (checks it) and unchecks all other buttons. If the given button is not present,
+     * every button in the container will get a false value (unchecked).
+     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     */
     selectOne: function(child) {
       this.getChildren().map(button => button.setValue(button === child));
     }

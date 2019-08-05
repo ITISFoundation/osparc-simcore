@@ -116,6 +116,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __sidePanel: null,
     __userStudies: null,
     __templateStudies: null,
+    __templateDeleteButton: null,
+    __studiesDeleteButton: null,
 
     __initResources: function() {
       this.__getUserProfile();
@@ -146,25 +148,37 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
+      const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const studiesDeleteButton = this.__studiesDeleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+        visibility: "excluded"
+      });
+      const myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
         font: navBarLabelFont
       });
+      studiesTitleContainer.add(myStudyLabel);
+      studiesTitleContainer.add(studiesDeleteButton);
       let userStudyList = this.__userStudyContainer = this.__createUserStudyList();
       let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
-      userStudyLayout.add(myStudyLabel);
+      userStudyLayout.add(studiesTitleContainer);
       userStudyLayout.add(newStudyBtn);
       userStudyLayout.add(userStudyList);
 
-      let tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
+      const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const templateDeleteButton = this.__templateDeleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+        visibility: "excluded"
+      });
+      const tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
         font: navBarLabelFont
       });
+      templateTitleContainer.add(tempStudyLabel);
+      templateTitleContainer.add(templateDeleteButton);
       let tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
       let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
-      tempStudyLayout.add(tempStudyLabel);
+      tempStudyLayout.add(templateTitleContainer);
       tempStudyLayout.add(tempStudyList);
 
       let editStudyLayout = this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
@@ -400,6 +414,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       });
 
       item.addListener("execute", e => {
+        // Selection logic
         if (item.getValue()) {
           if (isTemplate) {
             this.__userStudyContainer.resetSelection();
@@ -408,6 +423,19 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this.__templateStudyContainer.resetSelection();
           }
           this.__itemSelected(item.getUuid(), isTemplate);
+        } else {
+          if (isTemplate) {
+            this.__itemSelected(null);
+            this.__templateDeleteButton.exclude();
+          } else {
+            const selection = this.__userStudyContainer.getSelection();
+            if (selection.length) {
+              this.__itemSelected(selection[0].getUuid());
+            } else {
+              this.__studiesDeleteButton.exclude();
+              this.__itemSelected(null);
+            }
+          }
         }
       }, this);
 
@@ -442,131 +470,29 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
-      const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
+      const form = new qxapp.component.widget.StudyDetails(studyData, isTemplate);
+      form.addListener("closed", () => this.__itemSelected(null));
+      form.addListener("updatedStudy", study => this.reloadUserStudies());
+      form.addListener("updatedTemplate", template => this.reloadTemplateStudies());
+
+      this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
+
+      this.__addRemoveButtons(studyData, isTemplate);
+    },
+
+    __addRemoveButtons: function(studyData, isTemplate) {
       const canDeleteTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.delete");
-      const isMyTemplate = studyData["prjOwner"] === qxapp.data.Permissions.getInstance().getLogin();
-
-      const itemsToBeDisplayed = ["name", "description", "thumbnail", "prjOwner", "creationDate", "lastChangeDate"];
-      const itemsToBeModified = (isTemplate && !(canUpdateTemplate && isMyTemplate)) ? [] : ["name", "description", "thumbnail"];
-
-      let form = new qx.ui.form.Form();
-      let control;
-      for (const dataId in studyData) {
-        if (itemsToBeDisplayed.includes(dataId)) {
-          switch (dataId) {
-            case "name":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Name"));
-              break;
-            case "description":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Description"));
-              break;
-            case "thumbnail":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Thumbnail"));
-              break;
-            case "prjOwner":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Owner"));
-              break;
-            case "creationDate":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Creation Date"));
-              break;
-            case "lastChangeDate":
-              control = new qx.ui.form.TextField();
-              form.add(control, this.tr("Last Change Date"));
-              break;
-          }
-          let value = studyData[dataId];
-          if (typeof value === "object") {
-            if (value === null) {
-              value = "";
-            } else {
-              value = Object.keys(value).join(", ");
-            }
-          }
-          control.set({
-            value: value
-          });
-          control.setEnabled(itemsToBeModified.includes(dataId));
-        }
+      const isCurrentUserOwner = studyData.prjOwner === qxapp.data.Permissions.getInstance().getLogin();
+      let deleteButton = this.__studiesDeleteButton;
+      if (isTemplate) {
+        this.__studiesDeleteButton.exclude();
+        deleteButton = this.__templateDeleteButton;
+      } else {
+        this.__templateDeleteButton.exclude();
+        this.__studiesDeleteButton.setLabel(this.__userStudyContainer.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
       }
-
-      let controller = new qx.data.controller.Form(null, form);
-      let model = controller.createModel();
-
-      // buttons
-      let saveButton = new qx.ui.form.Button(this.tr("Save"));
-      saveButton.setMinWidth(70);
-      saveButton.setEnabled(!isTemplate || (canUpdateTemplate && isMyTemplate));
-      saveButton.addListener("execute", e => {
-        for (let i=0; i<itemsToBeModified.length; i++) {
-          const key = itemsToBeModified[i];
-          let getter = "get" + qx.lang.String.firstUp(key);
-          let newVal = model[getter]();
-          studyData[key] = newVal;
-        }
-        let resource = this.__studyResources.project;
-
-        resource.addListenerOnce("putSuccess", ev => {
-          if (isTemplate) {
-            this.reloadTemplateStudies();
-          } else {
-            this.reloadUserStudies();
-          }
-        }, this);
-
-        resource.put({
-          "project_id": studyData["uuid"]
-        }, studyData);
-
-        this.__itemSelected(null);
-      }, this);
-      form.addButton(saveButton);
-
-      if (!isTemplate && canCreateTemplate) {
-        const saveAsButton = new qx.ui.form.Button(this.tr("Save As Template"));
-        saveAsButton.setMinWidth(70);
-
-        saveAsButton.addListener("execute", e => {
-          for (let i=0; i<itemsToBeModified.length; i++) {
-            const key = itemsToBeModified[i];
-            let getter = "get" + qx.lang.String.firstUp(key);
-            let newVal = model[getter]();
-            studyData[key] = newVal;
-          }
-
-          const resources = this.__studyResources.projects;
-
-          resources.addListenerOnce("postSaveAsTemplateSuccess", ev => {
-            console.log(ev);
-            this.reloadTemplateStudies();
-          }, this);
-          resources.addListenerOnce("postSaveAsTemplateError", ev => {
-            console.error(ev);
-          });
-          resources.postSaveAsTemplate({
-            "study_id": studyData["uuid"]
-          }, studyData);
-        }, this);
-
-        form.addButton(saveAsButton);
-      }
-
-      let cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      cancelButton.setMinWidth(70);
-      cancelButton.addListener("execute", e => {
-        this.__itemSelected(null);
-      }, this);
-      form.addButton(cancelButton);
-
-      const deleteButton = this.__deleteButton = new qx.ui.form.Button();
-      deleteButton.setLabel(this.__userStudyContainer.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
-      deleteButton.setMinWidth(70);
-      deleteButton.setEnabled(!isTemplate || (canDeleteTemplate && isMyTemplate));
+      deleteButton.show();
+      deleteButton.setEnabled(isCurrentUserOwner && (!isTemplate || canDeleteTemplate));
       deleteButton.addListener("execute", e => {
         let win = this.__createConfirmWindow();
         win.center();
@@ -582,9 +508,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           }
         }, this);
       }, this);
-      form.addButton(deleteButton);
-
-      this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
