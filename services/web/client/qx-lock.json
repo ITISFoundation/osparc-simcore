@@ -48,6 +48,14 @@
       "repo_name": "qooxdoo/qxl.testtapper",
       "repo_tag": "v0.4.3",
       "path": "contrib/qooxdoo_qxl_testtapper_v0_4_3"
+    },
+    {
+      "library_name": "logpane",
+      "library_version": "0.1.4",
+      "path": "qx_packages/qooxdoo_qxl_logpane_v0_1_4",
+      "uri": "qooxdoo/qxl.logpane",
+      "repo_name": "qooxdoo/qxl.logpane",
+      "repo_tag": "v0.1.4"
     }
   ]
 }
