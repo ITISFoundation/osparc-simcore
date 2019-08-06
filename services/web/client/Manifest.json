@@ -22,17 +22,17 @@
   },
   "externalResources": {
     "script": [
-      "resource/socketio/socket.io.js",
-      "resource/svg/svg.min.js",
-      "resource/svg/svg.path.min.js",
-      "resource/jsondiffpatch/jsondiffpatch.min.js",
-      "resource/jsontreeviewer/jsonTree.js",
-      "resource/plotly/plotly.min.js"
+      "socketio/socket.io.js",
+      "svg/svg.min.js",
+      "svg/svg.path.min.js",
+      "jsondiffpatch/jsondiffpatch.min.js",
+      "jsontreeviewer/jsonTree.js",
+      "plotly/plotly.min.js"
     ],
     "css": [
-      "resource/jsontreeviewer/jsonTree.css",
-      "resource/hint/hint.css",
-      "resource/common/common.css"
+      "jsontreeviewer/jsonTree.css",
+      "hint/hint.css",
+      "common/common.css"
     ]
   },
   "requires": {
