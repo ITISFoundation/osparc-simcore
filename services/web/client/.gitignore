@@ -3,7 +3,7 @@ source-output/
 build-output/
 
 # qooxdoo contributions folder and json config file
-contrib/*
+qx_packages/*
 
 # npm modules
 node_modules/*
