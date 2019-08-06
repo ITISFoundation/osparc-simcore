@@ -1,12 +1,11 @@
 {
   "dependencies": {
+    "@qooxdoo/compiler": "^1.0.0-beta.20190805-1047",
     "cookie-parser": "^1.4.3",
     "coveralls": "^3.0.3",
     "http-server": "^0.11.1",
     "puppeteer": "^1.14.0",
     "puppeteer-to-istanbul": "^1.2.2",
-    "qooxdoo-sdk": "^6.0.0-alpha-20190409-f79cc78",
-    "qxcompiler": "^0.3.0-alpha.20190423-1234",
     "yargs": "^13.2.2"
   }
 }
