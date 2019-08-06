@@ -23,8 +23,8 @@
   "externalResources": {
     "script": [
       "resource/socketio/socket.io.js",
-      "resource/workbench/svg.min.js",
-      "resource/workbench/svg.path.min.js",
+      "resource/svg/svg.min.js",
+      "resource/svg/svg.path.min.js",
       "resource/jsondiffpatch/jsondiffpatch.min.js",
       "resource/jsontreeviewer/jsonTree.js",
       "resource/plotly/plotly.min.js"
@@ -42,6 +42,9 @@
     "qooxdoo/qxl.versionlabel": "^0.1.2",
     "qooxdoo/qxl.testtapper": "^0.4.3",
     "qooxdoo/qxl.logpane": "^0.1.4"
+    "ITISFoundation/qx-iconfont-fontawesome5": "^0.1.1",
+    "ITISFoundation/qx-iconfont-material": "^0.1.5",
+    "ITISFoundation/qx-osparc-theme": "^0.4.6"
   },
   "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
 }
