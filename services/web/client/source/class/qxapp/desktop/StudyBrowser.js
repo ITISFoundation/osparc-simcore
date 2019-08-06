@@ -441,18 +441,16 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this.__templateStudyContainer.resetSelection();
           }
           this.__itemSelected(item.getUuid(), isTemplate);
+        } else if (isTemplate) {
+          this.__itemSelected(null);
+          this.__templateDeleteButton.exclude();
         } else {
-          if (isTemplate) {
-            this.__itemSelected(null);
-            this.__templateDeleteButton.exclude();
+          const selection = this.__userStudyContainer.getSelection();
+          if (selection.length) {
+            this.__itemSelected(selection[0].getUuid());
           } else {
-            const selection = this.__userStudyContainer.getSelection();
-            if (selection.length) {
-              this.__itemSelected(selection[0].getUuid());
-            } else {
-              this.__studiesDeleteButton.exclude();
-              this.__itemSelected(null);
-            }
+            this.__studiesDeleteButton.exclude();
+            this.__itemSelected(null);
           }
         }
       }, this);
