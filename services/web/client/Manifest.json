@@ -8,7 +8,7 @@
     "authors": [
       {
         "name": "maiz",
-        "email": ""
+        "email": "maiz@itis.swiss"
       }
     ],
     "version": "1.0.0"
@@ -18,14 +18,30 @@
     "encoding": "utf-8",
     "class": "source/class",
     "resource": "source/resource",
-    "translation": "source/translation",
-    "type": "application"
+    "translation": "source/translation"
+  },
+  "externalResources": {
+    "script": [
+      "resource/socketio/socket.io.js",
+      "resource/workbench/svg.min.js",
+      "resource/workbench/svg.path.min.js",
+      "resource/jsondiffpatch/jsondiffpatch.min.js",
+      "resource/jsontreeviewer/jsonTree.js",
+      "resource/plotly/plotly.min.js"
+    ],
+    "css": [
+      "resource/jsontreeviewer/jsonTree.css",
+      "resource/hint/hint.css",
+      "resource/common/common.css"
+    ]
   },
   "requires": {
-    "qooxdoo-sdk": "^6.0.0-alpha",
-    "qooxdoo-compiler": "^0.3.0-alpha",
-    "qooxdoo/qxl.apiviewer": "^0.1.12",
+    "@qooxdoo/compiler": "^1.0.0-beta",
+    "@qooxdoo/framework": "^6.0.0-beta",
+    "qooxdoo/qxl.apiviewer": "^0.1.20",
     "qooxdoo/qxl.versionlabel": "^0.1.2",
-    "qooxdoo/qxl.testtapper": "^0.3.0"
-  }
+    "qooxdoo/qxl.testtapper": "^0.4.3",
+    "qooxdoo/qxl.logpane": "^0.1.4"
+  },
+  "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
 }

@@ -18,7 +18,6 @@
   "locales": [
     "en"
   ],
-  "lint-check": true,
   "applications": [
     {
       "class": "qxapp.Application",
@@ -69,42 +68,6 @@
       }
     }
   ],
-  "common": {
-    "add-css": [
-      {
-        "uri": "resource/jsontreeviewer/jsonTree.css"
-      },
-      {
-        "uri": "resource/hint/hint.css"
-      },
-      {
-        "uri": "resource/common/common.css"
-      }
-    ],
-    "add-script": [
-      {
-        "uri": "resource/socketio/socket.io.js"
-      },
-      {
-        "uri": "resource/workbench/svg*.js"
-      },
-      {
-        "uri": "resource/jsondiffpatch/jsondiffpatch*.js"
-      },
-      {
-        "uri": "resource/jsontreeviewer/jsonTree.js"
-      },
-      {
-        "uri": "resource/plotly/plotly.min.js"
-      },
-      {
-        "uri": "resource/qxapp/*.png"
-      },
-      {
-        "uri": "resource/qxapp/loading/*"
-      }
-    ]
-  },
   "eslintConfig": {
     "parserOptions": {
       "ecmaVersion": 2017,
@@ -114,7 +77,8 @@
       "JSZip": false
     },
     "extends": [
-      "qx/browser"
+      "@qooxdoo/qx/browser"
     ]
-  }
+  },
+  "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/compile-1-0-0.json"
 }
