@@ -57,7 +57,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_delete**
-> InlineResponse204 running_interactive_services_delete(service_uuid)
+> running_interactive_services_delete(service_uuid)
 
 Stops and removes an interactive service from the oSparc platform
 
@@ -77,8 +77,7 @@ service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid of the serv
 
 try:
     # Stops and removes an interactive service from the oSparc platform
-    api_response = api_instance.running_interactive_services_delete(service_uuid)
-    pprint(api_response)
+    api_instance.running_interactive_services_delete(service_uuid)
 except ApiException as e:
     print("Exception when calling UsersApi->running_interactive_services_delete: %s\n" % e)
 ```
@@ -91,7 +90,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse204**](InlineResponse204.md)
+void (empty response body)
 
 ### Authorization
 
