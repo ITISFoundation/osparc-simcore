@@ -46,6 +46,23 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return style;
       }
     },
+    "selectable": {
+      include: "material-button",
+      style: function(states) {
+        const style = {
+          decorator: "no-radius-button",
+          padding: 5,
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "background-main-lighter+";
+        }
+        if (states.selected || states.checked) {
+          style.backgroundColor = "#444";
+        }
+        return style;
+      }
+    },
 
     /*
     ---------------------------------------------------------------------------
@@ -416,7 +433,8 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     "dashboard/bar/content": {
       style: state => ({
-        width: 160
+        width: 160,
+        paddingTop: 15
       })
     },
 

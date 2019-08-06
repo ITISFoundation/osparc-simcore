@@ -55,7 +55,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20)).set({
+        marginTop: 20
+      });
 
       const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),

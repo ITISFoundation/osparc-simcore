@@ -58,8 +58,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
     this.addListener("pointerout", this._onPointerOut, this);
   },
 
-  events:
-  {
+  events: {
     /** (Fired by {@link qx.ui.form.List}) */
     "action" : "qx.event.type.Event"
   },
@@ -67,7 +66,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
   properties: {
     appearance: {
       refine : true,
-      init : "pb-listitem"
+      init : "selectable"
     },
 
     title: {

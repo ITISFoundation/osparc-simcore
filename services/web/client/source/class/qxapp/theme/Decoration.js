@@ -153,6 +153,12 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         radius: 3
       }
+    },
+
+    "no-radius-button": {
+      style: {
+        radius: 0
+      }
     }
   }
 });
