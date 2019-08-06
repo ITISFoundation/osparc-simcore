@@ -427,9 +427,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       item.addListener("dbltap", e => {
         const studyData = this.__getStudyData(item.getUuid(), isTemplate);
         if (isTemplate) {
-          this.__createStudyBtnClkd(studyData); // eslint-disable-line no-underscore-dangle
+          this.__createStudyBtnClkd(studyData);
         } else {
-          this.__startStudy(studyData); // eslint-disable-line no-underscore-dangle
+          this.__startStudy(studyData);
         }
       });
 
@@ -491,9 +491,16 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }
 
       const form = new qxapp.component.widget.StudyDetails(studyData, isTemplate);
-      form.addListener("closed", () => this.__itemSelected(null));
-      form.addListener("updatedStudy", study => this.reloadUserStudies());
-      form.addListener("updatedTemplate", template => this.reloadTemplateStudies());
+      form.addListener("closed", () => this.__itemSelected(null), this);
+      form.addListener("updatedStudy", study => this.reloadUserStudies(), this);
+      form.addListener("updatedTemplate", template => this.reloadTemplateStudies(), this);
+      form.addListener("openedStudy", () => {
+        if (isTemplate) {
+          this.__createStudyBtnClkd(studyData);
+        } else {
+          this.__startStudy(studyData);
+        }
+      }, this);
 
       this.__editStudyLayout.add(new qx.ui.form.renderer.Single(form));
 

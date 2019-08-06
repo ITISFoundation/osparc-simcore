@@ -27,7 +27,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
   events: {
     updatedStudy: "qx.event.type.Data",
     updatedTemplate: "qx.event.type.Data",
-    closed: "qx.event.type.Event"
+    closed: "qx.event.type.Event",
+    openedStudy: "qx.event.type.Event"
   },
 
   members: {
@@ -88,6 +89,12 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
       const isCurrentUserOwner = model.getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
+
+      const openButton = new qx.ui.form.Button(this.tr("Open"));
+      openButton.addListener("execute", () => {
+        this.fireEvent("openedStudy");
+      }, this);
+      this.addButton(openButton);
 
       const saveButton = new qx.ui.form.Button(this.tr("Save"));
       saveButton.addListener("execute", () => {
