@@ -45,9 +45,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
 
-    this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-      padding: [0, 0, 0, 15]
-    });
+    this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
       appearance: "sidepanel",
       width: 500,
@@ -476,7 +474,13 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           this.__templateStudyContainer.resetSelection();
         }
         if (this.__editStudyLayout) {
-          this.__editPane.setVisibility("excluded");
+          this.__editPane.exclude();
+        }
+        if (this.__studiesDeleteButton) {
+          this.__studiesDeleteButton.exclude();
+        }
+        if (this.__templateDeleteButton) {
+          this.__templateDeleteButton.exclude();
         }
         return;
       }
