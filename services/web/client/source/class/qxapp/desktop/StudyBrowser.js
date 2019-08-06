@@ -569,7 +569,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         showMaximize: false,
         showMinimize: false,
         showClose: false,
-        autoDestroy: false
+        autoDestroy: false,
+        appearance: "service-window"
       });
 
       let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the study?"));
