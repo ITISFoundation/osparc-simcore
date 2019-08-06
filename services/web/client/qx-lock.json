@@ -3,19 +3,19 @@
   "libraries": [
     {
       "library_name": "qx-iconfont-fontawesome5",
-      "library_version": "0.0.6",
+      "library_version": "0.1.1",
       "uri": "ITISFoundation/qx-iconfont-fontawesome5",
       "repo_name": "ITISFoundation/qx-iconfont-fontawesome5",
-      "repo_tag": "v0.0.6",
-      "path": "contrib/ITISFoundation_qx-iconfont-fontawesome5_v0_0_6"
+      "repo_tag": "v0.1.1",
+      "path": "contrib/ITISFoundation_qx-iconfont-fontawesome5_v0_1_1"
     },
     {
       "library_name": "qx-iconfont-material",
       "library_version": "0.1.4",
+      "path": "contrib/ITISFoundation_qx-iconfont-material_v0_1_4",
       "uri": "ITISFoundation/qx-iconfont-material",
       "repo_name": "ITISFoundation/qx-iconfont-material",
-      "repo_tag": "v0.1.4",
-      "path": "contrib/ITISFoundation_qx-iconfont-material_v0_1_4"
+      "repo_tag": "v0.1.4"
     },
     {
       "library_name": "qx-osparc-theme",
@@ -27,27 +27,27 @@
     },
     {
       "library_name": "Qooxdoo API Viewer",
-      "library_version": "0.1.15",
+      "library_version": "0.1.20",
       "uri": "qooxdoo/qxl.apiviewer",
       "repo_name": "qooxdoo/qxl.apiviewer",
-      "repo_tag": "v0.1.15",
-      "path": "contrib/qooxdoo_qxl_apiviewer_v0_1_15"
+      "repo_tag": "v0.1.20",
+      "path": "contrib/qooxdoo_qxl_apiviewer_v0_1_20"
     },
     {
       "library_name": "versionlabel",
       "library_version": "0.1.2",
+      "path": "contrib/qooxdoo_qxl_versionlabel_v0_1_2",
       "uri": "qooxdoo/qxl.versionlabel",
       "repo_name": "qooxdoo/qxl.versionlabel",
-      "repo_tag": "v0.1.2",
-      "path": "contrib/qooxdoo_qxl_versionlabel_v0_1_2"
+      "repo_tag": "v0.1.2"
     },
     {
       "library_name": "Commandline Testrunner for Qooxdoo Apps",
-      "library_version": "0.3.0",
+      "library_version": "0.4.3",
       "uri": "qooxdoo/qxl.testtapper",
       "repo_name": "qooxdoo/qxl.testtapper",
-      "repo_tag": "v0.3.0",
-      "path": "contrib/qooxdoo_qxl_testtapper_v0_3_0"
+      "repo_tag": "v0.4.3",
+      "path": "contrib/qooxdoo_qxl_testtapper_v0_4_3"
     }
   ]
 }
