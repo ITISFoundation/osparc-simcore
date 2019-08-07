@@ -23,8 +23,8 @@
   "externalResources": {
     "script": [
       "socketio/socket.io.js",
-      "svg/svg.min.js",
-      "svg/svg.path.min.js",
+      "svg/svg.js",
+      "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
       "plotly/plotly.min.js"
