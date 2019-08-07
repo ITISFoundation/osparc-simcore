@@ -232,7 +232,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         minWidth: 500,
         centerOnAppear: true,
         autoDestroy: true,
-        modal: true
+        modal: true,
+        appearance: "service-window"
       });
 
       const newStudyDlg = new qxapp.component.widget.NewStudyDlg(templateData);
