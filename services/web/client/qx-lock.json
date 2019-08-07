@@ -1,29 +1,27 @@
 {
-  "version": "2",
   "libraries": [
     {
       "library_name": "qx-iconfont-fontawesome5",
       "library_version": "0.1.1",
+      "path": "qx_packages/ITISFoundation_qx-iconfont-fontawesome5_v0_1_1",
       "uri": "ITISFoundation/qx-iconfont-fontawesome5",
       "repo_name": "ITISFoundation/qx-iconfont-fontawesome5",
-      "repo_tag": "v0.1.1",
-      "path": "contrib/ITISFoundation_qx-iconfont-fontawesome5_v0_1_1"
+      "repo_tag": "v0.1.1"
     },
     {
       "library_name": "qx-iconfont-material",
-      "library_version": "0.1.4",
-      "path": "contrib/ITISFoundation_qx-iconfont-material_v0_1_4",
+      "library_version": "0.1.5",
+      "path": "qx_packages/ITISFoundation_qx-iconfont-material_v0_1_5",
       "uri": "ITISFoundation/qx-iconfont-material",
       "repo_name": "ITISFoundation/qx-iconfont-material",
-      "repo_tag": "v0.1.4"
+      "repo_tag": "v0.1.5"
     },
     {
       "library_name": "qx-osparc-theme",
       "library_version": "0.4.6",
+      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_4_6",
       "uri": "ITISFoundation/qx-osparc-theme",
       "repo_name": "ITISFoundation/qx-osparc-theme",
-      "repo_tag": "v0.4.6",
-      "path": "contrib/ITISFoundation_qx-osparc-theme_v0_4_6"
     },
     {
       "library_name": "Qooxdoo API Viewer",
@@ -44,18 +42,19 @@
     {
       "library_name": "Commandline Testrunner for Qooxdoo Apps",
       "library_version": "0.4.3",
+      "path": "qx_packages/qooxdoo_qxl_testtapper_v0_4_3",
       "uri": "qooxdoo/qxl.testtapper",
       "repo_name": "qooxdoo/qxl.testtapper",
-      "repo_tag": "v0.4.3",
-      "path": "contrib/qooxdoo_qxl_testtapper_v0_4_3"
+      "repo_tag": "v0.4.3"
     },
     {
       "library_name": "logpane",
-      "library_version": "0.1.4",
-      "path": "qx_packages/qooxdoo_qxl_logpane_v0_1_4",
+      "library_version": "1.0.0-beta.3",
+      "path": "qx_packages/qooxdoo_qxl_logpane_v1_0_0-beta_3",
       "uri": "qooxdoo/qxl.logpane",
       "repo_name": "qooxdoo/qxl.logpane",
-      "repo_tag": "v0.1.4"
+      "repo_tag": "v1.0.0-beta.3"
     }
-  ]
+  ],
+  "version": "2.1.0"
 }

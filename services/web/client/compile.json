@@ -53,19 +53,19 @@
     },
     {
       "class": "qxl.testtapper.Application",
-      "theme": "qxapp.theme.Theme",
       "name": "testtapper",
+      "theme": "qxapp.theme.Theme",
       "title": "Qooxdoo TestTAPper",
+      "environment": {
+        "qx.icontheme": "Tango"
+      },
       "include": [
         "qxapp.test.*",
         "iconfont.material.Load"
       ],
       "exclude": [
         "qx.test.*"
-      ],
-      "environment": {
-        "qx.icontheme": "Tango"
-      }
+      ]
     }
   ],
   "eslintConfig": {
