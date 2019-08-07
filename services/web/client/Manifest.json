@@ -38,8 +38,6 @@
   "requires": {
     "@qooxdoo/compiler": "^1.0.0-beta",
     "@qooxdoo/framework": "^6.0.0-beta",
-    "qooxdoo/qxl.apiviewer": "^0.1.20",
-    "qooxdoo/qxl.versionlabel": "^0.1.2",
     "ITISFoundation/qx-iconfont-fontawesome5": "^0.1.1",
     "ITISFoundation/qx-iconfont-material": "^0.1.5",
     "ITISFoundation/qx-osparc-theme": "^0.4.6",
