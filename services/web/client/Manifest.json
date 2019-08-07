@@ -27,7 +27,8 @@
       "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
-      "plotly/plotly.min.js"
+      "plotly/plotly.min.js",
+      "marked/marked.min.js"
     ],
     "css": [
       "jsontreeviewer/jsonTree.css",
