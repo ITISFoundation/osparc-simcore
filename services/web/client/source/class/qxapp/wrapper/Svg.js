@@ -33,7 +33,7 @@ qx.Class.define("qxapp.wrapper.Svg", {
 
   statics: {
     NAME: "svg.js",
-    VERSION: "3.0.13",
+    VERSION: "2.7.1",
     URL: "https://github.com/svgdotjs/svg.js"
   },
 
@@ -55,8 +55,8 @@ qx.Class.define("qxapp.wrapper.Svg", {
   members: {
     init: function() {
       // initialize the script loading
-      let svgPath = "svg/svg.min.js";
-      let svgPathPath = "svg/svg.path.min.js";
+      let svgPath = "svg/svg.js";
+      let svgPathPath = "svg/svg.path.js";
       let dynLoader = new qx.util.DynamicScriptLoader([
         svgPath,
         svgPathPath
