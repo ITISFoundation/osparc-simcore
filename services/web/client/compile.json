@@ -105,6 +105,9 @@
       },
       {
         "uri": "resource/qxapp/loading/*"
+      },
+      {
+        "uri": "resource/marked/marked.min.js"
       }
     ]
   },
