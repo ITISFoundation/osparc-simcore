@@ -823,10 +823,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __selectedItemChanged: function(newID) {
-      if (newID === this.__selectedItemId) {
-        return;
-      }
-
       const oldId = this.__selectedItemId;
       if (oldId) {
         if (this.__isSelectedItemAnEdge(oldId)) {
