@@ -155,37 +155,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __currentModel: null,
 
-    __getPlusButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
-      let plusButton = new qx.ui.form.Button(null, icon);
-      plusButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      plusButton.addListener("execute", function() {
-        this.openServiceCatalog();
-      }, this);
-      return plusButton;
-    },
-
-    __getRemoveButton: function() {
-      const icon = "@FontAwesome5Solid/trash/32";
-      let removeButton = new qx.ui.form.Button(null, icon);
-      removeButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      removeButton.addListener("execute", function() {
-        if (this.__selectedItemId && this.__isSelectedItemAnEdge(this.__selectedItemId)) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemId = null;
-        } else {
-          this.__removeSelectedNode();
-        }
-      }, this);
-      return removeButton;
-    },
-
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
       let unlinkBtn = new qx.ui.form.Button(null, icon);
@@ -194,7 +163,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         height: BUTTON_SIZE
       });
       unlinkBtn.addListener("execute", function() {
-        if (this.__selectedItemId && this.__isSelectedItemAnEdge(this.__selectedItemId)) {
+        if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemId = null;
         }
@@ -825,7 +794,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __selectedItemChanged: function(newID) {
       const oldId = this.__selectedItemId;
       if (oldId) {
-        if (this.__isSelectedItemAnEdge(oldId)) {
+        if (this.__isSelectedItemAnEdge()) {
           const unselectedEdge = this.__getEdgeUI(oldId);
           const unselectedColor = qxapp.theme.Color.colors["workbench-edge-comp-active"];
           this.__svgWidget.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
@@ -833,7 +802,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
 
       this.__selectedItemId = newID;
-      if (this.__isSelectedItemAnEdge(newID)) {
+      if (this.__isSelectedItemAnEdge()) {
         const selectedEdge = this.__getEdgeUI(newID);
         const selectedColor = qxapp.theme.Color.colors["workbench-edge-selected"];
         this.__svgWidget.updateColor(selectedEdge.getRepresentation(), selectedColor);
@@ -841,7 +810,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
-      this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge(newID) ? "visible" : "excluded");
+      this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
     },
 
     __nodeSelected: function(nodeId) {
