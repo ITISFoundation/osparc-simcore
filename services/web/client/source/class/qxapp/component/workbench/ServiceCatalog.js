@@ -127,7 +127,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalog").set({
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceList("serviceCatalog").set({
         width: 568
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
