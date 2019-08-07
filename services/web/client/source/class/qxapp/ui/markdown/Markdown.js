@@ -15,6 +15,10 @@
 qx.Class.define("qxapp.ui.markdown.Markdown", {
   extend: qx.ui.basic.Label,
 
+  /**
+   * Markdown constructor. It directly accepts markdown as its first argument.
+   * @param {String} markdown Plain text accepting markdown syntax. Its compiled version will be set in the value property of the label.
+   */
   construct: function(markdown) {
     this.base(arguments);
     this.setRich(true);
