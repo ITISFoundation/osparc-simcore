@@ -25,7 +25,13 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   let services = qxapp.store.Data.getInstance().getServices();
+ *    const filesStore = qxapp.store.Files.getInstance();
+ *    filesStore.addListenerOnce("nodeFiles", e => {
+ *      const files = e.getData();
+ *      const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+ *      this.__filesToRoot(newChildren);
+ *    }, this);
+ *    filesStore.getNodeFiles(nodeId);
  * </pre>
  */
 
@@ -35,8 +41,8 @@ qx.Class.define("qxapp.store.Data", {
   type : "singleton",
 
   construct: function() {
-    this.__reloadingServices = false;
-    this.__servicesCached = {};
+    this.__locationsCached = [];
+    this.__datasetsByLocationCached = {};
   },
 
   events: {
@@ -49,14 +55,22 @@ qx.Class.define("qxapp.store.Data", {
   },
 
   members: {
+    __locationsCached: null,
+    __datasetsByLocationCached: null,
 
     getLocations: function(useCache = true) {
       // Get available storage locations
-      let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
+      if (useCache && this.__locationsCached.length) {
+        this.fireDataEvent("myLocations", this.__locationsCached);
+        return;
+      }
+
+      const reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
+        this.__locations = locations;
         this.fireDataEvent("myLocations", locations);
       }, this);
 
@@ -71,17 +85,31 @@ qx.Class.define("qxapp.store.Data", {
       reqLoc.send();
     },
 
-    getDatasetsByLocation: function(locationId) {
+    getDatasetsByLocation: function(locationId, useCache = true) {
+      // Get list of datasets
       if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
-      // Get list of datasets
+
+      let cache = this.__datasetsByLocationCached;
+      if (useCache && locationId in cache && cache[locationId].length) {
+        const data = {
+          location: locationId,
+          datasets: cache[locationId]
+        };
+        this.fireDataEvent("myDatasets", data);
+        return;
+      }
+
       const endPoint = "/storage/locations/" + locationId + "/datasets";
       const reqDatasets = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
       reqDatasets.addListener("success", eFiles => {
         const datasets = eFiles.getTarget().getResponse()
           .data;
+        this.__datasetsByLocationCached = {
+          locationId: datasets
+        };
         const data = {
           location: locationId,
           datasets: []
