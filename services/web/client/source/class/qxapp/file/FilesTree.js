@@ -128,34 +128,16 @@ qx.Class.define("qxapp.file.FilesTree", {
       return null;
     },
 
-    addFileEntry: function(uuid) {
-      const dummyFileEntry = {
-        "bucket_name": "MyFile",
-        "created_at": "2019-07-03T10:01:03.471071Z",
-        "display_file_path": "MyFile/testing/Hallo.csv",
-        "file_id": "N:package:7b5637d5-da2e-49fc-9c54-75b5c6acf166",
-        "file_name": "Hallo.csv",
-        "file_size": 398,
-        "file_uuid": "MyFile/testing/Hallo.csv",
-        "last_modified": "2019-07-03T10:01:04.057912Z",
-        "location": "datcore",
-        "location_id": 1,
-        "node_id": null,
-        "node_name": null,
-        "object_name": "testing/Hallo.csv",
-        "project_id": null,
-        "project_name": null,
-        "raw_file_path": "MyFile/testing/Hallo.csv",
-        "user_id": null,
-        "user_name": null
-      };
-
-      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
-      filesTreePopulator.addFileEntryToTree(dummyFileEntry);
-      const item = this.__findUuidInLeaves(dummyFileEntry["file_uuid"]);
+    addFileEntry: function(fileMetadata) {
+      console.log("file copied", fileMetadata);
+      /*
+      const filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
+      filesTreePopulator.addFileEntryToTree(fileMetadata);
+      const item = this.__findUuidInLeaves(fileMetadata["file_uuid"]);
       if (item) {
         this.openNodeAndParents(item);
       }
+      */
     },
 
     __getLeafList: function(item, leaves) {

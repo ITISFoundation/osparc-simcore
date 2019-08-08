@@ -71,7 +71,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     userFilesTree.addListener("fileCopied", e => {
       const fileMetadata = e.getData();
       if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata["fileUuid"]);
+        this.__userFilesTree.addFileEntry(fileMetadata);
       }
     }, this);
     treesLayout.add(userFilesTree, {
