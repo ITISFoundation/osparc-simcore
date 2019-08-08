@@ -92,7 +92,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
           this.populateMyLocation(locationId);
         }
       }, this);
-      filesStore.getMyLocations();
+      filesStore.getLocations();
     },
 
     populateMyLocation: function(locationId = null) {

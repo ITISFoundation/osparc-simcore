@@ -50,7 +50,7 @@ qx.Class.define("qxapp.store.Data", {
 
   members: {
 
-    getMyLocations: function() {
+    getLocations: function(useCache = true) {
       // Get available storage locations
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
