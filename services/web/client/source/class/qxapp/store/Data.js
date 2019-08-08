@@ -70,7 +70,7 @@ qx.Class.define("qxapp.store.Data", {
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
-        this.__locations = locations;
+        this.__locationsCached = locations;
         this.fireDataEvent("myLocations", locations);
       }, this);
 
@@ -107,9 +107,7 @@ qx.Class.define("qxapp.store.Data", {
       reqDatasets.addListener("success", eFiles => {
         const datasets = eFiles.getTarget().getResponse()
           .data;
-        this.__datasetsByLocationCached = {
-          locationId: datasets
-        };
+        this.__datasetsByLocationCached[locationId] = datasets;
         const data = {
           location: locationId,
           datasets: []
