@@ -42,7 +42,6 @@
         ]
       },
       "include": [
-        "qx.*",
         "qxapp.*"
       ],
       "exclude": [
