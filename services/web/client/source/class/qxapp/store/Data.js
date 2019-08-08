@@ -43,6 +43,7 @@ qx.Class.define("qxapp.store.Data", {
   construct: function() {
     this.__locationsCached = [];
     this.__datasetsByLocationCached = {};
+    this.__filesByLocationAndDatasetCached = {};
   },
 
   events: {
@@ -57,11 +58,13 @@ qx.Class.define("qxapp.store.Data", {
   members: {
     __locationsCached: null,
     __datasetsByLocationCached: null,
+    __filesByLocationAndDatasetCached: null,
 
     getLocations: function(useCache = true) {
       // Get available storage locations
-      if (useCache && this.__locationsCached.length) {
-        this.fireDataEvent("myLocations", this.__locationsCached);
+      const cache = this.__locationsCached;
+      if (useCache && cache.length) {
+        this.fireDataEvent("myLocations", cache);
         return;
       }
 
@@ -70,6 +73,7 @@ qx.Class.define("qxapp.store.Data", {
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
+        // Add it to cache
         this.__locationsCached = locations;
         this.fireDataEvent("myLocations", locations);
       }, this);
@@ -91,8 +95,10 @@ qx.Class.define("qxapp.store.Data", {
         return;
       }
 
-      let cache = this.__datasetsByLocationCached;
-      if (useCache && locationId in cache && cache[locationId].length) {
+      const cache = this.__datasetsByLocationCached;
+      if (useCache &&
+        locationId in cache &&
+        cache[locationId].length) {
         const data = {
           location: locationId,
           datasets: cache[locationId]
@@ -107,7 +113,6 @@ qx.Class.define("qxapp.store.Data", {
       reqDatasets.addListener("success", eFiles => {
         const datasets = eFiles.getTarget().getResponse()
           .data;
-        this.__datasetsByLocationCached[locationId] = datasets;
         const data = {
           location: locationId,
           datasets: []
@@ -115,6 +120,8 @@ qx.Class.define("qxapp.store.Data", {
         if (datasets && datasets.length>0) {
           data.datasets = datasets;
         }
+        // Add it to cache
+        this.__datasetsByLocationCached[locationId] = data.datasets;
         this.fireDataEvent("myDatasets", data);
       }, this);
 
@@ -133,47 +140,26 @@ qx.Class.define("qxapp.store.Data", {
       reqDatasets.send();
     },
 
-    getFilesByLocation: function(locationId) {
+    getFilesByLocationAndDataset: function(locationId, datasetId, useCache = true) {
+      // Get list of file meta data
       if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
-      // Get list of file meta data
-      const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
+      const cache = this.__filesByLocationAndDatasetCached;
+      if (useCache &&
+        locationId in cache &&
+        datasetId in cache[locationId] &&
+        cache[locationId][datasetId].length) {
         const data = {
           location: locationId,
-          files: []
-        };
-        if (files && files.length>0) {
-          data.files = files;
-        }
-        this.fireDataEvent("myDocuments", data);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        const data = {
-          location: locationId,
-          files: []
+          dataset: datasetId,
+          files: cache[locationId][datasetId]
         };
         this.fireDataEvent("myDocuments", data);
-        console.error("Failed getting Files list", error);
-      });
-
-      reqFiles.send();
-    },
-
-    getFilesByLocationAndDataset: function(locationId, datasetId) {
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
-      // Get list of file meta data
+
       const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
       const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
@@ -185,6 +171,11 @@ qx.Class.define("qxapp.store.Data", {
           dataset: datasetId,
           files: files && files.length>0 ? files : []
         };
+        // Add it to cache
+        if (!(locationId in this.__filesByLocationAndDatasetCached)) {
+          this.__filesByLocationAndDatasetCached[locationId] = {};
+        }
+        this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
         this.fireDataEvent("myDocuments", data);
       }, this);
 
