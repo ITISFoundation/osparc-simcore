@@ -49,32 +49,6 @@ qx.Class.define("qxapp.store.Data", {
   },
 
   members: {
-    getNodeFiles: function(nodeId) {
-      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
-      let endPoint = "/storage/locations/0/files/metadata";
-      endPoint += filter;
-      let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
-        console.log("Node Files", files);
-        if (files && files.length>0) {
-          this.fireDataEvent("nodeFiles", files);
-        }
-        this.fireDataEvent("nodeFiles", []);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        this.fireDataEvent("nodeFiles", []);
-        console.error("Failed getting Node Files list", error);
-      });
-
-      reqFiles.send();
-    },
 
     getMyLocations: function() {
       // Get available storage locations
@@ -199,6 +173,33 @@ qx.Class.define("qxapp.store.Data", {
         };
         this.fireDataEvent("myDocuments", data);
         console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
+    },
+
+    getNodeFiles: function(nodeId) {
+      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
+      let endPoint = "/storage/locations/0/files/metadata";
+      endPoint += filter;
+      let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        console.log("Node Files", files);
+        if (files && files.length>0) {
+          this.fireDataEvent("nodeFiles", files);
+        }
+        this.fireDataEvent("nodeFiles", []);
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        this.fireDataEvent("nodeFiles", []);
+        console.error("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
