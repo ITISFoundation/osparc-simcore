@@ -66,13 +66,13 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       const rootModel = this.__tree.getModel();
       qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      const store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("nodeFiles", e => {
+      const dataStore = qxapp.store.Data.getInstance();
+      dataStore.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__filesToRoot(newChildren);
       }, this);
-      store.getNodeFiles(nodeId);
+      dataStore.getNodeFiles(nodeId);
     },
 
     populateMyData: function() {
@@ -82,8 +82,8 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       rootModel.getChildren().removeAll();
       qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      const store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("myLocations", e => {
+      const dataStore = qxapp.store.Data.getInstance();
+      dataStore.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         this.__locationsToRoot(locations);
 
@@ -92,7 +92,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
           this.populateMyLocation(locationId);
         }
       }, this);
-      store.getMyLocations();
+      dataStore.getMyLocations();
     },
 
     populateMyLocation: function(locationId = null) {
@@ -104,8 +104,8 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
         }
       }
 
-      const store = qxapp.data.Store.getInstance();
-      store.addListener("myDatasets", ev => {
+      const dataStore = qxapp.store.Data.getInstance();
+      dataStore.addListener("myDatasets", ev => {
         const {
           location,
           datasets
@@ -113,7 +113,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
         this.__datasetsToLocation(location, datasets);
       }, this);
 
-      store.getDatasetsByLocation(locationId);
+      dataStore.getDatasetsByLocation(locationId);
     },
 
     addFileEntryToTree: function(fileEntry) {
@@ -148,8 +148,8 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
             }
             this.__tree.cachedDatasets.push(datasetId);
 
-            const store = qxapp.data.Store.getInstance();
-            store.addListener("myDocuments", ev => {
+            const dataStore = qxapp.store.Data.getInstance();
+            dataStore.addListener("myDocuments", ev => {
               const {
                 location,
                 dataset,
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
               } = ev.getData();
               this.__filesToDataset(location, dataset, files);
             }, this);
-            store.getFilesByLocationAndDataset(locationId, datasetId);
+            dataStore.getFilesByLocationAndDataset(locationId, datasetId);
           }, this);
           return fileTreeItem;
         },

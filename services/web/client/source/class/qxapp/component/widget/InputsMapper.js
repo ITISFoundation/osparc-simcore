@@ -182,7 +182,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             children: []
           };
           let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
+          const itemProps = qxapp.store.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
           if (itemProps) {
             let form = new qxapp.component.form.Auto(itemProps, this.getNode());
             let propsWidget = new qxapp.component.form.renderer.PropForm(form);
@@ -272,7 +272,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         .push(newItem);
       if (willBeBranch) {
         // Hmmmm not sure about the double getKey :(
-        const itemProps = qxapp.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
+        const itemProps = qxapp.store.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
         if (itemProps) {
           let form = new qxapp.component.form.Auto(itemProps, this.getNode());
           let propsWidget = new qxapp.component.form.renderer.PropForm(form);

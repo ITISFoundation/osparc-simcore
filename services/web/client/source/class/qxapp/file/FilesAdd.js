@@ -112,8 +112,8 @@ qx.Class.define("qxapp.file.FilesAdd", {
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
-      let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("presignedLink", e => {
+      let dataStore = qxapp.store.Data.getInstance();
+      dataStore.addListenerOnce("presignedLink", e => {
         const presignedLinkData = e.getData();
         file["location"] = presignedLinkData.locationId;
         file["path"] = presignedLinkData.fileUuid;
@@ -127,7 +127,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
       const nodeId = this.getNode() ? this.getNode().getNodeId() : qxapp.utils.Utils.uuidv4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
-      store.getPresignedLink(download, locationId, fileUuid);
+      dataStore.getPresignedLink(download, locationId, fileUuid);
     },
 
     // Use XMLHttpRequest to upload the file to S3.

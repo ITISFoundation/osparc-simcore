@@ -198,7 +198,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
 
     __populateList: function(reload = false) {
       this.__allServicesList = [];
-      let store = qxapp.data.Store.getInstance();
+      let store = qxapp.store.Store.getInstance();
       let services = store.getServices(reload);
       if (services === null) {
         store.addListener("servicesRegistered", e => {
