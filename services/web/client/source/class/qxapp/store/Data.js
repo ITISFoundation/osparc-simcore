@@ -25,7 +25,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *    const filesStore = qxapp.store.Files.getInstance();
+ *    const filesStore = qxapp.store.Data.getInstance();
  *    filesStore.addListenerOnce("nodeFiles", e => {
  *      const files = e.getData();
  *      const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
