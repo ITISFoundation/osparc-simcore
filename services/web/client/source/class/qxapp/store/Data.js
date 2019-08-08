@@ -41,9 +41,7 @@ qx.Class.define("qxapp.store.Data", {
   type : "singleton",
 
   construct: function() {
-    this.__locationsCached = [];
-    this.__datasetsByLocationCached = {};
-    this.__filesByLocationAndDatasetCached = {};
+    this.resetCache();
   },
 
   events: {
@@ -60,10 +58,16 @@ qx.Class.define("qxapp.store.Data", {
     __datasetsByLocationCached: null,
     __filesByLocationAndDatasetCached: null,
 
-    getLocations: function(useCache = true) {
+    resetCache: function() {
+      this.__locationsCached = [];
+      this.__datasetsByLocationCached = {};
+      this.__filesByLocationAndDatasetCached = {};
+    },
+
+    getLocations: function() {
       // Get available storage locations
       const cache = this.__locationsCached;
-      if (useCache && cache.length) {
+      if (cache.length) {
         this.fireDataEvent("myLocations", cache);
         return;
       }
@@ -89,16 +93,14 @@ qx.Class.define("qxapp.store.Data", {
       reqLoc.send();
     },
 
-    getDatasetsByLocation: function(locationId, useCache = true) {
+    getDatasetsByLocation: function(locationId) {
       // Get list of datasets
       if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
 
       const cache = this.__datasetsByLocationCached;
-      if (useCache &&
-        locationId in cache &&
-        cache[locationId].length) {
+      if (locationId in cache && cache[locationId].length) {
         const data = {
           location: locationId,
           datasets: cache[locationId]
@@ -140,17 +142,14 @@ qx.Class.define("qxapp.store.Data", {
       reqDatasets.send();
     },
 
-    getFilesByLocationAndDataset: function(locationId, datasetId, useCache = true) {
+    getFilesByLocationAndDataset: function(locationId, datasetId) {
       // Get list of file meta data
       if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
 
       const cache = this.__filesByLocationAndDatasetCached;
-      if (useCache &&
-        locationId in cache &&
-        datasetId in cache[locationId] &&
-        cache[locationId][datasetId].length) {
+      if (locationId in cache && datasetId in cache[locationId] && cache[locationId][datasetId].length) {
         const data = {
           location: locationId,
           dataset: datasetId,

@@ -42,7 +42,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     this._setLayout(prjBrowserLayout);
 
     this.__createDataManagerLayout();
-    this.__initResources();
+    this.__initResources(null);
   },
 
   members: {
@@ -50,8 +50,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function(locationId = null) {
+    __initResources: function(locationId) {
       this.__filesTree.populateTree(null, locationId);
+    },
+
+    __resetCache: function() {
+      this.__filesTree.resetCache();
     },
 
     __createDataManagerLayout: function() {
@@ -72,7 +76,8 @@ qx.Class.define("qxapp.desktop.DataManager", {
         icon: "@FontAwesome5Solid/sync-alt/16"
       });
       reloadBtn.addListener("execute", function() {
-        this.__initResources();
+        this.__resetCache();
+        this.__initResources(null);
       }, this);
       dataManagerControl.add(reloadBtn);
 
@@ -114,7 +119,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
-          this.__initResources();
+          this.__initResources(null);
         }
       }, this);
       filesTree.addListener("modelChanged", () => {

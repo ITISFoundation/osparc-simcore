@@ -60,6 +60,11 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
   members: {
     __tree: null,
 
+    resetCache: function() {
+      const filesStore = qxapp.store.Data.getInstance();
+      filesStore.resetCache();
+    },
+
     populateNodeFiles: function(nodeId) {
       const treeName = "Node files";
       this.__resetTree(treeName);

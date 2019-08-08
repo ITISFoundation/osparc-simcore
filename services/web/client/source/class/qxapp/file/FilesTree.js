@@ -97,6 +97,12 @@ qx.Class.define("qxapp.file.FilesTree", {
   },
 
   members: {
+
+    resetCache: function() {
+      const filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
+      filesTreePopulator.resetCache();
+    },
+
     populateTree: function(nodeId = null, locationId = null) {
       let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
       if (nodeId) {
