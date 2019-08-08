@@ -320,6 +320,8 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "material-button",
       alias: "material-button",
       style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
         minHeight: 50,
         center: true
       })
@@ -329,6 +331,24 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "material-button/label",
       style: state => ({
         font: "title-16"
+      })
+    },
+
+    "md-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 35,
+        center: true
+      })
+    },
+
+    "md-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "text-16"
       })
     },
 
