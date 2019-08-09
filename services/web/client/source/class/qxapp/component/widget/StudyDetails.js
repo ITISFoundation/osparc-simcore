@@ -11,6 +11,7 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
   construct: function(study, isTemplate) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
+    this.setMarginBottom(20);
 
     this.__model = qx.data.marshal.Json.createModel(study);
 
