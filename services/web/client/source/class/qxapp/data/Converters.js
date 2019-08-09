@@ -86,7 +86,7 @@ qx.Class.define("qxapp.data.Converters", {
                   [this.createFileEntry(
                     fileName,
                     file["location_id"],
-                    file["file_uuid"],
+                    file["file_id"],
                     file["last_modified"],
                     file["file_size"])
                   ]
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.data.Converters", {
           let fileInfo = this.createFileEntry(
             splitted[splitted.length-1],
             file["location_id"],
-            file["file_uuid"],
+            file["file_id"],
             file["last_modified"],
             file["file_size"]);
           parent.children.push(fileInfo);
@@ -123,6 +123,9 @@ qx.Class.define("qxapp.data.Converters", {
     },
 
     createDirEntry: function(label, location, path, children = []) {
+      if (label === null || label === undefined || label === "") {
+        label = "Unknown label";
+      }
       return {
         label,
         location,
@@ -145,7 +148,7 @@ qx.Class.define("qxapp.data.Converters", {
         lastModified = (Math.floor(Math.random()*1000000)+1).toString();
       }
       if (size === undefined) {
-        size = (Math.floor(Math.random()*1000000)+1).toString();
+        size = 0;
       }
       return {
         label,

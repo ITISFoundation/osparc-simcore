@@ -1,4 +1,5 @@
 import os
+import tempfile
 import typing
 from pathlib import Path
 
@@ -8,8 +9,6 @@ from blackfynn.models import Collection
 import utils
 from simcore_service_storage.datcore import DatcoreClient
 from simcore_service_storage.models import FileMetaData
-
-import tempfile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 api_token = os.environ.get("BF_API_KEY")
@@ -32,7 +31,6 @@ if utils.has_datcore_tokens():
     finally:
         os.remove(path)
 
-    aa
     files =  []
     if True:
         dataset = client.get_dataset("mag")

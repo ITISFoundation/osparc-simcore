@@ -2,14 +2,14 @@
 
 """
 import datetime
-import uuid
 from pathlib import Path
 from typing import Tuple
 
 import attr
 
 from simcore_postgres_database.storage_models import (file_meta_data, metadata,
-                                                      projects, tokens, user_to_projects, users)
+                                                      projects, tokens,
+                                                      user_to_projects, users)
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
 
@@ -60,6 +60,10 @@ def _location_from_str(location : str) ->str:
 
     return intstr
 
+@attr.s(auto_attribs=True)
+class DatasetMetaData:
+    dataset_id: str=""
+    display_name: str=""
 
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
@@ -119,7 +123,7 @@ class FileMetaData:
             self.project_id = parts[0]
             self.node_id = parts[1]
             self.file_uuid = file_uuid
-            self.file_id = str(uuid.uuid4())
+            self.file_id = file_uuid
             self.raw_file_path = self.file_uuid
             self.display_file_path = str(Path("not") / Path("yet") / Path("implemented"))
             self.created_at = str(datetime.datetime.now())
@@ -140,11 +144,25 @@ attr.s(
     kw_only=True)(FileMetaData)
 
 
+@attr.s(auto_attribs=True)
+class FileMetaDataEx():
+    """Extend the base type by some additional attributes that shall not end up in the db
+    """
+    fmd: FileMetaData
+    parent_id: str=""
+
+    def __str__(self):
+        _str = str(self.fmd)
+        _str += "  {0: <25}: {1}\n".format("parent_id", str(self.parent_id))
+        return _str
+
+
 __all__ = [
     "file_meta_data",
     "tokens",
     "metadata",
     "FileMetaData",
+    "FileMetaDataEx",
     "projects",
     "users",
     "user_to_projects"

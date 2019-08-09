@@ -88,6 +88,9 @@ class Item:
                     file_name = next(iter(self._schema.fileToKeyMap))
 
                 file_path = data_items_utils.create_file_path(self.key, file_name)
+                if value == file_path:
+                    # this can happen in case
+                    return value
                 if file_path.exists():
                     file_path.unlink()
                 file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -147,15 +150,19 @@ class Item:
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)
 
-    async def __get_value_from_store(self, value):
+    async def __get_value_from_store(self, value) -> Path:
         log.debug("Getting value from storage %s", value)
         store_id, s3_path = data_items_utils.decode_store(value)
-        log.debug("Fetch file from S3 %s", self.value)
-        file_name = Path(s3_path).name
-        # if a file alias is present use it
+        # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
+        local_path = data_items_utils.create_folder_path(self.key)
+        downloaded_file = await filemanager.download_file(store_id=store_id, s3_object=s3_path, local_folder=local_path)
+        # if a file alias is present use it to rename the file accordingly
         if self._schema.fileToKeyMap:
-            file_name = next(iter(self._schema.fileToKeyMap))
+            renamed_file = local_path / next(iter(self._schema.fileToKeyMap))
+            if downloaded_file != renamed_file:
+                if renamed_file.exists():
+                    renamed_file.unlink()
+                shutil.move(downloaded_file, renamed_file)
+                downloaded_file = renamed_file
 
-        file_path = data_items_utils.create_file_path(self.key, file_name)
-        await filemanager.download_file(store_id=store_id, s3_object=s3_path, local_file_path=file_path)
-        return file_path
+        return downloaded_file

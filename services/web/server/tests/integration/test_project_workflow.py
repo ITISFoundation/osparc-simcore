@@ -12,6 +12,7 @@
 
 import json
 import sys
+from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -39,7 +40,7 @@ API_VERSION = "v0"
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
     'apihub',
-    'postgres'
+    'postgres',
 ]
 
 tool_services = [
@@ -127,6 +128,35 @@ async def logged_user(client): #, role: UserRole):
         yield user
         await delete_all_projects(client.app)
 
+
+@pytest.fixture
+def computational_system_mock(mocker):
+    # director needs access to service registry which unfortunately cannot be provided for testing. For that reason we need to mock
+    # interaction with director
+    mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
+    mock_fun.return_value.set_result("")
+    return mock_fun
+
+@pytest.fixture
+async def storage_subsystem_mock(loop, mocker):
+    """
+        Patches client calls to storage service
+
+        Patched functions are exposed within projects but call storage subsystem
+    """
+    # requests storage to copy data
+    mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_folders_from_project')
+    async def _mock_copy_data_from_project(*args):
+        return args[2]
+
+    mock.side_effect = _mock_copy_data_from_project
+
+    # requests storage to delete data
+    #mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
+    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=Future())
+    mock1.return_value.set_result("")
+    return mock, mock1
+
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects
 
@@ -172,7 +202,7 @@ async def _request_delete(client, pid):
 
 
 
-async def test_workflow(client, fake_project_data, logged_user):
+async def test_workflow(client, fake_project_data, logged_user, computational_system_mock, storage_subsystem_mock):
     # empty list
     projects = await _request_list(client)
     assert not projects

@@ -89,7 +89,6 @@ async def user_project(client, fake_project, logged_user):
         yield project
         print("<----- removed project", project["name"])
 
-
 @pytest.fixture
 async def template_project(client, fake_project):
     project_data = deepcopy(fake_project)
@@ -106,6 +105,13 @@ async def template_project(client, fake_project):
         yield template_project
         print("<----- removed template project", template_project["name"])
 
+@pytest.fixture
+def computational_system_mock(mocker):
+    mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
+    mock_fun.return_value.set_result("")
+    return mock_fun
+
+
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k:dikt[k] for k in keys}
@@ -117,6 +123,8 @@ def assert_replaced(current_project, update_data):
 
     k = "lastChangeDate"
     assert to_datetime(update_data[k]) < to_datetime(current_project[k])
+
+
 
 
 # GET --------
@@ -193,7 +201,8 @@ async def test_get_project(client, logged_user, user_project, template_project, 
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project(client, logged_user, expected):
+async def test_new_project(client, logged_user, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -241,7 +250,8 @@ async def test_new_project(client, logged_user, expected):
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project_from_template(client, logged_user, template_project, expected):
+async def test_new_project_from_template(client, logged_user, template_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?from_template={template_uuid}
     url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
 
@@ -277,7 +287,8 @@ async def test_new_project_from_template(client, logged_user, template_project, 
     (UserRole.USER, web.HTTPCreated),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_project_from_template_with_body(client, logged_user, template_project, expected):
+async def test_new_project_from_template_with_body(client, logged_user, template_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?from_template={template_uuid}
     url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
 
@@ -331,7 +342,8 @@ async def test_new_project_from_template_with_body(client, logged_user, template
     (UserRole.USER, web.HTTPForbidden),
     (UserRole.TESTER, web.HTTPCreated),
 ])
-async def test_new_template_from_project(client, logged_user, user_project, expected):
+async def test_new_template_from_project(client, logged_user, user_project, expected,
+    computational_system_mock, storage_subsystem_mock):
     # POST /v0/projects?as_template={user_uuid}
     url = client.app.router["create_projects"].url_for().\
         with_query(as_template=user_project["uuid"])
@@ -361,11 +373,11 @@ async def test_new_template_from_project(client, logged_user, user_project, expe
 # PUT --------
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_replace_project(client, logged_user, user_project, expected):
+async def test_replace_project(client, logged_user, user_project, expected, computational_system_mock):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
@@ -384,7 +396,7 @@ async def test_replace_project(client, logged_user, user_project, expected):
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_replace_project_updated_inputs(client, logged_user, user_project, expected):
+async def test_replace_project_updated_inputs(client, logged_user, user_project, expected, computational_system_mock):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
@@ -408,11 +420,11 @@ async def test_replace_project_updated_inputs(client, logged_user, user_project,
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_replace_project_updated_readonly_inputs(client, logged_user, user_project, expected):
+async def test_replace_project_updated_readonly_inputs(client, logged_user, user_project, expected, computational_system_mock):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
@@ -436,7 +448,7 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_delete_project(client, logged_user, user_project, expected):
+async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock):
     # DELETE /v0/projects/{project_id}
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 

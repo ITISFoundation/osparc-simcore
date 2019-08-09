@@ -29,11 +29,12 @@ from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
 from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
                    USER_ID)
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+sys.path.append(str(current_dir / 'helpers'))
 
 @pytest.fixture(scope='session')
 def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
+    return current_dir
 
 @pytest.fixture(scope='session')
 def package_dir(here):
@@ -299,7 +300,7 @@ async def datcore_testbucket(loop, mock_files_factory):
     for f in tmp_files:
         await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
 
-    yield BUCKET_NAME
+    yield BUCKET_NAME, tmp_files[0], tmp_files[1]
 
     await dcw.delete_test_dataset(BUCKET_NAME)
 
@@ -315,3 +316,38 @@ def dsm_fixture(s3_client, postgres_engine, loop):
     dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
     return dsm_fixture
+
+
+@pytest.fixture(scope="function")
+async def datcore_structured_testbucket(loop, mock_files_factory):
+    api_token = os.environ.get("BF_API_KEY")
+    api_secret = os.environ.get("BF_API_SECRET")
+
+    if api_secret is None:
+        yield "no_bucket"
+        return
+
+    pool = ThreadPoolExecutor(2)
+    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+
+    dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
+    tmp_files = mock_files_factory(3)
+    # first file to the root
+    file_id1 = await dcw.upload_file_to_id(dataset_id, os.path.normpath(tmp_files[0]))
+    # create first level folder
+    collection_id1 = await dcw.create_collection(dataset_id, "level1")
+    # upload second file
+    file_id2 = await dcw.upload_file_to_id(collection_id1, os.path.normpath(tmp_files[1]))
+
+    # create 3rd level folder
+    collection_id2 = await dcw.create_collection(collection_id1, "level2")
+    file_id3 = await dcw.upload_file_to_id(collection_id2, os.path.normpath(tmp_files[2]))
+
+    yield { 'dataset_id' : dataset_id,
+        'coll1_id' : collection_id1, 'coll2_id' : collection_id2,
+        'file_id1' : file_id1, 'filename1' : tmp_files[0],
+        'file_id2' : file_id2, 'filename2' : tmp_files[1],
+        'file_id3' : file_id3, 'filename3' : tmp_files[2],
+        'dcw' : dcw }
+
+    await dcw.delete_test_dataset(BUCKET_NAME)

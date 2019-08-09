@@ -148,14 +148,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("updatePipeline", e => {
-        let node = e.getData();
-        this.__updatePipeline(node);
+      workbench.addListener("retrieveInputs", e => {
+        const data = e.getData();
+        const node = data["node"];
+        const portKey = data["portKey"];
+        this.__updatePipelineAndRetrieve(node, portKey);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -357,39 +358,20 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
-      let req = new qxapp.io.request.ApiRequest(url, "PUT");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("updating pipeline: " + url);
-      console.log(data);
+    __updatePipelineAndRetrieve: function(node, portKey = null) {
+      this.updateStudyDocument(
+        false,
+        null,
+        this.__retrieveInputs.bind(this, node, portKey)
+      );
+      this.getLogger().debug("root", "Updating pipeline");
+    },
 
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline successfully updated");
-        if (node) {
-          node.retrieveInputs();
-        } else {
-          const workbench = this.getStudy().getWorkbench();
-          const allNodes = workbench.getNodes(true);
-          Object.values(allNodes).forEach(node2 => {
-            node2.retrieveInputs();
-          }, this);
-        }
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error updating pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed updating pipeline");
-      }, this);
-      req.send();
-
-      this.getLogger().debug(null, "Updating pipeline");
+    __retrieveInputs: function(node, portKey = null) {
+      this.getLogger().debug("root", "Retrieveing inputs");
+      if (node) {
+        node.retrieveInputs(portKey);
+      }
     },
 
     __startPipeline: function() {
@@ -397,7 +379,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         return false;
       }
 
-      return this.updateStudyDocument(null, this.__doStartPipeline);
+      return this.updateStudyDocument(true, null, this.__doStartPipeline);
     },
 
     __doStartPipeline: function() {
@@ -436,14 +418,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error submitting pipeline");
+        this.getLogger().error("root", "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed submitting pipeline");
+        this.getLogger().error("root", "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info(null, "Starting pipeline");
+      this.getLogger().info("root", "Starting pipeline");
       return true;
     },
 
@@ -460,28 +442,28 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
+        this.getLogger().error("root", "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
+        this.getLogger().error("root", "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
+      this.getLogger().info("root", "Stopping pipeline. Not yet implemented");
       return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
+      this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__pipelineId = null;
-        this.getLogger().error(null, "Submition failed");
+        this.getLogger().error("root", "Submition failed");
       } else {
         this.__pipelineId = pipelineId;
-        this.getLogger().info(null, "Pipeline started");
+        this.getLogger().info("root", "Pipeline started");
       }
     },
 
@@ -505,7 +487,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.updateStudyDocument(newObj);
+            this.updateStudyDocument(false, newObj);
           }
         }
       }, this);
@@ -519,7 +501,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cb) {
+    updateStudyDocument: function(run=false, newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -529,12 +511,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cb) {
-          cb.call(this);
+        if (cbSuccess) {
+          cbSuccess.call(this);
         }
       }, this);
+      resource.addListenerOnce("putError", ev => {
+        this.getLogger().error("root", "Error updating pipeline");
+      }, this);
       resource.put({
-        "project_id": prjUuid
+        "project_id": prjUuid,
+        run
       }, newObj);
     },
 

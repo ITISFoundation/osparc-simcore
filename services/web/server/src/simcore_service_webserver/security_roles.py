@@ -24,6 +24,11 @@ ROLES_PERMISSIONS = {
   },
   UserRole.GUEST: {
       "can": [
+        # Anonymous users need access to the filesystem because files are being transferred
+        "project.update",
+        "storage.locations.*", # "storage.datcore.read"
+        "storage.files.*",
+
         "project.read",          # "studies.user.read",
                                  # "studies.templates.read"
         # NOTE: All services* are not necessary since it only requires login
@@ -39,7 +44,6 @@ ROLES_PERMISSIONS = {
   UserRole.USER: {
       "can": [
           "project.create",      # "studies.user.create",
-          "project.update",
           "project.delete",      # "study.node.create",
                                  # "study.node.delete",
                                  # "study.node.rename",
@@ -50,8 +54,7 @@ ROLES_PERMISSIONS = {
                                  # "preferences.role.update"
           "user.tokens.*",       # "preferences.token.create",
                                  # "preferences.token.delete"
-          "storage.locations.*", # "storage.datcore.read"
-          "storage.files.*",
+          
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
         # TODO: kept temporarily as a way to denote resources

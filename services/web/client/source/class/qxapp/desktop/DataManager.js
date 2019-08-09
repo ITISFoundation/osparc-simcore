@@ -55,7 +55,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20)).set({
+        marginTop: 20
+      });
 
       const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
@@ -95,7 +97,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
         dataManagerLayout.add(chartLayout);
       }
 
-      this._add(dataManagerMainLayout);
+      this._add(dataManagerMainLayout, {
+        flex: 1
+      });
     },
 
     __createTreeLayout: function() {
@@ -103,8 +107,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
       const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
-        dropMechnism: true,
-        minHeight: 600
+        dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {
         this.__selectionChanged();
@@ -121,21 +124,35 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
+      const actionsToolbar = this.__createActionsToolbar();
+      treeLayout.add(actionsToolbar);
+
+      return treeLayout;
+    },
+
+    __createActionsToolbar: function() {
+      const actionsToolbar = new qx.ui.toolbar.ToolBar();
+      const fileActions = new qx.ui.toolbar.Part();
+      const addFile = new qx.ui.toolbar.Part();
+      actionsToolbar.add(fileActions);
+      actionsToolbar.addSpacer();
+      actionsToolbar.add(addFile);
+
       const addBtn = new qxapp.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
-      treeLayout.add(addBtn);
+      addFile.add(addBtn);
 
       const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
-      treeLayout.add(selectedFileLayout);
+      fileActions.add(selectedFileLayout);
 
-      return treeLayout;
+      return actionsToolbar;
     },
 
     __createChartLayout: function() {

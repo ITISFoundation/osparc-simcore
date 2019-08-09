@@ -15,12 +15,17 @@ services:
     image: services_director:dev
     build:
       target: development
+    environment:
+      - REGISTRY_CACHING=False
+      - SC_BOOT_MODE=debug-ptvsd
     volumes:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
       - ../api:/devel/services/api
     stdin_open: true
     tty: true
+    ports:
+      - "3004:3000"
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:dev
@@ -44,6 +49,10 @@ services:
       - ../packages:/devel/packages
     stdin_open: true
     tty: true
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+    ports:
+      - "3001:3000"
     depends_on:
       - webclient
   #--------------------------------------------------------------------
@@ -63,10 +72,14 @@ services:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+    ports:
+      - "3003:3000"
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
   maintenance:
     image: services_maintenance:dev
     volumes:
-      - ./maintenance/notebooks:/home/jovyan/work
+      - ./maintenance/work:/home/jovyan/work/devel

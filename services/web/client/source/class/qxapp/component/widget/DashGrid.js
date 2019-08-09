@@ -139,8 +139,6 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
             plot.style.WebkitTouchCallout = "none";
             plot.style.WebkitUserSelect = "none";
             plot.style.userSelect = "none";
-            parentNode.setThumbnail(plot.outerHTML);
-            node.setThumbnail(plot.outerHTML);
           }
         }, this);
         cellHandler.retrieveOutput();

@@ -33,15 +33,15 @@ APP_PROJECT_DBAPI  = __name__ + '.ProjectDBAPI'
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
 # TODO: check here how schema to model db works!?
-def _convert_to_db_names(project_data: Dict) -> Dict:
+def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
-    for key, value in project_data.items():
+    for key, value in project_document_data.items():
         converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
-def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
+def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
     converted_args = {}
-    for key, value in project_db_data.items():
+    for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
             continue
         converted_value = value
@@ -175,17 +175,21 @@ class ProjectDBAPI:
             prj["uuid"] = kargs["uuid"]
             return prj["uuid"]
 
-    async def load_user_projects(self, user_id: str) -> List[Dict]:
+    async def load_user_projects(self, user_id: str, *, exclude_templates=True) -> List[Dict]:
         """ loads a project for a user
 
         """
         log.info("Loading projects for user %s", user_id)
         projects_list = []
-        async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table)\
-                .where(user_to_projects.c.user_id == user_id)
 
+        condition = user_to_projects.c.user_id == user_id
+        if exclude_templates:
+            condition = and_(condition,  projects.c.type != ProjectType.TEMPLATE )
+
+        joint_table = user_to_projects.join(projects)
+        query = select([projects]).select_from(joint_table).where(condition)
+
+        async with self.engine.acquire() as conn:
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
                 log.debug("found project: %s", result_dict)
@@ -268,6 +272,18 @@ class ProjectDBAPI:
 
         return template_prj
 
+    async def get_project_workbench(self, project_uuid: str):
+        async with self.engine.acquire() as conn:
+            query = select([projects.c.workbench]).where(
+                    projects.c.uuid == project_uuid
+                    )
+            result = await conn.execute(query)
+            row = await result.first()
+            if row:
+                return row[projects.c.workbench]
+        return {}
+
+
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
 
@@ -302,6 +318,12 @@ class ProjectDBAPI:
                 values(**_convert_to_db_names(project_data)).\
                     where(projects.c.id == row[projects.c.id])
             await conn.execute(query)
+
+
+    async def pop_project(self, project_uuid) -> Dict:
+        # TODO: delete projects and returns a copy
+        pass
+
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         """ deletes a project from a user

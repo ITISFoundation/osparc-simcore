@@ -25,13 +25,13 @@ class SimcoreNode(Model):
         :param description: The description of this SimcoreNode.  # noqa: E501
         :type description: str
         :param inputs: The inputs of this SimcoreNode.  # noqa: E501
-        :type inputs: object
+        :type inputs: Dict[str, object]
         :param key: The key of this SimcoreNode.  # noqa: E501
         :type key: str
         :param name: The name of this SimcoreNode.  # noqa: E501
         :type name: str
         :param outputs: The outputs of this SimcoreNode.  # noqa: E501
-        :type outputs: object
+        :type outputs: Dict[str, object]
         :param type: The type of this SimcoreNode.  # noqa: E501
         :type type: str
         :param version: The version of this SimcoreNode.  # noqa: E501
@@ -41,10 +41,10 @@ class SimcoreNode(Model):
             'authors': 'List[InlineResponse2001Authors]',
             'contact': 'str',
             'description': 'str',
-            'inputs': 'object',
+            'inputs': 'Dict[str, object]',
             'key': 'str',
             'name': 'str',
-            'outputs': 'object',
+            'outputs': 'Dict[str, object]',
             'type': 'str',
             'version': 'str'
         }
@@ -162,7 +162,7 @@ class SimcoreNode(Model):
         definition of the inputs of this node  # noqa: E501
 
         :return: The inputs of this SimcoreNode.
-        :rtype: object
+        :rtype: Dict[str, object]
         """
         return self._inputs
 
@@ -173,7 +173,7 @@ class SimcoreNode(Model):
         definition of the inputs of this node  # noqa: E501
 
         :param inputs: The inputs of this SimcoreNode.
-        :type inputs: object
+        :type inputs: Dict[str, object]
         """
         if inputs is None:
             raise ValueError("Invalid value for `inputs`, must not be `None`")  # noqa: E501
@@ -239,7 +239,7 @@ class SimcoreNode(Model):
         definition of the outputs of this node  # noqa: E501
 
         :return: The outputs of this SimcoreNode.
-        :rtype: object
+        :rtype: Dict[str, object]
         """
         return self._outputs
 
@@ -250,7 +250,7 @@ class SimcoreNode(Model):
         definition of the outputs of this node  # noqa: E501
 
         :param outputs: The outputs of this SimcoreNode.
-        :type outputs: object
+        :type outputs: Dict[str, object]
         """
         if outputs is None:
             raise ValueError("Invalid value for `outputs`, must not be `None`")  # noqa: E501

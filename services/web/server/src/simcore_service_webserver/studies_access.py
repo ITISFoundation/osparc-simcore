@@ -100,7 +100,8 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import clone_project_data, substitute_parameterized_inputs
+    from .projects.projects_utils import substitute_parameterized_inputs
+    from .projects.projects_api import clone_project
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
@@ -118,14 +119,13 @@ async def copy_study_to_account(request: web.Request, template_project: Dict, us
 
     except ProjectNotFoundError:
         # new project from template
-        project = clone_project_data(template_project)
+        project = await clone_project(request, template_project, user["id"], forced_copy_project_id=project_uuid)
 
         # check project inputs and substitute template_parameters
         if template_parameters:
             log.info("Substituting parameters '%s' in template", template_parameters)
             project = substitute_parameterized_inputs(project, template_parameters) or project
 
-        project["uuid"] = project_uuid
         await db.add_project(project, user["id"], force_project_uuid=True)
 
     return project_uuid
@@ -139,11 +139,12 @@ async def access_study(request: web.Request) -> web.Response:
         - public studies are templates that are marked as published in the database
         - if user is not registered, it creates a temporary guest account with limited resources and expiration
     """
-    study_id = request.match_info["id"]
+    project_id = request.match_info["id"]
 
-    template_project = await get_public_project(request.app, study_id)
+    template_project = await get_public_project(request.app, project_id)
     if not template_project:
-        raise web.HTTPNotFound(reason="Invalid public study [{}]".format(study_id))
+        raise web.HTTPNotFound(reason=f"Requested study ({project_id}) has not been published.\
+             Please contact the data curators for more information.")
 
     user = None
     is_anonymous_user = await is_anonymous(request)
@@ -157,7 +158,6 @@ async def access_study(request: web.Request) -> web.Response:
         raise RuntimeError("Unable to start user session")
 
     log.debug("Granted access to study '%d' for user %s. Copying study over ...", template_project.get('name'), user.get('email'))
-
     copied_project_id = await copy_study_to_account(request, template_project, user)
 
     log.debug("Study %s copied", copied_project_id)

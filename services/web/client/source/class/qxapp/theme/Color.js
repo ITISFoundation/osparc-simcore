@@ -27,12 +27,13 @@ qx.Theme.define("qxapp.theme.Color", {
     "logger-info-message": "#FFF",
     "logger-warning-message": "#FF0",
     "logger-error-message": "#F00",
-    "background-main-lighter": "#2D2D2D",
+    "background-main-lighter": "#303030",
     "background-main-lighter+": "#373737",
     "text-placeholder": "text-disabled",
     "text-darker": "text-disabled",
     "tabview-pane-background": "background-main",
     "workbench-start-hint": "#505050",
-    "ready-green": "#33925A"
+    "ready-green": "#33925A",
+    "failed-red": "#FF2D2D"
   }
 });
