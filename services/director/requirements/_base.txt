@@ -15,10 +15,10 @@ certifi==2019.6.16        # via requests
 chardet==3.0.4            # via aiohttp, requests
 idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, requests, yarl
-jsonschema==3.0.1
+jsonschema==3.0.2
 multidict==4.5.2          # via aiohttp, yarl
-pyrsistent==0.15.2        # via jsonschema
-pyyaml==5.1.1
+pyrsistent==0.15.4        # via jsonschema
+pyyaml==5.1.2
 requests==2.22.0
 six==1.12.0               # via jsonschema, pyrsistent, tenacity
 tenacity==5.0.4
