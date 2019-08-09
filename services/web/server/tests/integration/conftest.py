@@ -5,7 +5,6 @@
 
 import logging
 import sys
-from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -21,6 +20,7 @@ from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
 
 # imports the fixtures for the integration tests
+# TODO: remove pytest_plugins https://docs.pytest.org/en/latest/deprecations.html#pytest-plugins-in-non-top-level-conftest-files
 pytest_plugins = [
     "fixtures.standard_directories",
     "fixtures.docker_compose",
