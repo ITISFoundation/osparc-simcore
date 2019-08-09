@@ -69,23 +69,6 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
       dataManagerMainLayout.add(label);
 
-      const dataManagerControl = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-
-      // button for refetching data
-      const reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__resetCache();
-        this.__initResources(null);
-      }, this);
-      dataManagerControl.add(reloadBtn);
-
-      const toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
-      dataManagerControl.add(toDatCore);
-
-      dataManagerMainLayout.add(dataManagerControl);
-
       const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
         flex: 1
@@ -109,6 +92,16 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      // button for refetching data
+      const reloadBtn = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/sync-alt/16"
+      });
+      reloadBtn.addListener("execute", function() {
+        this.__resetCache();
+        this.__initResources(null);
+      }, this);
+      treeLayout.add(reloadBtn);
 
       const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
