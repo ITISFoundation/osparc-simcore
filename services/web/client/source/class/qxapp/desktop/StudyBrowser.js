@@ -141,7 +141,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __createStudiesLayout: function() {
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
-        allowGrowX: false
+        allowGrowX: false,
+        width: 210
       });
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
