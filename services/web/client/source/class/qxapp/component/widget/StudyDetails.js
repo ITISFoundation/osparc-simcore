@@ -104,7 +104,12 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       this.__model.bind("description", description, "markdown");
       this.__model.bind("thumbnail", image, "source");
       this.__model.bind("thumbnail", image, "visibility", {
-        converter: thumbnail => thumbnail ? "visible" : "excluded"
+        converter: thumbnail => {
+          if (thumbnail) {
+            return "visible";
+          }
+          return "excluded";
+        }
       });
       this.__model.bind("creationDate", creationDate, "value", dateOptions);
       this.__model.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
@@ -158,7 +163,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
         saveAsTemplateButton.addListener("execute", e => {
           const btn = e.getTarget();
           btn.setIcon("@FontAwesome5Solid/circle-notch/12");
-          btn.getChildControl("icon").getContentElement().addClass("rotate")
+          btn.getChildControl("icon").getContentElement()
+            .addClass("rotate");
           this.__saveAsTemplate(btn);
         }, this);
         buttons.add(saveAsTemplateButton);
@@ -198,7 +204,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       modeButton.addListener("execute", e => {
         const btn = e.getTarget();
         btn.setIcon("@FontAwesome5Solid/circle-notch/16");
-        btn.getChildControl("icon").getContentElement().addClass("rotate")
+        btn.getChildControl("icon").getContentElement()
+          .addClass("rotate");
         this.__saveStudy(btn);
       }, this);
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
@@ -216,7 +223,7 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
         font: "text-14",
         marginTop: 20
       }));
-      editView.add(name)
+      editView.add(name);
       editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
         font: "text-14"
       }));
@@ -237,7 +244,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().project;
       apiCall.addListenerOnce("putSuccess", e => {
         btn.resetIcon();
-        btn.getChildControl("icon").getContentElement().removeClass("rotate");
+        btn.getChildControl("icon").getContentElement()
+          .removeClass("rotate");
         this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", e);
         const data = e.getData().data;
         this.__model.set(data);
@@ -252,7 +260,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
       apiCall.addListenerOnce("postSaveAsTemplateSuccess", e => {
         btn.resetIcon();
-        btn.getChildControl("icon").getContentElement().removeClass("rotate");
+        btn.getChildControl("icon").getContentElement()
+          .removeClass("rotate");
         this.fireDataEvent("updatedTemplate", e);
         const data = e.getData().data;
         this.__model.set(data);
@@ -279,7 +288,7 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
     },
 
     _applyMode: function(mode) {
-      switch(mode) {
+      switch (mode) {
         case "display":
           this.__stack.setSelection([this.__displayView]);
           break;

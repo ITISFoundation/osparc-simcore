@@ -188,10 +188,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         visibility: "excluded"
       });
       deleteButton.addListener("execute", e => {
+        const thisButton = e.getTarget();
         const isTemplate = this.__templateDeleteButton === thisButton;
         const selection = isTemplate ? this.__templateStudyContainer.getSelection() : this.__userStudyContainer.getSelection();
         const win = this.__createConfirmWindow(selection.length > 1);
-        const thisButton = e.getTarget();
         win.center();
         win.open();
         win.addListener("close", () => {

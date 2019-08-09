@@ -60,7 +60,7 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
         this.setValue(marked(value));
-      }).catch(error => console.error(err));
+      }).catch(error => console.error(error));
     }
   }
 });
