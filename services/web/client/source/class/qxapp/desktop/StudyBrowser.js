@@ -188,15 +188,15 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         visibility: "excluded"
       });
       deleteButton.addListener("execute", e => {
-        const win = this.__createConfirmWindow();
-        const thisButton = e.getTarget();
         const isTemplate = this.__templateDeleteButton === thisButton;
+        const selection = isTemplate ? this.__templateStudyContainer.getSelection() : this.__userStudyContainer.getSelection();
+        const win = this.__createConfirmWindow(selection.length > 1);
+        const thisButton = e.getTarget();
         win.center();
         win.open();
         win.addListener("close", () => {
           if (win["value"] === 1) {
-            const list = isTemplate ? this.__templateStudyContainer : this.__userStudyContainer;
-            this.__deleteStudy(list.getSelection().map(button => this.__getStudyData(button.getUuid(), isTemplate)), isTemplate);
+            this.__deleteStudy(selection.map(button => this.__getStudyData(button.getUuid(), isTemplate)), isTemplate);
           }
         }, this);
       }, this);
@@ -535,7 +535,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       });
     },
 
-    __createConfirmWindow: function() {
+    __createConfirmWindow: function(isMulti) {
       let win = new qx.ui.window.Window("Confirmation").set({
         layout: new qx.ui.layout.VBox(10),
         width: 300,
@@ -548,7 +548,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         appearance: "service-window"
       });
 
-      let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the study?"));
+      const message = `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`;
+      const text = new qx.ui.basic.Label(this.tr(message));
       win.add(text);
 
       let buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
