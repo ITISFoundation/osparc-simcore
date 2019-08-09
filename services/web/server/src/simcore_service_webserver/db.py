@@ -39,6 +39,7 @@ async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
     sa_engine = sa.create_engine(DSN.format(**params))
     metadata.create_all(sa_engine)
+    sa_engine.dispose()
 
 async def pg_engine(app: web.Application):
     engine = None
@@ -62,6 +63,7 @@ async def pg_engine(app: web.Application):
 
     engine = app.get(APP_DB_ENGINE_KEY)
     if engine:
+        engine.terminate()
         engine.close()
         await engine.wait_closed()
 

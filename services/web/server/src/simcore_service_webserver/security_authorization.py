@@ -65,6 +65,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             log.debug("Invalid indentity [%s] of permission [%s]. Denying access.", identity, permission)
             return False
 
+        user = None
         async with self.engine.acquire() as conn:
             query = users.select().where(
                 sa.and_(users.c.email == identity,
@@ -73,8 +74,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             ret = await conn.execute(query)
             user = await ret.fetchone()
 
-            if user:
-                role = user.get('role')
-                return await check_access(self.access_model, role, permission, context)
+        if user:
+            role = user.get('role')
+            return await check_access(self.access_model, role, permission, context)
 
         return False
