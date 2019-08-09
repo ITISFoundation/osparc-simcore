@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -48,16 +48,16 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let inputsMapper = new qxapp.component.widget.InputsMapper(node, inputs["mapper"]);
+ *   let inputsMapper = new osparc.component.widget.InputsMapper(node, inputs["mapper"]);
  *   this.getRoot().add(inputsMapper);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.InputsMapper", {
+qx.Class.define("osparc.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
     * @param mapper {Object} mapper object provided by service's metadata
   */
   construct: function(node, mapper) {
@@ -79,7 +79,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     let that = this;
     tree.setDelegate({
-      createItem: () => new qxapp.component.widget.InputsMapperTreeItem(),
+      createItem: () => new osparc.component.widget.InputsMapperTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
@@ -125,7 +125,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const to = e.getCurrentTarget();
             if (from.getLabel() === "20181113_Yoon-sun_V4_preview") {
               // HACK
-              const mat2ent = qxapp.dev.fake.mat2ent.Data.mat2ent(from.getLabel());
+              const mat2ent = osparc.dev.fake.mat2ent.Data.mat2ent(from.getLabel());
               for (let i=0; i<mat2ent.length; i++) {
                 to.getModel().getChildren()
                   .push(mat2ent[i]);
@@ -182,10 +182,10 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             children: []
           };
           let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
+          const itemProps = osparc.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
           if (itemProps) {
-            let form = new qxapp.component.form.Auto(itemProps, this.getNode());
-            let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+            let form = new osparc.component.form.Auto(itemProps, this.getNode());
+            let propsWidget = new osparc.component.form.renderer.PropForm(form);
             newItemBranch["propsWidget"] = propsWidget;
           }
           data.children.push(newItemBranch);
@@ -218,7 +218,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       }
       switch (keyEvent.getKeyIdentifier()) {
         case "F2": {
-          let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+          let treeItemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
           treeItemRenamer.addListener("labelChanged", e => {
             let newLabel = e.getData()["newLabel"];
             selectedItem.setLabel(newLabel);
@@ -250,7 +250,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     },
 
@@ -272,10 +272,10 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         .push(newItem);
       if (willBeBranch) {
         // Hmmmm not sure about the double getKey :(
-        const itemProps = qxapp.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
+        const itemProps = osparc.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
         if (itemProps) {
-          let form = new qxapp.component.form.Auto(itemProps, this.getNode());
-          let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+          let form = new osparc.component.form.Auto(itemProps, this.getNode());
+          let propsWidget = new osparc.component.form.renderer.PropForm(form);
           newItem["propsWidget"] = propsWidget;
         }
       }

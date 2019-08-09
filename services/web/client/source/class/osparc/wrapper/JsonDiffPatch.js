@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  * <a href='https://github.com/benjamine/jsondiffpatch' target='_blank'>JsonDiffPatch</a>
  */
 
-qx.Class.define("qxapp.wrapper.JsonDiffPatch", {
+qx.Class.define("osparc.wrapper.JsonDiffPatch", {
   extend: qx.core.Object,
   type: "singleton",
 

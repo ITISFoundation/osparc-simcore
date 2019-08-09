@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,8 +19,8 @@
  *
  */
 
-qx.Class.define("qxapp.auth.ui.ResetPassRequestView", {
-  extend: qxapp.auth.core.BaseAuthPage,
+qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
+  extend: osparc.auth.core.BaseAuthPage,
 
   /*
   *****************************************************************************
@@ -75,16 +75,16 @@ qx.Class.define("qxapp.auth.ui.ResetPassRequestView", {
     __submit: function(email) {
       console.debug("sends email to reset password to ", email);
 
-      let manager = qxapp.auth.Manager.getInstance();
+      let manager = osparc.auth.Manager.getInstance();
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.message.FlashMessenger.getInstance().log(log);
+        osparc.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Could not request password reset");
-        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.resetPasswordRequest(email.getValue(), successFun, failFun, this);

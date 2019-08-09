@@ -13,7 +13,7 @@
  * widget and next to the individual form widgets.
  */
 
-qx.Class.define("qxapp.component.form.renderer.PropForm", {
+qx.Class.define("osparc.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
   /**
      * create a page for the View Tab with the given title
@@ -52,19 +52,19 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
   properties: {
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: true
     },
 
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: true
     }
   },
 
   statics: {
     getRetrievingAtom: function() {
-      return new qx.ui.basic.Atom("", "qxapp/loading.gif");
+      return new qx.ui.basic.Atom("", "osparc/loading.gif");
     },
 
     getRetrievedAtom: function(success) {
@@ -108,7 +108,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         });
         label.setBuddy(item);
 
-        const field = new qxapp.component.form.FieldWHint(null, item.description, item);
+        const field = new osparc.component.form.FieldWHint(null, item.description, item);
         field.key = item.key;
         this._add(field, {
           row: this._row,
@@ -242,7 +242,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.column === this._gridPos.entryField) {
           this._remove(child);
-          const field = new qxapp.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
+          const field = new osparc.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
           this._addAt(field, idx, {
             row: layoutProps.row,
             column: layoutProps.column
@@ -305,13 +305,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let icon;
       switch (status) {
         case this._retrieveStatus.failed:
-          icon = qxapp.component.form.renderer.PropForm.getRetrievedAtom(false);
+          icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(false);
           break;
         case this._retrieveStatus.retrieving:
-          icon = qxapp.component.form.renderer.PropForm.getRetrievingAtom();
+          icon = osparc.component.form.renderer.PropForm.getRetrievingAtom();
           break;
         case this._retrieveStatus.succeed:
-          icon = qxapp.component.form.renderer.PropForm.getRetrievedAtom(true);
+          icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(true);
           break;
       }
       icon.key = portId;
@@ -348,7 +348,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);
-          return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+          return osparc.data.Store.getInstance().arePortsCompatible(port1, port2);
         }
       }
       return false;

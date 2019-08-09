@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -23,12 +23,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let controlsBar = new qxapp.desktop.ControlsBar();
+ *   let controlsBar = new osparc.desktop.ControlsBar();
  *   this.getRoot().add(controlsBar);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.ControlsBar", {
+qx.Class.define("osparc.desktop.ControlsBar", {
   extend: qx.ui.toolbar.ToolBar,
 
   construct: function() {
@@ -51,8 +51,8 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
 
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
-      const serviceFilters = new qxapp.desktop.ServiceFilters("workbench");
-      qxapp.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
+      const serviceFilters = new osparc.desktop.ServiceFilters("workbench");
+      osparc.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
       filterCtrls.add(serviceFilters);
       this.add(filterCtrls);
 

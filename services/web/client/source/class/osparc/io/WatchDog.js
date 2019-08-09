@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,17 +27,17 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   qxapp.io.WatchDog.getInstance().startCheck();
+ *   osparc.io.WatchDog.getInstance().startCheck();
  * </pre>
  */
 
-qx.Class.define("qxapp.io.WatchDog", {
+qx.Class.define("osparc.io.WatchDog", {
   extend: qx.core.Object,
 
   type : "singleton",
 
   construct: function() {
-    let resource = qxapp.io.rest.ResourceFactory.getInstance().createHealthCheck();
+    let resource = osparc.io.rest.ResourceFactory.getInstance().createHealthCheck();
     this.__healthCheckResource = resource.healthCheck;
 
     const interval = 5000;
@@ -96,15 +96,15 @@ qx.Class.define("qxapp.io.WatchDog", {
     __updateOnlineStatus: function(e) {
       this.setOnLine(window.navigator.onLine);
       if (this.getOnLine()) {
-        qxapp.component.message.FlashMessenger.getInstance().info("Internet is back");
+        osparc.component.message.FlashMessenger.getInstance().info("Internet is back");
       } else {
-        qxapp.component.message.FlashMessenger.getInstance().error("Internet is down");
+        osparc.component.message.FlashMessenger.getInstance().error("Internet is down");
       }
     },
 
     __updateHealthCheckStatus: function(status) {
       this.setHealthCheck(status);
-      let logo = qxapp.component.widget.LogoOnOff.getInstance();
+      let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
         logo.online(status);
       }

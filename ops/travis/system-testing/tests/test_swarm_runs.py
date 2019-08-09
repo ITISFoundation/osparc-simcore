@@ -213,7 +213,7 @@ async def test_check_serve_root(docker_client, services_docker_compose, tools_do
         resp = urllib.request.urlopen(req)
         charset = resp.info().get_content_charset()
         content = resp.read().decode(charset)
-        search = "qxapp/boot.js"
+        search = "osparc/boot.js"
         if content.find(search) < 0:
             pytest.fail("{} not found in main index.html".format(search))
     except urllib.error.HTTPError as err:

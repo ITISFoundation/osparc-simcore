@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -16,9 +16,9 @@
 ************************************************************************ */
 
 /**
- * A FlashMessage provides brief messages about the app processes. It is used and handled by qxapp.component.message.FlashMessenger.
+ * A FlashMessage provides brief messages about the app processes. It is used and handled by osparc.component.message.FlashMessenger.
  */
-qx.Class.define("qxapp.ui.message.FlashMessage", {
+qx.Class.define("osparc.ui.message.FlashMessage", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -86,7 +86,7 @@ qx.Class.define("qxapp.ui.message.FlashMessage", {
           });
           break;
         case "closebutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
+          control = new osparc.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
             alignY: "middle"
           });
           this._add(control);

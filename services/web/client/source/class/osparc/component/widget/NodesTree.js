@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -30,17 +30,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+ *   let nodesTree = new osparc.component.widget.NodesTree(study.getName(), study.getWorkbench());
  *   this.getRoot().add(nodesTree);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodesTree", {
+qx.Class.define("osparc.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
   /**
     * @param studyName {String} Study Name for displaying as root of the tree
-    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+    * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
   */
   construct: function(studyName, workbench) {
     this.base(arguments);
@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
 
   properties: {
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false
     },
 
@@ -167,7 +167,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
         this.__tree.setDelegate({
-          createItem: () => new qxapp.component.widget.NodeTreeItem(),
+          createItem: () => new osparc.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
             c.bindProperty("label", "label", null, item, id);
@@ -242,7 +242,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         return;
       }
 
-      const treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+      const treeItemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
       treeItemRenamer.addListener("labelChanged", e => {
         const data = e.getData();
         const newLabel = data.newLabel;

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,17 +25,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutput = new qxapp.component.widget.NodeOutput(node);
+ *   let nodeOutput = new osparc.component.widget.NodeOutput(node);
  *   nodeOutput.populateNodeLayout();
  *   this.getRoot().add(nodeOutput);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeOutput", {
-  extend: qxapp.component.widget.NodeInOut,
+qx.Class.define("osparc.component.widget.NodeOutput", {
+  extend: osparc.component.widget.NodeInOut,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
   */
   construct: function(node) {
     this.base(arguments, node);

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
 /**
  * Display widget with a title bar and collapsible content.
  */
-qx.Class.define("qxapp.desktop.PanelView", {
+qx.Class.define("osparc.desktop.PanelView", {
 
   extend: qx.ui.core.Widget,
 

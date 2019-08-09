@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -29,15 +29,15 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   study.setWorkbench(new qxapp.data.model.Workbench(study, study.workbench));
+ *   study.setWorkbench(new osparc.data.model.Workbench(study, study.workbench));
  * </pre>
  */
 
-qx.Class.define("qxapp.data.model.Workbench", {
+qx.Class.define("osparc.data.model.Workbench", {
   extend: qx.core.Object,
 
   /**
-    * @param study {qxapp.data.model.Study} Study owning the Workbench
+    * @param study {osparc.data.model.Study} Study owning the Workbench
     * @param workbenchData {qx.core.Object} Object containing the workbench raw data
     */
   construct: function(study, workbenchData) {
@@ -51,7 +51,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
   properties: {
     study: {
-      check: "qxapp.data.model.Study",
+      check: "osparc.data.model.Study",
       nullable: false
     },
 
@@ -149,10 +149,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (existingEdge) {
         return existingEdge;
       }
-      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.create", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.edge.create", true)) {
         return null;
       }
-      const edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
+      const edge = new osparc.data.model.Edge(edgeId, node1Id, node2Id);
       this.addEdge(edge);
 
       // post edge creation
@@ -176,10 +176,10 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (existingNode) {
         return existingNode;
       }
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.create", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
-      const node = new qxapp.data.model.Node(this, key, version, uuid);
+      const node = new osparc.data.model.Node(this, key, version, uuid);
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
@@ -235,7 +235,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     removeNode: function(nodeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
 
@@ -260,7 +260,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
     },
 
     removeEdge: function(edgeId, currentNodeId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
         return false;
       }
 
@@ -344,11 +344,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
         if (nodeData.key) {
           // not container
           // this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
-          node = new qxapp.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
+          node = new osparc.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
         } else {
           // container
           // this.createNode(null, null, nodeId, parentNode, false);
-          node = new qxapp.data.model.Node(this, null, null, nodeId);
+          node = new osparc.data.model.Node(this, null, null, nodeId);
         }
         if (node) {
           this.__initNodeSignals(node);
@@ -379,13 +379,13 @@ qx.Class.define("qxapp.data.model.Workbench", {
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
             const outputNodeId = nodeData.inputNodes[i];
-            const edge = new qxapp.data.model.Edge(null, outputNodeId, nodeId);
+            const edge = new osparc.data.model.Edge(null, outputNodeId, nodeId);
             this.addEdge(edge);
             node.addInputNode(outputNodeId);
           }
         }
         if (nodeData.outputNode) {
-          const edge = new qxapp.data.model.Edge(null, nodeId, nodeData.parent);
+          const edge = new osparc.data.model.Edge(null, nodeId, nodeData.parent);
           this.addEdge(edge);
         }
       }

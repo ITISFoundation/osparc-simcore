@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * SelectBox with its padding and margins adapted to be show inside a qx.ui.toolbar.ToolBar.
  */
-qx.Class.define("qxapp.ui.toolbar.SelectBox", {
+qx.Class.define("osparc.ui.toolbar.SelectBox", {
   extend: qx.ui.form.SelectBox,
 
   construct: function() {

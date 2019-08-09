@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "qxapp",
+    "name": "osparc",
     "summary": "Front-end application for the oSPARC platform",
     "description": "",
     "homepage": "",
@@ -14,7 +14,7 @@
     "version": "1.0.0"
   },
   "provides": {
-    "namespace": "qxapp",
+    "namespace": "osparc",
     "encoding": "utf-8",
     "class": "source/class",
     "resource": "source/resource",

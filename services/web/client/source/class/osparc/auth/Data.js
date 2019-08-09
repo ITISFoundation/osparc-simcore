@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -20,7 +20,7 @@
  *  - Keeps data and state of current authenticated (logged in) user
 */
 
-qx.Class.define("qxapp.auth.Data", {
+qx.Class.define("osparc.auth.Data", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -31,7 +31,7 @@ qx.Class.define("qxapp.auth.Data", {
     auth: {
       init: null,
       nullable: true,
-      check: "qxapp.io.request.authentication.Token"
+      check: "osparc.io.request.authentication.Token"
     },
 
     /**
@@ -48,22 +48,22 @@ qx.Class.define("qxapp.auth.Data", {
 
     setToken: function(token) {
       if (token) {
-        qxapp.utils.Utils.cookie.setCookie("user", token);
-        this.setAuth(new qxapp.io.request.authentication.Token(token));
+        osparc.utils.Utils.cookie.setCookie("user", token);
+        this.setAuth(new osparc.io.request.authentication.Token(token));
       }
     },
 
     resetToken: function() {
-      qxapp.utils.Utils.cookie.setCookie("user", "logout");
+      osparc.utils.Utils.cookie.setCookie("user", "logout");
       this.resetAuth();
     },
 
     isLogout: function() {
-      return qxapp.utils.Utils.cookie.getCookie("user") === "logout";
+      return osparc.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
     getUserName: function() {
-      const email = qxapp.auth.Data.getInstance().getEmail();
+      const email = osparc.auth.Data.getInstance().getEmail();
       if (email) {
         return email.split("@")[0];
       }

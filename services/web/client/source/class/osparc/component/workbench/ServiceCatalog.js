@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,13 +27,13 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let srvCat = new qxapp.component.workbench.ServiceCatalog();
+ *   let srvCat = new osparc.component.workbench.ServiceCatalog();
  *   srvCat.center();
  *   srvCat.open();
  * </pre>
  */
 
-qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
+qx.Class.define("osparc.component.workbench.ServiceCatalog", {
   extend: qx.ui.window.Window,
 
   construct: function() {
@@ -96,14 +96,14 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       const filterPart = new qx.ui.toolbar.Part().set({
         spacing: 10
       });
-      const filters = new qxapp.desktop.ServiceFilters("serviceCatalog");
+      const filters = new osparc.desktop.ServiceFilters("serviceCatalog");
       this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
       const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
       showAllCheckbox.set({
         value: false,
         // FIXME: Backend should do the filtering
-        visibility: qxapp.data.Permissions.getInstance().canDo("test") ? "visible" : "excluded"
+        visibility: osparc.data.Permissions.getInstance().canDo("test") ? "visible" : "excluded"
       });
       showAllCheckbox.addListener("changeValue", e => {
         this.__updateList();
@@ -127,7 +127,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      const services = this.__serviceBrowser = new qxapp.component.service.ServiceList("serviceCatalog").set({
+      const services = this.__serviceBrowser = new osparc.component.service.ServiceList("serviceCatalog").set({
         width: 568
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
@@ -153,7 +153,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       const infoPart = new qx.ui.toolbar.Part();
       const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));
       infoPart.add(versionLabel);
-      const selectBox = this.__versionsBox = new qxapp.ui.toolbar.SelectBox().set({
+      const selectBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox().set({
         enabled: false
       });
       infoPart.add(selectBox);
@@ -198,7 +198,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
 
     __populateList: function(reload = false) {
       this.__allServicesList = [];
-      let store = qxapp.data.Store.getInstance();
+      let store = osparc.data.Store.getInstance();
       let services = store.getServices(reload);
       if (services === null) {
         store.addListener("servicesRegistered", e => {
@@ -211,7 +211,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
     },
 
     __addNewData: function(newData) {
-      this.__allServicesList = qxapp.utils.Services.convertObjectToArray(newData);
+      this.__allServicesList = osparc.utils.Services.convertObjectToArray(newData);
       this.__updateList(this.__allServicesList);
     },
 
@@ -224,11 +224,11 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
         }
       }
 
-      let groupedServices = this.__allServicesObj = qxapp.utils.Services.convertArrayToObject(filteredServices);
+      let groupedServices = this.__allServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
 
       let groupedServicesList = [];
       for (const serviceKey in groupedServices) {
-        let service = qxapp.utils.Services.getLatest(groupedServices, serviceKey);
+        let service = osparc.utils.Services.getLatest(groupedServices, serviceKey);
         let newModel = qx.data.marshal.Json.createModel(service);
         groupedServicesList.push(newModel);
       }
@@ -244,7 +244,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (serviceKey in this.__allServicesObj) {
-          let versions = qxapp.utils.Services.getVersions(this.__allServicesObj, serviceKey);
+          let versions = osparc.utils.Services.getVersions(this.__allServicesObj, serviceKey);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
@@ -289,11 +289,11 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
+      return osparc.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
     },
 
     __showServiceInfo: function() {
-      const win = new qxapp.component.metadata.ServiceInfoWindow(this.__getSelectedService());
+      const win = new osparc.component.metadata.ServiceInfoWindow(this.__getSelectedService());
       win.center();
       win.open();
     },
@@ -304,7 +304,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
 
     __attachEventHandlers: function() {
       this.addListener("appear", () => {
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
+        osparc.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
         this.__textfield.focus();
       }, this);
       this.__textfield.addListener("keypress", e => {

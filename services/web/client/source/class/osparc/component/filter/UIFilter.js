@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,9 +19,9 @@
  * Base class for GUI filters. Stores the filter id and group id and implements common filter operations
  * like dispatching changes.
  */
-qx.Class.define("qxapp.component.filter.UIFilter", {
+qx.Class.define("osparc.component.filter.UIFilter", {
   extend: qx.ui.core.Widget,
-  implement: qxapp.component.filter.IFilter,
+  implement: osparc.component.filter.IFilter,
   type: "abstract",
 
   /**
@@ -37,7 +37,7 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
       groupId
     });
 
-    qxapp.component.filter.UIFilterController.getInstance().registerFilter(this);
+    osparc.component.filter.UIFilterController.getInstance().registerFilter(this);
   },
 
   properties: {
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
      * @param {string} suffix Will be added at the end of the message name to decrease the probability of message name collision.
      */
     _getMessageName: function(suffix = "filter") {
-      return qxapp.utils.Utils.capitalize(this.getFilterId(), this.getGroupId(), suffix);
+      return osparc.utils.Utils.capitalize(this.getFilterId(), this.getGroupId(), suffix);
     },
 
     /**
@@ -72,7 +72,7 @@ qx.Class.define("qxapp.component.filter.UIFilter", {
         filterId: this.getFilterId(),
         data
       };
-      qxapp.component.filter.UIFilterController.getInstance().publish(filterData);
+      osparc.component.filter.UIFilterController.getInstance().publish(filterData);
     }
   }
 });

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,10 +24,10 @@
  * - Minimal layout and apperance is delegated to the selected theme
  */
 
-qx.Class.define("qxapp.auth.ui.LoginView", {
-  extend: qxapp.auth.core.BaseAuthPage,
+qx.Class.define("osparc.auth.ui.LoginView", {
+  extend: osparc.auth.core.BaseAuthPage,
   include: [
-    qxapp.auth.core.MAuth
+    osparc.auth.core.MAuth
   ],
 
   /*
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       this.__form = new qx.ui.form.Form();
 
       const atm = new qx.ui.basic.Atom().set({
-        icon: "qxapp/osparc-white.svg",
+        icon: "osparc/osparc-white.svg",
         iconPosition: "top"
       });
       atm.getChildControl("icon").set({
@@ -102,7 +102,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
         const interval = 1000;
         const configTimer = new qx.event.Timer(interval);
-        const resource = qxapp.io.rest.ResourceFactory.getInstance();
+        const resource = osparc.io.rest.ResourceFactory.getInstance();
         let registerWithInvitation = resource.registerWithInvitation();
         configTimer.addListener("interval", () => {
           registerWithInvitation = resource.registerWithInvitation();
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
               let text = this.tr("Registration is currently only available with an invitation.");
               text += "<br>";
               text += this.tr("Please contact info@itis.swiss");
-              qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+              osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             } else {
               this.fireEvent("toRegister");
             }
@@ -166,7 +166,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      const manager = qxapp.auth.Manager.getInstance();
+      const manager = osparc.auth.Manager.getInstance();
 
       const successFun = function(log) {
         this.fireDataEvent("done", log.message);
@@ -186,7 +186,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
           });
         });
 
-        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);

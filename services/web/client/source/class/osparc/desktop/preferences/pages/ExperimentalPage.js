@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -21,8 +21,8 @@
  *
  */
 
-qx.Class.define("qxapp.desktop.preferences.pages.ExperimentalPage", {
-  extend:qxapp.desktop.preferences.pages.BasePage,
+qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
+  extend:osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/flask/24";
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ExperimentalPage", {
       ));
       box.add(label);
 
-      let linkBtn = new qxapp.ui.form.LinkButton(this.tr("To qx-osparc-theme"), "https://github.com/ITISFoundation/qx-osparc-theme");
+      let linkBtn = new osparc.ui.form.LinkButton(this.tr("To qx-osparc-theme"), "https://github.com/ITISFoundation/qx-osparc-theme");
       box.add(linkBtn);
 
       let select = new qx.ui.form.SelectBox("Theme");

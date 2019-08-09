@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Common functions for all elements that can be filtered
  */
-qx.Mixin.define("qxapp.component.filter.MFilterable", {
+qx.Mixin.define("osparc.component.filter.MFilterable", {
   members: {
     /**
      * Used to subscribe the element to a filter group.
@@ -26,7 +26,7 @@ qx.Mixin.define("qxapp.component.filter.MFilterable", {
      * @param {String} groupId Id of the filter group to subscribe to.
      */
     subscribeToFilterGroup: function(groupId) {
-      const msgName = qxapp.utils.Utils.capitalize(groupId, "filter");
+      const msgName = osparc.utils.Utils.capitalize(groupId, "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, this.__subscriber, this);
     },
     /**

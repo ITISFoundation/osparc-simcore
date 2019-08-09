@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.file.FileTreeItem(),
+ *     createItem: () => new osparc.file.FileTreeItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindDefaultProperties(item, id);
  *       c.bindProperty("fileId", "fileId", null, item, id);
@@ -39,7 +39,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FileTreeItem", {
+qx.Class.define("osparc.file.FileTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function() {
@@ -165,12 +165,12 @@ qx.Class.define("qxapp.file.FileTreeItem", {
           if (value === null) {
             return "";
           }
-          return qxapp.utils.Utils.bytesToSize(value);
+          return osparc.utils.Utils.bytesToSize(value);
         }
       });
       this.addWidget(sizeWidget);
 
-      if (qxapp.data.Permissions.getInstance().canDo("study.filestree.uuid.read")) {
+      if (osparc.data.Permissions.getInstance().canDo("study.filestree.uuid.read")) {
         this.addWidget(new qx.ui.core.Spacer(10));
 
         // Add Path

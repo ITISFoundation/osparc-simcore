@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   list.setDelegate({
- *     createItem: () => new qxapp.component.widget.inputs.NodeOutputListIconItem(),
+ *     createItem: () => new osparc.component.widget.inputs.NodeOutputListIconItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindDefaultProperties(item, id);
  *       c.bindProperty("key", "model", null, item, id);
@@ -41,7 +41,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIconItem", {
+qx.Class.define("osparc.component.widget.inputs.NodeOutputListIconItem", {
   extend: qx.ui.form.ListItem,
 
   construct: function() {

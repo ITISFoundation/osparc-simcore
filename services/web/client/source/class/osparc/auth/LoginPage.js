@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -20,7 +20,7 @@
  *    A multi-page view that fills all page
  */
 
-qx.Class.define("qxapp.auth.LoginPage", {
+qx.Class.define("osparc.auth.LoginPage", {
   extend : qx.ui.core.Widget,
 
   /*
@@ -44,10 +44,10 @@ qx.Class.define("qxapp.auth.LoginPage", {
       alignX: "center"
     });
 
-    let login = new qxapp.auth.ui.LoginView();
-    let register = new qxapp.auth.ui.RegistrationView();
-    let resetRequest = new qxapp.auth.ui.ResetPassRequestView();
-    let reset = new qxapp.auth.ui.ResetPassView();
+    let login = new osparc.auth.ui.LoginView();
+    let register = new osparc.auth.ui.RegistrationView();
+    let resetRequest = new osparc.auth.ui.ResetPassRequestView();
+    let reset = new osparc.auth.ui.ResetPassView();
 
     pages.add(login);
     pages.add(register);
@@ -59,13 +59,13 @@ qx.Class.define("qxapp.auth.LoginPage", {
       column:0
     });
 
-    const page = qxapp.auth.core.Utils.findParameterInFragment("page");
-    const code = qxapp.auth.core.Utils.findParameterInFragment("code");
+    const page = osparc.auth.core.Utils.findParameterInFragment("page");
+    const code = osparc.auth.core.Utils.findParameterInFragment("code");
     if (page === "reset-password" && code !== null) {
       pages.setSelection([reset]);
     }
 
-    const urlFragment = qxapp.utils.Utils.parseURLFragment();
+    const urlFragment = osparc.utils.Utils.parseURLFragment();
     if (urlFragment.nav && urlFragment.nav.length) {
       if (urlFragment.nav[0] === "registration") {
         pages.setSelection([register]);
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
         pages.setSelection([reset]);
       }
     } else if (urlFragment.params && urlFragment.params.registered) {
-      qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
     }
 
     // Transitions between pages
@@ -120,10 +120,10 @@ qx.Class.define("qxapp.auth.LoginPage", {
         margin: [10, 0]
       });
 
-      const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
+      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       if (platformVersion) {
         const text = platformVersion.name + " v" + platformVersion.version;
-        const versionLink = new qxapp.ui.basic.LinkLabel(text, platformVersion.url).set({
+        const versionLink = new osparc.ui.basic.LinkLabel(text, platformVersion.url).set({
           font: "text-12",
           textColor: "text-darker"
         });
@@ -133,7 +133,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
         versionLinkLayout.add(separator);
       }
 
-      const organizationLink = new qxapp.ui.basic.LinkLabel("© 2019 IT'IS Foundation", "https://itis.swiss").set({
+      const organizationLink = new osparc.ui.basic.LinkLabel("© 2019 IT'IS Foundation", "https://itis.swiss").set({
         font: "text-12",
         textColor: "text-darker"
       });

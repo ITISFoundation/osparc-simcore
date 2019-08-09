@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.component.widget.NodeTreeItem(),
+ *     createItem: () => new osparc.component.widget.NodeTreeItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindDefaultProperties(item, id);
  *       c.bindProperty("label", "label", null, item, id);
@@ -36,7 +36,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeTreeItem", {
+qx.Class.define("osparc.component.widget.NodeTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
   properties : {
@@ -64,7 +64,7 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-      if (qxapp.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
+      if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
         // Add a NodeId
         const nodeIdWidget = new qx.ui.basic.Label();
         this.bind("nodeId", nodeIdWidget, "value");

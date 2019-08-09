@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.neuroman.Data", {
+qx.Class.define("osparc.dev.fake.neuroman.Data", {
   type: "static",
 
   statics: {
@@ -6,27 +6,27 @@ qx.Class.define("qxapp.dev.fake.neuroman.Data", {
       "defaultNeuromanModels": [{
         key: "Model-Neuroman-UUID",
         label: "DemoDec_Neuroman.smash",
-        thumbnail: "qxapp/img1.jpg"
+        thumbnail: "osparc/img1.jpg"
       }, {
         key: "Model-Head-Neuroman-UUID",
         label: "DemoDec_Head_Neuroman.smash",
-        thumbnail: "qxapp/img2.jpg"
+        thumbnail: "osparc/img2.jpg"
       }, {
         key: "Model-Head-Modeler-UUID",
         label: "DemoDec_Head_Modeler.smash",
-        thumbnail: "qxapp/img3.jpg"
+        thumbnail: "osparc/img3.jpg"
       }, {
         key: "Model-Head-LF-UUID",
         label: "DemoDec_Head_LF.smash",
-        thumbnail: "qxapp/img4.jpg"
+        thumbnail: "osparc/img4.jpg"
       }, {
         key: "Model-Head-Neuron-UUID",
         label: "DemoDec_Head_Neuron.smash",
-        thumbnail: "qxapp/img5.jpg"
+        thumbnail: "osparc/img5.jpg"
       }, {
         key: "Rat-Light-UUID",
         label: "ratmodel_simplified.smash",
-        thumbnail: "qxapp/img6.jpg"
+        thumbnail: "osparc/img6.jpg"
       }]
     },
 
@@ -41,7 +41,7 @@ qx.Class.define("qxapp.dev.fake.neuroman.Data", {
     },
 
     getItemList: function(key) {
-      let itemList = qxapp.dev.fake.neuroman.Data.itemList[key];
+      let itemList = osparc.dev.fake.neuroman.Data.itemList[key];
       itemList.sort(this.compare);
       return itemList;
     }

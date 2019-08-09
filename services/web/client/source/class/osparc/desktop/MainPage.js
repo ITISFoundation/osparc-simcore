@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,12 +28,12 @@
  *   - StudyEditor
  *
  * <pre class='javascript'>
- *   let layoutManager = new qxapp.desktop.MainPage();
+ *   let layoutManager = new osparc.desktop.MainPage();
  *   this.getRoot().add(layoutManager);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.MainPage", {
+qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
   construct: function(studyId) {
@@ -49,7 +49,7 @@ qx.Class.define("qxapp.desktop.MainPage", {
       flex: 1
     });
 
-    qxapp.io.WatchDog.getInstance().startCheck();
+    osparc.io.WatchDog.getInstance().startCheck();
   },
 
   events: {},
@@ -61,12 +61,12 @@ qx.Class.define("qxapp.desktop.MainPage", {
     __studyEditor: null,
 
     __createNavigationBar: function() {
-      let navBar = new qxapp.desktop.NavigationBar().set({
+      let navBar = new osparc.desktop.NavigationBar().set({
         height: 100
       });
 
       navBar.addListener("dashboardPressed", () => {
-        if (!qxapp.data.Permissions.getInstance().canDo("studies.user.create", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
           return;
         }
         if (this.__studyEditor) {
@@ -88,7 +88,7 @@ qx.Class.define("qxapp.desktop.MainPage", {
     __createMainView: function(studyId) {
       let prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new qxapp.desktop.Dashboard(studyId);
+      let dashboard = this.__dashboard = new osparc.desktop.Dashboard(studyId);
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
         this.__showStudyEditor(studyEditor);

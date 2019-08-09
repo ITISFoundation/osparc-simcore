@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.ui.hint.Hint", {
+qx.Class.define("osparc.ui.hint.Hint", {
   extend: qx.ui.core.Widget,
 
   construct: function(element, text) {

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Theme.define("qxapp.theme.Appearance", {
+qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.osparcdark.Appearance,
 
   appearances: {

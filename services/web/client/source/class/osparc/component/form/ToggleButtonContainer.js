@@ -8,7 +8,7 @@
 /**
  * Container for StudyBrowserListItems or any other ToggleButtons, with some convenient methods.
  */
-qx.Class.define("qxapp.component.form.ToggleButtonContainer", {
+qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function(layout) {

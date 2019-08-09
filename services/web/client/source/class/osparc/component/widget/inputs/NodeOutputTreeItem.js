@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
+ *     createItem: () => new osparc.component.widget.inputs.NodeOutputTreeItem(),
  *     bindItem: (c, item, id) => {
  *      c.bindDefaultProperties(item, id);
  *     },
@@ -41,7 +41,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
+qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function() {

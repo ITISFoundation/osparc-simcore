@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * ProgressBar with its padding and margins adapted to be show inside a qx.ui.toolbar.ToolBar.
  */
-qx.Class.define("qxapp.ui.toolbar.ProgressBar", {
+qx.Class.define("osparc.ui.toolbar.ProgressBar", {
   extend: qx.ui.indicator.ProgressBar,
 
   construct: function() {

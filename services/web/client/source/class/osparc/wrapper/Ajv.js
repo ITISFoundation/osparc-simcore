@@ -14,7 +14,7 @@
  * <a href='https://github.com/epoberezkin/ajv' target='_blank'>Ajv</a>
  */
 
-qx.Class.define("qxapp.wrapper.Ajv", {
+qx.Class.define("osparc.wrapper.Ajv", {
   extend: qx.core.Object,
 
   statics: {

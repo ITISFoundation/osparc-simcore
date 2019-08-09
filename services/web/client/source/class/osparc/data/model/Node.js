@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -30,19 +30,19 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let node = new qxapp.data.model.Node(this, key, version, uuid);
+ *   let node = new osparc.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
  *   node.startInteractiveNode();
  * </pre>
  */
 
-qx.Class.define("qxapp.data.model.Node", {
+qx.Class.define("osparc.data.model.Node", {
   extend: qx.core.Object,
   include: qx.locale.MTranslation,
 
   /**
-    * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
+    * @param workbench {osparc.data.model.Workbench} workbench owning the widget the node
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
@@ -59,12 +59,12 @@ qx.Class.define("qxapp.data.model.Node", {
     this.__outputs = {};
 
     this.set({
-      nodeId: uuid || qxapp.utils.Utils.uuidv4(),
+      nodeId: uuid || osparc.utils.Utils.uuidv4(),
       key,
       version
     });
 
-    let store = qxapp.data.Store.getInstance();
+    let store = osparc.data.Store.getInstance();
     let metaData = this.__metaData = store.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
@@ -87,7 +87,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
   properties: {
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false
     },
 
@@ -114,7 +114,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     propsWidget: {
-      check: "qxapp.component.form.renderer.PropForm",
+      check: "osparc.component.form.renderer.PropForm",
       init: null,
       nullable: true
     },
@@ -154,7 +154,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     iFrame: {
-      check: "qxapp.component.widget.PersistentIframe",
+      check: "osparc.component.widget.PersistentIframe",
       init: null,
       nullable: true
     },
@@ -250,15 +250,15 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isDynamic: function() {
-      return qxapp.data.model.Node.isDynamic(this.getMetaData());
+      return osparc.data.model.Node.isDynamic(this.getMetaData());
     },
 
     isComputational: function() {
-      return qxapp.data.model.Node.isComputational(this.getMetaData());
+      return osparc.data.model.Node.isComputational(this.getMetaData());
     },
 
     isRealService: function() {
-      return qxapp.data.model.Node.isRealService(this.getMetaData());
+      return osparc.data.model.Node.isRealService(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -418,7 +418,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __addInputsDefaultWidgets: function() {
       const isInputModel = false;
-      this.__inputsDefaultWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
+      this.__inputsDefaultWidget = new osparc.component.widget.NodePorts(this, isInputModel);
     },
 
     /**
@@ -445,7 +445,7 @@ qx.Class.define("qxapp.data.model.Node", {
     __addMapper: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
       if (filteredInputs.mapper) {
-        let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
+        let inputsMapper = new osparc.component.widget.InputsMapper(this, filteredInputs["mapper"]);
         this.setInputsMapper(inputsMapper);
         delete filteredInputs["mapper"];
       }
@@ -457,7 +457,7 @@ qx.Class.define("qxapp.data.model.Node", {
      *
      */
     __addSettings: function(inputs) {
-      const form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
+      const form = this.__settingsForm = new osparc.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         const changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
@@ -467,7 +467,7 @@ qx.Class.define("qxapp.data.model.Node", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      const propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new osparc.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
         const changedField = e.getData();
@@ -485,7 +485,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     __addOutputWidget: function() {
       const isInputModel = true;
-      this.__outputWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
+      this.__outputWidget = new osparc.component.widget.NodePorts(this, isInputModel);
     },
 
     __addInputsDefault: function(inputsDefault) {
@@ -552,7 +552,7 @@ qx.Class.define("qxapp.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (osparc.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               break;
             }
@@ -607,7 +607,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     renameNode: function(newLabel) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.rename", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
         return false;
       }
       this.setLabel(newLabel);
@@ -616,7 +616,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
-        this.setIFrame(new qxapp.component.widget.PersistentIframe());
+        this.setIFrame(new osparc.component.widget.PersistentIframe());
       }
       if (loadThis) {
         this.getIFrame().resetSource();
@@ -654,7 +654,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     __showLoadingIFrame: function() {
-      const loadingUri = qxapp.utils.Utils.getLoaderUri();
+      const loadingUri = osparc.utils.Utils.getLoaderUri();
       this.restartIFrame(loadingUri);
     },
 
@@ -668,7 +668,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     retrieveInputs: function(portKey = null) {
       if (this.isDynamic() && this.isRealService()) {
-        if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
+        if (!osparc.data.Permissions.getInstance().canDo("study.update")) {
           return;
         }
         const srvUrl = this.getServiceUrl();
@@ -761,7 +761,7 @@ qx.Class.define("qxapp.data.model.Node", {
         query += "&service_key=" + encodeURIComponent(metaData.key);
         query += "&service_tag=" + encodeURIComponent(metaData.version);
       }
-      let request = new qxapp.io.request.ApiRequest(url+query, "POST");
+      let request = new osparc.io.request.ApiRequest(url+query, "POST");
       request.addListener("success", this.__onInteractiveNodeStarted, this);
       request.addListener("error", e => {
         const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -854,7 +854,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
     __nodeState: function() {
       const url = "/running_interactive_services/" + encodeURIComponent(this.getNodeId());
-      let request = new qxapp.io.request.ApiRequest(url, "GET");
+      let request = new osparc.io.request.ApiRequest(url, "GET");
       request.addListener("success", this.__onNodeState, this);
       request.addListener("error", e => {
         const errorMsg = "Error when starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
@@ -939,7 +939,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const store = qxapp.data.Store.getInstance();
+        const store = osparc.data.Store.getInstance();
         store.stopInteractiveService(this.getNodeId());
         this.removeIFrame();
       }

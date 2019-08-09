@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,7 +25,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
+ *   let tableModel = this.__logModel = new osparc.component.widget.logger.RemoteTableModel();
  *   tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
@@ -42,7 +42,7 @@
  * @asset(demobrowser/backend/remote_table.php)
  */
 
-qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
+qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
 
   extend : qx.ui.table.model.Remote,
 
@@ -85,8 +85,8 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
     addRows: function(newRows) {
       for (let i=0; i<newRows.length; i++) {
         const newRow = newRows[i];
-        newRow["whoRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(newRow.label, newRow.nodeColor);
-        newRow["msgRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(newRow.msg, newRow.msgColor);
+        newRow["whoRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(newRow.label, newRow.nodeColor);
+        newRow["msgRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(newRow.msg, newRow.msgColor);
         this.__rawData.push(newRow);
       }
     },
@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
         const row = this.__rawData[i];
         if (row.nodeId === nodeId) {
           row.label = newLabel;
-          row["whoRich"] = qxapp.component.widget.logger.RemoteTableModel.addColorTag(row.label, row.nodeColor);
+          row["whoRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(row.label, row.nodeColor);
         }
       }
     },

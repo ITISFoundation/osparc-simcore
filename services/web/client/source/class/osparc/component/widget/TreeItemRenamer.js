@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let itemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+ *   let itemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
  *   itemRenamer.addListener("labelChanged", e => {
  *     const data = e.getData();
  *     const newLabel = data.newLabel;
@@ -36,7 +36,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
+qx.Class.define("osparc.component.widget.TreeItemRenamer", {
   extend: qx.ui.window.Window,
 
   construct: function(selectedItem) {

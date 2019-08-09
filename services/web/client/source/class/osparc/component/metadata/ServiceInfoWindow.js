@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
+qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
   extend: qx.ui.window.Window,
   construct: function(metadata) {
     this.base(arguments, this.tr("Service information") + " · " + metadata.name);
@@ -18,7 +18,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
       modal: true
     });
 
-    this.add(new qxapp.component.metadata.ServiceInfo(metadata));
+    this.add(new osparc.component.metadata.ServiceInfo(metadata));
   },
 
   properties: {

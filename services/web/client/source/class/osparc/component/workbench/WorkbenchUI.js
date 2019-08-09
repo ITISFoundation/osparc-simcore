@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let workbenchUI = new qxapp.component.workbench.WorkbenchUI(workbench);
+ *   let workbenchUI = new osparc.component.workbench.WorkbenchUI(workbench);
  *   this.getRoot().add(workbenchUI);
  * </pre>
  */
@@ -33,11 +33,11 @@ const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
-qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
+qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+    * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
   */
   construct: function(workbench) {
     this.base(arguments);
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
-    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+    const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
     let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
       font: navBarLabelFont,
       alignX: "center"
@@ -95,7 +95,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     });
     this.__desktopCanvas.add(this.__startHint);
 
-    this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
+    this.__svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
@@ -134,7 +134,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
   properties: {
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false,
       apply: "loadModel"
     }
@@ -156,7 +156,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __currentModel: null,
 
     __getPlusButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
+      const icon = "@FontAwesome5Solid/plus/32"; // osparc.dev.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.Button(null, icon);
       plusButton.set({
         width: BUTTON_SIZE,
@@ -208,7 +208,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createServiceCatalog: function(pos) {
-      let srvCat = new qxapp.component.workbench.ServiceCatalog();
+      let srvCat = new osparc.component.workbench.ServiceCatalog();
       if (pos) {
         srvCat.moveTo(pos.x, pos.y);
       } else {
@@ -305,7 +305,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __createNodeUI: function(nodeId) {
       let node = this.getWorkbench().getNode(nodeId);
 
-      let nodeUI = new qxapp.component.workbench.NodeUI(node);
+      let nodeUI = new osparc.component.workbench.NodeUI(node);
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
 
@@ -339,7 +339,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const y2 = pointList[1] ? pointList[1][1] : 0;
         const edgeRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-        const edgeUI = new qxapp.component.workbench.EdgeUI(edge, edgeRepresentation);
+        const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
         edgeUI.getRepresentation().node.addEventListener("click", e => {
@@ -478,7 +478,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createNodeInputUI: function(inputNode) {
-      let nodeInput = new qxapp.component.widget.NodeInput(inputNode);
+      let nodeInput = new osparc.component.widget.NodeInput(inputNode);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
       this.__inputNodesLayout.add(nodeInput, {
@@ -505,7 +505,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createNodeOutputUI: function(currentModel) {
-      let nodeOutput = new qxapp.component.widget.NodeOutput(currentModel);
+      let nodeOutput = new osparc.component.widget.NodeOutput(currentModel);
       nodeOutput.populateNodeLayout();
       this.__createDragDropMechanism(nodeOutput);
       this.__outputNodesLayout.add(nodeOutput, {
@@ -537,7 +537,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return qxapp.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
+      return osparc.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {
@@ -831,7 +831,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       if (oldId) {
         if (this.__isSelectedItemAnEdge(oldId)) {
           const unselectedEdge = this.__getEdgeUI(oldId);
-          const unselectedColor = qxapp.theme.Color.colors["workbench-edge-comp-active"];
+          const unselectedColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
           this.__svgWidget.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
@@ -839,7 +839,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge(newID)) {
         const selectedEdge = this.__getEdgeUI(newID);
-        const selectedColor = qxapp.theme.Color.colors["workbench-edge-selected"];
+        const selectedColor = osparc.theme.Color.colors["workbench-edge-selected"];
         this.__svgWidget.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
@@ -859,15 +859,15 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
+        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
 
         qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
       });
       this.addListener("disappear", () => {
         // Reset filters
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        qxapp.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
+        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
       });
 
       this.__desktop.addListener("tap", e => {

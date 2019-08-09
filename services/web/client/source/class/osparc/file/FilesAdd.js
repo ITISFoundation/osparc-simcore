@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -35,12 +35,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
+ *   let filesAdd = new osparc.file.FilesAdd(this.tr("Add file(s)"));
  *   this.getRoot().add(filesAdd);
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FilesAdd", {
+qx.Class.define("osparc.file.FilesAdd", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -79,7 +79,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: true
     },
 
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
-      let store = qxapp.data.Store.getInstance();
+      let store = osparc.data.Store.getInstance();
       store.addListenerOnce("presignedLink", e => {
         const presignedLinkData = e.getData();
         file["location"] = presignedLinkData.locationId;
@@ -123,8 +123,8 @@ qx.Class.define("qxapp.file.FilesAdd", {
       }, this);
       const download = false;
       const locationId = 0;
-      const studyId = this.getStudyId() || qxapp.utils.Utils.uuidv4();
-      const nodeId = this.getNode() ? this.getNode().getNodeId() : qxapp.utils.Utils.uuidv4();
+      const studyId = this.getStudyId() || osparc.utils.Utils.uuidv4();
+      const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidv4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       store.getPresignedLink(download, locationId, fileUuid);
@@ -134,7 +134,7 @@ qx.Class.define("qxapp.file.FilesAdd", {
     __uploadFile: function(file, url) {
       const hBox = this._createChildControlImpl("progressBox");
       const label = new qx.ui.basic.Atom(file.name);
-      const progressBar = new qxapp.ui.toolbar.ProgressBar();
+      const progressBar = new osparc.ui.toolbar.ProgressBar();
       hBox.add(label);
       hBox.add(progressBar);
 

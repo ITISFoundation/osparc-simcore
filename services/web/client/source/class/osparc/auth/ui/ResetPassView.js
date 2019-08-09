@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,8 +19,8 @@
  *
  */
 
-qx.Class.define("qxapp.auth.ui.ResetPassView", {
-  extend: qxapp.auth.core.BaseAuthPage,
+qx.Class.define("osparc.auth.ui.ResetPassView", {
+  extend: osparc.auth.core.BaseAuthPage,
 
   /*
   *****************************************************************************
@@ -48,7 +48,7 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
       });
       this.add(confirm);
 
-      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const urlFragment = osparc.utils.Utils.parseURLFragment();
       const resetCode = urlFragment.params ? urlFragment.params.code || null : null;
       const code = new qx.ui.form.TextField().set({
         visibility: "excluded",
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
       this.add(code);
 
       validator.setValidator(function(_itemForms) {
-        return qxapp.auth.core.Utils.checkSamePasswords(password, confirm);
+        return osparc.auth.core.Utils.checkSamePasswords(password, confirm);
       });
 
       // submit and cancel buttons
@@ -89,16 +89,16 @@ qx.Class.define("qxapp.auth.ui.ResetPassView", {
     },
 
     __submit: function(password, confirm, code) {
-      let manager = qxapp.auth.Manager.getInstance();
+      let manager = osparc.auth.Manager.getInstance();
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.message.FlashMessenger.getInstance().log(log);
+        osparc.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Could not reset password");
-        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       };
 
       manager.resetPassword(password, confirm, code, successFun, failFun, this);

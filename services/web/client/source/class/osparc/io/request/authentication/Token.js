@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.io.request.authentication.Token", {
+qx.Class.define("osparc.io.request.authentication.Token", {
   extend: qx.core.Object,
 
   implement: qx.io.request.authentication.IAuthentication,

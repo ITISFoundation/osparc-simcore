@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -20,8 +20,8 @@
  *  TODO: add a check to prevent bots to register users
 */
 
-qx.Class.define("qxapp.auth.ui.RegistrationView", {
-  extend: qxapp.auth.core.BaseAuthPage,
+qx.Class.define("osparc.auth.ui.RegistrationView", {
+  extend: osparc.auth.core.BaseAuthPage,
 
 
   /*
@@ -65,7 +65,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
       this.add(pass2);
 
-      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const urlFragment = osparc.utils.Utils.parseURLFragment();
       const token = urlFragment.params ? urlFragment.params.invitation || null : null;
       const invitation = new qx.ui.form.TextField().set({
         visibility: "excluded",
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       // validation
       validator.add(email, qx.util.Validate.email());
       validator.setValidator(function(_itemForms) {
-        return qxapp.auth.core.Utils.checkSamePasswords(pass1, pass2);
+        return osparc.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
 
 
@@ -117,16 +117,16 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
     __submit: function(userData) {
       console.debug("Registering new user");
 
-      let manager = qxapp.auth.Manager.getInstance();
+      let manager = osparc.auth.Manager.getInstance();
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        qxapp.component.message.FlashMessenger.getInstance().log(log);
+        osparc.component.message.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.register(userData, successFun, failFun, this);

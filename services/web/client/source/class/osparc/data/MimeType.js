@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,11 +24,11 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const sameType = qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+ *   const sameType = osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
  * </pre>
  */
 
-qx.Class.define("qxapp.data.MimeType", {
+qx.Class.define("osparc.data.MimeType", {
   extend: qx.core.Object,
 
   properties: {

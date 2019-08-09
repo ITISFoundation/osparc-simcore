@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Base class for RESTful resources
  */
-qx.Class.define("qxapp.io.rest.AbstractResource", {
+qx.Class.define("osparc.io.rest.AbstractResource", {
   extend: qx.io.rest.Resource,
   type: "abstract",
 
@@ -27,7 +27,7 @@ qx.Class.define("qxapp.io.rest.AbstractResource", {
     AUTHENTICATION: null,
 
     setAutheticationHeader: function(usernameOrToken, password=null) {
-      qxapp.io.rest.AbstractResource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+      osparc.io.rest.AbstractResource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
     }
 
   },
@@ -41,7 +41,7 @@ qx.Class.define("qxapp.io.rest.AbstractResource", {
         value: "application/json"
       }];
 
-      const auth = qxapp.io.rest.AbstractResource.AUTHENTICATION;
+      const auth = osparc.io.rest.AbstractResource.AUTHENTICATION;
       if (auth === null) {
         console.debug("Authentication missing");
       } else {
@@ -61,7 +61,7 @@ qx.Class.define("qxapp.io.rest.AbstractResource", {
      * Can be overriden in subclass to change prefix
      */
     formatUrl: function(tail) {
-      return qxapp.io.rest.AbstractResource.API + tail;
+      return osparc.io.rest.AbstractResource.API + tail;
     }
   }
 

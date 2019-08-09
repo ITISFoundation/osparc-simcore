@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,17 +26,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputTree = new qxapp.component.widget.inputs.NodeOutputTree(node, port, portKey);
+ *   let nodeOutputTree = new osparc.component.widget.inputs.NodeOutputTree(node, port, portKey);
  *   widget = nodeOutputTree.getOutputWidget();
  *   this.getRoot().add(widget);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
+qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
   extend: qx.ui.tree.VirtualTree,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
     * @param port {Object} Port owning the widget
     * @param portKey {String} Port Key
   */
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
     const self = this;
     this.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
+      createItem: () => new osparc.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("value", "value", null, item, id);
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     },
     ports: {
@@ -132,13 +132,13 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
           open: false
         };
         if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
-          const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
+          const itemList = osparc.data.Store.getInstance().getItemList(node.getKey(), portKey);
           const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
-          const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
+          const children = osparc.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
           portData.children = children;
           portData.open = true;
         } else {
-          portData.icon = qxapp.data.Converters.fromTypeToIcon(ports[portKey].type);
+          portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
           portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value; // eslint-disable-line no-eq-null
         }
         data.children.push(portData);

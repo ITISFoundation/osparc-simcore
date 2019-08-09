@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,16 +18,16 @@
 /**
  * Helpers to build Auth Pages (temporary)
 */
-qx.Mixin.define("qxapp.auth.core.MAuth", {
+qx.Mixin.define("osparc.auth.core.MAuth", {
 
   members:{
 
     /**
      * Create link button
-     * TODO: create its own widget under qxapp.core.ui.LinkButton (extend Button with different apperance)
+     * TODO: create its own widget under osparc.core.ui.LinkButton (extend Button with different apperance)
      */
     createLinkButton: function(txt, cbk, ctx) {
-      const atm = new qxapp.ui.form.LinkButton(txt).set({
+      const atm = new osparc.ui.form.LinkButton(txt).set({
         appearance: "link-button"
       });
       atm.addListener("execute", function() {

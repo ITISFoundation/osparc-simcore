@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,17 +24,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let store = qxapp.data.Store.getInstance();
+ *   let store = osparc.data.Store.getInstance();
  *   store.addListenerOnce("nodeFiles", e => {
  *     const files = e.getData();
- *     const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+ *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
  *     this.__addTreeData(newChildren);
  *   }, this);
  *   store.getNodeFiles(nodeId);
  * </pre>
  */
 
-qx.Class.define("qxapp.data.Converters", {
+qx.Class.define("osparc.data.Converters", {
   type: "static",
 
   statics: {
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.data.Converters", {
     },
 
     fromDSMToVirtualTreeModel: function(files) {
-      let uuidToName = qxapp.utils.UuidToName.getInstance();
+      let uuidToName = osparc.utils.UuidToName.getInstance();
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];

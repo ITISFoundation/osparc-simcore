@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Defines the methods all UI filterable elements should implement.
  */
-qx.Interface.define("qxapp.component.filter.IFilterable", {
+qx.Interface.define("osparc.component.filter.IFilterable", {
   members:{
     /**
      * Function in charge of setting the element to a filtered state.

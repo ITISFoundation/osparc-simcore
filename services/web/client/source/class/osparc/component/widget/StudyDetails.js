@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.component.widget.StudyDetails", {
+qx.Class.define("osparc.component.widget.StudyDetails", {
   extend: qx.ui.form.Form,
   include: qx.locale.MTranslation,
 
@@ -82,13 +82,13 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
     },
 
     __createButtons: function() {
-      const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().project;
+      const apiCall = osparc.io.rest.ResourceFactory.getInstance().createStudyResources().project;
       const model = this.__controller.getModel();
 
       // Permissions
-      const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
-      const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
-      const isCurrentUserOwner = model.getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
+      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
+      const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
+      const isCurrentUserOwner = model.getPrjOwner() === osparc.data.Permissions.getInstance().getLogin();
 
       const openButton = new qx.ui.form.Button(this.tr("Open"));
       openButton.addListener("execute", () => {
@@ -140,8 +140,8 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
     },
 
     __applyPermissionsOnFields: function() {
-      const isCurrentUserOwner = this.__controller.getModel().getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
-      const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
+      const isCurrentUserOwner = this.__controller.getModel().getPrjOwner() === osparc.data.Permissions.getInstance().getLogin();
+      const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
       for (let key in this.getItems()) {
         if (["name", "description", "thumbnail"].includes(key)) {
           this.getItems()[key].setEnabled(isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate));

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,10 +19,10 @@
  * Big button representing a service. It shows it name, description and contact information. It also adds
  * filtering capabilities.
  */
-qx.Class.define("qxapp.component.service.ServiceJumbo", {
-  extend: qxapp.ui.form.Jumbo,
-  include: qxapp.component.filter.MFilterable,
-  implement: qxapp.component.filter.IFilterable,
+qx.Class.define("osparc.component.service.ServiceJumbo", {
+  extend: osparc.ui.form.Jumbo,
+  include: osparc.component.filter.MFilterable,
+  implement: osparc.component.filter.IFilterable,
 
   /**
    * Constructor

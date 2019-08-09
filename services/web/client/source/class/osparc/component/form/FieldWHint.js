@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * @asset(hint/hint.css)
  */
 
-qx.Class.define("qxapp.component.form.FieldWHint", {
+qx.Class.define("osparc.component.form.FieldWHint", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -66,7 +66,7 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
       let control;
       switch (id) {
         case "infobutton":
-          control = new qxapp.component.form.IconButton("@FontAwesome5Solid/info-circle/14");
+          control = new osparc.component.form.IconButton("@FontAwesome5Solid/info-circle/14");
           control.getContentElement().addClass("hint-button");
           this._add(control, {
             right: 0,
@@ -79,7 +79,7 @@ qx.Class.define("qxapp.component.form.FieldWHint", {
 
     __attachEventHandlers: function() {
       if (this.__hintText) {
-        this.__infoButton.addListener("mouseover", () => this.__hint = new qxapp.ui.hint.Hint(this.__infoButton, this.__hintText), this);
+        this.__infoButton.addListener("mouseover", () => this.__hint = new osparc.ui.hint.Hint(this.__infoButton, this.__hintText), this);
         this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
 
         this.__field.bind("visibility", this, "visibility");

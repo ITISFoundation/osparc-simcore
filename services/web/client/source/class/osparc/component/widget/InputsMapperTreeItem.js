@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.component.widget.InputsMapperTreeItem(),
+ *     createItem: () => new osparc.component.widget.InputsMapperTreeItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindDefaultProperties(item, id);
  *       c.bindProperty("isDir", "isDir", null, item, id);
@@ -36,7 +36,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.InputsMapperTreeItem", {
+qx.Class.define("osparc.component.widget.InputsMapperTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function() {

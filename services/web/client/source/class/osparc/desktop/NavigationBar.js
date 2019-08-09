@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -31,14 +31,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let navBar = new qxapp.desktop.NavigationBar();
+ *   let navBar = new osparc.desktop.NavigationBar();
  *   this.getRoot().add(navBar);
  * </pre>
  */
 
 const NAVIGATION_BUTTON_HEIGHT = 32;
 
-qx.Class.define("qxapp.desktop.NavigationBar", {
+qx.Class.define("osparc.desktop.NavigationBar", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -61,7 +61,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       minHeight: NAVIGATION_BUTTON_HEIGHT
     };
 
-    let logo = qxapp.component.widget.LogoOnOff.getInstance();
+    let logo = osparc.component.widget.LogoOnOff.getInstance();
     this._add(logo);
     this._add(new qx.ui.toolbar.Separator());
 
@@ -87,21 +87,21 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
-    this._add(new qxapp.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
+    this._add(new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
       appearance: "link-button"
     }));
 
-    this._add(new qxapp.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
+    this._add(new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
       appearance: "link-button"
     }));
 
-    const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-    const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
+    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
 
     const userBtn = this.__createUserBtn();
     userBtn.set({
       ...commonBtnSettings,
-      icon: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT),
+      icon: osparc.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT),
       label: userName
     });
 
@@ -115,7 +115,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
   properties: {
     study: {
-      check: "qxapp.data.model.Study",
+      check: "osparc.data.model.Study",
       nullable: true
     }
   },
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
       }
@@ -200,11 +200,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", () => window.open(qxapp.component.widget.NewGHIssue.getNewIssueUrl()));
+      newIssueBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()));
       menu.add(newIssueBtn);
 
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
+      aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
       menu.add(aboutBtn);
 
       menu.addSeparator();
@@ -226,7 +226,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
-        this.__preferencesWin = new qxapp.desktop.preferences.DialogWindow();
+        this.__preferencesWin = new osparc.desktop.preferences.DialogWindow();
       }
 
       let win = this.__preferencesWin;

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,13 +18,13 @@
 ************************************************************************ */
 
 /**
- * This is the main application class of "qxapp"
+ * This is the main application class of "osparc"
  *
- * @asset(qxapp/*)
+ * @asset(osparc/*)
  * @asset(common/common.css)
  */
 
-qx.Class.define("qxapp.Application", {
+qx.Class.define("osparc.Application", {
   extend: qx.application.Standalone,
   include: [
     qx.locale.MTranslation
@@ -59,12 +59,12 @@ qx.Class.define("qxapp.Application", {
       });
       if (qx.core.Environment.get("dev.enableFakeSrv")) {
         console.debug("Fake server enabled");
-        qxapp.dev.fake.srv.restapi.User;
-        qxapp.dev.fake.srv.restapi.Authentication;
+        osparc.dev.fake.srv.restapi.User;
+        osparc.dev.fake.srv.restapi.Authentication;
       }
 
       // Setting up auth manager
-      qxapp.auth.Manager.getInstance().addListener("logout", function() {
+      osparc.auth.Manager.getInstance().addListener("logout", function() {
         this.__restart();
       }, this);
 
@@ -73,25 +73,25 @@ qx.Class.define("qxapp.Application", {
     },
 
     __initRouting: function() {
-      const urlFragment = qxapp.utils.Utils.parseURLFragment();
+      const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
           // Route: /#/study/{id}
-          qxapp.utils.Utils.cookie.deleteCookie("user");
-          qxapp.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          osparc.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
           // Route: /#/registration/?invitation={token}
-          qxapp.utils.Utils.cookie.deleteCookie("user");
+          osparc.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
         } else if (urlFragment.nav[0] === "reset-password" && urlFragment.params && urlFragment.params.code) {
           // Route: /#/reset-password/?code={resetCode}
-          qxapp.utils.Utils.cookie.deleteCookie("user");
+          osparc.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
         }
       } else if (urlFragment.params) {
         if (urlFragment.params.registered) {
           // Route: /#/?registered=true
-          qxapp.utils.Utils.cookie.deleteCookie("user");
+          osparc.utils.Utils.cookie.deleteCookie("user");
           this.__restart();
         } else {
           // this.load404();
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.Application", {
     },
 
     __restart: function() {
-      let isLogged = qxapp.auth.Manager.getInstance().isLoggedIn();
+      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
 
       if (qx.core.Environment.get("dev.disableLogin")) {
         console.warn("Login page was disabled", "Starting main application ...");
@@ -113,10 +113,10 @@ qx.Class.define("qxapp.Application", {
       if (isLogged) {
         this.__loadMainPage();
       } else {
-        qxapp.auth.Manager.getInstance().validateToken(data => {
+        osparc.auth.Manager.getInstance().validateToken(data => {
           if (data.role === "Guest") {
             // Logout a guest trying to access the Dashboard
-            qxapp.auth.Manager.getInstance().logout();
+            osparc.auth.Manager.getInstance().logout();
           } else {
             this.__loadMainPage();
           }
@@ -126,7 +126,7 @@ qx.Class.define("qxapp.Application", {
 
     __loadLoginPage: function() {
       this.__disconnectWebSocket();
-      const view = new qxapp.auth.LoginPage();
+      const view = new osparc.auth.LoginPage();
       view.addListener("done", function(msg) {
         this.__restart();
       }, this);
@@ -140,7 +140,7 @@ qx.Class.define("qxapp.Application", {
 
     __loadMainPage: function(studyId) {
       this.__connectWebSocket();
-      this.__loadView(new qxapp.desktop.MainPage(studyId), {
+      this.__loadView(new osparc.desktop.MainPage(studyId), {
         top: 0,
         bottom: 0,
         left: 0,
@@ -166,18 +166,18 @@ qx.Class.define("qxapp.Application", {
      * Resets session and restarts
     */
     logout: function() {
-      qxapp.auth.Manager.getInstance().logout();
+      osparc.auth.Manager.getInstance().logout();
       this.__restart();
     },
 
     __connectWebSocket: function() {
       // open web socket
-      qxapp.wrapper.WebSocket.getInstance().connect();
+      osparc.wrapper.WebSocket.getInstance().connect();
     },
 
     __disconnectWebSocket: function() {
       // open web socket
-      qxapp.wrapper.WebSocket.getInstance().disconnect();
+      osparc.wrapper.WebSocket.getInstance().disconnect();
     },
 
     __preventAutofillBrowserSyles: function() {

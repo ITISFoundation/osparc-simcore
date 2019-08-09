@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -23,12 +23,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const link = new qxapp.ui.basic.LinkLabel(this.tr("oSparc"),"https://osparc.io");
+ *   const link = new osparc.ui.basic.LinkLabel(this.tr("oSparc"),"https://osparc.io");
  *   this.getRoot().add(link);
  * </pre>
  */
 
-qx.Class.define("qxapp.ui.form.LinkButton", {
+qx.Class.define("osparc.ui.form.LinkButton", {
   extend: qx.ui.form.Button,
 
   /**

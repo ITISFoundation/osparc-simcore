@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.component.metadata.ServiceInfo", {
+qx.Class.define("osparc.component.metadata.ServiceInfo", {
   extend: qx.ui.core.Widget,
   construct: function(metadata) {
     this.base(arguments);
@@ -29,7 +29,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     this._add(authors);
 
     const rawMetadata = this.__createRawMetadata();
-    const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
+    const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
       caretSize: 14
     });
     this._add(more, {
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     },
 
     __createServiceThumbnail: function() {
-      return new qx.ui.basic.Image(this.__metadata.thumbnail || qxapp.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
+      return new qx.ui.basic.Image(this.__metadata.thumbnail || osparc.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
         scale: true,
         width: 200,
         height: 120
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
 
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
-      container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
+      container.add(new osparc.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
       return container;
     },
 

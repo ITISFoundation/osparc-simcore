@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let sidePanel = new qxapp.desktop.SidePanel();
+ *   let sidePanel = new osparc.desktop.SidePanel();
  *   sidePanel.addAt(widget1, 0);
  *   sidePanel.addAt(widget2, 1);
  *   sidePanel.addAt(widget3, 2);
@@ -32,7 +32,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.SidePanel", {
+qx.Class.define("osparc.desktop.SidePanel", {
   extend: qx.ui.container.Composite,
 
   construct: function() {

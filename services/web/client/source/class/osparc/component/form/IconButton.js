@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Small and simple icon button to trigger different actions on tap.
  */
-qx.Class.define("qxapp.component.form.IconButton", {
+qx.Class.define("osparc.component.form.IconButton", {
   extend: qx.ui.basic.Image,
 
   /**

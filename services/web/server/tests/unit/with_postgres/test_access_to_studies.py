@@ -41,7 +41,7 @@ def qx_client_outdir(tmpdir, mocker):
     """  Emulates qx output at service/web/client after compiling """
 
     basedir = tmpdir.mkdir("source-output")
-    folders = [ basedir.mkdir(folder_name) for folder_name in ('qxapp', 'resource', 'transpiled')]
+    folders = [ basedir.mkdir(folder_name) for folder_name in ('osparc', 'resource', 'transpiled')]
 
     index_file = Path( basedir.join("index.html") )
     index_file.write_text(textwrap.dedent("""\

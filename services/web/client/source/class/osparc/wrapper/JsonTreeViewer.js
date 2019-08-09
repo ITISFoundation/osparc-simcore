@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,7 +28,7 @@
  * <a href='https://github.com/summerstyle/jsonTreeViewer' target='_blank'>JsonTreeViewer</a>
  */
 
-qx.Class.define("qxapp.wrapper.JsonTreeViewer", {
+qx.Class.define("osparc.wrapper.JsonTreeViewer", {
   extend: qx.core.Object,
   type: "singleton",
 

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.mat2ent.Data", {
+qx.Class.define("osparc.dev.fake.mat2ent.Data", {
   type: "static",
 
   statics: {
@@ -253,12 +253,12 @@ qx.Class.define("qxapp.dev.fake.mat2ent.Data", {
         return null;
       }
 
-      const materialsList = qxapp.dev.fake.materialDB.Data.itemList;
-      const materialsProps = qxapp.dev.fake.materialDB.Data.item;
+      const materialsList = osparc.dev.fake.materialDB.Data.itemList;
+      const materialsProps = osparc.dev.fake.materialDB.Data.item;
 
-      const entitiesList = qxapp.dev.fake.modeler.Data.itemList["lfSim"];
+      const entitiesList = osparc.dev.fake.modeler.Data.itemList["lfSim"];
 
-      const mat2entNotSorted = qxapp.dev.fake.mat2ent.Data.mapping;
+      const mat2entNotSorted = osparc.dev.fake.mat2ent.Data.mapping;
       const mat2ent = {};
       Object.keys(mat2entNotSorted).sort()
         .forEach(function(key) {
@@ -270,7 +270,7 @@ qx.Class.define("qxapp.dev.fake.mat2ent.Data", {
         if (matId === "Air-UUID") {
           continue;
         }
-        const matLabel = qxapp.dev.fake.mat2ent.Data.getLabel(materialsList, matId);
+        const matLabel = osparc.dev.fake.mat2ent.Data.getLabel(materialsList, matId);
         let matData = {
           key: matId,
           label: matLabel,
@@ -282,15 +282,15 @@ qx.Class.define("qxapp.dev.fake.mat2ent.Data", {
         let matDataItem = qx.data.marshal.Json.createModel(matData, true);
         const itemProps = materialsProps[matId];
         if (itemProps) {
-          let form = new qxapp.component.form.Auto(itemProps);
-          let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+          let form = new osparc.component.form.Auto(itemProps);
+          let propsWidget = new osparc.component.form.renderer.PropForm(form);
           matDataItem["propsWidget"] = propsWidget;
         }
 
         const entIds = mat2ent[matId];
         for (let i=0; i<entIds.length; i++) {
           const entId = entIds[i];
-          const entLabel = qxapp.dev.fake.mat2ent.Data.getLabel(entitiesList, entId);
+          const entLabel = osparc.dev.fake.mat2ent.Data.getLabel(entitiesList, entId);
           if (entLabel === "") {
             continue;
           }

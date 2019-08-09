@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -31,12 +31,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
+ *   let servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
  *   this.getRoot().add(servicesView);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.ServiceBrowser", {
+qx.Class.define("osparc.desktop.ServiceBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
-    const iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
+    const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
     this._add(iframe, {
       flex: 1
     });
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __getServicesPreload: function() {
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         // Do not validate if are not taking actions
         // this.__nodeCheck(e.getData());
@@ -98,7 +98,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServicesList: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      const serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
+      const serviceFilters = new osparc.desktop.ServiceFilters("serviceBrowser");
       servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
@@ -112,11 +112,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           this.__serviceSelected(selectedKey);
         }
       }, this);
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       const latestServices = [];
       const services = this.__allServices = store.getServices();
       for (const serviceKey in services) {
-        latestServices.push(qxapp.utils.Services.getLatest(services, serviceKey));
+        latestServices.push(osparc.utils.Services.getLatest(services, serviceKey));
       }
       const latestServicesModel = new qx.data.Array(
         latestServices.map(s => qx.data.marshal.Json.createModel(s))
@@ -124,7 +124,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
       servCtrl.setDelegate({
         createItem: () => {
-          const item = new qxapp.desktop.ServiceBrowserListItem();
+          const item = new osparc.desktop.ServiceBrowserListItem();
           item.subscribeToFilterGroup("serviceBrowser");
           item.addListener("tap", e => {
             servicesList.setSelection([item]);
@@ -165,7 +165,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
       const label = new qx.ui.basic.Label(this.tr("Description")).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       titleContainer.add(label);
@@ -193,7 +193,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       });
 
       let label = new qx.ui.basic.Label(text).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       vBoxLayout.add(label);
@@ -206,7 +206,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         const versionsList = this.__versionsList;
         versionsList.removeAll();
         if (serviceKey in this.__allServices) {
-          const versions = qxapp.utils.Services.getVersions(this.__allServices, serviceKey);
+          const versions = osparc.utils.Services.getVersions(this.__allServices, serviceKey);
           if (versions) {
             let lastItem = null;
             versions.forEach(version => {
@@ -226,7 +226,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const serviceSelection = this.__servicesList.getSelection();
       if (serviceSelection.length > 0) {
         const serviceKey = serviceSelection[0].getModel();
-        const selectedService = qxapp.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
+        const selectedService = osparc.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
         this.__updateServiceDescription(selectedService);
       }
     },
@@ -234,18 +234,18 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
       if (selectedService && serviceDescription) {
-        const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+        const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
         serviceDescription.add(serviceInfo);
       }
     },
 
     __nodeCheck: function(services) {
       /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
+      let nodeCheck = new qx.io.request.Xhr("/resource/osparc/node-meta-v0.0.1.json");
       nodeCheck.addListener("success", e => {
         let data = e.getTarget().getResponse();
         try {
-          let ajv = new qxapp.wrapper.Ajv(data);
+          let ajv = new osparc.wrapper.Ajv(data);
           for (const srvId in services) {
             const service = services[srvId];
             let check = ajv.validate(service);

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,19 +19,19 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = qxapp.component.widget.NewGHIssue.getNewIssueUrl();
+ *   const url = osparc.component.widget.NewGHIssue.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NewGHIssue", {
+qx.Class.define("osparc.component.widget.NewGHIssue", {
   type: "static",
 
   statics: {
     getNewIssueUrl: function() {
-      const temp = qxapp.component.widget.NewGHIssue.getTemplate();
+      const temp = osparc.component.widget.NewGHIssue.getTemplate();
       let env = "```json\n";
-      env += JSON.stringify(qxapp.utils.LibVersions.getEnvLibs(), null, 2);
+      env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
       let url = "https://github.com/ITISFoundation/osparc-simcore/issues/new";

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
+qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
   extend: qx.ui.tabview.Page,
 
   construct: function(title, iconSrc = null) {
@@ -28,7 +28,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
 
     // Page title
     this.add(new qx.ui.basic.Label(title + " Settings").set({
-      font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"])
+      font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-16"])
     }));
 
     // spacer
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
      *
      */
     _createHelpLabel: function(message=null) {
-      let label = new qxapp.ui.basic.Label(12).set({
+      let label = new osparc.ui.basic.Label(12).set({
         value: message,
         rich: true
       });

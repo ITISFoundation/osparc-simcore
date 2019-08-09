@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * This is a view to display the available services in a flowing fashion. Creates a ServiceJumbo button
  * for every service in the model and subscribes it to the filter group.
  */
-qx.Class.define("qxapp.component.service.ServiceList", {
+qx.Class.define("osparc.component.service.ServiceList", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -64,7 +64,7 @@ qx.Class.define("qxapp.component.service.ServiceList", {
       model.toArray()
         .sort((a, b) => a.getName().localeCompare(b.getName()))
         .forEach(service => {
-          const button = new qxapp.component.service.ServiceJumbo(service);
+          const button = new osparc.component.service.ServiceJumbo(service);
           if (this.__filterGroup !== null) {
             button.subscribeToFilterGroup(this.__filterGroup);
           }

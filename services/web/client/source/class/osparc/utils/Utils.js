@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,7 +24,7 @@
 /* global XMLHttpRequest */
 /* global Blob */
 
-qx.Class.define("qxapp.utils.Utils", {
+qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
@@ -34,7 +34,7 @@ qx.Class.define("qxapp.utils.Utils", {
     },
 
     getLoaderUri: function(arg) {
-      let loadingUri = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
       if (arg) {
         loadingUri += "?loading=- ";
         loadingUri += arg;
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.utils.Utils", {
     },
 
     createLoadingIFrame: function(text) {
-      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
+      const loadingUri = osparc.utils.Utils.getLoaderUri(text);
       let iframe = new qx.ui.embed.Iframe(loadingUri);
       iframe.setBackgroundColor("transparent");
       return iframe;
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.utils.Utils", {
       let target = {};
       for (let key in src) {
         if (src[key] !== null && typeof (src[key]) === "object") {
-          target[key] = qxapp.utils.Utils.deepCloneObject(src[key]);
+          target[key] = osparc.utils.Utils.deepCloneObject(src[key]);
         } else {
           target[key] = src[key];
         }
@@ -89,7 +89,7 @@ qx.Class.define("qxapp.utils.Utils", {
       while (tempIdIdx !== -1) {
         let tempId = myData.substr(tempIdIdx, 36);
         let tempLocIdIdx = myData.indexOf(tempId);
-        let newUuid = qxapp.utils.Utils.uuidv4();
+        let newUuid = osparc.utils.Utils.uuidv4();
         while (tempLocIdIdx !== -1) {
           myData = myData.replace(tempId, newUuid);
           tempLocIdIdx = myData.indexOf(tempId);
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.utils.Utils", {
     },
 
     pretifyObject: function(object, short) {
-      let uuidToName = qxapp.utils.UuidToName.getInstance();
+      let uuidToName = osparc.utils.UuidToName.getInstance();
       let myText = "";
       const entries = Object.entries(object);
       for (let i=0; i<entries.length; i++) {
@@ -328,10 +328,10 @@ qx.Class.define("qxapp.utils.Utils", {
       const lastCharacters = uuid.substr(uuid.length-10);
       const aNumber = parseInt(lastCharacters, 16);
       const thumbnailId = aNumber%25;
-      return "qxapp/img"+ thumbnailId +".jpg";
+      return "osparc/img"+ thumbnailId +".jpg";
     },
 
-    getThumbnailFromString: str => "qxapp/img" + Math.abs(this.self().stringHash(str)%25) + ".jpg",
+    getThumbnailFromString: str => "osparc/img" + Math.abs(this.self().stringHash(str)%25) + ".jpg",
 
     stringHash: str => {
       // Based on https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript

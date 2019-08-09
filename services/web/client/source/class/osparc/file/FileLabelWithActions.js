@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,12 +28,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let hBox = new qxapp.file.FileLabelWithActions();
+ *   let hBox = new osparc.file.FileLabelWithActions();
  *   this.getRoot().add(hBox);
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FileLabelWithActions", {
+qx.Class.define("osparc.file.FileLabelWithActions", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -66,7 +66,7 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
       let control;
       switch (id) {
         case "selectedLabel":
-          control = new qxapp.ui.toolbar.Label();
+          control = new osparc.ui.toolbar.Label();
           this._add(control);
           break;
         case "downloadBtn":
@@ -93,7 +93,7 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
 
     __getItemSelected: function() {
       let selectedItem = this.__selection;
-      if (selectedItem && qxapp.file.FilesTree.isFile(selectedItem)) {
+      if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
         return selectedItem;
       }
       return null;
@@ -106,15 +106,15 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        let store = qxapp.data.Store.getInstance();
+        let store = osparc.data.Store.getInstance();
         store.addListenerOnce("presignedLink", e => {
           const presignedLinkData = e.getData();
           console.log(presignedLinkData.presignedLink);
           if (presignedLinkData.presignedLink) {
             const link = presignedLinkData.presignedLink.link;
-            const fileNameFromLink = qxapp.utils.Utils.fileNameFromPresignedLink(link);
+            const fileNameFromLink = osparc.utils.Utils.fileNameFromPresignedLink(link);
             fileName = fileNameFromLink ? fileNameFromLink : fileName;
-            qxapp.utils.Utils.downloadLink(link, fileName);
+            osparc.utils.Utils.downloadLink(link, fileName);
           }
         }, this);
         const download = true;
@@ -130,10 +130,10 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
         if (locationId !== 0 && locationId !== "0") {
-          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
           return false;
         }
-        let store = qxapp.data.Store.getInstance();
+        let store = osparc.data.Store.getInstance();
         store.addListenerOnce("deleteFile", e => {
           if (e) {
             this.fireDataEvent("fileDeleted", e.getData());

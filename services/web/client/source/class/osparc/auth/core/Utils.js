@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -17,7 +17,7 @@
 
 /* global document */
 
-qx.Class.define("qxapp.auth.core.Utils", {
+qx.Class.define("osparc.auth.core.Utils", {
   type: "static",
 
   statics:
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.auth.core.Utils", {
 
     removeParameterInFragment: function(parameterName) {
       let url = window.location.href;
-      const value = qxapp.auth.core.Utils.findParameterInFragment(parameterName);
+      const value = osparc.auth.core.Utils.findParameterInFragment(parameterName);
       if (value) {
         const removeMe = parameterName + "=" + value;
         // In case the parameterhas an ampersand in front

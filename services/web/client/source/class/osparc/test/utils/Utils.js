@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * Test Utils
  *
  */
-qx.Class.define("qxapp.test.utils.Utils", {
+qx.Class.define("osparc.test.utils.Utils", {
   extend: qx.dev.unit.TestCase,
   include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
 
@@ -43,9 +43,9 @@ qx.Class.define("qxapp.test.utils.Utils", {
     */
 
     testCompareVersionNumbers: function() {
-      this.assertPositiveNumber(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.0"));
-      this.assertPositiveNumber(-1*qxapp.utils.Utils.compareVersionNumbers("1.0.0", "1.0.1"));
-      this.assertEquals(qxapp.utils.Utils.compareVersionNumbers("1.0.1", "1.0.1"), 0);
+      this.assertPositiveNumber(osparc.utils.Utils.compareVersionNumbers("1.0.1", "1.0.0"));
+      this.assertPositiveNumber(-1*osparc.utils.Utils.compareVersionNumbers("1.0.0", "1.0.1"));
+      this.assertEquals(osparc.utils.Utils.compareVersionNumbers("1.0.1", "1.0.1"), 0);
 
       const unsorted = [
         "1.0.5",
@@ -63,7 +63,7 @@ qx.Class.define("qxapp.test.utils.Utils", {
         "2.10.0",
         "2.11.0"
       ];
-      const result = unsorted.sort(qxapp.utils.Utils.compareVersionNumbers);
+      const result = unsorted.sort(osparc.utils.Utils.compareVersionNumbers);
       this.assertArrayEquals(sorted, result);
     }
   }

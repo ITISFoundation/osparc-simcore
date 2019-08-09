@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,15 +25,15 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodePorts = new qxapp.component.widget.NodePorts(node, isInputModel);
+ *   let nodePorts = new osparc.component.widget.NodePorts(node, isInputModel);
  *   this.getRoot().add(nodePorts);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodePorts", {
-  extend: qxapp.desktop.PanelView,
+qx.Class.define("osparc.component.widget.NodePorts", {
+  extend: osparc.desktop.PanelView,
   /**
-   * @param node {qxapp.data.model.Node} Node owning the widget
+   * @param node {osparc.data.model.Node} Node owning the widget
    * @param isInputModel {Boolean} false for representing defaultInputs
    */
   construct: function(node, isInputModel = true) {
@@ -55,7 +55,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     },
 
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     }
   },
@@ -86,10 +86,10 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       }
       if (ports.defaultNeuromanModels) {
         // Maintaining NodeOutputListIcon for Neuroman
-        const nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
+        const nodeOutputList = new osparc.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
         this.setContent(nodeOutputList.getOutputWidget());
       } else {
-        const portTree = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
+        const portTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
         this.setContent(portTree);
       }
     }

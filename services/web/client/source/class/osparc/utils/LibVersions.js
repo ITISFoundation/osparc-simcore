@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.utils.LibVersions", {
+qx.Class.define("osparc.utils.LibVersions", {
   type: "static",
 
   statics: {
@@ -34,7 +34,7 @@ qx.Class.define("qxapp.utils.LibVersions", {
     getPlatformVersion: function() {
       const name = "osparc-simcore";
       const commitId = qx.core.Environment.get("osparc.vcsRef");
-      const remoteUrl = qxapp.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
+      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
 
       let url = remoteUrl;
       if (commitId) {
@@ -51,7 +51,7 @@ qx.Class.define("qxapp.utils.LibVersions", {
     getUIVersion: function() {
       let name = "osparc-simcore UI";
       const commitId = qx.core.Environment.get("osparc.vcsRefClient");
-      const remoteUrl = qxapp.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
+      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
 
       let url = remoteUrl;
       if (commitId) {
@@ -95,8 +95,8 @@ qx.Class.define("qxapp.utils.LibVersions", {
 
     get3rdPartyLibs: function() {
       const libs = [];
-      Object.keys(qxapp.wrapper).forEach(className => {
-        const wrapper = qxapp.wrapper[className];
+      Object.keys(osparc.wrapper).forEach(className => {
+        const wrapper = osparc.wrapper[className];
         libs.push({
           name: wrapper.NAME,
           version: wrapper.VERSION,
@@ -109,11 +109,11 @@ qx.Class.define("qxapp.utils.LibVersions", {
     getEnvLibs: function() {
       let libs = [];
       [
-        qxapp.utils.LibVersions.getPlatformVersion,
-        qxapp.utils.LibVersions.getUIVersion,
-        qxapp.utils.LibVersions.getQxCompiler,
-        qxapp.utils.LibVersions.getQxLibraryInfoMap,
-        qxapp.utils.LibVersions.get3rdPartyLibs
+        osparc.utils.LibVersions.getPlatformVersion,
+        osparc.utils.LibVersions.getUIVersion,
+        osparc.utils.LibVersions.getQxCompiler,
+        osparc.utils.LibVersions.getQxLibraryInfoMap,
+        osparc.utils.LibVersions.get3rdPartyLibs
       ].forEach(lib => {
         libs = libs.concat(lib.call(this));
       }, this);

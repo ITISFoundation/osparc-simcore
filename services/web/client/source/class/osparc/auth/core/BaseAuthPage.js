@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -21,7 +21,7 @@
  *  - Fixed-size widget with header (title/logo), body and footer (buttons)
  *  - Positioned at the upper center of the root document's window
  */
-qx.Class.define("qxapp.auth.core.BaseAuthPage", {
+qx.Class.define("osparc.auth.core.BaseAuthPage", {
   extend: qx.ui.container.Composite,
   type: "abstract",
 

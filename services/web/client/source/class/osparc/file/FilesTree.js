@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -31,12 +31,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesTree = new qxapp.file.FilesTree();
+ *   let filesTree = new osparc.file.FilesTree();
  *   this.getRoot().add(filesTree);
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FilesTree", {
+qx.Class.define("osparc.file.FilesTree", {
   extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
@@ -98,7 +98,7 @@ qx.Class.define("qxapp.file.FilesTree", {
 
   members: {
     populateTree: function(nodeId = null, locationId = null) {
-      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
+      let filesTreePopulator = new osparc.file.FilesTreePopulator(this);
       if (nodeId) {
         filesTreePopulator.populateNodeFiles(nodeId);
       } else if (locationId) {
@@ -118,7 +118,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     getSelectedFile: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
-        const isFile = qxapp.file.FilesTree.isFile(selectedItem);
+        const isFile = osparc.file.FilesTree.isFile(selectedItem);
         const data = {
           selectedItem: selectedItem,
           isFile: isFile
@@ -150,7 +150,7 @@ qx.Class.define("qxapp.file.FilesTree", {
         "user_name": null
       };
 
-      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
+      let filesTreePopulator = new osparc.file.FilesTreePopulator(this);
       filesTreePopulator.addFileEntryToTree(dummyFileEntry);
       const item = this.__findUuidInLeaves(dummyFileEntry["file_uuid"]);
       if (item) {
@@ -225,7 +225,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     __createDragMechanism: function(treeItem) {
       treeItem.setDraggable(true);
       treeItem.addListener("dragstart", e => {
-        if (qxapp.file.FilesTree.isFile(e.getOriginalTarget())) {
+        if (osparc.file.FilesTree.isFile(e.getOriginalTarget())) {
           // Register supported actions
           e.addAction("copy");
           // Register supported types
@@ -240,7 +240,7 @@ qx.Class.define("qxapp.file.FilesTree", {
       treeItem.setDroppable(true);
       treeItem.addListener("dragover", e => {
         let compatible = false;
-        if (qxapp.file.FilesTree.isDir(e.getOriginalTarget())) {
+        if (osparc.file.FilesTree.isDir(e.getOriginalTarget())) {
           if (e.supportsType("osparc-filePath")) {
             compatible = true;
           }
@@ -254,7 +254,7 @@ qx.Class.define("qxapp.file.FilesTree", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
-          const store = qxapp.data.Store.getInstance();
+          const store = osparc.data.Store.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
           const requestSent = store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
           if (requestSent) {

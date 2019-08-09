@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,12 +27,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let study = new qxapp.data.model.Study(studyData);
- *   let prjEditor = new qxapp.desktop.StudyEditor(study);
+ *   let study = new osparc.data.model.Study(studyData);
+ *   let prjEditor = new osparc.desktop.StudyEditor(study);
  * </pre>
  */
 
-qx.Class.define("qxapp.data.model.Study", {
+qx.Class.define("osparc.data.model.Study", {
   extend: qx.core.Object,
 
   /**
@@ -46,20 +46,20 @@ qx.Class.define("qxapp.data.model.Study", {
       name: studyData.name === undefined ? this.getName() : studyData.name,
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
-      prjOwner: studyData.prjOwner === undefined ? qxapp.auth.Data.getInstance().getUserName() : studyData.prjOwner,
+      prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new qxapp.data.model.Workbench(this, wbData));
+    this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
   },
 
   properties: {
     uuid: {
       check: "String",
       nullable: false,
-      init: qxapp.utils.Utils.uuidv4()
+      init: osparc.utils.Utils.uuidv4()
     },
 
     name: {
@@ -101,7 +101,7 @@ qx.Class.define("qxapp.data.model.Study", {
     },
 
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false
     }
   },

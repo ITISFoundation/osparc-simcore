@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.lf.Data", {
+qx.Class.define("osparc.dev.fake.lf.Data", {
   type: "static",
 
   statics: {
@@ -208,7 +208,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     },
 
     getItemList: function(simSettingsId) {
-      let itemList = qxapp.dev.fake.lf.Data.itemList[simSettingsId];
+      let itemList = osparc.dev.fake.lf.Data.itemList[simSettingsId];
       if (itemList) {
         itemList.sort(this.compare);
       }
@@ -216,7 +216,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     },
 
     getItem: function(simSettingsId, itemId) {
-      return qxapp.dev.fake.lf.Data.item[simSettingsId][itemId];
+      return osparc.dev.fake.lf.Data.item[simSettingsId][itemId];
     }
   } // statics
 });

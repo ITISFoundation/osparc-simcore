@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.materialDB.Data", {
+qx.Class.define("osparc.dev.fake.materialDB.Data", {
   type: "static",
 
   statics: {
@@ -2151,14 +2151,14 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
     },
 
     getItemList: function() {
-      let itemList = qxapp.dev.fake.materialDB.Data.itemList;
+      let itemList = osparc.dev.fake.materialDB.Data.itemList;
       itemList.sort(this.compare);
       return itemList;
     },
 
     getItem: function(materialId) {
-      if (materialId in qxapp.dev.fake.materialDB.Data.item) {
-        return qxapp.dev.fake.materialDB.Data.item[materialId];
+      if (materialId in osparc.dev.fake.materialDB.Data.item) {
+        return osparc.dev.fake.materialDB.Data.item[materialId];
       }
       return null;
     }

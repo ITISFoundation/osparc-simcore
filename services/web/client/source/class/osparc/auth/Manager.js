@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -22,7 +22,7 @@
  *  - Keeps authentication header for future requests to the backend
 */
 
-qx.Class.define("qxapp.auth.Manager", {
+qx.Class.define("osparc.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -49,8 +49,8 @@ qx.Class.define("qxapp.auth.Manager", {
       // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
       // TODO: check if expired??
       // TODO: request server if token is still valid (e.g. expired, etc)
-      const auth = qxapp.auth.Data.getInstance().getAuth();
-      return auth !== null && auth instanceof qxapp.io.request.authentication.Token;
+      const auth = osparc.auth.Data.getInstance().getAuth();
+      return auth !== null && auth instanceof osparc.io.request.authentication.Token;
     },
 
     /**
@@ -61,10 +61,10 @@ qx.Class.define("qxapp.auth.Manager", {
      * @param {Object} ctx Context that will be used inside the callback functions (this).
      */
     validateToken: function(successCb, errorCb, ctx) {
-      if (qxapp.auth.Data.getInstance().isLogout()) {
+      if (osparc.auth.Data.getInstance().isLogout()) {
         errorCb.call(ctx);
       } else {
-        const request = new qxapp.io.request.ApiRequest("/me", "GET");
+        const request = new osparc.io.request.ApiRequest("/me", "GET");
         request.addListener("success", e => {
           if (e.getTarget().getResponse().error) {
             errorCb.call(ctx);
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.auth.Manager", {
     login: function(email, password, successCbk, failCbk, context) {
       // TODO: consider qx.promise instead of having two callbacks an d a context might be nicer to work with
 
-      let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
+      let request = new osparc.io.request.ApiRequest("/auth/login", "POST");
       request.set({
         requestData: {
           email,
@@ -108,7 +108,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     logout: function() {
-      const request = new qxapp.io.request.ApiRequest("/auth/logout", "GET");
+      const request = new osparc.io.request.ApiRequest("/auth/logout", "GET");
       request.send();
       this.__logoutUser();
       this.fireEvent("logout");
@@ -117,7 +117,7 @@ qx.Class.define("qxapp.auth.Manager", {
     register: function(userData, successCbk, failCbk, context) {
       console.debug("Registering user ...");
       // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new qxapp.io.request.ApiRequest("/auth/register", "POST");
+      let request = new osparc.io.request.ApiRequest("/auth/register", "POST");
       request.set({
         requestData: userData
       });
@@ -131,7 +131,7 @@ qx.Class.define("qxapp.auth.Manager", {
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
       console.debug("Requesting reset password ...");
       // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new qxapp.io.request.ApiRequest("/auth/reset-password", "POST");
+      let request = new osparc.io.request.ApiRequest("/auth/reset-password", "POST");
       request.set({
         requestData: {
           "email": email
@@ -147,7 +147,7 @@ qx.Class.define("qxapp.auth.Manager", {
     resetPassword: function(newPassword, confirmation, code, successCbk, failCbk, context) {
       console.debug("Reseting password ...");
       // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new qxapp.io.request.ApiRequest("/auth/reset-password/" + encodeURIComponent(code), "POST");
+      let request = new osparc.io.request.ApiRequest("/auth/reset-password/" + encodeURIComponent(code), "POST");
       request.setRequestData({
         password: newPassword,
         confirm: confirmation
@@ -160,7 +160,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     evalPasswordStrength: function(password, callback, context=null) {
-      let request = new qxapp.io.request.ApiRequest("/auth/check-password/" + encodeURIComponent(password), "GET");
+      let request = new osparc.io.request.ApiRequest("/auth/check-password/" + encodeURIComponent(password), "GET");
       request.addListener("success", evt => {
         let payload = evt.getTarget().getResponse();
         callback.call(context, payload.strength, payload.rating, payload.improvements);
@@ -170,13 +170,13 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     __loginUser: function(email) {
-      qxapp.auth.Data.getInstance().setEmail(email);
-      qxapp.auth.Data.getInstance().setToken(email);
+      osparc.auth.Data.getInstance().setEmail(email);
+      osparc.auth.Data.getInstance().setToken(email);
     },
 
     __logoutUser: function() {
-      qxapp.auth.Data.getInstance().resetEmail();
-      qxapp.auth.Data.getInstance().resetToken();
+      osparc.auth.Data.getInstance().resetEmail();
+      osparc.auth.Data.getInstance().resetToken();
     },
 
     __bindDefaultSuccessCallback: function(request, successCbk, context) {

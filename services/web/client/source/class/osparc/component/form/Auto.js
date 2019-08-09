@@ -54,7 +54,7 @@
  *
  */
 
-qx.Class.define("qxapp.component.form.Auto", {
+qx.Class.define("osparc.component.form.Auto", {
   extend: qx.ui.form.Form,
   include: [qx.locale.MTranslation],
 
@@ -90,7 +90,7 @@ qx.Class.define("qxapp.component.form.Auto", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: true
     }
   },

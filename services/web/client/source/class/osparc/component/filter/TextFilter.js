@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,13 +18,13 @@
 /**
  * TextField to make a simple text filter.
  */
-qx.Class.define("qxapp.component.filter.TextFilter", {
-  extend: qxapp.component.filter.UIFilter,
+qx.Class.define("osparc.component.filter.TextFilter", {
+  extend: osparc.component.filter.UIFilter,
 
   /**
    * Constructor for the TextFilter takes UIFilters mandatory params plus an optional translation id for its label.
    *
-   * @extends qxapp.component.filter.UIFilter
+   * @extends osparc.component.filter.UIFilter
    */
   construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
@@ -67,7 +67,7 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
           this._add(control);
           break;
         case "clearbutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => this.reset());
+          control = new osparc.component.form.IconButton("@MaterialIcons/close/12", () => this.reset());
           this._add(control, {
             right: 0,
             bottom: 12

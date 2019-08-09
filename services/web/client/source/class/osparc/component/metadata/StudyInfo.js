@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.component.metadata.StudyInfo", {
+qx.Class.define("osparc.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
   construct: function(study) {
     this.base(arguments);
@@ -26,7 +26,7 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
     this._add(main);
 
     const extraInfo = this.__createExtraInfo();
-    const more = new qxapp.desktop.PanelView(this.tr("more information"), extraInfo).set({
+    const more = new osparc.desktop.PanelView(this.tr("more information"), extraInfo).set({
       caretSize: 14,
       collapsed: true
     });
@@ -62,7 +62,7 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
     },
 
     __createStudyThumbnail: function() {
-      const thumbnail = this.__study.getThumbnail() || qxapp.utils.Utils.getThumbnailFromUuid(this.__study.getUuid());
+      const thumbnail = this.__study.getThumbnail() || osparc.utils.Utils.getThumbnailFromUuid(this.__study.getUuid());
       return new qx.ui.basic.Image(thumbnail).set({
         scale: true,
         width: 200,

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 /**
- * Label with qxapp.theme.Font.fonts font set
+ * Label with osparc.theme.Font.fonts font set
  */
 
-qx.Class.define("qxapp.ui.basic.Label", {
+qx.Class.define("osparc.ui.basic.Label", {
   extend: qx.ui.basic.Label,
 
   /**
@@ -30,16 +30,16 @@ qx.Class.define("qxapp.ui.basic.Label", {
     this.base(arguments);
 
     this.set({
-      font: qxapp.ui.basic.Label.getFont(size, bold)
+      font: osparc.ui.basic.Label.getFont(size, bold)
     });
   },
 
   statics: {
     getFont: function(size=14, bold=false) {
       if (bold) {
-        return qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-"+size]);
+        return qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-"+size]);
       }
-      return qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-"+size]);
+      return qx.bom.Font.fromConfig(osparc.theme.Font.fonts["text-"+size]);
     }
   }
 });

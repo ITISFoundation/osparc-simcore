@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -22,8 +22,8 @@
  *
  */
 
-qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
-  extend:qxapp.desktop.preferences.pages.BasePage,
+qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
+  extend:osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/sliders-h/24";
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       });
 
       let role = null;
-      const permissions = qxapp.data.Permissions.getInstance();
+      const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("preferences.role.update")) {
         role = new qx.ui.form.SelectBox();
         const roles = permissions.getChildrenRoles(permissions.getRole());
@@ -121,7 +121,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       controller.addTarget(role, "value", "role", false);
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
-          return qxapp.utils.Avatar.getUrl(email.getValue(), 150);
+          return osparc.utils.Avatar.getUrl(email.getValue(), 150);
         }
       });
 
@@ -139,18 +139,18 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
       // update trigger
       updateBtn.addListener("execute", () => {
-        if (!qxapp.data.Permissions.getInstance().canDo("preferences.user.update", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("preferences.user.update", true)) {
           this.__resetDataToModel();
           return;
         }
 
         if (manager.validate()) {
-          const emailReq = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
+          const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
           emailReq.setRequestData({
             "email": model.getEmail()
           });
 
-          const profileReq = new qxapp.io.request.ApiRequest("/me", "PUT");
+          const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
           profileReq.setRequestData({
             "first_name": model.getFirstName(),
             "last_name": model.getLastName()
@@ -161,7 +161,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             req.addListenerOnce("success", e => {
               const res = e.getTarget().getResponse();
               if (res && res.data) {
-                qxapp.component.message.FlashMessenger.getInstance().log(res.data);
+                osparc.component.message.FlashMessenger.getInstance().log(res.data);
               }
             }, this);
 
@@ -170,7 +170,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
               this.__resetDataToModel();
               const error = e.getTarget().getResponse().error;
               const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
-              qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
             }, this);
 
             req.send();
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
     __getValuesFromServer: function() {
       // get values from server
-      const request = new qxapp.io.request.ApiRequest("/me", "GET");
+      const request = new osparc.io.request.ApiRequest("/me", "GET");
       request.addListenerOnce("success", e => {
         const data = e.getTarget().getResponse()["data"];
         this.__setDataToModel(data);
@@ -194,7 +194,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       request.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse().error;
         const msg = error ? error["errors"][0].message : this.tr("Failed to get profile");
-        qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       });
 
       request.send();

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -17,22 +17,22 @@
 
 /* eslint newline-per-chained-call: 0 */
 
-qx.Class.define("qxapp.desktop.StudyEditor", {
+qx.Class.define("osparc.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    qxapp.utils.UuidToName.getInstance().setStudy(study);
+    osparc.utils.UuidToName.getInstance().setStudy(study);
 
-    this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
+    this.__studyResources = osparc.io.rest.ResourceFactory.getInstance().createStudyResources();
 
     this.setStudy(study);
 
-    let mainPanel = this.__mainPanel = new qxapp.desktop.MainPanel().set({
+    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({
       minWidth: 1000
     });
-    let sidePanel = this.__sidePanel = new qxapp.desktop.SidePanel().set({
+    let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 800,
       width: 500
@@ -55,7 +55,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
   properties: {
     study: {
-      check: "qxapp.data.model.Study",
+      check: "osparc.data.model.Study",
       nullable: false
     }
   },
@@ -89,7 +89,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study.getName(), study.getWorkbench());
       nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -97,15 +97,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
-      const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
+      const extraView = this.__extraView = new osparc.component.metadata.StudyInfo(study);
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
-      const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView(study.getWorkbench());
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
-      const workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(study.getWorkbench());
+      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -139,7 +139,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      const nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
+      const nodeView = this.__nodeView = new osparc.component.widget.NodeView().set({
         minHeight: 200
       });
       nodeView.setWorkbench(study.getWorkbench());
@@ -249,14 +249,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         if (node.isContainer()) {
           if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
             if (node.isInKey("multi-plot")) {
-              widget = new qxapp.component.widget.DashGrid(node);
+              widget = new osparc.component.widget.DashGrid(node);
             }
           }
           if (widget === null) {
             widget = this.__workbenchUI;
           }
         } else if (node.isInKey("file-picker")) {
-          widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
+          widget = new osparc.file.FilePicker(node, this.getStudy().getUuid());
         } else {
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
@@ -375,7 +375,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __startPipeline: function() {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.start", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return false;
       }
 
@@ -385,7 +385,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
-      const socket = qxapp.wrapper.WebSocket.getInstance();
+      const socket = osparc.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -415,7 +415,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       // post pipeline
       this.__pipelineId = null;
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
-      const req = new qxapp.io.request.ApiRequest(url, "POST");
+      const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error("root", "Error submitting pipeline");
@@ -430,11 +430,11 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __stopPipeline: function() {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.stop", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
         return false;
       }
 
-      let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
+      let req = new osparc.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
       data["project_id"] = this.getStudy().getUuid();
       req.set({
@@ -472,7 +472,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __startAutoSaveTimer: function() {
-      let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
+      let diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
@@ -510,7 +510,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       let resource = this.__studyResources.project;
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
-        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        this.__lastSavedPrj = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }

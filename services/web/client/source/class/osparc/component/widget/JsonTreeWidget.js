@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,12 +24,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(data);
+ *   let jsonTreeWidget = new osparc.component.widget.JsonTreeWidget(data);
  *   this.getRoot().add(jsonTreeWidget);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.JsonTreeWidget", {
+qx.Class.define("osparc.component.widget.JsonTreeWidget", {
   extend: qx.ui.basic.Label,
 
   /**

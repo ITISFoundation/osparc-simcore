@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -16,7 +16,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.About", {
+qx.Class.define("osparc.About", {
   extend: qx.ui.window.Window,
   type: "singleton",
 
@@ -35,23 +35,23 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      const platformVersion = qxapp.utils.LibVersions.getPlatformVersion();
+      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       this.__createEntries([platformVersion]);
 
-      const uiVersion = qxapp.utils.LibVersions.getUIVersion();
+      const uiVersion = osparc.utils.LibVersions.getUIVersion();
       this.__createEntries([uiVersion]);
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      const qxCompiler = qxapp.utils.LibVersions.getQxCompiler();
+      const qxCompiler = osparc.utils.LibVersions.getQxCompiler();
       this.__createEntries([qxCompiler]);
 
-      const libsInfo = qxapp.utils.LibVersions.getQxLibraryInfoMap();
+      const libsInfo = osparc.utils.LibVersions.getQxLibraryInfoMap();
       this.__createEntries(libsInfo);
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      const libs = qxapp.utils.LibVersions.get3rdPartyLibs();
+      const libs = osparc.utils.LibVersions.get3rdPartyLibs();
       this.__createEntries(libs);
     },
 
@@ -69,16 +69,16 @@ qx.Class.define("qxapp.About", {
 
       let entryLabel = null;
       if (url) {
-        entryLabel = new qxapp.ui.basic.LinkLabel(item, url);
+        entryLabel = new osparc.ui.basic.LinkLabel(item, url);
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }
       entryLayout.set({
-        font: qxapp.ui.basic.Label.getFont(14, true)
+        font: osparc.ui.basic.Label.getFont(14, true)
       });
       entryLayout.add(entryLabel);
 
-      let entryVersion = new qxapp.ui.basic.Label(14).set({
+      let entryVersion = new osparc.ui.basic.Label(14).set({
         value: vers
       });
       entryLayout.add(entryVersion);

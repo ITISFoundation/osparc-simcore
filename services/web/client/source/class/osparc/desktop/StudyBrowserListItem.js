@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,7 +24,7 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
+qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   extend: qx.ui.form.ToggleButton,
   implement : [qx.ui.form.IModel],
   include : [qx.ui.form.MModelProperty],

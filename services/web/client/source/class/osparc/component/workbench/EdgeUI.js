@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -23,19 +23,19 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
+ *   let edge = new osparc.data.model.Edge(edgeId, node1Id, node2Id);
  *   let edgeRepresentation = svgWidget.drawCurve(x1, y1, x2, y2);
- *   let edgeUI = new qxapp.component.workbench.EdgeUI(edge, edgeRepresentation);
+ *   let edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.workbench.EdgeUI", {
+qx.Class.define("osparc.component.workbench.EdgeUI", {
   extend: qx.core.Object,
-  include: qxapp.component.filter.MFilterable,
-  implement: qxapp.component.filter.IFilterable,
+  include: osparc.component.filter.MFilterable,
+  implement: osparc.component.filter.IFilterable,
 
   /**
-    * @param edge {qxapp.data.model.Edge} Edge owning the object
+    * @param edge {osparc.data.model.Edge} Edge owning the object
     * @param representation {SVG Object} UI representation of the edge
   */
   construct: function(edge, representation) {
@@ -53,7 +53,7 @@ qx.Class.define("qxapp.component.workbench.EdgeUI", {
 
   properties: {
     edge: {
-      check: "qxapp.data.model.Edge",
+      check: "osparc.data.model.Edge",
       nullable: false
     },
 

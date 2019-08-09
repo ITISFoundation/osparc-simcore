@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.component.widget.DashGrid", {
+qx.Class.define("osparc.component.widget.DashGrid", {
   extend: qx.ui.core.Widget,
 
   construct: function(containerNode) {
@@ -33,7 +33,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
 
 
     let dashboradLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    let gridster = this.__gridterWr = new qxapp.wrapper.Gridster();
+    let gridster = this.__gridterWr = new osparc.wrapper.Gridster();
     gridster.addListener(("gridsterLibReady"), e => {
       let ready = e.getData();
       if (ready) {
@@ -75,7 +75,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
 
   properties: {
     containerNode: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: true
     }
   },
@@ -114,16 +114,16 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     },
 
     addWidget: function(node) {
-      let cellHandler = new qxapp.component.widget.cell.Handler(node);
+      let cellHandler = new osparc.component.widget.cell.Handler(node);
 
-      let cellEditor = new qxapp.component.widget.cell.Editor(cellHandler);
+      let cellEditor = new osparc.component.widget.cell.Editor(cellHandler);
       cellEditor.addListener("backToGrid", () => {
         cellHandler.retrieveOutput();
         this.__stack.setSelection([this.__gridView]);
       }, this);
       this.__cellEditors[cellHandler.getUuid()] = cellEditor;
 
-      let cellOutput = new qxapp.component.widget.cell.Output(cellHandler);
+      let cellOutput = new osparc.component.widget.cell.Output(cellHandler);
 
       let htmlElement = this.__gridterWr.addWidget(cellOutput);
       if (htmlElement) {

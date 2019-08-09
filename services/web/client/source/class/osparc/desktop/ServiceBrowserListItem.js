@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,7 +28,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
+ *     createItem: () => new osparc.desktop.ServiceBrowserListItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
@@ -41,10 +41,10 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
+qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
   extend: qx.ui.core.Widget,
-  implement : [qx.ui.form.IModel, qxapp.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, qxapp.component.filter.MFilterable],
+  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
@@ -126,7 +126,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       let control;
       switch (id) {
         case "title":
-          control = new qxapp.ui.basic.Label(14, true);
+          control = new osparc.ui.basic.Label(14, true);
           this._add(control, {
             row: 0,
             column: 0

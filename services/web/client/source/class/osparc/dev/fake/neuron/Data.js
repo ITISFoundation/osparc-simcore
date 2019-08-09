@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.neuron.Data", {
+qx.Class.define("osparc.dev.fake.neuron.Data", {
   type: "static",
 
   statics: {
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         label: "Point-Sensor"
       }],
 
-      "neuronsSetting": qxapp.dev.fake.modeler.Data.itemList["neuronSim"]
+      "neuronsSetting": osparc.dev.fake.modeler.Data.itemList["neuronSim"]
     },
 
     item: {
@@ -466,7 +466,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
     },
 
     getItemList: function(simSettingsId) {
-      let itemList = qxapp.dev.fake.neuron.Data.itemList[simSettingsId];
+      let itemList = osparc.dev.fake.neuron.Data.itemList[simSettingsId];
       if (itemList) {
         itemList.sort(this.compare);
       }
@@ -474,7 +474,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
     },
 
     getItem: function(simSettingsId, itemId) {
-      return qxapp.dev.fake.neuron.Data.item[simSettingsId][itemId];
+      return osparc.dev.fake.neuron.Data.item[simSettingsId][itemId];
     }
   } // statics
 

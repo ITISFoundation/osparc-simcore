@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,11 +28,11 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   qxapp.component.message.FlashMessenger.getInstance().log(log);
+ *   osparc.component.message.FlashMessenger.getInstance().log(log);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.message.FlashMessenger", {
+qx.Class.define("osparc.component.message.FlashMessenger", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -91,7 +91,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
         message = logger + ": " + message;
       }
 
-      const flash = new qxapp.ui.message.FlashMessage(message, level);
+      const flash = new osparc.ui.message.FlashMessage(message, level);
       flash.addListener("closeMessage", () => this.__removeMessage(flash), this);
       this.__messages.push(flash);
     },
@@ -99,7 +99,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
     /**
      * Private method to show a message to the user. It will stack it on the previous ones.
      *
-     * @param {qxapp.ui.message.FlashMessage} message FlassMessage element to show.
+     * @param {osparc.ui.message.FlashMessage} message FlassMessage element to show.
      */
     __showMessage: function(message) {
       this.__messages.remove(message);
@@ -121,7 +121,7 @@ qx.Class.define("qxapp.component.message.FlashMessenger", {
     /**
      * Private method to remove a message. If there are still messages in the queue, it will show the next available one.
      *
-     * @param {qxapp.ui.message.FlashMessage} message FlassMessage element to remove.
+     * @param {osparc.ui.message.FlashMessage} message FlassMessage element to remove.
      */
     __removeMessage: function(message) {
       if (this.__messageContainer.indexOf(message) > -1) {

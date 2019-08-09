@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
 /* eslint operator-assignment: ["off"] */
 
-qx.Class.define("qxapp.dev.Placeholders", {
+qx.Class.define("osparc.dev.Placeholders", {
   type: "static",
 
   statics: {

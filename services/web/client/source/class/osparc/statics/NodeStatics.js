@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.statics.NodeStatics", {
+qx.Class.define("osparc.statics.NodeStatics", {
   statics: {
     CATEGORIES: {
       postpro: {

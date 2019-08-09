@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let logo = qxapp.component.widget.LogoOnOff.getInstance();
+ *   let logo = osparc.component.widget.LogoOnOff.getInstance();
      logo.online(true/false);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.LogoOnOff", {
+qx.Class.define("osparc.component.widget.LogoOnOff", {
   extend: qx.ui.container.Stack,
 
   type: "singleton",
@@ -39,8 +39,8 @@ qx.Class.define("qxapp.component.widget.LogoOnOff", {
     this.base(arguments);
 
     [
-      "qxapp/osparc-red.svg",
-      "qxapp/osparc-white.svg"
+      "osparc/osparc-red.svg",
+      "osparc/osparc-white.svg"
     ].forEach(logo => {
       let image = new qx.ui.basic.Image(logo).set({
         width: 92,

@@ -17,7 +17,7 @@
  *
  */
 
-qx.Class.define("qxapp.component.widget.PersistentIframe", {
+qx.Class.define("osparc.component.widget.PersistentIframe", {
   extend: qx.ui.embed.AbstractIframe,
   /**
    *

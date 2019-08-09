@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("qxapp.ui.basic.Chip", {
+qx.Class.define("osparc.ui.basic.Chip", {
   extend: qx.ui.basic.Atom,
 
   construct: function(label, icon) {

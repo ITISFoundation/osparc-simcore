@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.srv.db.Project", {
+qx.Class.define("osparc.dev.fake.srv.db.Project", {
   type: "static",
 
   statics: {
@@ -8,7 +8,7 @@ qx.Class.define("qxapp.dev.fake.srv.db.Project", {
      * Creates a json object for a given study id
     */
     getObject: function(studyId) {
-      const name = qxapp.dev.fake.srv.db.Project.DUMMYNAMES[studyId];
+      const name = osparc.dev.fake.srv.db.Project.DUMMYNAMES[studyId];
       let study = {
         id: studyId,
         name: name,

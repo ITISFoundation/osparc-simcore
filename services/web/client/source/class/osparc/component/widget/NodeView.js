@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeView = new qxapp.component.widget.NodeView();
+ *   let nodeView = new osparc.component.widget.NodeView();
  *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
  *   nodeView.buildLayout();
@@ -35,13 +35,13 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeView", {
+qx.Class.define("osparc.component.widget.NodeView", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function() {
     this.base(arguments);
 
-    const inputPanel = this.__inputPanel = new qxapp.desktop.SidePanel().set({
+    const inputPanel = this.__inputPanel = new osparc.desktop.SidePanel().set({
       minWidth: 300
     });
     const titleBar = new qx.ui.toolbar.ToolBar();
@@ -86,12 +86,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
   properties: {
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false
     },
 
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       apply: "_applyNode"
     }
   },
@@ -268,7 +268,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
 
       const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
         layout: new qx.ui.layout.Grow(),
@@ -285,7 +285,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __openServiceInfo: function() {
-      const win = new qxapp.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
+      const win = new osparc.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
       win.center();
       win.open();
     },

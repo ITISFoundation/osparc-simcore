@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -30,11 +30,11 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   qxapp.data.Permissions.getInstance().canDo("study.start", true)
+ *   osparc.data.Permissions.getInstance().canDo("study.start", true)
  * </pre>
  */
 
-qx.Class.define("qxapp.data.Permissions", {
+qx.Class.define("osparc.data.Permissions", {
   extend: qx.core.Object,
 
   type : "singleton",
@@ -211,13 +211,13 @@ qx.Class.define("qxapp.data.Permissions", {
         canDo = this.__canRoleDo(this.__userRole, action);
       }
       if (showMsg && !canDo) {
-        qxapp.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
     },
 
     loadUserRoleFromBackend: function() {
-      let userResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
+      let userResources = osparc.io.rest.ResourceFactory.getInstance().createUserResources();
 
       let profile = userResources.profile;
       profile.addListenerOnce("getSuccess", e => {

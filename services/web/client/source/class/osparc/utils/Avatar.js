@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,11 +26,11 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let image = qxapp.utils.Avatar.getUrl(userEmail);
+ *   let image = osparc.utils.Avatar.getUrl(userEmail);
  * </pre>
  */
 
-qx.Class.define("qxapp.utils.Avatar", {
+qx.Class.define("osparc.utils.Avatar", {
   type: "static",
 
   statics: {

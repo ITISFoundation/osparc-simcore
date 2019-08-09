@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,13 +18,13 @@
 /**
  * Dropdown menu for tag filtering
  */
-qx.Class.define("qxapp.component.filter.TagsFilter", {
-  extend: qxapp.component.filter.UIFilter,
+qx.Class.define("osparc.component.filter.TagsFilter", {
+  extend: osparc.component.filter.UIFilter,
 
   /**
    * Constructor for TagsFilter creates a workbench TagsFilter.
    *
-   * @extends qxapp.component.filter.UIFilter
+   * @extends osparc.component.filter.UIFilter
    */
   construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
@@ -64,16 +64,16 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
     __buildMenu: function() {
       const menu = new qx.ui.menu.Menu();
 
-      qxapp.utils.Services.getTypes().forEach(serviceType => {
-        const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
+      osparc.utils.Services.getTypes().forEach(serviceType => {
+        const button = new qx.ui.menu.Button(osparc.utils.Utils.capitalize(serviceType));
         button.addListener("execute", e => this.__addTag(serviceType, e.getTarget()));
         menu.add(button);
       });
 
       menu.addSeparator();
 
-      qxapp.utils.Services.getCategories().forEach(serviceCategory => {
-        const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
+      osparc.utils.Services.getCategories().forEach(serviceCategory => {
+        const button = new qx.ui.menu.Button(osparc.utils.Utils.capitalize(serviceCategory));
         button.addListener("execute", e => this.__addTag(serviceCategory, e.getTarget()));
         menu.add(button);
       });
@@ -89,7 +89,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
         // Add tick
         menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
-        const tagButton = new qx.ui.toolbar.Button(qxapp.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
+        const tagButton = new qx.ui.toolbar.Button(osparc.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
         this._add(tagButton);
         tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state

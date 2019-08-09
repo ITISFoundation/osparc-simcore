@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -29,16 +29,16 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new qxapp.file.FilePicker(node, studyId);
+ *   let filePicker = new osparc.file.FilePicker(node, studyId);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FilePicker", {
+qx.Class.define("osparc.file.FilePicker", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
     * @param studyId {String} StudyId of the study that node belongs to
   */
   construct: function(node, studyId) {
@@ -84,7 +84,7 @@ qx.Class.define("qxapp.file.FilePicker", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node"
+      check: "osparc.data.model.Node"
     },
 
     studyId: {
@@ -106,13 +106,13 @@ qx.Class.define("qxapp.file.FilePicker", {
       let control;
       switch (id) {
         case "filesTree":
-          control = new qxapp.file.FilesTree();
+          control = new osparc.file.FilesTree();
           this._add(control, {
             flex: 1
           });
           break;
         case "addButton":
-          control = new qxapp.file.FilesAdd().set({
+          control = new osparc.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
           });

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -30,12 +30,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let prjBrowser = this.__serviceBrowser = new qxapp.desktop.StudyBrowser();
+ *   let prjBrowser = this.__serviceBrowser = new osparc.desktop.StudyBrowser();
  *   this.getRoot().add(prjBrowser);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.StudyBrowser", {
+qx.Class.define("osparc.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function(loadStudyId) {
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
+    this.__studyResources = osparc.io.rest.ResourceFactory.getInstance().createStudyResources();
 
     this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     });
     this._addAt(this.__editPane, 1);
 
-    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Studies"));
+    let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesPane.add(iframe, {
       flex: 1
     });
@@ -79,9 +79,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             this.__startStudy(studyData);
           }, this);
           resource.addListener("getError", ev => {
-            if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
+            if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
               // If guest fails to load study, log him out
-              qxapp.auth.Manager.getInstance().logout();
+              osparc.auth.Manager.getInstance().logout();
             }
             console.error(ev);
           });
@@ -123,7 +123,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __getUserProfile: function() {
-      let permissions = qxapp.data.Permissions.getInstance();
+      let permissions = osparc.data.Permissions.getInstance();
       permissions.addListener("userProfileRecieved", e => {
         this.__userReady = e.getData();
       }, this);
@@ -131,7 +131,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __getServicesPreload: function() {
-      let store = qxapp.data.Store.getInstance();
+      let store = osparc.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         this.__servicesReady = e.getData();
       }, this);
@@ -145,7 +145,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       });
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const studiesDeleteButton = this.__studiesDeleteButton = this.__createDeleteButton();
       const myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
@@ -236,9 +236,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         appearance: "service-window"
       });
 
-      const newStudyDlg = new qxapp.component.widget.NewStudyDlg(templateData);
+      const newStudyDlg = new osparc.component.widget.NewStudyDlg(templateData);
       newStudyDlg.addListenerOnce("createStudy", e => {
-        const minStudyData = qxapp.data.model.Study.createMinimumStudyObject();
+        const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
         const data = e.getData();
         minStudyData["name"] = data.prjTitle;
         minStudyData["description"] = data.prjDescription;
@@ -281,7 +281,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __startStudy: function(studyData) {
       if (this.__servicesReady === null) {
         this.__showChildren(false);
-        let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
+        let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
         this._add(iframe, {
           flex: 1
         });
@@ -304,8 +304,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __loadStudy: function(studyData) {
-      let study = new qxapp.data.model.Study(studyData);
-      let studyEditor = new qxapp.desktop.StudyEditor(study);
+      let study = new osparc.data.model.Study(studyData);
+      let studyEditor = new osparc.desktop.StudyEditor(study);
       this.fireDataEvent("startStudy", studyEditor);
     },
 
@@ -340,7 +340,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         console.error(e);
       }, this);
 
-      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
+      if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         resources.get();
       } else {
         this.__setStudyList([]);
@@ -366,7 +366,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         for (let i=0; i<tempStudyList.length; i++) {
           // FIXME: Backend should do the filtering
           if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
+          !osparc.data.Permissions.getInstance().canDo("services.all.read")) {
             continue;
           }
           tempFilteredStudyList.push(tempStudyList[i]);
@@ -378,7 +378,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         console.error(e);
       }, this);
 
-      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
+      if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         resources.get();
       } else {
         this.__setTemplateList([]);
@@ -402,18 +402,18 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudyListLayout: function() {
-      return new qxapp.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(8, 8));
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(8, 8));
     },
 
     __createStudyItem: function(study, isTemplate) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
 
-      const item = new qxapp.desktop.StudyBrowserListItem();
+      const item = new osparc.desktop.StudyBrowserListItem();
 
       item.setUuid(study.uuid);
       item.setPrjTitle(study.name);
-      item.setIcon(study.thumbnail ? study.thumbnail : qxapp.utils.Utils.getThumbnailFromUuid(study.uuid));
+      item.setIcon(study.thumbnail ? study.thumbnail : osparc.utils.Utils.getThumbnailFromUuid(study.uuid));
       item.setCreator(study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null);
       item.setLastChangeDate(study.lastChangeDate ? new Date(study.lastChangeDate) : null);
 
@@ -493,7 +493,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editStudyLayout.removeAt(1);
       }
 
-      const form = new qxapp.component.widget.StudyDetails(studyData, isTemplate);
+      const form = new osparc.component.widget.StudyDetails(studyData, isTemplate);
       form.addListener("closed", () => this.__itemSelected(null), this);
       form.addListener("updatedStudy", study => this.reloadUserStudies(), this);
       form.addListener("updatedTemplate", template => this.reloadTemplateStudies(), this);
@@ -511,8 +511,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __updateDeleteButtons: function(studyData, isTemplate) {
-      const canDeleteTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.delete");
-      const isCurrentUserOwner = studyData.prjOwner === qxapp.data.Permissions.getInstance().getLogin();
+      const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
+      const isCurrentUserOwner = studyData.prjOwner === osparc.data.Permissions.getInstance().getLogin();
       let deleteButton = this.__studiesDeleteButton;
       if (isTemplate) {
         this.__studiesDeleteButton.exclude();
@@ -548,11 +548,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __stopInteractiveServicesInStudy: function(studies) {
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       studies.forEach(studyData => {
         for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
           const metadata = store.getNodeMetaData(nodedata.key, nodedata.version);
-          if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
+          if (osparc.data.model.Node.isDynamic(metadata) && osparc.data.model.Node.isRealService(metadata)) {
             store.stopInteractiveService(nodeId);
           }
         }

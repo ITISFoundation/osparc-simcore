@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,11 +19,11 @@
  * Base class for NodeInput and NodeOutput
  */
 
-qx.Class.define("qxapp.component.widget.NodeInOut", {
+qx.Class.define("osparc.component.widget.NodeInOut", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
   */
   construct: function(node) {
     this.setNode(node);
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
       droppable: true
     });
     atom.getChildControl("label").set({
-      font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]),
+      font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-16"]),
       textAlign: "center"
     });
 
@@ -55,7 +55,7 @@ qx.Class.define("qxapp.component.widget.NodeInOut", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     },
 

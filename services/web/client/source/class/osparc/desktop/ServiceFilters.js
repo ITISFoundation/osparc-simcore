@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,15 +18,15 @@
 /**
  * Widget that contains the service filters.
  */
-qx.Class.define("qxapp.desktop.ServiceFilters", {
+qx.Class.define("osparc.desktop.ServiceFilters", {
   extend: qx.ui.core.Widget,
 
   construct: function(groupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
-    const textFilter = this.__textFilter = new qxapp.component.filter.TextFilter("text", groupId);
-    const tagsFilter = this.__tagsFilter = new qxapp.component.filter.TagsFilter("tags", groupId);
+    const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", groupId);
+    const tagsFilter = this.__tagsFilter = new osparc.component.filter.TagsFilter("tags", groupId);
     this._add(textFilter);
     this._add(tagsFilter);
   },

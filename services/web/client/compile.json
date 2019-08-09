@@ -21,9 +21,9 @@
   "lint-check": true,
   "applications": [
     {
-      "class": "qxapp.Application",
-      "theme": "qxapp.theme.Theme",
-      "name": "qxapp",
+      "class": "osparc.Application",
+      "theme": "osparc.theme.Theme",
+      "name": "osparc",
       "title": "oSPARC",
       "default": true,
       "include": [
@@ -44,7 +44,7 @@
       },
       "include": [
         "qx.*",
-        "qxapp.*"
+        "osparc.*"
       ],
       "exclude": [
         "qx.test.*",
@@ -54,11 +54,11 @@
     },
     {
       "class": "qxl.testtapper.Application",
-      "theme": "qxapp.theme.Theme",
+      "theme": "osparc.theme.Theme",
       "name": "testtapper",
       "title": "Qooxdoo TestTAPper",
       "include": [
-        "qxapp.test.*",
+        "osparc.test.*",
         "iconfont.material.Load"
       ],
       "exclude": [
@@ -101,10 +101,10 @@
         "uri": "resource/plotly/plotly.min.js"
       },
       {
-        "uri": "resource/qxapp/*.png"
+        "uri": "resource/osparc/*.png"
       },
       {
-        "uri": "resource/qxapp/loading/*"
+        "uri": "resource/osparc/loading/*"
       },
       {
         "uri": "resource/marked/marked.min.js"

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,16 +28,16 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeDataManager = new qxapp.component.widget.NodeDataManager(node);
+ *   let nodeDataManager = new osparc.component.widget.NodeDataManager(node);
  *   this.getRoot().add(nodeDataManager);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NodeDataManager", {
+qx.Class.define("osparc.component.widget.NodeDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
   */
   construct: function(node) {
     this.base(arguments);
@@ -91,7 +91,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node"
+      check: "osparc.data.model.Node"
     }
   },
 
@@ -105,10 +105,10 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       switch (id) {
         case "nodeTree":
         case "userTree":
-          control = new qxapp.file.FilesTree();
+          control = new osparc.file.FilesTree();
           break;
         case "selectedFileLayout":
-          control = new qxapp.file.FileLabelWithActions().set({
+          control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
           this._add(control);

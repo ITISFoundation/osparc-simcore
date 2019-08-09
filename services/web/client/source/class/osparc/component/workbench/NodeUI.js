@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,7 +25,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeUI = new qxapp.component.workbench.NodeUI(node);
+ *   let nodeUI = new osparc.component.workbench.NodeUI(node);
  *   nodeUI.populateNodeLayout();
  *   workbench.add(nodeUI)
  * </pre>
@@ -34,13 +34,13 @@
 const nodeWidth = 200;
 const portHeight = 16;
 
-qx.Class.define("qxapp.component.workbench.NodeUI", {
+qx.Class.define("osparc.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
-  include: qxapp.component.filter.MFilterable,
-  implement: qxapp.component.filter.IFilterable,
+  include: osparc.component.filter.MFilterable,
+  implement: osparc.component.filter.IFilterable,
 
   /**
-   * @param node {qxapp.data.model.Node} Node owning the widget
+   * @param node {osparc.data.model.Node} Node owning the widget
    */
   construct: function(node) {
     this.base();
@@ -67,7 +67,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     },
     thumbnail: {
@@ -228,8 +228,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
-        qxapp.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+      const captionHeight = osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + portHeight/2 + 1;
       if (this.__thumbnail) {
@@ -255,20 +255,20 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       const chipContainer = this.__chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
         margin: [3, 4]
       });
-      const category = this.getNode().isContainer() ? null : qxapp.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
+      const category = this.getNode().isContainer() ? null : osparc.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
       const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
-      const type = qxapp.statics.NodeStatics.getType(nodeType);
+      const type = osparc.statics.NodeStatics.getType(nodeType);
       if (type) {
-        chipContainer.add(new qxapp.ui.basic.Chip(type.label, type.icon + "12"));
+        chipContainer.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
       }
       if (category) {
-        chipContainer.add(new qxapp.ui.basic.Chip(category.label, category.icon + "12"));
+        chipContainer.add(new osparc.ui.basic.Chip(category.label, category.icon + "12"));
       }
       return chipContainer;
     },
 
     __addStatusIndicator: function() {
-      this.__status = new qxapp.component.service.NodeStatus(this.getNode());
+      this.__status = new osparc.component.service.NodeStatus(this.getNode());
       this.__chipContainer.add(this.__status);
     },
 
@@ -284,7 +284,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (oldThumbnail !== null) {
         this.removeAt(0);
       }
-      if (qxapp.utils.Utils.isUrl(thumbnail)) {
+      if (osparc.utils.Utils.isUrl(thumbnail)) {
         this.__thumbnail = new qx.ui.basic.Image(thumbnail).set({
           height: 100,
           allowShrinkX: true,

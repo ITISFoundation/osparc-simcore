@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -16,7 +16,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.io.rest.ResourceFactory", {
+qx.Class.define("osparc.io.rest.ResourceFactory", {
   extend: qx.core.Object,
   type : "singleton",
 
@@ -31,8 +31,8 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       if (this.__config === null) {
         // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
         // SEE: api/specs/webserver/v0/openapi.yaml
-        const basePath = qxapp.io.rest.ResourceFactory.API;
-        const configCheck = new qxapp.io.rest.Resource({
+        const basePath = osparc.io.rest.ResourceFactory.API;
+        const configCheck = new osparc.io.rest.Resource({
           get: {
             method: "GET",
             url: basePath+"/config"
@@ -65,10 +65,10 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
     createHealthCheck: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
-      const basePath = qxapp.io.rest.ResourceFactory.API;
+      const basePath = osparc.io.rest.ResourceFactory.API;
 
       // Singular resource
-      let healthCheck = new qxapp.io.rest.Resource({
+      let healthCheck = new osparc.io.rest.Resource({
         // Get health check
         get: {
           method: "GET",
@@ -84,10 +84,10 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
     createStudyResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-projects.yaml
-      const basePath = qxapp.io.rest.ResourceFactory.API;
+      const basePath = osparc.io.rest.ResourceFactory.API;
 
       // Singular resource
-      const study = new qxapp.io.rest.Resource({
+      const study = new osparc.io.rest.Resource({
         // Retrieve study
         get: {
           method: "GET",
@@ -108,7 +108,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       // Plural resource
-      const studies = new qxapp.io.rest.Resource({
+      const studies = new osparc.io.rest.Resource({
         // Retrieve list of studies
         get: {
           method: "GET",
@@ -134,7 +134,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         }
       });
 
-      var templates = new qxapp.io.rest.Resource({
+      var templates = new osparc.io.rest.Resource({
         // Retrieve list of studies
         get: {
           method: "GET",
@@ -153,10 +153,10 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
     createUserResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
-      const basePath = qxapp.io.rest.ResourceFactory.API;
+      const basePath = osparc.io.rest.ResourceFactory.API;
 
       // Singular resource
-      let profile = new qxapp.io.rest.Resource({
+      let profile = new osparc.io.rest.Resource({
         // Get token
         get: {
           method: "GET",
@@ -172,10 +172,10 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
     createTokenResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
-      const basePath = qxapp.io.rest.ResourceFactory.API;
+      const basePath = osparc.io.rest.ResourceFactory.API;
 
       // Singular resource
-      let token = new qxapp.io.rest.Resource({
+      let token = new osparc.io.rest.Resource({
         // Get token
         get: {
           method: "GET",
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       // Plural resource
-      var tokens = new qxapp.io.rest.Resource({
+      var tokens = new osparc.io.rest.Resource({
         // Retrieve tokens
         get: {
           method: "GET",

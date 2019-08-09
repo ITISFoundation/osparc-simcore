@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -28,7 +28,7 @@
  * <a href='https://github.com/svgdotjs/svg.js' target='_blank'>SVG</a>
  */
 
-qx.Class.define("qxapp.wrapper.Svg", {
+qx.Class.define("osparc.wrapper.Svg", {
   extend: qx.core.Object,
 
   statics: {
@@ -82,7 +82,7 @@ qx.Class.define("qxapp.wrapper.Svg", {
     },
 
     drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
-      const edgeColor = qxapp.theme.Color.colors["workbench-edge-comp-active"];
+      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
 
       let path = draw.path()
         .M(controls[0].x, controls[0].y)

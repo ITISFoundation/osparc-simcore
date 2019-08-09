@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Big button with a title, a text, an icon, and a footer text.
  */
-qx.Class.define("qxapp.ui.form.Jumbo", {
+qx.Class.define("osparc.ui.form.Jumbo", {
   extend: qx.ui.form.ToggleButton,
 
   /**

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Html cell renderer that does not override the cell styles.
  */
-qx.Class.define("qxapp.ui.table.cellrenderer.Html", {
+qx.Class.define("osparc.ui.table.cellrenderer.Html", {
   extend: qx.ui.table.cellrenderer.Html,
   construct: function() {
     this.base(arguments);

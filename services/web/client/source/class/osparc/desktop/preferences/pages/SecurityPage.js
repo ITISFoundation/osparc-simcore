@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -23,15 +23,15 @@
  *
  */
 
-qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
-  extend:qxapp.desktop.preferences.pages.BasePage,
+qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
+  extend:osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/shield-alt/24";
     const title = this.tr("Security");
     this.base(arguments, title, iconSrc);
 
-    this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createTokenResources();
+    this.__tokenResources = osparc.io.rest.ResourceFactory.getInstance().createTokenResources();
 
     this.add(this.__createPasswordSection());
     this.add(this.__createTokensSection());
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       ));
       box.add(label);
 
-      let linkBtn = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      let linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       box.add(linkBtn);
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -113,7 +113,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       let addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
       addTokenBtn.setWidth(100);
       addTokenBtn.addListener("execute", e => {
-        if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
           return;
         }
 
@@ -164,7 +164,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       let delTokenBtn = new qx.ui.form.Button(this.tr("Delete"));
       delTokenBtn.setWidth(100);
       delTokenBtn.addListener("execute", e => {
-        if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
           return;
         }
 
@@ -208,7 +208,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
       let manager = new qx.ui.form.validation.Manager();
       manager.setValidator(function(_itemForms) {
-        return qxapp.auth.core.Utils.checkSamePasswords(newPassword, confirm);
+        return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });
 
       let resetBtn = new qx.ui.form.Button("Reset Password").set({
@@ -218,7 +218,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
       resetBtn.addListener("execute", () => {
         if (manager.validate()) {
-          let request = new qxapp.io.request.ApiRequest("/auth/change-password", "POST");
+          let request = new osparc.io.request.ApiRequest("/auth/change-password", "POST");
           request.setRequestData({
             "current": currentPassword.getValue(),
             "new": newPassword.getValue(),
@@ -227,7 +227,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
           request.addListenerOnce("success", function(e) {
             const res = e.getTarget().getResponse();
-            qxapp.component.message.FlashMessenger.getInstance().log(res.data);
+            osparc.component.message.FlashMessenger.getInstance().log(res.data);
 
             [currentPassword, newPassword, confirm].forEach(item => {
               item.resetValue();
@@ -237,7 +237,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
           request.addListenerOnce("fail", e => {
             const error = e.getTarget().getResponse().error;
             const msg = error ? error["errors"][0].message : this.tr("Failed to reset password");
-            qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
 
             [currentPassword, newPassword, confirm].forEach(item => {
               item.resetValue();

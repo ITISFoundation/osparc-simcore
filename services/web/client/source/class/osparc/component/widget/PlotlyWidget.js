@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let plotlyWidget = new qxapp.component.widget.PlotlyWidget("elemId");
+ *   let plotlyWidget = new osparc.component.widget.PlotlyWidget("elemId");
  *   this.getRoot().add(plotlyWidget);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.PlotlyWidget", {
+qx.Class.define("osparc.component.widget.PlotlyWidget", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -40,7 +40,7 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
     this.base();
 
     this.addListenerOnce("appear", () => {
-      this.__plotlyWrapper = new qxapp.wrapper.Plotly();
+      this.__plotlyWrapper = new osparc.wrapper.Plotly();
       this.__plotlyWrapper.addListener(("plotlyLibReady"), e => {
         let ready = e.getData();
         if (ready) {

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -23,12 +23,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const filesTreePopulator = new qxapp.file.FilesTreePopulator(tree);
+ *   const filesTreePopulator = new osparc.file.FilesTreePopulator(tree);
  *   filesTreePopulator.populateNodeFiles(nodeId);
  * </pre>
  */
 
-qx.Class.define("qxapp.file.FilesTreePopulator", {
+qx.Class.define("osparc.file.FilesTreePopulator", {
   extend: qx.core.Object,
 
   construct: function(tree) {
@@ -38,7 +38,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
   statics: {
     addLoadingChild: function(parent) {
-      const loadingModel = new qxapp.file.FileTreeItem().set({
+      const loadingModel = new osparc.file.FileTreeItem().set({
         label: "Loading...",
         location: null,
         path: null,
@@ -64,12 +64,12 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       const treeName = "Node files";
       this.__resetTree(treeName);
       const rootModel = this.__tree.getModel();
-      qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
+      osparc.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       store.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__filesToRoot(newChildren);
       }, this);
       store.getNodeFiles(nodeId);
@@ -80,9 +80,9 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       this.__resetTree(treeName);
       const rootModel = this.__tree.getModel();
       rootModel.getChildren().removeAll();
-      qxapp.file.FilesTreePopulator.addLoadingChild(rootModel);
+      osparc.file.FilesTreePopulator.addLoadingChild(rootModel);
 
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       store.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         this.__locationsToRoot(locations);
@@ -100,11 +100,11 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
         const locationModel = this.__getLocationModel(locationId);
         if (locationModel) {
           locationModel.getChildren().removeAll();
-          qxapp.file.FilesTreePopulator.addLoadingChild(locationModel);
+          osparc.file.FilesTreePopulator.addLoadingChild(locationModel);
         }
       }
 
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
       store.addListener("myDatasets", ev => {
         const {
           location,
@@ -117,7 +117,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
     },
 
     addFileEntryToTree: function(fileEntry) {
-      const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel([fileEntry]);
+      const filesData = osparc.data.Converters.fromDSMToVirtualTreeModel([fileEntry]);
       this.__fileToTree(filesData[0]);
     },
 
@@ -136,7 +136,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       this.__tree.setModel(root);
       this.__tree.setDelegate({
         createItem: () => {
-          const fileTreeItem = new qxapp.file.FileTreeItem();
+          const fileTreeItem = new osparc.file.FileTreeItem();
           fileTreeItem.addListener("requestFiles", e => {
             const {
               locationId,
@@ -148,7 +148,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
             }
             this.__tree.downloadedDatasets.push(datasetId);
 
-            const store = qxapp.data.Store.getInstance();
+            const store = osparc.data.Store.getInstance();
             store.addListener("myDocuments", ev => {
               const {
                 location,
@@ -204,7 +204,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       rootModel.getChildren().removeAll();
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
-        const locationData = qxapp.data.Converters.createDirEntry(
+        const locationData = osparc.data.Converters.createDirEntry(
           location.name,
           location.id,
           ""
@@ -219,7 +219,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       locationModel.getChildren().removeAll();
       for (let i=0; i<datasets.length; i++) {
         const dataset = datasets[i];
-        const datasetData = qxapp.data.Converters.createDirEntry(
+        const datasetData = osparc.data.Converters.createDirEntry(
           dataset.display_name,
           locationId,
           dataset.dataset_id,
@@ -227,7 +227,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
         datasetData.isDataset = true;
         datasetData.loaded = false;
         const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
-        qxapp.file.FilesTreePopulator.addLoadingChild(datasetModel);
+        osparc.file.FilesTreePopulator.addLoadingChild(datasetModel);
         locationModel.getChildren().append(datasetModel);
       }
     },
@@ -237,7 +237,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       if (locationModel) {
         locationModel.getChildren().removeAll();
         if (files.length>0) {
-          const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          const filesData = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
           for (let j=0; j<filesData[0].children.length; j++) {
             const filesModel = qx.data.marshal.Json.createModel(filesData[0].children[j], true);
             locationModel.getChildren().append(filesModel);
@@ -251,7 +251,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       if (datasetModel) {
         datasetModel.getChildren().removeAll();
         if (files.length>0) {
-          const locationData = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
           const datasetData = locationData[0].children;
           for (let i=0; i<datasetData[0].children.length; i++) {
             const filesModel = qx.data.marshal.Json.createModel(datasetData[0].children[i], true);
@@ -263,7 +263,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
     __filesToRoot: function(data) {
       const currentModel = this.__tree.getModel();
-      qxapp.file.FilesTreePopulator.removeLoadingChild(currentModel);
+      osparc.file.FilesTreePopulator.removeLoadingChild(currentModel);
 
       const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
       currentModel.getChildren().append(newModelToAdd);

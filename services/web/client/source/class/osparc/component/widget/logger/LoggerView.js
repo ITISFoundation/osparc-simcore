@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -35,7 +35,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let loggerView = new qxapp.component.widget.logger.LoggerView(workbench);
+ *   let loggerView = new osparc.component.widget.logger.LoggerView(workbench);
  *   this.getRoot().add(loggerView);
  *   loggerView.info(null, "Hello world");
  * </pre>
@@ -54,7 +54,7 @@ const LOG_LEVEL = [
 ];
 Object.freeze(LOG_LEVEL);
 
-qx.Class.define("qxapp.component.widget.logger.LoggerView", {
+qx.Class.define("osparc.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
 
   construct: function(workbench) {
@@ -98,7 +98,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     workbench: {
-      check: "qxapp.data.model.Workbench",
+      check: "osparc.data.model.Workbench",
       nullable: false
     },
 
@@ -115,21 +115,21 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
         const logString = Object.keys(LOG_LEVEL[i])[0];
         const logNumber = LOG_LEVEL[i][logString];
         if (logNumber === logLevel) {
-          const logColor = qxapp.theme.Color.colors["logger-"+logString+"-message"];
+          const logColor = osparc.theme.Color.colors["logger-"+logString+"-message"];
           return logColor;
         }
       }
-      const logColorDef = qxapp.theme.Color.colors["logger-info-message"];
+      const logColorDef = osparc.theme.Color.colors["logger-info-message"];
       return logColorDef;
     },
 
     getNewColor: function() {
-      const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(osparc.theme.Color.colors["table-row-background-selected"]);
       let luminanceText = null;
       let color = null;
       do {
-        color = qxapp.utils.Utils.getRandomColor();
-        luminanceText = qxapp.utils.Utils.getColorLuminance(color);
+        color = osparc.utils.Utils.getRandomColor();
+        luminanceText = osparc.utils.Utils.getColorLuminance(color);
       } while (Math.abs(luminanceBG-luminanceText) < 0.4);
       return color;
     }
@@ -170,7 +170,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       for (let i=0; i<LOG_LEVEL.length; i++) {
         const level = Object.keys(LOG_LEVEL[i])[0];
         const logLevel = LOG_LEVEL[i][level];
-        if (level === "debug" && !qxapp.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+        if (level === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
           continue;
         }
         const label = level.charAt(0).toUpperCase() + level.slice(1);
@@ -194,7 +194,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      const tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
+      const tableModel = this.__logModel = new osparc.component.widget.logger.RemoteTableModel();
 
       const custom = {
         tableColumnModel : function(obj) {
@@ -210,7 +210,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       });
       const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(1, new qxapp.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
@@ -285,7 +285,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       }
 
       const nodeColor = this.__getNodesColor(nodeId);
-      const msgColor = qxapp.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
+      const msgColor = osparc.component.widget.logger.LoggerView.getLevelColorTag(logLevel);
       const msgLogs = [];
       for (let i=0; i<msgs.length; i++) {
         const msgLog = {
@@ -315,7 +315,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
           return item[1];
         }
       }
-      const color = qxapp.component.widget.logger.LoggerView.getNewColor();
+      const color = osparc.component.widget.logger.LoggerView.getNewColor();
       this.__messengerColors.add([nodeId, color]);
       return color;
     },

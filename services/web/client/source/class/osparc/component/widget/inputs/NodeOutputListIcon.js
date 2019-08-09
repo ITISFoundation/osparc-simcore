@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,17 +26,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputListIcon = new qxapp.component.widget.inputs.NodeOutputListIcon(node, port, portKey);
+ *   let nodeOutputListIcon = new osparc.component.widget.inputs.NodeOutputListIcon(node, port, portKey);
  *   widget = nodeOutputListIcon.getOutputWidget();
  *   this.getRoot().add(widget);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
+qx.Class.define("osparc.component.widget.inputs.NodeOutputListIcon", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param node {osparc.data.model.Node} Node owning the widget
     * @param port {Object} Port owning the widget
     * @param portKey {String} Port Key
   */
@@ -53,7 +53,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
 
     let that = this;
     list.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputListIconItem(),
+      createItem: () => new osparc.component.widget.inputs.NodeOutputListIconItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
@@ -71,15 +71,15 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
       }
     });
 
-    const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
-    const listModel = qxapp.data.Converters.fromAPIListToVirtualListModel(itemList);
+    const itemList = osparc.data.Store.getInstance().getItemList(node.getKey(), portKey);
+    const listModel = osparc.data.Converters.fromAPIListToVirtualListModel(itemList);
     let model = qx.data.marshal.Json.createModel(listModel, true);
     list.setModel(model);
   },
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: false
     }
   },

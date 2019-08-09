@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,14 +18,14 @@
 /**
  * Base class for RESTful resources
  */
-qx.Class.define("qxapp.io.rest.Resource", {
+qx.Class.define("osparc.io.rest.Resource", {
   extend: qx.io.rest.Resource,
 
   statics: {
     AUTHENTICATION: null,
 
     setAutheticationHeader: function(usernameOrToken, password=null) {
-      qxapp.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
     }
   },
 

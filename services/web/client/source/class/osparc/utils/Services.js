@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -24,11 +24,11 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = qxapp.utils.Services.getLatest(services, serviceKey);
+ *   let latestSrv = osparc.utils.Services.getLatest(services, serviceKey);
  * </pre>
  */
 
-qx.Class.define("qxapp.utils.Services", {
+qx.Class.define("osparc.utils.Services", {
   type: "static",
 
   statics: {
@@ -100,14 +100,14 @@ qx.Class.define("qxapp.utils.Services", {
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
-        versions.sort(qxapp.utils.Utils.compareVersionNumbers);
+        versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
       return versions;
     },
 
     getLatest: function(services, key) {
       if (key in services) {
-        const versions = qxapp.utils.Services.getVersions(services, key);
+        const versions = osparc.utils.Services.getVersions(services, key);
         return services[key][versions[versions.length - 1]];
       }
       return null;
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.utils.Services", {
           let allIn = true;
           const innerServices = service["innerNodes"];
           for (const innerService in innerServices) {
-            allIn &= qxapp.utils.Services.isServiceInList(listOfServices, innerServices[innerService].key);
+            allIn &= osparc.utils.Services.isServiceInList(listOfServices, innerServices[innerService].key);
           }
           if (allIn) {
             filteredServices.push(service);

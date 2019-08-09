@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -32,12 +32,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let newStudyDlg = new qxapp.component.widget.NewStudyDlg();
+ *   let newStudyDlg = new osparc.component.widget.NewStudyDlg();
  *   this.getRoot().add(newStudyDlg);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.NewStudyDlg", {
+qx.Class.define("osparc.component.widget.NewStudyDlg", {
   extend: qx.ui.core.Widget,
 
   construct: function(template=null) {

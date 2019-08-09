@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,11 +27,11 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let edge = new qxapp.data.model.Edge(edgeId, node1Id, node2Id);
+ *   let edge = new osparc.data.model.Edge(edgeId, node1Id, node2Id);
  * </pre>
  */
 
-qx.Class.define("qxapp.data.model.Edge", {
+qx.Class.define("osparc.data.model.Edge", {
   extend: qx.core.Object,
 
   /**
@@ -42,7 +42,7 @@ qx.Class.define("qxapp.data.model.Edge", {
   construct: function(edgeId, node1Id, node2Id) {
     this.base();
 
-    this.setEdgeId(edgeId || qxapp.utils.Utils.uuidv4());
+    this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
     this.setInputNodeId(node1Id);
     this.setOutputNodeId(node2Id);
   },

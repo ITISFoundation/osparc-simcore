@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.modeler.Data", {
+qx.Class.define("osparc.dev.fake.modeler.Data", {
   type: "static",
 
   statics: {
@@ -801,8 +801,8 @@ qx.Class.define("qxapp.dev.fake.modeler.Data", {
 
     getItemList: function(nodeKey) {
       let itemList = [];
-      const itemListLF = qxapp.dev.fake.modeler.Data.itemList["lfSim"];
-      const itemListNeuron = qxapp.dev.fake.modeler.Data.itemList["neuronSim"];
+      const itemListLF = osparc.dev.fake.modeler.Data.itemList["lfSim"];
+      const itemListNeuron = osparc.dev.fake.modeler.Data.itemList["neuronSim"];
       itemList = itemListLF.concat(itemListNeuron);
       itemList.sort(this.compare);
       return itemList;

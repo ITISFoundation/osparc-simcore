@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,18 +18,18 @@
 /**
  * Singleton class that is used as entrypoint to the webserver.
  *
- * All data transfer communication goes through the qxapp.data.Store.
+ * All data transfer communication goes through the osparc.data.Store.
  *
  * *Example*
  *
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   let services = qxapp.data.Store.getInstance().getServices();
+ *   let services = osparc.data.Store.getInstance().getServices();
  * </pre>
  */
 
-qx.Class.define("qxapp.data.Store", {
+qx.Class.define("osparc.data.Store", {
   extend: qx.core.Object,
 
   type : "singleton",
@@ -59,10 +59,10 @@ qx.Class.define("qxapp.data.Store", {
       if (typeA === typeB) {
         return true;
       }
-      let mtA = qxapp.data.MimeType.getMimeType(typeA);
-      let mtB = qxapp.data.MimeType.getMimeType(typeB);
+      let mtA = osparc.data.MimeType.getMimeType(typeA);
+      let mtB = osparc.data.MimeType.getMimeType(typeB);
       return mtA && mtB &&
-        new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+        new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
     },
 
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
@@ -77,9 +77,9 @@ qx.Class.define("qxapp.data.Store", {
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        metaData = qxapp.utils.Services.getFromObject(this.__servicesCached, key, version);
+        metaData = osparc.utils.Services.getFromObject(this.__servicesCached, key, version);
         if (metaData) {
-          metaData = qxapp.utils.Utils.deepCloneObject(metaData);
+          metaData = osparc.utils.Utils.deepCloneObject(metaData);
           if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
             metaData.outputs["modeler"] = {
               "label": "Modeler",
@@ -92,9 +92,9 @@ qx.Class.define("qxapp.data.Store", {
           return metaData;
         }
         const allServices = this.getFakeServices().concat(this.getBuiltInServices());
-        metaData = qxapp.utils.Services.getFromArray(allServices, key, version);
+        metaData = osparc.utils.Services.getFromArray(allServices, key, version);
         if (metaData) {
-          return qxapp.utils.Utils.deepCloneObject(metaData);
+          return osparc.utils.Utils.deepCloneObject(metaData);
         }
       }
       return null;
@@ -1113,21 +1113,21 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getFakeServices: function() {
-      return qxapp.dev.fake.Data.getFakeServices();
+      return osparc.dev.fake.Data.getFakeServices();
     },
 
     getServices: function(reload) {
       if (!this.__reloadingServices && (reload || Object.keys(this.__servicesCached).length === 0)) {
         this.__reloadingServices = true;
-        let req = new qxapp.io.request.ApiRequest("/services", "GET");
+        let req = new osparc.io.request.ApiRequest("/services", "GET");
         req.addListener("success", e => {
           let requ = e.getTarget();
           const {
             data
           } = requ.getResponse();
           const allServices = data.concat(this.getBuiltInServices());
-          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
-          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
+          const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
+          const services = osparc.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, true);
         }, this);
 
@@ -1137,8 +1137,8 @@ qx.Class.define("qxapp.data.Store", {
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
           const allServices = this.getFakeServices().concat(this.getBuiltInServices());
-          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
-          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
+          const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
+          const services = osparc.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, false);
         }, this);
         req.send();
@@ -1344,15 +1344,15 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getItemList: function(nodeKey, portKey) {
-      return qxapp.dev.fake.Data.getItemList(nodeKey, portKey);
+      return osparc.dev.fake.Data.getItemList(nodeKey, portKey);
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
-      return qxapp.dev.fake.Data.getItem(nodeInstanceUUID, portKey, itemUuid);
+      return osparc.dev.fake.Data.getItem(nodeInstanceUUID, portKey, itemUuid);
     },
 
     getFakeFiles: function() {
-      let data = qxapp.dev.fake.Data.getObjectList();
+      let data = osparc.dev.fake.Data.getObjectList();
       console.log("Fake Files", data);
       this.fireDataEvent("fakeFiles", data);
     },
@@ -1361,7 +1361,7 @@ qx.Class.define("qxapp.data.Store", {
       const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
       let endPoint = "/storage/locations/0/files/metadata";
       endPoint += filter;
-      let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+      let reqFiles = new osparc.io.request.ApiRequest(endPoint, "GET");
 
       reqFiles.addListener("success", eFiles => {
         const files = eFiles.getTarget().getResponse()
@@ -1386,7 +1386,7 @@ qx.Class.define("qxapp.data.Store", {
 
     getMyLocations: function() {
       // Get available storage locations
-      let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
+      let reqLoc = new osparc.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
@@ -1406,12 +1406,12 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getDatasetsByLocation: function(locationId) {
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
       // Get list of datasets
       const endPoint = "/storage/locations/" + locationId + "/datasets";
-      const reqDatasets = new qxapp.io.request.ApiRequest(endPoint, "GET");
+      const reqDatasets = new osparc.io.request.ApiRequest(endPoint, "GET");
 
       reqDatasets.addListener("success", eFiles => {
         const datasets = eFiles.getTarget().getResponse()
@@ -1442,12 +1442,12 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getFilesByLocation: function(locationId) {
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
       // Get list of file meta data
       const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+      const reqFiles = new osparc.io.request.ApiRequest(endPoint, "GET");
 
       reqFiles.addListener("success", eFiles => {
         const files = eFiles.getTarget().getResponse()
@@ -1478,12 +1478,12 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getFilesByLocationAndDataset: function(locationId, datasetId) {
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
       }
       // Get list of file meta data
       const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
-      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+      const reqFiles = new osparc.io.request.ApiRequest(endPoint, "GET");
 
       reqFiles.addListener("success", eFiles => {
         const files = eFiles.getTarget().getResponse()
@@ -1513,10 +1513,10 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
-      if (download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
+      if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
         return;
       }
-      if (!download && !qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+      if (!download && !osparc.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
         return;
       }
 
@@ -1526,7 +1526,7 @@ qx.Class.define("qxapp.data.Store", {
       const endPoint = "/storage/locations/" + locationId + "/files/" + res;
       // const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
       const method = download ? "GET" : "PUT";
-      let req = new qxapp.io.request.ApiRequest(endPoint, method);
+      let req = new osparc.io.request.ApiRequest(endPoint, method);
 
       req.addListener("success", e => {
         const {
@@ -1552,7 +1552,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
         return false;
       }
 
@@ -1566,7 +1566,7 @@ qx.Class.define("qxapp.data.Store", {
       parameters += "&extra_source=";
       parameters += encodeURIComponent(fileUuid);
       endPoint += parameters;
-      let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
+      let req = new osparc.io.request.ApiRequest(endPoint, "PUT");
 
       req.addListener("success", e => {
         const data = {
@@ -1583,7 +1583,7 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.error(error);
         console.error("Failed copying file", fileUuid, "to", pathId);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
         this.fireDataEvent("fileCopied", null);
       });
 
@@ -1593,14 +1593,14 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     deleteFile: function(locationId, fileUuid) {
-      if (!qxapp.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return false;
       }
 
       // Deletes File
       let parameters = encodeURIComponent(fileUuid);
       const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
-      let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
+      let req = new osparc.io.request.ApiRequest(endPoint, "DELETE");
 
       req.addListener("success", e => {
         const data = {
@@ -1616,7 +1616,7 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.error("Failed deleting file", error);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
         this.fireDataEvent("deleteFile", null);
       });
 
@@ -1628,7 +1628,7 @@ qx.Class.define("qxapp.data.Store", {
     stopInteractiveService(nodeId) {
       const url = "/running_interactive_services";
       const query = "/"+encodeURIComponent(nodeId);
-      const request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
+      const request = new osparc.io.request.ApiRequest(url+query, "DELETE");
       request.send();
     }
   }

@@ -12,7 +12,7 @@
 /**
  * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML and applies it to its value property.
  */
-qx.Class.define("qxapp.ui.markdown.Markdown", {
+qx.Class.define("osparc.ui.markdown.Markdown", {
   extend: qx.ui.basic.Label,
 
   /**

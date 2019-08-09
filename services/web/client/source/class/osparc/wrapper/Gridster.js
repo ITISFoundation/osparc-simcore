@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,7 +26,7 @@
  * <a href='https://github.com/dsmorse/gridster.js' target='_blank'>gridsterjs</a>
  */
 
-qx.Class.define("qxapp.wrapper.Gridster", {
+qx.Class.define("osparc.wrapper.Gridster", {
   extend: qx.ui.core.Widget,
 
   statics: {
@@ -100,12 +100,12 @@ qx.Class.define("qxapp.wrapper.Gridster", {
 
     __init: function() {
       // initialize the script loading
-      const jQueryPath = "qxapp/gridsterjs/jquery-3.3.1.min.js";
+      const jQueryPath = "osparc/gridsterjs/jquery-3.3.1.min.js";
       const extras = false;
-      const gridsterPath = extras ? "qxapp/gridsterjs/jquery.gridster.with-extras-0.7.0.min.js" : "qxapp/gridsterjs/jquery.gridster-0.7.0.min.js";
-      const gridsterCss = "qxapp/gridsterjs/jquery.gridster-0.7.0.min.css";
-      const gridsterDemoCss = "qxapp/gridsterjs/jquery.gridster.demo.css";
-      const gridsterOsparcCss = "qxapp/gridsterjs/jquery.gridster.osparc.css";
+      const gridsterPath = extras ? "osparc/gridsterjs/jquery.gridster.with-extras-0.7.0.min.js" : "osparc/gridsterjs/jquery.gridster-0.7.0.min.js";
+      const gridsterCss = "osparc/gridsterjs/jquery.gridster-0.7.0.min.css";
+      const gridsterDemoCss = "osparc/gridsterjs/jquery.gridster.demo.css";
+      const gridsterOsparcCss = "osparc/gridsterjs/jquery.gridster.osparc.css";
       const gridsterCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterCss);
       const gridsterDemoCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterDemoCss);
       const gridsterOsparcCssUri = qx.util.ResourceManager.getInstance().toUri(gridsterOsparcCss);

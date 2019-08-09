@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  * <a href='https://github.com/socketio/socket.io' target='_blank'>WebSocket</a>
  */
 
-qx.Class.define("qxapp.wrapper.WebSocket", {
+qx.Class.define("osparc.wrapper.WebSocket", {
   extend: qx.core.Object,
 
   type : "singleton",

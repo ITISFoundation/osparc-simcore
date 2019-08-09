@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * GUI filter controller. Stores the state of all grouped filters and dispatches it when they trigger a change.
  */
-qx.Class.define("qxapp.component.filter.UIFilterController", {
+qx.Class.define("osparc.component.filter.UIFilterController", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -49,7 +49,7 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
     /**
      * Function called by the base filter class to register a filter when after creating it.
      *
-     * @param {qxapp.component.filter.UIFilter} filter The filter to be registered.
+     * @param {osparc.component.filter.UIFilter} filter The filter to be registered.
      */
     registerFilter: function(filter) {
       const filterId = filter.getFilterId();
@@ -97,11 +97,11 @@ qx.Class.define("qxapp.component.filter.UIFilterController", {
     },
 
     __getInputMessageName: function(filterId, groupId, suffix = "filter") {
-      return qxapp.utils.Utils.capitalize(filterId, groupId, suffix);
+      return osparc.utils.Utils.capitalize(filterId, groupId, suffix);
     },
 
     __getOutputMessageName: function(groupId, suffix = "filter") {
-      return qxapp.utils.Utils.capitalize(groupId, suffix);
+      return osparc.utils.Utils.capitalize(groupId, suffix);
     },
 
     /**

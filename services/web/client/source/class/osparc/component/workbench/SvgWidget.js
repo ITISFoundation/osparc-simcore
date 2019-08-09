@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,12 +27,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
+ *   let svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
  *   this.getRoot().add(svgWidget);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.workbench.SvgWidget", {
+qx.Class.define("osparc.component.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
     this.addListenerOnce("appear", () => {
       let el = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
-      this.__svgWrapper = new qxapp.wrapper.Svg();
+      this.__svgWrapper = new osparc.wrapper.Svg();
       this.__svgWrapper.addListener(("svgLibReady"), () => {
         this.__edgesCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -26,12 +26,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dashboard = new qxapp.desktop.Dashboard();
+ *   let dashboard = new osparc.desktop.Dashboard();
  *   this.getRoot().add(dashboard);
  * </pre>
  */
 
-qx.Class.define("qxapp.desktop.Dashboard", {
+qx.Class.define("osparc.desktop.Dashboard", {
   extend: qx.ui.tabview.TabView,
 
   construct: function(studyId) {
@@ -39,8 +39,8 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
     this.setBarPosition("left");
 
-    qxapp.wrapper.JsonDiffPatch.getInstance().init();
-    qxapp.wrapper.JsonTreeViewer.getInstance().init();
+    osparc.wrapper.JsonDiffPatch.getInstance().init();
+    osparc.wrapper.JsonTreeViewer.getInstance().init();
     this.__createMainViewLayout(studyId);
   },
 
@@ -89,17 +89,17 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createStudiesView: function(studyId) {
-      const studiesView = this.__prjBrowser = new qxapp.desktop.StudyBrowser(studyId);
+      const studiesView = this.__prjBrowser = new osparc.desktop.StudyBrowser(studyId);
       return studiesView;
     },
 
     __createServicesLayout: function() {
-      const servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
+      const servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
       return servicesView;
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
+      const dataManagerView = this.__dataManager = new osparc.desktop.DataManager();
       return dataManagerView;
     }
   }

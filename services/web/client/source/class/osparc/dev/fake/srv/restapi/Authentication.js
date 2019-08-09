@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
+qx.Class.define("osparc.dev.fake.srv.restapi.Authentication", {
   type: "static",
 
   statics: {
@@ -17,14 +17,14 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
         };
         let body = null;
 
-        const login = qxapp.dev.fake.srv.restapi.Authentication.decodeAuthHeader(request.requestHeaders);
+        const login = osparc.dev.fake.srv.restapi.Authentication.decodeAuthHeader(request.requestHeaders);
 
-        const userId = qxapp.dev.fake.srv.restapi.Authentication.checkCredentials(login);
+        const userId = osparc.dev.fake.srv.restapi.Authentication.checkCredentials(login);
         if (userId !== null) {
-          console.debug("User ", qxapp.dev.fake.srv.db.User.DUMMYNAMES[userId], "is logging in ...");
+          console.debug("User ", osparc.dev.fake.srv.db.User.DUMMYNAMES[userId], "is logging in ...");
           status = 200;
           body = {
-            token: qxapp.dev.fake.srv.restapi.Authentication.createToken(userId)
+            token: osparc.dev.fake.srv.restapi.Authentication.createToken(userId)
           };
         }
 
@@ -45,8 +45,8 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
     },
 
     checkCredentials: function(login) {
-      let userId = qxapp.dev.fake.srv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
-        const user = qxapp.dev.fake.srv.db.User.getObject(userIndex);
+      let userId = osparc.dev.fake.srv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
+        const user = osparc.dev.fake.srv.db.User.getObject(userIndex);
         return (login.email == user.email || login.email == user.username) && login.password == user.passwordHash;
       });
       return userId>=0? userId: null;

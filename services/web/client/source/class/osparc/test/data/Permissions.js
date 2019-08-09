@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * Test Permissions
  *
  */
-qx.Class.define("qxapp.test.data.Permissions", {
+qx.Class.define("osparc.test.data.Permissions", {
   extend: qx.dev.unit.TestCase,
   include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
 
@@ -42,9 +42,9 @@ qx.Class.define("qxapp.test.data.Permissions", {
         name: "Test Study",
         description: ""
       };
-      const study = new qxapp.data.model.Study(studyData);
+      const study = new osparc.data.model.Study(studyData);
       const wbData = {};
-      this.__workbench = new qxapp.data.model.Workbench(study, wbData);
+      this.__workbench = new osparc.data.model.Workbench(study, wbData);
     },
 
     createDummyNode: function() {
@@ -66,11 +66,11 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeCreate: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       const anonNode = this.createDummyNode();
       this.assertNull(anonNode, "guest is not allowed to create nodes");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const userNode = this.createDummyNode();
       this.assertNotNull(userNode, "user is allowed to create nodes");
     },
@@ -79,15 +79,15 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeDelete: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const dummyNode = this.createDummyNode();
       this.assertNotNull(dummyNode, "user is allowed to create nodes");
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       let removed = this.__workbench.removeNode(dummyNode.getNodeId());
       this.assertFalse(removed, "guest is not allowed to delete nodes");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       removed = this.__workbench.removeNode(dummyNode.getNodeId());
       this.assertTrue(removed, "user is allowed to delete nodes");
     },
@@ -96,15 +96,15 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeRename: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const node = this.createDummyNode();
       const newLabel = "my new label";
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       node.renameNode(newLabel);
       this.assertNotIdentical(node.getLabel(), newLabel, "guest is not allowed to rename nodes");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       node.renameNode(newLabel);
       this.assertIdentical(node.getLabel(), newLabel, "guest is not allowed to rename nodes");
     },
@@ -113,15 +113,15 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyEdgeCreate: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const node1 = this.createDummyNode();
       const node2 = this.createDummyNode();
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       const anonEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
       this.assertNull(anonEdge, "guest is not allowed to create edges");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const userEdge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
       this.assertNotNull(userEdge, "user is allowed to create edges");
     },
@@ -130,16 +130,16 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyEdgeDelete: function() {
       this.createEmptyWorkbench();
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const node1 = this.createDummyNode();
       const node2 = this.createDummyNode();
       const edge = this.__workbench.createEdge(null, node1.getNodeId(), node2.getNodeId());
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       let removed = this.__workbench.removeEdge(edge.getEdgeId());
       this.assertFalse(removed, "guest is not allowed to delete edges");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       removed = this.__workbench.removeEdge(edge.getEdgeId());
       this.assertTrue(removed, "user is allowed to delete edges");
     },
@@ -150,13 +150,13 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const file0 = "file0";
       const loc1 = "loc1";
       const file1 = "file1";
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       const req0sent = store.copyFile(loc0, file0, loc1, file1);
       this.assertFalse(req0sent, "guest is not allowed to push files");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const req1sent = store.copyFile(loc0, file0, loc1, file1);
       this.assertTrue(req1sent, "user is allowed to push files");
     },
@@ -165,13 +165,13 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeDataDelete: function() {
       const loc0 = "loc0";
       const file0 = "file0";
-      const store = qxapp.data.Store.getInstance();
+      const store = osparc.data.Store.getInstance();
 
-      qxapp.data.Permissions.getInstance().setRole("guest");
+      osparc.data.Permissions.getInstance().setRole("guest");
       const req0sent = store.deleteFile(loc0, file0);
       this.assertFalse(req0sent, "guest is not allowed to delete files");
 
-      qxapp.data.Permissions.getInstance().setRole("user");
+      osparc.data.Permissions.getInstance().setRole("user");
       const req1sent = store.deleteFile(loc0, file0);
       this.assertTrue(req1sent, "user is allowed to delete files");
     }

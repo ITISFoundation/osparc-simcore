@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.component.widget.cell.Output", {
+qx.Class.define("osparc.component.widget.cell.Output", {
   extend: qx.ui.core.Widget,
 
   construct: function(cellData) {
@@ -9,7 +9,7 @@ qx.Class.define("qxapp.component.widget.cell.Output", {
 
   properties: {
     handler: {
-      check: "qxapp.component.widget.cell.Handler",
+      check: "osparc.component.widget.cell.Handler",
       nullable: false
     }
   },

@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * Test MimeType class
  *
  */
-qx.Class.define("qxapp.test.data.MimeType",
+qx.Class.define("osparc.test.data.MimeType",
   {
     extend: qx.dev.unit.TestCase,
     include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
@@ -50,7 +50,7 @@ qx.Class.define("qxapp.test.data.MimeType",
           ["data:text/csv", "text/csv"],
           ["data:image/svg+xml", "image/svg+xml"]
         ].forEach(pair => {
-          const a = qxapp.data.MimeType.getMimeType(pair[0]);
+          const a = osparc.data.MimeType.getMimeType(pair[0]);
           this.assertIdentical(a, pair[1], "should return " + pair[1]);
         }, this);
       },
@@ -58,10 +58,10 @@ qx.Class.define("qxapp.test.data.MimeType",
       testMatch: function() {
         const aPortType = "data:*/*";
         const bPortType = "data:text/csv";
-        const aMimeType = qxapp.data.MimeType.getMimeType(aPortType);
-        const bMimeType = qxapp.data.MimeType.getMimeType(bPortType);
-        const a = new qxapp.data.MimeType(aMimeType);
-        const b = new qxapp.data.MimeType(bMimeType);
+        const aMimeType = osparc.data.MimeType.getMimeType(aPortType);
+        const bMimeType = osparc.data.MimeType.getMimeType(bPortType);
+        const a = new osparc.data.MimeType(aMimeType);
+        const b = new osparc.data.MimeType(bMimeType);
         this.assert(a.match(b), "*/* should match everything");
       }
     }

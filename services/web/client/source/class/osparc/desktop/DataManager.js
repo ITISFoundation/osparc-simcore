@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -25,14 +25,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new qxapp.desktop.DataManager();
+ *   let dataManager = new osparc.desktop.DataManager();
  *   this.getRoot().add(dataManager);
  * </pre>
  */
 
 /* global document */
 
-qx.Class.define("qxapp.desktop.DataManager", {
+qx.Class.define("osparc.desktop.DataManager", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -60,7 +60,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
 
       const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       dataManagerMainLayout.add(label);
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
       }, this);
       dataManagerControl.add(reloadBtn);
 
-      const toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      const toDatCore = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       dataManagerControl.add(toDatCore);
 
       dataManagerMainLayout.add(dataManagerControl);
@@ -105,7 +105,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
+      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true
       });
@@ -138,14 +138,14 @@ qx.Class.define("qxapp.desktop.DataManager", {
       actionsToolbar.addSpacer();
       actionsToolbar.add(addFile);
 
-      const addBtn = new qxapp.file.FilesAdd();
+      const addBtn = new osparc.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
       addFile.add(addBtn);
 
-      const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
+      const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
@@ -159,13 +159,13 @@ qx.Class.define("qxapp.desktop.DataManager", {
       let chartLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const label = new qx.ui.basic.Label(this.tr("Data Resources")).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
         minWidth: 500
       });
       chartLayout.add(label);
 
       const plotlyDivId = "DataResources";
-      const plotly = new qxapp.component.widget.PlotlyWidget(plotlyDivId);
+      const plotly = new osparc.component.widget.PlotlyWidget(plotlyDivId);
       plotly.addListener("plotlyWidgetReady", e => {
         if (e.getData()) {
           this.__pieChart = plotly;
@@ -219,7 +219,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
         data["labels"].push("Free space");
         const value = (Math.floor(Math.random()*1000000)+1);
         data["values"].push(value);
-        data["tooltips"].push(qxapp.utils.Utils.bytesToSize(value));
+        data["tooltips"].push(osparc.utils.Utils.bytesToSize(value));
       }
       for (let i=0; i<children.length; i++) {
         const child = children.toArray()[i];
@@ -227,7 +227,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
         data["labels"].push(child.getLabel());
         const value2 = (Math.floor(Math.random()*1000000)+1);
         data["values"].push(value2);
-        data["tooltips"].push(qxapp.utils.Utils.bytesToSize(value2));
+        data["tooltips"].push(osparc.utils.Utils.bytesToSize(value2));
       }
       return data;
     }

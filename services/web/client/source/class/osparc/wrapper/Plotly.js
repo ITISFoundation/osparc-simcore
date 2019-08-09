@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -27,7 +27,7 @@
  * <a href='https://github.com/plotly/plotly.js' target='_blank'>Plotly</a>
  */
 
-qx.Class.define("qxapp.wrapper.Plotly", {
+qx.Class.define("osparc.wrapper.Plotly", {
   extend: qx.core.Object,
 
   statics: {
@@ -85,8 +85,8 @@ qx.Class.define("qxapp.wrapper.Plotly", {
     createEmptyPlot: function(id) {
       this.__plotId = id;
       const margin = 25;
-      const bigFont = qxapp.ui.basic.Label.getFont(14);
-      const smallFont = qxapp.ui.basic.Label.getFont(12);
+      const bigFont = osparc.ui.basic.Label.getFont(14);
+      const smallFont = osparc.ui.basic.Label.getFont(12);
       this.__layout = {
         titlefont: {
           color: "#bfbfbf",

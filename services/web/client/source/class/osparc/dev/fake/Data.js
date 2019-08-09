@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -21,7 +21,7 @@
  * TODO: Use faker https://scotch.io/tutorials/generate-fake-data-for-your-javascript-applications-using-faker
  */
 
-qx.Class.define("qxapp.dev.fake.Data", {
+qx.Class.define("osparc.dev.fake.Data", {
   type: "static",
 
   statics: {
@@ -1609,25 +1609,25 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getItemList: function(nodeKey, portKey) {
       switch (portKey) {
         case "defaultNeuromanModels":
-          return qxapp.dev.fake.neuroman.Data.getItemList(portKey);
+          return osparc.dev.fake.neuroman.Data.getItemList(portKey);
         case "modeler":
-          return qxapp.dev.fake.modeler.Data.getItemList();
+          return osparc.dev.fake.modeler.Data.getItemList();
         case "materialDB":
-          return qxapp.dev.fake.materialDB.Data.getItemList();
+          return osparc.dev.fake.materialDB.Data.getItemList();
         case "defaultLFMaterials":
         case "defaultLFBoundaries":
         case "defaultLFSensors":
         case "sensorSettingAPI":
-          return qxapp.dev.fake.lf.Data.getItemList(portKey);
+          return osparc.dev.fake.lf.Data.getItemList(portKey);
         case "defaultNeurons":
         case "defaultNeuronSources":
         case "defaultNeuronPointProcesses":
         case "defaultNeuronNetworkConnection":
         case "defaultNeuronSensors":
         case "neuronsSetting":
-          return qxapp.dev.fake.neuron.Data.getItemList(portKey);
+          return osparc.dev.fake.neuron.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
-          return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
+          return osparc.dev.fake.stimulationSelectivity.Data.getItemList();
       }
       return [];
     },
@@ -1635,17 +1635,17 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
       switch (portKey) {
         case "materialDB":
-          return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);
+          return osparc.dev.fake.materialDB.Data.getItem(itemUuid);
         case "defaultLFMaterials":
         case "defaultLFBoundaries":
         case "defaultLFSensors":
-          return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
+          return osparc.dev.fake.lf.Data.getItem(portKey, itemUuid);
         case "defaultNeurons":
         case "defaultNeuronSources":
         case "defaultNeuronPointProcesses":
         case "defaultNeuronNetworkConnection":
         case "defaultNeuronSensors":
-          return qxapp.dev.fake.neuron.Data.getItem(portKey, itemUuid);
+          return osparc.dev.fake.neuron.Data.getItem(portKey, itemUuid);
       }
       return {};
     }

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.component.widget.cell.Handler", {
+qx.Class.define("osparc.component.widget.cell.Handler", {
   extend: qx.core.Object,
 
   construct: function(node) {
@@ -9,7 +9,7 @@ qx.Class.define("qxapp.component.widget.cell.Handler", {
 
   properties: {
     node: {
-      check: "qxapp.data.model.Node",
+      check: "osparc.data.model.Node",
       nullable: true
     }
   },

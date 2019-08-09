@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -18,7 +18,7 @@
 /**
  * Defines the methods all UIFilter elements should implement.
  */
-qx.Interface.define("qxapp.component.filter.IFilter", {
+qx.Interface.define("osparc.component.filter.IFilter", {
   members:{
     /**
      * Function in charge of resetting the filter.

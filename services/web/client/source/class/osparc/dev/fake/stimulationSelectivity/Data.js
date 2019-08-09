@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fake.stimulationSelectivity.Data", {
+qx.Class.define("osparc.dev.fake.stimulationSelectivity.Data", {
   type: "static",
 
   statics: {
@@ -18,7 +18,7 @@ qx.Class.define("qxapp.dev.fake.stimulationSelectivity.Data", {
     },
 
     getItemList: function() {
-      let itemList = qxapp.dev.fake.stimulationSelectivity.Data.itemList;
+      let itemList = osparc.dev.fake.stimulationSelectivity.Data.itemList;
       itemList.sort(this.compare);
       return itemList;
     }

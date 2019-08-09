@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -21,7 +21,7 @@
  *
 */
 
-qx.Class.define("qxapp.desktop.preferences.DialogWindow", {
+qx.Class.define("osparc.desktop.preferences.DialogWindow", {
   extend: qx.ui.window.Window,
 
   construct: function() {
@@ -40,9 +40,9 @@ qx.Class.define("qxapp.desktop.preferences.DialogWindow", {
     let tabView = new qx.ui.tabview.TabView().set({
       barPosition: "left"
     });
-    tabView.add(new qxapp.desktop.preferences.pages.ProfilePage());
-    tabView.add(new qxapp.desktop.preferences.pages.SecurityPage());
-    tabView.add(new qxapp.desktop.preferences.pages.ExperimentalPage());
+    tabView.add(new osparc.desktop.preferences.pages.ProfilePage());
+    tabView.add(new osparc.desktop.preferences.pages.SecurityPage());
+    tabView.add(new osparc.desktop.preferences.pages.ExperimentalPage());
 
     this.add(tabView, {
       flex: 1

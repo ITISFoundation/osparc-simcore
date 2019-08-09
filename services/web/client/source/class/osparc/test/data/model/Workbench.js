@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -19,7 +19,7 @@
  * Test Workbench class
  *
  */
-qx.Class.define("qxapp.test.data.model.Workbench",
+qx.Class.define("osparc.test.data.model.Workbench",
   {
     extend: qx.dev.unit.TestCase,
     include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
@@ -31,15 +31,15 @@ qx.Class.define("qxapp.test.data.model.Workbench",
         this.debug("Setting up ...");
 
         // ToDo OM: Tobi is this correct?
-        qxapp.data.Permissions.getInstance().setRole("user");
+        osparc.data.Permissions.getInstance().setRole("user");
 
         const studyData = {
           name: "Test Study",
           description: ""
         };
-        const study = new qxapp.data.model.Study(studyData);
+        const study = new osparc.data.model.Study(studyData);
         const wbData = {};
-        this.__workbench = new qxapp.data.model.Workbench(study, wbData);
+        this.__workbench = new osparc.data.model.Workbench(study, wbData);
       },
 
       tearDown: function() {

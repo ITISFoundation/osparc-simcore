@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   qxapp - the simcore frontend
+   osparc - the simcore frontend
 
    https://osparc.io
 
@@ -21,7 +21,7 @@
  *
  *
  */
-qx.Class.define("qxapp.test.DemoTest",
+qx.Class.define("osparc.test.DemoTest",
   {
     extend: qx.dev.unit.TestCase,
     include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
