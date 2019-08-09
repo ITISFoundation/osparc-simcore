@@ -40,13 +40,15 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   events: {
-    "servicesRegistered": "qx.event.type.Event",
-    // "fakeFiles": "qx.event.type.Event",
-    "myDocuments": "qx.event.type.Event",
-    "nodeFiles": "qx.event.type.Event",
-    "presignedLink": "qx.event.type.Event",
-    "fileCopied": "qx.event.type.Event",
-    "deleteFile": "qx.event.type.Event"
+    "servicesRegistered": "qx.event.type.Data",
+    // "fakeFiles": "qx.event.type.Data",
+    "myLocations": "qx.event.type.Data",
+    "myDatasets": "qx.event.type.Data",
+    "myDocuments": "qx.event.type.Data",
+    "nodeFiles": "qx.event.type.Data",
+    "presignedLink": "qx.event.type.Data",
+    "fileCopied": "qx.event.type.Data",
+    "deleteFile": "qx.event.type.Data"
   },
 
   members: {
@@ -119,7 +121,12 @@ qx.Class.define("qxapp.data.Store", {
             type: "data:*/*"
           }
         }
-      }, {
+      }];
+      return builtInServices;
+    },
+
+    getBuiltInServices2: function() {
+      const builtInServices = [{
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
@@ -1154,13 +1161,80 @@ qx.Class.define("qxapp.data.Store", {
 
     __addCategoryToServices: function(services) {
       const cats = {
+        "simcore/services/frontend/file-picker": {
+          "category": "Data"
+        },
+        "simcore/services/dynamic/mattward-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/bornstein-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/cc-0d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-1d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-2d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/raw-graphs": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer-gpu": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/jupyter-r-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-base-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-scipy-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/comp/rabbit-ss-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/osparc-opencor": {
+          "category": "Solver"
+        },
+
+        "simcore/services/comp/itis/sleeper": {
+          "category": "Solver"
+        },
         "simcore/services/comp/itis/isolve-emlf": {
           "category": "Solver"
         },
         "simcore/services/comp/itis/neuron-isolve": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/itis/sleeper": {
           "category": "Solver"
         },
         "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
@@ -1235,31 +1309,7 @@ qx.Class.define("qxapp.data.Store", {
         "simcore/services/demodec/dynamic/itis/s4l/neuroman": {
           "category": "Modeling"
         },
-        "simcore/services/dynamic/3d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-0d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-1d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-2d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/jupyter-base-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-r-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-scipy-notebook": {
-          "category": "Notebook"
-        },
         "simcore/services/dynamic/kember-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/mattward-viewer": {
           "category": "PostPro"
         },
         "simcore/services/dynamic/modeler/webserver": {
@@ -1267,12 +1317,6 @@ qx.Class.define("qxapp.data.Store", {
         },
         "simcore/services/dynamic/modeler/webserverwithrat": {
           "category": "Modeling"
-        },
-        "simcore/services/dynamic/raw-graphs": {
-          "category": "PostPro"
-        },
-        "simcore/services/frontend/file-picker": {
-          "category": "Data"
         },
         "simcore/services/frontend/multi-plot": {
           "category": "PostPro"
@@ -1326,66 +1370,146 @@ qx.Class.define("qxapp.data.Store", {
         if (files && files.length>0) {
           this.fireDataEvent("nodeFiles", files);
         }
+        this.fireDataEvent("nodeFiles", []);
       }, this);
 
       reqFiles.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
+        this.fireDataEvent("nodeFiles", []);
         console.error("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
     },
 
-    getMyDocuments: function() {
+    getMyLocations: function() {
       // Get available storage locations
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
         const locations = eLoc.getTarget().getResponse()
           .data;
-        for (let i=0; i<locations.length; i++) {
-          const locationId = locations[i]["id"];
-          if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-            continue;
-          }
-          // Get list of file meta data
-          const endPoint = "/storage/locations/" + locationId + "/files/metadata";
-          const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-          reqFiles.addListener("success", eFiles => {
-            const files = eFiles.getTarget().getResponse()
-              .data;
-            console.log("My Files", files);
-            if (files && files.length>0) {
-              const data = {
-                location: locationId,
-                files: files
-              };
-              this.fireDataEvent("myDocuments", data);
-            }
-          }, this);
-
-          reqFiles.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            console.error("Failed getting Files list", error);
-          });
-
-          reqFiles.send();
-        }
+        this.fireDataEvent("myLocations", locations);
       }, this);
 
       reqLoc.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
+        this.fireDataEvent("myLocations", []);
         console.error("Failed getting Storage Locations", error);
       });
 
       reqLoc.send();
+    },
+
+    getDatasetsByLocation: function(locationId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of datasets
+      const endPoint = "/storage/locations/" + locationId + "/datasets";
+      const reqDatasets = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqDatasets.addListener("success", eFiles => {
+        const datasets = eFiles.getTarget().getResponse()
+          .data;
+        const data = {
+          location: locationId,
+          datasets: []
+        };
+        if (datasets && datasets.length>0) {
+          data.datasets = datasets;
+        }
+        this.fireDataEvent("myDatasets", data);
+      }, this);
+
+      reqDatasets.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          datasets: []
+        };
+        this.fireDataEvent("myDatasets", data);
+        console.error("Failed getting Datasets list", error);
+      });
+
+      reqDatasets.send();
+    },
+
+    getFilesByLocation: function(locationId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of file meta data
+      const endPoint = "/storage/locations/" + locationId + "/files/metadata";
+      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        const data = {
+          location: locationId,
+          files: []
+        };
+        if (files && files.length>0) {
+          data.files = files;
+        }
+        this.fireDataEvent("myDocuments", data);
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          files: []
+        };
+        this.fireDataEvent("myDocuments", data);
+        console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
+    },
+
+    getFilesByLocationAndDataset: function(locationId, datasetId) {
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return;
+      }
+      // Get list of file meta data
+      const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
+      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        const data = {
+          location: locationId,
+          dataset: datasetId,
+          files: files && files.length>0 ? files : []
+        };
+        this.fireDataEvent("myDocuments", data);
+      }, this);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        const data = {
+          location: locationId,
+          dataset: datasetId,
+          files: []
+        };
+        this.fireDataEvent("myDocuments", data);
+        console.error("Failed getting Files list", error);
+      });
+
+      reqFiles.send();
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
@@ -1445,9 +1569,11 @@ qx.Class.define("qxapp.data.Store", {
       let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
 
       req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
+        const data = {
+          data: e.getTarget().getResponse(),
+          locationId: toLoc,
+          fileUuid: pathId + "/" + fileName
+        };
         this.fireDataEvent("fileCopied", data);
       }, this);
 
@@ -1457,6 +1583,7 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.error(error);
         console.error("Failed copying file", fileUuid, "to", pathId);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
         this.fireDataEvent("fileCopied", null);
       });
 
@@ -1476,9 +1603,11 @@ qx.Class.define("qxapp.data.Store", {
       let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
 
       req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
+        const data = {
+          data: e.getTarget().getResponse(),
+          locationId: locationId,
+          fileUuid: fileUuid
+        };
         this.fireDataEvent("deleteFile", data);
       }, this);
 
@@ -1487,6 +1616,7 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.error("Failed deleting file", error);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
         this.fireDataEvent("deleteFile", null);
       });
 

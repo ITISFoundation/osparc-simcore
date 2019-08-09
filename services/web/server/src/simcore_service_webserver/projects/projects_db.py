@@ -30,19 +30,19 @@ from .projects_models import ProjectType, projects, user_to_projects
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI  = __name__ + '.ProjectDBAPI'
-
+DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
 # TODO: check here how schema to model db works!?
-def _convert_to_db_names(project_data: Dict) -> Dict:
+def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
-    for key, value in project_data.items():
+    for key, value in project_document_data.items():
         converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
-def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
+def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
     converted_args = {}
-    for key, value in project_db_data.items():
-        if key in ["type", "id"]:
+    for key, value in project_database_data.items():
+        if key in DB_EXCLUSIVE_COLUMNS:
             continue
         converted_value = value
         if isinstance(value, datetime):
@@ -55,6 +55,7 @@ def _convert_to_schema_names(project_db_data: Mapping) -> Dict:
 # TODO: is user_id str or int?
 # TODO: systemaic user_id, project
 # TODO: rename add_projects by create_projects
+# FIXME: not clear when data is schema-compliant and db-compliant
 
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
@@ -94,14 +95,21 @@ class ProjectDBAPI:
             uuids.append(prj_uuid)
         return uuids
 
-    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False) -> str:
-        """  Inserts a new project in the database and, if a user is specified, it assigns ownership
+    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False, force_as_template=False) -> str:
+        """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
-        - If user_id is None, then project is added as template.
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :raises ProjectInvalidRightsError: Assigning project to an unregistered user
+        :param prj: schema-compliant project data
+        :type prj: Dict
+        :param user_id: database's user identifier
+        :type user_id: str
+        :param force_project_uuid: enforces valid uuid, defaults to False
+        :type force_project_uuid: bool, optional
+        :param force_as_template: adds data as template, defaults to False
+        :type force_as_template: bool, optional
+        :raises ProjectInvalidRightsError: ssigning project to an unregistered user
         :return: newly assigned project UUID
         :rtype: str
         """
@@ -119,10 +127,10 @@ class ProjectDBAPI:
             })
             kargs = _convert_to_db_names(prj)
             kargs.update({
-                "type": ProjectType.TEMPLATE if user_id is None else ProjectType.STANDARD,
+                "type": ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD,
             })
 
-            # validate uuid
+            # must be valid uuid
             try:
                 uuidlib.UUID(kargs.get('uuid'))
             except ValueError:
@@ -167,32 +175,40 @@ class ProjectDBAPI:
             prj["uuid"] = kargs["uuid"]
             return prj["uuid"]
 
-    async def load_user_projects(self, user_id: str) -> List[Dict]:
+    async def load_user_projects(self, user_id: str, *, exclude_templates=True) -> List[Dict]:
         """ loads a project for a user
 
         """
         log.info("Loading projects for user %s", user_id)
         projects_list = []
-        async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table)\
-                .where(user_to_projects.c.user_id == user_id)
 
+        condition = user_to_projects.c.user_id == user_id
+        if exclude_templates:
+            condition = and_(condition,  projects.c.type != ProjectType.TEMPLATE )
+
+        joint_table = user_to_projects.join(projects)
+        query = select([projects]).select_from(joint_table).where(condition)
+
+        async with self.engine.acquire() as conn:
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
                 log.debug("found project: %s", result_dict)
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def load_template_projects(self) -> List[Dict]:
+    async def load_template_projects(self, *, only_published=False) -> List[Dict]:
         log.info("Loading template projects")
+        # TODO:
         # TODO: eliminate this and use mock to replace get_user_project instead
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
-            query = select([projects]).\
-                where(projects.c.type == ProjectType.TEMPLATE)
+            if only_published:
+                expression = and_( projects.c.type == ProjectType.TEMPLATE, projects.c.published == True)
+            else:
+                expression = projects.c.type == ProjectType.TEMPLATE
 
+            query = select([projects]).where(expression)
             async for row in conn.execute(query):
                 result_dict = {key:value for key,value in row.items()}
                 log.debug("found project: %s", result_dict)
@@ -229,7 +245,7 @@ class ProjectDBAPI:
                 raise ProjectNotFoundError(project_uuid)
             return _convert_to_schema_names(row)
 
-    async def get_template_project(self, project_uuid: str) -> Dict:
+    async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
         prj = Fake.projects.get(project_uuid)
         if prj and prj.template:
@@ -237,16 +253,36 @@ class ProjectDBAPI:
 
         template_prj = None
         async with self.engine.acquire() as conn:
-            query = select([projects]).where(
-                and_(projects.c.type == ProjectType.TEMPLATE,
-                     projects.c.uuid == project_uuid)
-            )
+            if only_published:
+                condition = and_(
+                    projects.c.type == ProjectType.TEMPLATE,
+                    projects.c.uuid == project_uuid,
+                    projects.c.published==True)
+            else:
+                condition = and_(
+                    projects.c.type == ProjectType.TEMPLATE,
+                    projects.c.uuid == project_uuid)
+
+            query = select([projects]).where(condition)
+
             result = await conn.execute(query)
             row = await result.first()
             if row:
                 template_prj = _convert_to_schema_names(row)
 
         return template_prj
+
+    async def get_project_workbench(self, project_uuid: str):
+        async with self.engine.acquire() as conn:
+            query = select([projects.c.workbench]).where(
+                    projects.c.uuid == project_uuid
+                    )
+            result = await conn.execute(query)
+            row = await result.first()
+            if row:
+                return row[projects.c.workbench]
+        return {}
+
 
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
@@ -282,6 +318,12 @@ class ProjectDBAPI:
                 values(**_convert_to_db_names(project_data)).\
                     where(projects.c.id == row[projects.c.id])
             await conn.execute(query)
+
+
+    async def pop_project(self, project_uuid) -> Dict:
+        # TODO: delete projects and returns a copy
+        pass
+
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         """ deletes a project from a user

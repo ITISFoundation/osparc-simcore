@@ -30,11 +30,14 @@ qx.Class.define("qxapp.desktop.PanelView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     // Title bar
-    this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
-      .set({
-        appearance: "panelview-titlebar"
-      });
+    this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
+    })).set({
+      appearance: "panelview-titlebar"
+    });
     this._add(this.__titleBar);
+
+    this.__caret = this.getChildControl("caret");
 
     // Set if coming in the constructor arguments
     if (title) {
@@ -44,16 +47,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
       this.setContent(content);
     }
 
-    // Transition effect
-    this.setDecorator("panelview");
-
     // Attach handlers
     this.__attachEventHandlers();
   },
 
   statics: {
-    MORE_CARET: "@MaterialIcons/expand_more/20",
-    LESS_CARET: "@MaterialIcons/expand_less/20"
+    MORE_CARET: "@MaterialIcons/expand_more/",
+    LESS_CARET: "@MaterialIcons/expand_less/"
   },
 
   properties: {
@@ -79,6 +79,18 @@ qx.Class.define("qxapp.desktop.PanelView", {
       init: false,
       check: "Boolean",
       apply: "_applySideCollapsed"
+    },
+
+    appearance: {
+      init: "panelview",
+      refine: true
+    },
+
+    caretSize: {
+      init: 20,
+      nullable: false,
+      check: "Integer",
+      apply: "_applyCaretSize"
     }
   },
 
@@ -89,6 +101,25 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __innerContainer: null,
     __containerHeight: null,
     __layoutFlex: null,
+    __minHeight: null,
+    __contentMinHeight: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "title":
+          control = new qx.ui.basic.Atom(this.getTitle());
+          this.__titleBar.addAt(control, 0);
+          break;
+        case "caret":
+          control = new qx.ui.basic.Image(this.__getCaretId(this.getCollapsed())).set({
+            visibility: "excluded"
+          });
+          this.__titleBar.addAt(control, 1);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     toggleCollapsed: function() {
       this.setCollapsed(!this.getCollapsed());
@@ -100,18 +131,30 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyCollapsed: function(collapsed) {
       if (this.getContent()) {
-        this.__caret.setSource(collapsed ? this.self().MORE_CARET : this.self().LESS_CARET);
+        this.__caret.setSource(this.__getCaretId(collapsed));
         if (collapsed) {
+          this.__minHeight = this.getMinHeight();
+          if (this.getContent()) {
+            this.__contentMinHeight = this.getContent().getMinHeight();
+            this.getContent().setMinHeight(0);
+          }
+          this.setMinHeight(0);
           if (this.getLayoutProperties().flex) {
             this.__layoutFlex = this.getLayoutProperties().flex;
             this.setLayoutProperties({
               flex: 0
             });
           }
-        } else if (this.__layoutFlex) {
-          this.setLayoutProperties({
-            flex: this.__layoutFlex
-          });
+        } else {
+          this.setMinHeight(this.__minHeight);
+          if (this.getContent()) {
+            this.getContent().setMinHeight(this.__contentMinHeight);
+          }
+          if (this.__layoutFlex) {
+            this.setLayoutProperties({
+              flex: this.__layoutFlex
+            });
+          }
         }
         this.__innerContainer.setHeight(collapsed ? 0 : this.__containerHeight);
       }
@@ -140,38 +183,40 @@ qx.Class.define("qxapp.desktop.PanelView", {
       }
 
       this.__innerContainer.removeAll();
-      content.setMinHeight(0);
       this.__innerContainer.add(content);
+      this.__innerContainer.setHeight(this.getCollapsed() ? 0 : this.__containerHeight);
 
-      if (this.__caret === null) {
-        this.__caret = new qx.ui.basic.Image(this.getCollapsed() ? this.self().MORE_CARET : this.self().LESS_CARET).set({
-          marginTop: 2
-        });
-        this.__titleBar.add(this.__caret);
+      if (content) {
+        this.__caret.show();
+      } else {
+        this.__caret.exclude();
       }
     },
 
     _applyTitle: function(title) {
-      if (this.__titleLabel) {
-        this.__titleLabel.setValue(title);
-      } else {
-        this.__titleLabel = new qx.ui.basic.Label(title)
-          .set({
-            appearance: "panelview-titlebar-label",
-            font: "title-14"
-          });
-        this.__titleBar.add(this.__titleLabel);
-      }
+      this.__titleLabel = this.getChildControl("title");
+      this.__titleLabel.setLabel(title);
+    },
+
+    _applySideCollapsed: function(sideCollapse, old) {
+      this.setCollapsed(sideCollapse);
+    },
+
+    _applyCaretSize: function(size) {
+      this.__caret.setSource(this.__getCaretId(this.getCollapsed()));
+    },
+
+    __getCaretId: function(collapsed) {
+      const caretSize = this.getCaretSize();
+      const moreCaret = this.self().MORE_CARET;
+      const lessCaret = this.self().LESS_CARET;
+      return collapsed ? moreCaret + caretSize : lessCaret + caretSize;
     },
 
     __attachEventHandlers: function() {
       this.__titleBar.addListener("tap", () => {
         this.toggleCollapsed();
       }, this);
-    },
-
-    _applySideCollapsed: function(sideCollapse, old) {
-      this.setCollapsed(sideCollapse);
     }
   }
 

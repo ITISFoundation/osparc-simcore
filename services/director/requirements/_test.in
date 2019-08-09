@@ -18,7 +18,8 @@ pytest-runner
 openapi-spec-validator
 docker
 
-# tools for CI
+# tools
 pylint
+ptvsd
 coveralls
 codecov

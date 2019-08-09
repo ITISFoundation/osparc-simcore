@@ -11,7 +11,7 @@ import unittest.mock as mock
 import pytest
 import yaml
 
-from simcore_service_storage.cli import parse, setup_parser
+from simcore_service_storage.cli import create_environ, parse, setup_parser
 from simcore_service_storage.resources import resources
 
 THIS_SERVICE = 'storage'
@@ -32,16 +32,16 @@ def services_docker_compose_file(osparc_simcore_root_dir):
 
 @pytest.fixture("session")
 def devel_environ(env_devel_file):
+    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
     with env_devel_file.open() as f:
         for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                key, value = line.split("=")
-                env_devel[key] = value
+            m = PATTERN_ENVIRON_EQUAL.match(line)
+            if m:
+                key, value = m.groups()
+                env_devel[key] = str(value)
     return env_devel
 
-from simcore_service_storage.cli import create_environ
 
 @pytest.fixture("session")
 def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
@@ -54,7 +54,6 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 
     container_environ = create_environ(skip_system_environ=True)
     container_environ.update({
-        'VENV2': '/home/scu/.venv27/', # defined in Dockerfile
         'OSPARC_SIMCORE_REPO_ROOTDIR':str(osparc_simcore_root_dir)
     })
 
@@ -63,6 +62,7 @@ def container_environ(services_docker_compose_file, devel_environ, osparc_simcor
 
     for item in environ_items:
         key, value = item.split("=")
+
         m = MATCH.match(value)
         if m:
             envkey = m.groups()[0]

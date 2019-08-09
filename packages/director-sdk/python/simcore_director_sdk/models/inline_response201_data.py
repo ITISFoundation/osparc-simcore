@@ -37,7 +37,9 @@ class InlineResponse201Data(object):
         'service_basepath': 'str',
         'service_host': 'str',
         'service_key': 'str',
+        'service_message': 'str',
         'service_port': 'int',
+        'service_state': 'str',
         'service_uuid': 'str',
         'service_version': 'str'
     }
@@ -48,12 +50,14 @@ class InlineResponse201Data(object):
         'service_basepath': 'service_basepath',
         'service_host': 'service_host',
         'service_key': 'service_key',
+        'service_message': 'service_message',
         'service_port': 'service_port',
+        'service_state': 'service_state',
         'service_uuid': 'service_uuid',
         'service_version': 'service_version'
     }
 
-    def __init__(self, entry_point=None, published_port=None, service_basepath=None, service_host=None, service_key=None, service_port=None, service_uuid=None, service_version=None):  # noqa: E501
+    def __init__(self, entry_point=None, published_port=None, service_basepath=None, service_host=None, service_key=None, service_message=None, service_port=None, service_state=None, service_uuid=None, service_version=None):  # noqa: E501
         """InlineResponse201Data - a model defined in OpenAPI"""  # noqa: E501
 
         self._entry_point = None
@@ -61,7 +65,9 @@ class InlineResponse201Data(object):
         self._service_basepath = None
         self._service_host = None
         self._service_key = None
+        self._service_message = None
         self._service_port = None
+        self._service_state = None
         self._service_uuid = None
         self._service_version = None
         self.discriminator = None
@@ -73,7 +79,10 @@ class InlineResponse201Data(object):
             self.service_basepath = service_basepath
         self.service_host = service_host
         self.service_key = service_key
+        if service_message is not None:
+            self.service_message = service_message
         self.service_port = service_port
+        self.service_state = service_state
         self.service_uuid = service_uuid
         self.service_version = service_version
 
@@ -203,6 +212,29 @@ class InlineResponse201Data(object):
         self._service_key = service_key
 
     @property
+    def service_message(self):
+        """Gets the service_message of this InlineResponse201Data.  # noqa: E501
+
+        the service message  # noqa: E501
+
+        :return: The service_message of this InlineResponse201Data.  # noqa: E501
+        :rtype: str
+        """
+        return self._service_message
+
+    @service_message.setter
+    def service_message(self, service_message):
+        """Sets the service_message of this InlineResponse201Data.
+
+        the service message  # noqa: E501
+
+        :param service_message: The service_message of this InlineResponse201Data.  # noqa: E501
+        :type: str
+        """
+
+        self._service_message = service_message
+
+    @property
     def service_port(self):
         """Gets the service_port of this InlineResponse201Data.  # noqa: E501
 
@@ -228,6 +260,37 @@ class InlineResponse201Data(object):
             raise ValueError("Invalid value for `service_port`, must be a value greater than or equal to `1`")  # noqa: E501
 
         self._service_port = service_port
+
+    @property
+    def service_state(self):
+        """Gets the service_state of this InlineResponse201Data.  # noqa: E501
+
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start   # noqa: E501
+
+        :return: The service_state of this InlineResponse201Data.  # noqa: E501
+        :rtype: str
+        """
+        return self._service_state
+
+    @service_state.setter
+    def service_state(self, service_state):
+        """Sets the service_state of this InlineResponse201Data.
+
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start   # noqa: E501
+
+        :param service_state: The service_state of this InlineResponse201Data.  # noqa: E501
+        :type: str
+        """
+        if service_state is None:
+            raise ValueError("Invalid value for `service_state`, must not be `None`")  # noqa: E501
+        allowed_values = ["pending", "pulling", "starting", "running", "complete", "failed"]  # noqa: E501
+        if service_state not in allowed_values:
+            raise ValueError(
+                "Invalid value for `service_state` ({0}), must be one of {1}"  # noqa: E501
+                .format(service_state, allowed_values)
+            )
+
+        self._service_state = service_state
 
     @property
     def service_uuid(self):

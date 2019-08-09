@@ -72,7 +72,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __sidePanel: null,
     __scrollContainer: null,
     __workbenchUI: null,
-    __treeView: null,
+    __nodesTree: null,
     __extraView: null,
     __loggerView: null,
     __nodeView: null,
@@ -89,20 +89,18 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const treeView = this.__treeView = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
-      treeView.addListener("addNode", () => {
+      const nodesTree = this.__nodesTree = new qxapp.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
-      treeView.addListener("removeNode", e => {
+      nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), treeView), 0);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
-      const extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), extraView).set({
-        collapsed: true
-      }), 1);
+      const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
+      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
       const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Logger"), loggerView), 2);
@@ -150,14 +148,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
-      this.__mainPanel.getControls().addListener("retrieveInputs", this.__updatePipeline, this);
 
       let workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("updatePipeline", e => {
-        let node = e.getData();
-        this.__updatePipeline(node);
+      workbench.addListener("retrieveInputs", e => {
+        const data = e.getData();
+        const node = data["node"];
+        const portKey = data["portKey"];
+        this.__updatePipelineAndRetrieve(node, portKey);
       }, this);
 
       workbench.addListener("showInLogger", ev => {
@@ -168,7 +167,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
 
       [
-        this.__treeView,
+        this.__nodesTree,
         this.__workbenchUI
       ].forEach(wb => {
         wb.addListener("nodeDoubleClicked", e => {
@@ -178,15 +177,15 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
 
       const workbenchUI = this.__workbenchUI;
-      const treeView = this.__treeView;
-      treeView.addListener("changeSelectedNode", e => {
+      const nodesTree = this.__nodesTree;
+      nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
           node.setActive(true);
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        treeView.nodeSelected(e.getData());
+        nodesTree.nodeSelected(e.getData());
       });
     },
 
@@ -235,9 +234,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
 
-      this.__switchExtraView(nodeId);
-
-      this.__treeView.nodeSelected(nodeId, openNodeAndParents);
+      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
@@ -267,38 +264,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         }
       }
       return widget;
-    },
-
-    __switchExtraView: function(nodeId) {
-      // Show screenshots in the ExtraView
-      if (nodeId === "root") {
-        this.showScreenshotInExtraView("workbench");
-      } else {
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        if (node.isContainer()) {
-          if (node.isInKey("multi-plot")) {
-            this.showScreenshotInExtraView("multi-plot");
-          } else {
-            this.showScreenshotInExtraView("container");
-          }
-        } else if (node.isInKey("file-picker")) {
-          this.showScreenshotInExtraView("file-picker");
-        } else if (node.isInKey("modeler")) {
-          this.showScreenshotInExtraView("modeler");
-        } else if (node.isInKey("3d-viewer")) {
-          this.showScreenshotInExtraView("postpro");
-        } else if (node.isInKey("viewer")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("jupyter")) {
-          this.showScreenshotInExtraView("notebook");
-        } else if (node.isInKey("Grid")) {
-          this.showScreenshotInExtraView("grid");
-        } else if (node.isInKey("Voxel")) {
-          this.showScreenshotInExtraView("voxels");
-        } else {
-          this.showScreenshotInExtraView("form");
-        }
-      }
     },
 
     __addNode: function() {
@@ -335,8 +300,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     },
 
     __workbenchChanged: function() {
-      this.__treeView.populateTree();
-      this.__treeView.nodeSelected(this.__currentNodeId);
+      this.__nodesTree.populateTree();
+      this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
     showInMainView: function(widget, nodeId) {
@@ -371,27 +336,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
-    showInExtraView: function(widget) {
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), widget).set({
-        collapsed: true
-      }), 1);
-    },
-
-    showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
-        scale: true,
-        allowShrinkX: true,
-        allowShrinkY: true
-      });
-      const container = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
-        height: 300
-      });
-      container.add(imageWidget);
-      this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Overview"), container).set({
-        collapsed: true
-      }), 1);
-    },
-
     getLogger: function() {
       return this.__loggerView;
     },
@@ -414,39 +358,20 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(node) {
-      let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid());
-      let req = new qxapp.io.request.ApiRequest(url, "PUT");
-      let data = {};
-      data["workbench"] = currentPipeline;
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      console.log("updating pipeline: " + url);
-      console.log(data);
+    __updatePipelineAndRetrieve: function(node, portKey = null) {
+      this.updateStudyDocument(
+        false,
+        null,
+        this.__retrieveInputs.bind(this, node, portKey)
+      );
+      this.getLogger().debug("root", "Updating pipeline");
+    },
 
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline successfully updated");
-        if (node) {
-          node.retrieveInputs();
-        } else {
-          const workbench = this.getStudy().getWorkbench();
-          const allNodes = workbench.getNodes(true);
-          Object.values(allNodes).forEach(node2 => {
-            node2.retrieveInputs();
-          }, this);
-        }
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error updating pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed updating pipeline");
-      }, this);
-      req.send();
-
-      this.getLogger().debug(null, "Updating pipeline");
+    __retrieveInputs: function(node, portKey = null) {
+      this.getLogger().debug("root", "Retrieveing inputs");
+      if (node) {
+        node.retrieveInputs(portKey);
+      }
     },
 
     __startPipeline: function() {
@@ -454,7 +379,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         return false;
       }
 
-      return this.updateStudyDocument(null, this.__doStartPipeline);
+      return this.updateStudyDocument(true, null, this.__doStartPipeline);
     },
 
     __doStartPipeline: function() {
@@ -493,14 +418,14 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const req = new qxapp.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error submitting pipeline");
+        this.getLogger().error("root", "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed submitting pipeline");
+        this.getLogger().error("root", "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info(null, "Starting pipeline");
+      this.getLogger().info("root", "Starting pipeline");
       return true;
     },
 
@@ -517,28 +442,28 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
+        this.getLogger().error("root", "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
+        this.getLogger().error("root", "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
+      this.getLogger().info("root", "Stopping pipeline. Not yet implemented");
       return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
+      this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__pipelineId = null;
-        this.getLogger().error(null, "Submition failed");
+        this.getLogger().error("root", "Submition failed");
       } else {
         this.__pipelineId = pipelineId;
-        this.getLogger().info(null, "Pipeline started");
+        this.getLogger().info("root", "Pipeline started");
       }
     },
 
@@ -562,7 +487,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.updateStudyDocument(newObj);
+            this.updateStudyDocument(false, newObj);
           }
         }
       }, this);
@@ -576,7 +501,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(newObj, cb) {
+    updateStudyDocument: function(run=false, newObj, cbSuccess, cbError) {
       if (newObj === null || newObj === undefined) {
         newObj = this.getStudy().serializeStudy();
       }
@@ -586,12 +511,16 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cb) {
-          cb.call(this);
+        if (cbSuccess) {
+          cbSuccess.call(this);
         }
       }, this);
+      resource.addListenerOnce("putError", ev => {
+        this.getLogger().error("root", "Error updating pipeline");
+      }, this);
       resource.put({
-        "project_id": prjUuid
+        "project_id": prjUuid,
+        run
       }, newObj);
     },
 

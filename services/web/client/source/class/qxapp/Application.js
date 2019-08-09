@@ -21,6 +21,7 @@
  * This is the main application class of "qxapp"
  *
  * @asset(qxapp/*)
+ * @asset(common/common.css)
  */
 
 qx.Class.define("qxapp.Application", {
@@ -68,10 +69,10 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__initRouting();
+      this.__loadCommonCss();
     },
 
     __initRouting: function() {
-      // TODO: PC -> IP consider regex for uuid, i.e. /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/ ???
       const urlFragment = qxapp.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
@@ -112,7 +113,14 @@ qx.Class.define("qxapp.Application", {
       if (isLogged) {
         this.__loadMainPage();
       } else {
-        qxapp.auth.Manager.getInstance().validateToken(this.__loadMainPage, this.__loadLoginPage, this);
+        qxapp.auth.Manager.getInstance().validateToken(data => {
+          if (data.role === "Guest") {
+            // Logout a guest trying to access the Dashboard
+            qxapp.auth.Manager.getInstance().logout();
+          } else {
+            this.__loadMainPage();
+          }
+        }, this.__loadLoginPage, this);
       }
     },
 
@@ -200,6 +208,11 @@ qx.Class.define("qxapp.Application", {
           "transition: background-color 0s linear 100000s, color 0s linear 100000s"
         );
       }
+    },
+
+    __loadCommonCss: function() {
+      const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
+      qx.module.Css.includeStylesheet(commonCssUri);
     }
   }
 });

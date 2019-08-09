@@ -40,37 +40,87 @@
  */
 
 qx.Class.define("qxapp.file.FileTreeItem", {
-  extend : qx.ui.tree.VirtualTreeItem,
+  extend: qx.ui.tree.VirtualTreeItem,
 
-  properties : {
-    fileId : {
-      check : "String",
+  construct: function() {
+    this.base(arguments);
+
+    // create a date format like "Oct. 19, 2018 11:31 AM"
+    this._dateFormat = new qx.util.format.DateFormat(
+      qx.locale.Date.getDateFormat("medium") + " " +
+      qx.locale.Date.getTimeFormat("short")
+    );
+
+    const openButton = this.getChildControl("open");
+    openButton.addListener("tap", e => {
+      if (this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
+        const locationId = this.getLocation();
+        const datasetId = this.getPath();
+        const data = {
+          locationId,
+          datasetId
+        };
+        this.setLoaded(true);
+        this.fireDataEvent("requestFiles", data);
+      }
+    }, this);
+  },
+
+  events: {
+    "requestFiles": "qx.event.type.Data"
+  },
+
+  properties: {
+    location: {
+      check: "String",
+      event: "changePath",
+      nullable: true
+    },
+
+    path: {
+      check: "String",
+      event: "changePath",
+      nullable: true
+    },
+
+    isDataset: {
+      check: "Boolean",
+      event: "changeIsDataset",
+      init: false,
+      nullable: false
+    },
+
+    loaded: {
+      check: "Boolean",
+      event: "changeLoaded",
+      init: true,
+      nullable: false
+    },
+
+    fileId: {
+      check: "String",
       event: "changeFileId",
-      nullable : true
+      nullable: true
     },
 
-    path : {
-      check : "String",
-      event: "changePath",
-      nullable : true
+    lastModified: {
+      check: "String",
+      event: "changeLastModified",
+      nullable: true
     },
 
-    location : {
-      check : "String",
-      event: "changePath",
-      nullable : true
-    },
-
-    size : {
-      check : "String",
+    size: {
+      check: "String",
       event: "changeSize",
-      nullable : true
+      nullable: true
     }
   },
 
-  members : {
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
+    _dateFormat: null,
+
     // overridden
-    _addWidgets : function() {
+    _addWidgets: function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
       this.addOpenButton();
@@ -86,8 +136,26 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         flex: 1
       });
 
+      // Add lastModified
+      const lastModifiedWidget = new qx.ui.basic.Label().set({
+        width: 120,
+        maxWidth: 120,
+        textAlign: "right"
+      });
+      let that = this;
+      this.bind("lastModified", lastModifiedWidget, "value", {
+        converter: function(value) {
+          if (value === null) {
+            return "";
+          }
+          const date = new Date(value);
+          return that._dateFormat.format(date); // eslint-disable-line no-underscore-dangle
+        }
+      });
+      this.addWidget(lastModifiedWidget);
+
       // Add size
-      var sizeWidget = new qx.ui.basic.Label().set({
+      const sizeWidget = new qx.ui.basic.Label().set({
         width: 70,
         maxWidth: 70,
         textAlign: "right"
@@ -125,6 +193,27 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         this.bind("fileId", fileIdWidget, "value");
         this.addWidget(fileIdWidget);
       }
+    },
+
+    // override
+    _applyIcon: function(value, old) {
+      this.base(arguments, value, old);
+      // HACKY: make the loading icon turn
+      const icon = this.getChildControl("icon", true);
+      if (icon && value === "@FontAwesome5Solid/circle-notch/12") {
+        icon.setPadding(0);
+        icon.setMarginRight(4);
+        icon.getContentElement().addClass("rotate");
+      } else {
+        icon.resetPadding();
+        icon.resetMargin();
+        icon.getContentElement().removeClass("rotate");
+      }
     }
+  },
+
+  destruct: function() {
+    this._dateFormat.dispose();
+    this._dateFormat = null;
   }
 });

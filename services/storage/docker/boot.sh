@@ -41,7 +41,10 @@ then
   echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
   python -c "import pdb, simcore_service_storage.cli; \
              pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-
+elif [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
+then
+  echo "PTVSD Debugger initializing in port 3003 with ${APP_CONFIG}"
+  python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG
 else
   simcore-service-storage --config $APP_CONFIG
 fi

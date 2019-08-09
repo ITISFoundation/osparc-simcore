@@ -135,6 +135,30 @@ qx.Theme.define("qxapp.theme.Decoration", {
       style: {
         width: 0
       }
+    },
+
+    "hint": {
+      style: {
+        radius: 3
+      }
+    },
+
+    "chip": {
+      style: {
+        radius: 9
+      }
+    },
+
+    "pb-listitem": {
+      style: {
+        radius: 3
+      }
+    },
+
+    "no-radius-button": {
+      style: {
+        radius: 0
+      }
     }
   }
 });

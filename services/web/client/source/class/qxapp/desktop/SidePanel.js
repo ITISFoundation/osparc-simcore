@@ -126,9 +126,14 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     },
 
     __getCssWidth: function() {
-      return this.__getSplitpaneContainer().getWidth() ||
-        parseInt(this.__getSplitpaneContainer().getContentElement()
+      if (this.__getSplitpaneContainer().getWidth()) {
+        return this.__getSplitpaneContainer().getWidth();
+      } else if (this.__getSplitpaneContainer().getContentElement()
+        .getDomElement()) {
+        return parseInt(this.__getSplitpaneContainer().getContentElement()
           .getDomElement().style.width);
+      }
+      return 300;
     },
 
     __setDecorators: function(decorator = null) {

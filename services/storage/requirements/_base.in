@@ -1,10 +1,13 @@
 #
 # Specifies third-party dependencies for 'storage'
 #
+-r python-with-pandas_89f709.txt # TODO: add reference to git@github.com:ITISFoundation/dockerfiles.git/requirements
 
 urllib3>=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
 psycopg2-binary         # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
+boto3==1.9.91           # do not use lastest version, this would require botocore<1.13.0,>=1.12.179 but aiobotocore[boto3]==0.10.2 hardcodes boto3==1.9.91 that requires botocore<1.12.92,>=1.12.91
 
+aioboto3
 aiohttp
 aiofiles
 aiopg[sa]~=0.15.0     # Fixes 0.16.0 https://github.com/aio-libs/aiopg/issues/535

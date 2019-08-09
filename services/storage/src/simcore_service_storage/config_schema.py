@@ -9,8 +9,8 @@ app_schema = T.Dict({
     "port": T.Int(),
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
     "testing": T.Bool(),
-    "python2": T.String(),
     T.Key("max_workers", default=8, optional=True) : T.Int(),
+    T.Key("monitoring_enabled", default=False): T.Or(T.Bool(), T.Int), # Int added to use environs
     T.Key("test_datcore", optional=True): T.Dict({
         "token_key": T.String(),
         "token_secret": T.String()

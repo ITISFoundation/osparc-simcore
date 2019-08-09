@@ -18,7 +18,7 @@
 /**
  * Widget that provides access to the data belonging to the active user.
  * - On the left side: myData FilesTree with the FileLabelWithActions
- * - On the right side: a pie chart reflecting the data resources consumed
+ * - On the right side: a pie chart reflecting the data resources consumed (hidden until there is real info)
  *
  * *Example*
  *
@@ -46,16 +46,18 @@ qx.Class.define("qxapp.desktop.DataManager", {
   },
 
   members: {
-    __tree: null,
+    __filesTree: null,
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function() {
-      this.__tree.populateTree();
+    __initResources: function(locationId = null) {
+      this.__filesTree.populateTree(null, locationId);
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20)).set({
+        marginTop: 20
+      });
 
       const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
@@ -89,19 +91,23 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      const chartLayout = this.__createChartLayout();
-      dataManagerLayout.add(chartLayout);
+      const showPieChart = false;
+      if (showPieChart) {
+        const chartLayout = this.__createChartLayout();
+        dataManagerLayout.add(chartLayout);
+      }
 
-      this._add(dataManagerMainLayout);
+      this._add(dataManagerMainLayout, {
+        flex: 1
+      });
     },
 
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const filesTree = this.__tree = new qxapp.file.FilesTree().set({
+      const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
-        dropMechnism: true,
-        minHeight: 600
+        dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {
         this.__selectionChanged();
@@ -118,19 +124,35 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      const addBtn = new qxapp.file.FilesAdd();
-      addBtn.addListener("fileAdded", e => {
-        this.__initResources();
-      }, this);
-      treeLayout.add(addBtn);
-
-      const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
-      selectedFileLayout.addListener("fileDeleted", () => {
-        this.__initResources();
-      }, this);
-      treeLayout.add(selectedFileLayout);
+      const actionsToolbar = this.__createActionsToolbar();
+      treeLayout.add(actionsToolbar);
 
       return treeLayout;
+    },
+
+    __createActionsToolbar: function() {
+      const actionsToolbar = new qx.ui.toolbar.ToolBar();
+      const fileActions = new qx.ui.toolbar.Part();
+      const addFile = new qx.ui.toolbar.Part();
+      actionsToolbar.add(fileActions);
+      actionsToolbar.addSpacer();
+      actionsToolbar.add(addFile);
+
+      const addBtn = new qxapp.file.FilesAdd();
+      addBtn.addListener("fileAdded", e => {
+        const fileMetadata = e.getData();
+        this.__initResources(fileMetadata["locationId"]);
+      }, this);
+      addFile.add(addBtn);
+
+      const selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
+      selectedFileLayout.addListener("fileDeleted", e => {
+        const fileMetadata = e.getData();
+        this.__initResources(fileMetadata["locationId"]);
+      }, this);
+      fileActions.add(selectedFileLayout);
+
+      return actionsToolbar;
     },
 
     __createChartLayout: function() {
@@ -162,8 +184,8 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __selectionChanged: function() {
-      this.__tree.resetSelection();
-      const selectionData = this.__tree.getSelectedFile();
+      this.__filesTree.resetSelection();
+      const selectionData = this.__filesTree.getSelectedFile();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
@@ -183,7 +205,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
     __getDataInfo: function(pathId) {
       const context = pathId || "/";
-      const children = this.__tree.getModel().getChildren();
+      const children = this.__filesTree.getModel().getChildren();
 
       let data = {
         "ids": [],

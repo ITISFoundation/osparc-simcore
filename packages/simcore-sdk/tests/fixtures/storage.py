@@ -4,7 +4,6 @@ import threading
 
 import pytest
 import requests
-from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 
 log = logging.getLogger(__name__)
 

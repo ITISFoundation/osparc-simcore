@@ -72,7 +72,7 @@ qx.Class.define("qxapp.file.FilesTree", {
   events: {
     "selectionChanged": "qx.event.type.Event",
     "itemSelected": "qx.event.type.Event",
-    "fileCopied": "qx.event.type.Event",
+    "fileCopied": "qx.event.type.Data",
     "modelChanged": "qx.event.type.Event"
   },
 
@@ -97,25 +97,22 @@ qx.Class.define("qxapp.file.FilesTree", {
   },
 
   members: {
-    __tree: null,
-
-    populateTree: function(nodeId = null) {
+    populateTree: function(nodeId = null, locationId = null) {
       let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
       if (nodeId) {
         filesTreePopulator.populateNodeFiles(nodeId);
+      } else if (locationId) {
+        filesTreePopulator.populateMyLocation(locationId);
       } else {
         filesTreePopulator.populateMyData();
       }
 
-      let delegate = this.getDelegate();
-      delegate["configureItem"] = item => {
+      this.getDelegate().configureItem = item => {
         item.addListener("dbltap", e => {
           this.__itemSelected();
         }, this);
-
         this.__addDragAndDropMechanisms(item);
       };
-      this.setDelegate(delegate);
     },
 
     getSelectedFile: function() {
@@ -129,6 +126,36 @@ qx.Class.define("qxapp.file.FilesTree", {
         return data;
       }
       return null;
+    },
+
+    addFileEntry: function(uuid) {
+      const dummyFileEntry = {
+        "bucket_name": "MyFile",
+        "created_at": "2019-07-03T10:01:03.471071Z",
+        "display_file_path": "MyFile/testing/Hallo.csv",
+        "file_id": "N:package:7b5637d5-da2e-49fc-9c54-75b5c6acf166",
+        "file_name": "Hallo.csv",
+        "file_size": 398,
+        "file_uuid": "MyFile/testing/Hallo.csv",
+        "last_modified": "2019-07-03T10:01:04.057912Z",
+        "location": "datcore",
+        "location_id": 1,
+        "node_id": null,
+        "node_name": null,
+        "object_name": "testing/Hallo.csv",
+        "project_id": null,
+        "project_name": null,
+        "raw_file_path": "MyFile/testing/Hallo.csv",
+        "user_id": null,
+        "user_name": null
+      };
+
+      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
+      filesTreePopulator.addFileEntryToTree(dummyFileEntry);
+      const item = this.__findUuidInLeaves(dummyFileEntry["file_uuid"]);
+      if (item) {
+        this.openNodeAndParents(item);
+      }
     },
 
     __getLeafList: function(item, leaves) {

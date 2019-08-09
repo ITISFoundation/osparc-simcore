@@ -31,9 +31,10 @@ from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
 from utils_login import LoggedUser, UserRole
 from utils_projects import NewProject, delete_all_projects
+from copy import deepcopy
+
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
-
 
 @pytest.fixture
 def qx_client_outdir(tmpdir, mocker):
@@ -82,9 +83,6 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service,
     assert setup_projects(app), "Shall not skip this setup"
     assert setup_studies_access(app), "Shall not skip this setup"
 
-    assert studies_access.SHARABLE_TEMPLATE_STUDY_IDS, "Did u change the name again?"
-    monkeypatch.setattr(studies_access, 'SHARABLE_TEMPLATE_STUDY_IDS', [SHARED_STUDY_UUID, ])
-
     # server and client
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
         'port': port,
@@ -108,6 +106,36 @@ async def logged_user(client): #, role: UserRole):
         yield user
         await delete_all_projects(client.app)
 
+@pytest.fixture
+async def published_project(client, fake_project):
+    project_data = deepcopy(fake_project)
+    project_data["name"] = "Published project"
+    project_data["uuid"] = SHARED_STUDY_UUID
+    project_data["published"] = True
+
+    async with NewProject(
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True
+    ) as template_project:
+        yield template_project
+
+@pytest.fixture
+async def unpublished_project(client, fake_project):
+    project_data = deepcopy(fake_project)
+    project_data["name"] = "Tempalte Unpublished project"
+    project_data["uuid"] = "'b134a337-a74f-40ff-a127-b36a1ccbede6"
+    project_data["published"] = False
+
+    async with NewProject(
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True
+    ) as template_project:
+        yield template_project
+
 
 async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
@@ -130,91 +158,87 @@ def _assert_same_projects(got: Dict, expected: Dict):
 
 
 # TESTS --------------------------------------
-async def test_access_to_invalid_study(client):
+async def test_access_to_invalid_study(client, published_project):
     resp = await client.get("/study/SOME_INVALID_UUID")
     content = await resp.text()
 
     assert resp.status == web.HTTPNotFound.status_code, str(content)
 
 
-async def test_access_to_forbidden_study(client):
+async def test_access_to_forbidden_study(client, unpublished_project):
     app = client.app
 
-    async with NewProject({}, app) as template_project:
-        valid_but_not_sharable = template_project["uuid"]
+    valid_but_not_sharable = unpublished_project["uuid"]
 
-        resp = await client.get("/study/%s" % valid_but_not_sharable)
-        content = await resp.text()
+    resp = await client.get("/study/%s" % valid_but_not_sharable)
+    content = await resp.text()
 
-        assert resp.status == web.HTTPNotFound.status_code, \
-            "STANDARD studies are NOT sharable: %s" % content
+    assert resp.status == web.HTTPNotFound.status_code, \
+        "STANDARD studies are NOT sharable: %s" % content
 
 
-async def test_access_study_anonymously(client, qx_client_outdir):
+async def test_access_study_anonymously(client, qx_client_outdir, published_project, storage_subsystem_mock):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
     }
 
-    async with NewProject(params, client.app, force_uuid=True) as template_project:
-        url_path = "/study/%s" % SHARED_STUDY_UUID
-        resp = await client.get(url_path)
-        content = await resp.text()
+    url_path = "/study/%s" % SHARED_STUDY_UUID
+    resp = await client.get(url_path)
+    content = await resp.text()
 
-        # index
-        assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
-        assert str(resp.url.path) == "/"
-        assert "OSPARC-SIMCORE" in content, \
-            "Expected front-end rendering workbench's study, got %s" % str(content)
+    # index
+    assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
+    assert str(resp.url.path) == "/"
+    assert "OSPARC-SIMCORE" in content, \
+        "Expected front-end rendering workbench's study, got %s" % str(content)
 
-        real_url = str(resp.real_url)
+    real_url = str(resp.real_url)
 
-        # has auto logged in as guest?
-        resp = await client.get("/v0/me")
-        data, _ = await assert_status(resp, web.HTTPOk)
-        assert data['login'].endswith("guest-at-osparc.io")
-        assert data['gravatar_id']
-        assert data['role'].upper() == UserRole.GUEST.name
+    # has auto logged in as guest?
+    resp = await client.get("/v0/me")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data['login'].endswith("guest-at-osparc.io")
+    assert data['gravatar_id']
+    assert data['role'].upper() == UserRole.GUEST.name
 
-        # guest user only a copy of the template project
-        projects = await _get_user_projects(client)
-        assert len(projects) == 1
-        guest_project = projects[0]
+    # guest user only a copy of the template project
+    projects = await _get_user_projects(client)
+    assert len(projects) == 1
+    guest_project = projects[0]
 
-        assert real_url.endswith("#/study/%s" % guest_project["uuid"])
-        _assert_same_projects(guest_project, template_project)
+    assert real_url.endswith("#/study/%s" % guest_project["uuid"])
+    _assert_same_projects(guest_project, published_project)
 
-        assert guest_project['prjOwner'] == data['login']
+    assert guest_project['prjOwner'] == data['login']
 
 
-async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir):
+async def test_access_study_by_logged_user(client, logged_user, qx_client_outdir, published_project, storage_subsystem_mock):
     params = {
         "uuid":SHARED_STUDY_UUID,
         "name":"some-template"
     }
 
-    async with NewProject(params, client.app, clear_all=True, force_uuid=True) as template_project:
+    url_path = "/study/%s" % SHARED_STUDY_UUID
+    resp = await client.get(url_path)
+    content = await resp.text()
 
-        url_path = "/study/%s" % SHARED_STUDY_UUID
-        resp = await client.get(url_path)
-        content = await resp.text()
+    # returns index
+    assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
+    assert str(resp.url.path) == "/"
+    real_url = str(resp.real_url)
 
-        # returns index
-        assert resp.status == web.HTTPOk.status_code, "Got %s" % str(content)
-        assert str(resp.url.path) == "/"
-        real_url = str(resp.real_url)
+    assert "OSPARC-SIMCORE" in content, \
+        "Expected front-end rendering workbench's study, got %s" % str(content)
 
-        assert "OSPARC-SIMCORE" in content, \
-            "Expected front-end rendering workbench's study, got %s" % str(content)
+    # user has a copy of the template project
+    projects = await _get_user_projects(client)
+    assert len(projects) == 1
+    user_project = projects[0]
 
-        # user has a copy of the template project
-        projects = await _get_user_projects(client)
-        assert len(projects) == 1
-        user_project = projects[0]
+    # TODO: check redirects to /#/study/{uuid}
+    assert real_url.endswith("#/study/%s" % user_project["uuid"])
 
-        # TODO: check redirects to /#/study/{uuid}
-        assert real_url.endswith("#/study/%s" % user_project["uuid"])
+    _assert_same_projects(user_project, published_project)
 
-        _assert_same_projects(user_project, template_project)
-
-        assert user_project['prjOwner'] == logged_user['email']
+    assert user_project['prjOwner'] == logged_user['email']

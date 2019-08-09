@@ -39,6 +39,7 @@
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
 
   /**
     * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
@@ -148,7 +149,8 @@ qx.Class.define("qxapp.data.model.Node", {
 
     serviceUrl: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeServiceUrl"
     },
 
     iFrame: {
@@ -177,11 +179,17 @@ qx.Class.define("qxapp.data.model.Node", {
       check: "String",
       nullable: true,
       init: ""
+    },
+
+    interactiveStatus: {
+      check: "String",
+      nullable: true,
+      event: "changeInteractiveStatus"
     }
   },
 
   events: {
-    "updatePipeline": "qx.event.type.Data",
+    "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
 
@@ -448,22 +456,26 @@ qx.Class.define("qxapp.data.model.Node", {
      * Add settings widget with those inputs that can be represented in a form
      *
      */
-    __addSetttings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
+    __addSettings: function(inputs) {
+      const form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
       }, this);
       form.addListener("linkRemoved", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
-        let changedField = e.getData();
+        const changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
+      }, this);
+      propsWidget.addListener("dataFieldModified", e => {
+        const portId = e.getData();
+        this.__retrieveInputs(portId);
       }, this);
     },
 
@@ -491,7 +503,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSetttings(filteredInputs);
+      this.__addSettings(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
@@ -623,6 +635,21 @@ qx.Class.define("qxapp.data.model.Node", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
+
+        if (this.getKey().includes("raw-graphs")) {
+          // Listen to the postMessage from RawGraphs, posting a new graph
+          window.addEventListener("message", e => {
+            const {
+              id,
+              imgData
+            } = e.data;
+            if (imgData && id === "svgChange") {
+              const img = document.createElement("img");
+              img.src = imgData;
+              this.setThumbnail(img.outerHTML);
+            }
+          }, false);
+        }
       }
     },
 
@@ -631,11 +658,15 @@ qx.Class.define("qxapp.data.model.Node", {
       this.restartIFrame(loadingUri);
     },
 
-    __retrieveInputs: function() {
-      this.fireDataEvent("updatePipeline", this);
+    __retrieveInputs: function(portKey) {
+      const data = {
+        node: this,
+        portKey
+      };
+      this.fireDataEvent("retrieveInputs", data);
     },
 
-    retrieveInputs: function() {
+    retrieveInputs: function(portKey = null) {
       if (this.isDynamic() && this.isRealService()) {
         if (!qxapp.data.Permissions.getInstance().canDo("study.update")) {
           return;
@@ -644,30 +675,53 @@ qx.Class.define("qxapp.data.model.Node", {
         if (srvUrl) {
           let urlUpdate = srvUrl + "/retrieve";
           urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-          let updReq = new qx.io.request.Xhr();
+          const updReq = new qx.io.request.Xhr();
+          const reqData = {
+            "port_keys": portKey ? [portKey] : []
+          };
           updReq.set({
             url: urlUpdate,
-            method: "GET"
+            method: "POST",
+            requestData: qx.util.Serializer.toJson(reqData)
           });
+          updReq.addListener("success", e => {
+            const {
+              data
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, true);
+            console.log(data);
+          }, this);
+          updReq.addListener("fail", e => {
+            const {
+              error
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("fail", error);
+          }, this);
+          updReq.addListener("error", e => {
+            const {
+              error
+            } = e.getTarget().getResponse();
+            this.getPropsWidget().retrievedPortData(portKey, false);
+            console.error("error", error);
+          }, this);
           updReq.send();
+
+          this.getPropsWidget().retrievingPortData(portKey);
         }
       }
     },
 
     startInteractiveNode: function() {
       if (this.isDynamic() && this.isRealService()) {
-        let retrieveBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/spinner/32"
-        });
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
         retrieveBtn.setEnabled(false);
         this.setRetrieveIFrameButton(retrieveBtn);
 
-        let restartBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/redo-alt/32"
-        });
+        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);
@@ -690,25 +744,8 @@ qx.Class.define("qxapp.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      const interval = 50;
-      let increment = true;
-      let progressTimer = new qx.event.Timer(interval);
-      progressTimer.addListener("interval", () => {
-        if (this.getServiceUrl() === null) {
-          let newProgress = increment ? this.getProgress()+5 : this.getProgress()-5;
-          newProgress = Math.min(newProgress, 100);
-          newProgress = Math.max(newProgress, 0);
-          this.setProgress(newProgress);
-          if (newProgress === 100) {
-            increment = false;
-          } else if (newProgress === 0) {
-            increment = true;
-          }
-        } else {
-          progressTimer.stop();
-        }
-      }, this);
-      progressTimer.start();
+      this.setProgress(0);
+      this.setInteractiveStatus("starting");
 
       const prjId = this.getWorkbench().getStudy()
         .getUuid();
@@ -733,7 +770,7 @@ qx.Class.define("qxapp.data.model.Node", {
           msg: errorMsg
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        progressTimer.stop();
+        this.setInteractiveStatus("failed");
       }, this);
       request.addListener("fail", e => {
         const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -741,13 +778,12 @@ qx.Class.define("qxapp.data.model.Node", {
           nodeId: this.getNodeId(),
           msg: failMsg
         };
+        this.setInteractiveStatus("failed");
         this.fireDataEvent("showInLogger", failMsgData);
-        progressTimer.stop();
       }, this);
       request.send();
     },
-
-    __onInteractiveNodeStarted: function(e) {
+    __onNodeState: function(e) {
       let req = e.getTarget();
       const {
         data, error
@@ -759,30 +795,107 @@ qx.Class.define("qxapp.data.model.Node", {
           nodeId: this.getNodeId(),
           msg: msg
         };
+        this.setInteractiveStatus("failed");
         this.fireDataEvent("showInLogger", msgData);
         return;
       }
-      const publishedPort = data["published_port"];
-      const servicePath=data["service_basepath"];
-      const entryPointD = data["entry_point"];
-      const nodeId = data["service_uuid"];
-      if (nodeId !== this.getNodeId()) {
-        return;
-      }
-      if (servicePath) {
-        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-        let srvUrl = servicePath + entryPoint;
-        // FIXME: this is temporary until the reverse proxy works for these services
-        if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
-          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+
+      const serviceState = data["service_state"];
+      switch (serviceState) {
+        case "starting":
+        case "pulling": {
+          this.setInteractiveStatus("starting");
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "pending": {
+          this.setInteractiveStatus("pending");
+          const interval = 10000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "running": {
+          // const publishedPort = data["published_port"];
+          const servicePath=data["service_basepath"];
+          const entryPointD = data["entry_point"];
+          const nodeId = data["service_uuid"];
+          if (nodeId !== this.getNodeId()) {
+            return;
+          }
+          if (servicePath) {
+            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+            let srvUrl = servicePath + entryPoint;
+            // FIXME: this is temporary until the reverse proxy works for these services
+            // if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+            //   srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+            // }
+
+            this.__serviceReadyIn(srvUrl);
+          }
+          break;
+        }
+        case "complete":
+          break;
+        case "failed": {
+          this.setInteractiveStatus("failed");
+          const msg = "Service failed: " + data["service_message"];
+          const msgData = {
+            nodeId: this.getNodeId(),
+            msg: msg
+          };
+          this.fireDataEvent("showInLogger", msgData);
+          return;
         }
 
-        this.__serviceReadyIn(srvUrl);
+        default:
+          break;
       }
+    },
+    __nodeState: function() {
+      const url = "/running_interactive_services/" + encodeURIComponent(this.getNodeId());
+      let request = new qxapp.io.request.ApiRequest(url, "GET");
+      request.addListener("success", this.__onNodeState, this);
+      request.addListener("error", e => {
+        const errorMsg = "Error when starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
+        const errorMsgData = {
+          nodeId: this.getNodeId(),
+          msg: errorMsg
+        };
+        this.fireDataEvent("showInLogger", errorMsgData);
+      }, this);
+      request.addListener("fail", e => {
+        const failMsg = "Failed starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
+        const failMsgData = {
+          nodeId: this.getNodeId(),
+          msg: failMsg
+        };
+        this.fireDataEvent("showInLogger", failMsgData);
+      }, this);
+      request.send();
+    },
+    __onInteractiveNodeStarted: function(e) {
+      let req = e.getTarget();
+      const {
+        error
+      } = req.getResponse();
+
+      if (error) {
+        const msg = "Error received: " + error;
+        const msgData = {
+          nodeId: this.getNodeId(),
+          msg: msg
+        };
+        this.fireDataEvent("showInLogger", msgData);
+        return;
+      }
+
+      this.__nodeState();
     },
 
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
+      this.setInteractiveStatus("ready");
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),

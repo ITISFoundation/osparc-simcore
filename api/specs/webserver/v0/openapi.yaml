@@ -89,6 +89,13 @@ paths:
   /storage/locations/{location_id}/files/{fileId}/metadata:
     $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{fileId}~1metadata'
 
+  /storage/locations/{location_id}/datasets/{dataset_id}/metadata:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets~1{dataset_id}~1metadata'
+
+  /storage/locations/{location_id}/datasets:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets'
+
+
   # SERVICES ------------------------------------------------------------------------
   /services:
     $ref: './openapi-services.yaml#/paths/~1services'

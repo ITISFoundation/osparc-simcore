@@ -182,6 +182,15 @@ qx.Class.define("qxapp.utils.Utils", {
       xhr.send();
     },
 
+    fileNameFromPresignedLink: function(link) {
+      // regex match /([^/]+)\?
+      const fileNames = new URL(link).pathname.split("/");
+      if (fileNames.length) {
+        return fileNames.pop();
+      }
+      return null;
+    },
+
     /**
      * Function that takes an indefinite number of strings as separated parameters, and concatenates them capitalizing the first letter.
      */
@@ -313,6 +322,33 @@ qx.Class.define("qxapp.utils.Utils", {
         }
       }
       return parsedFragment;
-    }
+    },
+
+    getThumbnailFromUuid: uuid => {
+      const lastCharacters = uuid.substr(uuid.length-10);
+      const aNumber = parseInt(lastCharacters, 16);
+      const thumbnailId = aNumber%25;
+      return "qxapp/img"+ thumbnailId +".jpg";
+    },
+
+    getThumbnailFromString: str => "qxapp/img" + Math.abs(this.self().stringHash(str)%25) + ".jpg",
+
+    stringHash: str => {
+      // Based on https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+      let hash = 0;
+      let i;
+      let chr;
+      if (str.length === 0) {
+        return hash;
+      }
+      for (i=0; i<str.length; i++) {
+        chr = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return hash;
+    },
+
+    isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url)
   }
 });

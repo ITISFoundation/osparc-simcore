@@ -1,0 +1,61 @@
+# Tooling stack
+version: '3.7'
+services:
+  #--------------------------------------------------------------------
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+  #--------------------------------------------------------------------
+  portainer:
+    image: portainer/portainer
+    ports:
+      - "9000:9000"
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+  #-------------------------------------------
+  # https://hub.docker.com/r/prom/prometheus
+  prometheus:
+    image: prom/prometheus:v2.11.1
+    ports:
+      - 9090:9090
+    volumes:
+      - prometheus_data:/prometheus-data
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+      #- source: prometheus_rules
+      #  target: /etc/prometheus/prometheus-rules.yml
+  # https://hub.docker.com/r/grafana/grafana/tags
+  grafana:
+    image: grafana/grafana:6.2.5
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${GF_SMTP_HOST}
+  postgres-exporter:
+    #https://hub.docker.com/r/wrouesnel/postgres_exporter/tags
+    image: wrouesnel/postgres_exporter:v0.5.1
+    ports:
+      - 9187
+    environment:
+      - DATA_SOURCE_NAME=${POSTGRES_EXPORTER_DATA_SOURCE_NAME}
+
+volumes:
+  portainer_data: {}
+  prometheus_data: {}
+  grafana_data: {}
+configs:
+  prometheus_config:
+    file: ./prometheus/config/prometheus.yml
+  #prometheus_rules:
+  #  file: ./prometheus/config/prometheus-rules.yml

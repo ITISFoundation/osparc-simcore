@@ -25,25 +25,40 @@ qx.Theme.define("qxapp.theme.Appearance", {
       style: function(states) {
         return {
           decorator: null,
-          padding: [0, 0]
+          padding: 0
         };
       }
     },
     "pb-listitem":  {
-      // FIXME
       include: "material-button",
-      // alias:   "material-button",
       style: function(states) {
-        let style = {
-          decorator: null,
-          padding: 0,
-          backgroundColor: "transparent"
+        const style = {
+          decorator: "pb-listitem",
+          padding: 5,
+          backgroundColor: "background-main-lighter+"
         };
         if (states.hovered) {
           style.backgroundColor = "#444";
         }
-        if (states.selected) {
+        if (states.selected || states.checked) {
           style.backgroundColor = "#555";
+        }
+        return style;
+      }
+    },
+    "selectable": {
+      include: "material-button",
+      style: function(states) {
+        const style = {
+          decorator: "no-radius-button",
+          padding: 5,
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "background-main-lighter+";
+        }
+        if (states.selected || states.checked) {
+          style.backgroundColor = "#444";
         }
         return style;
       }
@@ -142,20 +157,34 @@ qx.Theme.define("qxapp.theme.Appearance", {
         decorator: "workbench-small-cap-captionbar"
       })
     },
+    "info-service-window": {
+      include: "service-window",
+      alias: "service-window",
+      style: state => ({
+        maxHeight: state.maximized ? null : 500
+      })
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView
     ---------------------------------------------------------------------------
     */
+    "panelview": {
+      style: state => ({
+        decorator: "panelview"
+      })
+    },
+    "panelview/title": {
+      style: state => ({
+        font: "title-14"
+      })
+    },
     "panelview-titlebar": {
       style: state => ({
         height: 24,
-        padding: [0, 5]
-      })
-    },
-    "panelview-titlebar-label": {
-      style: state => ({
-        marginTop: 4
+        padding: [0, 5],
+        alignY: "middle",
+        cursor: "pointer"
       })
     },
     "panelview-content": {
@@ -256,10 +285,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "jumbo": {
       include: "material-button",
       alias: "material-button",
-      style: (state, styles) => {
-        styles.padding = [7, 8, 5, 8];
-        return styles;
-      }
+      style: state => ({
+        padding: [7, 8, 5, 8]
+      })
     },
 
     /*
@@ -288,6 +316,22 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "big-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        minHeight: 50,
+        center: true
+      })
+    },
+
+    "big-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       FlashMessage
@@ -303,6 +347,107 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "flash/badge": {
       style: state => ({
         decorator: "flash-badge"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      IFrame
+    ---------------------------------------------------------------------------
+    */
+    "iframe": {},
+
+    /*
+    ---------------------------------------------------------------------------
+      GroupBox
+    ---------------------------------------------------------------------------
+    */
+    "settings-groupbox": {
+      include: "groupbox",
+      alias: "groupbox"
+    },
+    "settings-groupbox/frame": {
+      include: "groupbox/frame",
+      style: state => ({
+        decorator: "no-border"
+      })
+    },
+    "settings-groupbox/legend": {
+      alias: "atom",
+      include: "groupbox/legend",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Hints
+    ---------------------------------------------------------------------------
+    */
+    "hint": {
+      style: state => ({
+        backgroundColor: "background-main-lighter+",
+        decorator: "hint",
+        padding: 5
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Chip
+    ---------------------------------------------------------------------------
+    */
+    "chip": {
+      include: "atom",
+      alias: "atom",
+      style: state => ({
+        decorator: "chip",
+        backgroundColor: "background-main-lighter",
+        padding: [3, 5]
+      })
+    },
+
+    "chip/label": {
+      include: "atom/label",
+      style: state => ({
+        font: "text-10"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Dashboard
+    ---------------------------------------------------------------------------
+    */
+    "dashboard": {
+      include: "tabview",
+      alias: "tabview"
+    },
+
+    "dashboard/pane": {
+      style: state => ({
+        padding: [0, 0, 0, 15]
+      })
+    },
+
+    "dashboard/bar/content": {
+      style: state => ({
+        width: 160,
+        paddingTop: 15
+      })
+    },
+
+    "dashboard-page": {
+      include: "tabview-page",
+      alias: "tabview-page"
+    },
+
+    "dashboard-page/button": {
+      include: "tabview-page/button",
+      alias: "tabview-page/button",
+      style: state => ({
+        font: state.checked ? "title-16" : "text-16"
       })
     }
   }

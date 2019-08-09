@@ -4,10 +4,13 @@
 #
 #    pip-compile --output-file=_base.txt _base.in
 #
+aioboto3==6.4.1
+aiobotocore[boto3]==0.10.2  # via aioboto3
 aiofiles==0.4.0
 aiohttp==3.5.4
 aiopg[sa]==0.15.0
 apipkg==1.5               # via execnet
+async-generator==1.10     # via aiobotocore
 async-timeout==3.0.1      # via aiohttp
 attrs==19.1.0             # via aiohttp
 blackfynn==2.13.1

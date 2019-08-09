@@ -127,7 +127,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       this.__allServicesList = [];
       this.__allServicesObj = {};
 
-      const services = this.__serviceBrowser = new qxapp.component.service.ServiceBrowser("serviceCatalog").set({
+      const services = this.__serviceBrowser = new qxapp.component.service.ServiceList("serviceCatalog").set({
         width: 568
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
@@ -293,25 +293,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
     },
 
     __showServiceInfo: function() {
-      const selectedService = this.__getSelectedService();
-      const jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescriptionCatalogue");
-      const win = new qx.ui.window.Window("Service info").set({
-        showMinimize: false,
-        showMaximize: false,
-        allowMaximize: false,
-        showStatusbar: false,
-        modal: true,
-        width: 550,
-        height: 550,
-        layout: new qx.ui.layout.Canvas(),
-        appearance: "service-window"
-      });
-      win.add(jsonTreeWidget, {
-        top: -30,
-        right: 0,
-        bottom: 0,
-        left: -60
-      });
+      const win = new qxapp.component.metadata.ServiceInfoWindow(this.__getSelectedService());
       win.center();
       win.open();
     },

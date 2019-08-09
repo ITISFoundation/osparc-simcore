@@ -42,8 +42,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
   construct: function() {
     this.base(arguments);
 
-    const prjBrowserLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(prjBrowserLayout);
+    this._setLayout(new qx.ui.layout.HBox(10));
 
     const iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
     this._add(iframe, {
@@ -87,17 +86,13 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      const servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-
       const servicesList = this.__createServicesList();
-      servicesLayout.add(servicesList);
+      this._add(servicesList);
 
       const serviceDescription = this.__createServiceDescription();
-      servicesLayout.add(serviceDescription, {
+      this._add(serviceDescription, {
         flex: 1
       });
-
-      this._add(servicesLayout);
     },
 
     __createServicesList: function() {
@@ -109,7 +104,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
         minWidth: 500,
-        height: 600,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
@@ -146,7 +140,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           ctrl.bindProperty("contact", "contact", null, item, id);
         }
       });
-      servicesLayout.add(servicesList);
+      servicesLayout.add(servicesList, {
+        flex: 1
+      });
 
       // Workaround to the list.changeSelection
       servCtrl.addListener("changeValue", e => {
@@ -162,7 +158,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServiceDescription: function() {
-      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
@@ -190,7 +188,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVBoxWLabel: function(text) {
-      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
 
       let label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
@@ -234,8 +234,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
       if (selectedService && serviceDescription) {
-        let jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescription");
-        serviceDescription.add(jsonTreeWidget);
+        const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+        serviceDescription.add(serviceInfo);
       }
     },
 

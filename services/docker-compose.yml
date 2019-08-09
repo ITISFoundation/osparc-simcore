@@ -1,7 +1,9 @@
-version: '3.4'
+# osparc-simcore stack (framework stack)
+version: '3.7'
 services:
   apihub:
     image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
@@ -23,6 +25,9 @@ services:
 #--------------------------------------------------------------------
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    stdin_open: true
+    tty: true
     build:
       context: ../
       dockerfile: services/director/Dockerfile
@@ -70,7 +75,7 @@ services:
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
-    restart: on-failure
+    init: true
     build:
       context: ./web/client/
       dockerfile: Dockerfile
@@ -93,6 +98,7 @@ services:
 
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       context: ../
       dockerfile: services/web/Dockerfile
@@ -114,25 +120,10 @@ services:
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
-      - LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:-1}
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - RABBIT_HOST=${RABBIT_HOST}
-      - RABBIT_PORT=${RABBIT_PORT}
-      - RABBITMQ_USER=${RABBITMQ_USER}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
-      - RABBITMQ_LOG_CHANNEL=${RABBITMQ_LOG_CHANNEL}
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
+      - WEBSERVER_MONITORING_ENABLED=1
+      - WEBSERVER_LOGLEVEL=INFO
+    env_file:
+      - ../.env
     stdin_open: true
     tty: true
     depends_on:
@@ -148,6 +139,13 @@ services:
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    deploy:
+      mode: replicated
+      resources:
+        reservations:
+          cpus: '0.1'
+          memory: '100M'
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -194,6 +192,7 @@ services:
   #--------------------------------------------------------------------
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -219,6 +218,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - STORAGE_LOGLEVEL=INFO
+      - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -239,6 +240,7 @@ services:
 #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
+    init: true
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
@@ -248,6 +250,7 @@ services:
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
+    init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -259,14 +262,43 @@ services:
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
+    init: true
     environment:
       - MINIO_ACCESS_KEY=12345678
       - MINIO_SECRET_KEY=12345678
     ports:
-      - "9000"
+      - "9001:9000"
     command: server /data
+    volumes:
+      - minio:/data
+  #--------------------------------------------------------------------
+  maintenance:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    build:
+      context: ../
+      dockerfile: services/maintenance/Dockerfile
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+    ports:
+      - "8888"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - maintenance_data:/home/jovyan/work/data
+    env_file:
+      - ../.env
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
 volumes:
-  input:
-  output:
-  log:
-  postgres:
+  input: {}
+  output: {}
+  log: {}
+  postgres: {}
+  minio: {}
+  maintenance_data: {}
