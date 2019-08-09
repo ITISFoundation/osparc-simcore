@@ -5,7 +5,14 @@
 
 urllib3>=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
 psycopg2-binary         # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
-boto3==1.9.91           # do not use lastest version, this would require botocore<1.13.0,>=1.12.179 but aiobotocore[boto3]==0.10.2 hardcodes boto3==1.9.91 that requires botocore<1.12.92,>=1.12.91
+
+boto3==1.9.189           # do not use lastest version, this would require botocore<1.13.0,>=1.12.179 but aiobotocore[boto3]==0.10.2 hardcodes boto3==1.9.91 that requires botocore<1.12.92,>=1.12.91
+#There are incompatible versions in the resolved dependencies:
+#  boto3==1.9.189 (from aiobotocore[boto3]==0.10.3->aioboto3==6.4.1->-r _base.in (line 10))
+#  boto3==1.9.91 (from -r _base.in (line 8))
+#  boto3>=1.4 (from blackfynn==2.14.1->-r _base.in (line 14))
+
+
 
 aioboto3
 aiohttp
