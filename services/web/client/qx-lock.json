@@ -10,11 +10,11 @@
     },
     {
       "library_name": "qx-osparc-theme",
-      "library_version": "0.4.8",
-      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_4_8",
+      "library_version": "0.4.9",
+      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_4_9",
       "uri": "ITISFoundation/qx-osparc-theme",
       "repo_name": "ITISFoundation/qx-osparc-theme",
-      "repo_tag": "v0.4.8"
+      "repo_tag": "v0.4.9"
     },
     {
       "library_name": "qx-iconfont-material",

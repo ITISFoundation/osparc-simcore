@@ -40,9 +40,9 @@
     "@qooxdoo/compiler": "^1.0.0-beta",
     "@qooxdoo/framework": "^6.0.0-beta",
     "ITISFoundation/qx-iconfont-fontawesome5": "^0.1.1",
-    "ITISFoundation/qx-osparc-theme": "^0.4.6",
+    "ITISFoundation/qx-osparc-theme": "^0.4.9",
     "qooxdoo/qxl.testtapper": "^0.4.3",
-    "qooxdoo/qxl.apiviewer": "^1.0.0-beta.6",
+    "qooxdoo/qxl.apiviewer": "^1.0.0-beta",
     "ITISFoundation/qx-iconfont-material": "^0.1.5"
   },
   "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
