@@ -247,6 +247,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
             datasetModel.getChildren().append(filesModel);
           }
         }
+        this.__tree.fireEvent("filesAddedToTree");
       }
     },
 
@@ -257,7 +258,7 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
       currentModel.getChildren().append(newModelToAdd);
       this.__tree.setModel(currentModel);
-      this.__tree.fireEvent("modelChanged");
+      this.__tree.fireEvent("filesAddedToTree");
     },
 
     __fileToTree: function(data) {

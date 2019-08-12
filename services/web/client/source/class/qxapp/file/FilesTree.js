@@ -73,7 +73,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     "selectionChanged": "qx.event.type.Event",
     "itemSelected": "qx.event.type.Event",
     "fileCopied": "qx.event.type.Data",
-    "modelChanged": "qx.event.type.Event"
+    "filesAddedToTree": "qx.event.type.Event"
   },
 
   statics: {

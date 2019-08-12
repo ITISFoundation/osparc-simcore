@@ -61,7 +61,7 @@ qx.Class.define("qxapp.file.FilePicker", {
     const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
     filesTree.addListener("selectionChanged", this.__selectionChanged, this);
     filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("modelChanged", this.__modelChanged, this);
+    filesTree.addListener("filesAddedToTree", this.__filesAdded, this);
 
     const toolbar = new qx.ui.toolbar.ToolBar();
     const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
@@ -177,7 +177,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       }
     },
 
-    __modelChanged: function() {
+    __filesAdded: function() {
       this.__checkSelectedFileIsListed();
     },
 
