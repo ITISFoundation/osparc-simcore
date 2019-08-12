@@ -221,6 +221,9 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
     __datasetsToLocation: function(locationId, datasets) {
       const locationModel = this.__getLocationModel(locationId);
+      if (!locationModel) {
+        return;
+      }
       locationModel.getChildren().removeAll();
       for (let i=0; i<datasets.length; i++) {
         const dataset = datasets[i];
@@ -239,6 +242,9 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
 
     __filesToLocation: function(locationId, files) {
       const locationModel = this.__getLocationModel(locationId);
+      if (!locationModel) {
+        return;
+      }
       if (locationModel) {
         locationModel.getChildren().removeAll();
         if (files.length>0) {
