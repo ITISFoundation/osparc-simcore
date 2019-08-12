@@ -121,11 +121,6 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
       filesStore.getDatasetsByLocation(locationId);
     },
 
-    addFileEntryToTree: function(fileEntry) {
-      const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel([fileEntry]);
-      this.__fileToTree(filesData[0]);
-    },
-
     __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
@@ -237,23 +232,6 @@ qx.Class.define("qxapp.file.FilesTreePopulator", {
         const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
         qxapp.file.FilesTreePopulator.addLoadingChild(datasetModel);
         locationModel.getChildren().append(datasetModel);
-      }
-    },
-
-    __filesToLocation: function(locationId, files) {
-      const locationModel = this.__getLocationModel(locationId);
-      if (!locationModel) {
-        return;
-      }
-      if (locationModel) {
-        locationModel.getChildren().removeAll();
-        if (files.length>0) {
-          const filesData = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          for (let j=0; j<filesData[0].children.length; j++) {
-            const filesModel = qx.data.marshal.Json.createModel(filesData[0].children[j], true);
-            locationModel.getChildren().append(filesModel);
-          }
-        }
       }
     },
 

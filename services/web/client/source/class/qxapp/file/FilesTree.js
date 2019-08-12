@@ -136,14 +136,6 @@ qx.Class.define("qxapp.file.FilesTree", {
 
     addFileEntry: function(fileMetadata) {
       console.log("file copied", fileMetadata);
-      /*
-      const filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
-      filesTreePopulator.addFileEntryToTree(fileMetadata);
-      const item = this.__findUuidInLeaves(fileMetadata["file_uuid"]);
-      if (item) {
-        this.openNodeAndParents(item);
-      }
-      */
     },
 
     __getLeafList: function(item, leaves) {
