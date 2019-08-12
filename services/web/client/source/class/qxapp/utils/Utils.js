@@ -15,14 +15,18 @@
 
 ************************************************************************ */
 
-/**
- * Sandbox of static methods that do not fit in other utils classes.
- */
-
 /* global window */
 /* global document */
 /* global XMLHttpRequest */
 /* global Blob */
+
+/**
+ * @ignore(URL)
+ */
+
+/**
+ * Sandbox of static methods that do not fit in other utils classes.
+ */
 
 qx.Class.define("qxapp.utils.Utils", {
   type: "static",
