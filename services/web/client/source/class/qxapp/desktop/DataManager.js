@@ -95,7 +95,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
       // button for refetching data
       const reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/16",
+        allowGrowX: false
       });
       reloadBtn.addListener("execute", function() {
         this.__resetCache();
