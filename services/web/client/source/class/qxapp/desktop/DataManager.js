@@ -117,9 +117,6 @@ qx.Class.define("qxapp.desktop.DataManager", {
           this.__initResources(null);
         }
       }, this);
-      filesTree.addListener("modelChanged", () => {
-        this.__reloadChartData();
-      }, this);
       treeLayout.add(filesTree, {
         flex: 1
       });
