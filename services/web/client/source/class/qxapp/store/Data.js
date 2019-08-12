@@ -64,12 +64,19 @@ qx.Class.define("qxapp.store.Data", {
       this.__filesByLocationAndDatasetCached = {};
     },
 
-    getLocations: function() {
-      // Get available storage locations
+    getLocationsCached: function() {
       const cache = this.__locationsCached;
       if (cache.length) {
-        this.fireDataEvent("myLocations", cache);
-        return;
+        return cache;
+      }
+      return null;
+    },
+
+    getLocations: function() {
+      // Get available storage locations
+      const cachedData = this.getLocationsCached();
+      if (cachedData) {
+        this.fireDataEvent("myLocations", cachedData);
       }
 
       const reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
@@ -93,20 +100,27 @@ qx.Class.define("qxapp.store.Data", {
       reqLoc.send();
     },
 
-    getDatasetsByLocation: function(locationId) {
-      // Get list of datasets
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-        return;
-      }
-
+    getDatasetsByLocationCached: function(locationId) {
       const cache = this.__datasetsByLocationCached;
       if (locationId in cache && cache[locationId].length) {
         const data = {
           location: locationId,
           datasets: cache[locationId]
         };
-        this.fireDataEvent("myDatasets", data);
+        return data;
+      }
+      return null;
+    },
+
+    getDatasetsByLocation: function(locationId) {
+      // Get list of datasets
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
+      }
+
+      const cachedData = this.getDatasetsByLocationCached(locationId);
+      if (cachedData) {
+        this.fireDataEvent("myDatasets", cachedData);
       }
 
       const endPoint = "/storage/locations/" + locationId + "/datasets";
@@ -142,12 +156,7 @@ qx.Class.define("qxapp.store.Data", {
       reqDatasets.send();
     },
 
-    getFilesByLocationAndDataset: function(locationId, datasetId) {
-      // Get list of file meta data
-      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-        return;
-      }
-
+    getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
       const cache = this.__filesByLocationAndDatasetCached;
       if (locationId in cache && datasetId in cache[locationId] && cache[locationId][datasetId].length) {
         const data = {
@@ -155,8 +164,20 @@ qx.Class.define("qxapp.store.Data", {
           dataset: datasetId,
           files: cache[locationId][datasetId]
         };
-        this.fireDataEvent("myDocuments", data);
+        return data;
+      }
+      return null;
+    },
+
+    getFilesByLocationAndDataset: function(locationId, datasetId) {
+      // Get list of file meta data
+      if (locationId === 1 && !qxapp.data.Permissions.getInstance().canDo("storage.datcore.read")) {
         return;
+      }
+
+      const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
+      if (cachedData) {
+        this.fireDataEvent("myDocuments", cachedData);
       }
 
       const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
