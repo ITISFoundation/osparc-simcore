@@ -151,21 +151,25 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
-        # only in DEBUG_MODE ######################################
         # publishing port on the ingress network.
-        elif config.DEBUG_MODE and param["name"] == "ports" and param["type"] == "int": # backward comp
-            # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-            docker_params["endpoint_spec"] = {
-                "Ports": [
-                    {
-                        "TargetPort": int(param["value"]),
-                        "PublishedPort": 0
-                    }
-                ]
-            }
+        elif param["name"] == "ports" and param["type"] == "int": # backward comp
+            docker_params["labels"]["port"] = str(param["value"])
+            if config.DEBUG_MODE:
+                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
+                docker_params["endpoint_spec"] = {
+                    "Ports": [
+                        {
+                            "TargetPort": int(param["value"]),
+                            "PublishedPort": 0
+                        }
+                    ]
+                }
         elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
-            docker_params["endpoint_spec"] = param["value"]
-        # only in DEBUG_MODE ######################################
+            if "Ports" in param["value"]:
+                if isinstance(param["value"]["Ports"], list) and "TargetPort" in param["value"]["Ports"][0]:
+                    docker_params["labels"]["port"] = str(param["value"]["Ports"][0]["TargetPort"])
+            if config.DEBUG_MODE:
+                docker_params["endpoint_spec"] = param["value"]
 
         # placement constraints
         elif param["name"] == "constraints": # python-API compatible
@@ -216,6 +220,7 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
             for port in ports_info_json:
                 published_ports.append(port['PublishedPort'])
                 target_ports.append(port["TargetPort"])
+    
     log.debug("Service %s publishes: %s ports", service["ID"], published_ports)
     published_port = None
     target_port = None
@@ -223,6 +228,10 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
         published_port = published_ports[0]
     if target_ports:
         target_port = target_ports[0]
+    else:
+        # if empty no port is published but there might still be an internal port
+        if "port" in service["Spec"]["Labels"]:
+            target_port = service["Spec"]["Labels"]["port"]
     return published_port, target_port
 
 
@@ -421,7 +430,7 @@ async def _start_docker_service(app: aiohttp.web.Application,
         # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
         # the docker swarm maybe opened some random port to access the service, get the latest version of the service
-        service = await client.services.inspect(service["ID"])
+        service = await client.services.inspect(service["ID"])        
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
         service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
