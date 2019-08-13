@@ -166,6 +166,8 @@ qx.Class.define("qxapp.file.FilesTree", {
     },
 
     __populateMyData: function() {
+      this.resetChecks();
+
       const treeName = "My Data";
       this.__resetTree(treeName);
       const rootModel = this.getModel();
@@ -292,7 +294,6 @@ qx.Class.define("qxapp.file.FilesTree", {
       rootModel.getChildren().removeAll();
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
-        this.__locations.add(location.id);
         const locationData = qxapp.data.Converters.createDirEntry(
           location.name,
           location.id,
@@ -310,6 +311,7 @@ qx.Class.define("qxapp.file.FilesTree", {
       if (!locationModel) {
         return;
       }
+      this.__locations.add(locationId);
       locationModel.getChildren().removeAll();
       for (let i=0; i<datasets.length; i++) {
         const dataset = datasets[i];
