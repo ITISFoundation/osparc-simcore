@@ -192,7 +192,7 @@ async def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
 async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
     network_name = "_default"
     if config.SWARM_STACK_NAME:
-        network_name = "{}_default".format(config.SWARM_STACK_NAME)
+        network_name = "{}".format(config.SWARM_STACK_NAME)
     # try to find the network name (usually named STACKNAME_default)
     networks = [x for x in (await client.networks.list()) if "swarm" in x["Scope"] and network_name in x["Name"]]
     if not networks or len(networks) > 1:
