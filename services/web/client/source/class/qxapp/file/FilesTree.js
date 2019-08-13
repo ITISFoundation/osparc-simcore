@@ -176,6 +176,8 @@ qx.Class.define("qxapp.file.FilesTree", {
       filesStore.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         if (this.__locations.size === 0) {
+          this.resetChecks();
+
           this.__locationsToRoot(locations);
 
           for (let i=0; i<locations.length; i++) {
@@ -196,14 +198,13 @@ qx.Class.define("qxapp.file.FilesTree", {
         }
       }
 
-      this.__locations.add(locationId);
       const filesStore = qxapp.store.Data.getInstance();
       filesStore.addListener("myDatasets", ev => {
         const {
           location,
           datasets
         } = ev.getData();
-        if (location === locationId) {
+        if (location === locationId && !this.__locations.has(locationId)) {
           this.__datasetsToLocation(location, datasets);
         }
       }, this);
@@ -291,7 +292,7 @@ qx.Class.define("qxapp.file.FilesTree", {
       rootModel.getChildren().removeAll();
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
-        this.__locations.add(location);
+        this.__locations.add(location.id);
         const locationData = qxapp.data.Converters.createDirEntry(
           location.name,
           location.id,
