@@ -42,7 +42,10 @@ qx.Class.define("qxapp.desktop.DataManager", {
     this._setLayout(prjBrowserLayout);
 
     this.__createDataManagerLayout();
-    this.__initResources(null);
+
+    this.addListener("appear", () => {
+      this.__initResources(null);
+    }, this);
   },
 
   members: {
