@@ -151,7 +151,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
-        elif param["name"] == "ports" and param["type"] == "int": # backward comp
+        # only in DEBUG_MODE ######################################
+        # publishing port on the ingress network.
+        elif config.DEBUG_MODE and param["name"] == "ports" and param["type"] == "int": # backward comp
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
             docker_params["endpoint_spec"] = {
                 "Ports": [
@@ -161,8 +163,11 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
                     }
                 ]
             }
-        elif param["type"] == "EndpointSpec": # REST-API compatible
+        elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
             docker_params["endpoint_spec"] = param["value"]
+        # only in DEBUG_MODE ######################################
+        
+        # placement constraints
         elif param["name"] == "constraints": # python-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints": # REST-API compatible
