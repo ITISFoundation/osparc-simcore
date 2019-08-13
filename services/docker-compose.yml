@@ -64,7 +64,7 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX}
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
+      - SIMCORE_SERVICES_NETWORK_NAME=large_subnet
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
