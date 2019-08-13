@@ -122,7 +122,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
                 }
             }
         },
-        "endpoint_spec": {},
+        "endpoint_spec": {
+            "Mode": "dnsrr"
+        },
         "labels": {
             "uuid": node_uuid,
             "type": "main" if main_service else "dependency"
@@ -156,14 +158,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             docker_params["labels"]["port"] = str(param["value"])
             if config.DEBUG_MODE:
                 # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-                docker_params["endpoint_spec"] = {
-                    "Ports": [
+                docker_params["endpoint_spec"]["Ports"] = [
                         {
                             "TargetPort": int(param["value"]),
                             "PublishedPort": 0
                         }
                     ]
-                }
         elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
             if "Ports" in param["value"]:
                 if isinstance(param["value"]["Ports"], list) and "TargetPort" in param["value"]["Ports"][0]:
