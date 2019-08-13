@@ -158,7 +158,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServiceDescription: function() {
-      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
@@ -186,7 +188,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVBoxWLabel: function(text) {
-      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
 
       let label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),

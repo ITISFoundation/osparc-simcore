@@ -19,7 +19,7 @@
  * This is a view to display the available services in a flowing fashion. Creates a ServiceJumbo button
  * for every service in the model and subscribes it to the filter group.
  */
-qx.Class.define("qxapp.component.service.ServiceBrowser", {
+qx.Class.define("qxapp.component.service.ServiceList", {
   extend: qx.ui.core.Widget,
 
   /**
