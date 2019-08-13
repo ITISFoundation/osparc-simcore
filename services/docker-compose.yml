@@ -136,6 +136,9 @@ services:
         constraints:
           - node.platform.os == linux
           - node.role == manager
+    networks:
+      - default
+      - large_subnet
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -237,6 +240,9 @@ services:
       placement:
         constraints:
           - node.platform.os == linux
+    networks:
+      - default
+      - large_subnet
 #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
@@ -259,6 +265,9 @@ services:
       - postgres:/var/lib/postgresql/data
     ports:
       - "5432"
+    networks:
+      - default
+      - large_subnet
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
@@ -271,6 +280,9 @@ services:
     command: server /data
     volumes:
       - minio:/data
+    networks:
+      - default
+      - large_subnet
   #--------------------------------------------------------------------
   maintenance:
     image: ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
@@ -302,3 +314,10 @@ volumes:
   postgres: {}
   minio: {}
   maintenance_data: {}
+networks:
+  large_subnet:
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.8.0.0/16"
