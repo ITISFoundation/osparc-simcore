@@ -58,10 +58,10 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
 
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      const titleAndButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
         alignY: "middle"
       })).set({
-        marginTop: 20
+        marginTop: 10
       });
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");
@@ -87,16 +87,16 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       const lastChangeDate = new qx.ui.basic.Label();
       const owner = new qx.ui.basic.Label();
 
+      const openButton = new qx.ui.form.Button("Open").set({
+        appearance: "md-button"
+      });
+      openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
+
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
         appearance: "md-button",
         visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       modeButton.addListener("execute", () => this.setMode("edit"), this);
-
-      const openButton = new qx.ui.form.Button("Open").set({
-        appearance: "md-button"
-      });
-      openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
 
       const dateOptions = {
         converter: date => new Date(date).toLocaleString()
@@ -117,13 +117,28 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       this.__model.bind("prjOwner", owner, "value");
 
       displayView.add(image);
-      titleAndButtons.add(title, {
+      buttonsLayout.add(openButton);
+      buttonsLayout.add(modeButton);
+      buttonsLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-      titleAndButtons.add(modeButton);
-      titleAndButtons.add(openButton);
-      displayView.add(titleAndButtons);
-      displayView.add(description);
+      if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
+        const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
+          appearance: "md-button"
+        });
+        saveAsTemplateButton.addListener("execute", e => {
+          const btn = e.getTarget();
+          btn.setIcon("@FontAwesome5Solid/circle-notch/12");
+          btn.getChildControl("icon").getContentElement()
+            .addClass("rotate");
+          this.__saveAsTemplate(btn);
+        }, this);
+        buttonsLayout.add(saveAsTemplateButton);
+      }
+      displayView.add(buttonsLayout);
+      displayView.add(title);
+        flex: 1
+      });
       moreData.add(new qx.ui.basic.Label(this.tr("Owner")).set({
         font: "title-12"
       }), {
@@ -155,22 +170,6 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
         column: 1
       });
       displayView.add(moreData);
-
-      if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
-        const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-          alignX: "center"
-        }));
-        const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template"));
-        saveAsTemplateButton.addListener("execute", e => {
-          const btn = e.getTarget();
-          btn.setIcon("@FontAwesome5Solid/circle-notch/12");
-          btn.getChildControl("icon").getContentElement()
-            .addClass("rotate");
-          this.__saveAsTemplate(btn);
-        }, this);
-        buttons.add(saveAsTemplateButton);
-        displayView.add(buttons);
-      }
 
       return displayView;
     },
