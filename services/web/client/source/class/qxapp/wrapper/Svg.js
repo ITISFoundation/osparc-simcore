@@ -19,7 +19,7 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
 /**
- * @asset(workbench/svg.*js)
+ * @asset(svg/svg.*js)
  * @ignore(SVG)
  */
 
@@ -33,7 +33,7 @@ qx.Class.define("qxapp.wrapper.Svg", {
 
   statics: {
     NAME: "svg.js",
-    VERSION: "2.6.4",
+    VERSION: "2.7.1",
     URL: "https://github.com/svgdotjs/svg.js"
   },
 
@@ -55,8 +55,8 @@ qx.Class.define("qxapp.wrapper.Svg", {
   members: {
     init: function() {
       // initialize the script loading
-      let svgPath = "workbench/svg.js";
-      let svgPathPath = "workbench/svg.path.js";
+      let svgPath = "svg/svg.js";
+      let svgPathPath = "svg/svg.path.js";
       let dynLoader = new qx.util.DynamicScriptLoader([
         svgPath,
         svgPathPath

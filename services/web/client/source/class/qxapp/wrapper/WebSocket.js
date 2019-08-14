@@ -34,7 +34,7 @@ qx.Class.define("qxapp.wrapper.WebSocket", {
 
   statics: {
     NAME: "socket.io",
-    VERSION: "2.1.2",
+    VERSION: "2.2.0",
     URL: "https://github.com/socketio/socket.io"
   },
 
