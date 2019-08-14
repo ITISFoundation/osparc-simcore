@@ -192,6 +192,9 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
           enabled: fieldIsEnabled
         }),
         description: new qx.ui.form.TextArea(this.__model.getDescription()).set({
+          autoSize: true,
+          minHeight: 100,
+          maxHeight: 500,
           enabled: fieldIsEnabled
         }),
         thumbnail: new qx.ui.form.TextField(this.__model.getThumbnail()).set({
