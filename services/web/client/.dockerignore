@@ -1,6 +1,6 @@
 # qx
 */source-output/*
-*/contrib/*
+*/qx_packages/*
 
 # node
 */node_modules/*

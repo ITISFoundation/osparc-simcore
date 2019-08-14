@@ -32,7 +32,7 @@ qx.Class.define("qxapp.wrapper.Plotly", {
 
   statics: {
     NAME: "plotly",
-    VERSION: "1.43.2",
+    VERSION: "1.49.1",
     URL: "https://github.com/plotly/plotly.js"
   },
 
