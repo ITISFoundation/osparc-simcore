@@ -137,8 +137,7 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
       }
       displayView.add(buttonsLayout);
       displayView.add(title);
-        flex: 1
-      });
+      displayView.add(description);
       moreData.add(new qx.ui.basic.Label(this.tr("Owner")).set({
         font: "title-12"
       }), {
