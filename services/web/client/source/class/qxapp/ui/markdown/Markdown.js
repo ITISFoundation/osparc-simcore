@@ -21,7 +21,9 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
    */
   construct: function(markdown) {
     this.base(arguments);
-    this.setRich(true);
+    this.set({
+      rich: true
+    });
     this.__loadMarked = new Promise((resolve, reject) => {
       if (typeof marked === "function") {
         resolve(marked);
