@@ -1,6 +1,6 @@
 # web/client
 
-``qxapp`` is the main client-side application of the sim-core platform.
+``osparc`` is the main client-side application of the sim-core platform.
 
 To ease development of the client, we have encapsulated the [qx]-compiler and all setup needed to run the client in a container. This way, we can develop the
 client without connecting to the final server but instead emulating it.
@@ -8,7 +8,7 @@ client without connecting to the final server but instead emulating it.
 Due to **limitations of docker on a Windows** host, a workaround is needed to enabling watching [qx] source code. The [docker-windows-volume-watcher](https://github.com/merofeev/docker-windows-volume-watcher) tool will notify Docker containers about changes in mounts on Windows. For convenience we provide a script in ``osparc-simcore/scripts/win-watcher.bat``.
 
 
-The docker-compose files in this directory help running ``qxapp`` stand-alone using a dev server in [qx].
+The docker-compose files in this directory help running ``osparc`` stand-alone using a dev server in [qx].
 ```bash
 cd path/to/web/client
 
