@@ -453,7 +453,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
 
     "dashboard/bar/content": {
       style: state => ({
-        width: 160,
+        width: 120,
         paddingTop: 15
       })
     },
