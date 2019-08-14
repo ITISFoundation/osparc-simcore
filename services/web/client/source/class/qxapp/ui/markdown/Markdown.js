@@ -6,7 +6,7 @@
  */
 
 /**
- * @asset(marked/marked.min.js)
+ * @asset(marked/marked.js)
  */
 
 /**
@@ -26,7 +26,7 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       if (typeof marked === "function") {
         resolve(marked);
       } else {
-        const loader = new qx.util.DynamicScriptLoader("marked/marked.min.js");
+        const loader = new qx.util.DynamicScriptLoader("marked/marked.js");
         loader.addListenerOnce("ready", () => {
           resolve(marked);
         }, this);

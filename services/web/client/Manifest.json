@@ -28,7 +28,7 @@
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
       "plotly/plotly.min.js",
-      "marked/marked.min.js"
+      "marked/marked.js"
     ],
     "css": [
       "jsontreeviewer/jsonTree.css",
