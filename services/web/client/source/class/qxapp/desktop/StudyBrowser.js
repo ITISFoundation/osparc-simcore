@@ -49,6 +49,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
       appearance: "sidepanel",
       width: 570,
+      allowGrowX: false,
       visibility: "excluded",
       padding: [0, 15]
     });

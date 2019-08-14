@@ -72,8 +72,9 @@ qx.Class.define("qxapp.component.widget.StudyDetails", {
 
       const image = new qx.ui.basic.Image().set({
         scale: true,
-        allowShrinkX: true,
-        allowShrinkY: true,
+        allowStretchX: true,
+        allowStretchY: true,
+        maxHeight: 330,
         alignX: "center"
       });
       const title = new qx.ui.basic.Label().set({
