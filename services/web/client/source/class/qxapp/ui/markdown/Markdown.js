@@ -22,6 +22,20 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
   construct: function(markdown) {
     this.base(arguments);
     this.setRich(true);
+    this.__loadMarked = new Promise((resolve, reject) => {
+      if (typeof marked === "function") {
+        resolve(marked);
+      } else {
+        const loader = new qx.util.DynamicScriptLoader("marked/marked.min.js");
+        loader.addListenerOnce("ready", () => {
+          resolve(marked);
+        }, this);
+        loader.addListenerOnce("failed", e => {
+          reject(Error(`Failed to load ${e.getData()}. Value couldn't be updated.`));
+        });
+        loader.start();
+      }
+    });
     if (markdown) {
       this.setMarkdown(markdown);
     }
@@ -38,20 +52,15 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
   },
 
   members: {
+    __loadMarked: null,
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
     _applyMarkdown: function(value) {
-      const loader = new qx.util.DynamicScriptLoader("marked/marked.min.js");
-      loader.addListenerOnce("ready", () => {
-        const markdown = marked(value);
-        this.setValue(markdown);
-      }, this);
-      loader.addListenerOnce("failed", e => {
-        console.error(`Failed to load ${e.getData()}. Value couldn't be updated.`);
-      });
-      loader.start();
+      this.__loadMarked.then(() => {
+        this.setValue(marked(value));
+      }).catch(error => console.error(error));
     }
   }
 });
