@@ -118,7 +118,7 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         let markdown = "";
         for (let i in this.__metadata.badges) {
           const badge = this.__metadata.badges[i];
-          markdown += `[![${badge.name}](${badge.image})](${badge.url})`;
+          markdown += `[![${badge.name}](${badge.image})](${badge.url}) `;
         }
         badges.setMarkdown(markdown);
         return badges;
