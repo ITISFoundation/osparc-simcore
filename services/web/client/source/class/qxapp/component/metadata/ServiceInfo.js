@@ -27,52 +27,47 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     __metadata: null,
 
     __createServiceInfoView: function() {
-      const main = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-      main.add(this.__createThumbnail());
-      main.add(this.__createMainInfo(), {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
+        alignY: "middle"
+      }));
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+      hBox.add(this.__createThumbnail());
+      hBox.add(this.__createExtraInfo(), {
         flex: 1
       });
-      this._add(main);
+      container.add(hBox);
 
-      this._add(this.__createAuthors());
+      container.add(this.__createDescription());
 
       const rawMetadata = this.__createRawMetadata();
       const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
         caretSize: 14
       });
-      this._add(more, {
-        flex: 1
-      });
       more.setCollapsed(true);
       more.getChildControl("title").setFont("text-12");
-    },
+      container.add(more);
 
-    __createMainInfo: function() {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
-        alignY: "middle"
-      }));
-
-      container.add(this.__createTitle());
-
-      const description = new qx.ui.basic.Label(this.__metadata.description).set({
-        rich: true
-      });
-      container.add(description);
-
-      const author = new qx.ui.basic.Label(this.tr("Contact") + ": <b>" + this.__metadata.contact + "</b>").set({
-        rich: true
-      });
-      container.add(author);
-
-      return container;
+      this._add(container);
     },
 
     __createThumbnail: function() {
       return new qx.ui.basic.Image(this.__metadata.thumbnail || qxapp.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
         scale: true,
-        width: 200,
-        height: 120
+        width: 300,
+        height: 180
       });
+    },
+
+    __createExtraInfo: function() {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
+        alignY: "middle"
+      }));
+      container.add(this.__createTitle());
+      container.add(this.__createContact());
+      container._add(this.__createAuthors());
+
+      return container;
     },
 
     __createTitle: function() {
@@ -92,9 +87,12 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       return titleContainer;
     },
 
-    __createRawMetadata: function() {
-      const container = new qx.ui.container.Scroll();
-      container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
+    __createContact: function() {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      container.add(new qx.ui.basic.Label(this.tr("Contact")).set({
+        font: "title-12"
+      }));
+      container.add(new qx.ui.basic.Label(this.__metadata.contact));
       return container;
     },
 
@@ -109,6 +107,18 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         container.add(new qx.ui.basic.Label(authorLine));
       }
       return container;
-    }
+    },
+
+    __createDescription: function() {
+      const description = new qxapp.ui.markdown.Markdown();
+      description.setMarkdown(this.__metadata.description);
+      return description;
+    },
+
+    __createRawMetadata: function() {
+      const container = new qx.ui.container.Scroll();
+      container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
+      return container;
+    },
   }
 });
