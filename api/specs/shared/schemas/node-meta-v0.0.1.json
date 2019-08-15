@@ -50,6 +50,13 @@
                 "Fast Counter"
             ]
         },
+        "thumbnail": {
+            "type": "string",
+            "description": "url to the thumbanil",
+            "examples": [
+                "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+            ]
+        },
         "description": {
             "type": "string",
             "description": "human readable description of the purpose of the node",
