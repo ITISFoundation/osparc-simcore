@@ -57,6 +57,35 @@
                 "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
             ]
         },
+        "badges": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "object",
+                "required": ["name", "url"],
+                "additionalProperties": false,
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the subject",
+                        "examples": [
+                            "travis-ci",
+                            "coverals.io",
+                            "github.io"
+                        ]
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "Link to status",
+                        "examples": [
+                            "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+                            "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+                            "https://itisfoundation.github.io/"
+                        ]
+                    }
+                }
+            }
+        },
         "description": {
             "type": "string",
             "description": "human readable description of the purpose of the node",
