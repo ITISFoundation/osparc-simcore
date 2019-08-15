@@ -136,6 +136,6 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       const container = new qx.ui.container.Scroll();
       container.add(new qxapp.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
       return container;
-    },
+    }
   }
 });
