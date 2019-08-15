@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 qx.Class.define("qxapp.component.metadata.StudyDetails", {
@@ -51,11 +52,15 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
     __fields: null,
 
     __createDisplayView: function() {
-      const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      displayView.add(this.__createThumbnail());
+      const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+      hBox.add(this.__createThumbnail(), {
+        flex: 1
+      });
+      hBox.add(this.__createExtraInfo());
+      displayView.add(hBox);
       displayView.add(this.__createButtons());
       displayView.add(this.__createTitle());
-      displayView.add(this.__createExtraInfo());
       displayView.add(this.__createDescription());
       return displayView;
     },
@@ -65,7 +70,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
         scale: true,
         allowStretchX: true,
         allowStretchY: true,
-        maxHeight: 330,
+        maxHeight: 200,
         alignX: "center"
       });
 
@@ -80,6 +85,62 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
       });
 
       return image;
+    },
+
+    __createExtraInfo: function() {
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnFlex(0, 1);
+      grid.setColumnFlex(1, 1);
+      const moreInfo = new qx.ui.container.Composite(grid).set({
+        maxWidth: 220,
+        alignY: "middle"
+      });
+
+      const creationDate = new qx.ui.basic.Label();
+      const lastChangeDate = new qx.ui.basic.Label();
+      const owner = new qx.ui.basic.Label();
+
+      const dateOptions = {
+        converter: date => new Date(date).toLocaleString()
+      };
+      this.__model.bind("creationDate", creationDate, "value", dateOptions);
+      this.__model.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
+      this.__model.bind("prjOwner", owner, "value");
+
+      moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
+        font: "title-12"
+      }), {
+        row: 0,
+        column: 0
+      });
+      moreInfo.add(owner, {
+        row: 0,
+        column: 1
+      });
+      moreInfo.add(new qx.ui.basic.Label(this.tr("Creation date")).set({
+        font: "title-12"
+      }), {
+        row: 1,
+        column: 0
+      });
+      moreInfo.add(creationDate, {
+        row: 1,
+        column: 1
+      });
+      moreInfo.add(new qx.ui.basic.Label(this.tr("Last modified")).set({
+        font: "title-12"
+      }), {
+        row: 2,
+        column: 0
+      });
+      moreInfo.add(lastChangeDate, {
+        row: 2,
+        column: 1
+      });
+
+      return moreInfo;
     },
 
     __createButtons: function() {
@@ -137,59 +198,6 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
       this.__model.bind("name", title, "value");
 
       return title;
-    },
-
-    __createExtraInfo: function() {
-      const grid = new qx.ui.layout.Grid(5, 3);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnFlex(0, 1);
-      grid.setColumnFlex(1, 1);
-      const moreInfo = new qx.ui.container.Composite(grid);
-
-      const creationDate = new qx.ui.basic.Label();
-      const lastChangeDate = new qx.ui.basic.Label();
-      const owner = new qx.ui.basic.Label();
-
-      const dateOptions = {
-        converter: date => new Date(date).toLocaleString()
-      };
-      this.__model.bind("creationDate", creationDate, "value", dateOptions);
-      this.__model.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      this.__model.bind("prjOwner", owner, "value");
-
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
-        font: "title-12"
-      }), {
-        row: 0,
-        column: 0
-      });
-      moreInfo.add(owner, {
-        row: 0,
-        column: 1
-      });
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Creation date")).set({
-        font: "title-12"
-      }), {
-        row: 1,
-        column: 0
-      });
-      moreInfo.add(creationDate, {
-        row: 1,
-        column: 1
-      });
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Last change date")).set({
-        font: "title-12"
-      }), {
-        row: 2,
-        column: 0
-      });
-      moreInfo.add(lastChangeDate, {
-        row: 2,
-        column: 1
-      });
-
-      return moreInfo;
     },
 
     __createDescription: function() {

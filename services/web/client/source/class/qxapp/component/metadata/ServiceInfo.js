@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 qx.Class.define("qxapp.component.metadata.ServiceInfo", {
