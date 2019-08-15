@@ -19,47 +19,40 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
 
     this.__metadata = metadata;
 
-    const main = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-    main.add(this.__createServiceThumbnail());
-    main.add(this.__createMainInfo(), {
-      flex: 1
-    });
-    this._add(main);
-
-    const authors = this.__createAuthors();
-    this._add(authors);
-
-    const rawMetadata = this.__createRawMetadata();
-    const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
-      caretSize: 14
-    });
-    this._add(more, {
-      flex: 1
-    });
-    more.setCollapsed(true);
-    more.getChildControl("title").setFont("text-12");
+    this.__createServiceInfoView();
   },
 
   members: {
     __service: null,
     __metadata: null,
 
+    __createServiceInfoView: function() {
+      const main = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+      main.add(this.__createThumbnail());
+      main.add(this.__createMainInfo(), {
+        flex: 1
+      });
+      this._add(main);
+
+      this._add(this.__createAuthors());
+
+      const rawMetadata = this.__createRawMetadata();
+      const more = new qxapp.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
+        caretSize: 14
+      });
+      this._add(more, {
+        flex: 1
+      });
+      more.setCollapsed(true);
+      more.getChildControl("title").setFont("text-12");
+    },
+
     __createMainInfo: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
         alignY: "middle"
       }));
 
-      const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const title = new qx.ui.basic.Label(this.__metadata.name).set({
-        font: "title-16",
-        rich: true
-      });
-      const version = new qx.ui.basic.Label("v" + this.__metadata.version).set({
-        rich: true
-      });
-      titleContainer.add(title);
-      titleContainer.add(version);
-      container.add(titleContainer);
+      container.add(this.__createTitle());
 
       const description = new qx.ui.basic.Label(this.__metadata.description).set({
         rich: true
@@ -74,12 +67,29 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       return container;
     },
 
-    __createServiceThumbnail: function() {
+    __createThumbnail: function() {
       return new qx.ui.basic.Image(this.__metadata.thumbnail || qxapp.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
         scale: true,
         width: 200,
         height: 120
       });
+    },
+
+    __createTitle: function() {
+      const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const title = new qx.ui.basic.Label(this.__metadata.name).set({
+        font: "title-16",
+        rich: true
+      });
+      titleContainer.add(title);
+
+      const version = new qx.ui.basic.Label("v" + this.__metadata.version).set({
+        rich: true
+      });
+      titleContainer.add(version);
+
+      return titleContainer;
     },
 
     __createRawMetadata: function() {
