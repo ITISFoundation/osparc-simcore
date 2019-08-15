@@ -65,8 +65,11 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
       }));
       container.add(this.__createTitle());
       container.add(this.__createContact());
-      container._add(this.__createAuthors());
-
+      container.add(this.__createAuthors());
+      const badges = this.__createBadges();
+      if (badges) {
+        container.add(badges);
+      }
       return container;
     },
 
@@ -107,6 +110,20 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
         container.add(new qx.ui.basic.Label(authorLine));
       }
       return container;
+    },
+
+    __createBadges: function() {
+      const badges = new qxapp.ui.markdown.Markdown();
+      if ("badges" in this.__metadata) {
+        let markdown = "";
+        for (let i in this.__metadata.badges) {
+          const badge = this.__metadata.badges[i];
+          markdown += `[![${badge.name}](${badge.image})](${badge.url})`;
+        }
+        badges.setMarkdown(markdown);
+        return badges;
+      }
+      return null;
     },
 
     __createDescription: function() {
