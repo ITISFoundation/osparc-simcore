@@ -62,7 +62,7 @@
             "minItems": 0,
             "items": {
                 "type": "object",
-                "required": ["name", "url"],
+                "required": ["name", "image", "url"],
                 "additionalProperties": false,
                 "properties": {
                     "name": {
@@ -72,6 +72,15 @@
                             "travis-ci",
                             "coverals.io",
                             "github.io"
+                        ]
+                    },
+                    "image": {
+                        "type": "string",
+                        "description": "Url to the shield",
+                        "examples": [
+                            "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+                            "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+                            "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
                         ]
                     },
                     "url": {

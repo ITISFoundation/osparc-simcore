@@ -63,6 +63,13 @@ properties:
             - travis-ci
             - coverals.io
             - github.io
+        image:
+          type: string
+          description: Url to the shield
+          example:
+            - "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master"
+            - "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master"
+            - "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
         url:
           description: Link to status
           type: string
