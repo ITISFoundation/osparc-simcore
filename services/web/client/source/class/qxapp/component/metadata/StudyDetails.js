@@ -9,7 +9,7 @@
 qx.Class.define("qxapp.component.metadata.StudyDetails", {
   extend: qx.ui.core.Widget,
 
-  construct: function(study) {
+  construct: function(study, maxHeight) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -19,32 +19,31 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
       this.__study = new qxapp.data.model.Study(study);
     }
 
-    this.__populateLayout();
+    this.__populateLayout(maxHeight);
   },
 
   members: {
     __study: null,
 
-    __populateLayout: function() {
+    __populateLayout: function(maxHeight) {
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       vBox.add(this.__createTitle());
       vBox.add(this.__createExtraInfo());
       hBox.add(vBox);
-      hBox.add(this.__createThumbnail(), {
+      hBox.add(this.__createThumbnail(maxHeight), {
         flex: 1
       });
       this._add(hBox);
       this._add(this.__createDescription());
     },
 
-    __createThumbnail: function() {
+    __createThumbnail: function(maxHeight) {
       const image = new qx.ui.basic.Image().set({
         scale: true,
         allowStretchX: true,
         allowStretchY: true,
-        maxHeight: 200,
-        alignX: "center"
+        maxHeight: maxHeight ? parseInt(maxHeight) : 200
       });
 
       this.__study.bind("thumbnail", image, "source");

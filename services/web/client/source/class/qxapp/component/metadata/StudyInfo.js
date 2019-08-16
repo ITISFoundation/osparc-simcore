@@ -19,7 +19,9 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
     this.__study = study;
 
     this._add(this.__createExpandButton());
-    this._add(new qxapp.component.metadata.StudyDetails(study), {
+    const windowWidth = 500;
+    const thumbnailWidth = (windowWidth - 250)/1.67;
+    this._add(new qxapp.component.metadata.StudyDetails(study, thumbnailWidth), {
       flex: 1
     });
   },
