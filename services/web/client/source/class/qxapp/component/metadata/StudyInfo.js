@@ -36,25 +36,7 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
         allowGrowX: false
       });
       expandButton.addListener("execute", function() {
-        const windowWidth = 700;
-        const windowHeight = 700;
-        const thumbnailWidth = (windowWidth - 250)/1.67;
-        const studyDetails = new qxapp.component.metadata.StudyDetails(this.__study, thumbnailWidth);
-        const scroll = new qx.ui.container.Scroll().set({
-          height: windowHeight
-        });
-        scroll.add(studyDetails);
-
-        const win = new qx.ui.window.Window(this.tr("Study information")).set({
-          layout: new qx.ui.layout.Grow(),
-          contentPadding: 10,
-          showMinimize: false,
-          modal: true,
-          width: windowWidth,
-          height: 700
-        });
-        win.add(scroll);
-
+        const win = new qxapp.component.metadata.StudyDetailsWindow(this.__study);
         win.center();
         win.open();
       }, this);
