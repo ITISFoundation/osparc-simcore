@@ -6,8 +6,25 @@
  *          Odei Maiz (odeimaiz)
  */
 
+/**
+ * Widget that displays the available information of the given service metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *    const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+ *    this.add(serviceInfo);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.metadata.ServiceInfo", {
   extend: qx.ui.core.Widget,
+
+  /**
+    * @param metadata {Object} Service metadata
+    */
   construct: function(metadata) {
     this.base(arguments);
 
@@ -23,7 +40,6 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
   },
 
   members: {
-    __service: null,
     __metadata: null,
 
     __createServiceInfoView: function() {

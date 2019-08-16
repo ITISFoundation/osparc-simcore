@@ -6,9 +6,26 @@
  *          Odei Maiz (odeimaiz)
  */
 
+/**
+ * Widget that displays the available information of the given study metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *    const studyDetails = new qxapp.component.metadata.StudyDetails(study);
+ *    this.add(studyDetails);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.metadata.StudyDetails", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param study {Object|qxapp.data.model.Study} Study (metadata)
+    * @param maxHeight {Integer} Max Height of the thumbnail
+    */
   construct: function(study, maxHeight) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(10));

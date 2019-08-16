@@ -6,9 +6,29 @@
  *          Odei Maiz (odeimaiz)
  */
 
+/**
+ * Widget that contains a stack with a StudyDetails and Study Details Editor form.
+ *
+ * It also provides options for opening the study and creating a template out of it if the
+ * user has the permissios.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *    const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+ *    this.add(serviceInfo);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param study {Object|qxapp.data.model.Study} Study (metadata)
+    * @param isTemplate {Boolean} Weather the study is template or not
+    */
   construct: function(study, isTemplate) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());

@@ -5,8 +5,26 @@
  * Authors: Odei Maiz (odeimaiz)
  */
 
+/**
+ * Window that contains the StudyDetails of the given study metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   const win = new qxapp.component.metadata.StudyDetailsWindow(study);
+ *   win.center();
+ *   win.open();
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.metadata.StudyDetailsWindow", {
   extend: qx.ui.window.Window,
+
+  /**
+    * @param study {Object|qxapp.data.model.Study} Study (metadata)
+    */
   construct: function(study) {
     this.base(arguments, this.tr("Study information") + " · " + study.getName());
 

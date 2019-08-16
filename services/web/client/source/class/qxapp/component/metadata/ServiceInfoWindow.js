@@ -3,10 +3,29 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
+ */
+
+/**
+ * Window that contains the ServiceInfo of the given service metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   const win = new qxapp.component.metadata.ServiceInfoWindow(service);
+ *   win.center();
+ *   win.open();
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
   extend: qx.ui.window.Window,
+
+  /**
+    * @param metadata {Object} Service metadata
+    */
   construct: function(metadata) {
     this.base(arguments, this.tr("Service information") + " · " + metadata.name);
 

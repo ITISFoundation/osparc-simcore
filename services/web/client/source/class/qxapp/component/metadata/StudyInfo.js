@@ -3,10 +3,30 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
+ */
+
+/**
+ * Widget that contains the StudyDetails of the given study metadata.
+ *
+ * It also provides a button that opens a window with the same information.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *    const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+ *    this.add(serviceInfo);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
+
+  /**
+    * @param study {Object|qxapp.data.model.Study} Study (metadata)
+    */
   construct: function(study) {
     this.base(arguments);
 
