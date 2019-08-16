@@ -100,6 +100,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
       const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
+      extraView.setMaxHeight(300);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
       const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
