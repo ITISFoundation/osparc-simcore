@@ -1072,7 +1072,7 @@ Renderer.prototype.image = function(href, title, text) {
   if (title) {
     out += ' title="' + title + '"';
   }
-  out += ' style="width:100%"';
+  out += ' style="max-width:100%"';
   out += this.options.xhtml ? '/>' : '>';
   return out;
 };
