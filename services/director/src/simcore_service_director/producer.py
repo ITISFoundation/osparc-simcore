@@ -208,7 +208,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
             msg="Swarm network name is not configured, found following networks: {}".format(networks))
     return networks[0]
 
-async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
+async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
     log.debug("getting port published by service: %s", service)
 
     published_ports = list()
@@ -220,7 +220,7 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
             for port in ports_info_json:
                 published_ports.append(port['PublishedPort'])
                 target_ports.append(port["TargetPort"])
-    
+
     log.debug("Service %s publishes: %s ports", service["ID"], published_ports)
     published_port = None
     target_port = None
@@ -229,9 +229,9 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
     if target_ports:
         target_port = target_ports[0]
     else:
-        # if empty no port is published but there might still be an internal port
+        # if empty no port is published but there might still be an internal port defined
         if "port" in service["Spec"]["Labels"]:
-            target_port = service["Spec"]["Labels"]["port"]
+            target_port = int(service["Spec"]["Labels"]["port"])
     return published_port, target_port
 
 
@@ -430,7 +430,7 @@ async def _start_docker_service(app: aiohttp.web.Application,
         # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
         # the docker swarm maybe opened some random port to access the service, get the latest version of the service
-        service = await client.services.inspect(service["ID"])        
+        service = await client.services.inspect(service["ID"])
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
         service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
