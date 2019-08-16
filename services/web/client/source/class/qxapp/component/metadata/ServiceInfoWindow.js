@@ -12,9 +12,9 @@ qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
 
     this.set({
       layout: new qx.ui.layout.Grow(),
-      contentPadding: 0,
+      contentPadding: 10,
       showMinimize: false,
-      resizable: false,
+      resizable: true,
       modal: true
     });
 
