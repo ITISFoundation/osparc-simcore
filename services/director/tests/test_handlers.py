@@ -171,7 +171,8 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         params["service_key"] = service_description["key"]
         params["service_tag"] = service_description["version"]
         service_port = created_service["internal_port"]
-        params["service_basepath"] = ""
+        service_entry_point = created_service["entry_point"]
+        params["service_basepath"] = "/i/am/a/basepath"
         params["service_uuid"] = str(uuid.uuid4())
         # start the service
         web_response = await client.post("/v0/running_interactive_services", params=params)
@@ -183,13 +184,14 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
         assert running_service_enveloped["data"]["service_key"] == params["service_key"]
         assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
-        # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
         assert running_service_enveloped["data"]["service_port"] == service_port
-        # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
-        service_entry_point = running_service_enveloped["data"]["entry_point"]
+        assert not service_published_port
+        assert service_entry_point == running_service_enveloped["data"]["entry_point"]
         service_host = running_service_enveloped["data"]["service_host"]
+        assert service_host == "test_{}".format(params["service_uuid"])
         service_basepath = running_service_enveloped["data"]["service_basepath"]
+        assert service_basepath == params["service_basepath"]
 
 
         # get the service
