@@ -82,9 +82,12 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, depende
     docker_labels = _create_docker_labels(service_description, bad_json_format)
     additional_docker_labels = [{"name": "constraints", "type": "string", "value": ["node.role==manager"]}]
     internal_port = None
+    entry_point = ''
     if service_type == "dynamic":
         internal_port = random.randint(1, 65535)
         additional_docker_labels.append({"name": "ports", "type": "int", "value": internal_port})
+        entry_point = "/test/entry_point"
+        docker_labels["simcore.service.bootsettings"] = json.dumps([{"name": "entry_point", "type": "string", "value": entry_point}])
     docker_labels["simcore.service.settings"] = json.dumps(additional_docker_labels)
     if bad_json_format:
         docker_labels["simcore.service.settings"] = "'fjks" + docker_labels["simcore.service.settings"]
@@ -108,7 +111,8 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, depende
         "service_description":service_description,
         "docker_labels":docker_labels,
         "image_path":image_tag,
-        "internal_port":internal_port
+        "internal_port":internal_port,
+        "entry_point": entry_point
         }
 
 def _clean_registry(registry_url, list_of_images, schema_version="v1"):
