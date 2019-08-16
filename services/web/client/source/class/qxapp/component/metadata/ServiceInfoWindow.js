@@ -10,15 +10,22 @@ qx.Class.define("qxapp.component.metadata.ServiceInfoWindow", {
   construct: function(metadata) {
     this.base(arguments, this.tr("Service information") + " · " + metadata.name);
 
+    const windowWidth = 700;
+    const windowHeight = 800;
     this.set({
       layout: new qx.ui.layout.Grow(),
       contentPadding: 10,
       showMinimize: false,
       resizable: true,
-      modal: true
+      modal: true,
+      width: windowWidth,
+      height: windowHeight
     });
 
-    this.add(new qxapp.component.metadata.ServiceInfo(metadata));
+    const serviceDetails = new qxapp.component.metadata.ServiceInfo(metadata);
+    const scroll = new qx.ui.container.Scroll();
+    scroll.add(serviceDetails);
+    this.add(scroll);
   },
 
   properties: {
