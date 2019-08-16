@@ -25,15 +25,15 @@ def push_services(loop, docker_registry, tmpdir):
             version = "1.0."
             dependent_image = None
             if inter_dependent_services:
-                dependent_image = _build_push_image(tmp_dir, registry_url, "computational", "dependency", "10.52.999999", None, bad_json_format=bad_json_format, schema_version="v1")
+                dependent_image = _build_push_image(tmp_dir, registry_url, "computational", "dependency", "10.52.999999", None, bad_json_format=bad_json_format)
                 dependent_images.append(dependent_image)
 
             for image_index in range(0, number_of_computational_services):
-                image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), dependent_image, bad_json_format=bad_json_format, schema_version="v1")
+                image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), dependent_image, bad_json_format=bad_json_format)
                 list_of_pushed_images_tags.append(image)
 
             for image_index in range(0, number_of_interactive_services):
-                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), dependent_image, bad_json_format=bad_json_format, schema_version="v1")
+                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), dependent_image, bad_json_format=bad_json_format)
                 list_of_pushed_images_tags.append(image)
         except docker.errors.APIError:
             _logger.exception("Unexpected docker API error")
@@ -46,39 +46,10 @@ def push_services(loop, docker_registry, tmpdir):
     _clean_registry(registry_url, list_of_pushed_images_tags)
     _clean_registry(registry_url, dependent_images)
 
-@pytest.fixture(scope="function")
-def push_v0_schema_services(docker_registry, tmpdir):
-    registry_url = docker_registry
-    tmp_dir = Path(tmpdir)
-
-    schema_version = "v0"
-    list_of_pushed_images_tags = []
-    def build_push_images(number_of_computational_services, number_of_interactive_services):
-        try:
-            version = "0.0."
-
-            dependent_image = None
-            for image_index in range(0, number_of_computational_services):
-                image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), dependent_image, schema_version=schema_version)
-                list_of_pushed_images_tags.append(image)
-            dependent_image = None
-            for image_index in range(0, number_of_interactive_services):
-                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), dependent_image, schema_version=schema_version)
-                list_of_pushed_images_tags.append(image)
-        except docker.errors.APIError:
-            _logger.exception("Unexpected docker API error")
-            raise
-
-        return list_of_pushed_images_tags
-
-    yield build_push_images
-    _logger.info("clean registry")
-    _clean_registry(registry_url, list_of_pushed_images_tags, schema_version)
-
-def _build_push_image(docker_dir, registry_url, service_type, name, tag, dependent_image=None, *, schema_version="v1", bad_json_format=False): # pylint: disable=R0913
+def _build_push_image(docker_dir, registry_url, service_type, name, tag, dependent_image=None, *, bad_json_format=False): # pylint: disable=R0913
     docker_client = docker.from_env()
     # crate image
-    service_description = _create_service_description(service_type, name, tag, schema_version)
+    service_description = _create_service_description(service_type, name, tag)
     docker_labels = _create_docker_labels(service_description, bad_json_format)
     additional_docker_labels = [{"name": "constraints", "type": "string", "value": ["node.role==manager"]}]
     internal_port = None
@@ -115,15 +86,12 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, depende
         "entry_point": entry_point
         }
 
-def _clean_registry(registry_url, list_of_images, schema_version="v1"):
+def _clean_registry(registry_url, list_of_images):
     request_headers = {'accept': "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
         # get the image digest
-        if schema_version == "v0":
-            tag = service_description["tag"]
-        else:
-            tag = service_description["version"]
+        tag = service_description["version"]
         url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=tag)
         response = requests.get(url, headers=request_headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
@@ -142,8 +110,8 @@ def _create_base_image(base_dir, labels):
     base_docker_image = docker_client.images.build(path=str(base_dir), rm=True, labels=labels)
     return base_docker_image[0]
 
-def _create_service_description(service_type, name, tag, schema_version):
-    file_name = "dummy_service_description-" + schema_version + ".json"
+def _create_service_description(service_type, name, tag):
+    file_name = "dummy_service_description-v1.json"
     dummy_description_path = Path(__file__).parent / file_name
     with dummy_description_path.open() as file_pt:
         service_desc = json.load(file_pt)
@@ -153,14 +121,8 @@ def _create_service_description(service_type, name, tag, schema_version):
     elif service_type == "dynamic":
         service_key_type = "dynamic"
     service_desc["key"] = "simcore/services/" + service_key_type + "/" + name
-    # version 0 had no validation, no version, no type
-    if schema_version == "v0":
-        service_desc["tag"] = tag
-    elif schema_version == "v1":
-        service_desc["version"] = tag
-        service_desc["type"] = service_type
-    else:
-        raise Exception("invalid version!!")
+    service_desc["version"] = tag
+    service_desc["type"] = service_type
 
     return service_desc
 
