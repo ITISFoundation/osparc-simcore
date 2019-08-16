@@ -147,14 +147,16 @@ async def test_interactive_service_published_port(run_services):
 def docker_network(docker_swarm) -> docker.models.networks.Network:
     client = docker_swarm
     network = client.networks.create("test_network", driver="overlay", scope="swarm")
+    config.SIMCORE_SERVICES_NETWORK_NAME = network.name
     yield network
 
     # cleanup
     network.remove()
+    config.SIMCORE_SERVICES_NETWORK_NAME = None
 
 
 async def test_interactive_service_in_correct_network(docker_network, run_services):
-    config.SIMCORE_SERVICES_NETWORK_NAME = docker_network.name
+
     running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=False)
     assert len(running_dynamic_services) == 2
     for service in running_dynamic_services:
