@@ -22,6 +22,8 @@ services:
       placement:
        constraints:
           - node.platform.os == linux
+    networks:
+      - default
 #--------------------------------------------------------------------
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
@@ -64,7 +66,7 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX}
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
-      - SIMCORE_SERVICES_NETWORK_NAME=large_subnet
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
@@ -72,6 +74,9 @@ services:
        constraints:
           - node.platform.os == linux
           - node.role == manager
+    networks:
+      - default
+      - interactive_services_subnet
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
@@ -138,13 +143,14 @@ services:
           - node.role == manager
     networks:
       - default
-      - large_subnet
+      - interactive_services_subnet
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
     deploy:
       mode: replicated
+      endpoint_mode: dnsrr
       resources:
         reservations:
           cpus: '0.1'
@@ -192,6 +198,10 @@ services:
       - rabbit
       - postgres
       - minio
+    networks:
+      - computational_services_subnet
+
+
   #--------------------------------------------------------------------
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
@@ -242,7 +252,8 @@ services:
           - node.platform.os == linux
     networks:
       - default
-      - large_subnet
+      - interactive_services_subnet
+      - computational_services_subnet
 #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
@@ -253,6 +264,9 @@ services:
     ports:
       - "5672"
       - "15672"
+    networks:
+      - default
+      - computational_services_subnet
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
@@ -267,7 +281,8 @@ services:
       - "5432"
     networks:
       - default
-      - large_subnet
+      - interactive_services_subnet
+      - computational_services_subnet
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
@@ -282,7 +297,8 @@ services:
       - minio:/data
     networks:
       - default
-      - large_subnet
+      - interactive_services_subnet
+      - computational_services_subnet
   #--------------------------------------------------------------------
   maintenance:
     image: ${DOCKER_REGISTRY:-itisfoundation}/maintenance:${DOCKER_IMAGE_TAG:-latest}
@@ -315,9 +331,23 @@ volumes:
   minio: {}
   maintenance_data: {}
 networks:
-  large_subnet:
+  interactive_services_subnet:
+    driver: overlay
     attachable: true
+    internal: false
+    labels:
+      com.simcore.description: "interactive services network"
     ipam:
       driver: default
       config:
         - subnet: "172.8.0.0/16"
+  computational_services_subnet:
+    driver: overlay
+    attachable: true
+    internal: false
+    labels:
+      com.simcore.description: "computational services network"
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.9.0.0/16"
