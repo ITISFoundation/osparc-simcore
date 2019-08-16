@@ -137,8 +137,6 @@ qx.Class.define("qxapp.data.model.Study", {
     },
 
     serializeStudy: function() {
-      this.setLastChangeDate(new Date());
-
       let jsonObject = {};
       const properties = this.constructor.$$properties;
       for (let key in properties) {
