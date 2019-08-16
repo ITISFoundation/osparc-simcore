@@ -99,18 +99,6 @@ async def test_services_get(docker_registry, client, push_services):
     assert len(services) == 2
 
 
-async def test_v0_services_conversion_to_new(client, push_v0_schema_services): #pylint: disable=W0613, W0621
-    created_services = push_v0_schema_services(3,2)
-    assert len(created_services) == 5
-    web_response = await client.get("/v0/services")
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    # ensure old style services are not retrieved
-    assert len(services) == 0
-
 async def test_services_by_key_version_get(client, push_services): #pylint: disable=W0613, W0621
     web_response = await client.get("/v0/services/whatever/someversion")
     assert web_response.status == 400
