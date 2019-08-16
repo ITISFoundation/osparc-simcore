@@ -31,6 +31,7 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
             service_key = service_description["key"]
             service_version = service_description["version"]
             service_port = pushed_service["internal_port"]
+            service_entry_point = pushed_service["entry_point"]
             service_uuid = str(uuid.uuid1())
             service_basepath = "/my/base/path"
             with pytest.raises(exceptions.ServiceUUIDNotFoundError):
@@ -39,8 +40,9 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
             started_service = await producer.start_service(aiohttp_mock_app, user_id, project_id, service_key, service_version, service_uuid, service_basepath)
             assert "published_port" in started_service
             if service_description["type"] == "dynamic":
-                assert started_service["published_port"]
+                assert not started_service["published_port"]
             assert "entry_point" in started_service
+            assert started_service["entry_point"] == service_entry_point
             assert "service_uuid" in started_service
             assert started_service["service_uuid"] == service_uuid
             assert "service_key" in started_service
@@ -126,7 +128,8 @@ async def test_interactive_service_published_port(run_services):
     assert "published_port" in service
 
     service_port = service["published_port"]
-    assert service_port > 0
+    # ports are not published anymore in production mode
+    assert not service_port
 
     client = docker.from_env()
     service_uuid = service["service_uuid"]
@@ -134,10 +137,36 @@ async def test_interactive_service_published_port(run_services):
     assert len(list_of_services) == 1
 
     docker_service = list_of_services[0]
-    low_level_client = docker.APIClient()
-    service_information = low_level_client.inspect_service(docker_service.id)
-    service_published_port = service_information["Endpoint"]["Ports"][0]["PublishedPort"]
-    assert service_published_port == service_port
+    # no port open to the outside
+    assert not docker_service.attrs["Endpoint"]["Spec"]
+    # service is started with dnsrr (round-robin) mode
+    assert docker_service.attrs["Spec"]["EndpointSpec"]["Mode"] == "dnsrr"
+
+
+@pytest.fixture
+def docker_network(docker_swarm) -> docker.models.networks.Network:
+    client = docker_swarm
+    network = client.networks.create("test_network", driver="overlay", scope="swarm")
+    yield network
+
+    # cleanup
+    network.remove()
+
+
+async def test_interactive_service_in_correct_network(docker_network, run_services):
+    config.SIMCORE_SERVICES_NETWORK_NAME = docker_network.name
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=False)
+    assert len(running_dynamic_services) == 2
+    for service in running_dynamic_services:
+        client = docker.from_env()
+        service_uuid = service["service_uuid"]
+        list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
+        assert list_of_services
+        assert len(list_of_services) == 1
+        docker_service = list_of_services[0]
+        assert docker_service.attrs["Spec"]["Networks"][0]["Target"] == docker_network.id
+
+
 
 async def test_dependent_services_have_common_network(run_services):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=True)
