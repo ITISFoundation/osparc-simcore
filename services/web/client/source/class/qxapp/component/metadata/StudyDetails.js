@@ -75,8 +75,13 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
       const lastChangeDate = new qx.ui.basic.Label();
       const owner = new qx.ui.basic.Label();
 
+      // create a date format like "Oct. 19, 2018 11:31 AM"
+      const dateFormat = new qx.util.format.DateFormat(
+        qx.locale.Date.getDateFormat("medium") + " " +
+        qx.locale.Date.getTimeFormat("short")
+      );
       const dateOptions = {
-        converter: date => new Date(date).toLocaleString()
+        converter: date => dateFormat.format(date)
       };
       this.__study.bind("creationDate", creationDate, "value", dateOptions);
       this.__study.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
