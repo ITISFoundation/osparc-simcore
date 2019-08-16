@@ -6,104 +6,58 @@
  *          Odei Maiz (odeimaiz)
  */
 
-qx.Class.define("qxapp.component.metadata.StudyDetails", {
+qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(study) {
+  construct: function(study, isTemplate) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.Grow());
 
     this.__model = qx.data.marshal.Json.createModel(study);
 
-    const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-    hBox.add(this.__createThumbnail(), {
-      flex: 1
-    });
-    hBox.add(this.__createExtraInfo());
-    this._add(hBox);
-    this._add(this.__createTitle());
-    this._add(this.__createDescription());
+    this.__stack = new qx.ui.container.Stack();
+    this.__displayView = this.__createDisplayView(study);
+    this.__editView = this.__createEditView();
+    this.__stack.add(this.__displayView);
+    this.__stack.add(this.__editView);
+    this._add(this.__stack);
+
+    this.__isTemplate = isTemplate;
+
+    // Workaround: qx serializer is not doing well with uuid as object keys.
+    this.__workbench = study.workbench;
+  },
+
+  events: {
+    updatedStudy: "qx.event.type.Data",
+    updatedTemplate: "qx.event.type.Data",
+    closed: "qx.event.type.Event",
+    openedStudy: "qx.event.type.Event"
+  },
+
+  properties: {
+    mode: {
+      check: ["display", "edit"],
+      init: "display",
+      nullable: false,
+      apply: "_applyMode"
+    }
   },
 
   members: {
+    __stack: null,
+    __workbench: null,
     __model: null,
+    __isTemplate: null,
+    __fields: null,
 
-    __createThumbnail: function() {
-      const image = new qx.ui.basic.Image().set({
-        scale: true,
-        allowStretchX: true,
-        allowStretchY: true,
-        maxHeight: 200,
-        alignX: "center"
+    __createDisplayView: function(study) {
+      const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      displayView.add(this.__createButtons());
+      displayView.add(new qxapp.component.metadata.StudyDetails(study), {
+        flex: 1
       });
-
-      this.__model.bind("thumbnail", image, "source");
-      this.__model.bind("thumbnail", image, "visibility", {
-        converter: thumbnail => {
-          if (thumbnail) {
-            return "visible";
-          }
-          return "excluded";
-        }
-      });
-
-      return image;
-    },
-
-    __createExtraInfo: function() {
-      const grid = new qx.ui.layout.Grid(5, 3);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnFlex(0, 1);
-      grid.setColumnFlex(1, 1);
-      const moreInfo = new qx.ui.container.Composite(grid).set({
-        maxWidth: 220,
-        alignY: "middle"
-      });
-
-      const creationDate = new qx.ui.basic.Label();
-      const lastChangeDate = new qx.ui.basic.Label();
-      const owner = new qx.ui.basic.Label();
-
-      const dateOptions = {
-        converter: date => new Date(date).toLocaleString()
-      };
-      this.__model.bind("creationDate", creationDate, "value", dateOptions);
-      this.__model.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      this.__model.bind("prjOwner", owner, "value");
-
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
-        font: "title-12"
-      }), {
-        row: 0,
-        column: 0
-      });
-      moreInfo.add(owner, {
-        row: 0,
-        column: 1
-      });
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Creation date")).set({
-        font: "title-12"
-      }), {
-        row: 1,
-        column: 0
-      });
-      moreInfo.add(creationDate, {
-        row: 1,
-        column: 1
-      });
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Last modified")).set({
-        font: "title-12"
-      }), {
-        row: 2,
-        column: 0
-      });
-      moreInfo.add(lastChangeDate, {
-        row: 2,
-        column: 1
-      });
-
-      return moreInfo;
+      return displayView;
     },
 
     __createButtons: function() {
@@ -149,26 +103,6 @@ qx.Class.define("qxapp.component.metadata.StudyDetails", {
       }
 
       return buttonsLayout;
-    },
-
-    __createTitle: function() {
-      const title = new qx.ui.basic.Label().set({
-        font: "nav-bar-label",
-        allowStretchX: true,
-        rich: true
-      });
-
-      this.__model.bind("name", title, "value");
-
-      return title;
-    },
-
-    __createDescription: function() {
-      const description = new qxapp.ui.markdown.Markdown();
-
-      this.__model.bind("description", description, "markdown");
-
-      return description;
     },
 
     __createEditView: function() {

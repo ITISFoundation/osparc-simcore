@@ -470,7 +470,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createForm: function(studyData, isTemplate) {
       this.__editStudyLayout.removeAll();
-      const studyDetails = new qxapp.component.metadata.StudyDetails(studyData, isTemplate);
+      const studyDetails = new qxapp.component.metadata.StudyDetailsEditor(studyData, isTemplate);
       studyDetails.addListener("closed", () => this.__itemSelected(null), this);
       studyDetails.addListener("updatedStudy", study => this.reloadUserStudies(), this);
       studyDetails.addListener("updatedTemplate", template => this.reloadTemplateStudies(), this);
