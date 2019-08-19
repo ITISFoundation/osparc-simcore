@@ -106,8 +106,8 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("presignedLink", e => {
+        let dataStore = qxapp.store.Data.getInstance();
+        dataStore.addListenerOnce("presignedLink", e => {
           const presignedLinkData = e.getData();
           console.log(presignedLinkData.presignedLink);
           if (presignedLinkData.presignedLink) {
@@ -119,7 +119,7 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
         }, this);
         const download = true;
         const locationId = selection.getLocation();
-        store.getPresignedLink(download, locationId, fileId);
+        dataStore.getPresignedLink(download, locationId, fileId);
       }
     },
 
@@ -133,13 +133,13 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
           qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
           return false;
         }
-        let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("deleteFile", e => {
+        let dataStore = qxapp.store.Data.getInstance();
+        dataStore.addListenerOnce("deleteFile", e => {
           if (e) {
             this.fireDataEvent("fileDeleted", e.getData());
           }
         }, this);
-        return store.deleteFile(locationId, fileId);
+        return dataStore.deleteFile(locationId, fileId);
       }
       return false;
     }
