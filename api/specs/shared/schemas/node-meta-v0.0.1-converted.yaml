@@ -48,7 +48,6 @@ properties:
       - https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
   badges:
     type: array
-    minItems: 0
     items:
       type: object
       required:
