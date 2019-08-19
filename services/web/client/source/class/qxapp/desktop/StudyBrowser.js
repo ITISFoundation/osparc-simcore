@@ -398,7 +398,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const item = new qxapp.desktop.StudyBrowserListItem();
 
       item.setUuid(study.uuid);
-      item.setPrjTitle(study.name);
+      item.setStudyTitle(study.name);
       item.setIcon(study.thumbnail ? study.thumbnail : qxapp.utils.Utils.getThumbnailFromUuid(study.uuid));
       item.setCreator(study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null);
       item.setLastChangeDate(study.lastChangeDate ? new Date(study.lastChangeDate) : null);
