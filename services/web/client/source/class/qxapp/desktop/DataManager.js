@@ -42,7 +42,10 @@ qx.Class.define("qxapp.desktop.DataManager", {
     this._setLayout(prjBrowserLayout);
 
     this.__createDataManagerLayout();
-    this.__initResources();
+
+    this.addListener("appear", () => {
+      this.__initResources(null);
+    }, this);
   },
 
   members: {
@@ -50,8 +53,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function(locationId = null) {
+    __initResources: function(locationId) {
       this.__filesTree.populateTree(null, locationId);
+    },
+
+    __resetCache: function() {
+      this.__filesTree.resetCache();
     },
 
     __createDataManagerLayout: function() {
@@ -64,22 +71,6 @@ qx.Class.define("qxapp.desktop.DataManager", {
         minWidth: 150
       });
       dataManagerMainLayout.add(label);
-
-      const dataManagerControl = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-
-      // button for refetching data
-      const reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__initResources();
-      }, this);
-      dataManagerControl.add(reloadBtn);
-
-      const toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
-      dataManagerControl.add(toDatCore);
-
-      dataManagerMainLayout.add(dataManagerControl);
 
       const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
@@ -105,6 +96,18 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
+      // button for refetching data
+      const reloadBtn = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/16",
+        allowGrowX: false
+      });
+      reloadBtn.addListener("execute", function() {
+        this.__resetCache();
+        this.__initResources(null);
+      }, this);
+      treeLayout.add(reloadBtn);
+
       const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true
@@ -114,11 +117,8 @@ qx.Class.define("qxapp.desktop.DataManager", {
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
-          this.__initResources();
+          this.__initResources(null);
         }
-      }, this);
-      filesTree.addListener("modelChanged", () => {
-        this.__reloadChartData();
       }, this);
       treeLayout.add(filesTree, {
         flex: 1
