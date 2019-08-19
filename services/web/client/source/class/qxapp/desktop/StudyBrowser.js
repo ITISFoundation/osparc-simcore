@@ -395,13 +395,13 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudyItem: function(study, isTemplate) {
-      const item = new qxapp.desktop.StudyBrowserListItem();
-
-      item.setUuid(study.uuid);
-      item.setStudyTitle(study.name);
-      item.setIcon(study.thumbnail ? study.thumbnail : qxapp.utils.Utils.getThumbnailFromUuid(study.uuid));
-      item.setCreator(study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null);
-      item.setLastChangeDate(study.lastChangeDate ? new Date(study.lastChangeDate) : null);
+      const item = new qxapp.desktop.StudyBrowserListItem().set({
+        uuid: study.uuid,
+        studyTitle: study.name,
+        icon: study.thumbnail ? study.thumbnail : qxapp.utils.Utils.getThumbnailFromUuid(study.uuid),
+        creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
+        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
+      });
 
       item.addListener("dbltap", e => {
         const studyData = this.__getStudyData(item.getUuid(), isTemplate);
