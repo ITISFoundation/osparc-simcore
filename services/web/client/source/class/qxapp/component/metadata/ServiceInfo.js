@@ -129,8 +129,8 @@ qx.Class.define("qxapp.component.metadata.ServiceInfo", {
     },
 
     __createBadges: function() {
-      const badges = new qxapp.ui.markdown.Markdown();
       if ("badges" in this.__metadata) {
+        const badges = new qxapp.ui.markdown.Markdown();
         let markdown = "";
         for (let i in this.__metadata.badges) {
           const badge = this.__metadata.badges[i];
