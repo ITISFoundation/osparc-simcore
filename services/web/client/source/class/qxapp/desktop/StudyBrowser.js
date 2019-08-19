@@ -444,7 +444,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return isTemplate ? this.__templateStudies.find(matchesId) : this.__userStudies.find(matchesId);
     },
 
-    __itemSelected: function(studyId, fromTemplate = false) {
+    __itemSelected: function(studyId, isTemplate = false) {
       if (studyId === null) {
         if (this.__userStudyContainer) {
           this.__userStudyContainer.resetSelection();
@@ -463,8 +463,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         }
         return;
       }
-      const studyData = this.__getStudyData(studyId, fromTemplate);
-      this.__createForm(studyData, fromTemplate);
+      const studyData = this.__getStudyData(studyId, isTemplate);
+      this.__createForm(studyData, isTemplate);
       this.__editPane.setVisibility("visible");
     },
 
