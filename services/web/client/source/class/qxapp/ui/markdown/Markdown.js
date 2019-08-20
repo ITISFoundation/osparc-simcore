@@ -62,6 +62,10 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
         this.setValue(marked(value));
+        qx.event.Timer.once(() => {
+          // Hack to readjust layout size after getting the images
+          this.updateLayoutProperties();
+        }, this, 3000);
       }).catch(error => console.error(error));
     }
   }
