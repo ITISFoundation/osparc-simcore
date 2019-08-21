@@ -198,7 +198,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
 
     __populateList: function(reload = false) {
       this.__allServicesList = [];
-      let store = qxapp.data.Store.getInstance();
+      let store = qxapp.store.Store.getInstance();
       let services = store.getServices(reload);
       if (services === null) {
         store.addListener("servicesRegistered", e => {
@@ -286,7 +286,7 @@ qx.Class.define("qxapp.component.workbench.ServiceCatalog", {
       const selected = this.__serviceBrowser.getSelected();
       const serviceKey = selected.getKey();
       let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
-      if (serviceVersion == this.tr(this.self(arguments).LATEST).toString()) {
+      if (serviceVersion == this.self(arguments).LATEST.toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
       return qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);

@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * VirtualTree that uses FilesTreePopulator class to build the content.
+ * VirtualTree that is able to build its content.
  *
  *   Elements in the tree also accept Drag and/or Drop mechanisms which are implemented here.
  * "osparc-filePath" type is used for the Drag&Drop.
@@ -47,6 +47,8 @@ qx.Class.define("qxapp.file.FilesTree", {
       decorator: "no-border"
     });
 
+    this.resetChecks();
+
     this.addListener("tap", this.__selectionChanged, this);
 
     // Listen to "Enter" key
@@ -73,7 +75,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     "selectionChanged": "qx.event.type.Event",
     "itemSelected": "qx.event.type.Event",
     "fileCopied": "qx.event.type.Data",
-    "modelChanged": "qx.event.type.Event"
+    "filesAddedToTree": "qx.event.type.Event"
   },
 
   statics: {
@@ -93,18 +95,51 @@ qx.Class.define("qxapp.file.FilesTree", {
         isFile = true;
       }
       return isFile;
+    },
+
+    addLoadingChild: function(parent) {
+      const loadingModel = new qxapp.file.FileTreeItem().set({
+        label: "Loading...",
+        location: null,
+        path: null,
+        icon: "@FontAwesome5Solid/circle-notch/12"
+      });
+      parent.getChildren().append(loadingModel);
+    },
+
+    removeLoadingChild: function(parent) {
+      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
+        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
+          parent.getChildren().toArray()
+            .splice(i, 1);
+        }
+      }
     }
   },
 
   members: {
+    __locations: null,
+    __datasets: null,
+
+    resetChecks: function() {
+      this.__locations = new Set();
+      this.__datasets = new Set();
+    },
+
+    resetCache: function() {
+      this.resetChecks();
+
+      const filesStore = qxapp.store.Data.getInstance();
+      filesStore.resetCache();
+    },
+
     populateTree: function(nodeId = null, locationId = null) {
-      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
       if (nodeId) {
-        filesTreePopulator.populateNodeFiles(nodeId);
+        this.__populateNodeFiles(nodeId);
       } else if (locationId) {
-        filesTreePopulator.populateMyLocation(locationId);
+        this.__populateMyLocation(locationId);
       } else {
-        filesTreePopulator.populateMyData();
+        this.__populateMyData();
       }
 
       this.getDelegate().configureItem = item => {
@@ -113,6 +148,248 @@ qx.Class.define("qxapp.file.FilesTree", {
         }, this);
         this.__addDragAndDropMechanisms(item);
       };
+    },
+
+    __populateNodeFiles: function(nodeId) {
+      const treeName = "Node files";
+      this.__resetTree(treeName);
+      const rootModel = this.getModel();
+      qxapp.file.FilesTree.addLoadingChild(rootModel);
+
+      const filesStore = qxapp.store.Data.getInstance();
+      filesStore.addListenerOnce("nodeFiles", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__filesToRoot(newChildren);
+      }, this);
+      filesStore.getNodeFiles(nodeId);
+    },
+
+    __populateMyData: function() {
+      this.resetChecks();
+
+      const treeName = "My Data";
+      this.__resetTree(treeName);
+      const rootModel = this.getModel();
+      rootModel.getChildren().removeAll();
+      qxapp.file.FilesTree.addLoadingChild(rootModel);
+
+      const filesStore = qxapp.store.Data.getInstance();
+      filesStore.addListenerOnce("myLocations", e => {
+        const locations = e.getData();
+        if (this.__locations.size === 0) {
+          this.resetChecks();
+
+          this.__locationsToRoot(locations);
+
+          for (let i=0; i<locations.length; i++) {
+            const locationId = locations[i]["id"];
+            this.__populateMyLocation(locationId);
+          }
+        }
+      }, this);
+      filesStore.getLocations();
+    },
+
+    __populateMyLocation: function(locationId = null) {
+      if (locationId !== null) {
+        const locationModel = this.__getLocationModel(locationId);
+        if (locationModel) {
+          locationModel.getChildren().removeAll();
+          qxapp.file.FilesTree.addLoadingChild(locationModel);
+        }
+      }
+
+      const filesStore = qxapp.store.Data.getInstance();
+      filesStore.addListener("myDatasets", ev => {
+        const {
+          location,
+          datasets
+        } = ev.getData();
+        if (location === locationId && !this.__locations.has(locationId)) {
+          this.__datasetsToLocation(location, datasets);
+        }
+      }, this);
+      filesStore.getDatasetsByLocation(locationId);
+    },
+
+    __resetTree: function(treeName) {
+      // FIXME: It is not reseting the model
+      this.resetModel();
+      const rootData = {
+        label: treeName,
+        location: null,
+        path: null,
+        children: []
+      };
+      const root = qx.data.marshal.Json.createModel(rootData, true);
+
+      this.setModel(root);
+      this.setDelegate({
+        createItem: () => {
+          const fileTreeItem = new qxapp.file.FileTreeItem();
+          fileTreeItem.addListener("requestFiles", e => {
+            const {
+              locationId,
+              datasetId
+            } = e.getData();
+
+            if (this.__datasets.has(datasetId)) {
+              return;
+            }
+
+            const filesStore = qxapp.store.Data.getInstance();
+            filesStore.addListener("myDocuments", ev => {
+              const {
+                location,
+                dataset,
+                files
+              } = ev.getData();
+              this.__filesToDataset(location, dataset, files);
+            }, this);
+            filesStore.getFilesByLocationAndDataset(locationId, datasetId);
+          }, this);
+          return fileTreeItem;
+        },
+        bindItem: (c, item, id) => {
+          c.bindDefaultProperties(item, id);
+          c.bindProperty("fileId", "fileId", null, item, id);
+          c.bindProperty("location", "location", null, item, id);
+          c.bindProperty("isDataset", "isDataset", null, item, id);
+          c.bindProperty("loaded", "loaded", null, item, id);
+          c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("lastModified", "lastModified", null, item, id);
+          c.bindProperty("size", "size", null, item, id);
+          c.bindProperty("icon", "icon", null, item, id);
+        }
+      });
+    },
+
+    __getLocationModel: function(locationId) {
+      const rootModel = this.getModel();
+      const locationModels = rootModel.getChildren();
+      for (let i=0; i<locationModels.length; i++) {
+        const locationModel = locationModels.toArray()[i];
+        if (locationModel.getLocation() === locationId || String(locationModel.getLocation()) === locationId) {
+          return locationModel;
+        }
+      }
+      return null;
+    },
+
+    __getDatasetModel: function(locationId, datasetId) {
+      const locationModel = this.__getLocationModel(locationId);
+      const datasetModels = locationModel.getChildren();
+      for (let i=0; i<datasetModels.length; i++) {
+        const datasetModel = datasetModels.toArray()[i];
+        if (datasetModel.getPath() === datasetId || String(datasetModel.getPath()) === datasetId) {
+          return datasetModel;
+        }
+      }
+      return null;
+    },
+
+    __locationsToRoot: function(locations) {
+      const rootModel = this.getModel();
+      rootModel.getChildren().removeAll();
+      for (let i=0; i<locations.length; i++) {
+        const location = locations[i];
+        const locationData = qxapp.data.Converters.createDirEntry(
+          location.name,
+          location.id,
+          ""
+        );
+        const locationModel = qx.data.marshal.Json.createModel(locationData, true);
+        rootModel.getChildren().append(locationModel);
+      }
+    },
+
+    __datasetsToLocation: function(locationId, datasets) {
+      const filesStore = qxapp.store.Data.getInstance();
+
+      const locationModel = this.__getLocationModel(locationId);
+      if (!locationModel) {
+        return;
+      }
+      this.__locations.add(locationId);
+      locationModel.getChildren().removeAll();
+      for (let i=0; i<datasets.length; i++) {
+        const dataset = datasets[i];
+        const datasetData = qxapp.data.Converters.createDirEntry(
+          dataset.display_name,
+          locationId,
+          dataset.dataset_id,
+        );
+        datasetData.isDataset = true;
+        datasetData.loaded = false;
+        const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
+        qxapp.file.FilesTree.addLoadingChild(datasetModel);
+        locationModel.getChildren().append(datasetModel);
+
+        // add cached files
+        const datasetId = dataset.dataset_id;
+        const cachedData = filesStore.getFilesByLocationAndDatasetCached(locationId, datasetId);
+        if (cachedData) {
+          this.__filesToDataset(cachedData.location, cachedData.dataset, cachedData.files);
+        }
+      }
+    },
+
+    __filesToDataset: function(locationId, datasetId, files) {
+      if (this.__datasets.has(datasetId)) {
+        return;
+      }
+
+      const datasetModel = this.__getDatasetModel(locationId, datasetId);
+      if (datasetModel) {
+        datasetModel.getChildren().removeAll();
+        if (files.length>0) {
+          const locationData = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          const datasetData = locationData[0].children;
+          for (let i=0; i<datasetData[0].children.length; i++) {
+            const filesModel = qx.data.marshal.Json.createModel(datasetData[0].children[i], true);
+            datasetModel.getChildren().append(filesModel);
+          }
+        }
+
+        this.__datasets.add(datasetId);
+        this.fireEvent("filesAddedToTree");
+      }
+    },
+
+    __filesToRoot: function(data) {
+      const currentModel = this.getModel();
+      qxapp.file.FilesTree.removeLoadingChild(currentModel);
+
+      const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
+      currentModel.getChildren().append(newModelToAdd);
+      this.setModel(currentModel);
+      this.fireEvent("filesAddedToTree");
+    },
+
+    __fileToTree: function(data) {
+      if ("location" in data) {
+        const locationModel = this.__getLocationModel(data["location"]);
+        if (locationModel && "children" in data && data["children"].length>0) {
+          this.__addRecursively(locationModel.getChildren(), data["children"][0]);
+        }
+      }
+    },
+
+    __addRecursively: function(one, two) {
+      let newDir = true;
+      const oneArray = one.toArray();
+      for (let i=0; i<oneArray.length; i++) {
+        if ("getPath" in oneArray[i] && oneArray[i].getPath() === two.path) {
+          newDir = false;
+          if ("children" in two) {
+            this.__addRecursively(oneArray[i].getChildren(), two.children[0]);
+          }
+        }
+      }
+      if (oneArray.length === 0 || "fileId" in two || newDir) {
+        one.append(qx.data.marshal.Json.createModel(two, true));
+      }
     },
 
     getSelectedFile: function() {
@@ -128,34 +405,8 @@ qx.Class.define("qxapp.file.FilesTree", {
       return null;
     },
 
-    addFileEntry: function(uuid) {
-      const dummyFileEntry = {
-        "bucket_name": "MyFile",
-        "created_at": "2019-07-03T10:01:03.471071Z",
-        "display_file_path": "MyFile/testing/Hallo.csv",
-        "file_id": "N:package:7b5637d5-da2e-49fc-9c54-75b5c6acf166",
-        "file_name": "Hallo.csv",
-        "file_size": 398,
-        "file_uuid": "MyFile/testing/Hallo.csv",
-        "last_modified": "2019-07-03T10:01:04.057912Z",
-        "location": "datcore",
-        "location_id": 1,
-        "node_id": null,
-        "node_name": null,
-        "object_name": "testing/Hallo.csv",
-        "project_id": null,
-        "project_name": null,
-        "raw_file_path": "MyFile/testing/Hallo.csv",
-        "user_id": null,
-        "user_name": null
-      };
-
-      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
-      filesTreePopulator.addFileEntryToTree(dummyFileEntry);
-      const item = this.__findUuidInLeaves(dummyFileEntry["file_uuid"]);
-      if (item) {
-        this.openNodeAndParents(item);
-      }
+    addFileEntry: function(fileMetadata) {
+      console.log("file copied", fileMetadata);
     },
 
     __getLeafList: function(item, leaves) {
@@ -254,11 +505,11 @@ qx.Class.define("qxapp.file.FilesTree", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
-          const store = qxapp.data.Store.getInstance();
+          const dataStore = qxapp.store.Data.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
-          const requestSent = store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
+          const requestSent = dataStore.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
           if (requestSent) {
-            store.addListenerOnce("fileCopied", ev => {
+            dataStore.addListenerOnce("fileCopied", ev => {
               if (ev) {
                 this.fireDataEvent("fileCopied", ev.getData());
               }

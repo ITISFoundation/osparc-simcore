@@ -122,7 +122,9 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
                 }
             }
         },
-        "endpoint_spec": {},
+        "endpoint_spec": {
+            "Mode": "dnsrr"
+        },
         "labels": {
             "uuid": node_uuid,
             "type": "main" if main_service else "dependency"
@@ -151,30 +153,36 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
+        # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
-            # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-            docker_params["endpoint_spec"] = {
-                "Ports": [
-                    {
-                        "TargetPort": int(param["value"]),
-                        "PublishedPort": 0
-                    }
-                ]
-            }
-        elif param["type"] == "EndpointSpec": # REST-API compatible
-            docker_params["endpoint_spec"] = param["value"]
+            docker_params["labels"]["port"] = str(param["value"])
+            if config.DEBUG_MODE:
+                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
+                docker_params["endpoint_spec"]["Ports"] = [
+                        {
+                            "TargetPort": int(param["value"]),
+                            "PublishedPort": 0
+                        }
+                    ]
+        elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
+            if "Ports" in param["value"]:
+                if isinstance(param["value"]["Ports"], list) and "TargetPort" in param["value"]["Ports"][0]:
+                    docker_params["labels"]["port"] = str(param["value"]["Ports"][0]["TargetPort"])
+            if config.DEBUG_MODE:
+                docker_params["endpoint_spec"] = param["value"]
+
+        # placement constraints
         elif param["name"] == "constraints": # python-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints": # REST-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
 
-    # the service may be part of the swarm network
-    if "Ports" in docker_params["endpoint_spec"]:
-        try:
-            swarm_network_id = (await _get_swarm_network(client))["Id"]
-            docker_params["networks"].append(swarm_network_id)
-        except exceptions.DirectorException:
-            log.exception("Could not find swarm network")
+    # attach the service to the swarm network dedicated to services
+    try:
+        swarm_network_id = (await _get_swarm_network(client))["Id"]
+        docker_params["networks"].append(swarm_network_id)
+    except exceptions.DirectorException:
+        log.exception("Could not find swarm network")
 
     log.debug("Converted labels to docker runtime parameters: %s", docker_params)
     return docker_params
@@ -191,8 +199,8 @@ async def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
 
 async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
     network_name = "_default"
-    if config.SWARM_STACK_NAME:
-        network_name = "{}_default".format(config.SWARM_STACK_NAME)
+    if config.SIMCORE_SERVICES_NETWORK_NAME:
+        network_name = "{}".format(config.SIMCORE_SERVICES_NETWORK_NAME)
     # try to find the network name (usually named STACKNAME_default)
     networks = [x for x in (await client.networks.list()) if "swarm" in x["Scope"] and network_name in x["Name"]]
     if not networks or len(networks) > 1:
@@ -200,7 +208,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
             msg="Swarm network name is not configured, found following networks: {}".format(networks))
     return networks[0]
 
-async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
+async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
     log.debug("getting port published by service: %s", service)
 
     published_ports = list()
@@ -212,6 +220,7 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
             for port in ports_info_json:
                 published_ports.append(port['PublishedPort'])
                 target_ports.append(port["TargetPort"])
+
     log.debug("Service %s publishes: %s ports", service["ID"], published_ports)
     published_port = None
     target_port = None
@@ -219,6 +228,10 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, str]:
         published_port = published_ports[0]
     if target_ports:
         target_port = target_ports[0]
+    else:
+        # if empty no port is published but there might still be an internal port defined
+        if "port" in service["Spec"]["Labels"]:
+            target_port = int(service["Spec"]["Labels"]["port"])
     return published_port, target_port
 
 

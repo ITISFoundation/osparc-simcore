@@ -19,7 +19,7 @@ run_qx()
   echo "- client dir: " ${CLIENT_DIR}
   echo "- fonts dir : " ${FONTS_DIR}
 
-  # TODO: add argument to avoid installing contributions
+  # TODO: add argument to avoid installing qooxdoo packages
   ${SCRIPT_DIR}/install-contrib.sh
 
   echo Running \'qx "$@"\' ...
