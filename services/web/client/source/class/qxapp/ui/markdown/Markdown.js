@@ -41,6 +41,7 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       this.setMarkdown(markdown);
     }
 
+    this.addListenerOnce("appear", () => this.__resizeMe(), this);
     this.addListener("resize", e => this.__resizeMe(), this);
   },
 
@@ -72,8 +73,11 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       }).catch(error => console.error(error));
     },
 
-    // Hacky https://stackoverflow.com/questions/14222660/qx-ui-embed-html-scale-to-content
+    // qx.ui.embed.html scale to content
     __resizeMe: function() {
+      if (!this.getContentElement) {
+        return;
+      }
       const domElement = this.getContentElement().getDomElement();
       if (domElement && domElement.children && domElement.children.length) {
         let height = 0;
