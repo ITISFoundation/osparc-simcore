@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**
@@ -13,7 +14,7 @@
  * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML and applies it to its value property.
  */
 qx.Class.define("qxapp.ui.markdown.Markdown", {
-  extend: qx.ui.basic.Label,
+  extend: qx.ui.embed.Html,
 
   /**
    * Markdown constructor. It directly accepts markdown as its first argument.
@@ -21,9 +22,7 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
    */
   construct: function(markdown) {
     this.base(arguments);
-    this.set({
-      rich: true
-    });
+
     this.__loadMarked = new Promise((resolve, reject) => {
       if (typeof marked === "function") {
         resolve(marked);
@@ -41,6 +40,8 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
     if (markdown) {
       this.setMarkdown(markdown);
     }
+
+    this.addListener("resize", e => this.__resizeMe(), this);
   },
 
   properties: {
@@ -61,12 +62,26 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
      */
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
-        this.setValue(marked(value));
+        const html = marked(value);
+        this.setHtml(html);
+        // Instead of a timer we should listen to image onload event
         qx.event.Timer.once(() => {
-          // Hack to readjust layout size after getting the images
-          this.updateLayoutProperties();
-        }, this, 3000);
+          this.__resizeMe();
+        }, this, 2000);
+        this.__resizeMe();
       }).catch(error => console.error(error));
+    },
+
+    // Hacky https://stackoverflow.com/questions/14222660/qx-ui-embed-html-scale-to-content
+    __resizeMe: function() {
+      const domElement = this.getContentElement().getDomElement();
+      if (domElement && domElement.children && domElement.children.length) {
+        let height = 0;
+        for (let i=0; i<domElement.children.length; i++) {
+          height += domElement.children[i].clientHeight;
+        }
+        this.setHeight(height + 18*2);
+      }
     }
   }
 });
