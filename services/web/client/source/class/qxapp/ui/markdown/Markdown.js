@@ -82,9 +82,10 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       if (domElement && domElement.children && domElement.children.length) {
         let height = 0;
         for (let i=0; i<domElement.children.length; i++) {
-          height += domElement.children[i].clientHeight;
+          // add also avg padding
+          height += domElement.children[i].clientHeight + 15;
         }
-        this.setHeight(height + 18*2);
+        this.setHeight(height);
       }
     }
   }
