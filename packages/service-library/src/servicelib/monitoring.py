@@ -30,16 +30,15 @@ def middleware_factory(app_name):
 
             resp = await handler(request)
 
-        except web.HTTPException as ee:
+        except web.HTTPException as exc:
             # Captures raised reponses (success/failures accounted with resp.status)
-            resp = ee
+            resp = exc
             raise
-        except Exception: #pylint: disable=broad-except
+        except Exception as exc: #pylint: disable=broad-except
             # Prevents issue #1025. FIXME: why middleware below is not non-http exception safe?
             log.exception("Unexpected exception. \
                 Error middleware below should only raise web.HTTPExceptions.")
-            resp = web.HTTPInternalServerError()
-            raise
+            resp = web.HTTPInternalServerError(reason=str(exc))
         finally:
             # metrics on the same request
             resp_time = time.time() - request['start_time']
