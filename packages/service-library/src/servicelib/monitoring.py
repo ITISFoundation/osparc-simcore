@@ -9,10 +9,14 @@
     - TODO: see https://github.com/claws/aioprometheus
 """
 
+import logging
+import time
+
 import prometheus_client
 from aiohttp import web
-from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST
-import time
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
+
+log = logging.getLogger(__name__)
 
 
 # https://prometheus.io/docs/concepts/metric_types/#counter
@@ -30,6 +34,12 @@ def middleware_factory(app_name):
         except web.HTTPException as ee:
             # Captures raised reponses (success/failures accounted with resp.status)
             resp = ee
+            raise
+        except Exception: #pylint: disable=broad-except
+            # Prevents issue #1025. FIXME: why middleware below is not non-http exception safe?
+            log.exception("Unexpected exception. \
+                Error middleware below should only raise web.HTTPExceptions.")
+            resp = web.HTTPInternalServerError()
             raise
         finally:
             # metrics on the same request
@@ -53,8 +63,7 @@ async def metrics(_request):
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
 
-
-def setup_monitoring(app, app_name):
+def setup_monitoring(app: web.Application, app_name: str):
 
     # NOTE: prometheus_client registers metrics in globals
     # tests might fail when fixtures get re-created
@@ -77,6 +86,7 @@ def setup_monitoring(app, app_name):
         ['app_name', 'endpoint', 'method']
     )
 
+    # ensures is first layer but cannot guarantee the order setup is applied
     app.middlewares.insert(0, middleware_factory(app_name))
 
     # FIXME: this in the front-end has to be protected!
