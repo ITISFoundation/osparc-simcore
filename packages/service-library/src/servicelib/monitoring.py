@@ -19,11 +19,10 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 log = logging.getLogger(__name__)
 
 
-# https://prometheus.io/docs/concepts/metric_types/#counter
-
 def middleware_factory(app_name):
     @web.middleware
     async def middleware_handler(request, handler):
+        # See https://prometheus.io/docs/concepts/metric_types
         try:
             request['start_time'] = time.time()
             request.app['REQUEST_IN_PROGRESS'].labels(
@@ -54,6 +53,8 @@ def middleware_factory(app_name):
                 app_name, request.method, request.path, resp.status).inc()
 
         return resp
+
+    middleware_handler.__middleware_name__ = __name__
     return middleware_handler
 
 async def metrics(_request):
@@ -63,9 +64,16 @@ async def metrics(_request):
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
 
-def setup_monitoring(app: web.Application, app_name: str):
+async def check_outermost_middleware(app: web.Application):
+    m = app.middlewares[0]
+    ok = m and hasattr(m, "__middleware_name__") and m.__middleware_name__==__name__
+    if not ok:
+        # TODO: name all middleware and list middleware in log
+        log.critical("Monitoring middleware expected in the outermost layer."
+            "TIP: Check setup order")
 
-    # NOTE: prometheus_client registers metrics in globals
+def setup_monitoring(app: web.Application, app_name: str):
+    # NOTE: prometheus_client registers metrics in **globals**. Therefore
     # tests might fail when fixtures get re-created
 
     # Total number of requests processed
@@ -91,3 +99,6 @@ def setup_monitoring(app: web.Application, app_name: str):
 
     # FIXME: this in the front-end has to be protected!
     app.router.add_get("/metrics", metrics)
+
+    # Checks that middleware is in the outermost layer
+    app.on_startup(check_outermost_middleware)
