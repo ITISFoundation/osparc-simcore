@@ -43,15 +43,17 @@ properties:
       - Fast Counter
   thumbnail:
     type: string
-    description: 'url to the thumbanil'
+    description: url to the thumbanil
     example:
-      - https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+      - >-
+        https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
   badges:
     type: array
     items:
       type: object
       required:
         - name
+        - image
         - url
       additionalProperties: false
       properties:
@@ -66,17 +68,23 @@ properties:
           type: string
           description: Url to the shield
           example:
-            - "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master"
-            - "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master"
-            - "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+            - >-
+              https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
+            - >-
+              https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
+            - >-
+              https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
         url:
-          description: Link to status
           type: string
-          format: email
+          description: Link to status
           example:
-            - "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'"
-            - "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'"
-            - "https://itisfoundation.github.io/"
+            - >-
+              https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI:
+              build, test and pushing images'
+            - >-
+              https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master
+              'Test coverage'
+            - 'https://itisfoundation.github.io/'
   description:
     type: string
     description: human readable description of the purpose of the node
