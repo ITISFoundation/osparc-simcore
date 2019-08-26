@@ -41,7 +41,6 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       this.setMarkdown(markdown);
     }
 
-    this.addListenerOnce("appear", () => this.__resizeMe(), this);
     this.addListener("resize", e => this.__resizeMe(), this);
   },
 
@@ -65,28 +64,68 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       this.__loadMarked.then(() => {
         const html = marked(value);
         this.setHtml(html);
-        // Instead of a timer we should listen to image onload event
+        // for some reason the content is not immediately there
         qx.event.Timer.once(() => {
+          this.__parseImages();
           this.__resizeMe();
-        }, this, 2000);
+        }, this, 100);
         this.__resizeMe();
       }).catch(error => console.error(error));
     },
 
-    // qx.ui.embed.html scale to content
-    __resizeMe: function() {
-      if (!this.getContentElement) {
+    __parseImages: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null) {
         return;
       }
-      const domElement = this.getContentElement().getDomElement();
-      if (domElement && domElement.children && domElement.children.length) {
-        let height = 0;
-        for (let i=0; i<domElement.children.length; i++) {
-          // add also avg padding
-          height += domElement.children[i].clientHeight + 15;
-        }
-        this.setHeight(height);
+      const images = qx.bom.Selector.query("img", domElement);
+      for (let i=0; i<images.length; i++) {
+        images[i].onload = () => {
+          console.log(images[i].src, "loaded");
+          this.__resizeMe();
+        };
       }
+    },
+
+    // qx.ui.embed.html scale to content
+    __resizeMe: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null) {
+        return;
+      }
+      if (domElement && domElement.children) {
+        const elemHeight = this.__getChildrenElementHeight(domElement.children);
+        console.log("All together", elemHeight);
+        this.setHeight(elemHeight);
+      }
+    },
+
+    __getChildrenElementHeight: function(children) {
+      let height = 0;
+      if (children.length) {
+        for (let i=0; i<children.length; i++) {
+          height += this.__getElementHeight(children[i]);
+        }
+      }
+      return height;
+    },
+
+    __getElementHeight: function(element) {
+      const size = qx.bom.element.Dimension.getSize(element);
+      console.log(element.innerHTML.substring(0, 10), size.height);
+      // add padding
+      return size.height + 15;
+    },
+
+    __getDomElement: function() {
+      if (!this.getContentElement) {
+        return null;
+      }
+      const domElement = this.getContentElement().getDomElement();
+      if (domElement) {
+        return domElement;
+      }
+      return null;
     }
   }
 });
