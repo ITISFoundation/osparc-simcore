@@ -317,15 +317,15 @@ jobs:
       before_install:
         - sudo bash ops/travis/system-testing/e2e_testing before_install
       install:
-        - unbuffer bash ops/travis/system-testing/e2e_testing install
+        - bash ops/travis/system-testing/e2e_testing install
       before_script:
-        - unbuffer bash ops/travis/system-testing/e2e_testing before_script
+        - bash ops/travis/system-testing/e2e_testing before_script
       script:
-        - unbuffer bash ops/travis/system-testing/e2e_testing script
+        - bash ops/travis/system-testing/e2e_testing script
       after_success:
-        - unbuffer bash ops/travis/system-testing/e2e_testing after_success
+        - bash ops/travis/system-testing/e2e_testing after_success
       after_failure:
-        - unbuffer bash ops/travis/system-testing/e2e_testing after_failure
+        - bash ops/travis/system-testing/e2e_testing after_failure
 
     - stage: deployment
       name: master
