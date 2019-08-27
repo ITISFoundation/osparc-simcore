@@ -33,11 +33,8 @@ before_script() {
 
 script() {
     docker service ls --format "table"
-    sleep 20s
-    docker service ls --format "table"
-    sleep 20s
-    docker service ls --format "table"
-    sleep 20s
+    # TODO: Get rid of this sleep and check the status of the services
+    sleep 60s
     docker service ls --format "table"
     node ops/travis/system-testing/index.js
 }
