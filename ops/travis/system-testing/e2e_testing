@@ -30,7 +30,6 @@ before_script() {
 }
 
 script() {
-    # wait for a minute to let the swarm warm up...
     docker service ls --format "table"
     node ops/travis/system-testing/index.js
 }
