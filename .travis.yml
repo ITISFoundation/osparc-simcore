@@ -303,8 +303,11 @@ jobs:
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
     - stage: system-testing
       name: e2e testing
-      language: node_js
       dist: trusty
+      language: node_js
+      node_js:
+        - "8.11.3"
+      sudo: required
       addons:
         apt:
           packages:
@@ -316,7 +319,6 @@ jobs:
       cache:
         directories:
           - node_modules
-      sudo: required
       before_install:
         - sudo bash ops/travis/system-testing/e2e_testing before_install
       install:
