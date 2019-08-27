@@ -205,6 +205,12 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         this.__model.set(data);
         this.setMode("display");
       }, this);
+      apiCall.addListenerOnce("putError", e => {
+        btn.resetIcon();
+        btn.getChildControl("icon").getContentElement()
+          .removeClass("rotate");
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the study information."), "ERROR");
+      }, this);
       apiCall.put({
         "project_id": this.__model.getUuid()
       }, this.__serializeForm());
