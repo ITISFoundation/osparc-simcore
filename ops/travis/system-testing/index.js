@@ -9,8 +9,6 @@ async function run () {
 
   await page.goto(url);
 
-  throw Error('here my error');
-
   const title = await page.title();
   assert.equal(title, 'oSPARC', 'Page title is not what expected');
 
@@ -20,6 +18,6 @@ async function run () {
 
 run()
   .catch((e) => {
-    console.log('err: ' + e);
+    console.log('puppeteer error: ' + e);
     process.exit(1);
   });
