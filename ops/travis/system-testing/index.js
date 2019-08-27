@@ -11,7 +11,8 @@ async function run () {
   const title = await page.title();
   console.log(title);
 
-  browser.close();
+  await browser.close();
 }
 
-run();
+run()
+  .catch((e) => console.log('err: ' + e));
