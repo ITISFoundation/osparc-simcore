@@ -8,6 +8,8 @@ async function run () {
 
   await page.goto(url);
 
+  throw Error('here my error');
+
   const title = await page.title();
   console.log(title);
 
