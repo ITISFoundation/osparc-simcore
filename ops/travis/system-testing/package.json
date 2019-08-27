@@ -1,0 +1,17 @@
+{
+  "name": "system-testing",
+  "version": "1.0.0",
+  "description": "e2e testing",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "odeimaiz",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^1.19.0"
+  }
+}
