@@ -306,8 +306,9 @@ jobs:
       addons:
         apt:
           packages:
-            # This is required to run new chrome on old trusty
-            - libnss3
+            - libnss3 # This is required to run new chrome on old trusty
+            - expect-dev # for unbuffer: brings color back into travis logs
+            - docker-ce
       notifications:
         email: false
       cache:
@@ -317,15 +318,15 @@ jobs:
       before_install:
         - sudo bash ops/travis/system-testing/e2e_testing before_install
       install:
-        - bash ops/travis/system-testing/e2e_testing install
+        - unbuffer bash ops/travis/system-testing/e2e_testing install
       before_script:
-        - bash ops/travis/system-testing/e2e_testing before_script
+        - unbuffer bash ops/travis/system-testing/e2e_testing before_script
       script:
-        - bash ops/travis/system-testing/e2e_testing script
+        - unbuffer bash ops/travis/system-testing/e2e_testing script
       after_success:
-        - bash ops/travis/system-testing/e2e_testing after_success
+        - unbuffer bash ops/travis/system-testing/e2e_testing after_success
       after_failure:
-        - bash ops/travis/system-testing/e2e_testing after_failure
+        - unbuffer bash ops/travis/system-testing/e2e_testing after_failure
 
     - stage: deployment
       name: master
