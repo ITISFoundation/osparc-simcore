@@ -205,6 +205,13 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         this.__model.set(data);
         this.setMode("display");
       }, this);
+      apiCall.addListenerOnce("putError", e => {
+        btn.resetIcon();
+        btn.getChildControl("icon").getContentElement()
+          .removeClass("rotate");
+        console.error(e);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+      }, this);
       apiCall.put({
         "project_id": this.__model.getUuid()
       }, this.__serializeForm());
@@ -224,6 +231,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
       apiCall.addListenerOnce("postSaveAsTemplateError", e => {
         btn.resetIcon();
         console.error(e);
+        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
       }, this);
       apiCall.postSaveAsTemplate({
         "study_id": this.__model.getUuid()
