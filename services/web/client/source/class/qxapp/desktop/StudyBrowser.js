@@ -131,7 +131,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __getServicesPreload: function() {
-      let store = qxapp.data.Store.getInstance();
+      let store = qxapp.store.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         this.__servicesReady = e.getData();
       }, this);
@@ -548,7 +548,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __stopInteractiveServicesInStudy: function(studies) {
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       studies.forEach(studyData => {
         for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
           const metadata = store.getNodeMetaData(nodedata.key, nodedata.version);

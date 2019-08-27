@@ -27,7 +27,7 @@ ENV REGISTRY_AUTH = '' \
     REGISTRY_URL = '' \
     REGISTRY_VERSION = 'v2' \
     PUBLISHED_HOST_NAME='' \
-    SWARM_STACK_NAME = '' \
+    SIMCORE_SERVICES_NETWORK_NAME = '' \
     EXTRA_HOSTS_SUFFIX = 'undefined'
 
 
