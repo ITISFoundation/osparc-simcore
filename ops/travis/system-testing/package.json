@@ -12,6 +12,7 @@
   "author": "odeimaiz",
   "license": "MIT",
   "dependencies": {
+    "assert": "^2.0.0",
     "puppeteer": "^1.19.0"
   }
 }
