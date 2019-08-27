@@ -20,7 +20,8 @@ before_install() {
 }
 
 install() {
-    npm install ops/travis/system-testing/package.json
+    cd ops/travis/system-testing
+    npm install
     make pull || ((make pull-cache || true) && make build)
 }
 

@@ -12,9 +12,11 @@ addons:
 
 stages:
   - name: build / unit-testing
-    if: tag IS blank
+    # if: tag IS blank
+    if: branch = master
   - name: integration-testing
-    if: tag IS blank
+    # if: tag IS blank
+    if: branch = master
   - name: system-testing
     if: tag IS blank
   - deployment
@@ -23,7 +25,6 @@ jobs:
   include:
     # build images ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       # in pull request we do not have credentials to push, so this is useless
       if: NOT type = pull_request AND tag IS blank
       name: build simcore images
@@ -49,7 +50,6 @@ jobs:
 
     # frontend testing ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: front end testing
       language: node_js
       node_js:
@@ -89,7 +89,6 @@ jobs:
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: webserver
       language: python
       python:
@@ -111,7 +110,6 @@ jobs:
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: director
       language: python
       python:
@@ -155,7 +153,6 @@ jobs:
 
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: service-library
       language: python
       python:
@@ -177,7 +174,6 @@ jobs:
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: storage
       language: python
       python:
@@ -201,7 +197,6 @@ jobs:
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: apihub
       language: python
       python:
@@ -223,7 +218,6 @@ jobs:
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
-      if: false
       name: python linting
       language: python
       python:
@@ -244,7 +238,6 @@ jobs:
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: false
       name: webserver in swarm
       language: python
       python:
@@ -266,7 +259,6 @@ jobs:
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing
-      if: false
       name: simcore-sdk in swarm
       language: python
       python:
@@ -288,7 +280,6 @@ jobs:
 
     # system testing build and up ----------------------------------------------------------------
     - stage: system-testing
-      if: false
       name: build and up
       sudo: required
       language: python
