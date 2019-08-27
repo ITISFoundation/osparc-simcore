@@ -381,7 +381,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }
       this.__itemSelected(this.__selectedItemId);
       if (this.__selectedItemId) {
-        const button = this.__userStudyContainer.getChildren().find(button => button.getUuid() === this.__selectedItemId);
+        const button = this.__userStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
         if (button) {
           button.setValue(true);
         }
@@ -396,7 +396,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }
       this.__itemSelected(this.__selectedItemId, true);
       if (this.__selectedItemId) {
-        const button = this.__templateStudyContainer.getChildren().find(button => button.getUuid() === this.__selectedItemId);
+        const button = this.__templateStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
         if (button) {
           button.setValue(true);
         }
