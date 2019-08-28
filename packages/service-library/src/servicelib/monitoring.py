@@ -100,4 +100,4 @@ def setup_monitoring(app: web.Application, app_name: str):
     app.router.add_get("/metrics", metrics)
 
     # Checks that middleware is in the outermost layer
-    app.on_startup(check_outermost_middleware)
+    app.on_startup.append(check_outermost_middleware)
