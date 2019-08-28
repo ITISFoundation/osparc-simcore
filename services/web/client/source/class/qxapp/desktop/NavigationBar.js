@@ -68,6 +68,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({
       rich: true
     });
+    qxapp.utils.Utils.setIdToWidget(dashboardBtn, "dashboardBtn");
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", () => {
       this.fireEvent("dashboardPressed");
