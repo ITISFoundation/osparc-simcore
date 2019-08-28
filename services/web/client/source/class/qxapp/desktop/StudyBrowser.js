@@ -143,6 +143,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         appearance: "big-button",
         allowGrowX: false
       });
+      qxapp.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
 
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
