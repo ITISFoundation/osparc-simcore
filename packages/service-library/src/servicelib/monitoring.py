@@ -9,17 +9,20 @@
     - TODO: see https://github.com/claws/aioprometheus
 """
 
-import prometheus_client
-from aiohttp import web
-from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST
+import logging
 import time
 
+import prometheus_client
+from aiohttp import web
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 
-# https://prometheus.io/docs/concepts/metric_types/#counter
+log = logging.getLogger(__name__)
+
 
 def middleware_factory(app_name):
     @web.middleware
     async def middleware_handler(request, handler):
+        # See https://prometheus.io/docs/concepts/metric_types
         try:
             request['start_time'] = time.time()
             request.app['REQUEST_IN_PROGRESS'].labels(
@@ -27,10 +30,15 @@ def middleware_factory(app_name):
 
             resp = await handler(request)
 
-        except web.HTTPException as ee:
+        except web.HTTPException as exc:
             # Captures raised reponses (success/failures accounted with resp.status)
-            resp = ee
+            resp = exc
             raise
+        except Exception as exc: #pylint: disable=broad-except
+            # Prevents issue #1025. FIXME: why middleware below is not non-http exception safe?
+            log.exception("Unexpected exception. \
+                Error middleware below should only raise web.HTTPExceptions.")
+            resp = web.HTTPInternalServerError(reason=str(exc))
         finally:
             # metrics on the same request
             resp_time = time.time() - request['start_time']
@@ -44,6 +52,8 @@ def middleware_factory(app_name):
                 app_name, request.method, request.path, resp.status).inc()
 
         return resp
+
+    middleware_handler.__middleware_name__ = __name__
     return middleware_handler
 
 async def metrics(_request):
@@ -53,10 +63,16 @@ async def metrics(_request):
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
 
+async def check_outermost_middleware(app: web.Application):
+    m = app.middlewares[0]
+    ok = m and hasattr(m, "__middleware_name__") and m.__middleware_name__==__name__
+    if not ok:
+        # TODO: name all middleware and list middleware in log
+        log.critical("Monitoring middleware expected in the outermost layer."
+            "TIP: Check setup order")
 
-def setup_monitoring(app, app_name):
-
-    # NOTE: prometheus_client registers metrics in globals
+def setup_monitoring(app: web.Application, app_name: str):
+    # NOTE: prometheus_client registers metrics in **globals**. Therefore
     # tests might fail when fixtures get re-created
 
     # Total number of requests processed
@@ -77,7 +93,11 @@ def setup_monitoring(app, app_name):
         ['app_name', 'endpoint', 'method']
     )
 
+    # ensures is first layer but cannot guarantee the order setup is applied
     app.middlewares.insert(0, middleware_factory(app_name))
 
     # FIXME: this in the front-end has to be protected!
     app.router.add_get("/metrics", metrics)
+
+    # Checks that middleware is in the outermost layer
+    app.on_startup.append(check_outermost_middleware)

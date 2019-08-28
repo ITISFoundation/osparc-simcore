@@ -31,6 +31,9 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
 
   construct: function() {
     this.base(arguments);
+    this.set({
+      width: 210
+    });
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
@@ -62,7 +65,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       check: "String"
     },
 
-    prjTitle: {
+    studyTitle: {
       check: "String",
       apply : "_applyStudyTitle",
       nullable : true
@@ -94,19 +97,23 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon":
-          control = new qx.ui.basic.Image(this.getIcon()).set({
-            anonymous: true
-          });
-          this._addAt(control, 1);
-          break;
-        case "prjTitle":
-          control = new qx.ui.basic.Label(this.getPrjTitle()).set({
+        case "studyTitle":
+          control = new qx.ui.basic.Label(this.getStudyTitle()).set({
             margin: [5, 0],
             font: "title-14",
             anonymous: true
           });
           this._addAt(control, 0);
+          break;
+        case "icon":
+          control = new qx.ui.basic.Image(this.getIcon()).set({
+            anonymous: true,
+            scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
+            maxHeight: 120
+          });
+          this._addAt(control, 1);
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
@@ -139,7 +146,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     },
 
     _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("prjTitle");
+      let label = this.getChildControl("studyTitle");
       label.setValue(value);
     },
 
