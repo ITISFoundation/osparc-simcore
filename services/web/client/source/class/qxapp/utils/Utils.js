@@ -86,59 +86,6 @@ qx.Class.define("qxapp.utils.Utils", {
       return target;
     },
 
-    replaceTemplateUUIDs: function(data) {
-      const tempPrefix = "template-uuid";
-      let myData = JSON.stringify(data);
-      let tempIdIdx = myData.indexOf(tempPrefix);
-      while (tempIdIdx !== -1) {
-        let tempId = myData.substr(tempIdIdx, 36);
-        let tempLocIdIdx = myData.indexOf(tempId);
-        let newUuid = qxapp.utils.Utils.uuidv4();
-        while (tempLocIdIdx !== -1) {
-          myData = myData.replace(tempId, newUuid);
-          tempLocIdIdx = myData.indexOf(tempId);
-        }
-        tempIdIdx = myData.indexOf(tempPrefix);
-      }
-      data = JSON.parse(myData);
-      return data;
-    },
-
-    stringsMatch: function(a, b, caseSensitive = false) {
-      let data = a;
-      let searchString = b;
-      if (caseSensitive === false) {
-        data = data.toUpperCase();
-        searchString = searchString.toUpperCase();
-      }
-      return data.search(searchString) != -1;
-    },
-
-    pretifyObject: function(object, short) {
-      let uuidToName = qxapp.utils.UuidToName.getInstance();
-      let myText = "";
-      const entries = Object.entries(object);
-      for (let i=0; i<entries.length; i++) {
-        const entry = entries[i];
-        myText += String(entry[0]);
-        myText += ": ";
-        // entry[1] might me a path of uuids
-        let entrySplitted = String(entry[1]).split("/");
-        if (short) {
-          myText += entrySplitted[entrySplitted.length-1];
-        } else {
-          for (let j=0; j<entrySplitted.length; j++) {
-            myText += uuidToName.convertToName(entrySplitted[j]);
-            if (j !== entrySplitted.length-1) {
-              myText += "/";
-            }
-          }
-        }
-        myText += "<br/>";
-      }
-      return myText;
-    },
-
     getRandomColor: function() {
       let letters = "0123456789ABCDEF";
       let color = "#";
@@ -152,10 +99,6 @@ qx.Class.define("qxapp.utils.Utils", {
       const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
       const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
       return luminance;
-    },
-
-    getKeyByValue(object, value) {
-      return Object.keys(object).find(key => object[key] === value);
     },
 
     bytesToSize: function(bytes) {
