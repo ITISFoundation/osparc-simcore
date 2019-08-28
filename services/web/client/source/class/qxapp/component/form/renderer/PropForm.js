@@ -348,7 +348,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);
-          return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+          return qxapp.store.Store.getInstance().arePortsCompatible(port1, port2);
         }
       }
       return false;

@@ -46,24 +46,40 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       node: node
     });
 
-    let nodeDataManagerLayout = new qx.ui.layout.VBox(10);
+    const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeDataManagerLayout);
 
-    let treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    const treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
     this._add(treesLayout, {
       flex: 1
     });
 
-    let nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
+    const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    const nodeReloadBtn = this._createChildControlImpl("reloadButton");
+    nodeReloadBtn.addListener("execute", function() {
+      this.__reloadNodeTree();
+    }, this);
+    nodeTreeLayout.add(nodeReloadBtn);
+    const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
     nodeFilesTree.setDragMechnism(true);
     nodeFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
     }, this);
-    treesLayout.add(nodeFilesTree, {
+    nodeTreeLayout.add(nodeFilesTree, {
+      flex: 1
+    });
+    treesLayout.add(nodeTreeLayout, {
       flex: 1
     });
 
-    let userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
+    const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    const userReloadBtn = this._createChildControlImpl("reloadButton");
+    userReloadBtn.addListener("execute", function() {
+      this.__userFilesTree.resetCache();
+      this.__reloadUserTree();
+    }, this);
+    userTreeLayout.add(userReloadBtn);
+    const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
     userFilesTree.setDropMechnism(true);
     userFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("user");
@@ -71,14 +87,17 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     userFilesTree.addListener("fileCopied", e => {
       const fileMetadata = e.getData();
       if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata["fileUuid"]);
+        this.__userFilesTree.addFileEntry(fileMetadata);
       }
     }, this);
-    treesLayout.add(userFilesTree, {
+    userTreeLayout.add(userFilesTree, {
+      flex: 1
+    });
+    treesLayout.add(userTreeLayout, {
       flex: 1
     });
 
-    let selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
+    const selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     selectedFileLayout.addListener("fileDeleted", e => {
       const fileMetadata = e.getData();
       this.__reloadNodeTree();
@@ -103,6 +122,13 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "reloadButton":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Reload"),
+            icon: "@FontAwesome5Solid/sync-alt/16",
+            allowGrowX: false
+          });
+          break;
         case "nodeTree":
         case "userTree":
           control = new qxapp.file.FilesTree();
