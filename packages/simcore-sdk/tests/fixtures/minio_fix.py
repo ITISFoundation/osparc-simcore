@@ -1,16 +1,21 @@
+# pylint: disable=redefined-outer-name
+
 import logging
 import os
 import socket
+import sys
+from pathlib import Path
 from typing import Dict
 
 import docker
 import pytest
 import requests
 import tenacity
-
+import yaml
 from s3wrapper.s3_client import S3Client
 
 log = logging.getLogger(__name__)
+here = Path(sys.argv[0] if __name__=="__main__" else __file__ ).resolve().parent
 
 @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_delay(10))
 def _minio_is_responsive(url:str, code:int=403) ->bool:
@@ -38,18 +43,44 @@ def _get_ip()->str:
     log.info("minio is set up to run on IP %s", IP)
     return IP
 
+
 @pytest.fixture(scope="session")
-def external_minio()->Dict:
+def repo_folder_path():
+    MAX_ITERATIONS = 7
+
+    repo_path, n = here.parent, 0
+    while not any(repo_path.glob(".git")) and n<MAX_ITERATIONS:
+        repo_path = repo_path.parent
+        n+=1
+    assert n<MAX_ITERATIONS, f"Could not find repo_folder_path, got until '{repo_path}'"
+    return repo_path
+
+
+@pytest.fixture(scope="session")
+def minio_image_name(repo_folder_path):
+    """ Ensures it uses same image as defined in services/docker-compose.yml """
+    DEFAULT_IMAGE = "minio/minio:latest"
+
+    with open(repo_folder_path / "services" / "docker-compose.yml") as fh:
+        image_name = yaml.safe_load(fh) \
+                .get('services', {})    \
+                .get('minio', {})       \
+                .get('image', DEFAULT_IMAGE)
+    return image_name
+
+
+@pytest.fixture(scope="session")
+def external_minio(minio_image_name)->Dict:
     client = docker.from_env()
     minio_config = {"host":_get_ip(), "port":9001, "s3access":"s3access", "s3secret":"s3secret"}
-    container = client.containers.run("minio/minio:latest", command="server /data", 
-                                        environment=["".join(["MINIO_ACCESS_KEY=", minio_config["s3access"]]), 
-                                                    "".join(["MINIO_SECRET_KEY=", minio_config["s3secret"]])], 
+    container = client.containers.run(minio_image_name, command="server /data",
+                                        environment=["".join(["MINIO_ACCESS_KEY=", minio_config["s3access"]]),
+                                                    "".join(["MINIO_SECRET_KEY=", minio_config["s3secret"]])],
                                         ports={'9000':minio_config["port"]},
                                         detach=True)
     url = "http://{}:{}".format(minio_config["host"], minio_config["port"])
     _minio_is_responsive(url)
-    
+
     # set up env variables
     os.environ["S3_ENDPOINT"] = "{}:{}".format(minio_config["host"], minio_config["port"])
     os.environ["S3_ACCESS_KEY"] = minio_config["s3access"]
