@@ -77,6 +77,8 @@ qx.Class.define("qxapp.desktop.Dashboard", {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
         });
+        const id = tuple[0].getMessageId().toLowerCase() + "TabBtn";
+        qxapp.utils.Utils.setIdToWidget(tabPage.getChildControl("button"), id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
         const viewLayout = tuple[1].call(this, studyId);
