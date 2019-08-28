@@ -70,7 +70,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       });
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
-      email.getContentElement().setAttribute("id", "loginUsernameFld");
+      qxapp.utils.Utils.setIdToWidget(email, "loginUsernameFld");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
       this.addListener("appear", () => {
         email.focus();
@@ -81,7 +81,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         required: true
       });
       pass.getContentElement().setAttribute("autocomplete", "current-password");
-      pass.getContentElement().setAttribute("id", "loginPasswordFld");
+      qxapp.utils.Utils.setIdToWidget(pass, "loginPasswordFld");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
@@ -95,7 +95,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
           this.__login();
         }
       }, this);
-      loginBtn.getContentElement().setAttribute("id", "loginSubmitBtn");
+      qxapp.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
 
 

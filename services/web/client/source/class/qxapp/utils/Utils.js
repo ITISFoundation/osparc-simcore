@@ -296,6 +296,12 @@ qx.Class.define("qxapp.utils.Utils", {
       return hash;
     },
 
-    isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url)
+    isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
+
+    setIdToWidget: (qWidget, id) => {
+      if (qWidget.getContentElement) {
+        qWidget.getContentElement().setAttribute("id", id);
+      }
+    }
   }
 });
