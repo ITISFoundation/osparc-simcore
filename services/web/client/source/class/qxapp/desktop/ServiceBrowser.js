@@ -57,6 +57,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         this._removeAll();
         iframe.dispose();
         this.__createServicesLayout();
+        this.__attachEventHandlers();
       }
     }, this);
     userTimer.start();
@@ -66,6 +67,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
   members: {
     __servicesReady: null,
+    __textfield: null,
     __allServices: null,
     __servicesList: null,
     __versionsList: null,
@@ -99,6 +101,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
       const serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
+      this.__textfield = serviceFilters.getTextFilter().getChildControl("textfield", true);
       servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
@@ -188,17 +191,32 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVBoxWLabel: function(text) {
-      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
 
-      let label = new qx.ui.basic.Label(text).set({
+      const label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       vBoxLayout.add(label);
 
       return vBoxLayout;
+    },
+
+    __attachEventHandlers: function() {
+      this.__textfield.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
+        this.__textfield.focus();
+      }, this);
+      this.__textfield.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          const selectables = this.__servicesList.getSelectables();
+          if (selectables) {
+            this.__servicesList.setSelection([selectables[0]]);
+          }
+        }
+      }, this);
     },
 
     __serviceSelected: function(serviceKey) {
