@@ -26,6 +26,7 @@ qx.Class.define("qxapp.desktop.ServiceFilters", {
     this._setLayout(new qx.ui.layout.HBox());
 
     const textFilter = this.__textFilter = new qxapp.component.filter.TextFilter("text", groupId);
+    qxapp.utils.Utils.setIdToWidget(textFilter, "serviceFiltersTextFld");
     const tagsFilter = this.__tagsFilter = new qxapp.component.filter.TagsFilter("tags", groupId);
     this._add(textFilter);
     this._add(tagsFilter);
