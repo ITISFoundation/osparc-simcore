@@ -175,6 +175,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
       titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
       const versions = this.__versionsList = new qx.ui.form.SelectBox();
+      qxapp.utils.Utils.setIdToWidget(versions, "serviceBrowserVersionsDrpDwn");
       titleContainer.add(versions);
 
       versions.addListener("changeSelection", e => {

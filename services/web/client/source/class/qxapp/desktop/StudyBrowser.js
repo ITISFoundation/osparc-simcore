@@ -190,6 +190,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         visibility: "excluded"
       });
+      qxapp.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", e => {
         const thisButton = e.getTarget();
         const isTemplate = this.__templateDeleteButton === thisButton;
@@ -553,7 +554,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createConfirmWindow: function(isMulti) {
-      let win = new qx.ui.window.Window("Confirmation").set({
+      const win = new qx.ui.window.Window("Confirmation").set({
         layout: new qx.ui.layout.VBox(10),
         width: 300,
         height: 60,
@@ -569,9 +570,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const text = new qx.ui.basic.Label(this.tr(message));
       win.add(text);
 
-      let buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
-      var btnNo = new qx.ui.form.Button("No");
-      var btnYes = new qx.ui.form.Button("Yes");
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
+      const btnNo = new qx.ui.form.Button("No");
+      qxapp.utils.Utils.setIdToWidget(btnNo, "cancelDeleteStudyBtn");
+      const btnYes = new qx.ui.form.Button("Yes");
+      qxapp.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
       btnNo.addListener("execute", e => {
         win["value"] = 0;
         win.close(0);

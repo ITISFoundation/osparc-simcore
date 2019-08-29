@@ -94,6 +94,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
       const openButton = new qx.ui.form.Button("Open").set({
         appearance: "md-button"
       });
+      qxapp.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
       openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
       buttonsLayout.add(openButton);
 
@@ -101,6 +102,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         appearance: "md-button",
         visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
+      qxapp.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
       modeButton.addListener("execute", () => this.setMode("edit"), this);
       buttonsLayout.add(modeButton);
 
@@ -112,6 +114,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
           appearance: "md-button"
         });
+        qxapp.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {
           const btn = e.getTarget();
           btn.setIcon("@FontAwesome5Solid/circle-notch/12");
@@ -155,6 +158,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
       const modeButton = new qx.ui.form.Button("Save", "@FontAwesome5Solid/save/16").set({
         appearance: "md-button"
       });
+      qxapp.utils.Utils.setIdToWidget(modeButton, "studyDetailsEditorSaveBtn");
       modeButton.addListener("execute", e => {
         const btn = e.getTarget();
         btn.setIcon("@FontAwesome5Solid/circle-notch/16");
@@ -166,6 +170,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         appearance: "md-button",
         enabled: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate)
       });
+      qxapp.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
       cancelButton.addListener("execute", () => this.setMode("display"), this);
 
       const {
@@ -177,14 +182,17 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         font: "text-14",
         marginTop: 20
       }));
+      qxapp.utils.Utils.setIdToWidget(name, "studyDetailsEditorTitleFld");
       editView.add(name);
       editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
         font: "text-14"
       }));
+      qxapp.utils.Utils.setIdToWidget(description, "studyDetailsEditorDescFld");
       editView.add(description);
       editView.add(new qx.ui.basic.Label(this.tr("Thumbnail")).set({
         font: "text-14"
       }));
+      qxapp.utils.Utils.setIdToWidget(thumbnail, "studyDetailsEditorThumbFld");
       editView.add(thumbnail);
       editView.add(buttons);
 
