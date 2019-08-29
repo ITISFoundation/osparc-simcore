@@ -12,12 +12,12 @@ async function run () {
   const title = await page.title();
   assert.equal(title, 'oSPARC', 'Page title is not what expected');
 
-  console.log('puppeteer is happy');
+  console.log('Puppeteer is happy');
   await browser.close();
 }
 
 run()
   .catch((e) => {
-    console.log('puppeteer error: ' + e);
+    console.log('Puppeteer error: ' + e);
     process.exit(1);
   });
