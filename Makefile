@@ -1,4 +1,5 @@
 # author: Sylvain Anderegg
+PREDEFINED_VARIABLES := $(.VARIABLES)
 
 VERSION := $(shell uname -a)
 
@@ -120,32 +121,32 @@ rebuild-client: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
 
 
-.PHONY: up up-devel up-swarm up-swarm-devel remove-intermediate-file down down-swarm
+.PHONY: init-swarm up up-devel up-devel remove-intermediate-file down down-swarm
 # target: up, up-devel: – init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
 
-docker-swarm-check:
-	@if $${DOCKER} node ls > /dev/null 2>&1; then \
-		echo "The node is already part of a swarm, running $${DOCKER} swarm leave -f..."; \
-		echo "$${DOCKER} swarm leave -f"; \
-		$${DOCKER} swarm leave -f; \
-	fi;
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
 
-up: up-swarm
-up-devel: up-swarm-devel
+init-swarm: ## inits swarm
+	$(if $(SWARM_HOSTS), \
+		, \
+		$(DOCKER) swarm init \
+	)
 
-up-swarm: .env docker-swarm-check
-	${DOCKER} swarm init
+up: .env init-swarm
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
-up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
-	${DOCKER} swarm init
+up-devel: .env init-swarm $(CLIENT_WEB_OUTPUT)
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
 
+up-swarm: up
+up-swarm-devel: up-devel
+
+
 .PHONY: up-webclient-devel
 # target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
-up-webclient-devel: up-swarm-devel remove-intermediate-file
+up-webclient-devel: up-devel remove-intermediate-file
 	${DOCKER} service rm services_webclient
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
@@ -224,7 +225,7 @@ create-stack-file:
 ## -------------------------------
 # Tools
 
-.PHONY: info
+.PHONY: info more-info
 # target: info – Displays some parameters of makefile environments
 info:
 	@echo '+ VCS_* '
@@ -239,6 +240,14 @@ info:
 	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
 	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
+more-info:
+	$(info VARIABLES ------------)
+	$(wildcard )
+	$(foreach v,                                                                                  \
+		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
+		$(info $(v)=$($(v))  [is $(origin $(v))])                                                   \
+	)
+	@echo ""
 
 .PHONY: pylint
 # target: pylint – Runs python linter framework's wide
