@@ -67,11 +67,20 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
   members: {
     __servicesReady: null,
-    __textfield: null,
+    __serviceFilters: null,
     __allServices: null,
     __servicesList: null,
     __versionsList: null,
     __searchTextfield: null,
+
+    /**
+     * Function that resets the selected item
+     */
+    resetSelection: function() {
+      this.__serviceFilters.reset();
+      this.__servicesList.setSelection([]);
+      this.__updateServiceDescription(null);
+    },
 
     __initResources: function() {
       this.__getServicesPreload();
@@ -88,20 +97,19 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      const servicesList = this.__createServicesList();
+      const servicesList = this.__createServicesListLayout();
       this._add(servicesList);
 
-      const serviceDescription = this.__createServiceDescription();
+      const serviceDescription = this.__createServiceDescriptionLayout();
       this._add(serviceDescription, {
         flex: 1
       });
     },
 
-    __createServicesList: function() {
+    __createServicesListLayout: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      const serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
-      this.__textfield = serviceFilters.getTextFilter().getChildControl("textfield", true);
+      const serviceFilters = this.__serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
       servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
@@ -160,12 +168,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createServiceDescription: function() {
+    __createServiceDescriptionLayout: function() {
       const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
+
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
       const label = new qx.ui.basic.Label(this.tr("Description")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
@@ -174,17 +182,18 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       titleContainer.add(label);
 
       titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
+
       const versions = this.__versionsList = new qx.ui.form.SelectBox();
       qxapp.utils.Utils.setIdToWidget(versions, "serviceBrowserVersionsDrpDwn");
       titleContainer.add(versions);
-
       versions.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length) {
           this.__versionSelected(e.getData()[0].getLabel());
         }
       }, this);
-
       descriptionView.add(titleContainer);
+
+      const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
       descriptionView.add(descriptionContainer, {
         flex: 1
       });
@@ -206,11 +215,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __attachEventHandlers: function() {
-      this.__textfield.addListener("appear", () => {
+      const textfield = this.__serviceFilters.getTextFilter().getChildControl("textfield", true);
+      textfield.addListener("appear", () => {
         qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
-        this.__textfield.focus();
+        textfield.focus();
       }, this);
-      this.__textfield.addListener("keypress", e => {
+      textfield.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
           const selectables = this.__servicesList.getSelectables();
           if (selectables) {
@@ -252,9 +262,13 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
     __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
-      if (selectedService && serviceDescription) {
-        const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
-        serviceDescription.add(serviceInfo);
+      if (serviceDescription) {
+        if (selectedService) {
+          const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+          serviceDescription.add(serviceInfo);
+        } else {
+          serviceDescription.add(null);
+        }
       }
     },
 
