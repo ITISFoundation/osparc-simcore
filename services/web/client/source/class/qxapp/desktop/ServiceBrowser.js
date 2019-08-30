@@ -74,12 +74,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __searchTextfield: null,
 
     /**
-     * Function that resets the selected item
+     * Function that resets the selected item by reseting the filters and the service selection
      */
     resetSelection: function() {
       this.__serviceFilters.reset();
       this.__servicesList.setSelection([]);
-      this.__updateServiceDescription(null);
     },
 
     __initResources: function() {
@@ -247,6 +246,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
               this.__versionSelected(lastItem.getLabel());
             }
           }
+        } else {
+          this.__updateServiceDescription(null);
         }
       }
     },
