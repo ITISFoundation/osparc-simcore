@@ -100,6 +100,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
 
       const extraView = this.__extraView = new qxapp.component.metadata.StudyInfo(study);
+      extraView.setMaxHeight(300);
       this.__sidePanel.addOrReplaceAt(new qxapp.desktop.PanelView(this.tr("Study information"), extraView), 1);
 
       const loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView(study.getWorkbench());
@@ -361,7 +362,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
     __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(
         false,
-        null,
         this.__retrieveInputs.bind(this, node, portKey)
       );
       this.getLogger().debug("root", "Updating pipeline");
@@ -379,7 +379,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
         return false;
       }
 
-      return this.updateStudyDocument(true, null, this.__doStartPipeline);
+      return this.updateStudyDocument(true, this.__doStartPipeline);
     },
 
     __doStartPipeline: function() {
@@ -487,7 +487,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.updateStudyDocument(false, newObj);
+            this.updateStudyDocument(false);
           }
         }
       }, this);
@@ -501,10 +501,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(run=false, newObj, cbSuccess, cbError) {
-      if (newObj === null || newObj === undefined) {
-        newObj = this.getStudy().serializeStudy();
-      }
+    updateStudyDocument: function(run=false, cbSuccess, cbError) {
+      this.getStudy().setLastChangeDate(new Date());
+      const newObj = this.getStudy().serializeStudy();
       const prjUuid = this.getStudy().getUuid();
 
       let resource = this.__studyResources.project;

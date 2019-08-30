@@ -49,13 +49,19 @@ qx.Class.define("qxapp.file.FilePicker", {
       studyId
     });
 
-    let filePickerLayout = new qx.ui.layout.VBox(10);
+    const filePickerLayout = new qx.ui.layout.VBox();
     this._setLayout(filePickerLayout);
 
-    let filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
+    const reloadButton = this._createChildControlImpl("reloadButton");
+    reloadButton.addListener("execute", function() {
+      this.__filesTree.resetCache();
+      this.__initResources();
+    }, this);
+
+    const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
     filesTree.addListener("selectionChanged", this.__selectionChanged, this);
     filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("modelChanged", this.__modelChanged, this);
+    filesTree.addListener("filesAddedToTree", this.__filesAdded, this);
 
     const toolbar = new qx.ui.toolbar.ToolBar();
     const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
@@ -64,7 +70,7 @@ qx.Class.define("qxapp.file.FilePicker", {
 
     this._add(toolbar);
 
-    let addBtn = this._createChildControlImpl("addButton");
+    const addBtn = this._createChildControlImpl("addButton");
     addBtn.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
       if ("location" in fileMetadata && "path" in fileMetadata) {
@@ -73,7 +79,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       this.__initResources(fileMetadata["location"]);
     }, this);
 
-    let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
+    const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
     selectBtn.setEnabled(false);
     selectBtn.addListener("execute", function() {
       this.__itemSelected();
@@ -105,6 +111,14 @@ qx.Class.define("qxapp.file.FilePicker", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "reloadButton":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Reload"),
+            icon: "@FontAwesome5Solid/sync-alt/16",
+            allowGrowX: false
+          });
+          this._add(control);
+          break;
         case "filesTree":
           control = new qxapp.file.FilesTree();
           this._add(control, {
@@ -163,7 +177,7 @@ qx.Class.define("qxapp.file.FilePicker", {
       }
     },
 
-    __modelChanged: function() {
+    __filesAdded: function() {
       this.__checkSelectedFileIsListed();
     },
 

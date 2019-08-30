@@ -76,7 +76,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __getServicesPreload: function() {
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         // Do not validate if are not taking actions
         // this.__nodeCheck(e.getData());
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
-        minWidth: 500,
+        minWidth: 400,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           this.__serviceSelected(selectedKey);
         }
       }, this);
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       const latestServices = [];
       const services = this.__allServices = store.getServices();
       for (const serviceKey in services) {

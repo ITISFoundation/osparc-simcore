@@ -73,30 +73,35 @@ qx.Class.define("qxapp.data.model.Study", {
     description: {
       check: "String",
       nullable: false,
+      event: "changeDescription",
       init: ""
     },
 
     thumbnail: {
       check: "String",
       nullable: true,
+      event: "changeThumbnail",
       init: ""
     },
 
     prjOwner: {
       check: "String",
       nullable: false,
+      event: "changePrjOwner",
       init: ""
     },
 
     creationDate: {
       check: "Date",
       nullable: false,
+      event: "changeCreationDate",
       init: new Date()
     },
 
     lastChangeDate: {
       check: "Date",
       nullable: false,
+      event: "changeLastChangeDate",
       init: new Date()
     },
 
@@ -137,8 +142,6 @@ qx.Class.define("qxapp.data.model.Study", {
     },
 
     serializeStudy: function() {
-      this.setLastChangeDate(new Date());
-
       let jsonObject = {};
       const properties = this.constructor.$$properties;
       for (let key in properties) {

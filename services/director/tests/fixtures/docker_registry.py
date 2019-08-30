@@ -55,4 +55,4 @@ def docker_registry(docker_ip, docker_services):
         raise
 
     yield url
-    print("teardown docker registry")
+    log.info("teared down docker registry")

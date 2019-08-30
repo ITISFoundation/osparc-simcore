@@ -5,7 +5,7 @@ FROM node:10.15.1 as base-stage
 #
 # + /home/scu/              $HOME
 #    + client/              $PWD, WORKDIR, VOLUME( only devel)
-#       + docker/          scripts and config to install contributions and run entrypoint
+#       + docker/          scripts and config to install packages and run entrypoint
 #       + source/
 #       + source-output/    $QOOXDOO_OUTDIR
 #       + packages.json     specifies qx-compiler
@@ -56,12 +56,12 @@ EXPOSE 8080
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
 
-# NOTE: cannot expose contrib and source-output volumes (to keep them inside)
+# NOTE: cannot expose packages and source-output volumes (to keep them inside)
 # within container does not work well because links remain in host
 
 VOLUME /home/scu/client
 
-# 3. installs contribs and qx serve -> source-output/
+# 3. installs packages and qx serve -> source-output/
 # NOTE: expects docker available via volume bound
 ENTRYPOINT ["./docker/entrypoint.sh"]
 
@@ -75,9 +75,9 @@ FROM base-stage as build
 COPY --chown=scu:scu docker docker
 RUN chmod +x docker/*.sh
 
-# 4. Installs qooxdoo contributions in $WORKDIR/contrib/ within container
+# 4. Installs qooxdoo packages in $WORKDIR/qx_packages/ within container
 COPY --chown=scu:scu compile.json compile.json
-COPY --chown=scu:scu contrib.json contrib.json
+COPY --chown=scu:scu qx-lock.json qx-lock.json
 RUN ./docker/install-contrib.sh
 
 # 5. compiles source -> build-output/
