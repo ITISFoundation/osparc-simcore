@@ -117,6 +117,53 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __studiesDeleteButton: null,
     __selectedItemId: null,
 
+    reloadUserStudies: function() {
+      const resources = this.__studyResources.projects;
+
+      resources.addListenerOnce("getSuccess", e => {
+        let userStudyList = e.getRequest().getResponse().data;
+        this.__setStudyList(userStudyList);
+      }, this);
+
+      resources.addListener("getError", e => {
+        console.error(e);
+      }, this);
+
+      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
+        resources.get();
+      } else {
+        this.__setStudyList([]);
+      }
+    },
+
+    reloadTemplateStudies: function() {
+      const resources = this.__studyResources.templates;
+
+      resources.addListenerOnce("getSuccess", e => {
+        const tempStudyList = e.getRequest().getResponse().data;
+        const tempFilteredStudyList = [];
+        for (let i=0; i<tempStudyList.length; i++) {
+          // FIXME: Backend should do the filtering
+          if (tempStudyList[i].uuid.includes("DemoDecember") &&
+          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
+            continue;
+          }
+          tempFilteredStudyList.push(tempStudyList[i]);
+        }
+        this.__setTemplateList(tempFilteredStudyList);
+      }, this);
+
+      resources.addListener("getError", e => {
+        console.error(e);
+      }, this);
+
+      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
+        resources.get();
+      } else {
+        this.__setTemplateList([]);
+      }
+    },
+
     __initResources: function() {
       this.__getUserProfile();
       this.__getServicesPreload();
@@ -320,57 +367,10 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return usrLst;
     },
 
-    reloadUserStudies: function() {
-      const resources = this.__studyResources.projects;
-
-      resources.addListenerOnce("getSuccess", e => {
-        let userStudyList = e.getRequest().getResponse().data;
-        this.__setStudyList(userStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
-      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
-        resources.get();
-      } else {
-        this.__setStudyList([]);
-      }
-    },
-
     __createTemplateStudyList: function() {
       let tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       this.reloadTemplateStudies();
       return tempList;
-    },
-
-    reloadTemplateStudies: function() {
-      const resources = this.__studyResources.templates;
-
-      resources.addListenerOnce("getSuccess", e => {
-        const tempStudyList = e.getRequest().getResponse().data;
-        const tempFilteredStudyList = [];
-        for (let i=0; i<tempStudyList.length; i++) {
-          // FIXME: Backend should do the filtering
-          if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
-            continue;
-          }
-          tempFilteredStudyList.push(tempStudyList[i]);
-        }
-        this.__setTemplateList(tempFilteredStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
-      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        resources.get();
-      } else {
-        this.__setTemplateList([]);
-      }
     },
 
     __setStudyList: function(userStudyList) {
