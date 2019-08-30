@@ -34,9 +34,22 @@ qx.Class.define("qxapp.desktop.ServiceFilters", {
 
   members: {
     __textFilter: null,
+    __tagsFilter: null,
+
+    /**
+     * Resets the text and active tags.
+     */
+    reset: function() {
+      this.__textFilter.reset();
+      this.__tagsFilter.reset();
+    },
 
     getTextFilter: function() {
       return this.__textFilter;
+    },
+
+    getTagsFilter: function() {
+      return this.__tagsFilter;
     }
   }
 });

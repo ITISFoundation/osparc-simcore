@@ -117,6 +117,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __studiesDeleteButton: null,
     __selectedItemId: null,
 
+    /**
+     * Function that resets the selected item
+     */
+    resetSelection: function() {
+      this.__itemSelected(null);
+    },
+
+    /**
+     *  Function that asks the backend for the list of studies belonging to the user
+     * and sets it
+     */
     reloadUserStudies: function() {
       const resources = this.__studyResources.projects;
 
@@ -136,21 +147,15 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       }
     },
 
+    /**
+     *  Function that asks the backend for the list of template studies and sets it
+     */
     reloadTemplateStudies: function() {
       const resources = this.__studyResources.templates;
 
       resources.addListenerOnce("getSuccess", e => {
         const tempStudyList = e.getRequest().getResponse().data;
-        const tempFilteredStudyList = [];
-        for (let i=0; i<tempStudyList.length; i++) {
-          // FIXME: Backend should do the filtering
-          if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
-            continue;
-          }
-          tempFilteredStudyList.push(tempStudyList[i]);
-        }
-        this.__setTemplateList(tempFilteredStudyList);
+        this.__setTemplateList(tempStudyList);
       }, this);
 
       resources.addListener("getError", e => {
