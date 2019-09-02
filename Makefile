@@ -219,7 +219,7 @@ pull: .env
 
 # target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
 create-stack-file:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.prod.yml\
 										config > $(output_file)
 
 ## -------------------------------
