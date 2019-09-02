@@ -128,7 +128,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
         this.fireEvent("toReset");
       }, this);
-      qxapp.utils.Utils.setIdToWidget(registerBtn, "loginForgotPasswordBtn");
+      qxapp.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
