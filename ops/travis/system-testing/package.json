@@ -2,17 +2,17 @@
   "name": "system-testing",
   "version": "1.0.0",
   "description": "e2e testing",
-  "main": "checkTitle.js",
+  "main": "title.test.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "author": "odeimaiz",
   "license": "MIT",
   "dependencies": {
-    "assert": "^2.0.0",
+    "jest": "^24.9.0",
     "puppeteer": "^1.19.0"
   }
 }
