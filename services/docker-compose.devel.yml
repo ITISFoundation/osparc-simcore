@@ -79,7 +79,7 @@ services:
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
-  maintenance:
-    image: services_maintenance:dev
-    volumes:
-      - ./maintenance/work:/home/jovyan/work/devel
+  # maintenance:
+  #   image: services_maintenance:dev
+  #   volumes:
+  #     - ./maintenance/work:/home/jovyan/work/devel
