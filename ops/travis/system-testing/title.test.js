@@ -1,15 +1,21 @@
 const puppeteer = require('puppeteer');
 
+let browser;
+let page;
 const url = "http://localhost:9081/"
 
-test('check site title', async () => {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
+beforeAll(async () => {
+  browser = await puppeteer.launch();
+  page = await browser.newPage();
+});
 
+afterAll(() => {
+  browser.close();
+});
+
+test('check site title', async () => {
   await page.goto(url);
 
   const title = await page.title();
   expect(title).toBe('oSPARC');
-
-  browser.close();
 }, 14000);
