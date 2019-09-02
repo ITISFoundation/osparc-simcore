@@ -287,7 +287,7 @@ services:
       - computational_services_subnet
   #--------------------------------------------------------------------
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2019-05-14T23-57-45Z
     init: true
     environment:
       - MINIO_ACCESS_KEY=12345678

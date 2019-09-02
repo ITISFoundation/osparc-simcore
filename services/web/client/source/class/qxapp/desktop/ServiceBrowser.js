@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
-        minWidth: 500,
+        minWidth: 400,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
