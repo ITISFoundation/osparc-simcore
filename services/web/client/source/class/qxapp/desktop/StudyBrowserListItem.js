@@ -26,8 +26,8 @@
 
 qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
   extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel],
-  include : [qx.ui.form.MModelProperty],
+  implement : [qx.ui.form.IModel, qxapp.component.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, qxapp.component.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
@@ -177,6 +177,41 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
      */
     _onPointerOut : function() {
       this.removeState("hovered");
+    },
+
+    /**
+     * Event handler for filtering events.
+     */
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        const checks = [
+          this.getStudyTitle(),
+          this.getCreator()
+        ];
+        for (let i=0; i<checks.length; i++) {
+          const label = checks[i].trim().toLowerCase();
+          if (label.indexOf(data.text) !== -1) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      return false;
     }
   },
 

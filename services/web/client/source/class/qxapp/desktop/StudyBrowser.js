@@ -72,7 +72,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__editPane.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
-        this.__createCommandEvents();
+        this.__attachEventHandlers();
         if (loadStudyId) {
           let resource = this.__studyResources.project;
           resource.addListenerOnce("getSuccess", e => {
@@ -105,6 +105,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __userReady: null,
     __servicesReady: null,
     __studyResources: null,
+    __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
     __editStudyLayout: null,
@@ -121,6 +122,9 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
      * Function that resets the selected item
      */
     resetSelection: function() {
+      if (this.__studyFilters) {
+        this.__studyFilters.reset();
+      }
       this.__itemSelected(null);
     },
 
@@ -191,6 +195,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
+      const studyFilters = this.__studyFilters = new qxapp.desktop.StudyFilters("studyBrowser");
+
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
         allowGrowX: false,
@@ -202,7 +208,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const studiesDeleteButton = this.__studiesDeleteButton = this.__createDeleteButton();
-      const myStudyLabel = new qx.ui.basic.Label(this.tr("My studies")).set({
+      const myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
         font: navBarLabelFont
       });
       studiesTitleContainer.add(myStudyLabel);
@@ -231,6 +237,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
       this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
+      this.__studiesPane.add(studyFilters);
       this.__studiesPane.add(userStudyLayout);
       this.__studiesPane.add(tempStudyLayout);
       this.__editPane.add(this.__editStudyLayout);
@@ -257,8 +264,13 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return deleteButton;
     },
 
-    __createCommandEvents: function() {
-      let commandEsc = new qx.ui.command.Command("Esc");
+    __attachEventHandlers: function() {
+      const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield", true);
+      textfield.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("studyBrowser");
+        textfield.focus();
+      }, this);
+      const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.__itemSelected(null);
       });
@@ -420,6 +432,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
       });
+
+      item.subscribeToFilterGroup("studyBrowser");
 
       item.addListener("dbltap", e => {
         const studyData = this.__getStudyData(item.getUuid(), isTemplate);
