@@ -13,9 +13,13 @@ afterAll(() => {
   browser.close();
 });
 
-test('check site title', async () => {
-  await page.goto(url);
+describe('oSPARC basics', () => {
 
-  const title = await page.title();
-  expect(title).toBe('oSPARC');
-}, 14000);
+  it('Check site title', async () => {
+    await page.goto(url);
+
+    const title = await page.title();
+    expect(title).toBe('oSPARC');
+  }, 14000);
+
+});
