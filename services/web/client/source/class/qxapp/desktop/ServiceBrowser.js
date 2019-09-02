@@ -77,8 +77,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
      * Function that resets the selected item by reseting the filters and the service selection
      */
     resetSelection: function() {
-      this.__serviceFilters.reset();
-      this.__servicesList.setSelection([]);
+      if (this.__serviceFilters) {
+        this.__serviceFilters.reset();
+      }
+      if (this.__servicesList) {
+        this.__servicesList.setSelection([]);
+      }
     },
 
     __initResources: function() {
