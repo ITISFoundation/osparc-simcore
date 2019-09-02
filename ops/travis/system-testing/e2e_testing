@@ -23,7 +23,6 @@ install() {
     cp ops/travis/system-testing/package.json .
     cp ops/travis/system-testing/package-lock.json .
     npm install
-    cp ops/travis/system-testing/jest.config.json .
     make pull || ((make pull-cache || true) && make build)
 }
 
