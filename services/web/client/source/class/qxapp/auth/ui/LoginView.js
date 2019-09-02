@@ -100,7 +100,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
 
 
       //  create account | forgot password? links
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
         const interval = 1000;
@@ -123,14 +123,17 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         }, this);
         configTimer.start();
       }, this);
+      qxapp.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
       const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
         this.fireEvent("toReset");
       }, this);
+      qxapp.utils.Utils.setIdToWidget(registerBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
-          center: true
+          center: true,
+          allowGrowX: true
         }), {
           width: "50%"
         });
