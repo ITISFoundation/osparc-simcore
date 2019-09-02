@@ -101,6 +101,28 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     "startStudy": "qx.event.type.Data"
   },
 
+  statics: {
+    sortStudyList: function(studyList) {
+      let sortByProperty = function(prop) {
+        return function(a, b) {
+          if (prop === "lastChangeDate") {
+            return new Date(b[prop]) - new Date(a[prop]);
+          }
+          if (typeof a[prop] == "number") {
+            return a[prop] - b[prop];
+          }
+          if (a[prop] < b[prop]) {
+            return -1;
+          } else if (a[prop] > b[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      studyList.sort(sortByProperty("lastChangeDate"));
+    }
+  },
+
   members: {
     __userReady: null,
     __servicesReady: null,
@@ -393,6 +415,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __setStudyList: function(userStudyList) {
       this.__userStudies = userStudyList;
       this.__userStudyContainer.removeAll();
+      qxapp.desktop.StudyBrowser.sortStudyList(userStudyList);
       for (let i=0; i<userStudyList.length; i++) {
         this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
       }
@@ -408,6 +431,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __setTemplateList: function(tempStudyList) {
       this.__templateStudies = tempStudyList;
       this.__templateStudyContainer.removeAll();
+      qxapp.desktop.StudyBrowser.sortStudyList(tempStudyList);
       for (let i=0; i<tempStudyList.length; i++) {
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
       }
