@@ -7,12 +7,13 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest --config=jest.config.json"
   },
   "author": "odeimaiz",
   "license": "MIT",
   "dependencies": {
     "jest": "^24.9.0",
+    "jest-puppeteer": "^4.3.0",
     "puppeteer": "^1.19.0"
   }
 }
