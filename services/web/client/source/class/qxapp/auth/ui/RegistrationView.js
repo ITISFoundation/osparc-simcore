@@ -93,7 +93,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
 
       const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
-      qxapp.utils.Utils.setIdToWidget(submitBtn, "registrationCancelBtn");
+      qxapp.utils.Utils.setIdToWidget(cancelBtn, "registrationCancelBtn");
       grp.add(cancelBtn, {
         flex:1
       });
