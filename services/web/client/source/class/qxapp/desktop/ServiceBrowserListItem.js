@@ -168,6 +168,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
+    /**
+     * Event handler for filtering events.
+     */
     _filter: function() {
       this.exclude();
     },
