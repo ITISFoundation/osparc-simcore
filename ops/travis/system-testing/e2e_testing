@@ -37,10 +37,11 @@ script() {
     # TODO: Get rid of this sleep and check the status of the services
     sleep 60s
     docker service ls --format "table"
-    node ops/travis/system-testing/index.js
+    node ops/travis/system-testing/checkTitle.js
 }
 
 after_success() {
+    # ToDo: call coveralls
     make down
 }
 
