@@ -20,14 +20,19 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
   members: {
     createFiltersBar: function() {
-      const toolbar = new qx.ui.toolbar.ToolBar();
+      const toolbar = new qx.ui.toolbar.ToolBar().set({
+        minHeight: 35
+      });
       const filtersPart = new qx.ui.toolbar.Part();
       toolbar.add(filtersPart);
   
+      const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const nameFilter = new qxapp.component.filter.TextFilter("name", "activityMonitor");
-      filtersPart.add(nameFilter);
+      filtersContainer.add(nameFilter);
+      filtersPart.add(filtersContainer);
   
       this._add(toolbar);
+      nameFilter.getChildControl("textfield").setPlaceholder("Filter by name");
     },
   
     createActivityTree: function() {
@@ -37,7 +42,10 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         "Status",
         "CPU usage",
         "GPU usage"
-      ]);
+      ]).set({
+        decorator: "no-border",
+        padding: 0
+      });
       this._add(tree, {
         flex: 1
       });

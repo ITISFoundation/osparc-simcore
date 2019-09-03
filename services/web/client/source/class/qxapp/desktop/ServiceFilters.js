@@ -21,6 +21,10 @@
 qx.Class.define("qxapp.desktop.ServiceFilters", {
   extend: qx.ui.core.Widget,
 
+  /**
+   * Constructor takes the desired groupId for the filters group.
+   * @param {String} groupId Group id of the filter
+   */
   construct: function(groupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
@@ -34,6 +38,9 @@ qx.Class.define("qxapp.desktop.ServiceFilters", {
   members: {
     __textFilter: null,
 
+    /**
+     * Returns the text filter widget.
+     */
     getTextFilter: function() {
       return this.__textFilter;
     }
