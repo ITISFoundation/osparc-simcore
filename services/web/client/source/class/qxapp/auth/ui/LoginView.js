@@ -70,7 +70,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       });
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
-      qxapp.utils.Utils.setIdToWidget(email, "loginUsernameFld");
+      qxapp.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
       this.addListener("appear", () => {
         email.focus();
