@@ -54,6 +54,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const actionsPart = new qx.ui.toolbar.Part();
+      toolbar.addSpacer();
       toolbar.add(actionsPart);
   
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
