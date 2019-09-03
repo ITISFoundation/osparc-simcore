@@ -192,20 +192,24 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
+      qxapp.utils.Utils.setIdToWidget(preferences, "userMenuPreferencesBtn");
       menu.add(preferences);
 
       menu.addSeparator();
 
       const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
       helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
+      qxapp.utils.Utils.setIdToWidget(helpBtn, "userMenuHelpBtn");
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
       newIssueBtn.addListener("execute", () => window.open(qxapp.component.widget.NewGHIssue.getNewIssueUrl()));
+      qxapp.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
       menu.add(newIssueBtn);
 
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
+      qxapp.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
       menu.add(aboutBtn);
 
       menu.addSeparator();
@@ -214,6 +218,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       logout.addListener("execute", e => {
         qx.core.Init.getApplication().logout();
       });
+      qxapp.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
       menu.add(logout);
 
       const userBtn = new qx.ui.form.MenuButton(null, null, menu);
@@ -221,6 +226,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         .setStyles({
           "border-radius": "16px"
         });
+      qxapp.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
 
       return userBtn;
     },
