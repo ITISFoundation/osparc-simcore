@@ -13,13 +13,16 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.createFiltersBar();
-    this.createActivityTree();
-    this.createActionsBar();
+    this.__createFiltersBar();
+    this.__createActivityTree();
+    this.__createActionsBar();
+
+    this.__updateTree();
   },
 
   members: {
-    createFiltersBar: function() {
+    __tree: null,
+    __createFiltersBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar().set({
         minHeight: 35
       });
@@ -35,8 +38,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       nameFilter.getChildControl("textfield").setPlaceholder("Filter by name");
     },
   
-    createActivityTree: function() {
-      const tree = new qx.ui.treevirtual.TreeVirtual([
+    __createActivityTree: function() {
+      const tree = this.__tree = new qx.ui.treevirtual.TreeVirtual([
         "Name",
         "Service",
         "Status",
@@ -51,7 +54,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       });
     },
   
-    createActionsBar: function() {
+    __createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const actionsPart = new qx.ui.toolbar.Part();
       toolbar.addSpacer();
@@ -67,6 +70,32 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       actionsPart.add(infoButton);
   
       this._add(toolbar);
+    },
+
+    __updateTree: function() {
+      const call = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
+      call.addListenerOnce("getSuccess", e => {
+        const studies = e.getRequest().getResponse().data;
+        const model = this.__tree.getDataModel();
+        studies.forEach(study => {
+          let parent = null;
+          for (let key in study.workbench) {
+            const node = study.workbench[key];
+            const metadata = qxapp.store.Store.getInstance().getNodeMetaData(node.key, node.version);
+            if (metadata && metadata.type === "computational") {
+              if (parent === null) {
+                parent = model.addBranch(null, study.name, true);
+              }
+              model.addLeaf(parent, node.label);
+            }
+          }
+        });
+        model.setData();
+      });
+      call.addListenerOnce("getError", e => {
+        console.error(e);
+      });
+      call.get();
     }
   }
 });
