@@ -18,7 +18,7 @@ afterAll(() => {
   browser.close();
 });
 
-test('Register and Log In', async () => {
+test('Register, Log In and Log Out', async () => {
   const randUser = Math.random().toString(36).substring(7);
   const userEmail = 'puppeteer_'+randUser+'@itis.testing';
   const pass = Math.random().toString(36).substring(7);
@@ -50,7 +50,10 @@ test('Register and Log In', async () => {
   });
 
   await logIn(page, userEmail, pass);
-}, 30000);
+
+  await logOut(page);
+
+}, 40000);
 
 async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
@@ -68,4 +71,12 @@ async function logIn(page, user, pass) {
   await page.type('#loginUserEmailFld', user);
   await page.type('#loginPasswordFld', pass);
   await page.click('#loginSubmitBtn');
+}
+
+async function logOut(page) {
+  await page.waitForSelector('#userMenuMainBtn');
+  await page.click('#userMenuMainBtn');
+
+  await page.waitForSelector('#userMenuLogoutBtn');
+  await page.click('#userMenuLogoutBtn');
 }
