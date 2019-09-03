@@ -81,8 +81,8 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     },
 
     __createButtons: function() {
+      const isCurrentUserOwner = this.__isCurrentUserOwner();
       const canCreateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.create");
-      const isCurrentUserOwner = this.__model.getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
 
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
@@ -129,7 +129,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     },
 
     __createEditView: function() {
-      const isCurrentUserOwner = this.__model.getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
+      const isCurrentUserOwner = this.__isCurrentUserOwner();
       const canUpdateTemplate = qxapp.data.Permissions.getInstance().canDo("studies.template.update");
       const fieldIsEnabled = isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate);
 
@@ -266,6 +266,13 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
           this.__stack.setSelection([this.__editView]);
           break;
       }
+    },
+
+    __isCurrentUserOwner: function() {
+      if (this.__model) {
+        return this.__model.getPrjOwner() === qxapp.data.Permissions.getInstance().getLogin();
+      }
+      return false;
     }
   }
 });
