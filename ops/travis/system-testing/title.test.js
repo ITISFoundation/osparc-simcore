@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 
 let browser;
-const demo = true;
+const demo = false;
 const url = "http://localhost:9081/"
 
 beforeAll(async () => {
