@@ -402,12 +402,14 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createUserStudyList: function() {
       const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
+      qxapp.utils.Utils.setIdToWidget(usrLst, "userStudiesList");
       this.reloadUserStudies();
       return usrLst;
     },
 
     __createTemplateStudyList: function() {
-      let tempList = this.__templateStudyContainer = this.__createStudyListLayout();
+      const tempList = this.__templateStudyContainer = this.__createStudyListLayout();
+      qxapp.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
       this.reloadTemplateStudies();
       return tempList;
     },

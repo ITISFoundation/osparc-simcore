@@ -103,6 +103,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             font: "title-14",
             anonymous: true
           });
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_title");
           this._addAt(control, 0);
           break;
         case "icon":
@@ -121,6 +122,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             allowGrowY: false,
             anonymous: true
           });
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
           this._addAt(control, 2);
           break;
         case "lastChangeDate":
@@ -129,6 +131,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
             allowGrowY: false,
             anonymous: true
           });
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
           this._addAt(control, 3);
           break;
       }
