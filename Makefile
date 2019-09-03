@@ -237,6 +237,7 @@ setup-check: .env .vscode/settings.json ## checks whether setup is in sync with 
 
 .PHONY: info
 info: ## displays selected parameters of makefile environments
+	@echo $(shell make --version | head -1)
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
@@ -258,7 +259,16 @@ info-more: ## displays all parameters of makefile environments
 		$(info $(v)=$($(v))     [in $(origin $(v))])                                                \
 	)
 	@echo "----"
-	@echo $(shell make --version | head -1)
+ifneq ($(SWARM_HOSTS), )
+	@echo ""
+	$(DOCKER) stack ls
+	@echo ""
+	-$(DOCKER) stack ps $(SWARM_STACK_NAME)
+	@echo ""
+	-$(DOCKER) stack services $(SWARM_STACK_NAME)
+	@echo ""
+	$(DOCKER) network ls
+endif
 
 
 .PHONY: clean
