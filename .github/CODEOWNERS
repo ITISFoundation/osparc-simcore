@@ -2,6 +2,7 @@
 # Order is important. The last matching pattern has the most precedence.
 
 # files and folders recursively
+Makefile                                  @pcrespov
 /.travis.yml                              @sanderegg
 /api/                                     @sanderegg, @pcrespov
 /ops/                                     @sanderegg, @pcrespov
