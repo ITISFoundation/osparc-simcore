@@ -26,4 +26,4 @@ test('Check site title', async () => {
   expect(title).toBe('oSPARC');
 
   page.close();
-}, 14000);
+}, 20000);

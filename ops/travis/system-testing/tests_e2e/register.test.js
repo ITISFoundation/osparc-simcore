@@ -50,7 +50,7 @@ test('Register and Log In', async () => {
   });
 
   await logIn(page, userEmail, pass);
-}, 20000);
+}, 30000);
 
 async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
