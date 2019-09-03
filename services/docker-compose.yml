@@ -332,7 +332,7 @@ volumes:
   log: {}
   postgres_data: {}
   minio: {}
-  maintenance_data: {}
+  # maintenance_data: {}
 
 networks:
   monitored_network:
