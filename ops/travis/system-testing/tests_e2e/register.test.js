@@ -18,17 +18,6 @@ afterAll(() => {
   browser.close();
 });
 
-test('Check site title', async () => {
-  const page = await browser.newPage();
-  await page.goto(url);
-
-  const title = await page.title();
-  expect(title).toBe('oSPARC');
-
-  page.close();
-}, 14000);
-
-
 test('Register and Log In', async () => {
   const randUser = Math.random().toString(36).substring(7);
   const userEmail = 'puppeteer_'+randUser+'@itis.testing';
