@@ -144,7 +144,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
-      - monitored_network
+
   #--------------------------------------------------------------------
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -255,7 +255,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-      - monitored_network
+
 #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
@@ -335,8 +335,6 @@ volumes:
   # maintenance_data: {}
 
 networks:
-  monitored_network:
-    external: true
   interactive_services_subnet:
     driver: overlay
     attachable: true

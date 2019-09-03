@@ -47,7 +47,6 @@ SERVICES_LIST := \
 
 CACHED_SERVICES_LIST := $(join $(SERVICE_LIST), webclient)
 CLIENT_WEB_OUTPUT    :=$(CURDIR)/services/web/client/source-output
-MONITORED_NETWORK    := monitored_network
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
 export VCS_REF:=$(shell git rev-parse --short HEAD)
@@ -139,11 +138,6 @@ down-force: ## forces to stop all services and leave swarms
 .init-swarm:
 	# ensures swarm is initialized
 	$(if $(SWARM_HOSTS),,$(DOCKER) swarm init)
-	# ensures $(MONITORED_NETWORK) network is created in swarm
-	$(if $(filter $(MONITORED_NETWORK), $(shell $(DOCKER) network ls --format="{{.Name}}")) \
-		, $(DOCKER) network ls --filter="name=$(MONITORED_NETWORK)" \
-		, $(DOCKER) network create --attachable --driver=overlay $(MONITORED_NETWORK)\
-	)
 
 
 ## DOCKER REGISTRY  -------------------------------
