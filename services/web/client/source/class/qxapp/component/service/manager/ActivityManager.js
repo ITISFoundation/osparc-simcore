@@ -35,7 +35,24 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       filtersPart.add(filtersContainer);
   
       this._add(toolbar);
-      nameFilter.getChildControl("textfield").setPlaceholder("Filter by name");
+      nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
+
+      // React to filter changes
+      const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
+      qx.event.message.Bus.getInstance().subscribe(msgName, msg => {
+        const model = this.__tree.getDataModel();
+        const filterText = msg.getData().name;
+        const filter = node => {
+          console.log(node);
+          if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
+            return true;
+          } else if (node.label.indexOf(filterText) === -1) {
+            return false;
+          }
+          return true;
+        };
+        model.setFilter(filter);
+      }, this);
     },
   
     __createActivityTree: function() {
@@ -77,6 +94,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       call.addListenerOnce("getSuccess", e => {
         const studies = e.getRequest().getResponse().data;
         const model = this.__tree.getDataModel();
+        model.clearData();
         studies.forEach(study => {
           let parent = null;
           for (let key in study.workbench) {
