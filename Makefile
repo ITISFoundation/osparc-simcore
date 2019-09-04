@@ -4,6 +4,7 @@
 #
 # Recommended
 #   GNU make version 4.2
+#       choco install make (Run as Administrator)
 #
 # by sanderegg, pcrespov
 #
@@ -18,19 +19,12 @@ IS_OSX  := $(filter Darwin,$(shell uname))
 else
 IS_WSL  := $(filter Microsoft,$(shell uname))
 endif
-IS_WIN  := $(if $(or IS_LINUX,IS_OSX,IS_WSL),,$(OS))
+IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
-$(info Detected OS : $(IS_LINUX) $(IS_OSX) $(IS_WSL) $(IS_WIN))
-
+$(info Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
 
 # Makefile's shell
-SHELL = $(if $(IS_WIN),cmd.exe,/bin/bash)
-
-export MKDIR  = $(if $(IS_WIN),md,mkdir -p)
-export RM     = $(if $(IS_WIN),del /Q,rm)
-export MKTEMP = $(if $(IS_WIN),\
-	set "tmpdir=%temp%\mktemp~%RANDOM%" && md %tmpdir% && echo %tmpdir%,\
-	mktemp)
+SHELL = $(if $(IS_WIN),powershell.exe -NoProfile,/bin/bash)
 
 export DOCKER_COMPOSE=$(if $(IS_WIN),docker-compose.exe,docker-compose)
 export DOCKER        =$(if $(IS_WIN),docker.exe,docker)
@@ -66,7 +60,7 @@ $(foreach v, \
 
 ## DOCKER BUILD -------------------------------
 
-TEMPCOMPOSE := $(shell $(MKTEMP))
+TEMPCOMPOSE := $(shell $(mktemp))
 SWARM_HOSTS = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
@@ -92,7 +86,7 @@ build-devel: .env .build-webclient ## Builds images of core services for develop
 
 $(CLIENT_WEB_OUTPUT):
 	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
-	$(MKDIR) $(CLIENT_WEB_OUTPUT)
+	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
 .PHONY: build-client rebuild-client
@@ -132,7 +126,7 @@ down-force: ## forces to stop all services and leave swarms
 
 .PHONY: .remove-intermediate-file
 .remove-intermediate-file:
-	-$(RM) $(TEMPCOMPOSE).tmp-compose.yml
+	-rm $(TEMPCOMPOSE).tmp-compose.yml
 
 .PHONY: .init-swarm
 .init-swarm:
@@ -184,9 +178,9 @@ pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
 
 
 ## PYTHON -------------------------------
-.PHONY: pylint
+.PHONY: pylint foo
 
-#TODO: does not work in windows
+# TODO: NOT windows friendly
 PY_FILES = $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*contrib*" \
@@ -195,16 +189,18 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))
 
+PY_PIP = $(if $(IS_WIN),cd $(CURDIR)/.venv/Scripts && pip.exe,./venv/bin/pip3)
+
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
+	# TODO: NOT windows friendly
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
 .venv: ## creates a python virtual environment with dev tools (pip, pylint, ...)
-	python3 -m venv .venv
-	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8 virtualenv pip-tools
-	@echo "To activate the venv, execute 'source .venv/bin/activate'"
-
+	$(if $(IS_WIN),python.exe,python3) -m venv .venv
+	$(PY_PIP) install --upgrade pip wheel setuptools
+	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
+	@echo "To activate the venv, execute 'source .venv/bin/activate' or './venv/Scripts/activate.bat' in windows"
 
 
 
@@ -243,11 +239,8 @@ info: ## displays selected parameters of makefile environments
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
 	@echo '+ BUILD_DATE           : ${BUILD_DATE}'
-	@echo '+ VERSION              : ${VERSION}'
-	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
-	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
 	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
 
