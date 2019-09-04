@@ -197,7 +197,7 @@ pylint: ## Runs python linter framework's wide
 	$(if $(IS_WIN),python.exe,python3) -m venv .venv
 	$(PY_PIP) install --upgrade pip wheel setuptools
 	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
-	@echo "To activate the venv, execute 'source .venv/bin/activate' or './venv/Scripts/activate.bat' in windows"
+	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
 
 
 
@@ -205,7 +205,8 @@ pylint: ## Runs python linter framework's wide
 ## MISC -------------------------------
 
 .PHONY: new-service
-new-service: ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/
+new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
+	$(PY_PIP) install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 #TODO: does not work in windows
