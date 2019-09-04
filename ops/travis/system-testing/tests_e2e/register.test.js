@@ -66,6 +66,7 @@ async function register(page, user, pass) {
   await page.type('#registrationEmailFld', user);
   await page.type('#registrationPass1Fld', pass);
   await page.type('#registrationPass2Fld', pass);
+  await page.waitForSelector('#registrationSubmitBtn');
   await page.click('#registrationSubmitBtn');
 }
 
