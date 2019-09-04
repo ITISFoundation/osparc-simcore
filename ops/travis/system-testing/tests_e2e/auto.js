@@ -14,7 +14,6 @@ async function logIn(page, user, pass) {
     // user might be already logged in
     const elementExists = page.$("loginUserEmailFld");
     if (elementExists) {
-        console.log("logged in");
         return;
     } else {
         await page.waitForSelector('#loginUserEmailFld');
