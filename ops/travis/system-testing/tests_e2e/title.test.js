@@ -1,17 +1,11 @@
-const puppeteer = require('puppeteer');
+const startBrowser = require('./startBrowser');
 
 let browser;
 const demo = false;
 const url = "http://localhost:9081/"
 
 beforeAll(async () => {
-  const visibleOptions = {
-    headless: false,
-    defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
-    slowMo: 60 // Slows down Puppeteer operations by the specified amount of milliseconds.
-  }
-  const options = demo ? visibleOptions : {};
-  browser = await puppeteer.launch(options);
+  browser = await startBrowser.launch(demo);
 });
 
 afterAll(() => {

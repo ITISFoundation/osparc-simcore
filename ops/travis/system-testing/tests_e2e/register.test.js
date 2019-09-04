@@ -1,24 +1,18 @@
-const puppeteer = require('puppeteer');
-
+const startBrowser = require('./startBrowser');
 const auto = require('./auto');
 
 let browser;
 let page;
-const demo = false;
+const demo = true;
 const url = "http://localhost:9081/"
+
 const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';
 const pass = Math.random().toString(36).substring(7);
 
 beforeAll(async () => {
-  const visibleOptions = {
-    headless: false,
-    defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
-    slowMo: 60 // Slows down Puppeteer operations by the specified amount of milliseconds.
-  }
-  const options = demo ? visibleOptions : {};
-  browser = await puppeteer.launch(options);
-}, 30000);
+  browser = await startBrowser.launch(demo);
+});
 
 afterAll(async () => {
   browser.close();

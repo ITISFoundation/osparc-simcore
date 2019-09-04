@@ -1,23 +1,16 @@
-const puppeteer = require('puppeteer');
-
+const startBrowser = require('./startBrowser');
 const auto = require('./auto');
 
 const demo = true;
-const url = "http://localhost:9081/"
+const browser = await startBrowser.launch(demo);
 
-const visibleOptions = {
-  headless: false,
-  defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
-  slowMo: 60 // Slows down Puppeteer operations by the specified amount of milliseconds.
-}
-const options = demo ? visibleOptions : {};
-const browser = await puppeteer.launch(options);
+const page = await browser.newPage();
+const url = "http://localhost:9081/"
+await page.goto(url);
 
 const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';
 const pass = Math.random().toString(36).substring(7);
-const page = await browser.newPage();
-await page.goto(url);
 
 page.on('response', response => {
   if (response.url().endsWith("register")) {
