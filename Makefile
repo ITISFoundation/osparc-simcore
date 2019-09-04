@@ -39,7 +39,7 @@ SERVICES_LIST := \
 	storage \
 	webserver
 
-CACHED_SERVICES_LIST := $(join $(SERVICE_LIST), webclient)
+CACHED_SERVICES_LIST := $(join $(SERVICES_LIST), webclient)
 CLIENT_WEB_OUTPUT    :=$(CURDIR)/services/web/client/source-output
 
 export VCS_URL:=$(shell git config --get remote.origin.url)
@@ -59,8 +59,8 @@ $(foreach v, \
 
 
 ## DOCKER BUILD -------------------------------
-
-TEMPCOMPOSE := $(shell $(mktemp))
+TEMP_SUFFIX := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
+TEMP_COMPOSE_YML :=	$(shell mktemp --suffix=$(TEMP_SUFFIX))
 SWARM_HOSTS = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
@@ -100,18 +100,19 @@ rebuild-client: .env
 
 
 ## DOCKER SWARM -------------------------------
-
 .PHONY: up up-devel
 up: .env .init-swarm ## init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	@$(DOCKER) stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml $(SWARM_STACK_NAME)
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+
 
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	@$(DOCKER) stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml $(SWARM_STACK_NAME)
+	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml -devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+
 
 .PHONY: up-webclient-devel
-up-webclient-devel: up-devel .remove-intermediate-file ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+up-webclient-devel: up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
 	$(DOCKER) service rm services_webclient
 	$(DOCKER_COMPOSE) -f services/web/client/docker-compose.yml up qx
 
@@ -123,10 +124,6 @@ down: ## stops and removes stack
 down-force: ## forces to stop all services and leave swarms
 	$(DOCKER) swarm leave -f
 
-
-.PHONY: .remove-intermediate-file
-.remove-intermediate-file:
-	-rm $(TEMPCOMPOSE).tmp-compose.yml
 
 .PHONY: .init-swarm
 .init-swarm:
@@ -189,7 +186,7 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))
 
-PY_PIP = $(if $(IS_WIN),cd $(CURDIR)/.venv/Scripts && pip.exe,./venv/bin/pip3)
+PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
 
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
@@ -249,7 +246,7 @@ info-more: ## displays all parameters of makefile environments
 	$(info VARIABLES ------------)
 	$(foreach v,                                                                                  \
 		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
-		$(info $(v)=$($(v))     [in $(origin $(v))])                                                \
+		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
 	@echo "----"
 ifneq ($(SWARM_HOSTS), )
@@ -265,7 +262,8 @@ endif
 
 
 .PHONY: clean
-clean: .remove-intermediate-file ## cleans all unversioned files in project
+clean:   ## cleans all unversioned files in project and temp files create by this makefile
+	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
 	@git clean -dxf -e .vscode/
 
 
