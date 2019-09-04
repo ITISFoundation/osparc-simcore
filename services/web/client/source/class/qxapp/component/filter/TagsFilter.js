@@ -22,30 +22,30 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
   extend: qxapp.component.filter.UIFilter,
 
   /**
-   * Constructor for TagsFilter creates a workbench TagsFilter.
+   * Constructor for TagsFilter creates a TagsFilter.
    *
    * @extends qxapp.component.filter.UIFilter
    */
-  construct: function(filterId, groupId) {
+  construct: function(label, filterId, groupId) {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__dropDown = new qx.ui.toolbar.MenuButton(this.tr("Tags"));
-    this.__dropDown.setMenu(this.__buildMenu());
-    this._add(this.__dropDown);
+    this._dropDown = new qx.ui.toolbar.MenuButton(label);
+    this._add(this._dropDown);
   },
 
   members: {
-    __dropDown: null,
+    _dropDown: null,
     __activeTags: null,
     __tagButtons: null,
+    __menu: null,
 
     /**
      * Implementing IFilter: Function in charge of resetting the filter.
      */
     reset: function() {
       // Remove ticks from menu
-      const menuButtons = this.__dropDown.getMenu().getChildren()
+      const menuButtons = this._dropDown.getMenu().getChildren()
         .filter(child => child instanceof qx.ui.menu.Button);
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
@@ -59,25 +59,6 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
       }
       // Dispatch
       this._filterChange(this.__activeTags);
-    },
-
-    __buildMenu: function() {
-      const menu = new qx.ui.menu.Menu();
-
-      qxapp.utils.Services.getTypes().forEach(serviceType => {
-        const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceType));
-        button.addListener("execute", e => this.__addTag(serviceType, e.getTarget()));
-        menu.add(button);
-      });
-
-      menu.addSeparator();
-
-      qxapp.utils.Services.getCategories().forEach(serviceCategory => {
-        const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(serviceCategory));
-        button.addListener("execute", e => this.__addTag(serviceCategory, e.getTarget()));
-        menu.add(button);
-      });
-      return menu;
     },
 
     __addTag: function(tagName, menuButton) {
@@ -110,6 +91,24 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
       delete this.__tagButtons[tagName];
       // Dispatch
       this._filterChange(this.__activeTags);
+    },
+
+    _addOption: function(tagName) {
+      if (this.__menu === null) {
+        this.__menu = new qx.ui.menu.Menu();
+        this._dropDown.setMenu(this.__menu);
+      }
+      const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(tagName));
+      button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
+      this.__menu.add(button);
+    },
+
+    _addSeparator: function() {
+      if (this.__menu === null) {
+        this.__menu = new qx.ui.menu.Menu();
+        this._dropDown.setMenu(this.__menu);
+      }
+      this.__menu.addSeparator();
     }
   }
 });

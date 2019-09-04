@@ -22,18 +22,21 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
   members: {
     __tree: null,
+    __studyFilter: null,
     __createFiltersBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar().set({
         minHeight: 35
       });
       const filtersPart = new qx.ui.toolbar.Part();
       toolbar.add(filtersPart);
-  
+
       const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const nameFilter = new qxapp.component.filter.TextFilter("name", "activityMonitor");
+      const studyFilter = this.__studyFilter = new qxapp.component.filter.StudyFilter("name", "activityMonitor");
       filtersContainer.add(nameFilter);
+      filtersContainer.add(studyFilter);
       filtersPart.add(filtersContainer);
-  
+
       this._add(toolbar);
       nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
 
@@ -54,7 +57,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         model.setFilter(filter);
       }, this);
     },
-  
+
     __createActivityTree: function() {
       const tree = this.__tree = new qx.ui.treevirtual.TreeVirtual([
         "Name",
@@ -70,22 +73,22 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         flex: 1
       });
     },
-  
+
     __createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const actionsPart = new qx.ui.toolbar.Part();
       toolbar.addSpacer();
       toolbar.add(actionsPart);
-  
+
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
-  
+
       const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
       actionsPart.add(stopButton);
-  
+
       const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info/14");
       actionsPart.add(infoButton);
-  
+
       this._add(toolbar);
     },
 
@@ -109,6 +112,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
           }
         });
         model.setData();
+        this.__studyFilter.buildMenu(studies);
       });
       call.addListenerOnce("getError", e => {
         console.error(e);
