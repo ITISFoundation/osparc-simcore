@@ -31,7 +31,6 @@ test('Register, Log In and Log Out', async () => {
       expect(respStatus).toBe(200);
     }
   });
-
   await register(page, userEmail, pass);
 
   page.on('response', response => {
@@ -48,11 +47,9 @@ test('Register, Log In and Log Out', async () => {
       expect(respStatus).toBe(200);
     }
   });
-
   await logIn(page, userEmail, pass);
 
   await logOut(page);
-
 }, 60000);
 
 async function register(page, user, pass) {
