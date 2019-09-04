@@ -11,12 +11,19 @@ async function register(page, user, pass) {
 }
 
 async function logIn(page, user, pass) {
+    // user might be already logged in
+    const elementExists = page.$("loginUserEmailFld");
+    if (elementExists) {
+        console.log("logged in");
+        return;
+    } else {
         await page.waitForSelector('#loginUserEmailFld');
         await page.type('#loginUserEmailFld', user);
         await page.waitForSelector('#loginPasswordFld');
         await page.type('#loginPasswordFld', pass);
         await page.waitForSelector('#loginSubmitBtn');
         await page.click('#loginSubmitBtn');
+    }
 }
 
 async function logOut(page) {
