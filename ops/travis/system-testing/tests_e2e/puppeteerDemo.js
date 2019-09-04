@@ -1,0 +1,56 @@
+const puppeteer = require('puppeteer');
+
+const auto = require('./auto');
+
+const demo = true;
+const url = "http://localhost:9081/"
+
+const visibleOptions = {
+  headless: false,
+  defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
+  slowMo: 60 // Slows down Puppeteer operations by the specified amount of milliseconds.
+}
+const options = demo ? visibleOptions : {};
+const browser = await puppeteer.launch(options);
+
+const randUser = Math.random().toString(36).substring(7);
+const userEmail = 'puppeteer_'+randUser+'@itis.testing';
+const pass = Math.random().toString(36).substring(7);
+const page = await browser.newPage();
+await page.goto(url);
+
+page.on('response', response => {
+  if (response.url().endsWith("register")) {
+    const respStatus = response.status();
+    expect(respStatus).toBe(200);
+  }
+});
+await auto.register(page, userEmail, pass);
+
+page.on('response', response => {
+  if (response.url().endsWith("services")) {
+    const respStatus = response.status();
+    expect(respStatus).toBe(200);
+  }
+  else if (response.url().endsWith("locations")) {
+    const respStatus = response.status();
+    expect(respStatus).toBe(200);
+  }
+});
+await auto.logIn(page, userEmail, pass);
+
+await auto.dashboardAbout(page);
+await auto.dashboardServiceBrowser(page);
+await auto.dashboardDataBrowser(page);
+await auto.dashboardStudyBrowser(page);
+// await auto.dashboardEditStudyThumbnail(page);
+// await auto.dashboardNewStudy(page);
+// await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
+// await auto.dashboardDeleteFirstStudy(page);
+if (demo) {
+  await page.waitFor(2000);
+}
+
+await auto.logOut(page);
+
+browser.close();

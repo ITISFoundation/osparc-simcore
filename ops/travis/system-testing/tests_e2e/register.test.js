@@ -1,8 +1,14 @@
 const puppeteer = require('puppeteer');
 
+const auto = require('./auto');
+
 let browser;
-const demo = false;
+let page;
+const demo = true;
 const url = "http://localhost:9081/"
+const randUser = Math.random().toString(36).substring(7);
+const userEmail = 'puppeteer_'+randUser+'@itis.testing';
+const pass = Math.random().toString(36).substring(7);
 
 beforeAll(async () => {
   const visibleOptions = {
@@ -12,33 +18,37 @@ beforeAll(async () => {
   }
   const options = demo ? visibleOptions : {};
   browser = await puppeteer.launch(options);
-});
+}, 30000);
 
-afterAll(() => {
+afterAll(async () => {
   browser.close();
 });
 
-test('Register, Log In and Log Out', async () => {
-  const randUser = Math.random().toString(36).substring(7);
-  const userEmail = 'puppeteer_'+randUser+'@itis.testing';
-  const pass = Math.random().toString(36).substring(7);
-  const page = await browser.newPage();
+beforeEach(async () => {
+  page = await browser.newPage();
   await page.goto(url);
+}, 30000);
 
+afterEach(async () => {
+  if (demo) {
+    await page.waitFor(1000);
+  }
+  await page.close();
+});
+
+test('Register', async () => {
   page.on('response', response => {
     if (response.url().endsWith("register")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
     }
   });
-  await register(page, userEmail, pass);
+  await auto.register(page, userEmail, pass);
+}, 30000);
 
+test('Log In and Log Out', async () => {
   page.on('response', response => {
-    if (response.url().endsWith("me")) {
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-    }
-    else if (response.url().endsWith("services")) {
+    if (response.url().endsWith("services")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
     }
@@ -47,36 +57,6 @@ test('Register, Log In and Log Out', async () => {
       expect(respStatus).toBe(200);
     }
   });
-  await logIn(page, userEmail, pass);
-
-  await logOut(page);
-}, 60000);
-
-async function register(page, user, pass) {
-  await page.waitForSelector('#loginCreateAccountBtn');
-  await page.click('#loginCreateAccountBtn');
-
-  await page.waitForSelector('#registrationEmailFld');
-  await page.type('#registrationEmailFld', user);
-  await page.type('#registrationPass1Fld', pass);
-  await page.type('#registrationPass2Fld', pass);
-  await page.waitForSelector('#registrationSubmitBtn');
-  await page.click('#registrationSubmitBtn');
-}
-
-async function logIn(page, user, pass) {
-  await page.waitForSelector('#loginUserEmailFld');
-  await page.type('#loginUserEmailFld', user);
-  await page.waitForSelector('#loginPasswordFld');
-  await page.type('#loginPasswordFld', pass);
-  await page.waitForSelector('#loginSubmitBtn');
-  await page.click('#loginSubmitBtn');
-}
-
-async function logOut(page) {
-  await page.waitForSelector('#userMenuMainBtn');
-  await page.click('#userMenuMainBtn');
-
-  await page.waitForSelector('#userMenuLogoutBtn');
-  await page.click('#userMenuLogoutBtn');
-}
+  await auto.logIn(page, userEmail, pass);
+  await auto.logOut(page);
+}, 30000);
