@@ -32,7 +32,6 @@ test('Register, Log In and Log Out', async () => {
     }
   });
 
-  await page.waitFor(1000);
   await register(page, userEmail, pass);
 
   page.on('response', response => {
@@ -50,10 +49,8 @@ test('Register, Log In and Log Out', async () => {
     }
   });
 
-  await page.waitFor(1000);
   await logIn(page, userEmail, pass);
 
-  await page.waitFor(1000);
   await logOut(page);
 
 }, 60000);
@@ -61,7 +58,6 @@ test('Register, Log In and Log Out', async () => {
 async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
   await page.click('#loginCreateAccountBtn');
-  await page.waitFor(1000);
 
   await page.waitForSelector('#registrationEmailFld');
   await page.type('#registrationEmailFld', user);
