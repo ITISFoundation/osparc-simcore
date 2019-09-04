@@ -3,7 +3,7 @@ const auto = require('./auto');
 
 let browser;
 let page;
-const demo = true;
+const demo = false;
 const url = "http://localhost:9081/"
 
 const randUser = Math.random().toString(36).substring(7);
