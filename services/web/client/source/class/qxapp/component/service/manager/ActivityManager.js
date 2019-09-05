@@ -75,16 +75,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     },
 
     __createActivityTree: function() {
-      const tree = this.__tree = new qx.ui.treevirtual.TreeVirtual([
-        "Node",
-        "Service",
-        "Status",
-        "CPU usage",
-        "GPU usage"
-      ]).set({
-        decorator: "no-border",
-        padding: 0
-      });
+      const tree = this.__tree = new qxapp.component.service.manager.ActivityTree();
       this._add(tree, {
         flex: 1
       });
