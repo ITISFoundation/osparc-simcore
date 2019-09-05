@@ -2,7 +2,6 @@ const startBrowser = require('../e2e_utils/startBrowser');
 const auto = require('../e2e_utils/auto');
 
 let browser;
-let page;
 const demo = false;
 const url = "http://localhost:9081/"
 
@@ -18,36 +17,9 @@ afterAll(async () => {
   await browser.close();
 });
 
-beforeEach(async () => {
-  page = await browser.newPage();
-  page.on('response', async response => {
-    if (response.url().endsWith("register")) {
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-    }
-    else if (response.url().endsWith("services")) {
-      console.log(response.url());
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-      const dataObj = await response.json();
-      console.log("services", dataObj);
-    }
-    else if (response.url().endsWith("locations")) {
-      console.log(response.url());
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-      const dataObj = await response.json();
-      console.log("locations", dataObj);
-    }
-  });
-  await page.goto(url);
-}, 30000);
-
-afterEach(async () => {
-  await page.close();
-});
-
 test('Register', async () => {
+  const page = await browser.newPage();
+  await page.goto(url);
   await auto.register(page, userEmail, pass);
 }, 30000);
 

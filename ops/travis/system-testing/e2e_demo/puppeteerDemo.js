@@ -47,7 +47,7 @@ async function run () {
 
   await auto.logOut(page);
 
-  browser.close();
+  await browser.close();
 }
 
 
