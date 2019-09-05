@@ -233,7 +233,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
-        this.__preferencesWin = new qxapp.desktop.preferences.DialogWindow();
+        this.__preferencesWin = new qxapp.desktop.preferences.Preferences();
       }
 
       let win = this.__preferencesWin;

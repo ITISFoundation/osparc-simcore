@@ -21,7 +21,7 @@
  *
 */
 
-qx.Class.define("qxapp.desktop.preferences.DialogWindow", {
+qx.Class.define("qxapp.desktop.preferences.Preferences", {
   extend: qx.ui.window.Window,
 
   construct: function() {
@@ -37,7 +37,7 @@ qx.Class.define("qxapp.desktop.preferences.DialogWindow", {
     });
     this.setLayout(new qx.ui.layout.VBox(10));
 
-    let tabView = new qx.ui.tabview.TabView().set({
+    const tabView = new qx.ui.tabview.TabView().set({
       barPosition: "left"
     });
     tabView.add(new qxapp.desktop.preferences.pages.ProfilePage());
