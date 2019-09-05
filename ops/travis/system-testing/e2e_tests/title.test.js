@@ -17,7 +17,7 @@ test('Check site title', async () => {
   let page = await browser.newPage();
   await page.goto(url);
 
-  const title = await utils.getPageTitle();
+  const title = await utils.getPageTitle(page);
   expect(title).toBe('oSPARC');
 
   await page.close();
