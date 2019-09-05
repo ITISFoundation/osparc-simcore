@@ -76,7 +76,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
     __createActivityTree: function() {
       const tree = this.__tree = new qx.ui.treevirtual.TreeVirtual([
-        "Name",
+        "Node",
         "Service",
         "Status",
         "CPU usage",
@@ -123,7 +123,11 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
               if (parent === null) {
                 parent = model.addBranch(null, study.name, true);
               }
-              model.addLeaf(parent, node.label);
+              const rowId = model.addLeaf(parent, node.label);
+              if (metadata.key && metadata.key.length) {
+                const splitted = metadata.key.split("/");
+                model.setColumnData(rowId, 1, splitted[splitted.length-1]);
+              }
             }
           }
         });
