@@ -70,7 +70,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
         // Add tick
         menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
-        const tagButton = new qx.ui.toolbar.Button(qxapp.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
+        const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
         this._add(tagButton);
         tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state
@@ -98,7 +98,7 @@ qx.Class.define("qxapp.component.filter.TagsFilter", {
         this.__menu = new qx.ui.menu.Menu();
         this._dropDown.setMenu(this.__menu);
       }
-      const button = new qx.ui.menu.Button(qxapp.utils.Utils.capitalize(tagName));
+      const button = new qx.ui.menu.Button(tagName);
       button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
       this.__menu.add(button);
     },

@@ -318,7 +318,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       if (data.tags && data.tags.length) {
         const category = this.getMetaData().category || "";
         const type = this.getMetaData().type || "";
-        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+        if (!data.tags.includes(qxapp.utils.Utils.capitalize(category.trim())) && !data.tags.includes(qxapp.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }

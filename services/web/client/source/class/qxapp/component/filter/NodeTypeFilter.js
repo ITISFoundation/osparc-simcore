@@ -36,9 +36,9 @@ qx.Class.define("qxapp.component.filter.NodeTypeFilter", {
   members: {
 
     __buildMenu: function() {
-      qxapp.utils.Services.getTypes().forEach(serviceType => this._addOption(serviceType));
+      qxapp.utils.Services.getTypes().forEach(serviceType => this._addOption(qxapp.utils.Utils.capitalize(serviceType)));
       this._addSeparator();
-      qxapp.utils.Services.getCategories().forEach(serviceCategory => this._addOption(serviceCategory));
+      qxapp.utils.Services.getCategories().forEach(serviceCategory => this._addOption(qxapp.utils.Utils.capitalize(serviceCategory)));
     },
   }
 });

@@ -32,7 +32,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
       const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const nameFilter = new qxapp.component.filter.TextFilter("name", "activityMonitor");
-      const studyFilter = this.__studyFilter = new qxapp.component.filter.StudyFilter("name", "activityMonitor");
+      const studyFilter = this.__studyFilter = new qxapp.component.filter.StudyFilter("study", "activityMonitor");
       filtersContainer.add(nameFilter);
       filtersContainer.add(studyFilter);
       filtersPart.add(filtersContainer);
@@ -45,14 +45,30 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       qx.event.message.Bus.getInstance().subscribe(msgName, msg => {
         const model = this.__tree.getDataModel();
         const filterText = msg.getData().name;
+        const filterStudy = msg.getData().study;
         const filter = node => {
-          console.log(node);
-          if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
+          const nameFilter = node => {
+            if (filterText && filterText.length) {
+              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
+                return true;
+              } else if (node.label.indexOf(filterText) === -1) {
+                return false;
+              }
+            }
             return true;
-          } else if (node.label.indexOf(filterText) === -1) {
-            return false;
-          }
-          return true;
+          };
+          const studyFilter = node => {
+            if (filterStudy && filterStudy.length) {
+              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.LEAF) {
+                return true;
+              } else if (filterStudy.includes(node.label)) {
+                return true;
+              }
+              return false;
+            }
+            return true;
+          };
+          return nameFilter(node) && studyFilter(node);
         };
         model.setFilter(filter);
       }, this);
