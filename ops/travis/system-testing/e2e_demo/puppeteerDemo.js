@@ -33,6 +33,7 @@ async function run () {
   await auto.logIn(page, userEmail, pass);
 
   await auto.dashboardAbout(page);
+  await auto.dashboardPreferences(page);
   await auto.dashboardServiceBrowser(page);
   await auto.dashboardDataBrowser(page);
   await auto.dashboardStudyBrowser(page);
