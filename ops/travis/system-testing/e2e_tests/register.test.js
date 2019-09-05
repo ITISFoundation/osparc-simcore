@@ -50,7 +50,7 @@ afterEach(async () => {
   page.close();
 });
 
-test.skip('Register', async () => {
+test('Register', async () => {
   await auto.register(page, userEmail, pass);
 }, 30000);
 
