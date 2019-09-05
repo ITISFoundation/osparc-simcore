@@ -46,8 +46,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         const model = this.__tree.getDataModel();
         const filterText = msg.getData().name;
         const filterStudy = msg.getData().study;
-        const filter = node => {
-          const nameFilter = node => {
+        const filter = targetNode => {
+          const nameFilterFn = node => {
             if (filterText && filterText.length) {
               if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
                 return true;
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
             }
             return true;
           };
-          const studyFilter = node => {
+          const studyFilterFn = node => {
             if (filterStudy && filterStudy.length) {
               if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.LEAF) {
                 return true;
@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
             }
             return true;
           };
-          return nameFilter(node) && studyFilter(node);
+          return nameFilterFn(targetNode) && studyFilterFn(targetNode);
         };
         model.setFilter(filter);
       }, this);

@@ -21,6 +21,6 @@ qx.Class.define("qxapp.component.filter.StudyFilter", {
   members: {
     buildMenu: function(studies) {
       studies.forEach(study => this._addOption(study.name));
-    },
+    }
   }
 });
