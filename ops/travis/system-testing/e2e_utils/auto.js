@@ -1,13 +1,19 @@
 async function register(page, user, pass) {
-  await page.waitForSelector('#loginCreateAccountBtn');
-  await page.click('#loginCreateAccountBtn');
-
-  await page.waitForSelector('#registrationEmailFld');
-  await page.type('#registrationEmailFld', user);
-  await page.type('#registrationPass1Fld', pass);
-  await page.type('#registrationPass2Fld', pass);
-  await page.waitForSelector('#registrationSubmitBtn');
-  await page.click('#registrationSubmitBtn');
+  try {
+    await page.waitForSelector('#loginCreateAccountBtn');
+    await page.click('#loginCreateAccountBtn');
+  
+    await page.waitForSelector('#registrationEmailFld');
+    await page.type('#registrationEmailFld', user);
+    await page.type('#registrationPass1Fld', pass);
+    await page.type('#registrationPass2Fld', pass);
+    await page.waitForSelector('#registrationSubmitBtn');
+    await page.click('#registrationSubmitBtn');
+  }
+  catch (e) {
+    console.log(e);
+    return;
+  }
 }
 
 async function logIn(page, user, pass) {
