@@ -15,7 +15,9 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  browser.close();
+  if (browser) {
+    browser.close();
+  }
 });
 
 beforeEach(async () => {

@@ -9,7 +9,9 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  browser.close();
+  if (browser) {
+    browser.close();
+  }
 });
 
 test.skip('Check site title', async () => {
