@@ -2,6 +2,8 @@ async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
   await page.click('#loginCreateAccountBtn');
 
+  await page.waitFor(1000);
+
   await page.waitForSelector('#registrationEmailFld');
   await page.type('#registrationEmailFld', user);
   await page.type('#registrationPass1Fld', pass);
