@@ -20,6 +20,26 @@ afterAll(async () => {
 
 beforeEach(async () => {
   page = await browser.newPage();
+  page.on('response', async response => {
+    if (response.url().endsWith("register")) {
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+    }
+    else if (response.url().endsWith("services")) {
+      console.log(response.url());
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      console.log("services", dataObj);
+    }
+    else if (response.url().endsWith("locations")) {
+      console.log(response.url());
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      console.log("locations", dataObj);
+    }
+  });
   await page.goto(url);
 }, 30000);
 
@@ -30,27 +50,11 @@ afterEach(async () => {
   page.close();
 });
 
-test('Register', async () => {
-  page.on('response', response => {
-    if (response.url().endsWith("register")) {
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-    }
-  });
+test.skip('Register', async () => {
   await auto.register(page, userEmail, pass);
 }, 30000);
 
-test('Log In and Log Out', async () => {
-  page.on('response', response => {
-    if (response.url().endsWith("services")) {
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-    }
-    else if (response.url().endsWith("locations")) {
-      const respStatus = response.status();
-      expect(respStatus).toBe(200);
-    }
-  });
+test.skip('Log In and Log Out', async () => {
   await auto.logIn(page, userEmail, pass);
   await auto.logOut(page);
 }, 30000);
