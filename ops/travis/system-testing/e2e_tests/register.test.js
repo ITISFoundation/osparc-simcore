@@ -48,7 +48,6 @@ afterEach(async () => {
 });
 
 test('Register', async () => {
-  await page.waitFor(1000);
   await auto.register(page, userEmail, pass);
 }, 30000);
 
