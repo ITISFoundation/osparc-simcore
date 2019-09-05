@@ -306,15 +306,17 @@ jobs:
       dist: trusty
       language: node_js
       node_js:
-        - "9"
+        - "8.11.3"
       sudo: required
       addons:
-        chrome: stable
-        hostname: localhost
+        apt:
+          packages:
+            - libnss3 # This is required to run new chrome on old trusty
+            - expect-dev # for unbuffer: brings color back into travis logs
+            - docker-ce
       notifications:
         email: false
       cache:
-        npm: true
         directories:
           - node_modules
       before_install:
