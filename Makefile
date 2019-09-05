@@ -22,7 +22,8 @@ IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(info + Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
 
 # Makefile's shell
-SHELL = $(if $(IS_WIN),powershell.exe -NoProfile,/bin/bash)
+SHELL := $(if $(IS_WIN),powershell.exe,/bin/bash)
+
 
 export DOCKER_COMPOSE=$(if $(IS_WIN),docker-compose.exe,docker-compose)
 export DOCKER        =$(if $(IS_WIN),docker.exe,docker)
@@ -57,8 +58,8 @@ $(foreach v, \
 
 ## DOCKER BUILD -------------------------------
 TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML :=	$(shell mktemp --suffix=$(TEMP_SUFFIX))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
+TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>$(if IS_WIN,$$null,/dev/null))
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
@@ -140,7 +141,6 @@ push-cache: ## Pushes service images tagged as 'cache' into the registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 .PHONY: tag push pull create-stack-file
-#TODO: does not work in windows
 tag: ## tags service images
 ifndef DOCKER_REGISTRY_NEW
 	$(error DOCKER_REGISTRY_NEW variable is undefined)
@@ -149,9 +149,9 @@ ifndef DOCKER_IMAGE_TAG_NEW
 	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
 endif
 	@echo "Tagging from $(DOCKER_REGISTRY), ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
-	@for i in $(SERVICES_LIST); do \
-		$(DOCKER) tag $(DOCKER_REGISTRY)/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$$i:${DOCKER_IMAGE_TAG_NEW}; \
-	done
+	$(foreach service, $(SERVICES_LIST) \
+		$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW) \
+	)
 
 push: ## Pushes images of $(SERVICES_LIST) into a registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
@@ -163,29 +163,24 @@ pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
 ## PYTHON -------------------------------
 .PHONY: pylint
 
-# TODO: NOT windows friendly
-PY_FILES = $(strip $(shell find services packages -iname '*.py' \
-											-not -path "*egg*" \
-											-not -path "*contrib*" \
-											-not -path "*-sdk/python*" \
-											-not -path "*generated_code*" \
-											-not -path "*datcore.py" \
-											-not -path "*web/server*"))
-
 PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
 
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
-	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
+	/bin/bash -c "pylint --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*egg*" \
+											-not -path "*contrib*" \
+											-not -path "*-sdk/python*" \
+											-not -path "*generated_code*" \
+											-not -path "*datcore.py" \
+											-not -path "*web/server*"))"
 
 .venv: ## creates a python virtual environment with dev tools (pip, pylint, ...)
 	$(if $(IS_WIN),python.exe,python3) -m venv .venv
 	$(PY_PIP) install --upgrade pip wheel setuptools
 	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
-
-
 
 
 ## MISC -------------------------------
@@ -218,7 +213,7 @@ setup-check: .env .vscode/settings.json ## checks whether setup is in sync with 
 
 .PHONY: info
 info: ## displays selected parameters of makefile environments
-	@echo + $(shell make --version $(if $(IS_WIN),,| head -1))
+	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
@@ -226,7 +221,6 @@ info: ## displays selected parameters of makefile environments
 	@echo '+ BUILD_DATE           : ${BUILD_DATE}'
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
-	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
 
 .PHONY: info-more
@@ -250,6 +244,7 @@ endif
 
 
 .PHONY: clean
+# TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
 	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
 	@git clean -dxf -e .vscode/
