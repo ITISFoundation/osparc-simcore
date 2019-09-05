@@ -12,8 +12,9 @@ async function register(page, user, pass) {
 
 async function logIn(page, user, pass) {
   // user might be already logged in
-  const elementExists = page.$("loginUserEmailFld");
-  if (elementExists) {
+  const elementExists = await page.$("#userMenuMainBtn");
+  if (elementExists !== null) {
+    console.log(elementExists, "User already logged in");
     return;
   }
   else {
@@ -27,6 +28,12 @@ async function logIn(page, user, pass) {
 }
 
 async function logOut(page) {
+  // user might be already logged in
+  const elementExists = await page.$("#userMenuMainBtn");
+  if (elementExists === null) {
+    console.log("User is not logged in");
+    return;
+  }
   await page.waitForSelector('#userMenuMainBtn');
   await page.click('#userMenuMainBtn');
 

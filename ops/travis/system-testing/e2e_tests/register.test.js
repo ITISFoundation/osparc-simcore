@@ -3,7 +3,7 @@ const auto = require('./auto');
 
 let browser;
 let page;
-const demo = false;
+const demo = true;
 const url = "http://localhost:9081/"
 
 const randUser = Math.random().toString(36).substring(7);
@@ -27,7 +27,7 @@ afterEach(async () => {
   if (demo) {
     await page.waitFor(1000);
   }
-  await page.close();
+  page.close();
 });
 
 test('Register', async () => {

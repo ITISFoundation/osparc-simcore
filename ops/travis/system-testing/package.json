@@ -4,7 +4,7 @@
   "description": "e2e testing",
   "main": "title.test.js",
   "directories": {
-    "test": "tests_e2e"
+    "test": "e2e_tests"
   },
   "scripts": {
     "test": "jest"

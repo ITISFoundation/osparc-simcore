@@ -3,6 +3,7 @@ const puppeteer = require('puppeteer');
 async function launch(demo) {
   const visibleOptions = {
     headless: false,
+    devTools: true,
     defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
     slowMo: 60 // Slows down Puppeteer operations by the specified amount of milliseconds.
   }
