@@ -1,4 +1,5 @@
 const startBrowser = require('../e2e_utils/startBrowser');
+const utils = require('../e2e_utils/utils');
 
 let browser;
 const demo = false;
@@ -12,11 +13,11 @@ afterAll(async () => {
   await browser.close();
 });
 
-test.skip('Check site title', async () => {
+test('Check site title', async () => {
   let page = await browser.newPage();
   await page.goto(url);
 
-  const title = await page.title();
+  const title = await utils.getPageTitle();
   expect(title).toBe('oSPARC');
 
   await page.close();
