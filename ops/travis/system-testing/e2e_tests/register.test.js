@@ -14,10 +14,8 @@ beforeAll(async () => {
   browser = await startBrowser.launch(demo);
 });
 
-afterAll(() => {
-  if (browser) {
-    browser.close();
-  }
+afterAll(async () => {
+  await browser.close();
 });
 
 beforeEach(async () => {
@@ -45,8 +43,8 @@ beforeEach(async () => {
   await page.goto(url);
 }, 30000);
 
-afterEach(() => {
-  page.close();
+afterEach(async () => {
+  await page.close();
 });
 
 test('Register', async () => {

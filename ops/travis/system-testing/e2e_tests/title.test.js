@@ -8,14 +8,12 @@ beforeAll(async () => {
   browser = await startBrowser.launch(demo);
 });
 
-afterAll(() => {
-  if (browser) {
-    browser.close();
-  }
+afterAll(async () => {
+  await browser.close();
 });
 
 test.skip('Check site title', async () => {
-  const page = await browser.newPage();
+  let page = await browser.newPage();
   await page.goto(url);
 
   const title = await page.title();
