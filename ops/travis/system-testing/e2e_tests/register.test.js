@@ -1,5 +1,5 @@
-const startBrowser = require('./startBrowser');
-const auto = require('./auto');
+const startBrowser = require('../e2e_utils/startBrowser');
+const auto = require('../e2e_utils/auto');
 
 let browser;
 let page;

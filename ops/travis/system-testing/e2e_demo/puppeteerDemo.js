@@ -1,5 +1,5 @@
-const startBrowser = require('../e2e_tests/startBrowser');
-const auto = require('../e2e_tests/auto');
+const startBrowser = require('../e2e_utils/startBrowser');
+const auto = require('../e2e_utils/auto');
 
 const demo = true;
 const url = "http://localhost:9081/"

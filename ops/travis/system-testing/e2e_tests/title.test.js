@@ -1,4 +1,4 @@
-const startBrowser = require('./startBrowser');
+const startBrowser = require('../e2e_utils/startBrowser');
 
 let browser;
 const demo = false;

@@ -2,7 +2,7 @@
   "name": "system-testing",
   "version": "1.0.0",
   "description": "e2e testing",
-  "main": "title.test.js",
+  "main": "./e2e_tests/title.test.js",
   "directories": {
     "test": "e2e_tests"
   },
