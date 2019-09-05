@@ -11,7 +11,7 @@ async function register(page, user, pass) {
     await page.click('#registrationSubmitBtn');
   }
   catch (e) {
-    console.log(e);
+    console.log("register error", e);
     return;
   }
 }
