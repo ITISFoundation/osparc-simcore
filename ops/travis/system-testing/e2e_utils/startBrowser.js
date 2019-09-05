@@ -13,11 +13,15 @@ async function launch(demo) {
   }
   else {
     const woSandbox = {
-      args: ['--disable-dev-shm-usage']
-      // args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ]
     };
     Object.assign(options, woSandbox);
   }
+  console.log("launch chrome with these options\n", options);
   const browser = await puppeteer.launch(options);
   return browser;
 }

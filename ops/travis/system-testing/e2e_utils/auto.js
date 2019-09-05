@@ -1,19 +1,13 @@
 async function register(page, user, pass) {
-  try {
-    await page.waitForSelector('#loginCreateAccountBtn');
-    await page.click('#loginCreateAccountBtn');
-  
-    await page.waitForSelector('#registrationEmailFld');
-    await page.type('#registrationEmailFld', user);
-    await page.type('#registrationPass1Fld', pass);
-    await page.type('#registrationPass2Fld', pass);
-    await page.waitForSelector('#registrationSubmitBtn');
-    await page.click('#registrationSubmitBtn');
-  }
-  catch (e) {
-    console.log("register error", e);
-    return;
-  }
+  await page.waitForSelector('#loginCreateAccountBtn');
+  await page.click('#loginCreateAccountBtn');
+
+  await page.waitForSelector('#registrationEmailFld');
+  await page.type('#registrationEmailFld', user);
+  await page.type('#registrationPass1Fld', pass);
+  await page.type('#registrationPass2Fld', pass);
+  await page.waitForSelector('#registrationSubmitBtn');
+  await page.click('#registrationSubmitBtn');
 }
 
 async function logIn(page, user, pass) {
@@ -92,14 +86,14 @@ async function dashboardServiceBrowser(page) {
   await page.waitForSelector('div > div > div > div > .qx-no-radius-button:nth-child(9)')
   await page.click('div > div > div > div > .qx-no-radius-button:nth-child(9)')
 
-  await page.waitForSelector('div #serviceBrowserVersionsDrpDwn')
-  await page.click('div #serviceBrowserVersionsDrpDwn')
+  await page.waitForSelector('#serviceBrowserVersionsDrpDwn')
+  await page.click('#serviceBrowserVersionsDrpDwn')
 
   await page.waitForSelector('.qx-popup > div > div > div > div:nth-child(1)')
   await page.click('.qx-popup > div > div > div > div:nth-child(1)')
 
-  await page.waitForSelector('div #serviceBrowserVersionsDrpDwn')
-  await page.click('div #serviceBrowserVersionsDrpDwn')
+  await page.waitForSelector('#serviceBrowserVersionsDrpDwn')
+  await page.click('#serviceBrowserVersionsDrpDwn')
 
   await page.waitForSelector('.qx-popup > div > div > div > div:nth-child(2)')
   await page.click('.qx-popup > div > div > div > div:nth-child(2)')
