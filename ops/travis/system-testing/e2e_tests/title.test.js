@@ -19,5 +19,5 @@ test.skip('Check site title', async () => {
   const title = await page.title();
   expect(title).toBe('oSPARC');
 
-  page.close();
+  await page.close();
 }, 20000);
