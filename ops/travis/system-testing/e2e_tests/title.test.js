@@ -12,7 +12,7 @@ afterAll(() => {
   browser.close();
 });
 
-test.skip('Check site title', async () => {
+test('Check site title', async () => {
   const page = await browser.newPage();
   await page.goto(url);
 
