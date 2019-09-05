@@ -1,10 +1,8 @@
 # osparc-simcore general makefile
 #
-# TODO: make fully windows-friendly (e.g. some tools to install or replace e.g. date, ...  )
+# TODO: make fully windows-friendly (e.g. some tools to install or replace e.g. mktemp, ...  )
 #
-# Recommended
-#   GNU make version 4.2
-#       choco install make (Run as Administrator)
+# Recommended: GNU make version 4.2
 #
 # by sanderegg, pcrespov
 #
@@ -21,7 +19,7 @@ IS_WSL  := $(filter Microsoft,$(shell uname))
 endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
-$(info Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
+$(info + Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
 
 # Makefile's shell
 SHELL = $(if $(IS_WIN),powershell.exe -NoProfile,/bin/bash)
@@ -32,6 +30,7 @@ export DOCKER        =$(if $(IS_WIN),docker.exe,docker)
 
 
 # VARIABLES ----------------------------------------------
+# TODO: read from docker-compose file instead
 SERVICES_LIST := \
 	apihub \
 	director \
@@ -39,29 +38,27 @@ SERVICES_LIST := \
 	storage \
 	webserver
 
-CACHED_SERVICES_LIST := $(join $(SERVICES_LIST), webclient)
-CLIENT_WEB_OUTPUT    :=$(CURDIR)/services/web/client/source-output
+CACHED_SERVICES_LIST    := $(SERVICES_LIST) webclient
+CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 
-export VCS_URL:=$(shell git config --get remote.origin.url)
-export VCS_REF:=$(shell git rev-parse --short HEAD)
-export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
-export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export VCS_URL          := $(shell git config --get remote.origin.url)
+export VCS_REF          := $(shell git rev-parse --short HEAD)
+export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
+export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export SWARM_STACK_NAME ?= simcore
-# using ?= will only set if absent
 export DOCKER_IMAGE_TAG ?= latest
-# default to local (no registry)
-export DOCKER_REGISTRY ?= itisfoundation
+export DOCKER_REGISTRY  ?= itisfoundation
 
 $(foreach v, \
-	SWARM_STACK_NAME DOCKER_IMAGE_TAG DOCKER_REGISTRY, \
+	SWARM_STACK_NAME DOCKER_IMAGE_TAG DOCKER_REGISTRY DOCKER_REGISTRY_NEW, \
 	$(info + $(v) set to '$($(v))'))
 
 
 ## DOCKER BUILD -------------------------------
-TEMP_SUFFIX := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
+TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
 TEMP_COMPOSE_YML :=	$(shell mktemp --suffix=$(TEMP_SUFFIX))
-SWARM_HOSTS = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>/dev/null)
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
@@ -80,8 +77,8 @@ build-devel: .env .build-webclient ## Builds images of core services for develop
 
 
 .PHONY: .build-webclient
-# fixes having services_webclient:build present for services_webserver:production when targeting services_webserver:development
 .build-webclient: $(CLIENT_WEB_OUTPUT)
+	# Fixes having services_webclient:build present for services_webserver:production when targeting services_webserver:development
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient
 
 $(CLIENT_WEB_OUTPUT):
@@ -91,12 +88,10 @@ $(CLIENT_WEB_OUTPUT):
 
 .PHONY: build-client rebuild-client
 build-client: .env ## Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webserver
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient webserver
 
 rebuild-client: .env
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache webclient
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache webserver
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache webclient webserver
 
 
 ## DOCKER SWARM -------------------------------
@@ -105,11 +100,9 @@ up: .env .init-swarm ## init swarm and deploys all core and tool services up [-d
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
 	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml -devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-
 
 .PHONY: up-webclient-devel
 up-webclient-devel: up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
@@ -127,30 +120,24 @@ down-force: ## forces to stop all services and leave swarms
 
 .PHONY: .init-swarm
 .init-swarm:
-	# ensures swarm is initialized
+	# Ensures swarm is initialized
 	$(if $(SWARM_HOSTS),,$(DOCKER) swarm init)
 
 
 ## DOCKER REGISTRY  -------------------------------
-
 .PHONY: pull-cache
 pull-cache: .env
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 build-cache: ## Builds service images and tags them as 'cache'
-	# WARNING: first all except webserver and then webserver
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient maintenance
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel $(filter-out webserver $(CACHED_SERVICES_LIST))
 	$(DOCKER) tag $(DOCKER_REGISTRY)/webclient:cache services_webclient:build
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 .PHONY: push-cache
 push-cache: ## Pushes service images tagged as 'cache' into the registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
-
-ifdef DOCKER_REGISTRY_NEW
-$(info DOCKER_REGISTRY_NEW set to ${DOCKER_REGISTRY_NEW})
-endif # DOCKER_REGISTRY_NEW
 
 .PHONY: tag push pull create-stack-file
 #TODO: does not work in windows
@@ -173,9 +160,8 @@ pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
 
 
-
 ## PYTHON -------------------------------
-.PHONY: pylint foo
+.PHONY: pylint
 
 # TODO: NOT windows friendly
 PY_FILES = $(strip $(shell find services packages -iname '*.py' \
@@ -209,20 +195,21 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	$(PY_PIP) install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
-#TODO: does not work in windows
+# TODO: NOT windows friendly
 .env: .env-devel ## creates .env file from defaults in .env-devel
 	# first check if file exists, copies it
 	@if [ ! -f $@ ]	; then \
-		echo "##### $@ does not exist, copying $< ############"; \
+		@echo "WARNING ##### $@ does not exist, copying $< ############"; \
 		cp $< $@; \
 	else \
-		echo "#####  $< is newer than $@ ####"; \
+		@echo "WARMING #####  $< is newer than $@ ####"; \
 		diff -uN $@ $<; \
 		false; \
 	fi
 
+# TODO: NOT windows friendly
 .vscode/settings.json: .vscode-template/settings.json
-	$(info #####  $< is newer than $@ ####)
+	$(info WARNING: #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
 	@false
 
@@ -231,7 +218,7 @@ setup-check: .env .vscode/settings.json ## checks whether setup is in sync with 
 
 .PHONY: info
 info: ## displays selected parameters of makefile environments
-	@echo $(shell make --version | head -1)
+	@echo + $(shell make --version $(if $(IS_WIN),,| head -1))
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
