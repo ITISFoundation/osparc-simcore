@@ -40,36 +40,39 @@ async function logOut(page) {
 }
 
 async function dashboardAbout(page) {
-  await page.waitForSelector('div > div > div > #userMenuMainBtn > div:nth-child(1)')
-  await page.click('div > div > div > #userMenuMainBtn > div:nth-child(1)')
+  await page.waitForSelector('#userMenuMainBtn');
+  await page.click('#userMenuMainBtn');
 
-  await page.waitForSelector('body > div > .qx-main > #userMenuAboutBtn > div')
-  await page.click('body > div > .qx-main > #userMenuAboutBtn > div')
+  await page.waitForSelector('#userMenuAboutBtn');
+  await page.click('#userMenuAboutBtn');
 
-  await page.waitForSelector('div > .qx-window-active:nth-child(4) > .qx-window-caption > div > div')
-  await page.click('div > .qx-window-active:nth-child(4) > .qx-window-caption > div > div')
+  await page.waitForSelector('#aboutWindowCloseBtn');
+  await page.click('#aboutWindowCloseBtn');
 }
 
 async function dashboardPreferences(page) {
-  await page.waitForSelector('div > div > div > #userMenuMainBtn > div:nth-child(1)')
-  await page.click('div > div > div > #userMenuMainBtn > div:nth-child(1)')
+  await page.waitForSelector('#userMenuMainBtn');
+  await page.click('#userMenuMainBtn');
 
-  await page.waitForSelector('body > div > .qx-main > #userMenuPreferencesBtn > div')
-  await page.click('body > div > .qx-main > #userMenuPreferencesBtn > div')
+  await page.waitForSelector('#userMenuPreferencesBtn');
+  await page.click('#userMenuPreferencesBtn');
 
-  await page.waitForSelector('div > div > div > .qx-tabview-page-button-left:nth-child(2) > div')
-  await page.click('div > div > div > .qx-tabview-page-button-left:nth-child(2) > div')
+  await page.waitForSelector('#preferencesProfileTabBtn');
+  await page.click('#preferencesProfileTabBtn');
 
-  await page.waitForSelector('div > div > div > .qx-tabview-page-button-left:nth-child(3) > div')
-  await page.click('div > div > div > .qx-tabview-page-button-left:nth-child(3) > div')
+  await page.waitForSelector('#preferencesSecurityTabBtn');
+  await page.click('#preferencesSecurityTabBtn');
 
-  await page.waitForSelector('div > .qx-window-active:nth-child(3) > .qx-window-caption > div > div')
-  await page.click('div > .qx-window-active:nth-child(3) > .qx-window-caption > div > div')
+  await page.waitForSelector('#preferencesExperimentalTabBtn');
+  await page.click('#preferencesExperimentalTabBtn');
+
+  await page.waitForSelector('#preferencesWindowCloseBtn');
+  await page.click('#preferencesWindowCloseBtn');
 }
 
 async function dashboardServiceBrowser(page) {
-  await page.waitForSelector('div > div > div > #servicesTabBtn > div')
-  await page.click('div > div > div > #servicesTabBtn > div')
+  await page.waitForSelector('#servicesTabBtn')
+  await page.click('#servicesTabBtn')
 
   await page.waitForSelector('div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
   await page.click('div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
