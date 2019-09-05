@@ -14,8 +14,8 @@ beforeAll(async () => {
   browser = await startBrowser.launch(demo);
 });
 
-afterAll(async () => {
-  await browser.close();
+afterAll(() => {
+  browser.close();
 });
 
 beforeEach(async () => {
@@ -43,14 +43,12 @@ beforeEach(async () => {
   await page.goto(url);
 }, 30000);
 
-afterEach(async () => {
-  if (demo) {
-    await page.waitFor(1000);
-  }
+afterEach(() => {
   page.close();
 });
 
 test('Register', async () => {
+  await page.waitFor(1000);
   await auto.register(page, userEmail, pass);
 }, 30000);
 
