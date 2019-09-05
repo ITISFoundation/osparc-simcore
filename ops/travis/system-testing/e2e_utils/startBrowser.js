@@ -13,7 +13,8 @@ async function launch(demo) {
   }
   else {
     const woSandbox = {
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--disable-dev-shm-usage']
+      // args: ['--no-sandbox', '--disable-setuid-sandbox']
     };
     Object.assign(options, woSandbox);
   }
