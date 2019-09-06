@@ -103,6 +103,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+        console.log("registerBtn executed");
         const interval = 1000;
         const configTimer = new qx.event.Timer(interval);
         const resource = qxapp.io.rest.ResourceFactory.getInstance();

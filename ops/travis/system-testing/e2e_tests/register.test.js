@@ -20,6 +20,9 @@ afterAll(async () => {
 
 beforeEach(async () => {
   page = await browser.newPage();
+
+  page.on('console', consoleObj => console.log(consoleObj.text()));
+
   page.on('response', async response => {
     if (response.url().endsWith("register")) {
       const respStatus = response.status();
