@@ -23,7 +23,7 @@ afterEach(async () => {
   await page.close();
 });
 
-test('Check site title', async () => {
+test('Check site url', async () => {
   const url2 = utils.getPageUrl(page);
   expect(url2).toBe(url);
 }, 20000);
