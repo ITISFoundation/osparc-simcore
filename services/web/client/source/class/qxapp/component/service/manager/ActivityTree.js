@@ -18,7 +18,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
       "GPU usage"
     ], {
       treeDataCellRenderer: new qx.ui.treevirtual.SimpleTreeDataCellRenderer().set({
-        excludeFirstLevelTreeLines: true,
         useTreeLines: false
       })
     });

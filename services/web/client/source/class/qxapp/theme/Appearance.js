@@ -215,6 +215,19 @@ qx.Theme.define("qxapp.theme.Appearance", {
     "textfilter": {},
     "textfilter/textfield": "toolbar-textfield",
 
+    "autocompletefilter": {},
+    "autocompletefilter/autocompletefield/textfield": {
+      include: "toolbar-textfield",
+      style: state => ({
+        paddingRight: 15
+      })
+    },
+    "autocompletefilter/autocompletefield/button": {
+      style: state => ({
+        visiblity: "excluded"
+      })
+    },
+
     "toolbar-selectbox": {
       include: "textfield",
       alias: "selectbox",

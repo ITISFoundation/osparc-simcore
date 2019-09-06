@@ -33,8 +33,10 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const nameFilter = new qxapp.component.filter.TextFilter("name", "activityMonitor");
       const studyFilter = this.__studyFilter = new qxapp.component.filter.StudyFilter("study", "activityMonitor");
+      const serviceFilter = new qxapp.component.filter.ServiceFilter("service", "activityMonitor");
       filtersContainer.add(nameFilter);
       filtersContainer.add(studyFilter);
+      filtersContainer.add(serviceFilter);
       filtersPart.add(filtersContainer);
 
       this._add(toolbar);
