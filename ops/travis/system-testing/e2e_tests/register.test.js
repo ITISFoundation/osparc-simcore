@@ -49,6 +49,28 @@ test('Register', async () => {
 }, 30000);
 
 test('Log In and Log Out', async () => {
+  page.on('response', async response => {
+    if (response.url().endsWith("login")) {
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      expect(dataObj.data["login"]).toBe(userEmail);
+    }
+    else if (response.url().endsWith("projects")) {
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      expect(Array.isArray(dataObj.data)).toBeTruthy();
+    }
+    else if (response.url().endsWith("services")) {
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      expect(Array.isArray(dataObj.data)).toBeTruthy();
+    }
+  });
+
   await auto.logIn(page, userEmail, pass);
+  await page.waitFor(2000);
   await auto.logOut(page);
 }, 30000);
