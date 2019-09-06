@@ -48,6 +48,15 @@ afterEach(async () => {
 });
 
 test('Register', async () => {
+  page.on('response', async response => {
+    if (response.url().endsWith("config")) {
+      const respStatus = response.status();
+      // expect(respStatus).toBe(200);
+      const dataObj = await response.json();
+      // {"data": {"invitation_required": false}, "error": null}
+      console.log("config", respStatus, dataObj);
+    }
+  });
   await auto.register(page, userEmail, pass);
 }, 30000);
 
