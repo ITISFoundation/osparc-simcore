@@ -42,10 +42,7 @@ test('Register', async () => {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
       const dataObj = await response.json();
-      const expectedResp = {
-        "invitation_required": false
-      };
-      expect(dataObj.data).toEqual(expectedResp);
+      expect(dataObj.data["invitation_required"]).toBeFalsy();
     }
   });
   await auto.register(page, userEmail, pass);
