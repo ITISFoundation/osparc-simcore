@@ -3,7 +3,6 @@ async function register(page, user, pass) {
   await page.click('#loginCreateAccountBtn');
 
   await page.waitFor(1000);
-  await page.waitFor(1000);
   console.log(await page.content());
 
   await page.waitForSelector('#registrationEmailFld');
