@@ -1,6 +1,8 @@
 async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
-  await page.click('#loginCreateAccountBtn');
+  // await page.click('#loginCreateAccountBtn');
+  await page.focus('#loginCreateAccountBtn');
+  await page.keyboard.press('Enter');
 
   await page.waitFor(3000);
   console.log(await page.content());
