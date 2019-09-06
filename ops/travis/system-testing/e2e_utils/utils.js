@@ -8,4 +8,5 @@ function getPageUrl(page) {
 
 module.exports = {
   getPageTitle,
+  getPageUrl,
 }
