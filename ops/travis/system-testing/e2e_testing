@@ -30,6 +30,7 @@ before_script() {
     docker images
     # disable email registration
     make .env
+    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
     make up
 }
