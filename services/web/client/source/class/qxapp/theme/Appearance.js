@@ -222,11 +222,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
         paddingRight: 15
       })
     },
-    "autocompletefilter/autocompletefield/button": {
-      style: state => ({
-        visiblity: "excluded"
-      })
-    },
+    "autocompletefilter/autocompletefield/button": {},
 
     "toolbar-selectbox": {
       include: "textfield",
