@@ -102,12 +102,12 @@ up: .env .init-swarm ## init swarm and deploys all core and tool services up [-d
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
-	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml -devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
+	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 .PHONY: up-webclient-devel
-up-webclient-devel: up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
-	$(DOCKER) service rm services_webclient
+up-webclient-devel: .init-swarm up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+	$(DOCKER) service rm $(SWARM_STACK_NAME)_webclient
 	$(DOCKER_COMPOSE) -f services/web/client/docker-compose.yml up qx
 
 
@@ -192,15 +192,9 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 # TODO: NOT windows friendly
 .env: .env-devel ## creates .env file from defaults in .env-devel
-	# first check if file exists, copies it
-	@if [ ! -f $@ ]	; then \
-		@echo "WARNING ##### $@ does not exist, copying $< ############"; \
-		cp $< $@; \
-	else \
-		@echo "WARMING #####  $< is newer than $@ ####"; \
-		diff -uN $@ $<; \
-		false; \
-	fi
+	$(if $(wildcard $@), \
+	@echo "WARMING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, copying $< ############"; cp $< $@)
 
 # TODO: NOT windows friendly
 .vscode/settings.json: .vscode-template/settings.json
