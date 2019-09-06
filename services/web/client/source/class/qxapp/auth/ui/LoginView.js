@@ -86,11 +86,9 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       this.__form.add(pass, "", null, "password", null);
 
       const loginBtn = new qx.ui.form.Button(this.tr("Log In"));
-      loginBtn.addListener("execute", function() {
-        this.__login();
-      }, this);
+      loginBtn.addListener("execute", () => this.__login(), this);
       // Listen to "Enter" key
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "Enter") {
           this.__login();
         }

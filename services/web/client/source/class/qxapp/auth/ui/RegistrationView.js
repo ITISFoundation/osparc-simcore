@@ -99,7 +99,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
       });
 
       // interaction
-      submitBtn.addListener("execute", function(e) {
+      submitBtn.addListener("execute", e => {
         const valid = validator.validate();
         if (valid) {
           this.__submit({
@@ -111,9 +111,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
         }
       }, this);
 
-      cancelBtn.addListener("execute", function(e) {
-        this.fireDataEvent("done", null);
-      }, this);
+      cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },
