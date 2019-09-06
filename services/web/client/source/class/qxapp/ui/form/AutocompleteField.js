@@ -26,6 +26,7 @@ qx.Class.define("qxapp.ui.form.AutocompleteField", {
           this.close();
         }
       }, this);
+      this.__textfield.addListener("focusout", e => this.close(), this);
     }
   }
 });

@@ -17,6 +17,13 @@ qx.Class.define("qxapp.component.filter.ServiceFilter", {
     });
 
     this.getChildControl("clearbutton");
+
+    const services = qxapp.store.Store.getInstance().getServices();
+    const dropdownData = Object.keys(services).map(key => {
+      const split = key.split("/");
+      return split[split.length-1];
+    });
+    this.__autocompleteField.setModel(new qx.data.Array(dropdownData));
   },
 
   properties: {
