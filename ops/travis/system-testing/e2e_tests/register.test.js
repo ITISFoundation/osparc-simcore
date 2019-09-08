@@ -33,8 +33,8 @@ test('Register, Log In and Log Out', async () => {
     if (response.url().endsWith("config")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
-      const dataObj = await response.json();
-      expect(dataObj.data["invitation_required"]).toBeFalsy();
+      const responseBody = await response.json();
+      expect(responseBody.data["invitation_required"]).toBeFalsy();
     }
     else if (response.url().endsWith("register")) {
       const respStatus = response.status();
@@ -43,14 +43,18 @@ test('Register, Log In and Log Out', async () => {
   });
   await auto.register(page, userEmail, pass);
 
-  await auto.logIn(page, userEmail, pass);
   page.on('response', async response => {
     if (response.url().endsWith("login")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
-      // const dataObj = await response.json();
-      // expect(dataObj.data["login"]).toBe(userEmail);
+    }
+    else if (response.url().endsWith("me")) {
+      const respStatus = response.status();
+      expect(respStatus).toBe(200);
+      const responseBody = await response.json();
+      expect(responseBody.data["login"]).toBe(userEmail);
     }
   });
+  await auto.logIn(page, userEmail, pass);
   await auto.logOut(page);
 }, 30000);
