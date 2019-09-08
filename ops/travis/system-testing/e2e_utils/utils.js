@@ -17,12 +17,9 @@ async function dragAndDrop(page, start, end) {
 require('dotenv').config();
 const cloudinary = require('cloudinary');
 cloudinary.config({
-  // cloud_name: process.env.CLOUD_NAME,
-  // api_key: process.env.CLOUD_API_KEY,
-  // api_secret: process.env.CLOUD_API_SECRET,
-  cloud_name: 'drls2m1ht',
-  api_key: '634131339128266',
-  api_secret: 'u9O7C3FKM5mWqo60nartoU26rNc',
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
 });
 
 function cloudinaryPromise(shotResult, cloudinary_options){
