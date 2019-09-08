@@ -1,5 +1,6 @@
 const startBrowser = require('../e2e_utils/startBrowser');
 const auto = require('../e2e_utils/auto');
+const utils = require('../e2e_utils/utils');
 
 let browser;
 let page;
@@ -58,7 +59,9 @@ test('Register, Log In and Log Out', async () => {
       }
     }
   });
+  await utils.doScreenCapture(page, "pre-register");
   await auto.register(page, userEmail, pass);
+  await utils.doScreenCapture(page, "post-register");
 
   page.on('response', async response => {
     if (response.url().endsWith("login")) {
@@ -80,6 +83,11 @@ test('Register, Log In and Log Out', async () => {
       }
     }
   });
+  await utils.doScreenCapture(page, "pre-login");
   await auto.logIn(page, userEmail, pass);
+  await utils.doScreenCapture(page, "post-login");
+
+  await utils.doScreenCapture(page, "pre-logout");
   await auto.logOut(page);
+  await utils.doScreenCapture(page, "post-logout");
 }, 30000);
