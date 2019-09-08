@@ -20,7 +20,14 @@ afterAll(async () => {
 
 beforeEach(async () => {
   page = await browser.newPage();
+
+  // Emitted when a script within the page uses `console`
   page.on('console', consoleObj => console.log(consoleObj.text()));
+  // Emitted when the page emits an error event (for example, the page crashes)
+  page.on('error', error => console.error(`Error ${error}`));
+  // Emitted when a script within the page has uncaught exception
+  page.on('pageerror', error => console.error(`Page Error ${error}`));
+
   await page.goto(url);
 }, 30000);
 
