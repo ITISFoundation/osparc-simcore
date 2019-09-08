@@ -48,8 +48,8 @@ test('Register, Log In and Log Out', async () => {
     if (response.url().endsWith("login")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
-      // const dataObj = await response.json();
-      // expect(dataObj.data["login"]).toBe(userEmail);
+      const dataObj = await response.json();
+      expect(dataObj.data["login"]).toBe(userEmail);
     }
   });
   await auto.logOut(page);
