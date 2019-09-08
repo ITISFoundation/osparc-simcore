@@ -16,14 +16,13 @@ async function logIn(page, user, pass) {
   if (elementExists !== null) {
     return;
   }
-  else {
-    await page.waitForSelector('#loginUserEmailFld');
-    await page.type('#loginUserEmailFld', user);
-    await page.waitForSelector('#loginPasswordFld');
-    await page.type('#loginPasswordFld', pass);
-    await page.waitForSelector('#loginSubmitBtn');
-    await page.click('#loginSubmitBtn');
-  }
+
+  await page.waitForSelector('#loginUserEmailFld');
+  await page.type('#loginUserEmailFld', user);
+  await page.waitForSelector('#loginPasswordFld');
+  await page.type('#loginPasswordFld', pass);
+  await page.waitForSelector('#loginSubmitBtn');
+  await page.click('#loginSubmitBtn');
 }
 
 async function logOut(page) {
