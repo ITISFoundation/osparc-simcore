@@ -33,8 +33,8 @@ test('Register, Log In and Log Out', async () => {
     if (response.url().endsWith("config")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
-      // const dataObj = await response.json();
-      // expect(dataObj.data["invitation_required"]).toBeFalsy();
+      const dataObj = await response.json();
+      expect(dataObj.data["invitation_required"]).toBeFalsy();
     }
     else if (response.url().endsWith("register")) {
       const respStatus = response.status();
