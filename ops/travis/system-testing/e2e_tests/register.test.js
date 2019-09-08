@@ -58,8 +58,6 @@ test('Register, Log In and Log Out', async () => {
     else if (response.url().endsWith("me")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
-      const responseBody = await response.json();
-      expect(responseBody.data["login"]).toBe(userEmail);
     }
   });
   await auto.logIn(page, userEmail, pass);
