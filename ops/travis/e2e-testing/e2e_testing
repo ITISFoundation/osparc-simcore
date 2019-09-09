@@ -20,8 +20,8 @@ before_install() {
 }
 
 install() {
-    cp ops/travis/system-testing/package.json .
-    cp ops/travis/system-testing/package-lock.json .
+    cp ops/travis/e2e-testing/package.json .
+    cp ops/travis/e2e-testing/package-lock.json .
     npm install
     make pull || ((make pull-cache || true) && make build)
 }
@@ -41,7 +41,7 @@ script() {
     # TODO: Get rid of this sleep and check the status of the services
     sleep 60s
     docker service ls --format "table"
-    # node ops/travis/system-testing/title.test.js
+    # node ops/travis/e2e-testing/title.test.js
     npm test
 }
 

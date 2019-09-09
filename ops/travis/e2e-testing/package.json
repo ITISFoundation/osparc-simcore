@@ -1,5 +1,5 @@
 {
-  "name": "system-testing",
+  "name": "e2e-testing",
   "version": "1.0.0",
   "description": "e2e testing",
   "main": "./tests/title.test.js",
