@@ -132,7 +132,7 @@ pull-cache: .env
 
 .PHONY: build-cache
 build-cache: ## Builds service images and tags them as 'cache'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel $(filter-out webserver $(CACHED_SERVICES_LIST))
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel $(filter-out webserver, $(CACHED_SERVICES_LIST))
 	$(DOCKER) tag $(DOCKER_REGISTRY)/webclient:cache services_webclient:build
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
