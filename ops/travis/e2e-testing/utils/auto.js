@@ -155,8 +155,8 @@ async function dashboardEditStudyThumbnail(page) {
 }
 
 async function dashboardNewStudy(page) {
-  await page.waitForSelector('div > div > div > #studiesTabBtn > div')
-  await page.click('div > div > div > #studiesTabBtn > div')
+  await page.waitForSelector('#studiesTabBtn')
+  await page.click('#studiesTabBtn')
 
   await page.waitFor('#newStudyBtn');
   await page.click('#newStudyBtn');
@@ -169,8 +169,8 @@ async function dashboardNewStudy(page) {
 }
 
 async function dashboardOpenFirstTemplateAndRun(page, templateName) {
-  await page.waitForSelector('div > div > div > #studiesTabBtn > div')
-  await page.click('div > div > div > #studiesTabBtn > div')
+  await page.waitForSelector('#studiesTabBtn')
+  await page.click('#studiesTabBtn')
 
   if (templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
@@ -179,14 +179,14 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
   await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
 
-  await page.waitForSelector('div > div > div > #openStudyBtn > div')
-  await page.click('div > div > div > #openStudyBtn > div')
+  await page.waitForSelector('#newStudyTitleFld')
+  await page.type('#newStudyTitleFld', ' testing');
 
   await page.waitForSelector('#newStudySubmitBtn')
   await page.click('#newStudySubmitBtn')
 
-  await page.waitForSelector('div > div > div > #runStudyBtn > div:nth-child(1)')
-  await page.click('div > div > div > #runStudyBtn > div:nth-child(1)')
+  await page.waitForSelector('#runStudyBtn')
+  await page.click('#runStudyBtn')
 
   await page.waitFor(20000);
 
@@ -204,14 +204,14 @@ async function __dashboardFilterStudiesByText(page, templateName) {
 }
 
 async function dashboardDeleteFirstStudy(page) {
-  await page.waitForSelector('div > div > div > #studiesTabBtn > div')
-  await page.click('div > div > div > #studiesTabBtn > div')
+  await page.waitForSelector('#studiesTabBtn')
+  await page.click('#studiesTabBtn')
 
-  await page.waitForSelector('div > div > #userStudiesList > .qx-pb-listitem:nth-child(1) > img')
-  await page.click('div > div > #userStudiesList > .qx-pb-listitem:nth-child(1) > img')
+  await page.waitForSelector('#userStudiesList > .qx-pb-listitem:nth-child(1)')
+  await page.click('#userStudiesList > .qx-pb-listitem:nth-child(1)')
 
-  await page.waitForSelector('div > div > div > #deleteStudiesBtn > div:nth-child(1)')
-  await page.click('div > div > div > #deleteStudiesBtn > div:nth-child(1)')
+  await page.waitForSelector('#deleteStudiesBtn')
+  await page.click('#deleteStudiesBtn')
 
   await page.waitForSelector('#confirmDeleteStudyBtn')
   await page.click('#confirmDeleteStudyBtn')
