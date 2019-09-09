@@ -7,7 +7,11 @@ module.exports = {
         browser: true,
         context: true,
         jestPuppeteer: true,
+        console: true,
         url: true,
         goToTimeout: true,
+    },
+    rules: {
+        "no-console": "off",
     },
 }
