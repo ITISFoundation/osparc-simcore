@@ -1,6 +1,6 @@
-const startBrowser = require('../e2e_utils/startBrowser');
-const auto = require('../e2e_utils/auto');
-const utils = require('../e2e_utils/utils');
+const startBrowser = require('../utils/startBrowser');
+const auto = require('../utils/auto');
+const utils = require('../utils/utils');
 
 const url = "http://localhost:9081/"
 
