@@ -39,8 +39,7 @@ test('Register, Log In and Log Out', async () => {
     if (response.url().endsWith("/login")) {
       try {
         const respStatus = response.status();
-        // expect(respStatus).toBe(200);
-        console.log("/login", respStatus);
+        expect(respStatus).toBe(200);
       }
       catch (e) {
         console.log("Pptr error", e);

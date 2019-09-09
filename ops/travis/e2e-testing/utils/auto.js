@@ -2,6 +2,7 @@ async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
   await page.click('#loginCreateAccountBtn');
 
+  console.log("Registering:", user);
   await page.waitForSelector('#registrationEmailFld');
   await page.type('#registrationEmailFld', user);
   await page.type('#registrationPass1Fld', pass);
@@ -17,7 +18,10 @@ async function logIn(page, user, pass) {
     return;
   }
 
-  await page.waitForSelector('#loginUserEmailFld');
+  console.log("Logging in:", user);
+  await page.waitForSelector('#loginUserEmailFld', {
+    visible: true
+  });
   await page.type('#loginUserEmailFld', user);
   await page.waitForSelector('#loginPasswordFld');
   await page.type('#loginPasswordFld', pass);
@@ -26,14 +30,21 @@ async function logIn(page, user, pass) {
 }
 
 async function logOut(page) {
+  /*
   // user might be already logged in
   const elementExists = await page.$("#userMenuMainBtn");
   if (elementExists === null) {
     return;
   }
+  */
+  await page.waitForSelector('#userMenuMainBtn', {
+    visible: true,
+    timeout: 1000
+  });
+
+  console.log("Logging out");
   await page.waitForSelector('#userMenuMainBtn');
   await page.click('#userMenuMainBtn');
-
   await page.waitForSelector('#userMenuLogoutBtn');
   await page.click('#userMenuLogoutBtn');
 }
