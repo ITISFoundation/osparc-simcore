@@ -1,6 +1,5 @@
-const auto = require('../e2e_utils/auto');
-const utils = require('../e2e_utils/utils');
-const url = "http://localhost:9081/"
+const auto = require('../utils/auto');
+// const utils = require('../utils/utils');
 
 const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';

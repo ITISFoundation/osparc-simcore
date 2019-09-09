@@ -1,8 +1,5 @@
-const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
-const utils = require('../utils/utils');
-
-const url = "http://localhost:9081/"
+// const utils = require('../utils/utils');
 
 const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';

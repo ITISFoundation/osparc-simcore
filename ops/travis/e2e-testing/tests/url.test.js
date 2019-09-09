@@ -1,5 +1,4 @@
-const utils = require('../e2e_utils/utils');
-const url = "http://localhost:9081/"
+const utils = require('../utils/utils');
 
 beforeAll(async () => {
   // utils.addPageListeners(page);
