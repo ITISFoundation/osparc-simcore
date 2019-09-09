@@ -30,13 +30,6 @@ async function logIn(page, user, pass) {
 }
 
 async function logOut(page) {
-  /*
-  // user might be already logged in
-  const elementExists = await page.$("#userMenuMainBtn");
-  if (elementExists === null) {
-    return;
-  }
-  */
   await page.waitForSelector('#userMenuMainBtn', {
     visible: true,
     timeout: 1000

@@ -1,11 +1,13 @@
 const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
+const utils = require('../utils/utils');
 
 const demo = true;
 const url = "http://localhost:9081/"
-const randUser = Math.random().toString(36).substring(7);
-const userEmail = 'puppeteer_'+randUser+'@itis.testing';
-const pass = Math.random().toString(36).substring(7);
+const {
+  user,
+  pass
+} = utils.getRandUserAndPass();
 
 async function run () {
   const browser = await startBrowser.launch(demo);
@@ -18,7 +20,7 @@ async function run () {
       expect(respStatus).toBe(200);
     }
   });
-  await auto.register(page, userEmail, pass);
+  await auto.register(page, user, pass);
 
   page.on('response', response => {
     if (response.url().endsWith("/services")) {
@@ -30,17 +32,18 @@ async function run () {
       expect(respStatus).toBe(200);
     }
   });
-  await auto.logIn(page, userEmail, pass);
+  await auto.logIn(page, user, pass);
 
   await auto.dashboardAbout(page);
   await auto.dashboardPreferences(page);
   await auto.dashboardServiceBrowser(page);
-  await auto.dashboardDataBrowser(page);
   await auto.dashboardStudyBrowser(page);
+
+  await auto.dashboardDataBrowser(page);
   // await auto.dashboardEditStudyThumbnail(page);
   // await auto.dashboardNewStudy(page);
-  // await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
-  // await auto.dashboardDeleteFirstStudy(page);
+  await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
+  await auto.dashboardDeleteFirstStudy(page);
   if (demo) {
     await page.waitFor(2000);
   }

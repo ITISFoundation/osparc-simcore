@@ -1,9 +1,10 @@
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
-const randUser = Math.random().toString(36).substring(7);
-const userEmail = 'puppeteer_'+randUser+'@itis.testing';
-const pass = Math.random().toString(36).substring(7);
+const {
+  user,
+  pass
+} = utils.getRandUserAndPass();
 
 beforeEach(async () => {
   // utils.addPageListeners(page);
@@ -11,8 +12,8 @@ beforeEach(async () => {
 }, goToTimeout);
 
 test.skip('Get services', async () => {
-  await auto.register(page, userEmail, pass);
-  await auto.logIn(page, userEmail, pass);
+  await auto.register(page, user, pass);
+  await auto.logIn(page, user, pass);
 
   const servicesUrl = url + "services";
   const {

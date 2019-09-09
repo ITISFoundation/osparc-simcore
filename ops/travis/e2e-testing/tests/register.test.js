@@ -1,9 +1,10 @@
 const auto = require('../utils/auto');
-// const utils = require('../utils/utils');
+const utils = require('../utils/utils');
 
-const randUser = Math.random().toString(36).substring(7);
-const userEmail = 'puppeteer_'+randUser+'@itis.testing';
-const pass = Math.random().toString(36).substring(7);
+const {
+  user,
+  pass
+} = utils.getRandUserAndPass();
 
 beforeAll(async () => {
   // utils.addPageListeners(page);
@@ -33,7 +34,7 @@ test('Register, Log In and Log Out', async () => {
       }
     }
   });
-  await auto.register(page, userEmail, pass);
+  await auto.register(page, user, pass);
 
   page.on('response', async response => {
     if (response.url().endsWith("/login")) {
@@ -55,6 +56,6 @@ test('Register, Log In and Log Out', async () => {
       }
     }
   });
-  await auto.logIn(page, userEmail, pass);
+  await auto.logIn(page, user, pass);
   await auto.logOut(page);
 }, 30000);

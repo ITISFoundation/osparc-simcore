@@ -6,6 +6,16 @@ function getPageUrl(page) {
   return page.url();
 }
 
+function getRandUserAndPass() {
+  const randUser = Math.random().toString(36).substring(7);
+  const user = 'puppeteer_'+randUser+'@itis.testing';
+  const pass = Math.random().toString(36).substring(7);
+  return {
+    user,
+    pass
+  }
+}
+
 function __logMe(msg, level='log') {
   if (level==='error') {
     console.error(`Error ${msg}`);
@@ -113,6 +123,7 @@ async function doScreenCapture(page, captureName) {
 module.exports = {
   getPageTitle,
   getPageUrl,
+  getRandUserAndPass,
   addPageListeners,
   removePageListeners,
   waitForResponse,
