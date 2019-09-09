@@ -5,7 +5,7 @@ const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';
 const pass = Math.random().toString(36).substring(7);
 
-beforeAll(async () => {
+beforeEach(async () => {
   // utils.addPageListeners(page);
   await page.goto(url);
 }, goToTimeout);
