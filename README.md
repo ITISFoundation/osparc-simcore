@@ -56,3 +56,13 @@
 ## Release workflow
 
 [Git release workflow](ops/README.md)
+
+
+## Requirements
+
+- docker
+- make
+- python 3.6 (this dependency will be removed soon)
+- awk (optional)
+
+For windows users, we higly recommended using [choco](https://chocolatey.org/) and [cmder](https://cmder.net/) as software manager and console.

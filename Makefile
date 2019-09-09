@@ -251,6 +251,10 @@ reset: ## restart docker daemon
 
 .PHONY: help
 help: ## display all callable targets
-	@sort $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf $(if $(IS_WIN),"%-20s %s/n","\033[36m%-20s\033[0m %s\n"), $$1, $$2}'
+ifeq ($(IS_WIN),)
+	@sort $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+else
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+endif
 
 .DEFAULT_GOAL := help
