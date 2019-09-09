@@ -14,6 +14,7 @@ async function dragAndDrop(page, start, end) {
   await page.mouse.up();
 }
 
+// https://medium.com/@viviancpy/save-screenshot-of-websites-with-puppeteer-cloudinary-and-heroku-1-3-bba6082d21d0
 require('dotenv').config();
 const cloudinary = require('cloudinary');
 cloudinary.config({
