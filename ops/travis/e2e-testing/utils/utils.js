@@ -41,6 +41,27 @@ async function dragAndDrop(page, start, end) {
   await page.mouse.up();
 }
 
+// https://blog.usejournal.com/getting-started-with-jest-and-puppeteer-7cf6c59a2cae
+const waitForResponse = (page, url) => {
+  console.log("waitForResponse", url);
+  return new Promise(async (resolve, reject) => {
+    page.on('response', async function responseDataHandler(response) {
+      console.log("Responded", response.url(), url);
+      if(response.url() === url) {
+        if(response.status() !== 200) {
+          reject(`Error Status: ${response.status}`);
+        }
+        let data = await response.text();
+        data = JSON.parse(data);
+        page.removeListener('response', responseDataHandler)
+        resolve({
+          data
+        });
+      }
+    });
+  });
+}
+
 // https://medium.com/@viviancpy/save-screenshot-of-websites-with-puppeteer-cloudinary-and-heroku-1-3-bba6082d21d0
 require('dotenv').config();
 const cloudinary = require('cloudinary');
@@ -94,6 +115,7 @@ module.exports = {
   getPageUrl,
   addPageListeners,
   removePageListeners,
+  waitForResponse,
   dragAndDrop,
   doScreenCapture,
 }

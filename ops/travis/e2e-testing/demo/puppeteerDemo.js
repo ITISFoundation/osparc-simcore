@@ -13,7 +13,7 @@ async function run () {
   await page.goto(url);
 
   page.on('response', response => {
-    if (response.url().endsWith("register")) {
+    if (response.url().endsWith("/register")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
     }
@@ -21,11 +21,11 @@ async function run () {
   await auto.register(page, userEmail, pass);
 
   page.on('response', response => {
-    if (response.url().endsWith("services")) {
+    if (response.url().endsWith("/services")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
     }
-    else if (response.url().endsWith("locations")) {
+    else if (response.url().endsWith("/locations")) {
       const respStatus = response.status();
       expect(respStatus).toBe(200);
     }

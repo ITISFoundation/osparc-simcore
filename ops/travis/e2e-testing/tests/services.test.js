@@ -1,5 +1,5 @@
 const auto = require('../utils/auto');
-// const utils = require('../utils/utils');
+const utils = require('../utils/utils');
 
 const randUser = Math.random().toString(36).substring(7);
 const userEmail = 'puppeteer_'+randUser+'@itis.testing';
@@ -17,7 +17,7 @@ test.skip('Get services', async () => {
   const servicesUrl = url + "services";
   const {
     data
-  } = await page.waitForResponse(servicesUrl);
+  } = await utils.waitForResponse(page, servicesUrl);
   console.log(data);
 
   await auto.logOut(page);

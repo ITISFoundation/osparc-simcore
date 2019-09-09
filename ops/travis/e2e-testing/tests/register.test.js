@@ -12,7 +12,7 @@ beforeAll(async () => {
 
 test('Register, Log In and Log Out', async () => {
   page.on('response', async response => {
-    if (response.url().endsWith("config")) {
+    if (response.url().endsWith("/config")) {
       try {
         const respStatus = response.status();
         expect(respStatus).toBe(200);
@@ -23,7 +23,7 @@ test('Register, Log In and Log Out', async () => {
         console.log("Pptr error", e);
       }
     }
-    else if (response.url().endsWith("register")) {
+    else if (response.url().endsWith("/register")) {
       try {
         const respStatus = response.status();
         expect(respStatus).toBe(200);
@@ -36,7 +36,7 @@ test('Register, Log In and Log Out', async () => {
   await auto.register(page, userEmail, pass);
 
   page.on('response', async response => {
-    if (response.url().endsWith("login")) {
+    if (response.url().endsWith("/login")) {
       try {
         const respStatus = response.status();
         expect(respStatus).toBe(200);
@@ -45,7 +45,7 @@ test('Register, Log In and Log Out', async () => {
         console.log("Pptr error", e);
       }
     }
-    else if (response.url().endsWith("me")) {
+    else if (response.url().endsWith("/me")) {
       try {
         const respStatus = response.status();
         expect(respStatus).toBe(200);
