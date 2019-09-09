@@ -41,7 +41,7 @@ script() {
     # TODO: Get rid of this sleep and check the status of the services
     sleep 60s
     docker service ls --format "table"
-    cp ops/travis/e2e-testing/jest.config .
+    cp ops/travis/e2e-testing/jest.config.js .
     cp ops/travis/e2e-testing/jest-puppeteer.config.js .
     npm test
 }
