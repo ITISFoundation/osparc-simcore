@@ -149,7 +149,7 @@ ifndef DOCKER_IMAGE_TAG_NEW
 	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
 endif
 	@echo "Tagging from $(DOCKER_REGISTRY), ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
-	$(foreach service, $(SERVICES_LIST) \
+	$(foreach service, $(SERVICES_LIST), \
 		$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW) \
 	)
 
