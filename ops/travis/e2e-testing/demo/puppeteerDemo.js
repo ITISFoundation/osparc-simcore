@@ -24,16 +24,21 @@ async function run () {
   // await auto.dashboardServiceBrowser(page);
   await auto.dashboardStudyBrowser(page);
 
-  // await auto.dashboardEditStudyThumbnail(page);
   await auto.dashboardNewStudy(page);
-  // const templateName = "Sleepers";
-  // await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
 
   // STUDY EDITOR
   await auto.toDashboard(page);
 
   // DASHBOARD
-  await auto.dashboardDataBrowser(page);
+  const templateName = "Sleepers";
+  await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
+
+  // STUDY EDITOR
+  await auto.toDashboard(page);
+
+  // DASHBOARD
+  await auto.dashboardEditFristStudyThumbnail(page);
+  // await auto.dashboardDataBrowser(page);
   await auto.dashboardDeleteFirstStudy(page);
   if (demo) {
     await page.waitFor(2000);
