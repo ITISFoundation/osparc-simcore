@@ -184,11 +184,12 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   }
 
   const children = await utils.getVisibleChildrenIDs(page, '#templateStudiesList');
-  console.log("nodeChildren", children);
-  await page.waitFor(30000);
-
-  await page.waitForSelector('#templateStudiesList > .qx-pb-listitem:nth-child(2)')
-  await page.click('#templateStudiesList > .qx-pb-listitem:nth-child(2)')
+  if (children.length === 0) {
+    return
+  }
+  const firstChildId = '#' + children[0]
+  await page.waitForSelector(firstChildId)
+  await page.click(firstChildId)
 
   await page.waitForSelector('#openStudyBtn')
   await page.click('#openStudyBtn')

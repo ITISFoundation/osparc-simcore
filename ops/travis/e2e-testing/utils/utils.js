@@ -16,10 +16,10 @@ function getRandUserAndPass() {
   }
 }
 
-async function getVisibleChildrenIDs(page, selector) {
-  console.log("looking for", selector, "children");
-  const childrenIDs = await page.evaluate(() => {
-    const parentNode = document.querySelector('#templateStudiesList');
+async function getVisibleChildrenIDs(page, parentSelector) {
+  const childrenIDs = await page.evaluate((selector) => {
+    selector = '#templateStudiesList';
+    const parentNode = document.querySelector(selector);
     const children = [];
     for (let i = 0; i < parentNode.children.length; i++) {
       const child = parentNode.children[i];
@@ -29,7 +29,7 @@ async function getVisibleChildrenIDs(page, selector) {
       }
     }
     return children;
-  });
+  }, parentSelector);
   return childrenIDs;
 }
 
