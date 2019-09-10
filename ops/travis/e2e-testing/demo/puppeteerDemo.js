@@ -25,6 +25,7 @@ async function run () {
   await auto.dashboardStudyBrowser(page);
 
   await auto.dashboardNewStudy(page);
+  await page.waitFor(2000);
 
   // STUDY EDITOR
   await auto.toDashboard(page);

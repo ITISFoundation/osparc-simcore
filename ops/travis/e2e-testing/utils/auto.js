@@ -119,17 +119,34 @@ async function dashboardServiceBrowser(page) {
 async function dashboardDataBrowser(page) {
   console.log("Navigating through Data");
 
-  await page.waitForSelector('div > div > div > #dataTabBtn > div')
-  await page.click('div > div > div > #dataTabBtn > div')
+  await page.waitForSelector('#dataTabBtn')
+  await page.click('#dataTabBtn')
 
   await page.waitFor(2000);
-  /*
+
+  // expand location
   await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
   await page.click('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
 
+  // expand dataset
   await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
   await page.click('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
-  */
+
+  await page.waitFor(2000)
+
+  // expand study
+  await page.waitForSelector('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
+  await page.click('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
+
+  // expand service
+  await page.waitForSelector('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
+  await page.click('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
+
+  // seelct file
+  await page.waitForSelector('div > div:nth-child(2) > div > .qx-toolbar-button-hovered > div:nth-child(1)')
+  await page.click('div > div:nth-child(2) > div > .qx-toolbar-button-hovered > div:nth-child(1)')
+
+  await page.waitFor(2000)
 }
 
 async function dashboardStudyBrowser(page) {
@@ -228,6 +245,8 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
 
   await page.waitForSelector('#newStudySubmitBtn')
   await page.click('#newStudySubmitBtn')
+
+  await page.waitFor(2000);
 
   await page.waitForSelector('#runStudyBtn')
   await page.click('#runStudyBtn')
