@@ -48,61 +48,6 @@ qx.Class.define("qxapp.store.Store", {
     __reloadingServices: null,
     __servicesCached: null,
 
-    getNodeMetaData: function(key, version) {
-      let metaData = null;
-      if (key && version) {
-        metaData = qxapp.utils.Services.getFromObject(this.__servicesCached, key, version);
-        if (metaData) {
-          metaData = qxapp.utils.Utils.deepCloneObject(metaData);
-          if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
-            metaData.outputs["modeler"] = {
-              "label": "Modeler",
-              "displayOrder":0,
-              "description": "Modeler",
-              "type": "node-output-tree-api-v0.0.1"
-            };
-            delete metaData.outputs["output_1"];
-          }
-          return metaData;
-        }
-        const allServices = this.getFakeServices().concat(this.getBuiltInServices());
-        metaData = qxapp.utils.Services.getFromArray(allServices, key, version);
-        if (metaData) {
-          return qxapp.utils.Utils.deepCloneObject(metaData);
-        }
-      }
-      return null;
-    },
-
-    getBuiltInServices: function() {
-      const builtInServices = [{
-        key: "simcore/services/frontend/file-picker",
-        version: "1.0.0",
-        type: "dynamic",
-        name: "File Picker",
-        description: "File Picker",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.ethz.ch"
-        }],
-        contact: "maiz@itis.ethz.ch",
-        inputs: {},
-        outputs: {
-          outFile: {
-            displayOrder: 0,
-            label: "File",
-            description: "Chosen File",
-            type: "data:*/*"
-          }
-        }
-      }];
-      return builtInServices;
-    },
-
-    getFakeServices: function() {
-      return qxapp.dev.fake.Data.getFakeServices();
-    },
-
     getServices: function(reload) {
       if (!this.__reloadingServices && (reload || Object.keys(this.__servicesCached).length === 0)) {
         this.__reloadingServices = true;
@@ -112,7 +57,7 @@ qx.Class.define("qxapp.store.Store", {
           const {
             data
           } = requ.getResponse();
-          const allServices = data.concat(this.getBuiltInServices());
+          const allServices = data.concat(qxapp.statics.NodeStatics.getBuiltInServices());
           const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
           const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, true);
@@ -123,7 +68,7 @@ qx.Class.define("qxapp.store.Store", {
             error
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
-          const allServices = this.getFakeServices().concat(this.getBuiltInServices());
+          const allServices = this.getFakeServices().concat(qxapp.statics.NodeStatics.getBuiltInServices());
           const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
           const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, false);
@@ -328,14 +273,6 @@ qx.Class.define("qxapp.store.Store", {
           }
         }
       }
-    },
-
-    getItemList: function(nodeKey, portKey) {
-      return qxapp.dev.fake.Data.getItemList(nodeKey, portKey);
-    },
-
-    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
-      return qxapp.dev.fake.Data.getItem(nodeInstanceUUID, portKey, itemUuid);
     },
 
     stopInteractiveService(nodeId) {

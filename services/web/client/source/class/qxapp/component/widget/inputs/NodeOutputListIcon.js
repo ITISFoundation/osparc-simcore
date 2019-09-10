@@ -71,7 +71,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
       }
     });
 
-    const itemList = qxapp.store.Store.getInstance().getItemList(node.getKey(), portKey);
+    const itemList = qxapp.dev.fake.Data.getItemList(node.getKey(), portKey);
     const listModel = qxapp.data.Converters.fromAPIListToVirtualListModel(itemList);
     let model = qx.data.marshal.Json.createModel(listModel, true);
     list.setModel(model);

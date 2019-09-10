@@ -72,5 +72,60 @@ qx.Class.define("qxapp.statics.NodeStatics", {
     arePortsCompatible: function(port1, port2) {
       return port1.type && port2.type && this.self().__matchPortType(port1.type, port2.type);
     },
+
+    getNodeMetaData: function(key, version) {
+      let metaData = null;
+      if (key && version) {
+        metaData = qxapp.utils.Services.getFromObject(qxapp.store.Store.getInstance().getServices(), key, version);
+        if (metaData) {
+          metaData = qxapp.utils.Utils.deepCloneObject(metaData);
+          if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
+            metaData.outputs["modeler"] = {
+              "label": "Modeler",
+              "displayOrder":0,
+              "description": "Modeler",
+              "type": "node-output-tree-api-v0.0.1"
+            };
+            delete metaData.outputs["output_1"];
+          }
+          return metaData;
+        }
+        const allServices = this.getFakeServices().concat(this.getBuiltInServices());
+        metaData = qxapp.utils.Services.getFromArray(allServices, key, version);
+        if (metaData) {
+          return qxapp.utils.Utils.deepCloneObject(metaData);
+        }
+      }
+      return null;
+    },
+
+    getBuiltInServices: function() {
+      const builtInServices = [{
+        key: "simcore/services/frontend/file-picker",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "File Picker",
+        description: "File Picker",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {},
+        outputs: {
+          outFile: {
+            displayOrder: 0,
+            label: "File",
+            description: "Chosen File",
+            type: "data:*/*"
+          }
+        }
+      }];
+      return builtInServices;
+    },
+
+    getFakeServices: function() {
+      return qxapp.dev.fake.Data.getFakeServices();
+    }
   }
 });

@@ -109,7 +109,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
           let parent = null;
           for (let key in study.workbench) {
             const node = study.workbench[key];
-            const metadata = qxapp.store.Store.getInstance().getNodeMetaData(node.key, node.version);
+            const metadata = qxapp.statics.NodeStatics.getNodeMetaData(node.key, node.version);
             if (metadata && metadata.type === "computational") {
               if (parent === null) {
                 parent = model.addBranch(null, study.name, true);

@@ -64,8 +64,7 @@ qx.Class.define("qxapp.data.model.Node", {
       version
     });
 
-    let store = qxapp.store.Store.getInstance();
-    let metaData = this.__metaData = store.getNodeMetaData(key, version);
+    let metaData = this.__metaData = qxapp.statics.NodeStatics.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
