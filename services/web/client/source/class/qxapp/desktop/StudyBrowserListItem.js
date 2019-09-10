@@ -142,8 +142,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
 
     // overriden
     _applyUuid: function(value, old) {
-      const id = value.substr(value.length - 10);
-      qxapp.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+id);
+      qxapp.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
     _applyIcon: function(value, old) {
