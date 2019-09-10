@@ -241,7 +241,8 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.click('#openStudyBtn')
 
   await page.waitForSelector('#newStudyTitleFld')
-  await page.type('#newStudyTitleFld', ' testing');
+  await utils.emptyField(page, '#newStudyTitleFld')
+  await page.type('#newStudyTitleFld', 'my sleepers');
 
   await page.waitForSelector('#newStudySubmitBtn')
   await page.click('#newStudySubmitBtn')
@@ -251,7 +252,7 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.waitForSelector('#runStudyBtn')
   await page.click('#runStudyBtn')
 
-  await page.waitFor(20000);
+  await page.waitFor(30000);
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
