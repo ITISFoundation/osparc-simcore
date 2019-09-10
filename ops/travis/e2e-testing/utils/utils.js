@@ -33,10 +33,10 @@ async function getVisibleChildrenIDs(page, parentSelector) {
 }
 
 async function fetch(endpoint) {
-  const responseEnv = await page.evaluate(async (endpoint) => {
-    const response = await fetch('http://localhost:9081/v0/'+endpoint);
+  const responseEnv = await page.evaluate(async (url, apiVersion, endpoint) => {
+    const response = await fetch(url+apiVersion+endpoint);
     return await response.json();
-  }, endpoint);
+  }, url, apiVersion, endpoint);
   return responseEnv;
 }
 

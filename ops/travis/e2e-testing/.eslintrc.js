@@ -9,6 +9,7 @@ module.exports = {
         jestPuppeteer: true,
         console: true,
         url: true,
+        apiVersion: true,
         ourTimeout: true,
     },
     rules: {
