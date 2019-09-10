@@ -45,6 +45,8 @@ async function logOut(page) {
 }
 
 async function dashboardAbout(page) {
+  console.log("Showing About");
+
   await page.waitForSelector('#userMenuMainBtn');
   await page.click('#userMenuMainBtn');
 
@@ -56,6 +58,8 @@ async function dashboardAbout(page) {
 }
 
 async function dashboardPreferences(page) {
+  console.log("Navigating through Preferences");
+
   await page.waitForSelector('#userMenuMainBtn');
   await page.click('#userMenuMainBtn');
 
@@ -76,6 +80,8 @@ async function dashboardPreferences(page) {
 }
 
 async function dashboardServiceBrowser(page) {
+  console.log("Navigating through Services");
+
   await page.waitForSelector('#servicesTabBtn')
   await page.click('#servicesTabBtn')
 
@@ -111,6 +117,8 @@ async function dashboardServiceBrowser(page) {
 }
 
 async function dashboardDataBrowser(page) {
+  console.log("Navigating through Data");
+
   await page.waitForSelector('div > div > div > #dataTabBtn > div')
   await page.click('div > div > div > #dataTabBtn > div')
 
@@ -125,6 +133,8 @@ async function dashboardDataBrowser(page) {
 }
 
 async function dashboardStudyBrowser(page) {
+  console.log("Navigating through Studies");
+
   await page.waitForSelector('div > div > div > #studiesTabBtn > div')
   await page.click('div > div > div > #studiesTabBtn > div')
 
@@ -141,22 +151,35 @@ async function dashboardStudyBrowser(page) {
   await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(2) > img')
 }
 
-async function dashboardEditStudyThumbnail(page) {
-  await page.waitForSelector('div > div > div > #studiesTabBtn > div')
-  await page.click('div > div > div > #studiesTabBtn > div')
+async function dashboardEditFristStudyThumbnail(page) {
+  console.log("Editing thumbnail")
 
-  await page.waitForSelector('div > div > div > #editStudyBtn > div:nth-child(1)')
-  await page.click('div > div > div > #editStudyBtn > div:nth-child(1)')
+  await page.waitForSelector('#studiesTabBtn')
+  await page.click('#studiesTabBtn')
 
-  await page.waitForSelector('div #studyDetailsEditorThumbFld')
-  await page.click('div #studyDetailsEditorThumbFld')
-  await page.type('div #studyDetailsEditorThumbFld', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
+  const children = await utils.getVisibleChildrenIDs(page, '#userStudiesList');
+  if (children.length === 0) {
+    console.log("Editing thumbnail: no study found")
+    return
+  }
+  const firstChildId = '#' + children[0]
+  await page.waitForSelector(firstChildId)
+  await page.click(firstChildId)
 
-  await page.waitForSelector('div #studyDetailsEditorSaveBtn')
-  await page.click('div #studyDetailsEditorSaveBtn')
+  await page.waitForSelector('#editStudyBtn')
+  await page.click('#editStudyBtn')
+
+  await page.waitForSelector('#studyDetailsEditorThumbFld')
+  await page.click('#studyDetailsEditorThumbFld')
+  await page.type('#studyDetailsEditorThumbFld', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
+
+  await page.waitForSelector('#studyDetailsEditorSaveBtn')
+  await page.click('#studyDetailsEditorSaveBtn')
 }
 
 async function dashboardNewStudy(page) {
+  console.log("Creating New Study");
+
   await page.waitForSelector('#studiesTabBtn')
   await page.click('#studiesTabBtn')
 
@@ -171,11 +194,15 @@ async function dashboardNewStudy(page) {
 }
 
 async function toDashboard(page) {
+  console.log("To Dashboard");
+
   await page.waitForSelector('#dashboardBtn')
   await page.click('#dashboardBtn')
 }
 
 async function dashboardOpenFirstTemplateAndRun(page, templateName) {
+  console.log("Creating New Study from template and running it");
+
   await page.waitForSelector('#studiesTabBtn')
   await page.click('#studiesTabBtn')
 
@@ -185,7 +212,8 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
 
   const children = await utils.getVisibleChildrenIDs(page, '#templateStudiesList');
   if (children.length === 0) {
-    return
+    console.log("Creating New Study from template and running it: no template found");
+    return;
   }
   const firstChildId = '#' + children[0]
   await page.waitForSelector(firstChildId)
@@ -238,7 +266,7 @@ module.exports = {
   dashboardServiceBrowser,
   dashboardDataBrowser,
   dashboardStudyBrowser,
-  dashboardEditStudyThumbnail,
+  dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplateAndRun,
   dashboardDeleteFirstStudy,
