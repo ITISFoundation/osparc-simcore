@@ -9,7 +9,7 @@ module.exports = {
         jestPuppeteer: true,
         console: true,
         url: true,
-        goToTimeout: true,
+        ourTimeout: true,
     },
     rules: {
         "no-console": "off",

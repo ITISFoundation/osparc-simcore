@@ -3,6 +3,6 @@ module.exports = {
   verbose: true,
   globals: {
     url: "http://localhost:9081/",
-    goToTimeout: 15000,
+    ourTimeout: 20000,
   }
 }

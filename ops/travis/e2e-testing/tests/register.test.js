@@ -9,7 +9,7 @@ const {
 beforeAll(async () => {
   // utils.addPageListeners(page);
   await page.goto(url);
-}, goToTimeout);
+}, ourTimeout);
 
 test('Register, Log In and Log Out', async () => {
   page.on('response', async response => {

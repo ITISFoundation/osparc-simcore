@@ -3,7 +3,7 @@ const utils = require('../utils/utils');
 beforeAll(async () => {
   // utils.addPageListeners(page);
   await page.goto(url);
-}, goToTimeout);
+}, ourTimeout);
 
 test('Check site title', async () => {
   const title = await utils.getPageTitle(page);

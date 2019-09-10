@@ -3,7 +3,7 @@ const utils = require('../utils/utils');
 beforeAll(async () => {
   // utils.addPageListeners(page);
   await page.goto(url);
-}, goToTimeout);
+}, ourTimeout);
 
 test('Check site url', async () => {
   const url2 = utils.getPageUrl(page);
