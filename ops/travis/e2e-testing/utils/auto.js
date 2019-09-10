@@ -1,3 +1,5 @@
+const utils = require("./utils")
+
 async function register(page, user, pass) {
   await page.waitForSelector('#loginCreateAccountBtn');
   await page.click('#loginCreateAccountBtn');
@@ -181,33 +183,8 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
   }
 
-  /*
-  await page.waitForSelector('#templateStudiesList');
-  const element = await page.$("#templateStudiesList");
-  console.log("element", element);
-  const templates = await page.$('#templateStudiesList', templateStudiesList => {
-    jestPuppeteer.debug();
-    templateStudiesList.children
-  });
-  console.log("nodeChildren", templates);
-  */
-  const nodes = await page.evaluate(() => {
-    const templateStudiesList = document.querySelector('#templateStudiesList');
-    console.log("templateStudiesList", templateStudiesList);
-    let templates = [];
-    for (let i = 0; i < templateStudiesList.children.length; i++) {
-      const templateStudy = templateStudiesList.children[i];
-      console.log("templateStudy", templateStudy);
-      const style = window.getComputedStyle(templateStudy);
-      templates.push(style.display);
-      if (style.display !== 'none') {
-        console.log("templateStudy vis", templateStudy);
-        // templates.push(templateStudy);
-      }
-    }
-    return templates;
-  });
-  console.log("nodeChildren", nodes);
+  const children = await utils.getVisibleChildrenIDs(page, '#templateStudiesList');
+  console.log("nodeChildren", children);
   await page.waitFor(30000);
 
   await page.waitForSelector('#templateStudiesList > .qx-pb-listitem:nth-child(2)')

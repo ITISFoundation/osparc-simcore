@@ -16,6 +16,23 @@ function getRandUserAndPass() {
   }
 }
 
+async function getVisibleChildrenIDs(page, selector) {
+  console.log("looking for", selector, "children");
+  const childrenIDs = await page.evaluate(() => {
+    const parentNode = document.querySelector('#templateStudiesList');
+    const children = [];
+    for (let i = 0; i < parentNode.children.length; i++) {
+      const child = parentNode.children[i];
+      const style = window.getComputedStyle(child);
+      if (style.display !== 'none') {
+        children.push(child.id);
+      }
+    }
+    return children;
+  });
+  return childrenIDs;
+}
+
 function __logMe(msg, level='log') {
   if (level==='error') {
     console.error(`Error ${msg}`);
@@ -124,6 +141,7 @@ module.exports = {
   getPageTitle,
   getPageUrl,
   getRandUserAndPass,
+  getVisibleChildrenIDs,
   addPageListeners,
   removePageListeners,
   waitForResponse,
