@@ -43,7 +43,6 @@ describe('Calls after logging in', () => {
 
   test('Locations', async () => {
     const responseEnv = await utils.fetch('storage/locations');
-    console.log("locations", responseEnv.data);
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
