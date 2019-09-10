@@ -40,4 +40,10 @@ describe('Calls after logging in', () => {
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
+
+  test('Locations', async () => {
+    const responseEnv = await utils.fetch('storage/locations');
+    expect(Array.isArray(responseEnv.data)).toBeTruthy();
+    expect(responseEnv.data.length).toBeGreaterThan(0);
+  }, ourTimeout);
 });
