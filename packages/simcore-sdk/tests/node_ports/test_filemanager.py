@@ -1,11 +1,9 @@
-#pylint: disable=W0613, W0621, too-many-arguments
+#pylint: disable=too-many-arguments, unused-argument
 import filecmp
 from pathlib import Path
 
 import pytest
-
 from simcore_sdk.node_ports import exceptions, filemanager
-
 
 
 async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):

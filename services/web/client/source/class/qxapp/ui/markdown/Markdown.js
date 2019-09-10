@@ -3,17 +3,18 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**
- * @asset(marked/marked.min.js)
+ * @asset(marked/marked.js)
  */
 
 /**
  * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML and applies it to its value property.
  */
 qx.Class.define("qxapp.ui.markdown.Markdown", {
-  extend: qx.ui.basic.Label,
+  extend: qx.ui.embed.Html,
 
   /**
    * Markdown constructor. It directly accepts markdown as its first argument.
@@ -21,10 +22,26 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
    */
   construct: function(markdown) {
     this.base(arguments);
-    this.setRich(true);
+
+    this.__loadMarked = new Promise((resolve, reject) => {
+      if (typeof marked === "function") {
+        resolve(marked);
+      } else {
+        const loader = new qx.util.DynamicScriptLoader("marked/marked.js");
+        loader.addListenerOnce("ready", () => {
+          resolve(marked);
+        }, this);
+        loader.addListenerOnce("failed", e => {
+          reject(Error(`Failed to load ${e.getData()}. Value couldn't be updated.`));
+        });
+        loader.start();
+      }
+    });
     if (markdown) {
       this.setMarkdown(markdown);
     }
+
+    this.addListener("resize", e => this.__resizeMe(), this);
   },
 
   properties: {
@@ -38,20 +55,77 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
   },
 
   members: {
+    __loadMarked: null,
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
     _applyMarkdown: function(value) {
-      const loader = new qx.util.DynamicScriptLoader("marked/marked.min.js");
-      loader.addListenerOnce("ready", () => {
-        const markdown = marked(value);
-        this.setValue(markdown);
-      }, this);
-      loader.addListenerOnce("failed", e => {
-        console.error(`Failed to load ${e.getData()}. Value couldn't be updated.`);
-      });
-      loader.start();
+      this.__loadMarked.then(() => {
+        const html = marked(value);
+        this.setHtml(html);
+        // for some reason the content is not immediately there
+        qx.event.Timer.once(() => {
+          this.__parseImages();
+          this.__resizeMe();
+        }, this, 100);
+        this.__resizeMe();
+      }).catch(error => console.error(error));
+    },
+
+    __parseImages: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null) {
+        return;
+      }
+      const images = qx.bom.Selector.query("img", domElement);
+      for (let i=0; i<images.length; i++) {
+        images[i].onload = () => {
+          console.log(images[i].src, "loaded");
+          this.__resizeMe();
+        };
+      }
+    },
+
+    // qx.ui.embed.html scale to content
+    __resizeMe: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null) {
+        return;
+      }
+      if (domElement && domElement.children) {
+        const elemHeight = this.__getChildrenElementHeight(domElement.children);
+        console.log("All together", elemHeight);
+        this.setHeight(elemHeight);
+      }
+    },
+
+    __getChildrenElementHeight: function(children) {
+      let height = 0;
+      if (children.length) {
+        for (let i=0; i<children.length; i++) {
+          height += this.__getElementHeight(children[i]);
+        }
+      }
+      return height;
+    },
+
+    __getElementHeight: function(element) {
+      const size = qx.bom.element.Dimension.getSize(element);
+      console.log(element.innerHTML.substring(0, 10), size.height);
+      // add padding
+      return size.height + 15;
+    },
+
+    __getDomElement: function() {
+      if (!this.getContentElement) {
+        return null;
+      }
+      const domElement = this.getContentElement().getDomElement();
+      if (domElement) {
+        return domElement;
+      }
+      return null;
     }
   }
 });
