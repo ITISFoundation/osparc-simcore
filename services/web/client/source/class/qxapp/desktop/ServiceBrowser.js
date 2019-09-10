@@ -147,6 +147,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
+          ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);

@@ -62,7 +62,8 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     },
 
     uuid: {
-      check: "String"
+      check: "String",
+      apply : "_applyUuid"
     },
 
     studyTitle: {
@@ -140,6 +141,11 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     },
 
     // overriden
+    _applyUuid: function(value, old) {
+      const id = value.substr(value.length - 10);
+      qxapp.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+id);
+    },
+
     _applyIcon: function(value, old) {
       let icon = this.getChildControl("icon");
       icon.set({

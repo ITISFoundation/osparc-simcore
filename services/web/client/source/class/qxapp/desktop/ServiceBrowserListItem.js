@@ -69,6 +69,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       init : "selectable"
     },
 
+    key: {
+      check: "String",
+      apply : "_applyKey"
+    },
+
     title: {
       check : "String",
       apply : "_applyTitle",
@@ -151,6 +156,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    _applyKey: function(value, old) {
+      const parts = value.split("/");
+      const id = parts.pop();
+      qxapp.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
     },
 
     _applyTitle: function(value) {
