@@ -59,7 +59,8 @@ $(foreach v, \
 ## DOCKER BUILD -------------------------------
 TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
 TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>$(if IS_WIN,\$null,/dev/null))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+
 
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
