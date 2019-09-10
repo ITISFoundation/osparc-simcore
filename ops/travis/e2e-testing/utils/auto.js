@@ -170,6 +170,7 @@ async function dashboardEditFristStudyThumbnail(page) {
   await page.click('#editStudyBtn')
 
   await page.waitForSelector('#studyDetailsEditorThumbFld')
+  await utils.emptyField(page, '#studyDetailsEditorThumbFld')
   await page.click('#studyDetailsEditorThumbFld')
   await page.type('#studyDetailsEditorThumbFld', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
 

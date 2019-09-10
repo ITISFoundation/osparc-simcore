@@ -21,7 +21,7 @@ async function run () {
   // DASHBOARD
   await auto.dashboardAbout(page);
   await auto.dashboardPreferences(page);
-  // await auto.dashboardServiceBrowser(page);
+  await auto.dashboardServiceBrowser(page);
   await auto.dashboardStudyBrowser(page);
 
   await auto.dashboardNewStudy(page);
@@ -38,7 +38,8 @@ async function run () {
 
   // DASHBOARD
   await auto.dashboardEditFristStudyThumbnail(page);
-  // await auto.dashboardDataBrowser(page);
+  await page.waitFor(2000);
+  await auto.dashboardDataBrowser(page);
   await auto.dashboardDeleteFirstStudy(page);
   if (demo) {
     await page.waitFor(2000);

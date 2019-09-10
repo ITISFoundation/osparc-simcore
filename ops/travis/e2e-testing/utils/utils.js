@@ -40,6 +40,10 @@ async function fetch(endpoint) {
   return responseEnv;
 }
 
+async function emptyField(page, selector) {
+  await page.evaluate((selector) => document.querySelector(selector).value = "", selector);
+}
+
 function __logMe(msg, level='log') {
   if (level==='error') {
     console.error(`Error ${msg}`);
@@ -130,6 +134,7 @@ module.exports = {
   getRandUserAndPass,
   getVisibleChildrenIDs,
   fetch,
+  emptyField,
   addPageListeners,
   removePageListeners,
   dragAndDrop,
