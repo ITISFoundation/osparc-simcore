@@ -32,6 +32,14 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
+async function fetch(endpoint) {
+  const responseEnv = await page.evaluate(async (endpoint) => {
+    const response = await fetch('http://localhost:9081/v0/'+endpoint);
+    return await response.json();
+  }, endpoint);
+  return responseEnv;
+}
+
 function __logMe(msg, level='log') {
   if (level==='error') {
     console.error(`Error ${msg}`);
@@ -67,26 +75,6 @@ async function dragAndDrop(page, start, end) {
   await page.mouse.up();
 }
 
-// https://blog.usejournal.com/getting-started-with-jest-and-puppeteer-7cf6c59a2cae
-const waitForResponse = (page, url) => {
-  console.log("waitForResponse", url);
-  return new Promise(async (resolve, reject) => {
-    page.on('response', async function responseDataHandler(response) {
-      if(response.url() === url) {
-        console.log("Responded", response.url(), url);
-        if(response.status() !== 200) {
-          reject(`Error Status: ${response.status}`);
-        }
-        let data = await response.text();
-        data = JSON.parse(data);
-        page.removeListener('response', responseDataHandler)
-        resolve({
-          data
-        });
-      }
-    });
-  });
-}
 
 // https://medium.com/@viviancpy/save-screenshot-of-websites-with-puppeteer-cloudinary-and-heroku-1-3-bba6082d21d0
 require('dotenv').config();
@@ -141,9 +129,9 @@ module.exports = {
   getPageUrl,
   getRandUserAndPass,
   getVisibleChildrenIDs,
+  fetch,
   addPageListeners,
   removePageListeners,
-  waitForResponse,
   dragAndDrop,
   doScreenCapture,
 }

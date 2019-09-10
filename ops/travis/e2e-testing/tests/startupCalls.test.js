@@ -20,35 +20,23 @@ afterAll(async () => {
 
 describe('Calls after logging in', () => {
   test('Profile', async () => {
-    const responseEnv = await page.evaluate(async () => {
-      const response = await fetch('http://localhost:9081/v0/me');
-      return await response.json();
-    });
+    const responseEnv = await utils.fetch('me');
     expect(responseEnv.data["login"]).toBe(user);
   }, ourTimeout);
 
   test('Studies', async () => {
-    const responseEnv = await page.evaluate(async () => {
-      const response = await fetch('http://localhost:9081/v0/projects?type=user');
-      return await response.json();
-    });
+    const responseEnv = await utils.fetch('projects?type=user');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   test('Templates', async () => {
-    const responseEnv = await page.evaluate(async () => {
-      const response = await fetch('http://localhost:9081/v0/projects?type=template');
-      return await response.json();
-    });
+    const responseEnv = await utils.fetch('projects?type=template');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   // ToDo: No registry is available for travis
   test.skip('Services', async () => {
-    const responseEnv = await page.evaluate(async () => {
-      const response = await fetch('http://localhost:9081/v0/services');
-      return await response.json();
-    });
+    const responseEnv = await utils.fetch('services');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
