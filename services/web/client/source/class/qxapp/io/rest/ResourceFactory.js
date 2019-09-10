@@ -142,12 +142,20 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         }
       });
 
-
       return {
         "project": study,
         "projects": studies,
         "templates": templates
       };
+    },
+
+    getProjects: function() {
+      return new Promise((resolve, reject) => {
+        const call = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
+        call.addListenerOnce("getSuccess", e => resolve(e));
+        call.addListenerOnce("getError", e => reject(Error(e)));
+        call.get();
+      });
     },
 
     createUserResources: function() {

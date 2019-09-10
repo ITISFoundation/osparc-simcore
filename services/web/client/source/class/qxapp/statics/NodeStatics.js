@@ -52,6 +52,25 @@ qx.Class.define("qxapp.statics.NodeStatics", {
     },
     getType: function(type) {
       return this.self().TYPES[type.trim().toLowerCase()];
-    }
+    },
+
+    __matchPortType: function(typeA, typeB) {
+      if (typeA === typeB) {
+        return true;
+      }
+      let mtA = qxapp.data.MimeType.getMimeType(typeA);
+      let mtB = qxapp.data.MimeType.getMimeType(typeB);
+      return mtA && mtB &&
+        new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+    },
+
+    areNodesCompatible: function(topLevelPort1, topLevelPort2) {
+      console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
+      return topLevelPort1.isInput !== topLevelPort2.isInput;
+    },
+
+    arePortsCompatible: function(port1, port2) {
+      return port1.type && port2.type && this.self().__matchPortType(port1.type, port2.type);
+    },
   }
 });

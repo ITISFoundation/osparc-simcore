@@ -24,9 +24,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     __tree: null,
     __studyFilter: null,
     __createFiltersBar: function() {
-      const toolbar = new qx.ui.toolbar.ToolBar().set({
-        minHeight: 35
-      });
+      const toolbar = new qx.ui.toolbar.ToolBar();
       const filtersPart = new qx.ui.toolbar.Part();
       toolbar.add(filtersPart);
 
@@ -102,8 +100,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     },
 
     __updateTree: function() {
-      const call = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
-      call.addListenerOnce("getSuccess", e => {
+      const call = qxapp.io.rest.ResourceFactory.getInstance().getProjects();
+      call.then(e => {
         const studies = e.getRequest().getResponse().data;
         const model = this.__tree.getDataModel();
         model.clearData();
@@ -126,11 +124,9 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         });
         model.setData();
         this.__studyFilter.buildMenu(studies);
-      });
-      call.addListenerOnce("getError", e => {
+      }).catch(e => {
         console.error(e);
       });
-      call.get();
     }
   }
 });
