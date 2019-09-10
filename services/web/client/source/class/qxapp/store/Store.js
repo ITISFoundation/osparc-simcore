@@ -44,6 +44,12 @@ qx.Class.define("qxapp.store.Store", {
     "presignedLink": "qx.event.type.Data"
   },
 
+  properties: {
+    services: {
+      check: "Object"
+    }
+  },
+
   members: {
     __reloadingServices: null,
     __servicesCached: null,
