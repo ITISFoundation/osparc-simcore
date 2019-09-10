@@ -205,7 +205,7 @@ async function dashboardNewStudy(page) {
   await page.click('#newStudyBtn');
 
   await page.waitFor('#newStudyTitleFld');
-  await page.type('#newStudyTitleFld', 'my new study');
+  await page.type('#newStudyTitleFld', 'puppeteering study');
   await page.type('#newStudyDescFld', 'this is puppeteer creating a new study');
 
   await page.click('#newStudySubmitBtn');
