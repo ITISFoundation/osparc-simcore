@@ -1,0 +1,17 @@
+# docker-compose override for production cluster
+version: '3.7'
+
+services:
+  postgres:
+    deploy:
+      placement:
+        constraints:
+          - node.labels.postgres==true
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DOCKER_VOLUME_POSTGRES_DATA}
+      o: bind
