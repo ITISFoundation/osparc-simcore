@@ -1,308 +1,260 @@
-# author: Sylvain Anderegg
-
-VERSION := $(shell uname -a)
-
-# SAN: this is a hack so that docker-compose works in the linux virtual environment under Windows
-WINDOWS_MODE=OFF
-ifneq (,$(findstring Microsoft,$(VERSION)))
-$(info    detected WSL)
-export DOCKER_COMPOSE=docker-compose
-export DOCKER=docker
-# SAN: Windows does not have these things defined... but they are needed to execute a local swarm
-WINDOWS_MODE=ON
-else ifeq ($(OS), Windows_NT)
-$(info    detected Powershell/CMD)
-export DOCKER_COMPOSE=docker-compose.exe
-export DOCKER=docker.exe
-WINDOWS_MODE=ON
-else ifneq (,$(findstring Darwin,$(VERSION)))
-$(info    detected OSX)
-SHELL = /bin/bash
-export DOCKER_COMPOSE=docker-compose
-export DOCKER=docker
-else
-$(info    detected native linux)
-SHELL = /bin/bash
-export DOCKER_COMPOSE=docker-compose
-export DOCKER=docker
-endif
-
-
-PY_FILES := $(strip $(shell find services packages -iname '*.py' \
-											-not -path "*egg*" \
-											-not -path "*contrib*" \
-											-not -path "*-sdk/python*" \
-											-not -path "*generated_code*" \
-											-not -path "*datcore.py" \
-											-not -path "*web/server*"))
-TEMPCOMPOSE := $(shell mktemp)
-
-SERVICES_LIST := apihub director sidecar storage webserver maintenance
-CACHED_SERVICES_LIST := apihub director sidecar storage webserver webclient
-CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
-
-export VCS_URL:=$(shell git config --get remote.origin.url)
-export VCS_REF:=$(shell git rev-parse --short HEAD)
-export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
-export BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export SWARM_STACK_NAME ?= services
-# using ?= will only set if absent
-export DOCKER_IMAGE_TAG ?= latest
-$(info DOCKER_IMAGE_TAG set to ${DOCKER_IMAGE_TAG})
-
-# default to local (no registry)
-export DOCKER_REGISTRY ?= itisfoundation
-$(info DOCKER_REGISTRY set to ${DOCKER_REGISTRY})
-## Tools ------------------------------------------------------------------------------------------------------
+# osparc-simcore general makefile
 #
-tools =
+# TODO: make fully windows-friendly (e.g. some tools to install or replace e.g. mktemp, ...  )
+#
+# Recommended: GNU make version 4.2
+#
+# by sanderegg, pcrespov
+#
+PREDEFINED_VARIABLES := $(.VARIABLES)
 
-ifeq ($(shell uname -s),Darwin)
-	SED = gsed
+# TOOLS --------------------------------------
+
+# Operating system
+ifeq ($(filter Windows_NT,$(OS)),)
+IS_LINUX:= $(filter Linux,$(shell uname))
+IS_OSX  := $(filter Darwin,$(shell uname))
 else
-	SED = sed
+IS_WSL  := $(filter Microsoft,$(shell uname))
 endif
+IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
-ifeq ($(shell which ${SED}),)
-	tools += $(SED)
-endif
+$(info + Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
 
-
-## ------------------------------------------------------------------------------------------------------
-.PHONY: all
-all: help info
-ifdef tools
-	$(error "Can't find tools:${tools}")
-endif
+# Makefile's shell
+SHELL := $(if $(IS_WIN),powershell.exe,/bin/bash)
 
 
-## -------------------------------
-# Docker build and composition
+export DOCKER_COMPOSE=$(if $(IS_WIN),docker-compose.exe,docker-compose)
+export DOCKER        =$(if $(IS_WIN),docker.exe,docker)
+
+
+
+# VARIABLES ----------------------------------------------
+# TODO: read from docker-compose file instead
+SERVICES_LIST := \
+	apihub \
+	director \
+	sidecar \
+	storage \
+	webserver
+
+CACHED_SERVICES_LIST    := $(SERVICES_LIST) webclient
+CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
+
+export VCS_URL          := $(shell git config --get remote.origin.url)
+export VCS_REF          := $(shell git rev-parse --short HEAD)
+export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
+export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export SWARM_STACK_NAME ?= simcore
+export DOCKER_IMAGE_TAG ?= latest
+export DOCKER_REGISTRY  ?= itisfoundation
+
+$(foreach v, \
+	SWARM_STACK_NAME DOCKER_IMAGE_TAG DOCKER_REGISTRY DOCKER_REGISTRY_NEW, \
+	$(info + $(v) set to '$($(v))'))
+
+
+## DOCKER BUILD -------------------------------
+TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
+TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>$(if IS_WIN,$$null,/dev/null))
+
+create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
+
 .PHONY: build
-# target: build: – Builds all core service images.
-build: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel ${SERVICES_LIST}
+build: .env .build-webclient ## Builds all core service images (user `make rebuild` to build w/o cache)
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --parallel $(SERVICES_LIST)
 
 .PHONY: rebuild
-# target: build: – Builds all core service images.
-rebuild: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache --parallel ${SERVICES_LIST}
+rebuild: .env .build-webclient
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache --parallel $(SERVICES_LIST)
+
+.PHONY: build-devel
+build-devel: .env .build-webclient ## Builds images of core services for development
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
 
 
-.PHONY: build-devel .tmp-webclient-build
-# target: build-devel, rebuild-devel: – Builds images of core services for development.
-build-devel: .env .tmp-webclient-build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
+.PHONY: .build-webclient
+.build-webclient: $(CLIENT_WEB_OUTPUT)
+	# Fixes having services_webclient:build present for services_webserver:production when targeting services_webserver:development
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient
 
-# TODO: fixes having services_webclient:build present for services_webserver:production when
-# targeting services_webserver:development and
-.tmp-webclient-build: $(CLIENT_WEB_OUTPUT)
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
-
-# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
 $(CLIENT_WEB_OUTPUT):
-ifeq ($(OS), Windows_NT)
-	md $(CLIENT_WEB_OUTPUT)
-else
-	mkdir -p $(CLIENT_WEB_OUTPUT)
-endif
+	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
+	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
 .PHONY: build-client rebuild-client
-# target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-build-client: .env
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+build-client: .env ## Builds only webclient and webserver images. Use `rebuild` to build w/o cache
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient webserver
 
 rebuild-client: .env
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache webclient webserver
 
 
-.PHONY: up up-devel up-swarm up-swarm-devel remove-intermediate-file down down-swarm
-# target: up, up-devel: – init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
+## DOCKER SWARM -------------------------------
+.PHONY: up up-devel
+up: .env .init-swarm ## init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-docker-swarm-check:
-	@if $${DOCKER} node ls > /dev/null 2>&1; then \
-		echo "The node is already part of a swarm, running $${DOCKER} swarm leave -f..."; \
-		echo "$${DOCKER} swarm leave -f"; \
-		$${DOCKER} swarm leave -f; \
-	fi;
-
-up: up-swarm
-up-devel: up-swarm-devel
-
-up-swarm: .env docker-swarm-check
-	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
-	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
-
-up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
-	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
-	@${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml ${SWARM_STACK_NAME}
+up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
+	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 .PHONY: up-webclient-devel
-# target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
-up-webclient-devel: up-swarm-devel remove-intermediate-file
-	${DOCKER} service rm services_webclient
-	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+up-webclient-devel: .init-swarm up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+	$(DOCKER) service rm $(SWARM_STACK_NAME)_webclient
+	$(DOCKER_COMPOSE) -f services/web/client/docker-compose.yml up qx
 
 
-ifeq ($(WINDOWS_MODE),ON)
-remove-intermediate-file:
-	$(info    .tmp-compose.yml not removed)
-else
-remove-intermediate-file:
-	rm $(TEMPCOMPOSE).tmp-compose.yml || true
-endif
+.PHONY: down down-force
+down: ## stops and removes stack
+	docker stack rm $(SWARM_STACK_NAME)
 
-# target: down: – stops `up`
-down: down-swarm
-down-swarm:
-	${DOCKER} swarm leave -f
+down-force: ## forces to stop all services and leave swarms
+	$(DOCKER) swarm leave -f
 
-## -------------------------------
-# Cache
 
+.PHONY: .init-swarm
+.init-swarm:
+	# Ensures swarm is initialized
+	$(if $(SWARM_HOSTS),,$(DOCKER) swarm init)
+
+
+## DOCKER REGISTRY  -------------------------------
 .PHONY: pull-cache
 pull-cache: .env
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
-# target: build-cache – Builds service images and tags them as 'cache'
-build-cache:
-	# WARNING: first all except webserver and then webserver
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient maintenance
-	${DOCKER} tag ${DOCKER_REGISTRY}/webclient:cache services_webclient:build
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
-
+build-cache: ## Builds service images and tags them as 'cache'
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel $(filter-out webserver, $(CACHED_SERVICES_LIST))
+	$(DOCKER) tag $(DOCKER_REGISTRY)/webclient:cache services_webclient:build
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 .PHONY: push-cache
-push-cache:
-# target: push-cache – Pushes service images tagged as 'cache' into the registry
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
-
-
-
-## -------------------------------
-# registry operations
-ifdef DOCKER_REGISTRY_NEW
-$(info DOCKER_REGISTRY_NEW set to ${DOCKER_REGISTRY_NEW})
-endif # DOCKER_REGISTRY_NEW
+push-cache: ## Pushes service images tagged as 'cache' into the registry
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 .PHONY: tag push pull create-stack-file
-#target: tag – Tags service images
-tag:
+tag: ## tags service images
 ifndef DOCKER_REGISTRY_NEW
 	$(error DOCKER_REGISTRY_NEW variable is undefined)
 endif
 ifndef DOCKER_IMAGE_TAG_NEW
 	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
 endif
-	@echo "Tagging from ${DOCKER_REGISTRY}, ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
-	@for i in $(SERVICES_LIST); do \
-		${DOCKER} tag ${DOCKER_REGISTRY}/$$i:${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$$i:${DOCKER_IMAGE_TAG_NEW}; \
-	done
+	@echo "Tagging from $(DOCKER_REGISTRY), ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
+	$(foreach service, $(SERVICES_LIST) \
+		$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW) \
+	)
 
-# target: push – Pushes images into a registry
-push:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										push ${SERVICES_LIST}
+push: ## Pushes images of $(SERVICES_LIST) into a registry
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
 
-# target: pull – Pulls images from a registry
-pull: .env
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-					 					pull ${SERVICES_LIST}
+pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
 
-# target: create-stack-file – use as 'make create-stack-file output_file=stack.yaml'
-create-stack-file:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml \
-										config > $(output_file)
 
-## -------------------------------
-# Tools
+## PYTHON -------------------------------
+.PHONY: pylint
+
+PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
+
+pylint: ## Runs python linter framework's wide
+	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
+	# TODO: NOT windows friendly
+	/bin/bash -c "pylint --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*egg*" \
+											-not -path "*contrib*" \
+											-not -path "*-sdk/python*" \
+											-not -path "*generated_code*" \
+											-not -path "*datcore.py" \
+											-not -path "*web/server*"))"
+
+.venv: ## creates a python virtual environment with dev tools (pip, pylint, ...)
+	$(if $(IS_WIN),python.exe,python3) -m venv .venv
+	$(PY_PIP) install --upgrade pip wheel setuptools
+	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
+	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+
+
+## MISC -------------------------------
+
+.PHONY: new-service
+new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
+	$(PY_PIP) install cookiecutter
+	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
+
+# TODO: NOT windows friendly
+.env: .env-devel ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARMING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, copying $< ############"; cp $< $@)
+
+# TODO: NOT windows friendly
+.vscode/settings.json: .vscode-template/settings.json
+	$(info WARNING: #####  $< is newer than $@ ####)
+	@diff -uN $@ $<
+	@false
+
+PHONY: setup-check
+setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
 .PHONY: info
-# target: info – Displays some parameters of makefile environments
-info:
+info: ## displays selected parameters of makefile environments
+	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
 	@echo '+ BUILD_DATE           : ${BUILD_DATE}'
-	@echo '+ VERSION              : ${VERSION}'
-	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
-	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
+	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
-	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
-	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
 
-.PHONY: pylint
-# target: pylint – Runs python linter framework's wide
-pylint:
-	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
-	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
+.PHONY: info-more
+info-more: ## displays all parameters of makefile environments
+	$(info VARIABLES ------------)
+	$(foreach v,                                                                                  \
+		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
+		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
+	)
+	@echo "----"
+ifneq ($(SWARM_HOSTS), )
+	@echo ""
+	$(DOCKER) stack ls
+	@echo ""
+	-$(DOCKER) stack ps $(SWARM_STACK_NAME)
+	@echo ""
+	-$(DOCKER) stack services $(SWARM_STACK_NAME)
+	@echo ""
+	$(DOCKER) network ls
+endif
 
-
-.PHONY: new-service
-# target: new-service – Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/
-new-service:
-	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
-
-
-## -------------------------------
-# Virtual Environments
-
-.env: .env-devel
-	# first check if file exists, copies it
-	@if [ ! -f $@ ]	; then \
-		echo "##### $@ does not exist, copying $< ############"; \
-		cp $< $@; \
-	else \
-		echo "#####  $< is newer than $@ ####"; \
-		diff -uN $@ $<; \
-		false; \
-	fi
-
-.vscode/settings.json: .vscode-template/settings.json
-	$(info #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
-
-PHONY: setup-check
-# target: setup-check – Checks whether setup is in sync with templates (e.g. vscode settings or .env file)
-setup-check: .env .vscode/settings.json
-
-.venv:
-# target: .venv – Creates a python virtual environment with dev tools (pip, pylint, ...)
-	python3 -m venv .venv
-	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8 virtualenv pip-tools
-	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/Scripts/activate.bat' (WIN)"
-
-
-## -------------------------------
-# Auxiliary targets.
-
-.PHONY: reset
-# target: reset – Restart docker daemon
-reset:
-	sudo systemctl restart docker
 
 .PHONY: clean
-# target: clean – Cleans all unversioned files in project
-clean: remove-intermediate-file
+# TODO: does not clean windows temps
+clean:   ## cleans all unversioned files in project and temp files create by this makefile
+	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
 	@git clean -dxf -e .vscode/
 
 
+.PHONY: reset
+reset: ## restart docker daemon
+	sudo systemctl restart docker
+
+
 .PHONY: help
-# target: help – Display all callable targets
-help:
-	@echo "Make targets in osparc-simcore:"
-	@echo
-	@egrep "^\s*#\s*target\s*:\s*" [Mm]akefile \
-	| $(SED) -r "s/^\s*#\s*target\s*:\s*//g"
-	@echo
+help: ## display all callable targets
+ifeq ($(IS_WIN),)
+	@sort $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+else
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+endif
+
+.DEFAULT_GOAL := help
