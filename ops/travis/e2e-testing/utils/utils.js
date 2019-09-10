@@ -72,8 +72,8 @@ const waitForResponse = (page, url) => {
   console.log("waitForResponse", url);
   return new Promise(async (resolve, reject) => {
     page.on('response', async function responseDataHandler(response) {
-      console.log("Responded", response.url(), url);
       if(response.url() === url) {
+        console.log("Responded", response.url(), url);
         if(response.status() !== 200) {
           reject(`Error Status: ${response.status}`);
         }
