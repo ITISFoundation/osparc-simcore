@@ -18,7 +18,6 @@ function getRandUserAndPass() {
 
 async function getVisibleChildrenIDs(page, parentSelector) {
   const childrenIDs = await page.evaluate((selector) => {
-    selector = '#templateStudiesList';
     const parentNode = document.querySelector(selector);
     const children = [];
     for (let i = 0; i < parentNode.children.length; i++) {
