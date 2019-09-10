@@ -43,7 +43,7 @@ describe('Calls after logging in', () => {
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
-  test('Get services', async () => {
+  test('Services', async () => {
     const responseEnv = await page.evaluate(async () => {
       const response = await fetch('http://localhost:9081/v0/services');
       return await response.json();
