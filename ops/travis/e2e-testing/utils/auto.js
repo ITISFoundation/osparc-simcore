@@ -168,6 +168,11 @@ async function dashboardNewStudy(page) {
   await page.click('#newStudySubmitBtn');
 }
 
+async function toDashboard(page) {
+  await page.waitForSelector('#dashboardBtn')
+  await page.click('#dashboardBtn')
+}
+
 async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.waitForSelector('#studiesTabBtn')
   await page.click('#studiesTabBtn')
@@ -176,8 +181,40 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
   }
 
-  await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
-  await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
+  /*
+  await page.waitForSelector('#templateStudiesList');
+  const element = await page.$("#templateStudiesList");
+  console.log("element", element);
+  const templates = await page.$('#templateStudiesList', templateStudiesList => {
+    jestPuppeteer.debug();
+    templateStudiesList.children
+  });
+  console.log("nodeChildren", templates);
+  */
+  const nodes = await page.evaluate(() => {
+    const templateStudiesList = document.querySelector('#templateStudiesList');
+    console.log("templateStudiesList", templateStudiesList);
+    let templates = [];
+    for (let i = 0; i < templateStudiesList.children.length; i++) {
+      const templateStudy = templateStudiesList.children[i];
+      console.log("templateStudy", templateStudy);
+      const style = window.getComputedStyle(templateStudy);
+      templates.push(style.display);
+      if (style.display !== 'none') {
+        console.log("templateStudy vis", templateStudy);
+        // templates.push(templateStudy);
+      }
+    }
+    return templates;
+  });
+  console.log("nodeChildren", nodes);
+  await page.waitFor(30000);
+
+  await page.waitForSelector('#templateStudiesList > .qx-pb-listitem:nth-child(2)')
+  await page.click('#templateStudiesList > .qx-pb-listitem:nth-child(2)')
+
+  await page.waitForSelector('#openStudyBtn')
+  await page.click('#openStudyBtn')
 
   await page.waitForSelector('#newStudyTitleFld')
   await page.type('#newStudyTitleFld', ' testing');
@@ -189,9 +226,6 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.click('#runStudyBtn')
 
   await page.waitFor(20000);
-
-  await page.waitForSelector('div > div > div > #dashboardBtn > div')
-  await page.click('div > div > div > #dashboardBtn > div')
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
@@ -230,4 +264,5 @@ module.exports = {
   dashboardNewStudy,
   dashboardOpenFirstTemplateAndRun,
   dashboardDeleteFirstStudy,
+  toDashboard,
 }
