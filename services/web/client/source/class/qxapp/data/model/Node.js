@@ -64,7 +64,7 @@ qx.Class.define("qxapp.data.model.Node", {
       version
     });
 
-    let metaData = this.__metaData = qxapp.statics.NodeStatics.getNodeMetaData(key, version);
+    let metaData = this.__metaData = qxapp.utils.Services.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
@@ -551,7 +551,7 @@ qx.Class.define("qxapp.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (qxapp.statics.NodeStatics.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (qxapp.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               break;
             }

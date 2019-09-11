@@ -40,8 +40,7 @@ qx.Class.define("qxapp.store.Store", {
   },
 
   events: {
-    "servicesRegistered": "qx.event.type.Data",
-    "presignedLink": "qx.event.type.Data"
+    "servicesRegistered": "qx.event.type.Data"
   },
 
   properties: {
@@ -64,7 +63,7 @@ qx.Class.define("qxapp.store.Store", {
           const {
             data
           } = requ.getResponse();
-          const allServices = data.concat(qxapp.statics.NodeStatics.getBuiltInServices());
+          const allServices = data.concat(qxapp.utils.Services.getBuiltInServices());
           const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
           const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, true);
@@ -75,7 +74,7 @@ qx.Class.define("qxapp.store.Store", {
             error
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
-          const allServices = this.getFakeServices().concat(qxapp.statics.NodeStatics.getBuiltInServices());
+          const allServices = qxapp.dev.fake.Data.getFakeServices().concat(qxapp.utils.Services.getBuiltInServices());
           const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
           const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
           this.__servicesToCache(services, false);

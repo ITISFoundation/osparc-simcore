@@ -543,7 +543,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       const store = qxapp.store.Store.getInstance();
       studies.forEach(studyData => {
         for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
-          const metadata = qxapp.statics.NodeStatics.getNodeMetaData(nodedata.key, nodedata.version);
+          const metadata = qxapp.utils.Services.getNodeMetaData(nodedata.key, nodedata.version);
           if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
             store.stopInteractiveService(nodeId);
           }

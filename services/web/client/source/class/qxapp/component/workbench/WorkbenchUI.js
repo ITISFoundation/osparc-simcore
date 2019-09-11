@@ -506,7 +506,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return qxapp.statics.NodeStatics.areNodesCompatible(topLevelPort1, topLevelPort2);
+      return qxapp.utils.Services.areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {

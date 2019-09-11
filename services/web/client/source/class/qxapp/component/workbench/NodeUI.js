@@ -255,9 +255,9 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       const chipContainer = this.__chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
         margin: [3, 4]
       });
-      const category = this.getNode().isContainer() ? null : qxapp.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
+      const category = this.getNode().isContainer() ? null : qxapp.utils.Services.getCategory(this.getNode().getMetaData().category);
       const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
-      const type = qxapp.statics.NodeStatics.getType(nodeType);
+      const type = qxapp.utils.Services.getType(nodeType);
       if (type) {
         chipContainer.add(new qxapp.ui.basic.Chip(type.label, type.icon + "12"));
       }

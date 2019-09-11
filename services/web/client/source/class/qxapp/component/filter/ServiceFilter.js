@@ -60,6 +60,6 @@ qx.Class.define("qxapp.component.filter.ServiceFilter", {
           break;
       }
       return control || this.base(arguments, id);
-    },
+    }
   }
 });
