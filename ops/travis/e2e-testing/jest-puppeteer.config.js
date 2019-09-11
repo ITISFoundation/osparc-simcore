@@ -2,8 +2,9 @@ const demo = false;
 
 module.exports = {
   launch: {
-    headless: demo !== 'false',
+    headless: !demo,
     slowMo: demo ? 60 : 0,
+    defaultViewport: null,
     devtools: true
   }
 }
