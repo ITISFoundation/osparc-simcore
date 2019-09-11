@@ -1,0 +1,16 @@
+# NOTE: Windows users. See limitations in README.md
+version: '3.4'
+services:
+  qooxdoo-kit:
+    image: itisfoundation/qooxdoo-kit:latest
+    volumes:
+      - '.:/project'
+    ports:
+      - '8080:8080'
+    working_dir: /project
+    command: >
+      qx serve --set qx.allowUrlSettings=true
+        --set osparc.vcsOriginUrl='"${VCS_URL}"'
+        --set osparc.vcsRef='"${VCS_REF}"'
+        --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+        --set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'

@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "@qooxdoo/compiler": "^1.0.0-beta.20190807-0955",
-    "puppeteer": "^1.19.0",
-    "puppeteer-to-istanbul": "^1.2.2",
-    "yargs": "^13.3.0"
-  }
-}
