@@ -24,17 +24,23 @@ qx.Class.define("qxapp.data.Resources", {
   members: {
     fetch: function(resource, method = "GET", useCache = true) {
       return new Promise((resolve, reject) => {
+        if (this.self().resources[resource] == null) {
+          reject(Error(`Error while fetching ${resource}: the resource is not defined`));
+        }
         const stored = this.__getCached(resource);
         if (!useCache || !stored) {
           // Fetch resources
           const call = this.self().resources[resource];
           const normalizedMethod = method.trim().toLowerCase();
+
           call.addListenerOnce(normalizedMethod + "Success", e => {
             const data = e.getRequest().getResponse().data;
             this.__setCached(resource, data);
             resolve(data);
           }, this);
-          call.addListenerOnce(normalizedMethod + "Error", e => reject(Error(e)));
+
+          call.addListenerOnce(normalizedMethod + "Error", e => reject(Error(`Error while fetching ${resource}: ${e.getData()}`)));
+
           call[normalizedMethod]();
         } else {
           // Using cache
@@ -47,16 +53,28 @@ qx.Class.define("qxapp.data.Resources", {
       return this.fetch(resource, "GET", useCache);
     },
 
+    post: function(resource, useCache = true) {
+      return this.fetch(resource, "POST", useCache);
+    },
+
+    put: function(resource, useCache = true) {
+      return this.fetch(resource, "PUT", useCache);
+    },
+
+    delete: function(resource, useCache = true) {
+      return this.fetch(resource, "DELETE", useCache);
+    },
+
     __getCached: function(resource) {
       const stored = qxapp.store.Store.getInstance().get(resource);
       switch (resource) {
         case "studies":
-          if (stored.length > 0) {
-            return stored;
+          if (stored.length === 0) {
+            return null;
           }
           break;
       }
-      return null;
+      return stored;
     },
 
     __setCached: function(resource, data) {
@@ -75,6 +93,15 @@ qx.Class.define("qxapp.data.Resources", {
     },
     get: function(resource, useCache) {
       return this.getInstance().get(resource, useCache);
+    },
+    post: function(resource, useCache) {
+      return this.getInstance().post(resource, useCache);
+    },
+    put: function(resource, useCache) {
+      return this.getInstance().put(resource, useCache);
+    },
+    delete: function(resource, useCache) {
+      return this.getInstance().delete(resource, useCache);
     }
   }
 });
