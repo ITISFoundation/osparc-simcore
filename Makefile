@@ -108,7 +108,7 @@ up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
 
 .PHONY: up-webclient-devel
 up-webclient-devel: .init-swarm up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
-	$(DOCKER) service rm $(SWARM_STACK_NAME)_webclient
+	## TODO:download
 	$(DOCKER_COMPOSE) -f services/web/client/docker-compose.yml up qx
 
 

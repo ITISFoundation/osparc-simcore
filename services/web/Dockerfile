@@ -63,6 +63,13 @@ RUN $SC_PIP install \
       -r tmp/web/server/requirements/_base.txt
 
 
+ARG QX_KIT_VERSION=latest
+FROM itisfoundation/qooxdoo-kit:${QX_KIT_VERSION} as build-qx
+
+
+# BUILD HERE?
+
+
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
