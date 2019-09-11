@@ -100,9 +100,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     },
 
     __updateTree: function() {
-      const call = qxapp.io.rest.ResourceFactory.getInstance().getProjects();
-      call.then(e => {
-        const studies = e.getRequest().getResponse().data;
+      const call = qxapp.data.Resources.get("studies");
+      call.then(studies => {
         const model = this.__tree.getDataModel();
         model.clearData();
         studies.forEach(study => {

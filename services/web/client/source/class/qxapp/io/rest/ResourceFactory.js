@@ -149,15 +149,6 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       };
     },
 
-    getProjects: function() {
-      return new Promise((resolve, reject) => {
-        const call = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
-        call.addListenerOnce("getSuccess", e => resolve(e));
-        call.addListenerOnce("getError", e => reject(Error(e)));
-        call.get();
-      });
-    },
-
     createUserResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml

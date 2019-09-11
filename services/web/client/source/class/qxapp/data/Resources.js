@@ -16,6 +16,36 @@ qx.Class.define("qxapp.data.Resources", {
         get: {
           method: "GET",
           url: statics.API + "/projects?type=user"
+        },
+        getOne: {
+          method: "GET",
+          url: statics.API + "/projects/{project_id}"
+        },
+        post: {
+          method: "POST",
+          url: statics.API + "/projects"
+        },
+        postFromTemplate: {
+          method: "POST",
+          url: statics.API + "/projects?from_template={template_id}"
+        },
+        postToTemplate: {
+          method: "POST",
+          url: statics.API + "/projects?as_template={study_id}"
+        },
+        put: {
+          method: "PUT",
+          url: statics.API + "/projects/{project_id}"
+        },
+        delete: {
+          method: "DELETE",
+          url: statics.API + "/projects/{project_id}"
+        }
+      }),
+      templates: new qx.io.rest.Resource({
+        get: {
+          method: "GET",
+          url: statics.API + "/projects?type=template"
         }
       })
     };
