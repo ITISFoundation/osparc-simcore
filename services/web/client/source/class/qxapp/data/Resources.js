@@ -49,10 +49,10 @@ qx.Class.define("qxapp.data.Resources", {
 
     __getCached: function(resource) {
       const stored = qxapp.store.Store.getInstance().get(resource);
-      switch(resource) {
+      switch (resource) {
         case "studies":
           if (stored.length > 0) {
-            return stored
+            return stored;
           }
           break;
       }
@@ -61,7 +61,7 @@ qx.Class.define("qxapp.data.Resources", {
 
     __setCached: function(resource, data) {
       const store = qxapp.store.Store.getInstance();
-      switch(resource) {
+      switch (resource) {
         default:
           store.set(resource, data);
       }

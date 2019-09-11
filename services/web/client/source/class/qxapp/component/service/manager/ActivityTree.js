@@ -9,8 +9,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
   extend: qx.ui.treevirtual.TreeVirtual,
 
   construct: function() {
-    this.base(arguments,
-    [
+    this.base(arguments, [
       "Node",
       "Service",
       "Status",
