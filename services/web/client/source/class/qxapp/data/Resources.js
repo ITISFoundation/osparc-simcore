@@ -10,20 +10,35 @@ qx.Class.define("qxapp.data.Resources", {
 
   type: "singleton",
 
+  defer: function(statics) {
+    statics.resources = {
+      studies: new qx.io.rest.Resource({
+        get: {
+          method: "GET",
+          url: statics.API + "/projects?type=user"
+        }
+      })
+    };
+  },
+
   members: {
     fetch: function(resource, method = "GET", useCache = true) {
-      const getter = qxapp.store.Store[this.__getterName(resource)];
       return new Promise((resolve, reject) => {
-        if (!useCache || !getter()) {
+        const stored = this.__getCached(resource);
+        if (!useCache || !stored) {
           // Fetch resources
-          const call = this.self()[resource];
+          const call = this.self().resources[resource];
           const normalizedMethod = method.trim().toLowerCase();
-          call.addListenerOnce(normalizedMethod + "Success", e => resolve(e.getRequest().getResponse().data));
+          call.addListenerOnce(normalizedMethod + "Success", e => {
+            const data = e.getRequest().getResponse().data;
+            this.__setCached(resource, data);
+            resolve(data);
+          }, this);
           call.addListenerOnce(normalizedMethod + "Error", e => reject(Error(e)));
           call[normalizedMethod]();
         } else {
           // Using cache
-          resolve(getter());
+          resolve(stored);
         }
       });
     },
@@ -32,18 +47,34 @@ qx.Class.define("qxapp.data.Resources", {
       return this.fetch(resource, "GET", useCache);
     },
 
-    __getterName: function(resource) {
-      return "get" + qxapp.utils.Utils.capitalize(resource);
+    __getCached: function(resource) {
+      const stored = qxapp.store.Store.getInstance().get(resource);
+      switch(resource) {
+        case "studies":
+          if (stored.length > 0) {
+            return stored
+          }
+          break;
+      }
+      return null;
+    },
+
+    __setCached: function(resource, data) {
+      const store = qxapp.store.Store.getInstance();
+      switch(resource) {
+        default:
+          store.set(resource, data);
+      }
     }
   },
 
   statics: {
     API: "/v0",
-    studies: new qx.io.rest.Resource({
-      get: {
-        method: "GET",
-        url: this.self().API + "/projects?type=user"
-      }
-    })
-  },
+    fetch: function(resource, method, useCache) {
+      return this.getInstance().fetch(resource, method, useCache);
+    },
+    get: function(resource, useCache) {
+      return this.getInstance().get(resource, useCache);
+    }
+  }
 });
