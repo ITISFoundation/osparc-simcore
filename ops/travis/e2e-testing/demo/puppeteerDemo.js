@@ -18,34 +18,35 @@ async function run () {
   await auto.register(page, user, pass);
   await auto.logIn(page, user, pass);
 
-  // DASHBOARD
+  // DASHBOARD navigation
   await auto.dashboardAbout(page);
   await auto.dashboardPreferences(page);
   await auto.dashboardServiceBrowser(page);
   await auto.dashboardStudyBrowser(page);
 
+  // NEW STUDY from Scratch
   await auto.dashboardNewStudy(page);
   await page.waitFor(2000);
-
-  // STUDY EDITOR
   await auto.toDashboard(page);
 
-  // DASHBOARD
+  // NEW STUDY from Template
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
-
-  // STUDY EDITOR
   await auto.toDashboard(page);
 
-  // DASHBOARD
+  // First study edition
   await auto.dashboardEditFristStudyThumbnail(page);
   await page.waitFor(2000);
+
   // await auto.dashboardDataBrowser(page);
+
+  // First study removal
   await auto.dashboardDeleteFirstStudy(page);
+
+  // LOGOUT
   if (demo) {
     await page.waitFor(2000);
   }
-
   await auto.logOut(page);
 
   await browser.close();
