@@ -12,11 +12,9 @@ addons:
 
 stages:
   - name: build / unit-testing
-    # if: tag IS blank
-    if: 0 = 1
+    if: tag IS blank
   - name: integration-testing
-    # if: tag IS blank
-    if: 0 = 1
+    if: tag IS blank
   - name: system-testing
     if: tag IS blank
   - deployment
