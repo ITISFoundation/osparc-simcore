@@ -59,7 +59,9 @@ $(foreach v, \
 ## DOCKER BUILD -------------------------------
 TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
 TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format={{.Hostname}} 2>$(if IS_WIN,$$null,/dev/null))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+
+
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
@@ -75,7 +77,6 @@ rebuild: .env .build-webclient
 .PHONY: build-devel
 build-devel: .env .build-webclient ## Builds images of core services for development
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
-
 
 .PHONY: .build-webclient
 .build-webclient: $(CLIENT_WEB_OUTPUT)
@@ -113,7 +114,7 @@ up-webclient-devel: .init-swarm up-devel ## init swarm and deploys all core and 
 
 .PHONY: down down-force
 down: ## stops and removes stack
-	docker stack rm $(SWARM_STACK_NAME)
+	$(DOCKER) stack rm $(SWARM_STACK_NAME)
 
 down-force: ## forces to stop all services and leave swarms
 	$(DOCKER) swarm leave -f
@@ -149,8 +150,8 @@ ifndef DOCKER_IMAGE_TAG_NEW
 	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
 endif
 	@echo "Tagging from $(DOCKER_REGISTRY), ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
-	$(foreach service, $(SERVICES_LIST), \
-		$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW) \
+	$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW); \
 	)
 
 push: ## Pushes images of $(SERVICES_LIST) into a registry
