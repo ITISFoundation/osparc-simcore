@@ -29,6 +29,9 @@ async function run () {
   await page.waitFor(2000);
   await auto.toDashboard(page);
 
+  // First study removal
+  await auto.dashboardDeleteFirstStudy(page);
+
   // NEW STUDY from Template
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
@@ -38,10 +41,7 @@ async function run () {
   await auto.dashboardEditFristStudyThumbnail(page);
   await page.waitFor(2000);
 
-  // await auto.dashboardDataBrowser(page);
-
-  // First study removal
-  await auto.dashboardDeleteFirstStudy(page);
+  await auto.dashboardDataBrowser(page);
 
   // LOGOUT
   if (demo) {

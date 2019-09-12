@@ -122,22 +122,20 @@ async function dashboardDataBrowser(page) {
   await page.waitForSelector('#dataTabBtn')
   await page.click('#dataTabBtn')
 
-  await page.waitFor(2000);
-
-  // expand location
+  // expand first location
   await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
   await page.click('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
 
-  // expand dataset
-  await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
-  await page.click('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
+  // expand first study
+  // await page.waitForSelector('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
+  // await page.click('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
+
+  // expand second study
+  await page.waitForSelector('div:nth-child(1) > div > div > div:nth-child(4) > div:nth-child(1)')
+  await page.click('div:nth-child(1) > div > div > div:nth-child(4) > div:nth-child(1)')
 
   await page.waitFor(2000)
-
-  // expand study
-  await page.waitForSelector('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
-  await page.click('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
-
+  /*
   // expand service
   await page.waitForSelector('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
   await page.click('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
@@ -147,6 +145,7 @@ async function dashboardDataBrowser(page) {
   await page.click('div > div:nth-child(2) > div > .qx-toolbar-button-hovered > div:nth-child(1)')
 
   await page.waitFor(2000)
+  */
 }
 
 async function dashboardStudyBrowser(page) {
@@ -256,6 +255,8 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
+  console.log("Filtering by", templateName);
+
   await page.waitFor(1000)
   await page.waitFor('#studyFiltersTextFld')
   await page.click('#studyFiltersTextFld')
@@ -265,6 +266,8 @@ async function __dashboardFilterStudiesByText(page, templateName) {
 }
 
 async function dashboardDeleteFirstStudy(page) {
+  console.log("Deleting first study")
+
   await page.waitForSelector('#studiesTabBtn')
   await page.click('#studiesTabBtn')
 
@@ -273,6 +276,8 @@ async function dashboardDeleteFirstStudy(page) {
 
   await page.waitForSelector('#deleteStudiesBtn')
   await page.click('#deleteStudiesBtn')
+
+  await page.waitFor(500)
 
   await page.waitForSelector('#confirmDeleteStudyBtn')
   await page.click('#confirmDeleteStudyBtn')
