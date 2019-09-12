@@ -39,7 +39,7 @@ SERVICES_LIST := \
 	storage \
 	webserver
 
-CACHED_SERVICES_LIST    := $(SERVICES_LIST) webclient
+CACHED_SERVICES_LIST    := $(SERVICES_LIST)
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 
 export VCS_URL          := $(shell git config --get remote.origin.url)
@@ -57,59 +57,63 @@ $(foreach v, \
 
 
 ## DOCKER BUILD -------------------------------
-TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN)\
+	,(New-TemporaryFile).FullName\
+	,mktemp /tmp/$(SWARM_STACK_NAME)-XXXX\
+	) \
+)
+NULL := $(if IS_WIN,null,/dev/null)
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}")
 
-
-
-create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
+.PHONY: config
+create-stack-file: config # TODO: deprecate create-stack-file
+config: ## Creates stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
 
-.PHONY: build
-build: .env .build-webclient ## Builds all core service images (user `make rebuild` to build w/o cache)
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --parallel $(SERVICES_LIST)
 
-.PHONY: rebuild
-rebuild: .env .build-webclient
+.PHONY: build
+build: .env ## Builds all core service images (user `make build-nc` to build w/o cache)
+	# Compiles front-end
+	$(MAKE) -C services/web/client compile
+	# Building services
+	export BUILD_TARGET=production; $(DOCKER_COMPOSE) -f services/docker-compose.build.yml build webserver
+
+.PHONY: rebuild build-nc
+rebuild: build-nc #TODO: deprecate rebuild
+build-nc: .env
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache --parallel $(SERVICES_LIST)
 
 .PHONY: build-devel
-build-devel: .env .build-webclient ## Builds images of core services for development
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
+build-devel: .env ## Builds images of core services for development
+	# Compiles front-end
+	$(MAKE) -C services/web/client compile-dev
+	# Build services
+	export BUILD_TARGET=development; $(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
 
-.PHONY: .build-webclient
-.build-webclient: $(CLIENT_WEB_OUTPUT)
-	# Fixes having services_webclient:build present for services_webserver:production when targeting services_webserver:development
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient
 
 $(CLIENT_WEB_OUTPUT):
 	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
-.PHONY: build-client rebuild-client
-build-client: .env ## Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build webclient webserver
-
-rebuild-client: .env
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache webclient webserver
-
-
 ## DOCKER SWARM -------------------------------
 .PHONY: up up-devel
-up: .env .init-swarm ## init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+up: .env .init-swarm ## deploys production stack + tools
+	# config stack to $(TEMP_COMPOSE_YML)
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT)
+up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys development stack
 	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 .PHONY: up-webclient-devel
-up-webclient-devel: .init-swarm up-devel ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
-	## TODO:download
-	$(DOCKER_COMPOSE) -f services/web/client/docker-compose.yml up qx
+up-webclient-devel: ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+	# start compile+watch front-end container
+	$(MAKE) -C services/web/client compile-dev
+	# deploy devel stack
+	$(MAKE) up-devel
 
 
 .PHONY: down down-force
@@ -129,19 +133,18 @@ down-force: ## forces to stop all services and leave swarms
 ## DOCKER REGISTRY  -------------------------------
 .PHONY: pull-cache
 pull-cache: .env
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml pull
+	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml pull
 
 .PHONY: build-cache
 build-cache: ## Builds service images and tags them as 'cache'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel $(filter-out webserver, $(CACHED_SERVICES_LIST))
-	$(DOCKER) tag $(DOCKER_REGISTRY)/webclient:cache services_webclient:build
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.cache.yml build --parallel
+	## $(filter-out webserver, $(CACHED_SERVICES_LIST))
 
 .PHONY: push-cache
 push-cache: ## Pushes service images tagged as 'cache' into the registry
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
+	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
-.PHONY: tag push pull create-stack-file
+.PHONY: tag push pull
 tag: ## tags service images
 ifndef DOCKER_REGISTRY_NEW
 	$(error DOCKER_REGISTRY_NEW variable is undefined)
@@ -241,7 +244,7 @@ endif
 .PHONY: clean
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
-	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
+	@-rm $(wildcard /tmp/$(SWARM_STACK_NAME)*)
 	@git clean -dxf -e .vscode/
 
 
