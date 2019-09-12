@@ -63,13 +63,6 @@ RUN $SC_PIP install \
       -r tmp/web/server/requirements/_base.txt
 
 
-ARG QX_KIT_VERSION=latest
-FROM itisfoundation/qooxdoo-kit:${QX_KIT_VERSION} as build-qx
-
-
-# BUILD HERE?
-
-
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
@@ -90,8 +83,8 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
     $SC_PIP list -v
 
 # front-end client last
-COPY --from=services_webclient:build --chown=scu:scu \
-      /home/scu/client/build-output \
+COPY --from=tools/qooxdoo-kit/compile:last --chown=scu:scu \
+      /project/build-output \
       /build/services/web/client
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
