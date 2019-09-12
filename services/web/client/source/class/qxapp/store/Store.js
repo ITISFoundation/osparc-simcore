@@ -51,6 +51,10 @@ qx.Class.define("qxapp.store.Store", {
     config: {
       check: "Object",
       init: {}
+    },
+    templates: {
+      check: "Array",
+      init: []
     }
   },
 

@@ -34,10 +34,6 @@ qx.Class.define("qxapp.data.Resources", {
             method: "POST",
             url: statics.API + "/projects?from_template={template_id}"
           },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?as_template={study_id}"
-          },
           put: {
             method: "PUT",
             url: statics.API + "/projects/{project_id}"
@@ -57,7 +53,11 @@ qx.Class.define("qxapp.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/projects?type=template"
-          }
+          },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?as_template={study_id}"
+          },
         })
       },
       /*

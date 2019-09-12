@@ -218,24 +218,24 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     },
 
     __saveAsTemplate: function(btn) {
-      const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
-      apiCall.addListenerOnce("postSaveAsTemplateSuccess", e => {
+      const params = {
+        url: {
+          "study_url": this.__model.getUuid()
+        },
+        data: this.__serializeForm()
+      };
+      qxapp.data.Resources.fetch("templates", "postToTemplate", params).then(template => {
         btn.resetIcon();
         btn.getChildControl("icon").getContentElement()
           .removeClass("rotate");
-        this.fireDataEvent("updatedTemplate", e);
-        const data = e.getData().data;
-        this.__model.set(data);
+        this.fireDataEvent("updatedTemplate", template);
+        this.__model.set(template);
         this.setMode("display");
-      }, this);
-      apiCall.addListenerOnce("postSaveAsTemplateError", e => {
+      }).catch(err => {
         btn.resetIcon();
-        console.error(e);
+        console.error(err);
         qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
-      }, this);
-      apiCall.postSaveAsTemplate({
-        "study_id": this.__model.getUuid()
-      }, this.__serializeForm());
+      });
     },
 
     __serializeForm: function() {
