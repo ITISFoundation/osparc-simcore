@@ -3,7 +3,7 @@ const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
 const demo = true;
-const url = "http://localhost:9081/";
+const url = "http://127.0.0.1:9081/";
 const {
   user,
   pass
