@@ -33,7 +33,7 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
     this.set({
       allowStretchX: false,
       allowStretchY: false
-    })
+    });
 
     this.__textField = this.getChildControl("textfield");
 
