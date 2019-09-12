@@ -30,9 +30,12 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.__textField = this.getChildControl("textfield").set({
-      placeholder: this.tr("Filter")
-    });
+    this.set({
+      allowStretchX: false,
+      allowStretchY: false
+    })
+
+    this.__textField = this.getChildControl("textfield");
 
     this.getChildControl("clearbutton");
 
@@ -62,15 +65,19 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
       switch (id) {
         case "textfield":
           control = new qx.ui.form.TextField().set({
-            paddingRight: 15
+            paddingRight: 15,
+            placeholder: this.tr("Filter")
           });
           this._add(control);
           break;
         case "clearbutton":
-          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => this.reset());
+          control = new qxapp.component.form.IconButton("@MaterialIcons/close/12", () => {
+            this.reset();
+            this.__textField.focus();
+          });
           this._add(control, {
             right: 0,
-            bottom: 12
+            bottom: 6
           });
           break;
       }

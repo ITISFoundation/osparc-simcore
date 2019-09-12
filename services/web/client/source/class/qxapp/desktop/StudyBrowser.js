@@ -217,7 +217,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
-      const studyFilters = this.__studyFilters = new qxapp.desktop.StudyFilters("studyBrowser");
+      const studyFilters = this.__studyFilters = new qxapp.component.filter.TextFilter("text", "studyBrowser");
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
@@ -287,9 +287,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __attachEventHandlers: function() {
-      const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield", true);
+      const textfield = this.__studyFilters.getChildControl("textfield", true);
       textfield.addListener("appear", () => {
-        qxapp.component.filter.UIFilterController.getInstance().resetGroup("studyBrowser");
         textfield.focus();
       }, this);
       const commandEsc = new qx.ui.command.Command("Esc");
