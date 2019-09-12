@@ -7,15 +7,11 @@ services:
 
   apihub:
     image: services_apihub:dev
-    build:
-      target: development
     volumes:
       - '../api:/srv/http/api'
 
   director:
     image: services_director:dev
-    build:
-      target: development
     environment:
       - REGISTRY_CACHING=False
       - SC_BOOT_MODE=debug-ptvsd
@@ -28,22 +24,8 @@ services:
     ports:
       - "3004:3000"
 
-  webclient:
-    image: services_webclient:dev
-    build:
-      target: development
-    volumes:
-      - './web/client:/home/scu/client'
-    command: >
-      compile --watch
-        --set osparc.vcsOriginUrl='"${VCS_URL}"'
-        --set osparc.vcsRef='"${VCS_REF}"'
-        --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
-        --set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
   webserver:
     image: services_webserver:dev
-    build:
-      target: development
     volumes:
       - ./web/server:/devel/services/web/server
       - ./web/client/source-output:/devel/services/web/client
@@ -54,13 +36,9 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
     ports:
       - "3001:3000"
-    depends_on:
-      - webclient
 
   sidecar:
     image: services_sidecar:dev
-    build:
-      target: development
     volumes:
       - ./sidecar:/devel/services/sidecar
       - ./storage/client-sdk:/devel/services/storage/client-sdk
@@ -68,8 +46,6 @@ services:
 
   storage:
     image: services_storage:dev
-    build:
-      target: development
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages

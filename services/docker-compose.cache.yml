@@ -16,10 +16,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:cache
     build:
       target: cache
-  webclient:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/webclient:cache
-    build:
-      target: build
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
     build:
