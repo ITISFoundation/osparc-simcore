@@ -74,20 +74,19 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         this.__createStudiesLayout();
         this.__createCommandEvents();
         if (loadStudyId) {
-          let resource = this.__studyResources.project;
-          resource.addListenerOnce("getSuccess", e => {
-            const studyData = e.getRequest().getResponse().data;
+          const params = {
+            url: {
+              "project_id": loadStudyId
+            }
+          };
+          qxapp.data.Resources.getOne("studies", params, loadStudyId).then(studyData => {
             this.__startStudy(studyData);
-          }, this);
-          resource.addListener("getError", ev => {
+          }).catch(err => {
             if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
               // If guest fails to load study, log him out
               qxapp.auth.Manager.getInstance().logout();
             }
-            console.error(ev);
-          });
-          resource.get({
-            "project_id": loadStudyId
+            console.error(err);
           });
         }
       }

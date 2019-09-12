@@ -54,6 +54,30 @@ qx.Class.define("qxapp.store.Store", {
     __reloadingServices: null,
     __servicesCached: null,
 
+    update: function(resource, data) {
+      const stored = this.get(resource);
+      if (Array.isArray(stored)) {
+        if (Array.isArray(data)) {
+          this.set(resource, data);
+        } else {
+          let item = stored.find(item => item.uuid === data.uuid);
+          if (item) {
+            const newStored = stored.map(item => {
+              if (item.uuid === data.uuid) {
+                return data;
+              }
+              return item;
+            });
+            this.set(resource, newStored);
+          } else {
+            stored.push(data);
+          }
+        }
+      } else {
+        this.set(resource, data);
+      }
+    },
+
     getServices: function(reload) {
       if (!this.__reloadingServices && (reload || Object.keys(this.__servicesCached).length === 0)) {
         this.__reloadingServices = true;

@@ -12,7 +12,10 @@ qx.Class.define("qxapp.data.Resources", {
 
   defer: function(statics) {
     statics.resources = {
-      studies: new qx.io.rest.Resource({
+      /*
+       * STUDIES
+       */
+      studies: new qxapp.io.rest.Resource({
         get: {
           method: "GET",
           url: statics.API + "/projects?type=user"
@@ -42,7 +45,10 @@ qx.Class.define("qxapp.data.Resources", {
           url: statics.API + "/projects/{project_id}"
         }
       }),
-      templates: new qx.io.rest.Resource({
+      /*
+       * TEMPLATES (actually studies flagged as studies)
+       */
+      templates: new qxapp.io.rest.Resource({
         get: {
           method: "GET",
           url: statics.API + "/projects?type=template"
@@ -52,26 +58,27 @@ qx.Class.define("qxapp.data.Resources", {
   },
 
   members: {
-    fetch: function(resource, method = "GET", useCache = true) {
+    fetch: function(resource, endpoint, params = {}, useCache = false) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
+        } else if (this.self().resources[resource][endpoint] == null) {
+          reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
         const stored = this.__getCached(resource);
         if (!useCache || !stored) {
           // Fetch resources
           const call = this.self().resources[resource];
-          const normalizedMethod = method.trim().toLowerCase();
 
-          call.addListenerOnce(normalizedMethod + "Success", e => {
+          call.addListenerOnce(endpoint + "Success", e => {
             const data = e.getRequest().getResponse().data;
             this.__setCached(resource, data);
             resolve(data);
           }, this);
 
-          call.addListenerOnce(normalizedMethod + "Error", e => reject(Error(`Error while fetching ${resource}: ${e.getData()}`)));
+          call.addListenerOnce(endpoint + "Error", e => reject(Error(`Error while fetching ${resource}: ${e.getData()}`)));
 
-          call[normalizedMethod]();
+          call[endpoint](params.url || null, params.data || null);
         } else {
           // Using cache
           resolve(stored);
@@ -79,20 +86,24 @@ qx.Class.define("qxapp.data.Resources", {
       });
     },
 
-    get: function(resource, useCache = true) {
-      return this.fetch(resource, "GET", useCache);
+    getOne: function(resource, params, id, useCache = true) {
+      const stored = this.__getCached(resource);
+      if (stored && useCache) {
+        const item = stored.find(element => element.uuid === id);
+        if (item) {
+          return Promise.resolve(item);
+        }
+      }
+      return this.fetch(resource, "getOne", params, useCache)
     },
 
-    post: function(resource, useCache = true) {
-      return this.fetch(resource, "POST", useCache);
-    },
-
-    put: function(resource, useCache = true) {
-      return this.fetch(resource, "PUT", useCache);
-    },
-
-    delete: function(resource, useCache = true) {
-      return this.fetch(resource, "DELETE", useCache);
+    getAll: function(resource, params, useCache = true) {
+      const stored = this.__getCached(resource);
+      if (stored && useCache) {
+        return Promise.resolve(stored);
+      } else {
+        return this.fetch(resource, "get", params, useCache);
+      }
     },
 
     __getCached: function(resource) {
@@ -111,7 +122,7 @@ qx.Class.define("qxapp.data.Resources", {
       const store = qxapp.store.Store.getInstance();
       switch (resource) {
         default:
-          store.set(resource, data);
+          store.update(resource, data);
       }
     }
   },
@@ -121,17 +132,12 @@ qx.Class.define("qxapp.data.Resources", {
     fetch: function(resource, method, useCache) {
       return this.getInstance().fetch(resource, method, useCache);
     },
-    get: function(resource, useCache) {
-      return this.getInstance().get(resource, useCache);
+    getOne: function(resource, params, id, useCache) {
+      return this.getInstance().getOne(resource, params, id, useCache);
     },
-    post: function(resource, useCache) {
-      return this.getInstance().post(resource, useCache);
-    },
-    put: function(resource, useCache) {
-      return this.getInstance().put(resource, useCache);
-    },
-    delete: function(resource, useCache) {
-      return this.getInstance().delete(resource, useCache);
+
+    getAll: function(resource, params, useCache) {
+      return this.getInstance().getAll(resource, params, useCache);
     }
   }
 });
