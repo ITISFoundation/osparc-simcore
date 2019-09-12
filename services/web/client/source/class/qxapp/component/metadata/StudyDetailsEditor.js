@@ -195,26 +195,26 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     },
 
     __saveStudy: function(btn) {
-      const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().project;
-      apiCall.addListenerOnce("putSuccess", e => {
+      const params = {
+        url: {
+          "project_id": this.__model.getUuid()
+        },
+        data: this.__serializeForm()
+      };
+      qxapp.data.Resources.fetch("studies", "put", params).then(data => {
         btn.resetIcon();
         btn.getChildControl("icon").getContentElement()
           .removeClass("rotate");
-        this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", e);
-        const data = e.getData().data;
+        this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
         this.__model.set(data);
         this.setMode("display");
-      }, this);
-      apiCall.addListenerOnce("putError", e => {
+      }).catch(err => {
         btn.resetIcon();
         btn.getChildControl("icon").getContentElement()
           .removeClass("rotate");
-        console.error(e);
+        console.error(err);
         qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
-      }, this);
-      apiCall.put({
-        "project_id": this.__model.getUuid()
-      }, this.__serializeForm());
+      });
     },
 
     __saveAsTemplate: function(btn) {

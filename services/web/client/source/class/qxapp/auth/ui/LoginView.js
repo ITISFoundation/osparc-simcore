@@ -100,25 +100,18 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
-        const interval = 1000;
-        const configTimer = new qx.event.Timer(interval);
-        const resource = qxapp.io.rest.ResourceFactory.getInstance();
-        let registerWithInvitation = resource.registerWithInvitation();
-        configTimer.addListener("interval", () => {
-          registerWithInvitation = resource.registerWithInvitation();
-          if (registerWithInvitation !== null) {
-            configTimer.stop();
-            if (registerWithInvitation) {
-              let text = this.tr("Registration is currently only available with an invitation.");
-              text += "<br>";
-              text += this.tr("Please contact info@itis.swiss");
-              qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-            } else {
-              this.fireEvent("toRegister");
-            }
+        qxapp.data.Resources.getOne("config").then(config => {
+          if (config["invitation_required"]) {
+            let text = this.tr("Registration is currently only available with an invitation.");
+            text += "<br>";
+            text += this.tr("Please contact info@itis.swiss");
+            qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          } else {
+            this.fireEvent("toRegister");
           }
-        }, this);
-        configTimer.start();
+        }).catch(err => {
+          this.fireEvent("toRegister");
+        });
       }, this);
 
       const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {

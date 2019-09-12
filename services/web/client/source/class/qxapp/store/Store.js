@@ -47,6 +47,10 @@ qx.Class.define("qxapp.store.Store", {
     studies: {
       check: "Array",
       init: []
+    },
+    config: {
+      check: "Object",
+      init: {}
     }
   },
 
