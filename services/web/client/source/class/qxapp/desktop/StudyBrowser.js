@@ -218,6 +218,7 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __createStudiesLayout: function() {
       const studyFilters = this.__studyFilters = new qxapp.component.filter.TextFilter("text", "studyBrowser");
+      qxapp.utils.Utils.setIdToWidget(studyFilters, "studyFiltersTextFld");
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
