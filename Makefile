@@ -67,7 +67,7 @@ SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}")
 
 .PHONY: config
 create-stack-file: config # TODO: deprecate create-stack-file
-config: ## Creates stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
+config: ## Creates deploy stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
 
 
@@ -76,19 +76,23 @@ build: .env ## Builds all core service images (user `make build-nc` to build w/o
 	# Compiles front-end
 	$(MAKE) -C services/web/client compile
 	# Building services
-	export BUILD_TARGET=production; $(DOCKER_COMPOSE) -f services/docker-compose.build.yml build webserver
+	export BUILD_TARGET=production; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
 .PHONY: rebuild build-nc
 rebuild: build-nc #TODO: deprecate rebuild
 build-nc: .env
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml build --no-cache --parallel $(SERVICES_LIST)
+	export BUILD_TARGET=production; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --no-cache --parallel
+
 
 .PHONY: build-devel
 build-devel: .env ## Builds images of core services for development
 	# Compiles front-end
 	$(MAKE) -C services/web/client compile-dev
 	# Build services
-	export BUILD_TARGET=development; $(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
+	export BUILD_TARGET=development; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.devel.yml build --parallel
 
 
 $(CLIENT_WEB_OUTPUT):
