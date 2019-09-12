@@ -1,7 +1,18 @@
 # simcore stack
 
-![](img/docker-compose.png)
 
+Different views of the stack configuration
+
+
+![](img/docker-compose-wo-networks.png)
+
+---
+
+![](img/docker-compose-w-ports.png)
+
+---
+
+![](img/docker-compose.png)
 
 
 ---
