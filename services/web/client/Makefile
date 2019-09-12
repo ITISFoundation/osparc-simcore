@@ -7,16 +7,16 @@ docker_compose=docker-compose -f tools/docker-compose.yml
 docker_file=tools/qooxdoo-kit/compile/Dockerfile
 docker_image=$(subst /Dockerfile,,$(docker_file)):last
 
-
-
+#FIXME: does not work????
 qx_packages:
 	$(docker_compose) run --rm qooxdoo-kit \
 		/bin/sh -c '"qx package update && qx package install"'
 
 .PHONY: compile-dev
-compile-dev: qx_packages ## qx compiles front-end's code [dev]
+#FIXME: does not work????
+compile-dev: qx_packages ## qx compiles front-end's code [dev] (make compile-dev watch=1)
 	$(docker_compose) run --rm qooxdoo-kit \
-		qx compile \
+		qx compile $(qxflags)\
 			--set osparc.vcsRef='"${VCS_REF}"' \
 			--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
 			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \

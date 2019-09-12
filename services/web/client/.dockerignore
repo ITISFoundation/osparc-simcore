@@ -1,0 +1,16 @@
+# qx
+*/build-output/*
+*/source-output/*
+*/qx_packages/*
+
+# node
+*/node_modules/*
+
+# docker
+Dockerfile*
+
+# markdown
+*.md
+
+# hidden files
+.*/

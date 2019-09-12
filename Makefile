@@ -104,16 +104,17 @@ up: .env .init-swarm ## deploys production stack + tools
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys development stack
+up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys development stack and qx-compile+watch
+	# config devel stack to $(TEMP_COMPOSE_YML)
 	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
+	# deploy devel stack
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
+
 .PHONY: up-webclient-devel
-up-webclient-devel: ## init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+up-webclient-devel: up-devel ## as up-devel but with continuous compile of the front-end
 	# start compile+watch front-end container
-	$(MAKE) -C services/web/client compile-dev
-	# deploy devel stack
-	$(MAKE) up-devel
+	$(MAKE) -C services/web/client compile-dev qxflags=--watch
 
 
 .PHONY: down down-force
