@@ -84,7 +84,6 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
         const viewLayout = tuple[1].call(this, studyId);
         tabButton.addListener("execute", () => {
-          console.log(id);
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
           }
