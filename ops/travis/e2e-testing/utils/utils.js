@@ -24,7 +24,7 @@ async function getVisibleChildrenIDs(page, parentSelector) {
       const child = parentNode.children[i];
       const style = window.getComputedStyle(child);
       if (style.display !== 'none') {
-        children.push(child.id);
+        children.push(child.getAttribute("osparc-test-id"));
       }
     }
     return children;

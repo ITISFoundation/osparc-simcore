@@ -300,7 +300,7 @@ qx.Class.define("qxapp.utils.Utils", {
 
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {
-        qWidget.getContentElement().setAttribute("id", id);
+        qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
     }
   }

@@ -1,89 +1,89 @@
 const utils = require("./utils")
 
 async function register(page, user, pass) {
-  await page.waitForSelector('#loginCreateAccountBtn');
-  await page.click('#loginCreateAccountBtn');
+  await page.waitForSelector('[osparc-test-id="loginCreateAccountBtn"]');
+  await page.click('[osparc-test-id="loginCreateAccountBtn');
 
   console.log("Registering:", user);
-  await page.waitForSelector('#registrationEmailFld');
-  await page.type('#registrationEmailFld', user);
-  await page.type('#registrationPass1Fld', pass);
-  await page.type('#registrationPass2Fld', pass);
-  await page.waitForSelector('#registrationSubmitBtn');
-  await page.click('#registrationSubmitBtn');
+  await page.waitForSelector('[osparc-test-id="registrationEmailFld"]');
+  await page.type('[osparc-test-id="registrationEmailFld"]', user);
+  await page.type('[osparc-test-id="registrationPass1Fld"]', pass);
+  await page.type('[osparc-test-id="registrationPass2Fld"]', pass);
+  await page.waitForSelector('[osparc-test-id="registrationSubmitBtn"]');
+  await page.click('[osparc-test-id="registrationSubmitBtn"]');
 }
 
 async function logIn(page, user, pass) {
   // user might be already logged in
-  const elementExists = await page.$("#userMenuMainBtn");
+  const elementExists = await page.$('[osparc-test-id="userMenuMainBtn"]');
   if (elementExists !== null) {
     return;
   }
 
   console.log("Logging in:", user);
-  await page.waitForSelector('#loginUserEmailFld', {
+  await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
     visible: true
   });
-  await page.type('#loginUserEmailFld', user);
-  await page.waitForSelector('#loginPasswordFld');
-  await page.type('#loginPasswordFld', pass);
-  await page.waitForSelector('#loginSubmitBtn');
-  await page.click('#loginSubmitBtn');
+  await page.type('[osparc-test-id="loginUserEmailFld"]', user);
+  await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
+  await page.type('[osparc-test-id="loginPasswordFld"]', pass);
+  await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
+  await page.click('[osparc-test-id="loginSubmitBtn"]');
 }
 
 async function logOut(page) {
-  await page.waitForSelector('#userMenuMainBtn', {
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
     visible: true,
     timeout: 1000
   });
 
   console.log("Logging out");
-  await page.waitForSelector('#userMenuMainBtn');
-  await page.click('#userMenuMainBtn');
-  await page.waitForSelector('#userMenuLogoutBtn');
-  await page.click('#userMenuLogoutBtn');
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
+  await page.click('[osparc-test-id="userMenuMainBtn"]');
+  await page.waitForSelector('[osparc-test-id="userMenuLogoutBtn"]');
+  await page.click('[osparc-test-id="userMenuLogoutBtn"]');
 }
 
 async function dashboardAbout(page) {
   console.log("Showing About");
 
-  await page.waitForSelector('#userMenuMainBtn');
-  await page.click('#userMenuMainBtn');
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
+  await page.click('[osparc-test-id="userMenuMainBtn"]');
 
-  await page.waitForSelector('#userMenuAboutBtn');
-  await page.click('#userMenuAboutBtn');
+  await page.waitForSelector('[osparc-test-id="userMenuAboutBtn"]');
+  await page.click('[osparc-test-id="userMenuAboutBtn"]');
 
-  await page.waitForSelector('#aboutWindowCloseBtn');
-  await page.click('#aboutWindowCloseBtn');
+  await page.waitForSelector('[osparc-test-id="aboutWindowCloseBtn"]');
+  await page.click('[osparc-test-id="aboutWindowCloseBtn"]');
 }
 
 async function dashboardPreferences(page) {
   console.log("Navigating through Preferences");
 
-  await page.waitForSelector('#userMenuMainBtn');
-  await page.click('#userMenuMainBtn');
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
+  await page.click('[osparc-test-id="userMenuMainBtn"]');
 
-  await page.waitForSelector('#userMenuPreferencesBtn');
-  await page.click('#userMenuPreferencesBtn');
+  await page.waitForSelector('[osparc-test-id="userMenuPreferencesBtn"]');
+  await page.click('[osparc-test-id="userMenuPreferencesBtn"]');
 
-  await page.waitForSelector('#preferencesProfileTabBtn');
-  await page.click('#preferencesProfileTabBtn');
+  await page.waitForSelector('[osparc-test-id="preferencesProfileTabBtn"]');
+  await page.click('[osparc-test-id="preferencesProfileTabBtn"]');
 
-  await page.waitForSelector('#preferencesSecurityTabBtn');
-  await page.click('#preferencesSecurityTabBtn');
+  await page.waitForSelector('[osparc-test-id="preferencesSecurityTabBtn"]');
+  await page.click('[osparc-test-id="preferencesSecurityTabBtn"]');
 
-  await page.waitForSelector('#preferencesExperimentalTabBtn');
-  await page.click('#preferencesExperimentalTabBtn');
+  await page.waitForSelector('[osparc-test-id="preferencesExperimentalTabBtn"]');
+  await page.click('[osparc-test-id="preferencesExperimentalTabBtn"]');
 
-  await page.waitForSelector('#preferencesWindowCloseBtn');
-  await page.click('#preferencesWindowCloseBtn');
+  await page.waitForSelector('[osparc-test-id="preferencesWindowCloseBtn"]');
+  await page.click('[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
 async function dashboardServiceBrowser(page) {
   console.log("Navigating through Services");
 
-  await page.waitForSelector('#servicesTabBtn')
-  await page.click('#servicesTabBtn')
+  await page.waitForSelector('[osparc-test-id="servicesTabBtn"]')
+  await page.click('[osparc-test-id="servicesTabBtn"]')
 
   await page.waitForSelector('div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
   await page.click('div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
@@ -97,14 +97,14 @@ async function dashboardServiceBrowser(page) {
   await page.waitForSelector('div > div > div > div > .qx-no-radius-button:nth-child(9)')
   await page.click('div > div > div > div > .qx-no-radius-button:nth-child(9)')
 
-  await page.waitForSelector('#serviceBrowserVersionsDrpDwn')
-  await page.click('#serviceBrowserVersionsDrpDwn')
+  await page.waitForSelector('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
+  await page.click('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
 
   await page.waitForSelector('.qx-popup > div > div > div > div:nth-child(1)')
   await page.click('.qx-popup > div > div > div > div:nth-child(1)')
 
-  await page.waitForSelector('#serviceBrowserVersionsDrpDwn')
-  await page.click('#serviceBrowserVersionsDrpDwn')
+  await page.waitForSelector('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
+  await page.click('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
 
   await page.waitForSelector('.qx-popup > div > div > div > div:nth-child(2)')
   await page.click('.qx-popup > div > div > div > div:nth-child(2)')
@@ -119,20 +119,16 @@ async function dashboardServiceBrowser(page) {
 async function dashboardDataBrowser(page) {
   console.log("Navigating through Data");
 
-  await page.waitForSelector('#dataTabBtn')
-  await page.click('#dataTabBtn')
+  await page.waitForSelector('[osparc-test-id="dataTabBtn"]')
+  await page.click('[osparc-test-id="dataTabBtn"]')
 
   // expand first location
   await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
   await page.click('.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
 
   // expand first study
-  // await page.waitForSelector('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
-  // await page.click('div:nth-child(1) > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1)')
-
-  // expand second study
-  await page.waitForSelector('div:nth-child(1) > div > div > div:nth-child(4) > div:nth-child(1)')
-  await page.click('div:nth-child(1) > div > div > div:nth-child(4) > div:nth-child(1)')
+  await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
+  await page.click('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
 
   await page.waitFor(2000)
   /*
@@ -149,107 +145,107 @@ async function dashboardDataBrowser(page) {
 }
 
 async function dashboardStudyBrowser(page) {
-  console.log("Navigating through Studies");
+  console.log("Navigating through Templates");
 
-  await page.waitForSelector('div > div > div > #studiesTabBtn > div')
-  await page.click('div > div > div > #studiesTabBtn > div')
+  await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
+  await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
-  await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
-
-  await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(2) > img')
-  await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(2) > img')
-
-  await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
-  await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(1) > img')
-
-  await page.waitForSelector('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(2) > img')
-  await page.click('div > div > #templateStudiesList > .qx-pb-listitem:nth-child(2) > img')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+  console.log("children", children)
+  if (children.length === 0) {
+    console.log("Editing thumbnail: no study found")
+    return
+  }
+  for (let i=0; i<children.length; i++) {
+    const childId = '[osparc-test-id="' + children[i] + '"]'
+    await page.waitForSelector(childId)
+    await page.click(childId)
+  }
 }
 
 async function dashboardEditFristStudyThumbnail(page) {
   console.log("Editing thumbnail")
 
-  await page.waitForSelector('#studiesTabBtn')
-  await page.click('#studiesTabBtn')
+  await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
+  await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  const children = await utils.getVisibleChildrenIDs(page, '#userStudiesList');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="userStudiesList"]');
   if (children.length === 0) {
     console.log("Editing thumbnail: no study found")
     return
   }
-  const firstChildId = '#' + children[0]
+  const firstChildId = '[osparc-test-id="' + children[0] + '"]'
   await page.waitForSelector(firstChildId)
   await page.click(firstChildId)
 
-  await page.waitForSelector('#editStudyBtn')
-  await page.click('#editStudyBtn')
+  await page.waitForSelector('[osparc-test-id="editStudyBtn"]')
+  await page.click('[osparc-test-id="editStudyBtn"]')
 
-  await page.waitForSelector('#studyDetailsEditorThumbFld')
-  await utils.emptyField(page, '#studyDetailsEditorThumbFld')
-  await page.click('#studyDetailsEditorThumbFld')
-  await page.type('#studyDetailsEditorThumbFld', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
+  await page.waitForSelector('[osparc-test-id="studyDetailsEditorThumbFld"]')
+  await utils.emptyField(page, '[osparc-test-id="studyDetailsEditorThumbFld"]')
+  await page.click('[osparc-test-id="studyDetailsEditorThumbFld"]')
+  await page.type('[osparc-test-id="studyDetailsEditorThumbFld"]', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
 
-  await page.waitForSelector('#studyDetailsEditorSaveBtn')
-  await page.click('#studyDetailsEditorSaveBtn')
+  await page.waitForSelector('[osparc-test-id="studyDetailsEditorSaveBtn"]')
+  await page.click('[osparc-test-id="studyDetailsEditorSaveBtn"]')
 }
 
 async function dashboardNewStudy(page) {
   console.log("Creating New Study");
 
-  await page.waitForSelector('#studiesTabBtn')
-  await page.click('#studiesTabBtn')
+  await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
+  await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitFor('#newStudyBtn');
-  await page.click('#newStudyBtn');
+  await page.waitFor('[osparc-test-id="newStudyBtn"]');
+  await page.click('[osparc-test-id="newStudyBtn"]');
 
-  await page.waitFor('#newStudyTitleFld');
-  await page.type('#newStudyTitleFld', 'puppeteering study');
-  await page.type('#newStudyDescFld', 'this is puppeteer creating a new study');
+  await page.waitFor('[osparc-test-id="newStudyTitleFld"]');
+  await page.type('[osparc-test-id="newStudyTitleFld"]', 'puppeteering study');
+  await page.type('[osparc-test-id="newStudyDescFld"]', 'this is puppeteer creating a new study');
 
-  await page.click('#newStudySubmitBtn');
+  await page.click('[osparc-test-id="newStudySubmitBtn"]');
 }
 
 async function toDashboard(page) {
   console.log("To Dashboard");
 
-  await page.waitForSelector('#dashboardBtn')
-  await page.click('#dashboardBtn')
+  await page.waitForSelector('[osparc-test-id="dashboardBtn"]')
+  await page.click('[osparc-test-id="dashboardBtn"]')
 }
 
 async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   console.log("Creating New Study from template and running it");
 
-  await page.waitForSelector('#studiesTabBtn')
-  await page.click('#studiesTabBtn')
+  await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
+  await page.click('[osparc-test-id="studiesTabBtn"]')
 
   if (templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
   }
 
-  const children = await utils.getVisibleChildrenIDs(page, '#templateStudiesList');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
   if (children.length === 0) {
     console.log("Creating New Study from template and running it: no template found");
     return;
   }
-  const firstChildId = '#' + children[0]
+  const firstChildId = '[osparc-test-id="' + children[0] + '"]'
   await page.waitForSelector(firstChildId)
   await page.click(firstChildId)
 
-  await page.waitForSelector('#openStudyBtn')
-  await page.click('#openStudyBtn')
+  await page.waitForSelector('[osparc-test-id="openStudyBtn"]')
+  await page.click('[osparc-test-id="openStudyBtn"]')
 
-  await page.waitForSelector('#newStudyTitleFld')
-  await utils.emptyField(page, '#newStudyTitleFld')
-  await page.type('#newStudyTitleFld', 'my sleepers');
+  await page.waitForSelector('[osparc-test-id="newStudyTitleFld"]')
+  await utils.emptyField(page, '[osparc-test-id="newStudyTitleFld"]')
+  await page.type('[osparc-test-id="newStudyTitleFld"]', 'my sleepers');
 
-  await page.waitForSelector('#newStudySubmitBtn')
-  await page.click('#newStudySubmitBtn')
+  await page.waitForSelector('[osparc-test-id="newStudySubmitBtn"]')
+  await page.click('[osparc-test-id="newStudySubmitBtn"]')
 
   await page.waitFor(2000);
 
-  await page.waitForSelector('#runStudyBtn')
-  await page.click('#runStudyBtn')
+  await page.waitForSelector('[osparc-test-id="runStudyBtn"]')
+  await page.click('[osparc-test-id="runStudyBtn"]')
 
   await page.waitFor(30000);
 }
@@ -258,9 +254,9 @@ async function __dashboardFilterStudiesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
   await page.waitFor(1000)
-  await page.waitFor('#studyFiltersTextFld')
-  await page.click('#studyFiltersTextFld')
-  await page.type('#studyFiltersTextFld', templateName)
+  await page.waitFor('[osparc-test-id="studyFiltersTextFld"]')
+  await page.click('[osparc-test-id="studyFiltersTextFld"]')
+  await page.type('[osparc-test-id="studyFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
   await page.waitFor(1000)
 }
@@ -268,19 +264,19 @@ async function __dashboardFilterStudiesByText(page, templateName) {
 async function dashboardDeleteFirstStudy(page) {
   console.log("Deleting first study")
 
-  await page.waitForSelector('#studiesTabBtn')
-  await page.click('#studiesTabBtn')
+  await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
+  await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitForSelector('#userStudiesList > .qx-pb-listitem:nth-child(1)')
-  await page.click('#userStudiesList > .qx-pb-listitem:nth-child(1)')
+  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
+  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
 
-  await page.waitForSelector('#deleteStudiesBtn')
-  await page.click('#deleteStudiesBtn')
+  await page.waitForSelector('[osparc-test-id="deleteStudiesBtn"]')
+  await page.click('[osparc-test-id="deleteStudiesBtn"]')
 
   await page.waitFor(500)
 
-  await page.waitForSelector('#confirmDeleteStudyBtn')
-  await page.click('#confirmDeleteStudyBtn')
+  await page.waitForSelector('[osparc-test-id="confirmDeleteStudyBtn"]')
+  await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
 }
 
 module.exports = {
