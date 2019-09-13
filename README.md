@@ -33,6 +33,11 @@
 ![service-web](docs/img/service-interaction.svg)
 
 
+A graph view of services, ports, volumes and service dependencies:
+![](docs/img/docker-compose-wo-networks.png)
+
+## Usage
+
 ```bash
   # clone repo
   git clone https://github.com/ITISFoundation/osparc-simcore.git
@@ -52,13 +57,7 @@
   # stops
   make down
 ```
-
-## Release workflow
-
-[Git release workflow](ops/README.md)
-
-
-## Requirements
+### Requirements
 
 - docker
 - make
@@ -66,3 +65,8 @@
 - awk (optional)
 
 For windows users, we higly recommended using [choco](https://chocolatey.org/) and [cmder](https://cmder.net/) as software manager and console.
+
+
+## Release
+
+- [Git release workflow](ops/README.md)
