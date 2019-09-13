@@ -25,8 +25,8 @@ $(info + Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
 SHELL := $(if $(IS_WIN),powershell.exe,/bin/bash)
 
 
-export DOCKER_COMPOSE=$(if $(IS_WIN),docker-compose.exe,docker-compose)
-export DOCKER        =$(if $(IS_WIN),docker.exe,docker)
+DOCKER_COMPOSE=$(if $(IS_WIN),docker-compose.exe,docker-compose)
+DOCKER        =$(if $(IS_WIN),docker.exe,docker)
 
 
 
@@ -57,13 +57,10 @@ $(foreach v, \
 
 
 ## DOCKER BUILD -------------------------------
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN)\
-	,(New-TemporaryFile).FullName\
-	,mktemp /tmp/$(SWARM_STACK_NAME)-XXXX\
-	) \
-)
-NULL := $(if IS_WIN,null,/dev/null)
-SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}")
+TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
+TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+
 
 .PHONY: config
 create-stack-file: config # TODO: deprecate create-stack-file
@@ -72,25 +69,29 @@ config: ## Creates deploy stack file for production as $(output_file) e.g. 'make
 
 
 .PHONY: build
-build: .env ## Builds all core service images (user `make build-nc` to build w/o cache)
-	# Compiles front-end
+build: .env ## Builds all core service images (user 'make build-nc' to build w/o cache)
+	# Compiling front-end
 	$(MAKE) -C services/web/client compile
 	# Building services
 	export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
+
 .PHONY: rebuild build-nc
 rebuild: build-nc #TODO: deprecate rebuild
 build-nc: .env
+	# Compiling front-end
+	$(MAKE) -C services/web/client clean compile
+	# Building services
 	export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --no-cache --parallel
 
 
 .PHONY: build-devel
 build-devel: .env ## Builds images of core services for development
-	# Compiles front-end
-	$(MAKE) -C services/web/client compile-dev
-	# Build services
+	# Compiling front-end ('compile' target needed since productions stage in Dockerfile of webserver copies client/tools/qooxdoo-kit/build:latest)
+	$(MAKE) -C services/web/client compile compile-dev
+	# Building services
 	export BUILD_TARGET=development; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.devel.yml build --parallel
 
@@ -113,12 +114,14 @@ up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys development stack and
 	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	# deploy devel stack
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+	# start compile+watch front-end container
+	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 
 .PHONY: up-webclient-devel
 up-webclient-devel: up-devel ## as up-devel but with continuous compile of the front-end
 	# start compile+watch front-end container
-	$(MAKE) -C services/web/client compile-dev qxflags=--watch
+	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 
 .PHONY: down down-force
@@ -249,7 +252,11 @@ endif
 .PHONY: clean
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
-	@-rm $(wildcard /tmp/$(SWARM_STACK_NAME)*)
+	# cleaning web/client
+	$(MAKE) -C services/web/client clean
+	# removing temps
+	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
+	# removing unversioned
 	@git clean -dxf -e .vscode/
 
 

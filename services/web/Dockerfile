@@ -82,8 +82,8 @@ WORKDIR /build/services/web/server
 RUN $SC_PIP install -r requirements/prod.txt &&\
     $SC_PIP list -v
 
-# front-end client last
-COPY --from=tools/qooxdoo-kit/compile:last --chown=scu:scu \
+# front-end client last (image name is the path to the Dockerfile)
+COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
       /project/build-output \
       /build/services/web/client
 # --------------------------Production stage -------------------
