@@ -64,10 +64,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
     __rebuildTokensList: function() {
       this.__tokensList.removeAll();
-
-      let tokens = this.__tokenResources.tokens;
-      tokens.addListenerOnce("getSuccess", e => {
-        let tokensList = e.getRequest().getResponse().data;
+      qxapp.data.Resources.get("tokens").then(tokensList => {
         if (tokensList.length === 0) {
           let emptyForm = this.__createEmptyTokenForm();
           this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
@@ -78,12 +75,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
             this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
           }
         }
-      }, this);
-
-      tokens.addListenerOnce("getError", e => {
-        console.error(e);
-      });
-      tokens.get();
+      }).catch(err => console.error(err));
     },
 
     __createEmptyTokenForm: function() {
@@ -116,20 +108,14 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
         if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
           return;
         }
-
-        let tokens = this.__tokenResources.tokens;
-        tokens.addListenerOnce("postSuccess", ev => {
-          this.__rebuildTokensList();
-        }, this);
-        tokens.addListenerOnce("getError", ev => {
-          console.error(ev);
-        });
-        const newTokenInfo = {
-          "service": newTokenService.getValue(),
-          "token_key": newTokenKey.getValue(),
-          "token_secret": newTokenSecret.getValue()
+        const params = {
+          data: {
+            "service": newTokenService.getValue(),
+            "token_key": newTokenKey.getValue(),
+            "token_secret": newTokenSecret.getValue()
+          }
         };
-        tokens.post(null, newTokenInfo);
+        qxapp.data.Resources.fetch("tokens", "post", params).then(() => this.__rebuildTokensList()).catch(err => console.error(err));
       }, this);
       form.addButton(addTokenBtn);
 

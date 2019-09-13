@@ -71,19 +71,47 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/config"
           }
         })
+      },
+      /*
+       * PROFILE
+       */
+      profile: {
+        usesCache: true,
+        endpoints: new qxapp.io.rest.Resource({
+          getOne: {
+            method: "GET",
+            url: statics.API + "/me"
+          }
+        })
+      },
+      /*
+       * TOKENS
+       */
+      tokens: {
+        idField: "service",
+        usesCache: true,
+        endpoints: new qxapp.io.rest.Resource({
+          get: {
+            method: "GET",
+            url: statics.API + "/me/tokens"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/tokens"
+          }
+        })
       }
     };
   },
 
   members: {
-    fetch: function(resource, endpoint, params = {}, useCache = false) {
+    fetch: function(resource, endpoint, params = {}) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
         } else if (this.self().resources[resource].endpoints[endpoint] == null) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
-        console.log(`Fetching ${resource} from server.`)
 
         const call = this.self().resources[resource];
 
@@ -103,23 +131,26 @@ qx.Class.define("qxapp.data.Resources", {
 
     getOne: function(resource, params, id, useCache = true) {
       const stored = this.__getCached(resource);
+      const idField = this.self().resources[resource].idField || "uuid";
       if (stored && useCache) {
-        const item = Array.isArray(stored) ? stored.find(element => element.uuid === id) : stored;
+        const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
         if (item) {
           console.log(item, `Getting ${resource} from cache.`)
           return Promise.resolve(item);
         }
       }
-      return this.fetch(resource, "getOne", params, useCache)
+      console.log(`Fetching ${resource} from server.`)
+      return this.fetch(resource, "getOne", params)
     },
 
-    getAll: function(resource, params, useCache = true) {
+    get: function(resource, params, useCache = true) {
       const stored = this.__getCached(resource);
       if (stored && useCache) {
         console.log(stored, `Getting all ${resource} from cache.`)
         return Promise.resolve(stored);
       } else {
-        return this.fetch(resource, "get", params, useCache);
+        console.log(`Fetching ${resource} from server.`)
+        return this.fetch(resource, "get", params);
       }
     },
 
@@ -142,21 +173,21 @@ qx.Class.define("qxapp.data.Resources", {
       const store = qxapp.store.Store.getInstance();
       switch (resource) {
         default:
-          store.update(resource, data);
+          store.update(resource, data, this.self().resources[resource].idField || "uuid");
       }
     }
   },
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, useCache) {
-      return this.getInstance().fetch(resource, endpoint, params, useCache);
+    fetch: function(resource, endpoint, params) {
+      return this.getInstance().fetch(resource, endpoint, params);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
     },
-    getAll: function(resource, params, useCache) {
-      return this.getInstance().getAll(resource, params, useCache);
+    get: function(resource, params, useCache) {
+      return this.getInstance().get(resource, params, useCache);
     }
   }
 });

@@ -55,6 +55,14 @@ qx.Class.define("qxapp.store.Store", {
     templates: {
       check: "Array",
       init: []
+    },
+    profile: {
+      check: "Object",
+      init: {}
+    },
+    tokens: {
+      check: "Array",
+      init: []
     }
   },
 
@@ -62,16 +70,16 @@ qx.Class.define("qxapp.store.Store", {
     __reloadingServices: null,
     __servicesCached: null,
 
-    update: function(resource, data) {
+    update: function(resource, data, idField = "uuid") {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
         if (Array.isArray(data)) {
           this.set(resource, data);
         } else {
-          let item = stored.find(item => item.uuid === data.uuid);
+          let item = stored.find(item => item[idField] === data[idField]);
           if (item) {
             const newStored = stored.map(item => {
-              if (item.uuid === data.uuid) {
+              if (item[idField] === data[idField]) {
                 return data;
               }
               return item;
