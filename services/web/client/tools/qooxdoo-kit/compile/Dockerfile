@@ -1,22 +1,28 @@
-FROM itisfoundation/qooxdoo-kit:latest as build-client
-
-# Expects context at web/client
+#
+# Compiles client's source code within an image based in qooxdoo-kit
+#
+# Note: context at osparc-simcore/services/web/client expected
+#
+ARG tag
+FROM itisfoundation/qooxdoo-kit:${tag} as build-client
 
 WORKDIR /project
 ENV PATH=/home/node/node_modules/.bin:${PATH}
 
-# Installs contrib
+# Installs contributions
 COPY --chown=node:node compile.json compile.json
 COPY --chown=node:node qx-lock.json qx-lock.json
 COPY --chown=node:node Manifest.json Manifest.json
 
+# Install packages (warning: cache might keep these library out-of-date!)
+# TODO: should we freeze packages??
 RUN qx package update &&\
     qx package install &&\
     ls -la qx_packages
 # -> /project/qx_packages
 
 
-# compiles sources
+# Copy sources and compile inside the image
 COPY --chown=node:node source source
 COPY --chown=node:node Manifest.json Manifest.json
 

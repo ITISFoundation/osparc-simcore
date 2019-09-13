@@ -5,7 +5,7 @@
 # Recommended: GNU make version 4.2
 #
 # by sanderegg, pcrespov
-#
+
 PREDEFINED_VARIABLES := $(.VARIABLES)
 
 # TOOLS --------------------------------------

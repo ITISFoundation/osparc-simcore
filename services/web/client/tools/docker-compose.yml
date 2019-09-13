@@ -1,8 +1,10 @@
-# NOTE: Windows users. See limitations in README.md
+#
+# Used in development to compile source code using a running qooxdoo-kit container
+#
 version: '3.4'
 services:
   qooxdoo-kit:
-    image: itisfoundation/qooxdoo-kit:latest
+    image: itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
     volumes:
       - '../:/project'
     ports:
