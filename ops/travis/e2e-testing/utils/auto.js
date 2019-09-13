@@ -94,8 +94,8 @@ async function dashboardServiceBrowser(page) {
   await page.waitForSelector('div > div > div > div > .qx-no-radius-button:nth-child(6)')
   await page.click('div > div > div > div > .qx-no-radius-button:nth-child(6)')
 
-  await page.waitForSelector('div > div > div > div > .qx-no-radius-button:nth-child(9)')
-  await page.click('div > div > div > div > .qx-no-radius-button:nth-child(9)')
+  await page.waitForSelector('div > div > div > div > .qx-no-radius-button:nth-child(10)')
+  await page.click('div > div > div > div > .qx-no-radius-button:nth-child(10)')
 
   await page.waitForSelector('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
   await page.click('[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
