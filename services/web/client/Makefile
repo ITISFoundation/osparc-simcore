@@ -53,7 +53,7 @@ serve-dev: qx_packages ## compiles & watches host `source` and serves site in 12
 .PHONY: serve
 serve: compile ## serves site compiled in image in 127.0.0.1:8080
 	# qx serve $(flags) `build-output` within `$(docker_image)` image --> 127.0.0.1:8080
-	docker run --rm -p 8080:8080  ${docker_image} $(qx_serve)
+	docker run --rm -p 8080:8080  ${docker_image} $(qx_serve) --target=build
 
 
 # misc --------------------------
