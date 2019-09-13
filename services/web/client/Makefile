@@ -62,8 +62,13 @@ serve: compile ## serves site compiled in image in 127.0.0.1:8080
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## this colorful help
 	@echo "Recipes to qx compile/serve web client using 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'"
+	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
+	@echo ""
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+
+
 
 .DEFAULT_GOAL := help
 
