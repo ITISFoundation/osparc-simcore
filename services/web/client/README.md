@@ -16,7 +16,7 @@ A **makefile** provides recipies to easily compile and *statically* serve the cl
 The [itisfoundation/qooxdoo-kit] is used in two different ways:
 
 - runs **as a container**, binds the current directly and compiles the code at **run-time**
-- used **as a base image** of a [Dockerfile](services/web/client/tools/qooxdoo-kit/compile/Dockerfile) that compiles the source code at **build-time**.
+- used **as a base image** of a [Dockerfile](services/web/client/tools/qooxdoo-kit/builder/Dockerfile) that compiles the source code at **build-time**.
 
 The former is used in development and the latter is used for production. Some (hopefully) self-explanatory examples:
 

@@ -7,9 +7,9 @@ export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
-docker_compose=docker-compose -f tools/docker-compose.yml
-docker_file=tools/qooxdoo-kit/compile/Dockerfile
-docker_image=$(subst /Dockerfile,,$(docker_file)):last
+docker_compose := docker-compose -f tools/docker-compose.yml
+docker_file    := tools/qooxdoo-kit/builder/Dockerfile
+docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
 
 # qx compile --------------------------
@@ -19,8 +19,8 @@ qx_packages:
 		/bin/sh -c "qx package update && qx package install"
 
 .PHONY: compile-dev
-compile-dev: qx_packages ## qx compiles host' `source` -> host's `source-output`. Use `make compile-dev flags=--watch` for continuous compilation.
-	# qx compile `source` $(flags) --> `source-output` [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
+compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --rm qooxdoo-kit \
 		qx compile $(flags)\
 			--set osparc.vcsRef='"${VCS_REF}"' \
@@ -29,9 +29,9 @@ compile-dev: qx_packages ## qx compiles host' `source` -> host's `source-output`
 			--set osparc.vcsOriginUrl='"${VCS_URL}"'
 
 .PHONY: compile
-compile: ## qx compiles host' `source` -> image's `build-output`
-	# qx compile `source` within `$(docker_image)` image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker build -f ${docker_file} -t ${docker_image} --build-arg tag=${QOOXDOO_KIT_TAG} .
+compile: ## qx compiles host' 'source' -> image's 'build-output'
+	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
+	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} .
 
 
 # qx serve --------------------------
@@ -46,14 +46,14 @@ define qx_serve =
 endef
 
 .PHONY: serve-dev
-serve-dev: qx_packages ## compiles & watches host `source` and serves site in 127.0.0.1:8080. Use this to view the effect of your changes in realtime
-	# qx serve $(flags) `source` --> `source-output` --> 127.0.0.1:8080
+serve-dev: qx_packages ## compiles & watches host 'source' and serves site in 127.0.0.1:8080. Use this to view the effect of your changes in realtime
+	# qx serve $(flags) 'source' --> 'source-output' --> 127.0.0.1:8080
 	$(docker_compose) run --rm --service-ports qooxdoo-kit $(qx_serve)
 
 .PHONY: serve
 serve: compile ## serves site compiled in image in 127.0.0.1:8080
-	# qx serve $(flags) `build-output` within `$(docker_image)` image --> 127.0.0.1:8080
-	docker run --rm -p 8080:8080  ${docker_image} $(qx_serve) --target=build
+	# qx serve $(flags) 'build-output' within $(docker_image) image --> 127.0.0.1:8080
+	docker run --rm -p 8080:8080  $(docker_image) $(qx_serve) --target=build
 
 
 # misc --------------------------
@@ -72,7 +72,7 @@ clean: ## clean start
 	# tear down docker-compose
 	@${docker_compose} down
 	# remove build
-	@docker image rm ${docker_image}
+	@docker image rm -f $(docker_image)
 	# remove generated outputs
 	@-rm -rf qx_packages .qooxdoo source-output
 	# remove unversioned
