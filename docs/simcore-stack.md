@@ -17,5 +17,10 @@ Different views of the stack configuration
 
 ---
 
+
+Diagrams of the [osparc-ops stacks](https://github.com/pcrespov/osparc-ops/blob/enh/documentation/docs/stacks-graph.md)
+
+---
+
 <sup>Updated Sep 12, 2019</sup>
 <sup>Credits https://github.com/pmsipilot/docker-compose-viz</sup>
