@@ -30,20 +30,35 @@ qx.Theme.define("qxapp.theme.Appearance", {
       }
     },
     "pb-listitem":  {
-      // FIXME
       include: "material-button",
-      // alias:   "material-button",
       style: function(states) {
-        let style = {
-          decorator: null,
-          padding: 0,
-          backgroundColor: "transparent"
+        const style = {
+          decorator: "pb-listitem",
+          padding: 5,
+          backgroundColor: "background-main-lighter+"
         };
         if (states.hovered) {
           style.backgroundColor = "#444";
         }
-        if (states.selected) {
+        if (states.selected || states.checked) {
           style.backgroundColor = "#555";
+        }
+        return style;
+      }
+    },
+    "selectable": {
+      include: "material-button",
+      style: function(states) {
+        const style = {
+          decorator: "no-radius-button",
+          padding: 5,
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "background-main-lighter+";
+        }
+        if (states.selected || states.checked) {
+          style.backgroundColor = "#444";
         }
         return style;
       }
@@ -301,6 +316,42 @@ qx.Theme.define("qxapp.theme.Appearance", {
       })
     },
 
+    "big-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 50,
+        center: true
+      })
+    },
+
+    "big-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    "md-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 35,
+        center: true
+      })
+    },
+
+    "md-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "text-16"
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       FlashMessage
@@ -381,6 +432,42 @@ qx.Theme.define("qxapp.theme.Appearance", {
       include: "atom/label",
       style: state => ({
         font: "text-10"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Dashboard
+    ---------------------------------------------------------------------------
+    */
+    "dashboard": {
+      include: "tabview",
+      alias: "tabview"
+    },
+
+    "dashboard/pane": {
+      style: state => ({
+        padding: [0, 0, 0, 15]
+      })
+    },
+
+    "dashboard/bar/content": {
+      style: state => ({
+        width: 120,
+        paddingTop: 15
+      })
+    },
+
+    "dashboard-page": {
+      include: "tabview-page",
+      alias: "tabview-page"
+    },
+
+    "dashboard-page/button": {
+      include: "tabview-page/button",
+      alias: "tabview-page/button",
+      style: state => ({
+        font: state.checked ? "title-16" : "text-16"
       })
     }
   }

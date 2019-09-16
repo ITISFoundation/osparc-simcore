@@ -150,14 +150,14 @@ qx.Class.define("qxapp.test.data.Permissions", {
       const file0 = "file0";
       const loc1 = "loc1";
       const file1 = "file1";
-      const store = qxapp.data.Store.getInstance();
+      const dataStore = qxapp.store.Data.getInstance();
 
       qxapp.data.Permissions.getInstance().setRole("guest");
-      const req0sent = store.copyFile(loc0, file0, loc1, file1);
+      const req0sent = dataStore.copyFile(loc0, file0, loc1, file1);
       this.assertFalse(req0sent, "guest is not allowed to push files");
 
       qxapp.data.Permissions.getInstance().setRole("user");
-      const req1sent = store.copyFile(loc0, file0, loc1, file1);
+      const req1sent = dataStore.copyFile(loc0, file0, loc1, file1);
       this.assertTrue(req1sent, "user is allowed to push files");
     },
 
@@ -165,14 +165,14 @@ qx.Class.define("qxapp.test.data.Permissions", {
     testStudyNodeDataDelete: function() {
       const loc0 = "loc0";
       const file0 = "file0";
-      const store = qxapp.data.Store.getInstance();
+      const dataStore = qxapp.store.Data.getInstance();
 
       qxapp.data.Permissions.getInstance().setRole("guest");
-      const req0sent = store.deleteFile(loc0, file0);
+      const req0sent = dataStore.deleteFile(loc0, file0);
       this.assertFalse(req0sent, "guest is not allowed to delete files");
 
       qxapp.data.Permissions.getInstance().setRole("user");
-      const req1sent = store.deleteFile(loc0, file0);
+      const req1sent = dataStore.deleteFile(loc0, file0);
       this.assertTrue(req1sent, "user is allowed to delete files");
     }
   }

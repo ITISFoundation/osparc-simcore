@@ -76,7 +76,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __getServicesPreload: function() {
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         // Do not validate if are not taking actions
         // this.__nodeCheck(e.getData());
@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
-        minWidth: 500,
+        minWidth: 400,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           this.__serviceSelected(selectedKey);
         }
       }, this);
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       const latestServices = [];
       const services = this.__allServices = store.getServices();
       for (const serviceKey in services) {
@@ -158,7 +158,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServiceDescription: function() {
-      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
@@ -186,7 +188,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVBoxWLabel: function(text) {
-      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
 
       let label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),

@@ -8,7 +8,7 @@
     "authors": [
       {
         "name": "maiz",
-        "email": ""
+        "email": "maiz@itis.swiss"
       }
     ],
     "version": "1.0.0"
@@ -18,14 +18,32 @@
     "encoding": "utf-8",
     "class": "source/class",
     "resource": "source/resource",
-    "translation": "source/translation",
-    "type": "application"
+    "translation": "source/translation"
+  },
+  "externalResources": {
+    "script": [
+      "socketio/socket.io.js",
+      "svg/svg.js",
+      "svg/svg.path.js",
+      "jsondiffpatch/jsondiffpatch.min.js",
+      "jsontreeviewer/jsonTree.js",
+      "plotly/plotly.min.js",
+      "marked/marked.js"
+    ],
+    "css": [
+      "jsontreeviewer/jsonTree.css",
+      "hint/hint.css",
+      "common/common.css"
+    ]
   },
   "requires": {
-    "qooxdoo-sdk": "^6.0.0-alpha",
-    "qooxdoo-compiler": "^0.3.0-alpha",
-    "qooxdoo/qxl.apiviewer": "^0.1.12",
-    "qooxdoo/qxl.versionlabel": "^0.1.2",
-    "qooxdoo/qxl.testtapper": "^0.3.0"
-  }
+    "@qooxdoo/compiler": "^1.0.0-beta",
+    "@qooxdoo/framework": "^6.0.0-beta",
+    "ITISFoundation/qx-iconfont-fontawesome5": "^0.1.1",
+    "ITISFoundation/qx-osparc-theme": "^0.4.9",
+    "qooxdoo/qxl.testtapper": "^0.4.3",
+    "qooxdoo/qxl.apiviewer": "^1.0.0-beta",
+    "ITISFoundation/qx-iconfont-material": "^0.1.5"
+  },
+  "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
 }

@@ -4,13 +4,16 @@
 import logging
 import os
 
+DEBUG_MODE = os.environ.get("DEBUG", False) in ["true", "True", True]
+
 logging.basicConfig(
-    level=logging.DEBUG if (os.environ.get("DEBUG", False) in ["true", "True", True]) else logging.INFO,
+    level=logging.DEBUG if DEBUG_MODE else logging.INFO,
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
 API_VERSION = "v0"
 API_ROOT = "oas3"
+
 REGISTRY_CACHING = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
 REGISTRY_CACHING_TTL = os.environ.get("REGISTRY_CACHING_TTL", 15*60)
 APP_REGISTRY_CACHE_DATA_KEY = __name__ + "_registry_cache_data"
@@ -38,6 +41,6 @@ PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
     "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))
 # used to find the right network name
-SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME")
+SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 # useful when developing with an alternative registry namespace
 SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")

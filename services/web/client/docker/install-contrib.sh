@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Installing qooxdoo contrib ..."
+echo "Installing qooxdoo packages ..."
 
 source $(dirname $0)/.env
 
@@ -20,13 +20,13 @@ popd
 
 pushd ${CLIENT_DIR};
 
-echo "Updating contributions ..."
-qx contrib update
+echo "Updating packages ..."
+qx package update
 
-echo "Listing contributions ..."
-qx contrib list
+echo "Listing packages ..."
+qx package list
 
-echo "Installing contributions (based on information from contrib.json) ..."
-qx contrib install
+echo "Installing packages (based on information from qx-lock.json) ..."
+qx package install
 
 popd
