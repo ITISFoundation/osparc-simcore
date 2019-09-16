@@ -39,7 +39,6 @@ SERVICES_LIST := \
 	storage \
 	webserver
 
-CACHED_SERVICES_LIST    := $(SERVICES_LIST)
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 
 export VCS_URL          := $(shell git config --get remote.origin.url)
@@ -146,11 +145,11 @@ pull-cache: .env
 .PHONY: build-cache
 build-cache: ## Builds service images and tags them as 'cache'
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.cache.yml build --parallel
-	## $(filter-out webserver, $(CACHED_SERVICES_LIST))
+
 
 .PHONY: push-cache
 push-cache: ## Pushes service images tagged as 'cache' into the registry
-	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
+	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml push ${SERVICES_LIST}
 
 .PHONY: tag push pull
 tag: ## tags service images
