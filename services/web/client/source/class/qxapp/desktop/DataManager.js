@@ -62,15 +62,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20)).set({
-        marginTop: 20
-      });
-
-      const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 150
-      });
-      dataManagerMainLayout.add(label);
+      const dataManagerMainLayout = this.__createVBoxWLabel(this.tr("Data Manager"));
 
       const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
@@ -91,6 +83,20 @@ qx.Class.define("qxapp.desktop.DataManager", {
       this._add(dataManagerMainLayout, {
         flex: 1
       });
+    },
+
+    __createVBoxWLabel: function(text) {
+      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
+
+      const label = new qx.ui.basic.Label(text).set({
+        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        minWidth: 150
+      });
+      vBoxLayout.add(label);
+
+      return vBoxLayout;
     },
 
     __createTreeLayout: function() {

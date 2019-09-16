@@ -30,6 +30,8 @@ qx.Class.define("qxapp.About", {
       resizable: false,
       centerOnAppear: true
     });
+    const closeBtn = this.getChildControl("close-button");
+    qxapp.utils.Utils.setIdToWidget(closeBtn, "aboutWindowCloseBtn");
     this.__populateEntries();
   },
 

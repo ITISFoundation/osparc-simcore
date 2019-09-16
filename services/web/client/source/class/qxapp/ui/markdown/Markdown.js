@@ -81,7 +81,6 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       const images = qx.bom.Selector.query("img", domElement);
       for (let i=0; i<images.length; i++) {
         images[i].onload = () => {
-          console.log(images[i].src, "loaded");
           this.__resizeMe();
         };
       }
@@ -95,7 +94,6 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       }
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
-        console.log("All together", elemHeight);
         this.setHeight(elemHeight);
       }
     },
@@ -112,7 +110,6 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
 
     __getElementHeight: function(element) {
       const size = qx.bom.element.Dimension.getSize(element);
-      console.log(element.innerHTML.substring(0, 10), size.height);
       // add padding
       return size.height + 15;
     },

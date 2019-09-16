@@ -69,6 +69,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       init : "selectable"
     },
 
+    key: {
+      check: "String",
+      apply : "_applyKey"
+    },
+
     title: {
       check : "String",
       apply : "_applyTitle",
@@ -153,6 +158,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       return control || this.base(arguments, id);
     },
 
+    _applyKey: function(value, old) {
+      const parts = value.split("/");
+      const id = parts.pop();
+      qxapp.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
+    },
+
     _applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
@@ -168,6 +179,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
+    /**
+     * Event handler for filtering events.
+     */
     _filter: function() {
       this.exclude();
     },
