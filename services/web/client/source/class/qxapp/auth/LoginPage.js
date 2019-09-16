@@ -77,23 +77,23 @@ qx.Class.define("qxapp.auth.LoginPage", {
     }
 
     // Transitions between pages
-    login.addListener("done", function(msg) {
+    login.addListener("done", msg => {
       login.resetValues();
       this.fireDataEvent("done", msg);
     }, this);
 
-    login.addListener("toReset", function(e) {
+    login.addListener("toReset", e => {
       pages.setSelection([resetRequest]);
       login.resetValues();
     }, this);
 
-    login.addListener("toRegister", function(e) {
+    login.addListener("toRegister", e => {
       pages.setSelection([register]);
       login.resetValues();
     }, this);
 
     [register, resetRequest, reset].forEach(srcPage => {
-      srcPage.addListener("done", function(msg) {
+      srcPage.addListener("done", msg => {
         pages.setSelection([login]);
         srcPage.resetValues();
       }, this);

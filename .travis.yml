@@ -276,6 +276,7 @@ jobs:
       after_failure:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk after_failure
 
+    # system testing build and up ----------------------------------------------------------------
     - stage: system-testing
       name: build and up
       sudo: required
@@ -295,6 +296,39 @@ jobs:
         - unbuffer bash ops/travis/system-testing/build_and_run after_success
       after_failure:
         - unbuffer bash ops/travis/system-testing/build_and_run after_failure
+
+    # system testing e2e testing -----------------------------------------------------------------
+    # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
+    - stage: system-testing
+      name: e2e testing
+      dist: trusty
+      language: node_js
+      node_js:
+        - "8.11.3"
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - libnss3 # This is required to run new chrome on old trusty
+            - expect-dev # for unbuffer: brings color back into travis logs
+            - docker-ce
+      notifications:
+        email: false
+      cache:
+        directories:
+          - node_modules
+      before_install:
+        - sudo bash ops/travis/e2e-testing/e2e_testing before_install
+      install:
+        - unbuffer bash ops/travis/e2e-testing/e2e_testing install
+      before_script:
+        - unbuffer bash ops/travis/e2e-testing/e2e_testing before_script
+      script:
+        - unbuffer bash ops/travis/e2e-testing/e2e_testing script
+      after_success:
+        - unbuffer bash ops/travis/e2e-testing/e2e_testing after_success
+      after_failure:
+        - unbuffer bash ops/travis/e2e-testing/e2e_testing after_failure
 
     - stage: deployment
       name: master

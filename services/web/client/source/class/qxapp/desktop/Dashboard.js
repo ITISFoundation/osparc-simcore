@@ -77,9 +77,17 @@ qx.Class.define("qxapp.desktop.Dashboard", {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
         });
+        const tabButton = tabPage.getChildControl("button");
+        const id = tuple[0].getMessageId().toLowerCase() + "TabBtn";
+        qxapp.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
         const viewLayout = tuple[1].call(this, studyId);
+        tabButton.addListener("execute", () => {
+          if (viewLayout.resetSelection) {
+            viewLayout.resetSelection();
+          }
+        }, this);
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
         tabPage.add(scrollerMainView);

@@ -58,16 +58,14 @@ qx.Class.define("qxapp.auth.ui.ResetPassRequestView", {
       });
 
       // interaction
-      submitBtn.addListener("execute", function(e) {
+      submitBtn.addListener("execute", e => {
         const valid = manager.validate();
         if (valid) {
           this.__submit(email);
         }
       }, this);
 
-      cancelBtn.addListener("execute", function(e) {
-        this.fireDataEvent("done", null);
-      }, this);
+      cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },

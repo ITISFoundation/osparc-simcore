@@ -91,7 +91,7 @@ qx.Class.define("qxapp.auth.Manager", {
         }
       });
 
-      request.addListener("success", function(e) {
+      request.addListener("success", e => {
         const {
           data
         } = e.getTarget().getResponse();
@@ -180,7 +180,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     __bindDefaultSuccessCallback: function(request, successCbk, context) {
-      request.addListener("success", function(e) {
+      request.addListener("success", e => {
         const {
           data
         } = e.getTarget().getResponse();
@@ -192,7 +192,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     __bindDefaultFailCallback: function(request, failCbk, context) {
-      request.addListener("fail", function(e) {
+      request.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();

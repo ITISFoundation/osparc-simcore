@@ -70,6 +70,7 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       });
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
+      qxapp.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
       this.addListener("appear", () => {
         email.focus();
@@ -80,24 +81,24 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         required: true
       });
       pass.getContentElement().setAttribute("autocomplete", "current-password");
+      qxapp.utils.Utils.setIdToWidget(pass, "loginPasswordFld");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
       const loginBtn = new qx.ui.form.Button(this.tr("Log In"));
-      loginBtn.addListener("execute", function() {
-        this.__login();
-      }, this);
+      loginBtn.addListener("execute", () => this.__login(), this);
       // Listen to "Enter" key
-      this.addListener("keypress", function(keyEvent) {
+      this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "Enter") {
           this.__login();
         }
       }, this);
+      qxapp.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
 
 
       //  create account | forgot password? links
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
         const interval = 1000;
@@ -120,14 +121,17 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
         }, this);
         configTimer.start();
       }, this);
+      qxapp.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
       const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => {
         this.fireEvent("toReset");
       }, this);
+      qxapp.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
-          center: true
+          center: true,
+          allowGrowX: true
         }), {
           width: "50%"
         });
