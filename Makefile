@@ -41,34 +41,31 @@ SERVICES_LIST := \
 
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 
+# version control
 export VCS_URL          := $(shell git config --get remote.origin.url)
 export VCS_REF          := $(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
-export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export SWARM_STACK_NAME ?= simcore
+export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+SWARM_STACK_NAME ?= simcore
+
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
 $(foreach v, \
-	SWARM_STACK_NAME DOCKER_IMAGE_TAG DOCKER_REGISTRY DOCKER_REGISTRY_NEW, \
+	SWARM_STACK_NAME DOCKER_IMAGE_TAG DOCKER_REGISTRY, \
 	$(info + $(v) set to '$($(v))'))
 
 
+
 ## DOCKER BUILD -------------------------------
-TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
-
-
-.PHONY: config
-create-stack-file: config # TODO: deprecate create-stack-file
-config: ## Creates deploy stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
-
+#
+# - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
+# - only production and cache images are released (i.e. tagged pushed into registry)
+#
 
 .PHONY: build
-build: .env ## Builds all core service images (user 'make build-nc' to build w/o cache)
+build: .env ## Builds until production stage of core services and tags them as 'local/{service-name}:production'
 	# Compiling front-end
 	$(MAKE) -C services/web/client compile
 	# Building services
@@ -77,22 +74,29 @@ build: .env ## Builds all core service images (user 'make build-nc' to build w/o
 
 
 .PHONY: rebuild build-nc
-rebuild: build-nc #TODO: deprecate rebuild
-build-nc: .env
+rebuild: build-nc
+build-nc: .env ## As build but w/o cache (alias: rebuild)
 	# Compiling front-end
 	$(MAKE) -C services/web/client clean compile
 	# Building services
 	export BUILD_TARGET=production; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --no-cache --parallel
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel --no-cache
 
 
 .PHONY: build-devel
-build-devel: .env ## Builds images of core services for development
+build-devel: .env ## Builds until development stage of core services and tags them as 'local/{service-name}:development'
 	# Compiling front-end ('compile' target needed since productions stage in Dockerfile of webserver copies client/tools/qooxdoo-kit/build:latest)
 	$(MAKE) -C services/web/client compile compile-dev
 	# Building services
 	export BUILD_TARGET=development; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.devel.yml build --parallel
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
+
+
+.PHONY: build-cache
+# TODO: should download cache if any??
+build-cache: ## Builds until cache stage of core services and tags them as 'local/{service-name}:cache'
+	export BUILD_TARGET=cache; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -101,24 +105,41 @@ $(CLIENT_WEB_OUTPUT):
 
 
 ## DOCKER SWARM -------------------------------
+TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
+TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName,mktemp $(if $(IS_OSX),-t ,--suffix=)$(TEMP_SUFFIX)))
+SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
+
+
+.PHONY: config
+create-stack-file: config
+	## TODO: deprecated create-stack-file, use instead 'make config output_file=stack.yaml'
+config: ## Creates deploy stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
+	# docker-compose config for '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' -> $(output_file)
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
+
+
 .PHONY: up up-devel
-up: .env .init-swarm ## deploys production stack + tools
-	# config stack to $(TEMP_COMPOSE_YML)
-	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+up: .env .init-swarm ## deploys production stack (analogous to other osparc-ops's stack)
+	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(TEMP_COMPOSE_YML)
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys development stack and qx-compile+watch
-	# config devel stack to $(TEMP_COMPOSE_YML)
-	$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
+
+up-local: .env .init-swarm ## deploys local production stack and tools. Use as a lightweight to deploying osparc-ops stacks.
+	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
+	@export DOCKER_REGISTRY=local;      \
+	export DOCKER_IMAGE_TAG=production; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	# deploy stack $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+
+
+up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys local development stack, tools and qx-compile+watch
+	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
+	@$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	# deploy devel stack
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-	# start compile+watch front-end container
-	$(MAKE) -C services/web/client compile-dev flags=--watch
-
-
-.PHONY: up-webclient-devel
-up-webclient-devel: up-devel ## as up-devel but with continuous compile of the front-end
 	# start compile+watch front-end container
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
@@ -138,34 +159,51 @@ down-force: ## forces to stop all services and leave swarms
 
 
 ## DOCKER REGISTRY  -------------------------------
-.PHONY: pull-cache
-pull-cache: .env
-	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml pull
+#
 
-.PHONY: build-cache
-build-cache: ## Builds service images and tags them as 'cache'
-	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.cache.yml build --parallel
-
-
-.PHONY: push-cache
-push-cache: ## Pushes service images tagged as 'cache' into the registry
-	$(DOCKER_COMPOSE) -f services/docker-compose.cache.yml push ${SERVICES_LIST}
-
-.PHONY: tag push pull
-tag: ## tags service images
-ifndef DOCKER_REGISTRY_NEW
-	$(error DOCKER_REGISTRY_NEW variable is undefined)
-endif
-ifndef DOCKER_IMAGE_TAG_NEW
-	$(error DOCKER_IMAGE_TAG_NEW variable is undefined)
-endif
-	@echo "Tagging from $(DOCKER_REGISTRY), ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY_NEW}, ${DOCKER_IMAGE_TAG_NEW}"
-	$(foreach service, $(SERVICES_LIST)\
-		,$(DOCKER) tag $(DOCKER_REGISTRY)/$(service):${DOCKER_IMAGE_TAG} ${DOCKER_REGISTRY_NEW}/$(service):$(DOCKER_IMAGE_TAG_NEW); \
+tag-cache: ## tags localy built cache images as '${DOCKER_REGISTRY}/{service}:cache'
+	# tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
+	@$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
-push: ## Pushes images of $(SERVICES_LIST) into a registry
+tag-version: ## tags locally built production images as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	@$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
+	)
+
+tag-latest: ## tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
+	@export DOCKER_IMAGE_TAG=latest;
+	$(MAKE) tag-version
+
+
+tag: tag-version tag-latest ## tags service images before pushing to repo
+
+
+.PHONY: pull-cache
+pull-cache: .env
+	-export DOCKER_IMAGE_TAG=cache; \
+	export DOCKER_REGISTRY=itisfoundation; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
+
+.PHONY: push-cache
+push-cache: tag-cache ## Pushes service images tagged as 'cache' into the registry
+	export DOCKER_IMAGE_TAG=cache; \
+	export DOCKER_REGISTRY=itisfoundation; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
+
+
+push-version: tag-version
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
+
+push-latest: tag-latest
+	export DOCKER_IMAGE_TAG=latest; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
+
+push: push-version push-latest ## Pushes latest version images of $(SERVICES_LIST) into a registry
+	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
+
 
 pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
@@ -216,8 +254,9 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 PHONY: setup-check
 setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
-.PHONY: info
-info: ## displays selected parameters of makefile environments
+
+.PHONY: info info-images info-swarm info-vars info-all
+info: ## displays selected information
 	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
@@ -227,15 +266,19 @@ info: ## displays selected parameters of makefile environments
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 
-
-.PHONY: info-more
-info-more: ## displays all parameters of makefile environments
+info-vars: ## displays all parameters of makefile environments
 	$(info VARIABLES ------------)
 	$(foreach v,                                                                                  \
 		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
 		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
 	@echo "----"
+
+info-images:  ## lists created images
+	@$(foreach service,$(SERVICES_LIST)\
+		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
+
+info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
 	@echo ""
 	$(DOCKER) stack ls
@@ -247,8 +290,11 @@ ifneq ($(SWARM_HOSTS), )
 	$(DOCKER) network ls
 endif
 
+info-all: info-vars, info-images, info-swarm
 
-.PHONY: clean
+
+
+.PHONY: clean clean-images
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
 	# cleaning web/client
@@ -257,6 +303,13 @@ clean:   ## cleans all unversioned files in project and temp files create by thi
 	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
 	# removing unversioned
 	@git clean -dxf -e .vscode/
+
+clean-images:  ## removes all created images
+	# cleaning all service images
+	$(foreach service,$(SERVICES_LIST)\
+		,$(DOCKER) image rm -f $(shell $(DOCKER) images */$(service):* -q);)
+	# cleaning webclient
+	$(MAKE) -C services/web/client clean
 
 
 .PHONY: reset
