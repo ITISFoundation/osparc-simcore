@@ -65,7 +65,7 @@ $(foreach v, \
 #
 
 .PHONY: build
-build: .env ## Builds until production stage of core services and tags them as 'local/{service-name}:production'
+build: .env ## Builds production images and tags them as 'local/{service-name}:production'
 	# Compiling front-end
 	$(MAKE) -C services/web/client compile
 	# Building services
@@ -84,7 +84,7 @@ build-nc: .env ## As build but w/o cache (alias: rebuild)
 
 
 .PHONY: build-devel
-build-devel: .env ## Builds until development stage of core services and tags them as 'local/{service-name}:development'
+build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'
 	# Compiling front-end ('compile' target needed since productions stage in Dockerfile of webserver copies client/tools/qooxdoo-kit/build:latest)
 	$(MAKE) -C services/web/client compile compile-dev
 	# Building services
@@ -94,7 +94,7 @@ build-devel: .env ## Builds until development stage of core services and tags th
 
 .PHONY: build-cache
 # TODO: should download cache if any??
-build-cache: ## Builds until cache stage of core services and tags them as 'local/{service-name}:cache'
+build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
 	export BUILD_TARGET=cache; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
@@ -119,14 +119,14 @@ config: ## Creates deploy stack file for production as $(output_file) e.g. 'make
 
 
 .PHONY: up up-devel
-up: .env .init-swarm ## deploys production stack (analogous to other osparc-ops's stack)
+up: .env .init-swarm ## Deploys production stack (analogous to other osparc-ops's stack)
 	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
 	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(TEMP_COMPOSE_YML)
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 
-up-local: .env .init-swarm ## deploys local production stack and tools. Use as a lightweight to deploying osparc-ops stacks.
+up-local: .env .init-swarm ## Deploys local production stack and tools. Use as a lightweight to deploying osparc-ops stacks.
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
 	@export DOCKER_REGISTRY=local;      \
 	export DOCKER_IMAGE_TAG=production; \
@@ -135,7 +135,7 @@ up-local: .env .init-swarm ## deploys local production stack and tools. Use as a
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
 
-up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys local development stack, tools and qx-compile+watch
+up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
 	@$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
 	# deploy devel stack
@@ -145,10 +145,10 @@ up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## deploys local development sta
 
 
 .PHONY: down down-force
-down: ## stops and removes stack
+down: ## Stops and removes stack
 	$(DOCKER) stack rm $(SWARM_STACK_NAME)
 
-down-force: ## forces to stop all services and leave swarms
+down-force: ## Forces to stop all services and leave swarms
 	$(DOCKER) swarm leave -f
 
 
@@ -158,41 +158,56 @@ down-force: ## forces to stop all services and leave swarms
 	$(if $(SWARM_HOSTS),,$(DOCKER) swarm init)
 
 
-## DOCKER REGISTRY  -------------------------------
-#
+## DOCKER TAGS  -------------------------------
 
-tag-cache: ## tags localy built cache images as '${DOCKER_REGISTRY}/{service}:cache'
+.PHONY: tag-local tag-cache tag-version tag-latest tag
+
+tag-local: ## Tags current images as local. Used to retag pulled versions as local
+	# tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
+	@$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
+	)
+
+tag-cache: ## Tags 'local/{service}:cache' images as '${DOCKER_REGISTRY}/{service}:cache'
 	# tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
-tag-version: ## tags locally built production images as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+tag-version: ## Tags 'local/{service}:production' images as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	# tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
 	)
 
-tag-latest: ## tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
+tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
 	@export DOCKER_IMAGE_TAG=latest;
 	$(MAKE) tag-version
 
 
-tag: tag-version tag-latest ## tags service images before pushing to repo
+tag: tag-version tag-latest ## Tags service images with version and latest before pushing to repo
 
 
-.PHONY: pull-cache
+## DOCKER PULL/PUSH  -------------------------------
+
+.PHONY: pull-cache push-cache
 pull-cache: .env
 	-export DOCKER_IMAGE_TAG=cache; \
 	export DOCKER_REGISTRY=itisfoundation; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
 
-.PHONY: push-cache
+
 push-cache: tag-cache ## Pushes service images tagged as 'cache' into the registry
 	export DOCKER_IMAGE_TAG=cache; \
 	export DOCKER_REGISTRY=itisfoundation; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
 
+
+.PHONY: pull push-version push-latest push release
+
+pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
+	# pulling '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
 
 push-version: tag-version
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
@@ -204,11 +219,7 @@ push-latest: tag-latest
 push: push-version push-latest ## Pushes latest version images of $(SERVICES_LIST) into a registry
 	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
 
-
-pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
-
-
+release: push
 ## PYTHON -------------------------------
 .PHONY: pylint
 
