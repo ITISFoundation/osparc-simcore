@@ -24,7 +24,6 @@ before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         npx eslint --version
-        npx puppeteer --version
         make -C services/web/client info
     fi
 }
