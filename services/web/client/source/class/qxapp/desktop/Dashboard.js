@@ -41,6 +41,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
     qxapp.wrapper.JsonDiffPatch.getInstance().init();
     qxapp.wrapper.JsonTreeViewer.getInstance().init();
+    qxapp.wrapper.DOMPurify.getInstance().init();
     this.__createMainViewLayout(studyId);
   },
 

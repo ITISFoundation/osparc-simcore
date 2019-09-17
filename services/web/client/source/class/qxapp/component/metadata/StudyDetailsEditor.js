@@ -261,7 +261,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         "thumbnail"
       ].forEach(fieldKey => {
         const dirty = data[fieldKey];
-        const clean = qxapp.ui.markdown.Markdown.sanitize(dirty);
+        const clean = qxapp.wrapper.DOMPurify.getInstance().sanitize(dirty);
         if (dirty !== clean) {
           qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
         }
