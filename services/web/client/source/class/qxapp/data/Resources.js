@@ -58,6 +58,10 @@ qx.Class.define("qxapp.data.Resources", {
             method: "POST",
             url: statics.API + "/projects?as_template={study_id}"
           },
+          put: {
+            method: "PUT",
+            url: statics.API + "/projects/{project_id}"
+          }
         })
       },
       /*

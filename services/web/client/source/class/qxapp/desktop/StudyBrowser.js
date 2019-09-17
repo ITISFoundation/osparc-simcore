@@ -153,20 +153,14 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
      *  Function that asks the backend for the list of studies belonging to the user
      * and sets it
      */
-    reloadUserStudies: function() {
-      const resources = this.__studyResources.projects;
-
-      resources.addListenerOnce("getSuccess", e => {
-        let userStudyList = e.getRequest().getResponse().data;
-        this.__setStudyList(userStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
+    reloadUserStudies: function(study) {
       if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
-        resources.get();
+        qxapp.data.Resources.get("studies").then(studies => {
+          this.__setStudyList(studies);
+          this.__itemSelected(study ? study.uuid : null, false);
+        }).catch(err => {
+          console.error(err);
+        });
       } else {
         this.__setStudyList([]);
       }
@@ -175,20 +169,14 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     /**
      *  Function that asks the backend for the list of template studies and sets it
      */
-    reloadTemplateStudies: function() {
-      const resources = this.__studyResources.templates;
-
-      resources.addListenerOnce("getSuccess", e => {
-        const tempStudyList = e.getRequest().getResponse().data;
-        this.__setTemplateList(tempStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
+    reloadTemplateStudies: function(template) {
       if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        resources.get();
+        qxapp.data.Resources.get("templates").then(templates => {
+          this.__setTemplateList(templates);
+          this.__itemSelected(template ? template.uuid : null, true);
+        }).catch(err => {
+          console.error(err);
+        });
       } else {
         this.__setTemplateList([]);
       }
@@ -405,44 +393,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       return usrLst;
     },
 
-    reloadUserStudies: function() {
-      if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
-        qxapp.data.Resources.get("studies").then(studies => {
-          this.__setStudyList(studies);
-        }).catch(err => {
-          console.error(err);
-        });
-      } else {
-        this.__setStudyList([]);
-      }
-    },
-
     __createTemplateStudyList: function() {
       const tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       qxapp.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
       this.reloadTemplateStudies();
       return tempList;
-    },
-
-    reloadTemplateStudies: function() {
-      if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        qxapp.data.Resources.get("templates").then(templates => {
-          const tempFilteredStudyList = [];
-          for (let i=0; i<templates.length; i++) {
-            // FIXME: Backend should do the filtering
-            if (templates[i].uuid.includes("DemoDecember") &&
-            !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
-              continue;
-            }
-            tempFilteredStudyList.push(templates[i]);
-          }
-          this.__setTemplateList(tempFilteredStudyList);
-        }).catch(err => {
-          console.error(err);
-        });
-      } else {
-        this.__setTemplateList([]);
-      }
     },
 
     __setStudyList: function(userStudyList) {
@@ -561,8 +516,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       this.__editStudyLayout.removeAll();
       const studyDetails = new qxapp.component.metadata.StudyDetailsEditor(studyData, isTemplate);
       studyDetails.addListener("closed", () => this.__itemSelected(null), this);
-      studyDetails.addListener("updatedStudy", study => this.reloadUserStudies(), this);
-      studyDetails.addListener("updatedTemplate", template => this.reloadTemplateStudies(), this);
+      studyDetails.addListener("updatedStudy", e => this.reloadUserStudies(e.getData()), this);
+      studyDetails.addListener("updatedTemplate", e => this.reloadTemplateStudies(e.getData()), this);
       studyDetails.addListener("openedStudy", () => {
         if (isTemplate) {
           this.__createStudyBtnClkd(studyData);

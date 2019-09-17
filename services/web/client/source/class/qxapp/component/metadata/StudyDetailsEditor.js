@@ -208,7 +208,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         },
         data: this.__serializeForm()
       };
-      qxapp.data.Resources.fetch("studies", "put", params).then(data => {
+      qxapp.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params).then(data => {
         btn.resetIcon();
         btn.getChildControl("icon").getContentElement()
           .removeClass("rotate");
