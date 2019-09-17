@@ -246,7 +246,9 @@ endif
 .PHONY: clean
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
-	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME))
+	# removing temps
+	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME)*)
+	# cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 
