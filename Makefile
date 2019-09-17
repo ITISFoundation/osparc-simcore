@@ -12,10 +12,9 @@ PREDEFINED_VARIABLES := $(.VARIABLES)
 
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
-IS_LINUX:= $(filter Linux,$(shell uname))
-IS_OSX  := $(filter Darwin,$(shell uname))
-else
-IS_WSL  := $(filter Microsoft,$(shell uname))
+IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_OSX  := $(filter Darwin,$(shell uname -a))
+IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
