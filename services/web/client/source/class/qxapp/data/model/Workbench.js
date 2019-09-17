@@ -365,7 +365,14 @@ qx.Class.define("qxapp.data.model.Workbench", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         this.getNode(nodeId).giveUniqueName();
-        this.getNode(nodeId).startInteractiveNode();
+      }
+    },
+
+    initWorkbench: function() {
+      const allModels = this.getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        node.startInteractiveNode();
       }
     },
 

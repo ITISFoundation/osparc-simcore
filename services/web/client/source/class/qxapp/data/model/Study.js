@@ -37,8 +37,9 @@ qx.Class.define("qxapp.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
+    * @param initStudy {Boolean} If workbench needs to be initialized. Default false
     */
-  construct: function(studyData) {
+  construct: function(studyData, initWorkbench = false) {
     this.base(arguments);
 
     this.set({
@@ -53,6 +54,9 @@ qx.Class.define("qxapp.data.model.Study", {
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new qxapp.data.model.Workbench(this, wbData));
+    if (initWorkbench) {
+      this.getWorkbench().initWorkbench();
+    }
   },
 
   properties: {
