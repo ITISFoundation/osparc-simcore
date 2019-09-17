@@ -101,25 +101,28 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
 
     __buildToolbar: function() {
       const iconSize = 14;
-      let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+      const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
+      const newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
       newButton.addListener("execute", e => {
         this.__addNode();
       }, this);
+      qxapp.utils.Utils.setIdToWidget(newButton, "newServiceBtn");
       toolbar.add(newButton);
-      let part2 = new qx.ui.toolbar.Part();
-      let deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+
+      const deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
       deleteButton.addListener("execute", e => {
         this.__deleteNode();
       }, this);
-      let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
+      qxapp.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
+      toolbar.add(deleteButton);
+
+      const renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
         this.__openItemRenamer();
       }, this);
-      part2.add(deleteButton);
-      part2.add(renameButton);
-      toolbar.add(part2);
+      qxapp.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
+      toolbar.add(renameButton);
 
       return toolbar;
     },

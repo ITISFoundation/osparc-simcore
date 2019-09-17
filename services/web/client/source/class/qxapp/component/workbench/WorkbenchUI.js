@@ -840,15 +840,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }, this);
 
       this.addListener("dbltap", e => {
-        // FIXME:
-        const navBarHeight = 50;
-        let x = e.getViewportLeft() - this.getBounds().left;
-        let y = e.getViewportTop() - navBarHeight;
+        const x = e.getViewportLeft() - this.getBounds().left;
+        const y = e.getViewportTop();
         const pos = {
           x: x,
           y: y
         };
-        let srvCat = this.__createServiceCatalog(pos);
+        const srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
       }, this);
 

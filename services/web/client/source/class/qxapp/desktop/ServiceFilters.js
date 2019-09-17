@@ -30,6 +30,7 @@ qx.Class.define("qxapp.desktop.ServiceFilters", {
     this._setLayout(new qx.ui.layout.HBox());
 
     const textFilter = this.__textFilter = new qxapp.component.filter.TextFilter("text", groupId);
+    qxapp.utils.Utils.setIdToWidget(textFilter, "serviceFiltersTextFld");
     const tagsFilter = this.__tagsFilter = new qxapp.component.filter.NodeTypeFilter("tags", groupId);
     this._add(textFilter);
     this._add(tagsFilter);
@@ -37,12 +38,25 @@ qx.Class.define("qxapp.desktop.ServiceFilters", {
 
   members: {
     __textFilter: null,
+    __tagsFilter: null,
+
+    /**
+     * Resets the text and active tags.
+     */
+    reset: function() {
+      this.__textFilter.reset();
+      this.__tagsFilter.reset();
+    },
 
     /**
      * Returns the text filter widget.
      */
     getTextFilter: function() {
       return this.__textFilter;
+    },
+
+    getTagsFilter: function() {
+      return this.__tagsFilter;
     }
   }
 });
