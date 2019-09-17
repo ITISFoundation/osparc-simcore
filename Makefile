@@ -138,9 +138,9 @@ up-local: .env .init-swarm ## Deploys local production stack and tools. Use as a
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
 	@$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
-	# deploy devel stack
+	# deploy devel stack [back-end]
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-	# start compile+watch front-end container
+	# start compile+watch front-end container [back-end]
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 
@@ -220,6 +220,8 @@ push: push-version push-latest ## Pushes latest version images of $(SERVICES_LIS
 	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
 
 release: push
+
+
 ## PYTHON -------------------------------
 .PHONY: pylint
 

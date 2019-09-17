@@ -56,7 +56,22 @@ serve: compile ## serves site compiled in image in 127.0.0.1:8080
 	docker run --rm -p 8080:8080  $(docker_image) $(qx_serve) --target=build
 
 
+
 # misc --------------------------
+.PHONY: shell
+shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
+	@$(docker_compose) run --rm qooxdoo-kit /bin/sh
+
+
+
+.PHONY: info
+info: ## this colorful help
+	# toolkit image 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
+	@docker images itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
+	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
+	# build image '$(docker_image)'
+	@docker images $(docker_image)
+
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -67,7 +82,6 @@ help: ## this colorful help
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-
 
 
 .DEFAULT_GOAL := help

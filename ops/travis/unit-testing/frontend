@@ -15,9 +15,7 @@ before_install() {
 install() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        cd services/web/client
         npm install
-        npx qx contrib install
     fi
 }
 
@@ -25,31 +23,38 @@ before_script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         npx eslint --version
+        npx puppeteer --version
+        make -C services/web/client info
     fi
 }
 
 script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-	npm install
+        echo "# Running Linter"
         npm run linter
+
         pushd services/web/client
-        echo "Building build version"
-        npx qx compile --machine-readable --target=build
-        echo "Building source version"
-        npx qx serve --machine-readable --target=source  --listen-port=8080 &
-        SERVER_PID=$!
-        echo "Waiting for build to complete"
+
+        echo "# Building build version"
+        make compile
+
+        echo "# Building source version"
+        make compile-dev flags=--machine-readable
+
+        echo "# Serving source version"
+        make serve-dev flags=--machine-readable
+
+        #TODO: move this inside qx-kit container
+        echo "# Waiting for build to complete"
         while ! nc -z localhost 8080; do
           sleep 1 # wait for 10 second before check again
         done
         node source-output/resource/qxl/testtapper/run.js --diag --verbose http://localhost:8080/testtapper/
-        kill $SERVER_PID
         popd
     else
         echo "No changes detected. Skipping linting of node.js."
     fi
-
 }
 
 after_success() {
