@@ -347,6 +347,18 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     getInputNodes: function() {
+      const inputNodes = [];
+      const inputNodeIds = this.getInputNodeIds();
+      for (let i = 0; i < inputNodeIds.length; i++) {
+        const inputNode = this.getWorkbench().getNode(inputNodeIds[i]);
+        if (inputNode) {
+          inputNodes.push(inputNode);
+        }
+      }
+      return inputNodes;
+    },
+
+    getInputNodeIds: function() {
       return this.__inputNodes;
     },
 
@@ -969,7 +981,7 @@ qx.Class.define("qxapp.data.model.Node", {
         label: this.getLabel(),
         inputs: this.getInputValues(),
         inputAccess: this.getInputAccess(),
-        inputNodes: this.getInputNodes(),
+        inputNodes: this.getInputNodeIds(),
         outputNode: this.getIsOutputNode(),
         outputs: this.getOutputValues(),
         parent: this.getParentNodeId(),

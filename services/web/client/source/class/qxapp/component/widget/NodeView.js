@@ -28,7 +28,6 @@
  *
  * <pre class='javascript'>
  *   let nodeView = new qxapp.component.widget.NodeView();
- *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
  *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
@@ -85,11 +84,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   properties: {
-    workbench: {
-      check: "qxapp.data.model.Workbench",
-      nullable: false
-    },
-
     node: {
       check: "qxapp.data.model.Node",
       apply: "_applyNode"
@@ -156,7 +150,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       // Add the representations for the inputs
       const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
+        const inputNode = inputNodes[i];
         if (inputNode.isContainer()) {
           for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
             const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];

@@ -750,7 +750,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
-          const inputNodes = node.getInputNodes();
+          const inputNodes = node.getInputNodeIds();
           for (let i = 0; i < inputNodes.length; i++) {
             let inputNode = inputNodes[i];
             if (inputNode in nodes) {

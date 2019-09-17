@@ -140,10 +140,9 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      const nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
+      this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      nodeView.setWorkbench(study.getWorkbench());
     },
 
     connectEvents: function() {
