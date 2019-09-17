@@ -108,7 +108,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
+      const dataManagerView = this.__dataManager = new qxapp.desktop.DataBrowser();
       return dataManagerView;
     }
   }
