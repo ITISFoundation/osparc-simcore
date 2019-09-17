@@ -11,6 +11,9 @@
  * @asset(DOMPurify/purify.min.js)
  */
 
+/* global marked */
+/* global DOMPurify */
+
 /**
  * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML,
  * sanitizes it and applies it to its value property.
