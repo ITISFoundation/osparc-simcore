@@ -47,8 +47,10 @@ export VCS_REF          := $(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-SWARM_STACK_NAME ?= simcore
+# swarm
+export SWARM_STACK_NAME ?= simcore
 
+# version tags
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
@@ -311,7 +313,7 @@ info-all: info-vars, info-images, info-swarm
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
 	# cleaning web/client
-	$(MAKE) -C services/web/client clean
+	@$(MAKE) -C services/web/client clean
 	# removing temps
 	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
 	# removing unversioned
@@ -319,10 +321,10 @@ clean:   ## cleans all unversioned files in project and temp files create by thi
 
 clean-images:  ## removes all created images
 	# cleaning all service images
-	$(foreach service,$(SERVICES_LIST)\
+	-$(foreach service,$(SERVICES_LIST)\
 		,$(DOCKER) image rm -f $(shell $(DOCKER) images */$(service):* -q);)
 	# cleaning webclient
-	$(MAKE) -C services/web/client clean
+	@$(MAKE) -C services/web/client clean
 
 
 .PHONY: reset
