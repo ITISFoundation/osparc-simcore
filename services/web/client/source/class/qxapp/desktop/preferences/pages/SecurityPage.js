@@ -31,15 +31,11 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
     const title = this.tr("Security");
     this.base(arguments, title, iconSrc);
 
-    this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createTokenResources();
-
     this.add(this.__createPasswordSection());
     this.add(this.__createTokensSection());
   },
 
   members: {
-    __tokenResources: null,
-
     __tokensList: null,
 
     __createTokensSection: function() {
@@ -199,33 +195,25 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
       resetBtn.addListener("execute", () => {
         if (manager.validate()) {
-          let request = new qxapp.io.request.ApiRequest("/auth/change-password", "POST");
-          request.setRequestData({
-            "current": currentPassword.getValue(),
-            "new": newPassword.getValue(),
-            "confirm": confirm.getValue()
+          const params = {
+            data: {
+              current: currentPassword.getValue(),
+              new: newPassword.getValue(),
+              confirm: confirm.getValue()
+            }
+          };
+          qxapp.data.Resources.fetch("password", "post", params).then(data => {
+            qxapp.component.message.FlashMessenger.getInstance().log(data);
+            [currentPassword, newPassword, confirm].forEach(item => {
+              item.resetValue();
+            });
+          }).catch(err => {
+            console.error(err);
+            qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+            [currentPassword, newPassword, confirm].forEach(item => {
+              item.resetValue();
+            });
           });
-
-          request.addListenerOnce("success", function(e) {
-            const res = e.getTarget().getResponse();
-            qxapp.component.message.FlashMessenger.getInstance().log(res.data);
-
-            [currentPassword, newPassword, confirm].forEach(item => {
-              item.resetValue();
-            });
-          }, this);
-
-          request.addListenerOnce("fail", e => {
-            const error = e.getTarget().getResponse().error;
-            const msg = error ? error["errors"][0].message : this.tr("Failed to reset password");
-            qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-
-            [currentPassword, newPassword, confirm].forEach(item => {
-              item.resetValue();
-            });
-          }, this);
-
-          request.send();
         }
       });
 

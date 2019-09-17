@@ -112,6 +112,18 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/me/tokens/{service}"
           }
         })
+      },
+      /*
+       * PASSWORD
+       */
+      password: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          post: {
+            method: "POST",
+            url: statics.API + "/auth/change-password"
+          }
+        })
       }
     };
   },
@@ -139,7 +151,14 @@ qx.Class.define("qxapp.data.Resources", {
           resolve(data);
         }, this);
 
-        call.endpoints.addListenerOnce(endpoint + "Error", e => reject(Error(`Error while fetching ${resource}: ${e.getData()}`)));
+        call.endpoints.addListenerOnce(endpoint + "Error", e => {
+          const logs = e.getData().error.logs || null;
+          let message = null;
+          if (logs && logs.length) {
+            message = logs[0].message;
+          }
+          reject(Error(`Error while fetching ${resource}${message ? ": " + message : "."}`));
+        });
 
         call.endpoints[endpoint](params.url || null, params.data || null);
       });
