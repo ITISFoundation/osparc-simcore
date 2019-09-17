@@ -33,6 +33,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
+    this.__isTemplate = isTemplate;
     this.__model = qx.data.marshal.Json.createModel(study);
 
     this.__stack = new qx.ui.container.Stack();
@@ -41,8 +42,6 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
     this._add(this.__stack);
-
-    this.__isTemplate = isTemplate;
 
     // Workaround: qx serializer is not doing well with uuid as object keys.
     this.__workbench = study.workbench;

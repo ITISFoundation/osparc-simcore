@@ -45,7 +45,7 @@ qx.Class.define("qxapp.data.Resources", {
         })
       },
       /*
-       * TEMPLATES (actually studies flagged as studies)
+       * TEMPLATES (actually studies flagged as templates)
        */
       templates: {
         usesCache: true,
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.data.Resources", {
           if (logs && logs.length) {
             message = logs[0].message;
           }
-          reject(Error(`Error while fetching ${resource}${message ? ": " + message : "."}`));
+          reject(Error(message ? message : `Error while fetching ${resource}`));
         });
 
         call.endpoints[endpoint](params.url || null, params.data || null);

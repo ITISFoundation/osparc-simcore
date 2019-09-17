@@ -246,28 +246,27 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData, templateId) {
-      const resources = this.__studyResources.projects;
-
       if (templateId) {
-        resources.addListenerOnce("postFromTemplateSuccess", e => {
-          const studyData = e.getRequest().getResponse().data;
-          this.__startStudy(studyData);
-        }, this);
-        resources.addListenerOnce("postFromTemplateError", e => {
-          console.error(e);
+        const params = {
+          url: {
+            "template_id": templateId
+          },
+          data: minStudyData
+        };
+        qxapp.data.Resources.fetch("studies", "postFromTemplate", params).then(study => {
+          this.__startStudy(study);
+        }).catch(err => {
+          console.error(err);
         });
-        resources.postFromTemplate({
-          "template_id": templateId
-        }, minStudyData);
       } else {
-        resources.addListenerOnce("postSuccess", e => {
-          const studyData = e.getRequest().getResponse().data;
-          this.__startStudy(studyData);
-        }, this);
-        resources.addListenerOnce("postError", e => {
+        const params = {
+          data: minStudyData
+        };
+        qxapp.data.Resources.fetch("studies", "post", params).then(study => {
+          this.__startStudy(study);
+        }).catch(err => {
           console.error(e);
         });
-        resources.post(null, minStudyData);
       }
     },
 
@@ -320,19 +319,12 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     reloadUserStudies: function() {
-      const resources = this.__studyResources.projects;
-
-      resources.addListenerOnce("getSuccess", e => {
-        let userStudyList = e.getRequest().getResponse().data;
-        this.__setStudyList(userStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
       if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
-        resources.get();
+        qxapp.data.Resources.get("studies").then(studies => {
+          this.__setStudyList(studies);
+        }).catch(err => {
+          console.error(err);
+        });
       } else {
         this.__setStudyList([]);
       }
@@ -345,28 +337,21 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     reloadTemplateStudies: function() {
-      const resources = this.__studyResources.templates;
-
-      resources.addListenerOnce("getSuccess", e => {
-        const tempStudyList = e.getRequest().getResponse().data;
-        const tempFilteredStudyList = [];
-        for (let i=0; i<tempStudyList.length; i++) {
-          // FIXME: Backend should do the filtering
-          if (tempStudyList[i].uuid.includes("DemoDecember") &&
-          !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
-            continue;
-          }
-          tempFilteredStudyList.push(tempStudyList[i]);
-        }
-        this.__setTemplateList(tempFilteredStudyList);
-      }, this);
-
-      resources.addListener("getError", e => {
-        console.error(e);
-      }, this);
-
       if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        resources.get();
+        qxapp.data.Resources.get("templates").then(templates => {
+          const tempFilteredStudyList = [];
+          for (let i=0; i<templates.length; i++) {
+            // FIXME: Backend should do the filtering
+            if (templates[i].uuid.includes("DemoDecember") &&
+            !qxapp.data.Permissions.getInstance().canDo("services.all.read")) {
+              continue;
+            }
+            tempFilteredStudyList.push(templates[i]);
+          }
+          this.__setTemplateList(tempFilteredStudyList);
+        }).catch(err => {
+          console.error(err);
+        });
       } else {
         this.__setTemplateList([]);
       }
@@ -378,7 +363,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       for (let i=0; i<userStudyList.length; i++) {
         this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
       }
-      this.__itemSelected(this.__selectedItemId);
       if (this.__selectedItemId) {
         const button = this.__userStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
         if (button) {
@@ -393,7 +377,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       for (let i=0; i<tempStudyList.length; i++) {
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
       }
-      this.__itemSelected(this.__selectedItemId, true);
       if (this.__selectedItemId) {
         const button = this.__templateStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
         if (button) {
