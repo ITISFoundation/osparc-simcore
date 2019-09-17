@@ -56,10 +56,11 @@ $(foreach v, \
 
 
 ## DOCKER BUILD -------------------------------
-TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+TEMP_COMPOSE_YML := $(if $(IS_WIN)\
+	,$(shell (New-TemporaryFile).FullName)\
+	,$(shell mktemp -d /tmp/$(SWARM_STACK_NAME)-XXXXX)/docker-compose.yml)
 
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
@@ -240,7 +241,7 @@ endif
 .PHONY: clean
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
-	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
+	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME))
 	@git clean -dxf -e .vscode/
 
 
