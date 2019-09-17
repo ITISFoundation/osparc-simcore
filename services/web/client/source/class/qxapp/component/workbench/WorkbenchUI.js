@@ -460,8 +460,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       this.__clearNodeInputUIs();
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
-        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
-        let inputLabel = this.__createNodeInputUI(inputNode);
+        const inputNode = inputNodes[i];
+        const inputLabel = this.__createNodeInputUI(inputNode);
         this.__nodesUI.push(inputLabel);
       }
     },
