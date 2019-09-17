@@ -67,8 +67,8 @@ qx.Class.define("qxapp.desktop.ControlsBar", {
     },
 
     __createStartButton: function() {
-      let startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
-
+      const startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
+      qxapp.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
       startButton.addListener("execute", () => {
         this.fireEvent("startPipeline");
       }, this);
