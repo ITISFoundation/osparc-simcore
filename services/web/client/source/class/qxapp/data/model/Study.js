@@ -37,7 +37,7 @@ qx.Class.define("qxapp.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
-    * @param initStudy {Boolean} Whether workbench needs to be initialized upon construction or not. Default false
+    * @param initWorkbench {Boolean} True to initialize workbench nodes. Default false
     */
   construct: function(studyData, initWorkbench = false) {
     this.base(arguments);
