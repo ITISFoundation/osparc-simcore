@@ -548,24 +548,21 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     __deleteStudy: function(studyData, isTemplate = false) {
       this.__stopInteractiveServicesInStudy(studyData);
-
-      let resource = this.__studyResources.project;
-
-      resource.addListenerOnce("delSuccess", ev => {
-        if (isTemplate) {
-          this.reloadTemplateStudies();
-        } else {
-          this.reloadUserStudies();
-        }
-      }, this);
-
       studyData.forEach(study => {
-        resource.del({
-          "project_id": study.uuid
-        });
+        const params = {
+          url: {
+            "project_id": study.uuid
+          }
+        };
+        qxapp.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid).then(() => {
+          if (isTemplate) {
+            this.reloadTemplateStudies();
+          } else {
+            this.reloadUserStudies();
+          }
+          this.__itemSelected(null);
+        }).catch(err => console.error(err));
       });
-
-      this.__itemSelected(null);
     },
 
     __stopInteractiveServicesInStudy: function(studies) {

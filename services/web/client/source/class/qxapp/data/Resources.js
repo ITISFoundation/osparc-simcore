@@ -61,6 +61,10 @@ qx.Class.define("qxapp.data.Resources", {
           put: {
             method: "PUT",
             url: statics.API + "/projects/{project_id}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/projects/{project_id}"
           }
         })
       },
