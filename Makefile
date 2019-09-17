@@ -206,8 +206,9 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 PHONY: setup-check
 setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
-.PHONY: info
-info: ## displays selected parameters of makefile environments
+
+.PHONY: info info-images info-swarm info-vars info-all
+info: ## displays selected information
 	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
@@ -217,24 +218,28 @@ info: ## displays selected parameters of makefile environments
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 
-
-.PHONY: info-more
-info-more: ## displays all parameters of makefile environments
+info-vars: ## displays all parameters of makefile environments
 	$(info VARIABLES ------------)
 	$(foreach v,                                                                                  \
 		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
 		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
 	@echo "----"
+
+info-images:  ## lists created images (mostly for debugging makefile)
+	@$(foreach service,$(SERVICES_LIST)\
+		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
+
+info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
-	@echo ""
-	$(DOCKER) stack ls
-	@echo ""
-	-$(DOCKER) stack ps $(SWARM_STACK_NAME)
-	@echo ""
-	-$(DOCKER) stack services $(SWARM_STACK_NAME)
-	@echo ""
-	$(DOCKER) network ls
+	# stacks in swarm
+	@$(DOCKER) stack ls
+	# containers (tasks) running in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack ps $(SWARM_STACK_NAME)
+	# services in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack services $(SWARM_STACK_NAME)
+	# networks
+	@$(DOCKER) network ls
 endif
 
 
