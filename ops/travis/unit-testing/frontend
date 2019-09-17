@@ -43,7 +43,7 @@ script() {
         make compile-dev flags=--machine-readable
 
         echo "# Serving source version"
-        make serve-dev flags=--machine-readable
+        make serve-dev flags=--machine-readable detached=test-server
 
         #TODO: move this inside qx-kit container
         echo "# Waiting for build to complete"
