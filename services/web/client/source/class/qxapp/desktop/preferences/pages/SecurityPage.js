@@ -153,17 +153,12 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
         if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
           return;
         }
-
-        let token = this.__tokenResources.token;
-        token.addListenerOnce("delSuccess", eve => {
-          this.__rebuildTokensList();
-        }, this);
-        token.addListenerOnce("delError", eve => {
-          console.log(eve);
-        });
-        token.del({
-          "service": service
-        });
+        const params = {
+          url: {
+            service
+          }
+        };
+        qxapp.data.Resources.fetch("tokens", "delete", params, service).then(() => this.__rebuildTokensList()).catch(err => console.error(err));
       }, this);
       form.addButton(delTokenBtn);
 

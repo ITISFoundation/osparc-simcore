@@ -98,6 +98,18 @@ qx.Class.define("qxapp.data.Resources", {
           post: {
             method: "POST",
             url: statics.API + "/me/tokens"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/me/tokens/{service}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/me/tokens/{service}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/me/tokens/{service}"
           }
         })
       }
@@ -105,7 +117,7 @@ qx.Class.define("qxapp.data.Resources", {
   },
 
   members: {
-    fetch: function(resource, endpoint, params = {}) {
+    fetch: function(resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -118,7 +130,11 @@ qx.Class.define("qxapp.data.Resources", {
         call.endpoints.addListenerOnce(endpoint + "Success", e => {
           const data = e.getRequest().getResponse().data;
           if (call.usesCache) {
-            this.__setCached(resource, data);
+            if (endpoint.includes("delete")) {
+              this.__removeCached(resource, deleteId);
+            } else {
+              this.__setCached(resource, data);
+            }
           }
           resolve(data);
         }, this);
@@ -175,13 +191,17 @@ qx.Class.define("qxapp.data.Resources", {
         default:
           store.update(resource, data, this.self().resources[resource].idField || "uuid");
       }
+    },
+
+    __removeCached: function(resource, deleteId) {
+      qxapp.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
     }
   },
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params) {
-      return this.getInstance().fetch(resource, endpoint, params);
+    fetch: function(resource, endpoint, params, deleteId) {
+      return this.getInstance().fetch(resource, endpoint, params, deleteId);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);

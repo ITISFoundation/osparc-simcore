@@ -94,6 +94,19 @@ qx.Class.define("qxapp.store.Store", {
       }
     },
 
+    remove: function(resource, idField = "uuid", id) {
+      const stored = this.get(resource);
+      if (Array.isArray(stored)) {
+        const item = stored.find(element => element[idField] === id);
+        if (item) {
+          const index = stored.indexOf(item);
+          stored.splice(index, 1);
+        }
+      } else if (stored[idField] && stored[idField] === id) {
+        this.set(resource, {});
+      }
+    },
+
     getServices: function(reload) {
       if (!this.__reloadingServices && (reload || Object.keys(this.__servicesCached).length === 0)) {
         this.__reloadingServices = true;
