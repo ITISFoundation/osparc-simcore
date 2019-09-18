@@ -77,15 +77,17 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
               "project_id": loadStudyId
             }
           };
-          qxapp.data.Resources.getOne("studies", params, loadStudyId).then(studyData => {
-            this.__startStudy(studyData);
-          }).catch(err => {
-            if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
-              // If guest fails to load study, log him out
-              qxapp.auth.Manager.getInstance().logout();
-            }
-            console.error(err);
-          });
+          qxapp.data.Resources.getOne("studies", params, loadStudyId)
+            .then(studyData => {
+              this.__startStudy(studyData);
+            })
+            .catch(err => {
+              if (qxapp.data.Permissions.getInstance().getRole() === "Guest") {
+                // If guest fails to load study, log him out
+                qxapp.auth.Manager.getInstance().logout();
+              }
+              console.error(err);
+            });
         }
       }
     }, this);
@@ -151,12 +153,14 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
      */
     reloadUserStudies: function(study) {
       if (qxapp.data.Permissions.getInstance().canDo("studies.user.read")) {
-        qxapp.data.Resources.get("studies").then(studies => {
-          this.__setStudyList(studies);
-          this.__itemSelected(study ? study.uuid : null, false);
-        }).catch(err => {
-          console.error(err);
-        });
+        qxapp.data.Resources.get("studies")
+          .then(studies => {
+            this.__setStudyList(studies);
+            this.__itemSelected(study ? study.uuid : null, false);
+          })
+          .catch(err => {
+            console.error(err);
+          });
       } else {
         this.__setStudyList([]);
       }
@@ -167,12 +171,14 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
      */
     reloadTemplateStudies: function(template) {
       if (qxapp.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        qxapp.data.Resources.get("templates").then(templates => {
-          this.__setTemplateList(templates);
-          this.__itemSelected(template ? template.uuid : null, true);
-        }).catch(err => {
-          console.error(err);
-        });
+        qxapp.data.Resources.get("templates")
+          .then(templates => {
+            this.__setTemplateList(templates);
+            this.__itemSelected(template ? template.uuid : null, true);
+          })
+          .catch(err => {
+            console.error(err);
+          });
       } else {
         this.__setTemplateList([]);
       }
@@ -323,20 +329,24 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
           },
           data: minStudyData
         };
-        qxapp.data.Resources.fetch("studies", "postFromTemplate", params).then(study => {
-          this.__startStudy(study);
-        }).catch(err => {
-          console.error(err);
-        });
+        qxapp.data.Resources.fetch("studies", "postFromTemplate", params)
+          .then(study => {
+            this.__startStudy(study);
+          })
+          .catch(err => {
+            console.error(err);
+          });
       } else {
         const params = {
           data: minStudyData
         };
-        qxapp.data.Resources.fetch("studies", "post", params).then(study => {
-          this.__startStudy(study);
-        }).catch(err => {
-          console.error(e);
-        });
+        qxapp.data.Resources.fetch("studies", "post", params)
+          .then(study => {
+            this.__startStudy(study);
+          })
+          .catch(err => {
+            console.error(err);
+          });
       }
     },
 
@@ -536,14 +546,16 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
             "project_id": study.uuid
           }
         };
-        qxapp.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid).then(() => {
-          if (isTemplate) {
-            this.reloadTemplateStudies();
-          } else {
-            this.reloadUserStudies();
-          }
-          this.__itemSelected(null);
-        }).catch(err => console.error(err));
+        qxapp.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid)
+          .then(() => {
+            if (isTemplate) {
+              this.reloadTemplateStudies();
+            } else {
+              this.reloadUserStudies();
+            }
+            this.__itemSelected(null);
+          })
+          .catch(err => console.error(err));
       });
     },
 

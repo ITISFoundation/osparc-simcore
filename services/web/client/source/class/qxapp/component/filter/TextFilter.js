@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.filter.TextFilter", {
             paddingRight: 15,
             placeholder: this.tr("Filter")
           });
-          control.getContentElement().setAttribute("autocomplete", "off")
+          control.getContentElement().setAttribute("autocomplete", "off");
           this._add(control);
           break;
         case "clearbutton":

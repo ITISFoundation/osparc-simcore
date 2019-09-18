@@ -72,8 +72,8 @@ qx.Class.define("qxapp.store.Store", {
         if (Array.isArray(data)) {
           this.set(resource, data);
         } else {
-          let item = stored.find(item => item[idField] === data[idField]);
-          if (item) {
+          let element = stored.find(item => item[idField] === data[idField]);
+          if (element) {
             const newStored = stored.map(item => {
               if (item[idField] === data[idField]) {
                 return data;
@@ -104,31 +104,33 @@ qx.Class.define("qxapp.store.Store", {
     },
 
     getServices: function(reload) {
-      if (!qxapp.utils.Services.__reloadingServices && (reload || Object.keys(qxapp.utils.Services.__servicesCached).length === 0)) {
-        qxapp.utils.Services.__reloadingServices = true;
-        qxapp.data.Resources.get("servicesTodo").then(data => {
-          const allServices = data.concat(qxapp.utils.Services.getBuiltInServices());
-          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
-          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
-          qxapp.utils.Services.__servicesToCache(services, true);
-          this.fireDataEvent("servicesRegistered", {
-            services: services,
-            fromServer: true
+      if (!qxapp.utils.Services.reloadingServices && (reload || Object.keys(qxapp.utils.Services.servicesCached).length === 0)) {
+        qxapp.utils.Services.reloadingServices = true;
+        qxapp.data.Resources.get("servicesTodo")
+          .then(data => {
+            const allServices = data.concat(qxapp.utils.Services.getBuiltInServices());
+            const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
+            const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
+            qxapp.utils.Services.servicesToCache(services, true);
+            this.fireDataEvent("servicesRegistered", {
+              services,
+              fromServer: true
+            });
+          })
+          .catch(err => {
+            console.error("getServices failed", err);
+            const allServices = qxapp.dev.fake.Data.getFakeServices().concat(qxapp.utils.Services.getBuiltInServices());
+            const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
+            const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
+            qxapp.utils.Services.servicesToCache(services, false);
+            this.fireDataEvent("servicesRegistered", {
+              services,
+              fromServer: false
+            });
           });
-        }).catch(err => {
-          console.error("getServices failed", err);
-          const allServices = qxapp.dev.fake.Data.getFakeServices().concat(this.getBuiltInServices());
-          const filteredServices = qxapp.utils.Services.filterOutUnavailableGroups(allServices);
-          const services = qxapp.utils.Services.convertArrayToObject(filteredServices);
-          qxapp.utils.Services.__servicesToCache(services, false);
-          this.fireDataEvent("servicesRegistered", {
-            services: services,
-            fromServer: false
-          });
-        });
         return null;
       }
-      return qxapp.utils.Services.__servicesCached;
+      return qxapp.utils.Services.servicesCached;
     }
   }
 });

@@ -75,8 +75,8 @@ qx.Class.define("qxapp.utils.Services", {
       }
     },
 
-    __reloadingServices: false,
-    __servicesCached: {},
+    reloadingServices: false,
+    servicesCached: {},
 
     getTypes: function() {
       return Object.keys(this.TYPES);
@@ -256,11 +256,11 @@ qx.Class.define("qxapp.utils.Services", {
       return builtInServices;
     },
 
-    __servicesToCache: function(services, fromServer) {
-      this.__servicesCached = {};
+    servicesToCache: function(services, fromServer) {
+      this.servicesCached = {};
       this.__addCategoryToServices(services);
-      this.__servicesCached = Object.assign(this.__servicesCached, services);
-      this.__reloadingServices = false;
+      this.servicesCached = Object.assign(this.servicesCached, services);
+      this.reloadingServices = false;
     },
 
     __addCategoryToServices: function(services) {

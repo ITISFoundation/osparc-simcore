@@ -509,7 +509,7 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           run
         },
         data: newObj
-      }
+      };
       qxapp.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);

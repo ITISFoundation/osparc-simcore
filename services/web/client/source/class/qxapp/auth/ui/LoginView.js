@@ -101,18 +101,21 @@ qx.Class.define("qxapp.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
-        qxapp.data.Resources.getOne("config").then(config => {
-          if (config["invitation_required"]) {
-            let text = this.tr("Registration is currently only available with an invitation.");
-            text += "<br>";
-            text += this.tr("Please contact info@itis.swiss");
-            qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-          } else {
+        qxapp.data.Resources.getOne("config")
+          .then(config => {
+            if (config["invitation_required"]) {
+              let text = this.tr("Registration is currently only available with an invitation.");
+              text += "<br>";
+              text += this.tr("Please contact info@itis.swiss");
+              qxapp.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+            } else {
+              this.fireEvent("toRegister");
+            }
+          })
+          .catch(err => {
+            console.error(err);
             this.fireEvent("toRegister");
-          }
-        }).catch(err => {
-          this.fireEvent("toRegister");
-        });
+          });
       }, this);
       qxapp.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 

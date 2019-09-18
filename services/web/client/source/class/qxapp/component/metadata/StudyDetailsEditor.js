@@ -208,20 +208,22 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         },
         data: this.__serializeForm()
       };
-      qxapp.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params).then(data => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
-        this.__model.set(data);
-        this.setMode("display");
-      }).catch(err => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        console.error(err);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
-      });
+      qxapp.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params)
+        .then(data => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
+          this.__model.set(data);
+          this.setMode("display");
+        })
+        .catch(err => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          console.error(err);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        });
     },
 
     __saveAsTemplate: function(btn) {
@@ -231,18 +233,20 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
         },
         data: this.__serializeForm()
       };
-      qxapp.data.Resources.fetch("templates", "postToTemplate", params).then(template => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        this.fireDataEvent("updatedTemplate", template);
-        this.__model.set(template);
-        this.setMode("display");
-      }).catch(err => {
-        btn.resetIcon();
-        console.error(err);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
-      });
+      qxapp.data.Resources.fetch("templates", "postToTemplate", params)
+        .then(template => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          this.fireDataEvent("updatedTemplate", template);
+          this.__model.set(template);
+          this.setMode("display");
+        })
+        .catch(err => {
+          btn.resetIcon();
+          console.error(err);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
+        });
     },
 
     __serializeForm: function() {

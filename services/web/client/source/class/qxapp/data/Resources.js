@@ -175,9 +175,9 @@ qx.Class.define("qxapp.data.Resources", {
   members: {
     fetch: function(resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
-        if (this.self().resources[resource] == null) {
+        if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
-        } else if (this.self().resources[resource].endpoints[endpoint] == null) {
+        } else if (this.self().resources[resource].endpoints[endpoint] == null) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
 
@@ -217,20 +217,20 @@ qx.Class.define("qxapp.data.Resources", {
           const idField = this.self().resources[resource].idField || "uuid";
           const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
           if (item) {
-            console.log(item, `Getting ${resource} from cache.`)
+            console.log(item, `Getting ${resource} from cache.`);
             return Promise.resolve(item);
           }
         }
         console.log(`Fetching ${resource} from server.`);
       }
-      return this.fetch(resource, "getOne", params)
+      return this.fetch(resource, "getOne", params);
     },
 
     get: function(resource, params, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
-          console.log(stored, `Getting all ${resource} from cache.`)
+          console.log(stored, `Getting all ${resource} from cache.`);
           return Promise.resolve(stored);
         }
         console.log(`Fetching ${resource} from server.`);
@@ -244,7 +244,7 @@ qx.Class.define("qxapp.data.Resources", {
      */
     __getCached: function(resource) {
       const stored = qxapp.store.Store.getInstance().get(resource);
-      if (typeof stored === 'object' && Object.keys(stored).length === 0) {
+      if (typeof stored === "object" && Object.keys(stored).length === 0) {
         return null;
       }
       if (Array.isArray(stored) && stored.length === 0) {
