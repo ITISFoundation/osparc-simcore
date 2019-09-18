@@ -257,6 +257,8 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           }
         } else if (node.isInKey("file-picker")) {
           widget = new qxapp.file.FilePicker(node, this.getStudy().getUuid());
+        } else if (node.isInKey("remote-renderer")) {
+          widget = new qxapp.component.widget.RemoteRenderer(node, null);
         } else {
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
