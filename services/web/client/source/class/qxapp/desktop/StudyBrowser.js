@@ -137,7 +137,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     __templateStudies: null,
     __templateDeleteButton: null,
     __studiesDeleteButton: null,
-    __selectedItemId: null,
 
     /**
      * Function that resets the selected item
@@ -407,12 +406,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       for (let i=0; i<userStudyList.length; i++) {
         this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
       }
-      if (this.__selectedItemId) {
-        const button = this.__userStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
-        if (button) {
-          button.setValue(true);
-        }
-      }
     },
 
     __setTemplateList: function(tempStudyList) {
@@ -421,12 +414,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
       qxapp.desktop.StudyBrowser.sortStudyList(tempStudyList);
       for (let i=0; i<tempStudyList.length; i++) {
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
-      }
-      if (this.__selectedItemId) {
-        const button = this.__templateStudyContainer.getChildren().find(btn => btn.getUuid() === this.__selectedItemId);
-        if (button) {
-          button.setValue(true);
-        }
       }
     },
 
@@ -503,10 +490,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
         if (this.__templateDeleteButton) {
           this.__templateDeleteButton.exclude();
         }
-        this.__selectedItemId = null;
         return;
       }
-      this.__selectedItemId = studyId;
       const studyData = this.__getStudyData(studyId, isTemplate);
       this.__createForm(studyData, isTemplate);
       this.__editPane.setVisibility("visible");
