@@ -938,8 +938,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const store = qxapp.store.Store.getInstance();
-        store.stopInteractiveService(this.getNodeId());
+        qxapp.utils.Services.stopInteractiveService(this.getNodeId());
         this.removeIFrame();
       }
     },

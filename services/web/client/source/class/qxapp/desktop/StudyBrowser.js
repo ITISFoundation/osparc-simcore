@@ -548,12 +548,11 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __stopInteractiveServicesInStudy: function(studies) {
-      const store = qxapp.store.Store.getInstance();
       studies.forEach(studyData => {
         for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
           const metadata = qxapp.utils.Services.getNodeMetaData(nodedata.key, nodedata.version);
           if (qxapp.data.model.Node.isDynamic(metadata) && qxapp.data.model.Node.isRealService(metadata)) {
-            store.stopInteractiveService(nodeId);
+            qxapp.utils.Services.stopInteractiveService(nodeId);
           }
         }
       });

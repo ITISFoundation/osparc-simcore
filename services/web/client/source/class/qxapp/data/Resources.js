@@ -144,6 +144,30 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/"
           }
         })
+      },
+      /*
+       * INTERACTIVE SERVICES
+       */
+      interactiveServices: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/running_interactive_services/{nodeId}"
+          }
+        })
+      },
+      /*
+       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
+       */
+      servicesTodo: {
+        usesCache: true,
+        endpoints: new qxapp.io.rest.Resource({
+          get: {
+            method: "GET",
+            url: statics.API + "/services"
+          }
+        })
       }
     };
   },
