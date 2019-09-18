@@ -132,6 +132,18 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/auth/change-password"
           }
         })
+      },
+      /*
+       * HEALTHCHECK
+       */
+      healthCheck: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          get: {
+            method: "GET",
+            url: statics.API + "/"
+          }
+        })
       }
     };
   },
@@ -160,10 +172,12 @@ qx.Class.define("qxapp.data.Resources", {
         }, this);
 
         call.endpoints.addListenerOnce(endpoint + "Error", e => {
-          const logs = e.getData().error.logs || null;
           let message = null;
-          if (logs && logs.length) {
-            message = logs[0].message;
+          if (e.getData().error) {
+            const logs = e.getData().error.logs || null;
+            if (logs && logs.length) {
+              message = logs[0].message;
+            }
           }
           reject(Error(message ? message : `Error while fetching ${resource}`));
         });
@@ -173,13 +187,15 @@ qx.Class.define("qxapp.data.Resources", {
     },
 
     getOne: function(resource, params, id, useCache = true) {
-      const stored = this.__getCached(resource);
-      const idField = this.self().resources[resource].idField || "uuid";
-      if (stored && useCache) {
-        const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
-        if (item) {
-          console.log(item, `Getting ${resource} from cache.`)
-          return Promise.resolve(item);
+      if (useCache) {
+        const stored = this.__getCached(resource);
+        if (stored) {
+          const idField = this.self().resources[resource].idField || "uuid";
+          const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
+          if (item) {
+            console.log(item, `Getting ${resource} from cache.`)
+            return Promise.resolve(item);
+          }
         }
       }
       console.log(`Fetching ${resource} from server.`)
@@ -187,14 +203,15 @@ qx.Class.define("qxapp.data.Resources", {
     },
 
     get: function(resource, params, useCache = true) {
-      const stored = this.__getCached(resource);
-      if (stored && useCache) {
-        console.log(stored, `Getting all ${resource} from cache.`)
-        return Promise.resolve(stored);
-      } else {
-        console.log(`Fetching ${resource} from server.`)
-        return this.fetch(resource, "get", params);
+      if (useCache) {
+        const stored = this.__getCached(resource);
+        if (stored) {
+          console.log(stored, `Getting all ${resource} from cache.`)
+          return Promise.resolve(stored);
+        }
       }
+      console.log(`Fetching ${resource} from server.`)
+      return this.fetch(resource, "get", params);
     },
 
     /**

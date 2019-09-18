@@ -37,9 +37,6 @@ qx.Class.define("qxapp.io.WatchDog", {
   type : "singleton",
 
   construct: function() {
-    let resource = qxapp.io.rest.ResourceFactory.getInstance().createHealthCheck();
-    this.__healthCheckResource = resource.healthCheck;
-
     const interval = 5000;
     this.__timer = new qx.event.Timer(interval);
 
@@ -62,7 +59,6 @@ qx.Class.define("qxapp.io.WatchDog", {
   },
 
   members: {
-    __healthCheckResource: null,
     __timer: null,
 
     startCheck: function() {
@@ -83,14 +79,9 @@ qx.Class.define("qxapp.io.WatchDog", {
     },
 
     __checkHealthCheckAsync: function() {
-      let resources = this.__healthCheckResource;
-      resources.addListener("getSuccess", e => {
-        this.__updateHealthCheckStatus(true);
-      }, this);
-      resources.addListener("getError", e => {
-        this.__updateHealthCheckStatus(false);
-      }, this);
-      resources.get();
+      qxapp.data.Resources.get("healthCheck", {}, false)
+        .then(() => this.__updateHealthCheckStatus(true))
+        .catch(() => this.__updateHealthCheckStatus(false));
     },
 
     __updateOnlineStatus: function(e) {

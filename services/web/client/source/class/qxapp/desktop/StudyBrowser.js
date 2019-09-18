@@ -43,8 +43,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
-
     this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
       appearance: "sidepanel",
@@ -125,7 +123,6 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
   members: {
     __userReady: null,
     __servicesReady: null,
-    __studyResources: null,
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
