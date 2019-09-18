@@ -5,12 +5,63 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * Class that defines all the endpoints of the API to get the application resources. It also offers some convenient methods
+ * to get them. It stores all the data in {qxapp.store.Store} and consumes it from there whenever it is possible. The flag
+ * "usesCache" must be set in the resource definition.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the class. For making calls that will update or add resources in the server,
+ * such as POST and PUT calls. You can use the "fetch" method. Let's say you want to modify a study using POST.
+ *
+ * <pre class='javascript'>
+ *   const params = {
+ *     url: { // Params for the URL
+ *       studyId
+ *     },
+ *     data: { // Payload
+ *       studyData
+ *     }
+ *   }
+ *   qxapp.data.Resources.fetch("studies", "post", params)
+ *     .then(study => {
+ *       // study contains the new updated study
+ *       // This code will execute if the call succeeds
+ *     })
+ *     .catch(err => {
+ *       // Treat the error. This will execute if the call fails.
+ *     });
+ * </pre>
+ *
+ * Keep in mind that in order for this to work, the resource has to be defined in the static property resources:
+ * <pre class='javascript'>
+ *   statics.resources = {
+ *     studies: {
+ *       usesCache: true, // Decide if the resources in the response have to be cached to avoid future calls
+ *       endpoints: {
+ *         // Define here all possible operations on this resource
+ *         post: { // Second parameter of of fetch, endpoint name. The used method (post) should be contained in this name.
+ *           method: "POST", // HTTP REST operation
+ *           url: statics.API + "/projects/{studyId}" // Defined in params under the 'url' property
+ *         }
+ *       }
+ *     }
+ *   }
+ * </pre>
+ *
+ * For just getting the resources without modifying them in the server, we use the dedicated methods 'get' and 'getOne'.
+ * They will try to get them from the cache if they exist there. If not, they will issue the call to get them from the server.
+ */
 qx.Class.define("qxapp.data.Resources", {
   extend: qx.core.Object,
 
   type: "singleton",
 
   defer: function(statics) {
+    /*
+     * Define here all resources and their endpoints.
+     */
     statics.resources = {
       /*
        * STUDIES
@@ -173,6 +224,13 @@ qx.Class.define("qxapp.data.Resources", {
   },
 
   members: {
+    /**
+     * Method to fetch resources from the server. If configured properly, the resources in the response will be cached in {qxapp.store.Store}.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
+     * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
+     * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
+     */
     fetch: function(resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
@@ -210,6 +268,13 @@ qx.Class.define("qxapp.data.Resources", {
       });
     },
 
+    /**
+     * Get a single resource or a specific resource inside a collection.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
+     * @param {String} id Id of the element to get, if it is a collection of elements.
+     * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
+     */
     getOne: function(resource, params, id, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
@@ -226,6 +291,12 @@ qx.Class.define("qxapp.data.Resources", {
       return this.fetch(resource, "getOne", params);
     },
 
+    /**
+     * Get a single resource or the entire collection.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
+     * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
+     */
     get: function(resource, params, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
@@ -253,6 +324,11 @@ qx.Class.define("qxapp.data.Resources", {
       return stored;
     },
 
+    /**
+     * Stores the cached version of a resource, or a collection of them.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {*} data Resource or collection of resources to be cached.
+     */
     __setCached: function(resource, data) {
       const store = qxapp.store.Store.getInstance();
       switch (resource) {
@@ -261,6 +337,11 @@ qx.Class.define("qxapp.data.Resources", {
       }
     },
 
+    /**
+     * Removes an element from the cache.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {String} deleteId Id of the item to remove from cache.
+     */
     __removeCached: function(resource, deleteId) {
       qxapp.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
     }
