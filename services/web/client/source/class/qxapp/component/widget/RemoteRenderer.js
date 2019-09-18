@@ -62,6 +62,10 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     });
 
     this.__counter = 0;
+    // --------- x,y
+    // -------------
+    // -------------
+    // 0,0 ---------
     this.addListenerOnce("appear", () => {
       const elem = this.getContentElement().getDomElement();
       const events = [
@@ -69,20 +73,21 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
         "pointerup",
         "tap",
         "dbltap",
-        "longtap",
+        // "longtap",
+        // "swipe",
+        // "track",
+        // "rotate",
+        // "pinch",
         "pointermove",
         "pointerover",
         "pointerout",
-        "swipe",
-        "track",
-        "rotate",
-        "pinch"
+        "mousewheel"
       ];
       events.forEach(event => {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
       }, this);
 
-      // this.addListener("resize", this.__resize, this);
+      this.addListener("resize", this.__resize, this);
 
       this.__requestScreenshot();
     }, this);
@@ -117,15 +122,58 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
     },
 
     __logPointerEvent: function(pointerEvent) {
-      const evType = pointerEvent.getType();
-      const evButton = pointerEvent.getButton();
-      const evXPos = pointerEvent.getDocumentLeft();
-      const evYPos = pointerEvent.getDocumentTop();
-      const docWidth = this.getBounds().width;
-      const docHeight = this.getBounds().height;
-      const evXPosRel = evXPos / docWidth;
-      const evYPosRel = evYPos / docHeight;
-      console.log(evType, evButton, evXPos, evYPos, evXPosRel, evYPosRel);
+      /*
+      const pevType = pointerEvent.getType();
+      const pevBtn = pointerEvent.getButton();
+      const pevDocL = pointerEvent.getDocumentLeft();
+      const pevDocT = pointerEvent.getDocumentTop();
+      const pevVpL = pointerEvent.getViewportLeft();
+      const pevVpT = pointerEvent.getViewportTop();
+      console.log("Pointer Event", pevType, pevBtn, pevDocL, pevDocT, pevVpL, pevVpT);
+
+      const bcrPos = this.getBounds();
+      console.log("Window", bcrPos);
+      */
+      const navBarHeight = 50;
+      const pPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
+      const pPosY = this.getBounds().height + navBarHeight - pointerEvent.getViewportTop();
+      const pevType = pointerEvent.getType();
+      switch (pevType) {
+        // case "tap":
+        case "pointerdown":
+        case "pointerup":
+        case "dbltap": {
+          const pevBtn = pointerEvent.getButton();
+          let what = 0;
+          switch (pevType) {
+            case "pointerdown":
+              what = 1;
+              break;
+            case "pointerup":
+              what = 2;
+              break;
+            case "dbltap":
+              what = 3;
+              break;
+          }
+          console.log("OnMouseButton", pPosX, pPosY, pevBtn, what);
+          break;
+        }
+        case "mousewheel": {
+          const pevWD = pointerEvent.getWheelDelta();
+          console.log("OnMouseWheel", pPosX, pPosY, pevWD);
+          break;
+        }
+        case "pointermove": {
+          console.log("OnMouseMove", pPosX, pPosY);
+          break;
+        }
+        default: {
+          console.log("Type", pevType);
+          break;
+        }
+      }
+
       this.__requestScreenshot();
     },
 
