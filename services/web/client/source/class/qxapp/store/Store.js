@@ -12,23 +12,23 @@
 
    Authors:
      * Odei Maiz (odeimaiz)
+     * Ignacio Pascual (ignapas)
 
 ************************************************************************ */
 
 /**
- * Singleton class that is used as entrypoint to the webserver.
- *
- * All data transfer communication goes through the qxapp.store.Store.
+ * Singleton class that stores all the application resources and acts as a cache for them. It is used by {qxapp.data.Resources},
+ * before making an API call to retrieve resources from the server, it will try to get them from here. Same with post and put calls,
+ * their stored elements will be cached here.
  *
  * *Example*
  *
- * Here is a little example of how to use the class.
+ * Here is a little example of how to use the class. You can get resources like this:
  *
  * <pre class='javascript'>
- *   let services = qxapp.store.Store.getInstance().getServices();
+ *   let studies = qxapp.store.Store.getInstance().getStudies();
  * </pre>
  */
-
 qx.Class.define("qxapp.store.Store", {
   extend: qx.core.Object,
 
@@ -66,6 +66,12 @@ qx.Class.define("qxapp.store.Store", {
   },
 
   members: {
+    /**
+     * Updates an element or a set of elements in the store.
+     * @param {String} resource Name of the resource property. If used with {qxapp.data.Resources}, it has to be the same there.
+     * @param {*} data Data to be stored, it needs to have the correct type as in the property definition.
+     * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
+     */
     update: function(resource, data, idField = "uuid") {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
@@ -90,6 +96,12 @@ qx.Class.define("qxapp.store.Store", {
       }
     },
 
+    /**
+     * Remove an element from an array, or erase the store for a given resource.
+     * @param {String} resource Name of the resource property. If used with {qxapp.data.Resources}, it has to be the same there.
+     * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
+     * @param {String} id Value of the id field.
+     */
     remove: function(resource, idField = "uuid", id) {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
@@ -103,6 +115,10 @@ qx.Class.define("qxapp.store.Store", {
       }
     },
 
+    /**
+     * Refactor needed. This functions does the needed processing in order to have a working list of services.
+     * @param {Boolean} reload ?
+     */
     getServices: function(reload) {
       if (!qxapp.utils.Services.reloadingServices && (reload || Object.keys(qxapp.utils.Services.servicesCached).length === 0)) {
         qxapp.utils.Services.reloadingServices = true;
