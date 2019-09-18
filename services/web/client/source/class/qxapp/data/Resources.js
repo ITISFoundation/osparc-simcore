@@ -197,8 +197,8 @@ qx.Class.define("qxapp.data.Resources", {
             return Promise.resolve(item);
           }
         }
+        console.log(`Fetching ${resource} from server.`);
       }
-      console.log(`Fetching ${resource} from server.`)
       return this.fetch(resource, "getOne", params)
     },
 
@@ -209,8 +209,8 @@ qx.Class.define("qxapp.data.Resources", {
           console.log(stored, `Getting all ${resource} from cache.`)
           return Promise.resolve(stored);
         }
+        console.log(`Fetching ${resource} from server.`);
       }
-      console.log(`Fetching ${resource} from server.`)
       return this.fetch(resource, "get", params);
     },
 
