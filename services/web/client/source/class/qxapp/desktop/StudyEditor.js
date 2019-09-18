@@ -261,7 +261,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
           widget = new qxapp.component.widget.RemoteRenderer(node, null);
         } else {
           this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
           widget = this.__nodeView;
         }
       }

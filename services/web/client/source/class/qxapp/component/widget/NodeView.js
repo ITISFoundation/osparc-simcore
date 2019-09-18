@@ -29,7 +29,6 @@
  * <pre class='javascript'>
  *   let nodeView = new qxapp.component.widget.NodeView();
  *   nodeView.setNode(workbench.getNode1());
- *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
@@ -131,8 +130,11 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       return toolbar;
     },
 
-    buildLayout: function() {
+    __buildLayout: function() {
+      this.getNode().bind("label", this.__title, "label");
+
       this.__addInputPortsUIs();
+
       this.__addSettings();
       this.__addMapper();
       this.__addIFrame();
@@ -309,8 +311,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }, this);
     },
 
-    _applyNode: function(node) {
-      this.__title.setLabel(node.getLabel());
+    _applyNode: function() {
+      this.__buildLayout();
     }
   }
 });
