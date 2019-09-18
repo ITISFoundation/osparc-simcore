@@ -6,6 +6,9 @@ from functools import reduce
 import sqlalchemy as sa
 from sqlalchemy.sql import and_  # , or_, not_
 
+from sqlalchemy import cast, String, JSON
+import json
+
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import metadata, tokens, users
 from simcore_service_webserver.login.utils import get_random_string
@@ -60,6 +63,11 @@ async def delete_all_tokens_from_db(engine):
 
 
 def to_expression(**params):
-    expr = reduce(and_, [getattr(tokens.c, key) ==
-                         value for key, value in params.items() if value is not None])
-    return expr
+    expressions = []
+    for key, value in params.items():
+        if value is not None:
+            statement = (cast(getattr(tokens.c, key), String) == json.dumps(value)) \
+                if isinstance(getattr(tokens.c, key).type, JSON) \
+                else (getattr(tokens.c, key) == value)
+            expressions.append(statement)
+    return reduce(and_, expressions)
