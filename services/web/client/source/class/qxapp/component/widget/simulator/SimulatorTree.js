@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
 
   statics: {
     getMetaData(nodeKey, b, c) {
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       return store.getItem(nodeKey, b, c);
     },
 
@@ -210,7 +210,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorTree", {
       this.setModel(rootModel);
 
       const simulatorKey = this.getNode().getKey();
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       const itemList = store.getItemList(simulatorKey);
       for (let i=0; i<itemList.length; i++) {
         const newEntry = thisClass.createGlobalSettingData(simulatorKey, itemList[i].key, itemList[i].version);

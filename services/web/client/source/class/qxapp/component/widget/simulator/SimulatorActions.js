@@ -80,7 +80,7 @@ qx.Class.define("qxapp.component.widget.simulator.SimulatorActions", {
       newSettings.resetMenu();
       const node = this.getNode();
       if (node && node.hasInputsDefault()) {
-        const store = qxapp.data.Store.getInstance();
+        const store = qxapp.store.Store.getInstance();
         const inputs = node.getInputsDefault();
         newSettings.setEnabled(true);
         const menu = new qx.ui.menu.Menu();
