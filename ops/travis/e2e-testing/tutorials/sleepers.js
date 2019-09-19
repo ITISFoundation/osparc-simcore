@@ -1,12 +1,16 @@
 const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
-const utils = require('../utils/utils');
+// const utils = require('../utils/utils');
 
 const demo = true;
+/*
 const {
   user,
   pass
 } = utils.getRandUserAndPass();
+*/
+const user = "maiz@itis.swiss";
+const pass = "osparc";
 
 async function runTutorial (url) {
   console.log("Running tutorial on", url);
@@ -22,12 +26,16 @@ async function runTutorial (url) {
   // Run pipeline
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
-  await page.waitFor(40000);
+  await page.waitFor(4000);
 
   // Check results are there
-  await auto.toDashboard(page);
+  await auto.openLastNode(page);
+  await page.waitFor(1000);
+
+  await auto.checkDataProducedByNode(page);
 
   // Remove Study
+  await auto.toDashboard(page);
   await auto.dashboardDeleteFirstStudy(page);
 
   // Make sure data was deleted
@@ -39,7 +47,8 @@ async function runTutorial (url) {
 }
 
 const urls = [
-  "http://master.osparc.io/",
+  "http://localhost:9081/"
+  // "http://master.osparc.io/",
   // "https://staging.osparc.io/",
   // "https://osparc.io/",
 ];
