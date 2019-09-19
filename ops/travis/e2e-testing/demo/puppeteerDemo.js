@@ -35,10 +35,11 @@ async function run () {
   // NEW STUDY from Template
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
+  await page.waitFor(30000);
   await auto.toDashboard(page);
 
   // First study edition
-  await auto.dashboardEditFristStudyThumbnail(page);
+  await auto.dashboardEditFirstStudyThumbnail(page);
   await page.waitFor(2000);
 
   await auto.dashboardDataBrowser(page);
