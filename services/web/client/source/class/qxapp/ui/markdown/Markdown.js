@@ -10,8 +10,11 @@
  * @asset(marked/marked.js)
  */
 
+/* global marked */
+
 /**
- * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML and applies it to its value property.
+ * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML,
+ * sanitizes it and applies it to its value property.
  */
 qx.Class.define("qxapp.ui.markdown.Markdown", {
   extend: qx.ui.embed.Html,
@@ -27,7 +30,9 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
       if (typeof marked === "function") {
         resolve(marked);
       } else {
-        const loader = new qx.util.DynamicScriptLoader("marked/marked.js");
+        const loader = new qx.util.DynamicScriptLoader([
+          "marked/marked.js"
+        ]);
         loader.addListenerOnce("ready", () => {
           resolve(marked);
         }, this);
@@ -63,7 +68,8 @@ qx.Class.define("qxapp.ui.markdown.Markdown", {
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
         const html = marked(value);
-        this.setHtml(html);
+        const safeHtml = qxapp.wrapper.DOMPurify.getInstance().sanitize(html);
+        this.setHtml(safeHtml);
         // for some reason the content is not immediately there
         qx.event.Timer.once(() => {
           this.__parseImages();

@@ -25,14 +25,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new qxapp.desktop.DataManager();
+ *   let dataManager = new qxapp.desktop.DataBrowser();
  *   this.getRoot().add(dataManager);
  * </pre>
  */
 
 /* global document */
 
-qx.Class.define("qxapp.desktop.DataManager", {
+qx.Class.define("qxapp.desktop.DataBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
