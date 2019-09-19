@@ -43,11 +43,13 @@ qx.Class.define("qxapp.file.FileLabelWithActions", {
     this._setLayout(fileLabelWithActionsLayout);
 
     let downloadBtn = this._createChildControlImpl("downloadBtn");
+    qxapp.utils.Utils.setIdToWidget(downloadBtn, "filesTreeDownloadBtn");
     downloadBtn.addListener("execute", e => {
       this.__retrieveURLAndDownload();
     }, this);
 
     let deleteBtn = this._createChildControlImpl("deleteBtn");
+    qxapp.utils.Utils.setIdToWidget(downloadBtn, "filesTreeDeleteBtn");
     deleteBtn.addListener("execute", e => {
       this.__deleteFile();
     }, this);
