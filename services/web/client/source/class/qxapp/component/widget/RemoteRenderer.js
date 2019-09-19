@@ -73,15 +73,8 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
         "pointerup",
         "tap",
         "dbltap",
-        // "longtap",
-        // "swipe",
-        // "track",
-        // "rotate",
-        // "pinch",
-        "pointermove",
-        "pointerover",
-        "pointerout",
-        "mousewheel"
+        "mousewheel",
+        "pointermove"
       ];
       events.forEach(event => {
         qx.bom.Element.addListener(elem, event, this.__logPointerEvent, this);
@@ -169,7 +162,7 @@ qx.Class.define("qxapp.component.widget.RemoteRenderer", {
           break;
         }
         default: {
-          console.log("Type", pevType);
+          console.log("Other type", pevType);
           break;
         }
       }
