@@ -128,6 +128,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       infoPart.add(infoBtn);
 
       const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      qxapp.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       buttonsPart.add(filesBtn);
 
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
