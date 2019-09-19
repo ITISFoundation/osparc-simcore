@@ -16,6 +16,22 @@ function getRandUserAndPass() {
   }
 }
 
+async function getNodeTreeItemIDs(page) {
+  const childrenIDs = await page.evaluate((selector) => {
+    const children = [];
+    const treeRoot = document.querySelector(selector);
+    if (treeRoot.parentElement) {
+      const tree = treeRoot.parentElement;
+      for (let i=1; i<tree.children.length; i++) {
+        const child = tree.children[i];
+        children.push(child.getAttribute("osparc-test-id"));
+      }
+    }
+    return children;
+  }, '[osparc-test-id="nodeTreeItem_root"]');
+  return childrenIDs;
+}
+
 async function getVisibleChildrenIDs(page, parentSelector) {
   const childrenIDs = await page.evaluate((selector) => {
     const parentNode = document.querySelector(selector);
@@ -132,6 +148,7 @@ module.exports = {
   getPageTitle,
   getPageUrl,
   getRandUserAndPass,
+  getNodeTreeItemIDs,
   getVisibleChildrenIDs,
   fetch,
   emptyField,
