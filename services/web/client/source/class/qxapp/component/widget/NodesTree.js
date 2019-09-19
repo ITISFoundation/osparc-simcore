@@ -142,18 +142,6 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         contentPadding: 0,
         padding: 0
       });
-      tree.addListener("dbltap", e => {
-        const currentSelection = this.__getOneSelectedRow();
-        if (currentSelection) {
-          this.fireDataEvent("nodeDoubleClicked", currentSelection.getNodeId());
-        }
-      }, this);
-      tree.addListener("tap", e => {
-        const currentSelection = this.__getOneSelectedRow();
-        if (currentSelection) {
-          this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
-        }
-      }, this);
       qxapp.utils.Utils.setIdToWidget(tree, "nodesTree");
       return tree;
     },
@@ -176,6 +164,14 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
             c.bindDefaultProperties(item, id);
             c.bindProperty("label", "label", null, item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
+          },
+          configureItem: item => {
+            item.addListener("dbltap", () => {
+              this.fireDataEvent("nodeDoubleClicked", item.getModel().getNodeId());
+            }, this);
+            item.addListener("tap", e => {
+              this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
+            }, this);
           }
         });
       }
