@@ -41,6 +41,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
     qxapp.wrapper.JsonDiffPatch.getInstance().init();
     qxapp.wrapper.JsonTreeViewer.getInstance().init();
+    qxapp.wrapper.DOMPurify.getInstance().init();
     this.__createMainViewLayout(studyId);
   },
 
@@ -107,7 +108,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
+      const dataManagerView = this.__dataManager = new qxapp.desktop.DataBrowser();
       return dataManagerView;
     }
   }
