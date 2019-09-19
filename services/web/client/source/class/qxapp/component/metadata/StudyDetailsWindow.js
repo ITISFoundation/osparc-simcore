@@ -32,6 +32,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsWindow", {
     const windowHeight = 800;
     this.set({
       layout: new qx.ui.layout.Grow(),
+      autoDestroy: true,
       contentPadding: 10,
       showMinimize: false,
       resizable: true,

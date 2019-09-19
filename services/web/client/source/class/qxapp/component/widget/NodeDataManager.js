@@ -46,7 +46,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       node: node
     });
 
-    qxapp.utils.Utils.setIdToWidget(this, "nodeDataManager_" + this.getNode().getNodeId());
+    qxapp.utils.Utils.setIdToWidget(this, "nodeDataManager");
 
     const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeDataManagerLayout);

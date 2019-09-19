@@ -49,6 +49,7 @@ qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
     this.set({
       appearance: "window-small-cap",
       layout: new qx.ui.layout.HBox(4),
+      autoDestroy: true,
       padding: 2,
       modal: true,
       showMaximize: false,

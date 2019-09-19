@@ -272,13 +272,17 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       const nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
 
       const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
         contentPadding: 0,
-        showMinimize: false,
-        width: 900,
         height: 600,
-        appearance: "service-window"
+        modal: true,
+        showMinimize: false,
+        width: 900
       });
+      const closeBtn = win.getChildControl("close-button");
+      qxapp.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
       win.add(nodeDataManager);
 
       win.center();
