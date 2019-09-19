@@ -384,8 +384,8 @@ qx.Class.define("qxapp.desktop.StudyBrowser", {
     },
 
     __loadStudy: function(studyData) {
-      let study = new qxapp.data.model.Study(studyData);
-      let studyEditor = new qxapp.desktop.StudyEditor(study);
+      const study = new qxapp.data.model.Study(studyData, true);
+      const studyEditor = new qxapp.desktop.StudyEditor(study);
       this.fireDataEvent("startStudy", studyEditor);
     },
 
