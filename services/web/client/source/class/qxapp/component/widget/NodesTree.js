@@ -136,7 +136,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     },
 
     __buildTree: function() {
-      let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         decorator: "service-tree",
         openMode: "none",
         contentPadding: 0,
@@ -154,6 +154,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
           this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
         }
       }, this);
+      qxapp.utils.Utils.setIdToWidget(tree, "nodesTree");
       return tree;
     },
 

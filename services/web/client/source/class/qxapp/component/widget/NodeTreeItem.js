@@ -43,12 +43,13 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
     nodeId : {
       check : "String",
       event: "changeNodeId",
+      apply: "_applyNodeId",
       nullable : true
     }
   },
 
   members : {
-    _addWidgets : function() {
+    _addWidgets: function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
       this.addOpenButton();
@@ -71,6 +72,10 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
         nodeIdWidget.setMaxWidth(250);
         this.addWidget(nodeIdWidget);
       }
+    },
+
+    _applyNodeId: function(nodeId) {
+      qxapp.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
     }
   }
 });
