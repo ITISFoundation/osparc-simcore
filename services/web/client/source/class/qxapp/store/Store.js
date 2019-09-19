@@ -160,7 +160,6 @@ qx.Class.define("qxapp.store.Store", {
         key: "simcore/services/frontend/multi-plot",
         version: "1.0.0",
         type: "group",
-        dedicatedWidget: true,
         name: "2D plot - Multi",
         description: "2D plot - Multi",
         authors: [{
