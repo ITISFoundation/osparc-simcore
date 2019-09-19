@@ -219,6 +219,34 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/services"
           }
         })
+      },
+      /*
+       * AUTH
+       */
+      auth: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          postLogin: {
+            method: "POST",
+            url: statics.API + "/auth/login"
+          },
+          getLogout: {
+            method: "GET",
+            url: statics.API + "/auth/logout"
+          },
+          postRegister: {
+            method: "POST",
+            url: statics.API + "/auth/register"
+          },
+          postRequestResetPassword: {
+            method: "POST",
+            url: statics.API + "/auth/reset-password"
+          },
+          postResetPassword: {
+            method: "POST",
+            url: statics.API + "/auth/reset-password/{code}"
+          }
+        })
       }
     };
   },
@@ -235,7 +263,7 @@ qx.Class.define("qxapp.data.Resources", {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
-        } else if (this.self().resources[resource].endpoints[endpoint] == null) { // eslint-disable-line no-eq-null
+        } else if (!this.self().resources[resource].endpoints.includesRoute(endpoint)) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
 
@@ -314,7 +342,12 @@ qx.Class.define("qxapp.data.Resources", {
      * @param {String} resource Resource name
      */
     __getCached: function(resource) {
-      const stored = qxapp.store.Store.getInstance().get(resource);
+      let stored;
+      try {
+        stored = qxapp.store.Store.getInstance().get(resource);
+      } catch (err) {
+        return null;
+      }
       if (typeof stored === "object" && Object.keys(stored).length === 0) {
         return null;
       }

@@ -110,7 +110,7 @@ qx.Class.define("qxapp.store.Store", {
           const index = stored.indexOf(item);
           stored.splice(index, 1);
         }
-      } else if (stored[idField] && stored[idField] === id) {
+      } else {
         this.set(resource, {});
       }
     },
