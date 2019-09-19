@@ -245,8 +245,6 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
 
   await page.waitForSelector('[osparc-test-id="runStudyBtn"]')
   await page.click('[osparc-test-id="runStudyBtn"]')
-
-  await page.waitFor(30000);
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
