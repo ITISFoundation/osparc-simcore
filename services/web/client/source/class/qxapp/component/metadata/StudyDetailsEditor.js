@@ -257,6 +257,19 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
       }
+      // Protect text fields against injecting malicious html/code in them
+      [
+        "name",
+        "description",
+        "thumbnail"
+      ].forEach(fieldKey => {
+        const dirty = data[fieldKey];
+        const clean = qxapp.wrapper.DOMPurify.getInstance().sanitize(dirty);
+        if (dirty !== clean) {
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
+        }
+        data[fieldKey] = clean;
+      }, this);
       return data;
     },
 
