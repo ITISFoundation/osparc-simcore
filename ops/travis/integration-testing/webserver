@@ -18,8 +18,10 @@ install() {
 
 before_script() {
     pip list -v
-    make pull || ((make pull-cache || true) && make build)
-    docker images
+    make pull tag-local || ((make pull-cache || true) && make build)
+    make tag-version tag-latest
+    # FIXME: integration tests uses "latest"
+    make info-images
 }
 
 script() {

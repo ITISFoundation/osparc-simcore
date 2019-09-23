@@ -12,16 +12,14 @@ export DOCKER_IMAGE_TAG=$(./ops/travis/helpers/find_staging_version | awk 'END{p
 make pull tag-local
 
 # show current images on system
-docker images
+make info-images
 
 # these variable must be available securely from travis
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-
 # re-tag staging to {TRAVIS_TAG}-DATE.BUILD_NUMBER.GIT_SHA
 TRAVIS_PLATFORM_PROD_VERSION=${TRAVIS_TAG}-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
-export DOCKER_IMAGE_TAG_NEW=$TRAVIS_PLATFORM_PROD_VERSION
-make push
-
+export DOCKER_IMAGE_TAG=$TRAVIS_PLATFORM_PROD_VERSION
+make push-version push-latest
 
 make info-images

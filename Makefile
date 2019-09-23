@@ -219,16 +219,15 @@ pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
 
 push-version: tag-version
+	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
 
 push-latest: tag-latest
-	export DOCKER_IMAGE_TAG=latest; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
+	@export DOCKER_IMAGE_TAG=latest;
+	$(MAKE) push-version
 
-push: push-version push-latest ## Pushes latest version images of $(SERVICES_LIST) into a registry
+release: push-version push-latest ## Tags and pushes latest version of local/$(service):production
 	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
-
-release: push
 
 
 ## PYTHON -------------------------------
@@ -264,7 +263,7 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 # TODO: NOT windows friendly
 .env: .env-devel ## creates .env file from defaults in .env-devel
 	$(if $(wildcard $@), \
-	@echo "WARMING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, copying $< ############"; cp $< $@)
 
 # TODO: NOT windows friendly
@@ -342,7 +341,7 @@ reset: ## restart docker daemon
 .PHONY: help
 help: ## display all callable targets
 ifeq ($(IS_WIN),)
-	@sort $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 else
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif

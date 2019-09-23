@@ -38,6 +38,7 @@ script() {
 
 after_success() {
     echo "build succeeded"
+    make info-images
 }
 
 after_failure() {
