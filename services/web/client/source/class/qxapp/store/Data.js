@@ -258,35 +258,30 @@ qx.Class.define("qxapp.store.Data", {
       // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
       let fileName = fileUuid.split("/");
       fileName = fileName[fileName.length-1];
-      let endPoint = "/storage/locations/"+toLoc+"/files/";
-      let parameters = encodeURIComponent(pathId + "/" + fileName);
-      parameters += "?extra_location=";
-      parameters += fromLoc;
-      parameters += "&extra_source=";
-      parameters += encodeURIComponent(fileUuid);
-      endPoint += parameters;
-      let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
 
-      req.addListener("success", e => {
-        const data = {
-          data: e.getTarget().getResponse(),
-          locationId: toLoc,
-          fileUuid: pathId + "/" + fileName
-        };
-        this.fireDataEvent("fileCopied", data);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error(error);
-        console.error("Failed copying file", fileUuid, "to", pathId);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
-        this.fireDataEvent("fileCopied", null);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          toLoc,
+          fileName: encodeURIComponent(pathId + "/" + fileName),
+          fromLoc,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      qxapp.data.Resources.fetch("storageFiles", "put", params)
+        .then(files => {
+          const data = {
+            data: files, // check
+            locationId: toLoc,
+            fileUuid: pathId + "/" + fileName
+          };
+          this.fireDataEvent("fileCopied", data);
+        })
+        .catch(err => {
+          console.error(err);
+          console.error("Failed copying file", fileUuid, "to", pathId);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
+          this.fireDataEvent("fileCopied", null);
+        });
 
       return true;
     },

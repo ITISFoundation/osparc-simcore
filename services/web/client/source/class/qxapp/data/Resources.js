@@ -285,6 +285,10 @@ qx.Class.define("qxapp.data.Resources", {
           getByNode: {
             method: "GET",
             url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={nodeId}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
           }
         })
       },
