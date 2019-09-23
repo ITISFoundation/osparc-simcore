@@ -14,7 +14,7 @@ async function runTutorial (url) {
   const page = await browser.newPage();
   await page.goto(url);
 
-  // await auto.register(page, user, pass);
+  await auto.register(page, user, pass);
   // Login
   await auto.logIn(page, user, pass);
 
