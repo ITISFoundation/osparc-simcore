@@ -23,24 +23,24 @@ install() {
     cp ops/travis/e2e-testing/package.json .
     cp ops/travis/e2e-testing/package-lock.json .
     npm install
-    make pull-version || ((make pull-cache || true) && make build)
+    make pull-version tag-local || ((make pull-cache || true) && make build)
 }
 
 before_script() {
-    docker images
+    make info-images
     # disable email registration
     make .env
     echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
-    make up
+    make up-local
 }
 
 script() {
     # wait for a minute to let the swarm warm up...
     docker service ls --format "table"
-    # TODO: Get rid of this sleep and check the status of the services
-    sleep 120s
-    docker service ls --format "table"
+    # FIXME: Get rid of this sleep and check the status of the services
+    sleep 80s
+    make info-swarm
     cp ops/travis/e2e-testing/jest.config.js .
     cp ops/travis/e2e-testing/jest-puppeteer.config.js .
     npm test

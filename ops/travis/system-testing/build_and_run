@@ -14,23 +14,23 @@ before_install() {
 install() {
     bash ops/travis/helpers/ensure_python_pip
     pip3 install -r ops/travis/system-testing/requirements.txt
-    make pull-version || ((make pull-cache || true) && make build)
+    make pull-version tag-local || ((make pull-cache || true) && make build)
 }
 
 before_script() {
     pip list -v
-    docker images
-    make up
+    make info-images
+    make up-local
 }
 
 script() {
     # wait for a minute to let the swarm warm up...
-    docker service ls --format "table"
+    make info-swarm
     pytest -v ops/travis/system-testing/tests
 }
 
 after_success() {
-    make down
+    make down-force
 }
 
 after_failure() {
