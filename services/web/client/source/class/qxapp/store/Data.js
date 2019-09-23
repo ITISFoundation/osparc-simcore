@@ -73,32 +73,22 @@ qx.Class.define("qxapp.store.Data", {
     },
 
     getLocations: function() {
-      // Get available storage locations
       const cachedData = this.getLocationsCached();
       if (cachedData) {
         this.fireDataEvent("myLocations", cachedData);
         return;
       }
-
-      const reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
-
-      reqLoc.addListener("success", eLoc => {
-        const locations = eLoc.getTarget().getResponse()
-          .data;
-        // Add it to cache
-        this.__locationsCached = locations;
-        this.fireDataEvent("myLocations", locations);
-      }, this);
-
-      reqLoc.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        this.fireDataEvent("myLocations", []);
-        console.error("Failed getting Storage Locations", error);
-      });
-
-      reqLoc.send();
+      // Get available storage locations
+      qxapp.data.Resources.get("storageLocations")
+        .then(locations => {
+          // Add it to cache
+          this.__locationsCached = locations;
+          this.fireDataEvent("myLocations", locations);
+        })
+        .catch(err => {
+          this.fireDataEvent("myLocations", []);
+          console.error(err);
+        });
     },
 
     getDatasetsByLocationCached: function(locationId) {
@@ -125,37 +115,32 @@ qx.Class.define("qxapp.store.Data", {
         return;
       }
 
-      const endPoint = "/storage/locations/" + locationId + "/datasets";
-      const reqDatasets = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-      reqDatasets.addListener("success", eFiles => {
-        const datasets = eFiles.getTarget().getResponse()
-          .data;
-        const data = {
-          location: locationId,
-          datasets: []
-        };
-        if (datasets && datasets.length>0) {
-          data.datasets = datasets;
+      const params = {
+        url: {
+          locationId
         }
-        // Add it to cache
-        this.__datasetsByLocationCached[locationId] = data.datasets;
-        this.fireDataEvent("myDatasets", data);
-      }, this);
-
-      reqDatasets.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        const data = {
-          location: locationId,
-          datasets: []
-        };
-        this.fireDataEvent("myDatasets", data);
-        console.error("Failed getting Datasets list", error);
-      });
-
-      reqDatasets.send();
+      };
+      qxapp.data.Resources.fetch("storageDatasets", "getByLocation", params)
+        .then(datasets => {
+          const data = {
+            location: locationId,
+            datasets: []
+          };
+          if (datasets && datasets.length>0) {
+            data.datasets = datasets;
+          }
+          // Add it to cache
+          this.__datasetsByLocationCached[locationId] = data.datasets;
+          this.fireDataEvent("myDatasets", data);
+        })
+        .catch(err => {
+          const data = {
+            location: locationId,
+            datasets: []
+          };
+          this.fireDataEvent("myDatasets", data);
+          console.error(err);
+        });
     },
 
     getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
@@ -183,66 +168,55 @@ qx.Class.define("qxapp.store.Data", {
         return;
       }
 
-      const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
-      const reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: files && files.length>0 ? files : []
-        };
-        // Add it to cache
-        if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-          this.__filesByLocationAndDatasetCached[locationId] = {};
+      const params = {
+        url: {
+          locationId,
+          datasetId
         }
-        this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-        this.fireDataEvent("myDocuments", data);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: []
-        };
-        this.fireDataEvent("myDocuments", data);
-        console.error("Failed getting Files list", error);
-      });
-
-      reqFiles.send();
+      };
+      qxapp.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+        .then(files => {
+          const data = {
+            location: locationId,
+            dataset: datasetId,
+            files: files && files.length>0 ? files : []
+          };
+          // Add it to cache
+          if (!(locationId in this.__filesByLocationAndDatasetCached)) {
+            this.__filesByLocationAndDatasetCached[locationId] = {};
+          }
+          this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
+          this.fireDataEvent("myDocuments", data);
+        })
+        .catch(err => {
+          const data = {
+            location: locationId,
+            dataset: datasetId,
+            files: []
+          };
+          this.fireDataEvent("myDocuments", data);
+          console.error(err);
+        });
     },
 
     getNodeFiles: function(nodeId) {
-      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
-      let endPoint = "/storage/locations/0/files/metadata";
-      endPoint += filter;
-      let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
-
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
-        console.log("Node Files", files);
-        if (files && files.length>0) {
-          this.fireDataEvent("nodeFiles", files);
+      const params = {
+        url: {
+          nodeId: encodeURIComponent(nodeId)
         }
-        this.fireDataEvent("nodeFiles", []);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        this.fireDataEvent("nodeFiles", []);
-        console.error("Failed getting Node Files list", error);
-      });
-
-      reqFiles.send();
+      };
+      qxapp.data.Resources.fetch("storageFiles", "getByNode", params)
+        .then(files => {
+          console.log("Node Files", files);
+          if (files && files.length>0) {
+            this.fireDataEvent("nodeFiles", files);
+          }
+          this.fireDataEvent("nodeFiles", []);
+        })
+        .catch(err => {
+          this.fireDataEvent("nodeFiles", []);
+          console.error(err);
+        });
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
@@ -255,33 +229,25 @@ qx.Class.define("qxapp.store.Data", {
 
       // GET: Returns download link for requested file
       // POST: Returns upload link or performs copy operation to datcore
-      let res = encodeURIComponent(fileUuid);
-      const endPoint = "/storage/locations/" + locationId + "/files/" + res;
-      // const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
-      const method = download ? "GET" : "PUT";
-      let req = new qxapp.io.request.ApiRequest(endPoint, method);
-
-      req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
-        const presignedLinkData = {
-          presignedLink: data,
-          locationId: locationId,
-          fileUuid: fileUuid
-        };
-        console.log("presignedLink", presignedLinkData);
-        this.fireDataEvent("presignedLink", presignedLinkData);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error("Failed getting Presigned Link", error);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          locationId,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      qxapp.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
+        .then(data => {
+          const presignedLinkData = {
+            presignedLink: data,
+            locationId: locationId,
+            fileUuid: fileUuid
+          };
+          console.log("presignedLink", presignedLinkData);
+          this.fireDataEvent("presignedLink", presignedLinkData);
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {

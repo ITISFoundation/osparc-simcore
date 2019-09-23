@@ -58,6 +58,10 @@ qx.Class.define("qxapp.store.Store", {
     servicesTodo: {
       check: "Array",
       init: []
+    },
+    storageLocations: {
+      check: "Array",
+      init: []
     }
   },
 

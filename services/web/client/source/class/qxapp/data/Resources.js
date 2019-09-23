@@ -247,6 +247,62 @@ qx.Class.define("qxapp.data.Resources", {
             url: statics.API + "/auth/reset-password/{code}"
           }
         })
+      },
+      /*
+       * STORAGE LOCATIONS
+       */
+      storageLocations: {
+        usesCache: true,
+        endpoints: new qxapp.io.rest.Resource({
+          get: {
+            method: "GET",
+            url: statics.API + "/storage/locations"
+          }
+        })
+      },
+      /*
+       * STORAGE DATASETS
+       */
+      storageDatasets: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          getByLocation: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/datasets"
+          }
+        })
+      },
+      /*
+       * STORAGE FILES
+       */
+      storageFiles: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          getByLocationAndDataset: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
+          },
+          getByNode: {
+            method: "GET",
+            url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={nodeId}"
+          }
+        })
+      },
+      /*
+       * STORAGE LINK
+       */
+      storageLink: {
+        usesCache: false,
+        endpoints: new qxapp.io.rest.Resource({
+          getOne: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+          }
+        })
       }
     };
   },
