@@ -63,7 +63,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     }, this);
     nodeTreeLayout.add(nodeReloadBtn);
     const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
-    qxapp.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree_" + this.getNode().getNodeId());
+    qxapp.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree");
     nodeFilesTree.setDragMechnism(true);
     nodeFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
     }, this);
     userTreeLayout.add(userReloadBtn);
     const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
-    qxapp.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree_" + this.getNode().getNodeId());
+    qxapp.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
     userFilesTree.setDropMechnism(true);
     userFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("user");
