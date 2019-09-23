@@ -83,6 +83,12 @@ qx.Class.define("qxapp.file.FileTreeItem", {
       nullable: true
     },
 
+    itemId: {
+      check: "String",
+      apply: "_applyItemId",
+      nullable: true
+    },
+
     isDataset: {
       check: "Boolean",
       event: "changeIsDataset",
@@ -196,6 +202,10 @@ qx.Class.define("qxapp.file.FileTreeItem", {
     },
 
     // override
+    _applyItemId: function(value, old) {
+      qxapp.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
+    },
+
     _applyIcon: function(value, old) {
       this.base(arguments, value, old);
       // HACKY: make the loading icon turn

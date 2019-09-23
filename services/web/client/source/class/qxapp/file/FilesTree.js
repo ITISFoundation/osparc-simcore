@@ -151,7 +151,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     },
 
     __populateNodeFiles: function(nodeId) {
-      const treeName = "Node files";
+      const treeName = "Node Files";
       this.__resetTree(treeName);
       const rootModel = this.getModel();
       qxapp.file.FilesTree.addLoadingChild(rootModel);
@@ -226,6 +226,7 @@ qx.Class.define("qxapp.file.FilesTree", {
       this.resetModel();
       const rootData = {
         label: treeName,
+        itemId: treeName.replace(/\s/g, ""), // remove all whitespaces
         location: null,
         path: null,
         children: []
@@ -261,6 +262,7 @@ qx.Class.define("qxapp.file.FilesTree", {
         },
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
+          c.bindProperty("itemId", "itemId", null, item, id);
           c.bindProperty("fileId", "fileId", null, item, id);
           c.bindProperty("location", "location", null, item, id);
           c.bindProperty("isDataset", "isDataset", null, item, id);
