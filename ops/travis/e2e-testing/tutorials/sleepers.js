@@ -1,16 +1,12 @@
 const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
-// const utils = require('../utils/utils');
+const utils = require('../utils/utils');
 
 const demo = true;
-/*
 const {
   user,
   pass
 } = utils.getRandUserAndPass();
-*/
-const user = "maiz@itis.swiss";
-const pass = "osparc";
 
 async function runTutorial (url) {
   console.log("Running tutorial on", url);
