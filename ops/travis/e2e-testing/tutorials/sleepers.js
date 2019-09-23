@@ -30,7 +30,7 @@ async function runTutorial (url) {
 
   // Check results are there
   await auto.openLastNode(page);
-  await page.waitFor(1000);
+  await page.waitFor(5000);
 
   await auto.checkDataProducedByNode(page);
 
