@@ -174,7 +174,7 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         this.addWidget(new qx.ui.core.Spacer(10));
 
         // Add Path
-        var pathWidget = new qx.ui.basic.Label().set({
+        const pathWidget = new qx.ui.basic.Label().set({
           width: 300,
           maxWidth: 300,
           textAlign: "right"
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.file.FileTreeItem", {
         this.addWidget(new qx.ui.core.Spacer(10));
 
         // Add NodeId
-        var fileIdWidget = new qx.ui.basic.Label().set({
+        const fileIdWidget = new qx.ui.basic.Label().set({
           width: 300,
           maxWidth: 300,
           textAlign: "right"
