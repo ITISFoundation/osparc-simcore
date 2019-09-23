@@ -157,14 +157,17 @@ qx.Class.define("qxapp.file.FilesTree", {
       qxapp.file.FilesTree.addLoadingChild(rootModel);
 
       const filesStore = qxapp.store.Data.getInstance();
+      if (filesStore.hasListener("nodeFiles")) {
+        filesStore.removeListener("nodeFiles");
+      }
       filesStore.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__filesToRoot(newChildren);
-        const added = this.__getFilesInTree();
-        console.log(added);
-        for (let i=0; i<added.length; i++) {
-          this.openNodeAndParents(added[i]);
+        let filesInTree = [];
+        this.__getFilesInTree(rootModel, filesInTree);
+        for (let i=0; i<filesInTree.length; i++) {
+          this.openNodeAndParents(filesInTree[i]);
         }
       }, this);
       filesStore.getNodeFiles(nodeId);
@@ -391,12 +394,12 @@ qx.Class.define("qxapp.file.FilesTree", {
       console.log("file copied", fileMetadata);
     },
 
-    __getLeafList: function(item, leaves) {
+    __getFilesInTree: function(item, leaves) {
       if (item.getChildren == null) { // eslint-disable-line no-eq-null
         leaves.push(item);
       } else {
         for (let i=0; i<item.getChildren().length; i++) {
-          this.__getLeafList(item.getChildren().toArray()[i], leaves);
+          this.__getFilesInTree(item.getChildren().toArray()[i], leaves);
         }
       }
     },
@@ -404,7 +407,7 @@ qx.Class.define("qxapp.file.FilesTree", {
     __findUuidInLeaves: function(uuid) {
       const parent = this.getModel();
       const list = [];
-      this.__getLeafList(parent, list);
+      this.__getFilesInTree(parent, list);
       for (let j = 0; j < list.length; j++) {
         if (uuid === list[j].getFileId()) {
           return list[j];
@@ -443,10 +446,6 @@ qx.Class.define("qxapp.file.FilesTree", {
       if (selectedItem) {
         this.fireEvent("itemSelected");
       }
-    },
-
-    __getFilesInTree: function() {
-      return null;
     },
 
     __addDragAndDropMechanisms: function(item) {
