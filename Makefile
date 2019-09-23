@@ -201,31 +201,25 @@ tag: tag-version tag-latest ## Tags service images with version and latest befor
 
 .PHONY: pull-cache
 pull-cache: .env
-	-export DOCKER_IMAGE_TAG=cache; \
-	export DOCKER_REGISTRY=itisfoundation; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
+	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull
 
-
-pull: .env ## Pulls images of $(SERVICES_LIST) from a registry
-	# pulling '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml pull $(SERVICES_LIST)
+pull: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
+	# pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
 
 
 .PHONY: push-cache push-version push-latest release
 
-push-cache: tag-cache ## Pushes service images tagged as 'cache' into the registry
-	# pushing 'itisfoundation/{service}:cache'
-	export DOCKER_IMAGE_TAG=cache; \
-	export DOCKER_REGISTRY=itisfoundation; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
-
-push-version: tag-version
-	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml push $(SERVICES_LIST)
+push-cache: tag-cache ## Pushes service images tagged as 'cache' into current registry
+	@export DOCKER_IMAGE_TAG=cache; $(MAKE) push-version
 
 push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest;
 	$(MAKE) push-version
+
+push-version: tag-version
+	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
 
 release: push-version push-latest ## Tags and pushes latest version of local/$(service):production
 	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
