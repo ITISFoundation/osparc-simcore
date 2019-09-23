@@ -73,7 +73,7 @@ SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN
 .PHONY: build
 build: .env ## Builds production images and tags them as 'local/{service-name}:production'
 	# Compiling front-end
-	$(MAKE) -C services/web/client compile
+	@$(MAKE) -C services/web/client compile
 	# Building services
 	export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
@@ -83,7 +83,7 @@ build: .env ## Builds production images and tags them as 'local/{service-name}:p
 rebuild: build-nc
 build-nc: .env ## As build but w/o cache (alias: rebuild)
 	# Compiling front-end
-	$(MAKE) -C services/web/client clean compile
+	@$(MAKE) -C services/web/client clean compile
 	# Building services
 	export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel --no-cache
@@ -101,6 +101,9 @@ build-devel: .env ## Builds development images and tags them as 'local/{service-
 .PHONY: build-cache
 # TODO: should download cache if any??
 build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
+	# Compiling front-end
+	@$(MAKE) -C services/web/client compile
+	# Building cache images
 	export BUILD_TARGET=cache; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
