@@ -318,6 +318,11 @@ async function checkDataProducedByNode(page) {
 
   await page.waitFor(4000)
 
+  const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
+  if (children.length < 4) { // 4 = location + study + node + file
+    throw("file items not found");
+  }
+
   await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
   await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')
 }
