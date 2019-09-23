@@ -270,7 +270,7 @@ qx.Class.define("qxapp.store.Data", {
       qxapp.data.Resources.fetch("storageFiles", "put", params)
         .then(files => {
           const data = {
-            data: files, // check
+            data: files,
             locationId: toLoc,
             fileUuid: pathId + "/" + fileName
           };

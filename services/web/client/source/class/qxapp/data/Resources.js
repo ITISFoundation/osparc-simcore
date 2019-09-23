@@ -292,7 +292,7 @@ qx.Class.define("qxapp.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url: "/storage/locations/{locationId}/files/{fileUuid}"
+            url:  statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         })
       },
