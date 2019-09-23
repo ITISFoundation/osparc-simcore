@@ -276,6 +276,23 @@ async function dashboardDeleteFirstStudy(page) {
   await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
 }
 
+async function openNode(page, pos) {
+  console.log("Opening Last Node");
+
+  const children = await utils.getNodeTreeItemIDs(page);
+  console.log("children", children);
+  if (children.length < pos+1) {
+    console.log("Node tree items not found");
+    return;
+  }
+  const lastChildId = '[osparc-test-id="' + children[pos] + '"]';
+  await page.waitForSelector(lastChildId);
+  await page.click(lastChildId);
+
+  await page.waitForSelector('[osparc-test-id="openServiceBtn"]');
+  await page.click('[osparc-test-id="openServiceBtn"]');
+}
+
 async function openLastNode(page) {
   console.log("Opening Last Node");
 
@@ -320,6 +337,7 @@ module.exports = {
   dashboardOpenFirstTemplateAndRun,
   dashboardDeleteFirstStudy,
   toDashboard,
+  openNode,
   openLastNode,
   checkDataProducedByNode,
 }
