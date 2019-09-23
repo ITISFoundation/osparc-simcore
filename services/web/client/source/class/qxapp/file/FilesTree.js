@@ -161,6 +161,11 @@ qx.Class.define("qxapp.file.FilesTree", {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__filesToRoot(newChildren);
+        const added = this.__getFilesInTree();
+        console.log(added);
+        for (let i=0; i<added.length; i++) {
+          this.openNodeAndParents(added[i]);
+        }
       }, this);
       filesStore.getNodeFiles(nodeId);
     },
@@ -461,6 +466,10 @@ qx.Class.define("qxapp.file.FilesTree", {
       if (selectedItem) {
         this.fireEvent("itemSelected");
       }
+    },
+
+    __getFilesInTree: function() {
+      return null;
     },
 
     __addDragAndDropMechanisms: function(item) {
