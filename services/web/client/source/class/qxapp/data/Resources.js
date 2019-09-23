@@ -289,6 +289,10 @@ qx.Class.define("qxapp.data.Resources", {
           put: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: "/storage/locations/{locationId}/files/{fileUuid}"
           }
         })
       },

@@ -292,29 +292,26 @@ qx.Class.define("qxapp.store.Data", {
       }
 
       // Deletes File
-      let parameters = encodeURIComponent(fileUuid);
-      const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
-      let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
-
-      req.addListener("success", e => {
-        const data = {
-          data: e.getTarget().getResponse(),
-          locationId: locationId,
-          fileUuid: fileUuid
-        };
-        this.fireDataEvent("deleteFile", data);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error("Failed deleting file", error);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
-        this.fireDataEvent("deleteFile", null);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          locationId,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      qxapp.data.Resources.fetch("storageFiles", "delete", params)
+        .then(files => {
+          const data = {
+            data: files,
+            locationId: locationId,
+            fileUuid: fileUuid
+          };
+          this.fireDataEvent("deleteFile", data);
+        })
+        .catch(err => {
+          console.error(err);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
+          this.fireDataEvent("deleteFile", null);
+        });
 
       return true;
     }
