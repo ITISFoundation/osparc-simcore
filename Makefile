@@ -12,10 +12,9 @@ PREDEFINED_VARIABLES := $(.VARIABLES)
 
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
-IS_LINUX:= $(filter Linux,$(shell uname))
-IS_OSX  := $(filter Darwin,$(shell uname))
-else
-IS_WSL  := $(filter Microsoft,$(shell uname))
+IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_OSX  := $(filter Darwin,$(shell uname -a))
+IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
@@ -57,10 +56,11 @@ $(foreach v, \
 
 
 ## DOCKER BUILD -------------------------------
-TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName, mktemp --suffix=$(TEMP_SUFFIX)))
-SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if IS_WIN,null,/dev/null))
+TEMP_COMPOSE_YML := $(if $(IS_WIN)\
+	,$(shell (New-TemporaryFile).FullName)\
+	,$(shell mktemp -d /tmp/$(SWARM_STACK_NAME)-XXXXX)/docker-compose.yml)
 
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 
 
 create-stack-file: ## Creates stack file for production as $(output_file) e.g. 'make create-stack-file output_file=stack.yaml'
@@ -206,8 +206,9 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 PHONY: setup-check
 setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
-.PHONY: info
-info: ## displays selected parameters of makefile environments
+
+.PHONY: info info-images info-swarm info-vars info-all
+info: ## displays selected information
 	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
@@ -217,31 +218,37 @@ info: ## displays selected parameters of makefile environments
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 
-
-.PHONY: info-more
-info-more: ## displays all parameters of makefile environments
+info-vars: ## displays all parameters of makefile environments
 	$(info VARIABLES ------------)
 	$(foreach v,                                                                                  \
 		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
 		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
 	@echo "----"
+
+info-images:  ## lists created images (mostly for debugging makefile)
+	@$(foreach service,$(SERVICES_LIST)\
+		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
+
+info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
-	@echo ""
-	$(DOCKER) stack ls
-	@echo ""
-	-$(DOCKER) stack ps $(SWARM_STACK_NAME)
-	@echo ""
-	-$(DOCKER) stack services $(SWARM_STACK_NAME)
-	@echo ""
-	$(DOCKER) network ls
+	# stacks in swarm
+	@$(DOCKER) stack ls
+	# containers (tasks) running in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack ps $(SWARM_STACK_NAME)
+	# services in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack services $(SWARM_STACK_NAME)
+	# networks
+	@$(DOCKER) network ls
 endif
 
 
 .PHONY: clean
 # TODO: does not clean windows temps
 clean:   ## cleans all unversioned files in project and temp files create by this makefile
-	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
+	# removing temps
+	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME)*)
+	# cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 
