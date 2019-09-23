@@ -23,7 +23,7 @@ install() {
     cp ops/travis/e2e-testing/package.json .
     cp ops/travis/e2e-testing/package-lock.json .
     npm install
-    make pull || ((make pull-cache || true) && make build)
+    make pull-version || ((make pull-cache || true) && make build)
 }
 
 before_script() {

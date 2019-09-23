@@ -9,7 +9,7 @@ export TAG="${TRAVIS_TAG}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
 export DOCKER_IMAGE_TAG=$(./ops/travis/helpers/find_staging_version | awk 'END{print}') || exit $?
-make pull tag-local
+make pull-version tag-local
 
 # show current images on system
 make info-images

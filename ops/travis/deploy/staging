@@ -5,7 +5,7 @@ IFS=$'\n\t'
 
 # pull the tagged master build
 export DOCKER_IMAGE_TAG=$(exec ops/travis/helpers/build_docker_image_tag)
-make pull tag-local
+make pull-version tag-local
 
 # show current images on system
 docker images

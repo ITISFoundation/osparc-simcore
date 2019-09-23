@@ -199,16 +199,16 @@ tag: tag-version tag-latest ## Tags service images with version and latest befor
 
 ## DOCKER PULL/PUSH  -------------------------------
 
-.PHONY: pull-cache
+.PHONY: pull-cache pull-version
 pull-cache: .env
-	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull
+	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull-version
 
-pull: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
+pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
 
 
-.PHONY: push-cache push-version push-latest release
+.PHONY: push-cache push-version push-latest
 
 push-cache: tag-cache ## Pushes service images tagged as 'cache' into current registry
 	@export DOCKER_IMAGE_TAG=cache; $(MAKE) push-version
@@ -220,6 +220,9 @@ push-latest: tag-latest
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
+
+
+.PHONY: release
 
 release: push-version push-latest ## Tags and pushes latest version of local/$(service):production
 	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
