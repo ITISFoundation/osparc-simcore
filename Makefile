@@ -12,10 +12,9 @@ PREDEFINED_VARIABLES := $(.VARIABLES)
 
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
-IS_LINUX:= $(filter Linux,$(shell uname))
-IS_OSX  := $(filter Darwin,$(shell uname))
-else
-IS_WSL  := $(filter Microsoft,$(shell uname))
+IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_OSX  := $(filter Darwin,$(shell uname -a))
+IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
@@ -60,12 +59,16 @@ $(foreach v, \
 	$(info + $(v) set to '$($(v))'))
 
 
-
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
+TEMP_COMPOSE_YML := $(if $(IS_WIN)\
+	,$(shell (New-TemporaryFile).FullName)\
+	,$(shell mktemp -d /tmp/$(SWARM_STACK_NAME)-XXXXX)/docker-compose.yml)
+
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 
 .PHONY: build
 build: .env ## Builds production images and tags them as 'local/{service-name}:production'
@@ -290,20 +293,20 @@ info-vars: ## displays all parameters of makefile environments
 	)
 	@echo "----"
 
-info-images:  ## lists created images
+info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST)\
 		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
-	@echo ""
-	$(DOCKER) stack ls
-	@echo ""
-	-$(DOCKER) stack ps $(SWARM_STACK_NAME)
-	@echo ""
-	-$(DOCKER) stack services $(SWARM_STACK_NAME)
-	@echo ""
-	$(DOCKER) network ls
+	# stacks in swarm
+	@$(DOCKER) stack ls
+	# containers (tasks) running in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack ps $(SWARM_STACK_NAME)
+	# services in '$(SWARM_STACK_NAME)' stack
+	-@$(DOCKER) stack services $(SWARM_STACK_NAME)
+	# networks
+	@$(DOCKER) network ls
 endif
 
 info-all: info-vars, info-images, info-swarm
@@ -316,8 +319,8 @@ clean:   ## cleans all unversioned files in project and temp files create by thi
 	# cleaning web/client
 	@$(MAKE) -C services/web/client clean
 	# removing temps
-	@-rm $(wildcard $(dir $(shell mktemp -u))*$(TEMP_SUFFIX))
-	# removing unversioned
+	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME)*)
+	# cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 clean-images:  ## removes all created images
