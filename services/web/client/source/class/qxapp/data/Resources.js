@@ -374,7 +374,7 @@ qx.Class.define("qxapp.data.Resources", {
           const idField = this.self().resources[resource].idField || "uuid";
           const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
           if (item) {
-            console.log(item, `Getting ${resource} from cache.`);
+            console.log(`Getting ${resource} from cache.`);
             return Promise.resolve(item);
           }
         }
@@ -393,7 +393,7 @@ qx.Class.define("qxapp.data.Resources", {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
-          console.log(stored, `Getting all ${resource} from cache.`);
+          console.log(`Getting all ${resource} from cache.`);
           return Promise.resolve(stored);
         }
         console.log(`Fetching ${resource} from server.`);
