@@ -6,23 +6,17 @@
  */
 
 qx.Class.define("qxapp.component.service.manager.ActivityTree", {
-  extend: qx.ui.treevirtual.TreeVirtual,
+  extend: qx.ui.table.Table,
 
   construct: function() {
-    this.base(arguments, [
+    this.__model = new qx.ui.table.model.Simple();
+    this.__model.setColumns([
       "Node",
       "Service",
       "Status",
       "CPU usage",
       "GPU usage"
-    ], {
-      treeDataCellRenderer: new qx.ui.treevirtual.SimpleTreeDataCellRenderer().set({
-        useTreeLines: false
-      })
-    });
-    this.set({
-      decorator: "no-border",
-      padding: 0
-    });
+    ]);
+    this.base(arguments, this.__model);
   }
 });

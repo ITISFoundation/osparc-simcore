@@ -43,34 +43,19 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       // React to filter changes
       const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, msg => {
-        const model = this.__tree.getDataModel();
+        const model = this.__tree.getTableModel();
         const filterText = msg.getData().name;
         const filterStudy = msg.getData().study;
         const filter = targetNode => {
           const nameFilterFn = node => {
-            if (filterText && filterText.length) {
-              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
-                return true;
-              } else if (node.label.indexOf(filterText) === -1) {
-                return false;
-              }
-            }
             return true;
           };
           const studyFilterFn = node => {
-            if (filterStudy && filterStudy.length) {
-              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.LEAF) {
-                return true;
-              } else if (filterStudy.includes(node.label)) {
-                return true;
-              }
-              return false;
-            }
             return true;
           };
           return nameFilterFn(targetNode) && studyFilterFn(targetNode);
         };
-        model.setFilter(filter);
+        // model.setFilter(filter);
       }, this);
     },
 
@@ -100,32 +85,30 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     },
 
     __updateTree: function() {
-      const call = qxapp.data.Resources.get("studies");
-      call.then(studies => {
-        const model = this.__tree.getDataModel();
-        model.clearData();
-        studies.forEach(study => {
-          let parent = null;
-          for (let key in study.workbench) {
-            const node = study.workbench[key];
-            const metadata = qxapp.utils.Services.getNodeMetaData(node.key, node.version);
-            if (metadata && metadata.type === "computational") {
-              if (parent === null) {
-                parent = model.addBranch(null, study.name, true);
-              }
-              const rowId = model.addLeaf(parent, node.label);
-              if (metadata.key && metadata.key.length) {
-                const splitted = metadata.key.split("/");
-                model.setColumnData(rowId, 1, splitted[splitted.length-1]);
+      qxapp.data.Resources.get("studies")
+        .then(studies => {
+          const rows = [];
+          studies.forEach(study => {
+            for (let key in study.workbench) {
+              const node = study.workbench[key];
+              const metadata = qxapp.utils.Services.getNodeMetaData(node.key, node.version);
+              if (metadata && metadata.type === "computational") {
+                const row = [];
+                if (metadata.key && metadata.key.length) {
+                  const splitted = metadata.key.split("/");
+                  row[1] = splitted[splitted.length-1];
+                }
+                row[0] = node.label;
+                rows.push(row);
               }
             }
-          }
+          });
+          this.__tree.getTableModel().setData(rows, false);
+          this.__studyFilter.buildMenu(studies);
+        })
+        .catch(e => {
+          console.error(e);
         });
-        model.setData();
-        this.__studyFilter.buildMenu(studies);
-      }).catch(e => {
-        console.error(e);
-      });
     }
   }
 });
