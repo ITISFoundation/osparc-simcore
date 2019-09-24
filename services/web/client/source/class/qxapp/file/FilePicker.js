@@ -55,7 +55,6 @@ qx.Class.define("qxapp.file.FilePicker", {
     const reloadButton = this._createChildControlImpl("reloadButton");
     reloadButton.addListener("execute", function() {
       this.__filesTree.resetCache();
-      qxapp.store.Store.getInstance().reset("storageLocations");
       this.__initResources();
     }, this);
 

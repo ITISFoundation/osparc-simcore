@@ -62,6 +62,8 @@ qx.Class.define("qxapp.store.Data", {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
       this.__filesByLocationAndDatasetCached = {};
+
+      qxapp.store.Store.getInstance().reset("storageLocations");
     },
 
     getLocationsCached: function() {
@@ -145,7 +147,7 @@ qx.Class.define("qxapp.store.Data", {
 
     getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
       const cache = this.__filesByLocationAndDatasetCached;
-      if (locationId in cache && datasetId in cache[locationId] && cache[locationId][datasetId].length) {
+      if (locationId in cache && datasetId in cache[locationId]) {
         const data = {
           location: locationId,
           dataset: datasetId,
