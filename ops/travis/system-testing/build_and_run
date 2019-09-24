@@ -14,13 +14,13 @@ before_install() {
 install() {
     bash ops/travis/helpers/ensure_python_pip
     pip3 install -r ops/travis/system-testing/requirements.txt
-    make pull-version tag-local || ((make pull-cache || true) && make build)
+    make pull-version || ((make pull-cache || true) && make build tag-version)
 }
 
 before_script() {
     pip list -v
     make info-images
-    make up-local
+    make up-version
 }
 
 script() {
@@ -30,7 +30,7 @@ script() {
 }
 
 after_success() {
-    make down-force
+    make leave
 }
 
 after_failure() {

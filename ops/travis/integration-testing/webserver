@@ -18,9 +18,7 @@ install() {
 
 before_script() {
     pip list -v
-    make pull-version tag-local || ((make pull-cache || true) && make build)
-    make tag-version tag-latest
-    # FIXME: integration tests uses "latest"
+    make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
 }
 

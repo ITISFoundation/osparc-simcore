@@ -127,22 +127,7 @@ config: ## Creates deploy stack file for production as $(output_file) e.g. 'make
 	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
 
 
-.PHONY: up up-devel
-up: .env .init-swarm ## Deploys production stack (analogous to other osparc-ops's stack)
-	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
-	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(TEMP_COMPOSE_YML)
-	# deploy stack $(SWARM_STACK_NAME)
-	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-
-
-up-local: .env .init-swarm ## Deploys local production stack and tools. Use as a lightweight to deploying osparc-ops stacks.
-	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
-	@export DOCKER_REGISTRY=local;      \
-	export DOCKER_IMAGE_TAG=production; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
-	# deploy stack $(SWARM_STACK_NAME)
-	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-
+.PHONY: up-devel up-prod up-version up-latest
 
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
@@ -152,12 +137,30 @@ up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development sta
 	# start compile+watch front-end container [back-end]
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
+up-prod: .env .init-swarm ## Deploys local production stack and tools. Use as a lightweight to deploying osparc-ops stacks.
+	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
+	@export DOCKER_REGISTRY=local;      \
+	export DOCKER_IMAGE_TAG=production; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	# deploy stack $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
-.PHONY: down down-force
+up-version: .env .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
+	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(TEMP_COMPOSE_YML)
+	# deploy stack $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+
+up-latest:
+	@export DOCKER_IMAGE_TAG=latest; \
+	$(MAKE) up-version
+
+
+.PHONY: down leave
 down: ## Stops and removes stack
 	$(DOCKER) stack rm $(SWARM_STACK_NAME)
 
-down-force: ## Forces to stop all services and leave swarms
+leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	$(DOCKER) swarm leave -f
 
 

@@ -133,9 +133,6 @@ def docker_client():
 
 # TESTS -------------------------------
 def test_all_services_up(docker_client, services_docker_compose, tools_docker_compose):
-    """
-        NOTE: Assumes `make up-swarm` executed
-    """
     running_services = docker_client.services.list()
 
     service_names = []
@@ -149,7 +146,6 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
 
 async def test_core_service_running(swarm_stack_name, core_service_name, docker_client, loop):
     """
-        NOTE: Assumes `make up-swarm` executed
         NOTE: loop fixture makes this test async
     """
     SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+)')
@@ -207,9 +203,6 @@ async def test_core_service_running(swarm_stack_name, core_service_name, docker_
 
 
 async def test_check_serve_root(docker_client, services_docker_compose, tools_docker_compose):
-    """
-        NOTE: Assumes `make up-swarm` executed
-    """
     running_services = docker_client.services.list()
     assert (len(services_docker_compose["services"]) + len(tools_docker_compose["services"])) == len(running_services)
 
