@@ -217,19 +217,13 @@ qx.Class.define("qxapp.data.Permissions", {
     },
 
     loadUserRoleFromBackend: function() {
-      let userResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
-
-      let profile = userResources.profile;
-      profile.addListenerOnce("getSuccess", e => {
-        let profileData = e.getRequest().getResponse().data;
-        this.__userRole = profileData.role;
-        this.__userLogin = profileData.login;
-        this.fireDataEvent("userProfileRecieved", true);
-      }, this);
-      profile.addListenerOnce("getError", e => {
-        console.error(e);
-      });
-      profile.get();
+      qxapp.data.Resources.getOne("profile")
+        .then(profileData => {
+          this.__userRole = profileData.role;
+          this.__userLogin = profileData.login;
+          this.fireDataEvent("userProfileRecieved", true);
+        })
+        .catch(err => console.error(err));
     }
   }
 });

@@ -33,6 +33,7 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
+    this.__isTemplate = isTemplate;
     this.__model = qx.data.marshal.Json.createModel(study);
 
     this.__stack = new qx.ui.container.Stack();
@@ -41,8 +42,6 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
     this._add(this.__stack);
-
-    this.__isTemplate = isTemplate;
 
     // Workaround: qx serializer is not doing well with uuid as object keys.
     this.__workbench = study.workbench;
@@ -203,47 +202,51 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
     },
 
     __saveStudy: function(btn) {
-      const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().project;
-      apiCall.addListenerOnce("putSuccess", e => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", e);
-        const data = e.getData().data;
-        this.__model.set(data);
-        this.setMode("display");
-      }, this);
-      apiCall.addListenerOnce("putError", e => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        console.error(e);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
-      }, this);
-      apiCall.put({
-        "project_id": this.__model.getUuid()
-      }, this.__serializeForm());
+      const params = {
+        url: {
+          "project_id": this.__model.getUuid()
+        },
+        data: this.__serializeForm()
+      };
+      qxapp.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params)
+        .then(data => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
+          this.__model.set(data);
+          this.setMode("display");
+        })
+        .catch(err => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          console.error(err);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        });
     },
 
     __saveAsTemplate: function(btn) {
-      const apiCall = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources().projects;
-      apiCall.addListenerOnce("postSaveAsTemplateSuccess", e => {
-        btn.resetIcon();
-        btn.getChildControl("icon").getContentElement()
-          .removeClass("rotate");
-        this.fireDataEvent("updatedTemplate", e);
-        const data = e.getData().data;
-        this.__model.set(data);
-        this.setMode("display");
-      }, this);
-      apiCall.addListenerOnce("postSaveAsTemplateError", e => {
-        btn.resetIcon();
-        console.error(e);
-        qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
-      }, this);
-      apiCall.postSaveAsTemplate({
-        "study_id": this.__model.getUuid()
-      }, this.__serializeForm());
+      const params = {
+        url: {
+          "study_url": this.__model.getUuid()
+        },
+        data: this.__serializeForm()
+      };
+      qxapp.data.Resources.fetch("templates", "postToTemplate", params)
+        .then(template => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          this.fireDataEvent("updatedTemplate", template);
+          this.__model.set(template);
+          this.setMode("display");
+        })
+        .catch(err => {
+          btn.resetIcon();
+          console.error(err);
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
+        });
     },
 
     __serializeForm: function() {
@@ -254,6 +257,19 @@ qx.Class.define("qxapp.component.metadata.StudyDetailsEditor", {
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
       }
+      // Protect text fields against injecting malicious html/code in them
+      [
+        "name",
+        "description",
+        "thumbnail"
+      ].forEach(fieldKey => {
+        const dirty = data[fieldKey];
+        const clean = qxapp.wrapper.DOMPurify.getInstance().sanitize(dirty);
+        if (dirty !== clean) {
+          qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
+        }
+        data[fieldKey] = clean;
+      }, this);
       return data;
     },
 

@@ -25,8 +25,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
 
     qxapp.utils.UuidToName.getInstance().setStudy(study);
 
-    this.__studyResources = qxapp.io.rest.ResourceFactory.getInstance().createStudyResources();
-
     this.setStudy(study);
 
     let mainPanel = this.__mainPanel = new qxapp.desktop.MainPanel().set({
@@ -66,7 +64,6 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
   },
 
   members: {
-    __studyResources: null,
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -506,21 +503,22 @@ qx.Class.define("qxapp.desktop.StudyEditor", {
       const newObj = this.getStudy().serializeStudy();
       const prjUuid = this.getStudy().getUuid();
 
-      let resource = this.__studyResources.project;
-      resource.addListenerOnce("putSuccess", ev => {
+      const params = {
+        url: {
+          "project_id": prjUuid,
+          run
+        },
+        data: newObj
+      };
+      qxapp.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }
-      }, this);
-      resource.addListenerOnce("putError", ev => {
+      }).catch(error => {
         this.getLogger().error("root", "Error updating pipeline");
-      }, this);
-      resource.put({
-        "project_id": prjUuid,
-        run
-      }, newObj);
+      });
     },
 
     closeStudy: function() {

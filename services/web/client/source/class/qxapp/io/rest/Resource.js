@@ -48,5 +48,11 @@ qx.Class.define("qxapp.io.rest.Resource", {
 
       request.setRequestHeader("Content-Type", "application/json");
     });
+  },
+
+  members: {
+    includesRoute: function(route) {
+      return Object.keys(this.__routes).includes(route);
+    }
   }
 });

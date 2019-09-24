@@ -31,15 +31,11 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
     const title = this.tr("Security");
     this.base(arguments, title, iconSrc);
 
-    this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createTokenResources();
-
     this.add(this.__createPasswordSection());
     this.add(this.__createTokensSection());
   },
 
   members: {
-    __tokenResources: null,
-
     __tokensList: null,
 
     __createTokensSection: function() {
@@ -64,26 +60,20 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
     __rebuildTokensList: function() {
       this.__tokensList.removeAll();
-
-      let tokens = this.__tokenResources.tokens;
-      tokens.addListenerOnce("getSuccess", e => {
-        let tokensList = e.getRequest().getResponse().data;
-        if (tokensList.length === 0) {
-          let emptyForm = this.__createEmptyTokenForm();
-          this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
-        } else {
-          for (let i=0; i<tokensList.length; i++) {
-            const token = tokensList[i];
-            let tokenForm = this.__createValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
-            this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
+      qxapp.data.Resources.get("tokens")
+        .then(tokensList => {
+          if (tokensList.length === 0) {
+            let emptyForm = this.__createEmptyTokenForm();
+            this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
+          } else {
+            for (let i=0; i<tokensList.length; i++) {
+              const token = tokensList[i];
+              let tokenForm = this.__createValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
+              this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
+            }
           }
-        }
-      }, this);
-
-      tokens.addListenerOnce("getError", e => {
-        console.error(e);
-      });
-      tokens.get();
+        })
+        .catch(err => console.error(err));
     },
 
     __createEmptyTokenForm: function() {
@@ -116,20 +106,16 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
         if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
           return;
         }
-
-        let tokens = this.__tokenResources.tokens;
-        tokens.addListenerOnce("postSuccess", ev => {
-          this.__rebuildTokensList();
-        }, this);
-        tokens.addListenerOnce("getError", ev => {
-          console.error(ev);
-        });
-        const newTokenInfo = {
-          "service": newTokenService.getValue(),
-          "token_key": newTokenKey.getValue(),
-          "token_secret": newTokenSecret.getValue()
+        const params = {
+          data: {
+            "service": newTokenService.getValue(),
+            "token_key": newTokenKey.getValue(),
+            "token_secret": newTokenSecret.getValue()
+          }
         };
-        tokens.post(null, newTokenInfo);
+        qxapp.data.Resources.fetch("tokens", "post", params)
+          .then(() => this.__rebuildTokensList())
+          .catch(err => console.error(err));
       }, this);
       form.addButton(addTokenBtn);
 
@@ -167,17 +153,14 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
         if (!qxapp.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
           return;
         }
-
-        let token = this.__tokenResources.token;
-        token.addListenerOnce("delSuccess", eve => {
-          this.__rebuildTokensList();
-        }, this);
-        token.addListenerOnce("delError", eve => {
-          console.log(eve);
-        });
-        token.del({
-          "service": service
-        });
+        const params = {
+          url: {
+            service
+          }
+        };
+        qxapp.data.Resources.fetch("tokens", "delete", params, service)
+          .then(() => this.__rebuildTokensList())
+          .catch(err => console.error(err));
       }, this);
       form.addButton(delTokenBtn);
 
@@ -218,33 +201,27 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
       resetBtn.addListener("execute", () => {
         if (manager.validate()) {
-          let request = new qxapp.io.request.ApiRequest("/auth/change-password", "POST");
-          request.setRequestData({
-            "current": currentPassword.getValue(),
-            "new": newPassword.getValue(),
-            "confirm": confirm.getValue()
-          });
-
-          request.addListenerOnce("success", function(e) {
-            const res = e.getTarget().getResponse();
-            qxapp.component.message.FlashMessenger.getInstance().log(res.data);
-
-            [currentPassword, newPassword, confirm].forEach(item => {
-              item.resetValue();
+          const params = {
+            data: {
+              current: currentPassword.getValue(),
+              new: newPassword.getValue(),
+              confirm: confirm.getValue()
+            }
+          };
+          qxapp.data.Resources.fetch("password", "post", params)
+            .then(data => {
+              qxapp.component.message.FlashMessenger.getInstance().log(data);
+              [currentPassword, newPassword, confirm].forEach(item => {
+                item.resetValue();
+              });
+            })
+            .catch(err => {
+              console.error(err);
+              qxapp.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+              [currentPassword, newPassword, confirm].forEach(item => {
+                item.resetValue();
+              });
             });
-          }, this);
-
-          request.addListenerOnce("fail", e => {
-            const error = e.getTarget().getResponse().error;
-            const msg = error ? error["errors"][0].message : this.tr("Failed to reset password");
-            qxapp.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-
-            [currentPassword, newPassword, confirm].forEach(item => {
-              item.resetValue();
-            });
-          }, this);
-
-          request.send();
         }
       });
 
