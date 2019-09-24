@@ -68,7 +68,7 @@ qx.Class.define("qxapp.data.Resources", {
        */
       studies: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/projects?type=user"
@@ -93,14 +93,14 @@ qx.Class.define("qxapp.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{project_id}"
           }
-        })
+        }
       },
       /*
        * TEMPLATES (actually studies flagged as templates)
        */
       templates: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/projects?type=template"
@@ -117,31 +117,31 @@ qx.Class.define("qxapp.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{project_id}"
           }
-        })
+        }
       },
       /*
        * CONFIG
        */
       config: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           getOne: {
             method: "GET",
             url: statics.API + "/config"
           }
-        })
+        }
       },
       /*
        * PROFILE
        */
       profile: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           getOne: {
             method: "GET",
             url: statics.API + "/me"
           }
-        })
+        }
       },
       /*
        * TOKENS
@@ -149,7 +149,7 @@ qx.Class.define("qxapp.data.Resources", {
       tokens: {
         idField: "service",
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/me/tokens"
@@ -170,62 +170,62 @@ qx.Class.define("qxapp.data.Resources", {
             method: "PUT",
             url: statics.API + "/me/tokens/{service}"
           }
-        })
+        }
       },
       /*
        * PASSWORD
        */
       password: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           post: {
             method: "POST",
             url: statics.API + "/auth/change-password"
           }
-        })
+        }
       },
       /*
        * HEALTHCHECK
        */
       healthCheck: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/"
           }
-        })
+        }
       },
       /*
        * INTERACTIVE SERVICES
        */
       interactiveServices: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           delete: {
             method: "DELETE",
             url: statics.API + "/running_interactive_services/{nodeId}"
           }
-        })
+        }
       },
       /*
        * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
        */
       servicesTodo: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/services"
           }
-        })
+        }
       },
       /*
        * AUTH
        */
       auth: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           postLogin: {
             method: "POST",
             url: statics.API + "/auth/login"
@@ -246,38 +246,38 @@ qx.Class.define("qxapp.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/reset-password/{code}"
           }
-        })
+        }
       },
       /*
        * STORAGE LOCATIONS
        */
       storageLocations: {
         usesCache: true,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/storage/locations"
           }
-        })
+        }
       },
       /*
        * STORAGE DATASETS
        */
       storageDatasets: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           getByLocation: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/datasets"
           }
-        })
+        }
       },
       /*
        * STORAGE FILES
        */
       storageFiles: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           getByLocationAndDataset: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
@@ -294,14 +294,14 @@ qx.Class.define("qxapp.data.Resources", {
             method: "DELETE",
             url:  statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
-        })
+        }
       },
       /*
        * STORAGE LINK
        */
       storageLink: {
         usesCache: false,
-        endpoints: new qxapp.io.rest.Resource({
+        endpoints: {
           getOne: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
@@ -310,7 +310,7 @@ qx.Class.define("qxapp.data.Resources", {
             method: "PUT",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
-        })
+        }
       }
     };
   },
@@ -327,25 +327,29 @@ qx.Class.define("qxapp.data.Resources", {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
-        } else if (!this.self().resources[resource].endpoints.includesRoute(endpoint)) { // eslint-disable-line no-eq-null
+        }
+
+        const resourceDefinition = this.self().resources[resource];
+        const res = new qxapp.io.rest.Resource(resourceDefinition.endpoints);
+
+        if (!res.includesRoute(endpoint)) { // eslint-disable-line no-eq-null
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
 
-        const call = this.self().resources[resource];
-
-        call.endpoints.addListenerOnce(endpoint + "Success", e => {
+        res.addListenerOnce(endpoint + "Success", e => {
           const data = e.getRequest().getResponse().data;
-          if (call.usesCache) {
+          if (resourceDefinition.usesCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);
             } else {
               this.__setCached(resource, data);
             }
           }
+          res.dispose();
           resolve(data);
         }, this);
 
-        call.endpoints.addListenerOnce(endpoint + "Error", e => {
+        res.addListenerOnce(endpoint + "Error", e => {
           let message = null;
           if (e.getData().error) {
             const logs = e.getData().error.logs || null;
@@ -353,10 +357,11 @@ qx.Class.define("qxapp.data.Resources", {
               message = logs[0].message;
             }
           }
+          res.dispose();
           reject(Error(message ? message : `Error while fetching ${resource}`));
         });
 
-        call.endpoints[endpoint](params.url || null, params.data || null);
+        res[endpoint](params.url || null, params.data || null);
       });
     },
 

@@ -175,6 +175,8 @@ qx.Class.define("qxapp.file.FilesTree", {
       qxapp.file.FilesTree.addLoadingChild(rootModel);
 
       const filesStore = qxapp.store.Data.getInstance();
+      // OM: ??? Somehow this check avoids duplicated code.
+      filesStore.hasListener("myLocations");
       filesStore.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         if (this.__locations.size === 0) {

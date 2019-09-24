@@ -110,6 +110,7 @@ qx.Class.define("qxapp.desktop.DataBrowser", {
       });
       reloadBtn.addListener("execute", function() {
         this.__resetCache();
+        qxapp.store.Store.getInstance().reset("storageLocations");
         this.__initResources(null);
       }, this);
       treeLayout.add(reloadBtn);
