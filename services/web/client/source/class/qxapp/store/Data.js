@@ -79,7 +79,7 @@ qx.Class.define("qxapp.store.Data", {
         return;
       }
       // Get available storage locations
-      qxapp.data.Resources.get("storageLocations", {}, false)
+      qxapp.data.Resources.get("storageLocations")
         .then(locations => {
           // Add it to cache
           this.__locationsCached = locations;
