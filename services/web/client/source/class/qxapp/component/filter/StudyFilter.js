@@ -9,13 +9,12 @@ qx.Class.define("qxapp.component.filter.StudyFilter", {
   extend: qxapp.component.filter.TagsFilter,
 
   /**
-   * Constructor for NodeTypeFilter creates the filter and builds its menu.
+   * Constructor for StudyFilter creates the filter and builds its menu.
    *
-   * @extends qxapp.component.filter.UIFilter
+   * @extends qxapp.component.filter.TagsFilter
    */
   construct: function(filterId, groupId) {
     this.base(arguments, this.tr("Studies"), filterId, groupId);
-    this._setLayout(new qx.ui.layout.HBox());
   },
 
   members: {
