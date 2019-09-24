@@ -62,6 +62,8 @@ qx.Class.define("qxapp.store.Data", {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
       this.__filesByLocationAndDatasetCached = {};
+
+      this.reset("storageLocations");
     },
 
     getLocationsCached: function() {

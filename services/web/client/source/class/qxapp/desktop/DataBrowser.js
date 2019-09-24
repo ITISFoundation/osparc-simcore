@@ -57,10 +57,6 @@ qx.Class.define("qxapp.desktop.DataBrowser", {
       this.__filesTree.populateTree(null, locationId);
     },
 
-    __resetCache: function() {
-      this.__filesTree.resetCache();
-    },
-
     __createDataManagerLayout: function() {
       const dataManagerMainLayout = this.__createVBoxWLabel(this.tr("Data Manager"));
 
@@ -109,8 +105,7 @@ qx.Class.define("qxapp.desktop.DataBrowser", {
         allowGrowX: false
       });
       reloadBtn.addListener("execute", function() {
-        this.__resetCache();
-        qxapp.store.Store.getInstance().reset("storageLocations");
+        this.__filesTree.resetCache();
         this.__initResources(null);
       }, this);
       treeLayout.add(reloadBtn);
