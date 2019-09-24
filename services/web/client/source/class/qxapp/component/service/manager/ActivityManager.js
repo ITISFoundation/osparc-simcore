@@ -20,6 +20,13 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     this.__updateTree();
   },
 
+  statics: {
+    itemTypes: {
+      STUDY: "study",
+      SERVICE: "service"
+    }
+  },
+
   members: {
     __tree: null,
     __studyFilter: null,
@@ -46,32 +53,12 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
       // React to filter changes
       const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
-      qx.event.message.Bus.getInstance().subscribe(msgName, msg => {
-        const model = this.__tree.getTableModel();
-        const filterText = msg.getData().name;
-        const filterStudy = msg.getData().study;
-        const filter = row => {
-          const nameFilterFn = roww => {
-            const name = roww[0];
-            if (filterText.length > 1) {
-              return name.trim().toLowerCase()
-                .includes(filterText.trim().toLowerCase());
-            }
-            return true;
-          };
-          const studyFilterFn = roww => {
-            return true;
-          };
-          return nameFilterFn(row) && studyFilterFn(row);
-        };
-        const filteredData = this.__data.filter(row => filter(row));
-        model.setData(filteredData);
-      }, this);
+      qx.event.message.Bus.getInstance().subscribe(msgName, msg => this.__applyFilter(msg), this);
     },
 
     __createActivityTree: function() {
-      const tree = this.__tree = new qxapp.component.service.manager.ActivityTree();
-      this._add(tree, {
+      this.__tree = new qxapp.component.service.manager.ActivityTree();
+      this._add(this.__tree, {
         flex: 1
       });
     },
@@ -108,16 +95,22 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         .then(studies => {
           const rows = [];
           studies.forEach(study => {
+            let parentAdded = false;
             for (let key in study.workbench) {
               const node = study.workbench[key];
               const metadata = qxapp.utils.Services.getNodeMetaData(node.key, node.version);
               if (metadata && metadata.type === "computational") {
+                if (!parentAdded) {
+                  rows.push([this.self().itemTypes.STUDY, study.name]);
+                  parentAdded = true;
+                }
                 const row = [];
+                row[0] = this.self().itemTypes.SERVICE;
+                row[1] = node.label;
                 if (metadata.key && metadata.key.length) {
                   const splitted = metadata.key.split("/");
-                  row[1] = splitted[splitted.length-1];
+                  row[2] = splitted[splitted.length-1];
                 }
-                row[0] = node.label;
                 rows.push(row);
               }
             }
@@ -129,6 +122,27 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
         .catch(e => {
           console.error(e);
         });
+    },
+
+    __applyFilter: function(msg) {
+      const filterText = msg.getData().name;
+      const filterStudy = msg.getData().study;
+      const filter = row => {
+        const nameFilterFn = roww => {
+          const name = roww[0];
+          if (filterText.length > 1) {
+            return name.trim().toLowerCase()
+              .includes(filterText.trim().toLowerCase());
+          }
+          return true;
+        };
+        const studyFilterFn = roww => {
+          return true;
+        };
+        return nameFilterFn(row) && studyFilterFn(row);
+      };
+      const filteredData = this.__data.filter(row => filter(row));
+      this.__tree.getTableModel().setData(filteredData);
     }
   }
 });

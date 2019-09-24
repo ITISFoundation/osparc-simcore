@@ -249,8 +249,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __openActivityManager: function() {
       const activityWindow = new qx.ui.window.Window(this.tr("Activity manager")).set({
-        height: 480,
-        width: 600,
+        height: 600,
+        width: 800,
         layout: new qx.ui.layout.Grow(),
         appearance: "service-window",
         showMinimize: false,
