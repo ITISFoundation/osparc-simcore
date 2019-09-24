@@ -175,6 +175,9 @@ qx.Class.define("qxapp.file.FilesTree", {
       qxapp.file.FilesTree.addLoadingChild(rootModel);
 
       const filesStore = qxapp.store.Data.getInstance();
+      if (filesStore.hasListener("myLocations")) {
+        filesStore.removeListener("myLocations");
+      }
       filesStore.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         if (this.__locations.size === 0) {
