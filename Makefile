@@ -59,6 +59,18 @@ $(foreach v, \
 	$(info + $(v) set to '$($(v))'))
 
 
+.PHONY: help
+help: ## displays targets
+ifeq ($(IS_WIN),)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+else
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+endif
+
+.DEFAULT_GOAL := help
+
+
+
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
@@ -172,9 +184,9 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 ## DOCKER TAGS  -------------------------------
 
-.PHONY: tag-local tag-cache tag-version tag-latest tag
+.PHONY: tag-local tag-cache tag-version tag-latest
 
-tag-local: ## Tags current images as local. Used to retag pulled versions as local
+tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
 	# tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
@@ -186,7 +198,7 @@ tag-cache: ## Tags 'local/{service}:cache' images as '${DOCKER_REGISTRY}/{servic
 		,$(DOCKER) tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
-tag-version: ## Tags 'local/{service}:production' images as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	# tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
@@ -196,8 +208,6 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 	@export DOCKER_IMAGE_TAG=latest;
 	$(MAKE) tag-version
 
-
-tag: tag-version tag-latest ## Tags service images with version and latest before pushing to repo
 
 
 ## DOCKER PULL/PUSH  -------------------------------
@@ -224,11 +234,6 @@ push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
 
-
-.PHONY: release
-
-release: push-version push-latest ## Tags and pushes latest version of local/$(service):production
-	# Released version '${DOCKER_IMAGE_TAG}' to registry '${DOCKER_REGISTRY}'
 
 
 ## PYTHON -------------------------------
@@ -288,13 +293,13 @@ info: ## displays selected information
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 
-info-vars: ## displays all parameters of makefile environments
+info-vars: ## displays all parameters of makefile environments (makefile debugging)
 	$(info VARIABLES ------------)
 	$(foreach v,                                                                                  \
 		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
 		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
-	@echo "----"
+	#
 
 info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST)\
@@ -311,8 +316,6 @@ ifneq ($(SWARM_HOSTS), )
 	# networks
 	@$(DOCKER) network ls
 endif
-
-info-all: info-vars, info-images, info-swarm
 
 
 
@@ -337,14 +340,3 @@ clean-images:  ## removes all created images
 .PHONY: reset
 reset: ## restart docker daemon
 	sudo systemctl restart docker
-
-
-.PHONY: help
-help: ## display all callable targets
-ifeq ($(IS_WIN),)
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-else
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
-
-.DEFAULT_GOAL := help
