@@ -87,7 +87,7 @@ build: .env ## Builds production images and tags them as 'local/{service-name}:p
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building services
-	export BUILD_TARGET=production; \
+	@export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
 
@@ -97,16 +97,16 @@ build-nc: .env ## As build but w/o cache (alias: rebuild)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
 	# Building services
-	export BUILD_TARGET=production; \
+	@export BUILD_TARGET=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel --no-cache
 
 
 .PHONY: build-devel
 build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'
-	# Compiling front-end ('compile' target needed since productions stage in Dockerfile of webserver copies client/tools/qooxdoo-kit/build:latest)
-	$(MAKE) -C services/web/client compile compile-dev
+	# Compiling front-end
+	@$(MAKE) -C services/web/client compile-dev
 	# Building services
-	export BUILD_TARGET=development; \
+	@export BUILD_TARGET=development; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
 
@@ -116,7 +116,7 @@ build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
-	export BUILD_TARGET=cache; \
+	@export BUILD_TARGET=cache; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
 
 
