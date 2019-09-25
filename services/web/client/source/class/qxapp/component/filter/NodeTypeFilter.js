@@ -34,6 +34,9 @@ qx.Class.define("qxapp.component.filter.NodeTypeFilter", {
   },
 
   members: {
+    /**
+     * Function that uses the information in {qxapp.utils.Services} statics to build the menu for the filter.
+     */
     __buildMenu: function() {
       qxapp.utils.Services.getTypes().forEach(serviceType => this._addOption(qxapp.utils.Utils.capitalize(serviceType)));
       this._addSeparator();
