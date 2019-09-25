@@ -80,7 +80,7 @@ TEMP_COMPOSE_YML := $(if $(IS_WIN)\
 	,$(shell (New-TemporaryFile).FullName)\
 	,$(shell mktemp -d /tmp/$(SWARM_STACK_NAME)-XXXXX)/docker-compose.yml)
 
-SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
+SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
 .PHONY: build
 build: .env ## Builds production images and tags them as 'local/{service-name}:production'

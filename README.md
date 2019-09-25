@@ -47,12 +47,16 @@ A graph view of services, ports, volumes and service dependencies:
   make build
 
   # starts swarm and deploys services
-  make up
+  make up-local
+
+  # display swarm configuration
+  make info-swarm
 
   # open browser in:
   #  localhost:9081 - simcore front-end site
   #
   xdg-open http://localhost:9081/
+
 
   # stops
   make down
@@ -60,7 +64,7 @@ A graph view of services, ports, volumes and service dependencies:
 ### Requirements
 
 - docker
-- make
+- make >=4
 - python 3.6 (this dependency will be removed soon)
 - awk (optional)
 
