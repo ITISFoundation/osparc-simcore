@@ -78,7 +78,8 @@ To develop, in addition:
 
 ### Developing in **Windows**
 
-For windows users, use [WSL] (windows subsystem for linux). It is also highly recommended using [chocolatey] as packages manager.
+In windows, it works under [WSL] (windows subsystem for linux).
+It is also highly recommended using [chocolatey] as packages manager.
 
 - [Install](https://chocolatey.org/docs/installation) chocolatey
   - ``choco install docker-for-windows``

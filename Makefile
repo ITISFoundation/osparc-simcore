@@ -19,6 +19,7 @@ endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
 $(info + Detected OS : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN))
+$(if $(IS_WIN),$(warning Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.txt),)
 
 # Makefile's shell
 SHELL := $(if $(IS_WIN),powershell.exe,/bin/bash)
@@ -290,7 +291,7 @@ PHONY: setup-check
 setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
 
-.PHONY: info info-images info-swarm info-vars info-all
+.PHONY: info info-images info-swarm info-vars info-tools
 info: ## displays selected information
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
@@ -321,7 +322,7 @@ info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST)\
 		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
 	## client images:
-	$(MAKE) -C services/web/client info
+	@$(MAKE) -C services/web/client info
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
