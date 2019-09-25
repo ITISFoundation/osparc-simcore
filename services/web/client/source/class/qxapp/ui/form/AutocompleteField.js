@@ -7,7 +7,8 @@
 
 /**
  * This is a similar widget to the virtual combo box that changes the behavior of opening the search view
- * and filters the available results depending on what is written in the input. WiP
+ * and filters the available results depending on what is written in the input.
+ * WiP
  */
 qx.Class.define("qxapp.ui.form.AutocompleteField", {
   extend: qx.ui.form.VirtualComboBox,
