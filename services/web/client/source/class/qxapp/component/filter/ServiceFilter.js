@@ -5,9 +5,17 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * Filter used for filtering services. Gets the list of services and uses them as possible options for the dropdown.
+ */
 qx.Class.define("qxapp.component.filter.ServiceFilter", {
   extend: qxapp.component.filter.UIFilter,
 
+  /**
+   * Constructor takes the usual parameters, like the rest of UI filters.
+   * @param {String} filterId Id of the filter. Must be unique among the other filters in the group
+   * @param {String} groupId Group id for the group of filters
+   */
   construct: function(filterId, groupId) {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.Canvas());
