@@ -6,12 +6,10 @@ version: '3.7'
 services:
 
   apihub:
-    image: services/apihub:development
     volumes:
       - '../api:/srv/http/api'
 
   director:
-    image: services/director:development
     environment:
       - REGISTRY_CACHING=False
       - SC_BOOT_MODE=debug-ptvsd
@@ -25,7 +23,6 @@ services:
       - "3004:3000"
 
   webserver:
-    image: services/webserver:development
     volumes:
       - ./web/server:/devel/services/web/server
       - ./web/client/source-output:/devel/services/web/client
@@ -38,14 +35,12 @@ services:
       - "3001:3000"
 
   sidecar:
-    image: services/sidecar:development
     volumes:
       - ./sidecar:/devel/services/sidecar
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   storage:
-    image: services/storage:development
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages

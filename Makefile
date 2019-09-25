@@ -141,27 +141,32 @@ config: ## Creates deploy stack file for production as $(output_file) e.g. 'make
 
 .PHONY: up-devel up-prod up-version up-latest
 
+define docker_compose_config
+	$(DOCKER_COMPOSE) ${1} --log-level=ERROR config > $(TEMP_COMPOSE_YML)
+endef
+
 up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
-	@$(DOCKER_COMPOSE) $(addprefix -f services/docker-compose, .yml .devel.yml -tools.yml) config > $(TEMP_COMPOSE_YML)
-	# deploy devel stack [back-end]
+	@export DOCKER_REGISTRY=local;       \
+	export DOCKER_IMAGE_TAG=development; \
+	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml)
+	# deploy stack $(SWARM_STACK_NAME) [back-end]
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-	# start compile+watch front-end container [back-end]
+	# start compile+watch front-end container [front-end]
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 up-prod: .env .init-swarm ## Deploys local production stack and tooling
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
 	@export DOCKER_REGISTRY=local;      \
 	export DOCKER_IMAGE_TAG=production; \
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose-tools.yml config > $(TEMP_COMPOSE_YML);
+	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose-tools.yml)
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
-
 
 # FIXME: add deploy options
 up-version: .env .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
 	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
-	@$(DOCKER_COMPOSE) -f services/docker-compose.yml config > $(TEMP_COMPOSE_YML)
+	$(call docker_compose_config,-f services/docker-compose.yml)
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 
