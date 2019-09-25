@@ -75,7 +75,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     });
     this.__settingsLayout.setLayout(new qx.ui.layout.VBox());
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.__interactiveLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
     mainLayout.add(this.__initToolbar());
 
@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     __inputNodesLayout: null,
     __settingsLayout: null,
     __mapperLayout: null,
-    __iFrameLayout: null,
+    __interactiveLayout: null,
     __toolbar: null,
     __title: null,
     __buttonContainer: null,
@@ -137,7 +137,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
       this.__addSettings();
       this.__addMapper();
-      this.__addIFrame();
+      this.__addInteractiveContent();
       this.__addButtons();
     },
 
@@ -206,29 +206,29 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __addIFrame: function() {
+    __addInteractiveContent: function() {
       const iFrame = this.getNode().getIFrame();
-      this.__iFrameLayout.removeAll();
+      this.__interactiveLayout.removeAll();
       if (iFrame) {
         iFrame.addListener("maximize", e => {
-          this.__maximizeIFrame(true);
+          this.__maximizeInteractive(true);
         }, this);
         iFrame.addListener("restore", e => {
-          this.__maximizeIFrame(false);
+          this.__maximizeInteractive(false);
         }, this);
-        this.__maximizeIFrame(iFrame.hasState("maximized"));
-        this.__iFrameLayout.add(iFrame, {
+        this.__maximizeInteractive(iFrame.hasState("maximized"));
+        this.__interactiveLayout.add(iFrame, {
           flex: 1
         });
-        this.__mainLayout.add(this.__iFrameLayout, {
+        this.__mainLayout.add(this.__interactiveLayout, {
           flex: 1
         });
-      } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__iFrameLayout)) {
-        this.__mainLayout.remove(this.__iFrameLayout);
+      } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__interactiveLayout)) {
+        this.__mainLayout.remove(this.__interactiveLayout);
       }
     },
 
-    __maximizeIFrame: function(maximize) {
+    __maximizeInteractive: function(maximize) {
       const othersStatus = maximize ? "excluded" : "visible";
       this.__inputNodesLayout.setVisibility(othersStatus);
       this.__settingsLayout.setVisibility(othersStatus);
@@ -236,12 +236,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__toolbar.setVisibility(othersStatus);
     },
 
-    hasIFrame: function() {
+    __hasInteractive: function() {
       return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
     },
 
     restoreIFrame: function() {
-      if (this.hasIFrame()) {
+      if (this.__hasInteractive()) {
         const iFrame = this.getNode().getIFrame();
         if (iFrame) {
           iFrame.maximizeIFrame(false);
