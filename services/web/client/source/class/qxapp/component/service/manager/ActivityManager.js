@@ -5,9 +5,16 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * This is a sort of Task Manager or Activity Monitor for oSPARC. It provides the user with the status of the different services running
+ * (queueing, hardware usage, running status, etc) and allows to run several actions on them.
+ */
 qx.Class.define("qxapp.component.service.manager.ActivityManager", {
   extend: qx.ui.core.Widget,
 
+  /**
+   * Constructor builds the widget's interface.
+   */
   construct: function() {
     this.base(arguments);
 
@@ -23,6 +30,9 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
   members: {
     __tree: null,
     __studyFilter: null,
+    /**
+     * Creates the top bar that holds the filtering widgets.
+     */
     __createFiltersBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const filtersPart = new qx.ui.toolbar.Part();
@@ -74,6 +84,9 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       }, this);
     },
 
+    /**
+     * Creates the main view, holding an instance of {qxapp.component.service.manager.ActivityTree}.
+     */
     __createActivityTree: function() {
       const tree = this.__tree = new qxapp.component.service.manager.ActivityTree();
       this._add(tree, {
@@ -81,6 +94,9 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       });
     },
 
+    /**
+     * Creates the bottom bar, which has buttons to refresh the tree and execute different actions on selected items.
+     */
     __createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const actionsPart = new qx.ui.toolbar.Part();
@@ -99,6 +115,9 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       this._add(toolbar);
     },
 
+    /**
+     * This functions updates the tree with the most recent data.
+     */
     __updateTree: function() {
       const call = qxapp.data.Resources.get("studies");
       call.then(studies => {
