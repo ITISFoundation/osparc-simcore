@@ -43,31 +43,29 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
     mode: {
       check: "String",
       nullable: false,
-      init: "default",
+      init: "hierarchical",
       apply: "_applyMode"
     },
     data: {
       check: "Array",
-      apply: "__reload"
+      apply: "_applyData"
     }
   },
 
   statics: {
     modes: {
-      DEFAULT: "default",
-      SORTING: "sort",
-      FILTERING: "filter"
+      HIERARCHICAL: "hierarchical",
+      FLAT: "flat"
     }
   },
 
   members: {
     __model: null,
-    __data: null,
 
-    __reload: function() {
+    _applyMode: function(mode) {
       const columnModel = this.getTableColumnModel();
-      switch (this.getMode()) {
-        case this.self().modes.DEFAULT:
+      switch (mode) {
+        case this.self().modes.HIERARCHICAL:
           columnModel.setDataCellRenderer(1,
             new qx.ui.table.cellrenderer.Dynamic(cellInfo => {
               if (cellInfo.rowData[0] === qxapp.component.service.manager.ActivityManager.itemTypes.SERVICE) {
@@ -77,19 +75,22 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
             })
           );
           break;
-        case this.self().modes.SORTING:
-          break;
-        case this.self().modes.FILTERING:
+        case this.self().modes.ONLY_SERVICES:
+          columnModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Default());
           break;
       }
-      this.getTableModel().setData(this.getData(), false);
     },
 
     __applyFilter: function(msg) {
       const filterText = msg.getData().name;
       const filterStudy = msg.getData().study;
+      // Filtering function
       const filter = row => {
+        // By text
         const nameFilterFn = roww => {
+          if (roww[0] === qxapp.component.service.manager.ActivityManager.itemTypes.STUDY) {
+            return true;
+          }
           const name = roww[1];
           if (filterText.length > 1) {
             return name.trim().toLowerCase()
@@ -97,17 +98,35 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
           }
           return true;
         };
+        // By study
         const studyFilterFn = roww => {
           return true;
         };
+        // Compose functions (AND)
         return nameFilterFn(row) && studyFilterFn(row);
       };
+      // Apply filters
       const filteredData = this.getData().filter(row => filter(row));
-      this.getTableModel().setData(filteredData);
+      this.getTableModel().setData(this.__removeEmptyStudies(filteredData));
     },
 
-    _applyMode: function() {
-      this.__reload();
+    __removeEmptyStudies: function(data) {
+      return data.filter((item, index, array) => {
+        if (item[0] === qxapp.component.service.manager.ActivityManager.itemTypes.STUDY) {
+          if (index === array.length-1) {
+            return false;
+          }
+          if (item[0] === array[index+1][0]) {
+            return false;
+          }
+        }
+        return true;
+      });
+    },
+
+    _applyData: function(data) {
+      this._applyMode(this.getMode());
+      this.getTableModel().setData(data);
     }
   }
 });
