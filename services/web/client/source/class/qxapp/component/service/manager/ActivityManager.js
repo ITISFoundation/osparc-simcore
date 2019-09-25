@@ -37,7 +37,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
   members: {
     __tree: null,
     __studyFilter: null,
-    __data: null,
 
     /**
      * Creates the top bar that holds the filtering widgets.
@@ -60,10 +59,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
       this._add(toolbar);
       nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
-
-      // React to filter changes
-      const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
-      qx.event.message.Bus.getInstance().subscribe(msgName, msg => this.__applyFilter(msg), this);
     },
 
     /**
@@ -134,34 +129,12 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
               }
             }
           });
-          this.__tree.getTableModel().setData(rows, false);
+          this.__tree.setData(rows);
           this.__studyFilter.buildMenu(studies);
-          this.__data = rows;
         })
         .catch(e => {
           console.error(e);
         });
-    },
-
-    __applyFilter: function(msg) {
-      const filterText = msg.getData().name;
-      const filterStudy = msg.getData().study;
-      const filter = row => {
-        const nameFilterFn = roww => {
-          const name = roww[0];
-          if (filterText.length > 1) {
-            return name.trim().toLowerCase()
-              .includes(filterText.trim().toLowerCase());
-          }
-          return true;
-        };
-        const studyFilterFn = roww => {
-          return true;
-        };
-        return nameFilterFn(row) && studyFilterFn(row);
-      };
-      const filteredData = this.__data.filter(row => filter(row));
-      this.__tree.getTableModel().setData(filteredData);
     }
   }
 });
