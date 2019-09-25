@@ -120,7 +120,7 @@ qx.Class.define("qxapp.store.Store", {
     },
 
     /**
-     * Refactor needed. This functions does the needed processing in order to have a working list of services.
+     * This functions does the needed processing in order to have a working list of services. Could use a refactor.
      * @param {Boolean} reload ?
      */
     getServices: function(reload) {

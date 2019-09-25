@@ -5,9 +5,17 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * This is a table display the status of running services in real time. Simulates, in some cases, the behavior of a tree.
+ * Has sorting and resizing capabilities, and its UI changes depending on its display mode, that changes depending on the activated type of sorting.
+ * WiP
+ */
 qx.Class.define("qxapp.component.service.manager.ActivityTree", {
   extend: qx.ui.table.Table,
 
+  /**
+   * Constructor sets the model and general look.
+   */
   construct: function() {
     this.__model = new qx.ui.table.model.Simple();
     this.__model.setColumns([

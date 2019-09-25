@@ -9,7 +9,7 @@ qx.Class.define("qxapp.component.filter.StudyFilter", {
   extend: qxapp.component.filter.TagsFilter,
 
   /**
-   * Constructor for StudyFilter creates the filter and builds its menu.
+   * Constructor for StudyFilter simply calls its parent constructor, passing an appropriate label name.
    *
    * @extends qxapp.component.filter.TagsFilter
    */
@@ -18,6 +18,10 @@ qx.Class.define("qxapp.component.filter.StudyFilter", {
   },
 
   members: {
+    /**
+     * Builds the menu from a list of studies
+     * @param {Array} studies List of studies
+     */
     buildMenu: function(studies) {
       studies.forEach(study => this._addOption(study.name));
     }
