@@ -105,11 +105,6 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return _services_docker_compose(osparc_simcore_root_dir)
 
 
-@pytest.fixture("session")
-def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    content = _load_yaml(osparc_simcore_root_dir / "services" / "docker-compose-tools.yml")
-    return content
-
 @pytest.fixture(scope="session")
 def swarm_stack_name():
     return os.environ.get("SWARM_STACK_NAME", 'simcore')
@@ -132,12 +127,11 @@ def docker_client():
 
 
 # TESTS -------------------------------
-def test_all_services_up(docker_client, services_docker_compose, tools_docker_compose):
+def test_all_services_up(docker_client, services_docker_compose):
     running_services = docker_client.services.list()
 
     service_names = []
     service_names += services_docker_compose["services"]
-    service_names += tools_docker_compose["services"]
 
     assert len(service_names) == len(running_services)
 
@@ -202,9 +196,9 @@ async def test_core_service_running(swarm_stack_name, core_service_name, docker_
                 get_failed_tasks_logs(running_service, docker_client))
 
 
-async def test_check_serve_root(docker_client, services_docker_compose, tools_docker_compose):
+async def test_check_serve_root(docker_client, services_docker_compose):
     running_services = docker_client.services.list()
-    assert (len(services_docker_compose["services"]) + len(tools_docker_compose["services"])) == len(running_services)
+    assert len(services_docker_compose["services"]) == len(running_services)
 
     req = urllib.request.Request("http://localhost:9081/")
     try:
