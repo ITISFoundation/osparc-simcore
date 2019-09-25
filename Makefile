@@ -136,7 +136,7 @@ create-stack-file: config
 	## TODO: deprecated create-stack-file, use instead 'make config output_file=stack.yaml'
 config: ## Creates deploy stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
 	# docker-compose config for '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' -> $(output_file)
-	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.prod.yml config > $(output_file)
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.deploy.yml config > $(output_file)
 
 
 .PHONY: up-devel up-prod up-version up-latest
