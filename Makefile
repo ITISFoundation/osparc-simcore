@@ -292,7 +292,6 @@ setup-check: .env .vscode/settings.json ## checks whether setup is in sync with 
 
 .PHONY: info info-images info-swarm info-vars info-all
 info: ## displays selected information
-	@echo '+ "$(shell make --version)"'
 	@echo '+ VCS_* '
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
@@ -300,6 +299,15 @@ info: ## displays selected information
 	@echo '+ BUILD_DATE           : ${BUILD_DATE}'
 	@echo '+ DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo '+ DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
+
+info-tools: ## displays tools in place
+	# make
+	@-echo "$(shell make --version)"
+	# jq
+	@-echo "$(shell jq --version)"
+	# awk
+	@-echo "$(shell awk --version)"
+
 
 info-vars: ## displays all parameters of makefile environments (makefile debugging)
 	$(info VARIABLES ------------)
@@ -312,6 +320,8 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST)\
 		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
+	## client images:
+	$(MAKE) -C services/web/client info
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
