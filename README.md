@@ -61,16 +61,39 @@ A graph view of services, ports, volumes and service dependencies:
   # stops
   make down
 ```
-### Requirements
+
+## Requirements
 
 - docker
-- make >=4
-- python 3.6 (this dependency will be removed soon)
+- make >=4.2
 - awk (optional)
 
-For windows users, we higly recommended using [choco](https://chocolatey.org/) and [cmder](https://cmder.net/) as software manager and console.
+In addition, for development
+
+- python 3.6 (this dependency will be deprecated soon)
+- [vscode] (highly recommended)
 
 
-## Release
+### Windows
+
+For windows users, use [WSL] (windows subsystem for linux). It is also highly recommended using [chocolatey] as packages manager.
+
+- [Install](https://docs.microsoft.com/en-us/windows/wsl/install-win10) wsl
+- [Install](https://chocolatey.org/docs/installation) chocolatey
+  - install required tools (see above), e.g.
+- [Setup docker for windows and WSL](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly)
+
+
+
+## Releases
 
 - [Git release workflow](ops/README.md)
+- Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+- Production in https://osparc.io
+
+
+
+<!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
+[chocolatey]:https://chocolatey.org/
+[vscode]:https://code.visualstudio.com/
+[WSL]:https://docs.microsoft.com/en-us/windows/wsl/faq
