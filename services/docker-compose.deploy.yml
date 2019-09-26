@@ -1,4 +1,5 @@
 # docker-compose override for production cluster
+# FIXME: this is still not used in up-version
 version: '3.7'
 
 services:
