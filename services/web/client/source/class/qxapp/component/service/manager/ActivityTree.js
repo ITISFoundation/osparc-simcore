@@ -36,9 +36,12 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
 
     this._applyMode(this.getMode());
 
+    this.update();
+    setInterval(() => this.update(), 2000);
+
     // React to filter changes
     const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
-    qx.event.message.Bus.getInstance().subscribe(msgName, msg => this.__applyFilter(msg), this);
+    qx.event.message.Bus.getInstance().subscribe(msgName, msg => this._applyFilters(msg.getData()), this);
   },
 
   properties: {
@@ -63,6 +66,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
 
   members: {
     __model: null,
+    __filters: {},
 
     _applyMode: function(mode) {
       const columnModel = this.getTableColumnModel();
@@ -76,6 +80,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
               return new qxapp.ui.table.cellrenderer.Indented(0);
             })
           );
+          columnModel.setDataCellRenderer(4, new qx.ui.table.cellrenderer.Html("center"));
+          columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Html("center"));
           break;
         case this.self().modes.ONLY_SERVICES:
           columnModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Default());
@@ -83,9 +89,10 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
       }
     },
 
-    __applyFilter: function(msg) {
-      const filterText = msg.getData().name;
-      const filterStudy = msg.getData().study;
+    _applyFilters: function(filters) {
+      this.__filters = filters;
+      const filterText = filters.name;
+      const filterStudy = filters.study;
       // Filtering function
       const filter = row => {
         // By text
@@ -127,7 +134,63 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
     },
 
     _applyData: function(data) {
-      this.getTableModel().setData(data);
+      this.getTableModel().setData(data, false);
+    },
+
+    /**
+     * This functions updates the tree with the most recent data.
+     */
+    update: function() {
+      qxapp.data.Resources.get("studies")
+        .then(studies => {
+          const rows = [];
+          studies.forEach(study => {
+            let parentAdded = false;
+            for (let key in study.workbench) {
+              const node = study.workbench[key];
+              const metadata = qxapp.utils.Services.getNodeMetaData(node.key, node.version);
+              if (metadata && metadata.type === "computational") {
+                if (!parentAdded) {
+                  rows.push([qxapp.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
+                  parentAdded = true;
+                }
+                const row = [];
+                row[0] = qxapp.component.service.manager.ActivityManager.itemTypes.SERVICE;
+                row[1] = node.label;
+                if (metadata.key && metadata.key.length) {
+                  const splitted = metadata.key.split("/");
+                  row[2] = splitted[splitted.length-1];
+                }
+                const percentage = Math.floor(Math.random()*101);
+                const percentageGpu = Math.floor(Math.random()*101);
+                row[4] = "" +
+                  `<div style="position: absolute; left: 0; right: 0;">${percentage}%</div>` +
+                  `<div style="height: 100%; width: ${percentage}%; background-color: #2c7cce;"></div>`;
+                row[5] = "" +
+                  `<div style="position: absolute; left: 0; right: 0;">${percentageGpu}%</div>` +
+                  `<div style="height: 100%; width: ${percentageGpu}%; background-color: #358475;"></div>`;
+                rows.push(row);
+              }
+            }
+          });
+          this.setData(rows);
+          if (this.__hasActiveFilters()) {
+            this._applyFilters(this.__filters);
+          }
+        })
+        .catch(e => {
+          console.error(e);
+        });
+    },
+
+    __hasActiveFilters: function() {
+      if (this.__filters.name && this.__filters.name.length) {
+        return true;
+      }
+      if (this.__filters.service && this.__filters.service.length) {
+        return true;
+      }
+      return false;
     }
   }
 });

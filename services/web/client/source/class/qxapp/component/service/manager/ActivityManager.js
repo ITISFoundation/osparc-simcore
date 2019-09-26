@@ -23,8 +23,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
     this.__createFiltersBar();
     this.__createActivityTree();
     this.__createActionsBar();
-
-    this.__updateTree();
   },
 
   statics: {
@@ -84,7 +82,7 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
 
       const reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
       tablePart.add(reloadButton);
-      reloadButton.addListener("execute", () => this.__updateTree(false));
+      reloadButton.addListener("execute", () => this.__tree.update());
 
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
@@ -99,42 +97,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityManager", {
       infoButton.addListener("execute", () => qxapp.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
 
       this._add(toolbar);
-    },
-
-    /**
-     * This functions updates the tree with the most recent data.
-     */
-    __updateTree: function(useCache = true) {
-      qxapp.data.Resources.get("studies", null, useCache)
-        .then(studies => {
-          const rows = [];
-          studies.forEach(study => {
-            let parentAdded = false;
-            for (let key in study.workbench) {
-              const node = study.workbench[key];
-              const metadata = qxapp.utils.Services.getNodeMetaData(node.key, node.version);
-              if (metadata && metadata.type === "computational") {
-                if (!parentAdded) {
-                  rows.push([this.self().itemTypes.STUDY, study.name]);
-                  parentAdded = true;
-                }
-                const row = [];
-                row[0] = this.self().itemTypes.SERVICE;
-                row[1] = node.label;
-                if (metadata.key && metadata.key.length) {
-                  const splitted = metadata.key.split("/");
-                  row[2] = splitted[splitted.length-1];
-                }
-                rows.push(row);
-              }
-            }
-          });
-          this.__tree.setData(rows);
-          this.__studyFilter.buildMenu(studies);
-        })
-        .catch(e => {
-          console.error(e);
-        });
     }
   }
 });
