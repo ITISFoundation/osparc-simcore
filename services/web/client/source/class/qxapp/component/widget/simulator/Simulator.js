@@ -137,7 +137,7 @@ qx.Class.define("qxapp.component.widget.simulator.Simulator", {
       const inputNodes = this.getNode().getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         if (inputNodes[i].isInKey("remote-renderer")) {
-          const modeler = this.__modeler = new qxapp.component.widget.RemoteRenderer(inputNodes[i], null);
+          const modeler = this.__modeler = new qxapp.component.widget.RemoteRenderer(null);
           return modeler;
         }
       }
