@@ -2,27 +2,27 @@
   "libraries": [
     {
       "library_name": "qx-iconfont-fontawesome5",
-      "library_version": "0.1.1",
-      "path": "qx_packages/ITISFoundation_qx-iconfont-fontawesome5_v0_1_1",
+      "library_version": "0.1.2",
+      "path": "qx_packages/ITISFoundation_qx-iconfont-fontawesome5_v0_1_2",
       "uri": "ITISFoundation/qx-iconfont-fontawesome5",
       "repo_name": "ITISFoundation/qx-iconfont-fontawesome5",
-      "repo_tag": "v0.1.1"
+      "repo_tag": "v0.1.2"
     },
     {
       "library_name": "qx-osparc-theme",
-      "library_version": "0.4.9",
-      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_4_9",
+      "library_version": "0.4.10",
+      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_4_10",
       "uri": "ITISFoundation/qx-osparc-theme",
       "repo_name": "ITISFoundation/qx-osparc-theme",
-      "repo_tag": "v0.4.9"
+      "repo_tag": "v0.4.10"
     },
     {
       "library_name": "qx-iconfont-material",
-      "library_version": "0.1.5",
-      "path": "qx_packages/ITISFoundation_qx-iconfont-material_v0_1_5",
+      "library_version": "0.1.7",
+      "path": "qx_packages/ITISFoundation_qx-iconfont-material_v0_1_7",
       "uri": "ITISFoundation/qx-iconfont-material",
       "repo_name": "ITISFoundation/qx-iconfont-material",
-      "repo_tag": "v0.1.5"
+      "repo_tag": "v0.1.7"
     },
     {
       "library_name": "Commandline Testrunner for Qooxdoo Apps",
