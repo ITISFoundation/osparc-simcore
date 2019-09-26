@@ -1,5 +1,5 @@
 {
-  "name"    : "qxapp",
+  "name"    : "osparc",
 
   "include" :
   [
@@ -29,7 +29,7 @@
 
   "let" :
   {
-    "APPLICATION"  : "qxapp",
+    "APPLICATION"  : "osparc",
     "QOOXDOO_PATH" : "../qooxdoo-sdk/",
     "QXTHEME"      : "qx.theme.Modern",
     "API_EXCLUDE"  : ["qx.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
