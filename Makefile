@@ -154,7 +154,9 @@ up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development sta
 	# deploy stack $(SWARM_STACK_NAME) [back-end]
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
 	# start compile+watch front-end container [front-end]
+	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
+
 
 up-prod: .env .init-swarm ## Deploys local production stack and tooling
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
@@ -338,9 +340,9 @@ endif
 
 
 
-.PHONY: clean clean-images
+.PHONY: clean clean-images .check_clean
 # TODO: does not clean windows temps
-clean:   ## cleans all unversioned files in project and temp files create by this makefile
+clean:.check_clean   ## cleans all unversioned files in project and temp files create by this makefile
 	# cleaning web/client
 	@$(MAKE) -C services/web/client clean
 	# removing temps
@@ -348,12 +350,16 @@ clean:   ## cleans all unversioned files in project and temp files create by thi
 	# cleaning unversioned
 	@git clean -dxf -e .vscode/
 
-clean-images:  ## removes all created images
+clean-images:.check_clean  ## removes all created images
 	# cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,$(DOCKER) image rm -f $(shell $(DOCKER) images */$(service):* -q);)
 	# cleaning webclient
 	@$(MAKE) -C services/web/client clean
+
+.check_clean:
+	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
 
 .PHONY: reset
