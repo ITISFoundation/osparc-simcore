@@ -34,6 +34,8 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(1, 80);
     columnModel.getBehavior().setMinWidth(2, 80);
 
+    this._applyMode(this.getMode());
+
     // React to filter changes
     const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
     qx.event.message.Bus.getInstance().subscribe(msgName, msg => this.__applyFilter(msg), this);
@@ -125,7 +127,6 @@ qx.Class.define("qxapp.component.service.manager.ActivityTree", {
     },
 
     _applyData: function(data) {
-      this._applyMode(this.getMode());
       this.getTableModel().setData(data);
     }
   }
