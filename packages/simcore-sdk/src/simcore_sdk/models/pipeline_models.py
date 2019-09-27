@@ -13,7 +13,7 @@ from .base import metadata
 
 # NOTE: All this file ises classical mapping to keep LEGACY
 class Base:
-    metadata = metadata
+    metadata = metadata #pylint: disable=self-assigning-variable
 
 
 class ComputationalPipeline:

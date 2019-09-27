@@ -1,4 +1,5 @@
 # qx
+*/build-output/*
 */source-output/*
 */qx_packages/*
 
@@ -10,3 +11,6 @@ Dockerfile*
 
 # markdown
 *.md
+
+# hidden files
+.*/
