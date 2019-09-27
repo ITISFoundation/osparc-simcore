@@ -520,8 +520,7 @@ async def _get_service_key_version_from_docker_service(service: Dict) -> Tuple[s
 
 async def _get_service_basepath_from_docker_service(service: Dict) -> str:
     envs_list = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
-    envs_dict = {key: value for key, value in (
-        x.split("=") for x in envs_list)}
+    envs_dict = dict(x.split("=") for x in envs_list)
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
 async def start_service(app: aiohttp.web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:

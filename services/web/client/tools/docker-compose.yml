@@ -1,0 +1,18 @@
+#
+# Used in development to compile source code using a running qooxdoo-kit container
+#
+version: '3.4'
+services:
+  qooxdoo-kit:
+    image: itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
+    volumes:
+      - '../:/project'
+    ports:
+      - '8080:8080'
+    working_dir: /project
+    command: >
+      qx serve --set qx.allowUrlSettings=true
+        --set osparc.vcsOriginUrl='"${VCS_URL}"'
+        --set osparc.vcsRef='"${VCS_REF}"'
+        --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+        --set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'

@@ -33,6 +33,11 @@
 ![service-web](docs/img/service-interaction.svg)
 
 
+A graph view of services, ports, volumes and service dependencies:
+![](docs/img/docker-compose-wo-networks.png)
+
+## Usage
+
 ```bash
   # clone repo
   git clone https://github.com/ITISFoundation/osparc-simcore.git
@@ -42,17 +47,57 @@
   make build
 
   # starts swarm and deploys services
-  make up
+  make up-local
+
+  # display swarm configuration
+  make info-swarm
 
   # open browser in:
   #  localhost:9081 - simcore front-end site
   #
   xdg-open http://localhost:9081/
 
+
   # stops
   make down
 ```
 
-## Release workflow
+## Requirements
 
-[Git release workflow](ops/README.md)
+To build and run:
+
+- docker
+- make >=4.2
+- awk, jq (optional tools within makefiles)
+
+To develop, in addition:
+
+- python 3.6 (this dependency will be deprecated soon)
+- [vscode] (highly recommended)
+
+
+### Developing in **Windows**
+
+In windows, it works under [WSL] (windows subsystem for linux).
+It is also highly recommended using [chocolatey] as packages manager.
+
+- [Install](https://chocolatey.org/docs/installation) chocolatey
+  - ``choco install docker-for-windows``
+  - ``choco install wsl`` or using [instructions](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+-  Follow **all details** on [how to setup flawlessly](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) docker for windows and [WSL]
+
+
+## Releases
+
+- [Git release workflow](ops/README.md)
+- Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+- Production in https://osparc.io
+
+
+
+
+
+<!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
+[chocolatey]:https://chocolatey.org/
+[vscode]:https://code.visualstudio.com/
+[WSL]:https://docs.microsoft.com/en-us/windows/wsl/faq
