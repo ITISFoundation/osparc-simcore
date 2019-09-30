@@ -136,57 +136,68 @@ SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
 
 .docker-compose-development.yml: .env $(docker-compose-configs)
-	# creating config for stack with 'local/{service}:development' to $@
+	# Creating config for stack with 'local/{service}:development' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=development; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
 
 .docker-compose-production.yml: .env $(docker-compose-configs)
-	# creating config for stack with 'local/{service}:production' to $@
+	# Creating config for stack with 'local/{service}:production' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=production; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
 .docker-compose-version.yml: .env $(docker-compose-configs)
-	# creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
+	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
 	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
 
+.PHONY: up-devel up-prod up-version up-latest up-tools
 
-.PHONY: up-devel up-prod up-version up-latest
+define deploy_tools
+	@$(DOCKER) stack deploy -c services/docker-compose-tools.yml tools
+endef
 
 up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
-	# deploy stack $(SWARM_STACK_NAME) [back-end]
+	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@$(DOCKER) stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
-	# start compile+watch front-end container [front-end]
+	# Deploy stack 'tools'
+	@$(call deploy_tools)
+	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 
 up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and tooling
-	# deploy stack $(SWARM_STACK_NAME)
+	# Deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
+	# Deploy stack 'tools'
+	@$(call deploy_tools)
 
 
 up-version: .docker-compose-version.yml .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
-	# deploy stack $(SWARM_STACK_NAME)
+	# Deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
+	# Deploy stack 'tools'
+	@$(call deploy_tools)
 
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
 
-
 up-tools: .init-swarm ## Deploys tools
-	@$(DOCKER) stack deploy -c services/docker-compose-tools.yml tools
-
+	@$(call deploy_tools)
 
 
 .PHONY: down leave
 down: ## Stops and removes stack
 	# Removing stack '$(SWARM_STACK_NAME)'
 	-$(DOCKER) stack rm $(SWARM_STACK_NAME)
+	# Removing stack 'tools'
+	-$(DOCKER) stack rm tools
+	# Removing client containers (if any)
+	-$(MAKE) -C services/web/client down
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-$(DOCKER) swarm leave -f
@@ -203,19 +214,19 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .PHONY: tag-local tag-cache tag-version tag-latest
 
 tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
-	# tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
+	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
 	)
 
 tag-cache: ## Tags 'local/{service}:cache' images as '${DOCKER_REGISTRY}/{service}:cache'
-	# tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
+	# Tagging all 'local/{service}:cache' as '${DOCKER_REGISTRY}/{service}:cache'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag local/$(service):cache ${DOCKER_REGISTRY}/$(service):cache; \
 	)
 
 tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	# tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# Tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(foreach service, $(SERVICES_LIST)\
 		,$(DOCKER) tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
 	)
@@ -233,7 +244,7 @@ pull-cache: .env
 	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull-version
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
-	# pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(DOCKER_COMPOSE) -f services/docker-compose.yml pull
 
 
@@ -247,7 +258,7 @@ push-latest: tag-latest
 	$(MAKE) push-version
 
 push-version: tag-version
-	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# Pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
 
 
@@ -328,18 +339,18 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST)\
 		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
-	## client images:
+	## Client images:
 	@$(MAKE) -C services/web/client info
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
-	# stacks in swarm
+	# Stacks in swarm
 	@$(DOCKER) stack ls
-	# containers (tasks) running in '$(SWARM_STACK_NAME)' stack
+	# Containers (tasks) running in '$(SWARM_STACK_NAME)' stack
 	-@$(DOCKER) stack ps $(SWARM_STACK_NAME)
-	# services in '$(SWARM_STACK_NAME)' stack
+	# Services in '$(SWARM_STACK_NAME)' stack
 	-@$(DOCKER) stack services $(SWARM_STACK_NAME)
-	# networks
+	# Networks
 	@$(DOCKER) network ls
 endif
 
@@ -348,18 +359,18 @@ endif
 .PHONY: clean clean-images .check_clean
 # TODO: does not clean windows temps
 clean:.check_clean   ## cleans all unversioned files in project and temp files create by this makefile
-	# cleaning web/client
+	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
-	# removing temps
+	# Removing temps
 	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME)*)
-	# cleaning unversioned
+	# Cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 clean-images:.check_clean  ## removes all created images
-	# cleaning all service images
+	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,$(DOCKER) image rm -f $(shell $(DOCKER) images */$(service):* -q);)
-	# cleaning webclient
+	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
 
 .check_clean:

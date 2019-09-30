@@ -1,4 +1,6 @@
 # Separate stack with some of the services deployed in osparc-ops
+# This stack IS NOT used in the deployed version
+#
 version: '3.7'
 
 services:
@@ -19,6 +21,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
 
+  # TODO: sync with https://github.com/ITISFoundation/osparc-ops/tree/master/services/minio
   minio:
     image: minio/minio:RELEASE.2019-09-18T21-55-05Z
     init: true
@@ -29,19 +32,23 @@ services:
       - "9001:9000"
     command: server /data
     volumes:
-      - minio:/data
+      - minio_data:/data
     networks:
       - simcore_default
       - interactive_services_subnet
       - computational_services_subnet
 
 volumes:
-  minio: {}
-
-volumes:
+  minio_data: {}
   portainer_data: {}
 
 networks:
   simcore_default:
-    name: ${STACK_NAME}
+    name: ${SWARM_STACK_NAME}_default
+    external: true
+  interactive_services_subnet:
+    name: ${SWARM_STACK_NAME}_interactive_services_subnet
+    external: true
+  computational_services_subnet:
+    name: ${SWARM_STACK_NAME}_computational_services_subnet
     external: true
