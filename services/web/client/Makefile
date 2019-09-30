@@ -34,6 +34,10 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} .
 
 
+.PHONY: down
+down: ## tear down docker-compose
+	@${docker_compose} down
+
 # qx serve --------------------------
 
 define qx_serve =
