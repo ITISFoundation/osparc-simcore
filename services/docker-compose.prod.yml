@@ -1,0 +1,60 @@
+# Overrides docker-compose.yml config to deploy production images in-place
+#
+#
+version: "3.7"
+services:
+
+  apihub:
+    ports:
+      - "8043"
+
+  director:
+    ports:
+      - "8080"
+
+  webserver:
+    ports:
+      - ${SIMCORE_PORT:-9081}:8080
+    depends_on:
+      - minio
+
+  sidecar:
+    depends_on:
+      - minio
+
+  storage:
+    ports:
+      - "8080"
+    depends_on:
+      - minio
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+    networks:
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
+
+  postgres:
+    ports:
+      - "5432"
+
+  minio:
+    image: minio/minio:RELEASE.2019-05-14T23-57-45Z
+    init: true
+    environment:
+      - MINIO_ACCESS_KEY=12345678
+      - MINIO_SECRET_KEY=12345678
+    ports:
+      - "9001:9000"
+    command: server /data
+    volumes:
+      - minio:/data
+    networks:
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
+
+volumes:
+  minio: {}

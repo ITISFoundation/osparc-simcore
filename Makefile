@@ -162,9 +162,10 @@ up-prod: .env .init-swarm ## Deploys local production stack and tooling
 	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
 	@export DOCKER_REGISTRY=local;      \
 	export DOCKER_IMAGE_TAG=production; \
-	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose-tools.yml)
+	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose.prod.yml -f services/docker-compose-tools.yml)
 	# deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+
 
 # FIXME: add deploy options
 up-version: .env .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
