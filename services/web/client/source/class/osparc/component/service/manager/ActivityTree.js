@@ -39,9 +39,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     this.update();
     setInterval(() => this.update(), 2000);
 
-    // React to filter changes
-    const msgName = osparc.utils.Utils.capitalize("activityMonitor", "filter");
-    qx.event.message.Bus.getInstance().subscribe(msgName, msg => this._applyFilters(msg.getData()), this);
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -83,7 +81,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
           columnModel.setDataCellRenderer(4, new qx.ui.table.cellrenderer.Html("center"));
           columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Html("center"));
           break;
-        case this.self().modes.ONLY_SERVICES:
+        case this.self().modes.FLAT:
           columnModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Default());
           break;
       }
@@ -150,8 +148,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               const node = study.workbench[key];
               const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
               if (metadata && metadata.type === "computational") {
-                if (!parentAdded) {
-                  rows.push([osparc.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
+                if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
+                  rows.push([qxapp.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
                   parentAdded = true;
                 }
                 const row = [];
@@ -191,6 +189,18 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         return true;
       }
       return false;
+    },
+
+    __attachEventHandlers: function() {
+      // React to filter changes
+      const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
+      qx.event.message.Bus.getInstance().subscribe(msgName, msg => this._applyFilters(msg.getData()), this);
+
+      this.__model.addListener("sorted", e => {
+        console.log(e);
+        this.setMode(this.self().modes.FLAT);
+        this.update();
+      });
     }
   }
 });
