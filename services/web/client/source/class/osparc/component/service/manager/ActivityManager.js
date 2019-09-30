@@ -80,9 +80,9 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       toolbar.addSpacer();
       toolbar.add(actionsPart);
 
-      const reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
+      const reloadButton = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/sync-alt/14");
       tablePart.add(reloadButton);
-      reloadButton.addListener("execute", () => this.__tree.update());
+      reloadButton.addListener("execute", () => this.__tree.reset());
 
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);

@@ -19,12 +19,12 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
   construct: function(data) {
     this.__model = new qx.ui.table.model.Simple();
     this.__model.setColumns([
-      "Type",
-      "Node",
-      "Service",
-      "Status",
-      "CPU usage",
-      "GPU usage"
+      this.tr("Type"),
+      this.tr("Node"),
+      this.tr("Service"),
+      this.tr("Status"),
+      this.tr("CPU usage"),
+      this.tr("GPU usage")
     ]);
     this.base(arguments, this.__model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
@@ -37,7 +37,6 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     this._applyMode(this.getMode());
 
     this.update();
-    setInterval(() => this.update(), 2000);
 
     this.__attachEventHandlers();
   },
@@ -65,6 +64,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
   members: {
     __model: null,
     __filters: {},
+    __sorting: {},
 
     _applyMode: function(mode) {
       const columnModel = this.getTableColumnModel();
@@ -114,7 +114,14 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       };
       // Apply filters
       const filteredData = this.getData().filter(row => filter(row));
-      this.getTableModel().setData(this.__removeEmptyStudies(filteredData));
+      this.getTableModel().setData(this.__removeEmptyStudies(filteredData), false);
+      if (this.__hasActiveSorting()) {
+        const {
+          columnIndex,
+          ascending
+        } = this.__sorting;
+        this.getTableModel().sortByColumn(columnIndex, ascending);
+      }
     },
 
     __removeEmptyStudies: function(data) {
@@ -129,6 +136,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         }
         return true;
       });
+    },
+
+    __removeStudies(data) {
+      return data.filter(item => item[0] !== osparc.component.service.manager.ActivityManager.itemTypes.STUDY);
     },
 
     _applyData: function(data) {
@@ -149,7 +160,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
               if (metadata && metadata.type === "computational") {
                 if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
-                  rows.push([qxapp.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
+                  rows.push([osparc.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
                   parentAdded = true;
                 }
                 const row = [];
@@ -175,6 +186,13 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
           if (this.__hasActiveFilters()) {
             this._applyFilters(this.__filters);
           }
+          if (this.__hasActiveSorting()) {
+            const {
+              columnIndex,
+              ascending
+            } = this.__sorting;
+            this.__model.sortByColumn(columnIndex, ascending);
+          }
         })
         .catch(e => {
           console.error(e);
@@ -191,16 +209,30 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       return false;
     },
 
+    __hasActiveSorting: function() {
+      if (Object.keys(this.__sorting).length) {
+        return true;
+      }
+      return false;
+    },
+
+    reset: function() {
+      this.__sorting = {};
+      this.getTableModel().clearSorting();
+      this.setMode(this.self().modes.HIERARCHICAL);
+      this.update();
+    },
+
     __attachEventHandlers: function() {
       // React to filter changes
-      const msgName = qxapp.utils.Utils.capitalize("activityMonitor", "filter");
+      const msgName = osparc.utils.Utils.capitalize("activityMonitor", "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, msg => this._applyFilters(msg.getData()), this);
 
       this.__model.addListener("sorted", e => {
-        console.log(e);
+        this.__sorting = e.getData();
         this.setMode(this.self().modes.FLAT);
-        this.update();
-      });
+        this.getTableModel().setData(this.__removeStudies(this.getTableModel().getData()), false);
+      }, this);
     }
   }
 });
