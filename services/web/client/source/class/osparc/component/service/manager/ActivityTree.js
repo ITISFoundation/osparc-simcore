@@ -34,6 +34,9 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(1, 80);
     columnModel.getBehavior().setMinWidth(2, 80);
 
+    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
+    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475"));
+
     this._applyMode(this.getMode());
 
     this.update();
@@ -78,8 +81,6 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               return new osparc.ui.table.cellrenderer.Indented(0);
             })
           );
-          columnModel.setDataCellRenderer(4, new qx.ui.table.cellrenderer.Html("center"));
-          columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Html("center"));
           break;
         case this.self().modes.FLAT:
           columnModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Default());
@@ -172,12 +173,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 }
                 const percentage = Math.floor(Math.random()*101);
                 const percentageGpu = Math.floor(Math.random()*101);
-                row[4] = "" +
-                  `<div style="position: absolute; left: 0; right: 0;">${percentage}%</div>` +
-                  `<div style="height: 100%; width: ${percentage}%; background-color: #2c7cce;"></div>`;
-                row[5] = "" +
-                  `<div style="position: absolute; left: 0; right: 0;">${percentageGpu}%</div>` +
-                  `<div style="height: 100%; width: ${percentageGpu}%; background-color: #358475;"></div>`;
+                row[4] = percentage;
+                row[5] = percentageGpu;
                 rows.push(row);
               }
             }
