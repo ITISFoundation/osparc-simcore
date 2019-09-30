@@ -50,6 +50,8 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    stdin_open: true
+    tty: true
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -61,8 +63,6 @@ services:
       - WEBSERVER_LOGLEVEL=INFO
     env_file:
       - ../.env
-    stdin_open: true
-    tty: true
     depends_on:
       - apihub
       - postgres
@@ -120,6 +120,8 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    stdin_open: true
+    tty: true
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -138,8 +140,6 @@ services:
       - S3_SECURE=${S3_SECURE}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
-    stdin_open: true
-    tty: true
     depends_on:
       - postgres
       - apihub

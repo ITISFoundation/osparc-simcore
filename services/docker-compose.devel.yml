@@ -1,6 +1,5 @@
-# Overrides docker-compose.yml for development mode
-# Usage:
-#   docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
+# Overrides docker-compose.yml config when deploying services in development mode,
+#  i.e. binding with source code in source
 #
 version: '3.7'
 services:
@@ -27,8 +26,6 @@ services:
       - ./web/server:/devel/services/web/server
       - ./web/client/source-output:/devel/services/web/client
       - ../packages:/devel/packages
-    stdin_open: true
-    tty: true
     environment:
       - SC_BOOT_MODE=debug-ptvsd
     ports:

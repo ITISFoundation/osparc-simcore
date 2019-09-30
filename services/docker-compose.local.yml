@@ -1,0 +1,8 @@
+# Overrides docker-compose.yml config when deploying services locally
+#
+version: "3.7"
+services:
+
+  webserver:
+    ports:
+      - ${SIMCORE_PORT:-9081}:8080

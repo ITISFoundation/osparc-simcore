@@ -131,52 +131,56 @@ TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
 TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName,mktemp $(if $(IS_OSX),-t ,--suffix=)$(TEMP_SUFFIX)))
 SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 
+# docker-compose configs---
 
-.PHONY: config
-create-stack-file: config
-	## TODO: deprecated create-stack-file, use instead 'make config output_file=stack.yaml'
-config: ## Creates deploy stack file for production as $(output_file) e.g. 'make config output_file=stack.yaml'
-	# docker-compose config for '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' -> $(output_file)
-	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.deploy.yml config > $(output_file)
+docker-compose-configs = $(wildcard services/docker-compose*.yml)
+
+.docker-compose-development.yml: .env $(docker-compose-configs)
+	# creating config for stack with 'local/{service}:development' to $@
+	@export DOCKER_REGISTRY=local;       \
+	export DOCKER_IMAGE_TAG=development; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
+
+.docker-compose-production.yml: .env $(docker-compose-configs)
+	# creating config for stack with 'local/{service}:production' to $@
+	@export DOCKER_REGISTRY=local;       \
+	export DOCKER_IMAGE_TAG=production; \
+	$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
+
+.docker-compose-version.yml: .env $(docker-compose-configs)
+	# creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
+	@$(DOCKER_COMPOSE) -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
+
 
 
 .PHONY: up-devel up-prod up-version up-latest
 
-define docker_compose_config
-	$(DOCKER_COMPOSE) ${1} --log-level=ERROR config > $(TEMP_COMPOSE_YML)
-endef
-
-up-devel: .env .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
-	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:development'
-	@export DOCKER_REGISTRY=local;       \
-	export DOCKER_IMAGE_TAG=development; \
-	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose-tools.yml)
+up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# deploy stack $(SWARM_STACK_NAME) [back-end]
-	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
 	# start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
 
-up-prod: .env .init-swarm ## Deploys local production stack and tooling
-	# config stack to $(TEMP_COMPOSE_YML) with 'local/{service}:production' and tools
-	@export DOCKER_REGISTRY=local;      \
-	export DOCKER_IMAGE_TAG=production; \
-	$(call docker_compose_config,-f services/docker-compose.yml -f services/docker-compose.prod.yml -f services/docker-compose-tools.yml)
+up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and tooling
 	# deploy stack $(SWARM_STACK_NAME)
-	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
 
 
-# FIXME: add deploy options
-up-version: .env .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
-	# config stack to $(TEMP_COMPOSE_YML) with '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
-	$(call docker_compose_config,-f services/docker-compose.yml)
+up-version: .docker-compose-version.yml .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
 	# deploy stack $(SWARM_STACK_NAME)
-	@$(DOCKER) stack deploy -c $(TEMP_COMPOSE_YML) $(SWARM_STACK_NAME)
+	@$(DOCKER) stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
+
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
+
+
+up-tools: .init-swarm ## Deploys tools
+	@$(DOCKER) stack deploy -c services/docker-compose-tools.yml tools
+
 
 
 .PHONY: down leave
