@@ -167,7 +167,6 @@ up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## De
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
-
 up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and tooling
 	# Deploy stack $(SWARM_STACK_NAME)
 	@$(DOCKER) stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
@@ -336,9 +335,14 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 	)
 	#
 
+info-image: ## list image tags and labels for a given service. E.g. make info-image service=webserver
+	## $(service) images:
+	@$(foreach iid,$(shell $(DOCKER) images */$(service):* -q),\
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
+
 info-images:  ## lists created images (mostly for debugging makefile)
-	@$(foreach service,$(SERVICES_LIST)\
-		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
+	@$(foreach service,$(SERVICES_LIST),\
+		echo "## $(service) images:";$(DOCKER) images */$(service):*;)
 	## Client images:
 	@$(MAKE) -C services/web/client info
 
