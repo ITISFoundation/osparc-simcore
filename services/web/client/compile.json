@@ -42,7 +42,7 @@
         ]
       },
       "include": [
-        "qxapp.*"
+        "osparc.*"
       ],
       "exclude": [
         "qx.test.*",
@@ -53,13 +53,13 @@
     {
       "class": "qxl.testtapper.Application",
       "name": "testtapper",
-      "theme": "qxapp.theme.Theme",
+      "theme": "osparc.theme.Theme",
       "title": "Qooxdoo TestTAPper",
       "environment": {
         "qx.icontheme": "Tango"
       },
       "include": [
-        "qxapp.test.*",
+        "osparc.test.*",
         "iconfont.material.Load"
       ],
       "exclude": [
