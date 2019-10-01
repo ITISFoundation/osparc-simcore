@@ -150,7 +150,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
-      let workbench = this.getStudy().getWorkbench();
+      const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("retrieveInputs", e => {
