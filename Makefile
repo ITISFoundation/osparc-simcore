@@ -77,9 +77,6 @@ endif
 # - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
-TEMP_COMPOSE_YML := $(if $(IS_WIN)\
-	,$(shell (New-TemporaryFile).FullName)\
-	,$(shell mktemp -d /tmp/$(SWARM_STACK_NAME)-XXXXX)/docker-compose.yml)
 
 SWARM_HOSTS = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
@@ -127,8 +124,6 @@ $(CLIENT_WEB_OUTPUT):
 
 
 ## DOCKER SWARM -------------------------------
-TEMP_SUFFIX      := $(strip $(SWARM_STACK_NAME)_docker-compose.yml)
-TEMP_COMPOSE_YML := $(shell $(if $(IS_WIN), (New-TemporaryFile).FullName,mktemp $(if $(IS_OSX),-t ,--suffix=)$(TEMP_SUFFIX)))
 SWARM_HOSTS       = $(shell $(DOCKER) node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 
 # docker-compose configs---
@@ -376,8 +371,6 @@ endif
 clean:.check_clean   ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
-	# Removing temps
-	@-rm -rf $(wildcard /tmp/$(SWARM_STACK_NAME)*)
 	# Cleaning unversioned
 	@git clean -dxf -e .vscode/
 
