@@ -86,13 +86,14 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
     assert env_file.parent == osparc_simcore_root_dir
 
     # target docker-compose path
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
-    assert docker_compose_path.exists()
+    docker_compose_paths = [osparc_simcore_root_dir / "services" / filename
+        for filename in ("docker-compose.yml", "services/docker-compose.local.yml")]
+    assert all(docker_compose_path.exists() for docker_compose_path in docker_compose_paths)
 
     # path to resolved docker-compose
     destination_path = temp_folder / "simcore_docker_compose.yml"
 
-    config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
+    config = _run_docker_compose_config(docker_compose_paths, destination_path, osparc_simcore_root_dir)
     return config
 
 
@@ -184,10 +185,16 @@ def _filter_services_and_dump(include: List, services_compose: Dict, docker_comp
         yaml.dump(content, f, default_flow_style=False)
 
 
-def _run_docker_compose_config(docker_compose_path: Path, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
+def _run_docker_compose_config(docker_compose_paths, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
+
+    if not isinstance(docker_compose_paths, list):
+        docker_compose_paths = [docker_compose_paths, ]
+
+    config_paths = [ f"-f {os.path.relpath(docker_compose_path, osparc_simcore_root_dir)}" for docker_compose_path in docker_compose_paths]
+    configs_prefix = " ".join(config_paths)
+
     # TODO: use instead python api of docker-compose!
-    config_path = os.path.relpath(docker_compose_path, osparc_simcore_root_dir)
-    subprocess.run( f"docker-compose -f {config_path} config > {destination_path}",
+    subprocess.run( f"docker-compose {configs_prefix} config > {destination_path}",
         shell=True, check=True,
         cwd=osparc_simcore_root_dir)
 
