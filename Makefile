@@ -257,10 +257,13 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest;
 	$(MAKE) push-version
 
+# NOTE: docker-compose only pushes images with a 'build' section.
+# TODO: change to docker-compose push when make config-version available
 push-version: tag-version
-	# Pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
-
+	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) push ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
+	)
 
 
 ## PYTHON -------------------------------
@@ -336,9 +339,21 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 	)
 	#
 
+define show-meta
+	$(foreach iid,$(shell $(DOCKER) images */$(1):* -q | sort | uniq),\
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
+endef
+
+info-image: ## list image tags and labels for a given service. E.g. make info-image service=webserver
+	## $(service) images:
+	$(call show-meta, $(service))
+
 info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST),\
-		echo "## $(service) images:";$(DOCKER) images */$(service):*;)
+		echo "## $(service) images:";\
+			$(DOCKER) images */$(service):*;\
+			$(call show-meta,$(service))\
+		)
 	## Client images:
 	@$(MAKE) -C services/web/client info
 

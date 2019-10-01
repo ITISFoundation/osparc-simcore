@@ -91,7 +91,7 @@ help: ## this colorful help
 .DEFAULT_GOAL := help
 
 .PHONY: clean
-clean: ## clean start
+clean: ## Forces clean of all outputs (files and images)
 	# tear down docker-compose
 	@${docker_compose} down
 	# remove build
