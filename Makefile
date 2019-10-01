@@ -242,10 +242,12 @@ push-latest: tag-latest
 	$(MAKE) push-version
 
 # NOTE: docker-compose only pushes images with a 'build' section.
+# TODO: change to docker-compose push when make config-version available
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.yml push
-
+	$(foreach service, $(SERVICES_LIST)\
+		,$(DOCKER) push ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
+	)
 
 
 ## PYTHON -------------------------------
