@@ -241,9 +241,10 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest;
 	$(MAKE) push-version
 
+# NOTE: docker-compose only pushes images with a 'build' section.
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	$(DOCKER_COMPOSE) -f services/docker-compose.yml push
+	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml -f services/docker-compose.yml push
 
 
 
@@ -320,10 +321,15 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 	)
 	#
 
+info-image: ## list image tags and labels for a given service. E.g. make info-image service=webserver
+	## $(service) images:
+	@$(foreach iid,$(shell $(DOCKER) images */$(service):* -q),\
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
+
 info-images:  ## lists created images (mostly for debugging makefile)
-	@$(foreach service,$(SERVICES_LIST)\
-		, echo "## $(service) images:"; $(DOCKER) images */$(service):*;)
-	## client images:
+	@$(foreach service,$(SERVICES_LIST),\
+		echo "## $(service) images:";$(DOCKER) images */$(service):*;)
+	## Client images:
 	@$(MAKE) -C services/web/client info
 
 info-swarm: ## displays info about stacks and networks
