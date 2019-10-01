@@ -161,7 +161,14 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
               if (metadata && metadata.type === "computational") {
                 if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
-                  rows.push([osparc.component.service.manager.ActivityManager.itemTypes.STUDY, study.name]);
+                  rows.push([
+                    osparc.component.service.manager.ActivityManager.itemTypes.STUDY,
+                    study.name,
+                    "",
+                    "",
+                    -1,
+                    -1
+                  ]);
                   parentAdded = true;
                 }
                 const row = [];
