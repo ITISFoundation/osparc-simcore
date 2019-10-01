@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import pytest
 import yaml
@@ -44,6 +44,10 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
         env_devel['REGISTRY_PW'] = ""
     if 'REGISTRY_AUTH' in env_devel:
         env_devel['REGISTRY_AUTH'] = False
+
+    if 'SWARM_STACK_NAME' not in os.environ:
+        env_devel['SWARM_STACK_NAME'] = "simcore"
+
     return env_devel
 
 @pytest.fixture(scope="module")
@@ -51,100 +55,83 @@ def temp_folder(request, tmpdir_factory) -> Path:
     tmp = Path(tmpdir_factory.mktemp("docker_compose_{}".format(request.module.__name__)))
     yield tmp
 
+@pytest.fixture(scope="module")
+def env_file(osparc_simcore_root_dir, devel_environ):
+    # ensures .env at git_root_dir
+    env_path = osparc_simcore_root_dir / ".env"
+    backup_path = osparc_simcore_root_dir / ".env-bak"
+    if env_path.exists():
+        shutil.copy(env_path, backup_path)
 
-@pytest.fixture("module")
-def osparc_simcore_docker_compose_all(osparc_simcore_root_dir, devel_environ, temp_folder):
-    """ Runs config on full docker-compose stack and resolves paths, environs, etc
+    with env_path.open('wt') as fh:
+        print(f"# TEMPORARY .env auto-generated from env_path in {__file__}")
+        for key, value in devel_environ.items():
+            print(f"{key}={value}", file=fh)
 
-    """
-    destination_path = temp_folder / "docker-compose-all.yml"
-    try:
-        # composes list
-        docker_compose_paths = [ osparc_simcore_root_dir / "services" / file_name
-            for file_name in [
-                "docker-compose.yml",
-                "docker-compose-tools.yml"]
-            ]
+    yield env_path
 
-        assert all([p.exists() for p in docker_compose_paths])
-
-        options = " ".join('-f "{}"'.format(os.path.relpath(docker_compose_path, osparc_simcore_root_dir))
-            for docker_compose_path in docker_compose_paths )
-
-        # ensures .env at git_root_dir
-        env_path = osparc_simcore_root_dir / ".env"
-        backup_path = osparc_simcore_root_dir / ".env-bak"
-        if env_path.exists():
-            shutil.copy(env_path, backup_path)
-
-        with env_path.open('wt') as fh:
-            print(f"# TEMPORARY .env auto-generated from env_path in {__file__}")
-            for key, value in devel_environ.items():
-                print(f"{key}={value}", file=fh)
-
-        # TODO: use instead python api of docker-compose!
-        cmd = f"docker-compose {options} config > {destination_path}"
-        process = subprocess.run(
-                cmd,
-                shell=True, check=True,
-                cwd=osparc_simcore_root_dir
-            )
-        assert process.returncode == 0, "Error in '{}'. Typically service dependencies missing. Check stdout/err for more details.".format(cmd)
-
-    finally:
-        env_path.unlink()
-        if backup_path.exists():
-            shutil.copy(backup_path, env_path)
-            backup_path.unlink()
-
-    content = {}
-    # docker-compose config resolves nicely paths and environs, etc
-    with destination_path.open() as f:
-        content = yaml.safe_load(f)
-    return content
+    env_path.unlink()
+    if backup_path.exists():
+        shutil.copy(backup_path, env_path)
+        backup_path.unlink()
 
 
 @pytest.fixture("module")
-def services_docker_compose(osparc_simcore_root_dir, osparc_simcore_docker_compose_all) -> Dict[str, str]:
-    """ Filters only services in services/docker-compose.yml
+def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
+    """ Resolves services/docker-compose.yml and returns yaml data
 
     """
+    # ensures .env at git_root_dir
+    assert env_file.exists()
+    assert env_file.parent == osparc_simcore_root_dir
+
+    # target docker-compose path
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert docker_compose_path.exists()
 
-    content = _filter_docker_compose(docker_compose_path, osparc_simcore_docker_compose_all)
-    return content
+    # path to resolved docker-compose
+    destination_path = temp_folder / "simcore_docker_compose.yml"
+
+    config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
+    return config
 
 
 @pytest.fixture("module")
-def tools_docker_compose(osparc_simcore_root_dir, osparc_simcore_docker_compose_all) -> Dict[str, str]:
-    """ Filters only services in docker-compose-tools.yml
+def tools_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
+    """ Filters only services in docker-compose-tools.yml and returns yaml data
 
     """
+    # ensures .env at git_root_dir
+    assert env_file.exists()
+    assert env_file.parent == osparc_simcore_root_dir
+
+    # target docker-compose path
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-tools.yml"
     assert docker_compose_path.exists()
 
-    content = _filter_docker_compose(docker_compose_path, osparc_simcore_docker_compose_all)
-    return content
+    # path to resolved docker-compose
+    destination_path = temp_folder / "tools_docker_compose.yml"
+
+    config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
+    return config
+
 
 
 @pytest.fixture(scope='module')
-def docker_compose_file(request, temp_folder, services_docker_compose):
-    """ Creates a docker-compose.yml with services listed in 'core_services' module variable
+def docker_compose_file(request, temp_folder, simcore_docker_compose):
+    """ A copy of simcore_docker_compose filtered with services in core_services
+
+        Creates a docker-compose.yml with services listed in 'core_services' module variable
         File is created in a temp folder
 
         Overrides pytest-docker fixture
     """
     core_services = getattr(request.module, 'core_services', []) # TODO: PC->SAN could also be defined as a fixture (as with docker_compose)
-    docker_compose_path = Path(temp_folder / 'docker-compose.core_services.yml')
+    docker_compose_path = Path(temp_folder / 'simcore_docker_compose.filtered.yml')
 
-    _filter_services_and_dump(core_services, services_docker_compose, docker_compose_path)
+    _filter_services_and_dump(core_services, simcore_docker_compose, docker_compose_path)
 
-    yield docker_compose_path
-
-    # cleanup if not failed
-    docker_compose_path.unlink()
-
+    return docker_compose_path
 
 @pytest.fixture(scope='module')
 def tools_docker_compose_file(request, temp_folder, tools_docker_compose):
@@ -152,14 +139,14 @@ def tools_docker_compose_file(request, temp_folder, tools_docker_compose):
         File is created in a temp folder
     """
     tool_services = getattr(request.module, 'tool_services', [])
-    docker_compose_path = Path(temp_folder / 'docker-compose.tool_services.yml')
+    docker_compose_path = Path(temp_folder / 'tools_docker_compose.filtered.yml')
 
     _filter_services_and_dump(tool_services, tools_docker_compose, docker_compose_path)
 
-    yield docker_compose_path
+    return docker_compose_path
 
-    # cleanup TODO: if not failed
-    docker_compose_path.unlink()
+
+
 
 # HELPERS ---------------------------------------------
 def _get_ip()->str:
@@ -174,27 +161,8 @@ def _get_ip()->str:
         s.close()
     return IP
 
-def _filter_docker_compose(docker_compose_path: Path, complete_docker_compose: Dict ):
-    # find which sections to include
-    include = defaultdict(list)
-    with docker_compose_path.open() as f:
-        content = yaml.safe_load(f)
 
-        for key, section in content.items():
-            if isinstance(section, dict):
-                include[key] = list(section.keys())
-    filtered_section = [k for k in complete_docker_compose if k in include]
-
-    # delete everything except these sections
-    content = deepcopy(complete_docker_compose)
-    for section in filtered_section:
-        for key in complete_docker_compose[section]:
-            if key not in include[section]:
-                content[section].pop(key)
-
-    return content
-
-def _filter_services_and_dump(include, services_compose, docker_compose_path):
+def _filter_services_and_dump(include: List, services_compose: Dict, docker_compose_path: Path):
     content = deepcopy(services_compose)
 
     # filters services
@@ -208,17 +176,21 @@ def _filter_services_and_dump(include, services_compose, docker_compose_path):
         if "build" in service:
             service.pop("build", None)
 
-
     # updates current docker-compose (also versioned ... do not change by hand)
     with docker_compose_path.open('wt') as f:
+        print("{:-^30}".format(str(docker_compose_path)))
+        yaml.dump(content, sys.stdout, default_flow_style=False)
+        print("-"*30)
         yaml.dump(content, f, default_flow_style=False)
 
-    # resolves
-    subprocess.run(f"docker-compose -f {docker_compose_path.name} config > {docker_compose_path.name}",
-        shell=True, check=True, cwd=docker_compose_path.parent)
 
-    # shows
-    with docker_compose_path.open('r') as f:
-        print("{:-^30}".format(str(docker_compose_path)))
-        print("-"*30)
-        print(f.read())
+def _run_docker_compose_config(docker_compose_path: Path, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
+    # TODO: use instead python api of docker-compose!
+    config_path = os.path.relpath(docker_compose_path, osparc_simcore_root_dir)
+    subprocess.run( f"docker-compose -f {config_path} config > {destination_path}",
+        shell=True, check=True,
+        cwd=osparc_simcore_root_dir)
+
+    with destination_path.open() as f:
+        config = yaml.safe_load(f)
+    return config

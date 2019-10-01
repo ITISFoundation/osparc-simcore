@@ -42,14 +42,14 @@ def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope="module")
-def webserver_environ(request, services_docker_compose, docker_stack) -> Dict[str, str]:
+def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str, str]:
     """ Environment variables for the webserver application
 
     """
     assert "webserver" not in docker_stack["services"]
 
     dockerfile_environ = {'SIMCORE_WEB_OUTDIR': "undefined" } # TODO: parse webserver dockerfile ??
-    docker_compose_environ = services_docker_compose['services']['webserver'].get('environment',{})
+    docker_compose_environ = simcore_docker_compose['services']['webserver'].get('environment',{})
 
     environ = {}
     environ.update(dockerfile_environ)
@@ -65,7 +65,7 @@ def webserver_environ(request, services_docker_compose, docker_stack) -> Dict[st
     #   on the host.
 
     services_with_published_ports = [name for name in core_services
-                if 'ports' in services_docker_compose['services'][name] ]
+                if 'ports' in simcore_docker_compose['services'][name] ]
 
     for name in services_with_published_ports:
         # published port is sometimes dynamically defined by the swarm

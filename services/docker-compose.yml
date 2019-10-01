@@ -110,7 +110,7 @@ services:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
     depends_on:
       - rabbit
       - postgres

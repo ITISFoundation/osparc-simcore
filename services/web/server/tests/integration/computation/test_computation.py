@@ -47,11 +47,11 @@ core_services = [
     'rabbit',
     'postgres',
     'sidecar',
-    'storage',
-    'minio'
+    'storage'
 ]
 
 tool_services = [
+    'minio'
 #    'adminer',
 #    'portainer'
 ]
