@@ -316,12 +316,22 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
-  await page.waitFor(4000)
+  await page.waitFor(10000)
 
   const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
+  console.log(children);
   if (children.length < 4) { // 4 = location + study + node + file
     throw("file items not found");
   }
+
+  const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
+  await page.waitForSelector(lastChildId)
+  await page.click(lastChildId)
+
+  await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
+  await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
+
+  await page.waitFor(4000)
 
   await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
   await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')

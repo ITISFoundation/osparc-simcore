@@ -49,7 +49,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     }, this);
 
     let deleteBtn = this._createChildControlImpl("deleteBtn");
-    osparc.utils.Utils.setIdToWidget(downloadBtn, "filesTreeDeleteBtn");
+    osparc.utils.Utils.setIdToWidget(deleteBtn, "filesTreeDeleteBtn");
     deleteBtn.addListener("execute", e => {
       this.__deleteFile();
     }, this);
