@@ -226,7 +226,7 @@ var jsonTree = (function() {
                 if (self.type === 'string' && val.includes('@')) {
                     let valAvatar = val;
                     valAvatar = valAvatar.replace(/^"(.*)"$/, '$1');
-                    avatar = ' <img src=' + qxapp.utils.Avatar.getUrl(valAvatar, 14, "blank") + ' />';
+                    avatar = ' <img src=' + osparc.utils.Avatar.getUrl(valAvatar, 14, "blank") + ' />';
                 }
 
                 var str = '\

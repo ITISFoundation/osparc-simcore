@@ -52,11 +52,11 @@ To build images for development
   make up-devel
 ```
 
-To build images for production (w/o tagging)
+To build images for production
 
 ```!bash
-  make build
-  make up
+  make build tag-version
+  make up-version
 ```
 
 ## Deploying Services
@@ -64,13 +64,13 @@ To build images for production (w/o tagging)
 To build and tag these images:
 
 ```!bash
-  make build
+  make build tag-version tag-latest
 ```
 
 To deploy the application in a single-node swarm
 
 ```!bash
-  make up-swarm
+  make up-latest
 ```
 ## Credentials
 

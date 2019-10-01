@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "qxapp",
+    "name": "osparc",
     "summary": "Front-end application for the oSPARC platform",
     "description": "",
     "homepage": "",
@@ -14,7 +14,7 @@
     "version": "1.0.0"
   },
   "provides": {
-    "namespace": "qxapp",
+    "namespace": "osparc",
     "encoding": "utf-8",
     "class": "source/class",
     "resource": "source/resource",
@@ -28,7 +28,8 @@
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
       "plotly/plotly.min.js",
-      "marked/marked.js"
+      "marked/marked.js",
+      "DOMPurify/purify.min.js"
     ],
     "css": [
       "jsontreeviewer/jsonTree.css",

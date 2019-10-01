@@ -51,7 +51,7 @@ def setup_statics(app: web.Application):
         outdir = get_client_outdir(app)
 
         # Checks integrity of RIA source before serving
-        EXPECTED_FOLDERS = ('qxapp', 'resource', 'transpiled')
+        EXPECTED_FOLDERS = ('osparc', 'resource', 'transpiled')
         folders = [x for x in outdir.iterdir() if x.is_dir()]
 
         for name in EXPECTED_FOLDERS:
