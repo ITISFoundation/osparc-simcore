@@ -185,6 +185,7 @@ up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
 
+
 up-tools: .init-swarm ## Deploys tools
 	@$(call deploy_tools)
 
@@ -334,11 +335,6 @@ info-vars: ## displays all parameters of makefile environments (makefile debuggi
 		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
 	)
 	#
-
-info-image: ## list image tags and labels for a given service. E.g. make info-image service=webserver
-	## $(service) images:
-	@$(foreach iid,$(shell $(DOCKER) images */$(service):* -q),\
-		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
 
 info-images:  ## lists created images (mostly for debugging makefile)
 	@$(foreach service,$(SERVICES_LIST),\

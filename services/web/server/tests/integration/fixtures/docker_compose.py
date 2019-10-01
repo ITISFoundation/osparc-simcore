@@ -130,15 +130,17 @@ def tools_docker_compose(osparc_simcore_root_dir, osparc_simcore_docker_compose_
 
 @pytest.fixture(scope='module')
 def docker_compose_file(request, temp_folder, services_docker_compose):
-    """ Overrides pytest-docker fixture
+    """ Creates a docker-compose.yml with services listed in 'core_services' module variable
+        File is created in a temp folder
 
+        Overrides pytest-docker fixture
     """
     core_services = getattr(request.module, 'core_services', []) # TODO: PC->SAN could also be defined as a fixture (as with docker_compose)
-    docker_compose_path = temp_folder / 'docker-compose.yml'
+    docker_compose_path = Path(temp_folder / 'docker-compose.core_services.yml')
 
     _filter_services_and_dump(core_services, services_docker_compose, docker_compose_path)
 
-    yield Path(docker_compose_path)
+    yield docker_compose_path
 
     # cleanup if not failed
     docker_compose_path.unlink()
@@ -146,11 +148,12 @@ def docker_compose_file(request, temp_folder, services_docker_compose):
 
 @pytest.fixture(scope='module')
 def tools_docker_compose_file(request, temp_folder, tools_docker_compose):
-    """ Overrides pytest-docker fixture
-
+    """ Creates a docker-compose.yml with services listed in 'tool_services' module variable
+        File is created in a temp folder
     """
     tool_services = getattr(request.module, 'tool_services', [])
-    docker_compose_path = Path(temp_folder / 'docker-compose-tools.yml')
+    docker_compose_path = Path(temp_folder / 'docker-compose.tool_services.yml')
+
     _filter_services_and_dump(tool_services, tools_docker_compose, docker_compose_path)
 
     yield docker_compose_path
@@ -201,13 +204,21 @@ def _filter_services_and_dump(include, services_compose, docker_compose_path):
 
     for name in include:
         service = content['services'][name]
-        # removes builds
+        # removes builds (No more)
         if "build" in service:
             service.pop("build", None)
 
+
     # updates current docker-compose (also versioned ... do not change by hand)
     with docker_compose_path.open('wt') as f:
-        print("{:-^30}".format(str(docker_compose_path)))
-        yaml.dump(content, sys.stdout, default_flow_style=False)
-        print("-"*30)
         yaml.dump(content, f, default_flow_style=False)
+
+    # resolves
+    subprocess.run(f"docker-compose -f {docker_compose_path.name} config > {docker_compose_path.name}",
+        shell=True, check=True, cwd=docker_compose_path.parent)
+
+    # shows
+    with docker_compose_path.open('r') as f:
+        print("{:-^30}".format(str(docker_compose_path)))
+        print("-"*30)
+        print(f.read())
