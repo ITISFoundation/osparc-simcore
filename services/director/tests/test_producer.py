@@ -101,7 +101,7 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert len(docker_tasks) > 0
         task = docker_tasks[0]
         envs_list = task["Spec"]["ContainerSpec"]["Env"]
-        envs_dict = {key:value for key,value in (x.split("=") for x in envs_list)}
+        envs_dict = dict(x.split("=") for x in envs_list)
 
         assert "POSTGRES_ENDPOINT" in envs_dict
         assert "POSTGRES_USER" in envs_dict
