@@ -328,10 +328,29 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector(lastChildId)
   await page.click(lastChildId)
 
+  page.on("response", resp => {
+    const header = resp.headers();
+    if (header['content-type'] === "binary/octet-stream") {
+      resp.text().then(
+        b => {
+          if (b<0 && b>10) {
+            throw("Sleeper should have a number between 0 and 10 in in the output");
+          }
+          else {
+            console.log('Succeed. Number in file: ', b);
+          }
+        },
+        e => {
+          console.error('Failed', e);
+          throw("Failed downloading file");
+        }
+      );
+    }
+  });
   await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
   await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
 
-  await page.waitFor(4000)
+  await page.waitFor(5000)
 
   await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
   await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')
