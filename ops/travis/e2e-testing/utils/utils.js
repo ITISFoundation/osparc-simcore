@@ -76,6 +76,15 @@ async function emptyField(page, selector) {
   await page.evaluate((selector) => document.querySelector(selector).value = "", selector);
 }
 
+const request = require('request');
+function readFileFromLink(downloadUrl) {
+  request.get(downloadUrl, (error, response, body) => {
+    if (!error && response.statusCode == 200) {
+      console.log('body', body);
+    }
+  });
+}
+
 function __logMe(msg, level='log') {
   if (level==='error') {
     console.error(`Error ${msg}`);
@@ -169,6 +178,7 @@ module.exports = {
   getVisibleChildrenIDs,
   fetch,
   emptyField,
+  readFileFromLink,
   addPageListeners,
   removePageListeners,
   dragAndDrop,
