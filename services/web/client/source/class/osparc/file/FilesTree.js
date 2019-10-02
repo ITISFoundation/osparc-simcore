@@ -175,6 +175,8 @@ qx.Class.define("osparc.file.FilesTree", {
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
       const filesStore = osparc.store.Data.getInstance();
+      // OM: ??? Somehow this check avoids duplicated code.
+      filesStore.hasListener("myLocations");
       filesStore.addListenerOnce("myLocations", e => {
         const locations = e.getData();
         if (this.__locations.size === 0) {
