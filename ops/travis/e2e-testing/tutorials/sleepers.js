@@ -1,3 +1,5 @@
+// node sleepers.js [user] [password]
+
 const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
