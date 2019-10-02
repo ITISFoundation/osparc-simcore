@@ -3,10 +3,16 @@ const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
 const demo = true;
-const {
+let {
   user,
   pass
 } = utils.getRandUserAndPass();
+
+const args = process.argv.slice(2);
+if (args.length === 2) {
+  user = args[0];
+  pass = args[1];
+}
 
 async function runTutorial (url) {
   console.log("Running tutorial on", url);
