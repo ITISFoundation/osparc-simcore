@@ -385,7 +385,7 @@ qx.Class.define("osparc.data.Resources", {
         }
         console.log(`Fetching ${resource} from server.`);
       }
-      return this.fetch(resource, "getOne", params);
+      return this.fetch(resource, "getOne", params || {});
     },
 
     /**
@@ -403,7 +403,7 @@ qx.Class.define("osparc.data.Resources", {
         }
         console.log(`Fetching ${resource} from server.`);
       }
-      return this.fetch(resource, "get", params);
+      return this.fetch(resource, "get", params || {});
     },
 
     /**
