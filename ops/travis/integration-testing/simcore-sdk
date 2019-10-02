@@ -29,8 +29,8 @@ before_script() {
     then
         pip freeze
         # pull the test images if registry is set up, else build the images
-        make pull || ((make pull-cache || true) && make build)
-        docker images
+        make pull-version || ((make pull-cache || true) && make build tag-version)
+        make info-images
     fi
 }
 

@@ -200,7 +200,7 @@ class DataStorageManager:
                             .where(user_to_projects.c.user_id == user_id)
 
                         async for row in conn.execute(query):
-                            proj_data = {key:value for key,value in row.items()}
+                            proj_data = dict(row.items())
 
                             uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
                             wb = proj_data['workbench']
@@ -322,7 +322,7 @@ class DataStorageManager:
                         query = sa.select([projects]).select_from(joint_table)\
                                 .where(user_to_projects.c.user_id == user_id)
                         async for row in conn.execute(query):
-                            proj_data = {key:value for key,value in row.items()}
+                            proj_data = dict(row.items())
                             dmd = DatasetMetaData(dataset_id=proj_data["uuid"],
                                 display_name=proj_data["name"])
                             data.append(dmd)

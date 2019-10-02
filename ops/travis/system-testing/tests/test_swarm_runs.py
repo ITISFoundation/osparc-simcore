@@ -7,6 +7,7 @@
 import asyncio
 import datetime
 import logging
+import os
 import re
 import sys
 import urllib
@@ -43,6 +44,7 @@ def _load_yaml(path: Path) -> Dict:
 def _services_docker_compose(osparc_simcore_root_dir: Path) -> Dict[str, str]:
     # TODO: pip install docker-compose and use
     # https://github.com/docker/compose/blob/master/compose/cli/main.py#L328
+    # TODO: add docker config ... to resolve docker-compose*.yml
     osparc_simcore_services_dir = osparc_simcore_root_dir / "services"
     compose = {}
     for name in ["docker-compose.yml", ]:
@@ -103,13 +105,12 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return _services_docker_compose(osparc_simcore_root_dir)
 
 
-@pytest.fixture("session")
-def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    content = _load_yaml(osparc_simcore_root_dir / "services" / "docker-compose-tools.yml")
-    return content
+@pytest.fixture(scope="session")
+def swarm_stack_name():
+    return os.environ.get("SWARM_STACK_NAME", 'simcore')
 
 def _list_core_services():
-    exclude = ["webclient"]
+    exclude = [ ]
     content = _services_docker_compose(_osparc_simcore_root_dir(_here()))
     return [name for name in content["services"].keys() if name not in exclude]
 
@@ -126,44 +127,38 @@ def docker_client():
 
 
 # TESTS -------------------------------
-def test_all_services_up(docker_client, services_docker_compose, tools_docker_compose):
-    """
-        NOTE: Assumes `make up-swarm` executed
-    """
+def test_all_services_up(docker_client, services_docker_compose):
     running_services = docker_client.services.list()
 
     service_names = []
     service_names += services_docker_compose["services"]
-    service_names += tools_docker_compose["services"]
 
     assert len(service_names) == len(running_services)
 
     for name in service_names:
         assert any( name in s.name for s in running_services ), f"{name} not in {running_services}"
 
-async def test_core_service_running(core_service_name, docker_client, loop):
+async def test_core_service_running(swarm_stack_name, core_service_name, docker_client, loop):
     """
-        NOTE: Assumes `make up-swarm` executed
         NOTE: loop fixture makes this test async
     """
     SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+)')
-    # Matches strings as
-    # services_director
-    # services_postgres-exporter
-    # services_postgres_exporter
+    # Matches service names in stacks as e.g.
+    #
+    #  'mystack_director'
+    #  'mystack_postgres-exporter'
+    #  'mystack_postgres_exporter'
+    #
+    # for a stack named 'mystack'
 
     # maps service names in docker-compose with actual services
     running_services = {}
-    expected_prefix = None
     for service in docker_client.services.list():
         match = SERVICE_NAMES_PATTERN.match(service.name)
         assert match, f"Could not match service name {service.name}"
         prefix, service_name = match.groups()
+        assert prefix == swarm_stack_name
         running_services[service_name] = service
-        if expected_prefix:
-            assert prefix == expected_prefix
-        else:
-            expected_prefix = prefix
 
     # find the service
     assert core_service_name in running_services
@@ -201,12 +196,9 @@ async def test_core_service_running(core_service_name, docker_client, loop):
                 get_failed_tasks_logs(running_service, docker_client))
 
 
-async def test_check_serve_root(docker_client, services_docker_compose, tools_docker_compose):
-    """
-        NOTE: Assumes `make up-swarm` executed
-    """
+async def test_check_serve_root(docker_client, services_docker_compose):
     running_services = docker_client.services.list()
-    assert (len(services_docker_compose["services"]) + len(tools_docker_compose["services"])) == len(running_services)
+    assert len(services_docker_compose["services"]) == len(running_services)
 
     req = urllib.request.Request("http://localhost:9081/")
     try:
