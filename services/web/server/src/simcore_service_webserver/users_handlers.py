@@ -84,10 +84,9 @@ async def create_tokens(request: web.Request):
             user_id=uid,
             token_service=body['service'],
             token_data=body)
-        result = await conn.execute(stmt)
-        row = await result.first()
+        await conn.execute(stmt)
 
-        raise web.HTTPCreated(text=json.dumps({'data': row['token_id']}),
+        raise web.HTTPCreated(text=json.dumps({'data': body}),
                               content_type="application/json")
 
 
