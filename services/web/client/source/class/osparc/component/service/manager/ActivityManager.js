@@ -35,7 +35,6 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
   members: {
     __tree: null,
     __studyFilter: null,
-
     /**
      * Creates the top bar that holds the filtering widgets.
      */
