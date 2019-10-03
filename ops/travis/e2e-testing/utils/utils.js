@@ -1,11 +1,3 @@
-async function getPageTitle(page) {
-  return await page.title();
-}
-
-function getPageUrl(page) {
-  return page.url();
-}
-
 function getRandUserAndPass() {
   const randUser = Math.random().toString(36).substring(7);
   const user = 'puppeteer_'+randUser+'@itis.testing';
@@ -76,42 +68,6 @@ async function emptyField(page, selector) {
   await page.evaluate((selector) => document.querySelector(selector).value = "", selector);
 }
 
-const request = require('request');
-function readFileFromLink(downloadUrl) {
-  request.get(downloadUrl, (error, response, body) => {
-    if (!error && response.statusCode == 200) {
-      console.log('body', body);
-    }
-  });
-}
-
-function __logMe(msg, level='log') {
-  if (level==='error') {
-    console.error(`Error ${msg}`);
-  }
-  else {
-    console.log("Console", msg.text());
-  }
-}
-
-function addPageListeners(page) {
-  // Emitted when a script within the page uses `console`
-  page.on('console', __logMe);
-  // Emitted when the page emits an error event (for example, the page crashes)
-  page.on('error', __logMe);
-  // Emitted when a script within the page has uncaught exception
-  page.on('pageerror', __logMe);
-}
-
-function removePageListeners(page) {
-  // Emitted when a script within the page uses `console`
-  page.removeListener('console', __logMe);
-  // Emitted when the page emits an error event (for example, the page crashes)
-  page.removeListener('error', __logMe);
-  // Emitted when a script within the page has uncaught exception
-  page.removeListener('pageerror', __logMe);
-}
-
 async function dragAndDrop(page, start, end) {
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
@@ -162,18 +118,13 @@ async function waitForValidSleeperOutputFile(page) {
 
 
 module.exports = {
-  getPageTitle,
-  getPageUrl,
   getRandUserAndPass,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
   fetch,
   emptyField,
-  readFileFromLink,
-  addPageListeners,
-  removePageListeners,
+  dragAndDrop,
   waitForResponse,
   waitForValidSleeperOutputFile,
-  dragAndDrop,
 }
