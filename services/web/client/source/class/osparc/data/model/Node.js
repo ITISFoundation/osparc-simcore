@@ -64,8 +64,7 @@ qx.Class.define("osparc.data.model.Node", {
       version
     });
 
-    let store = osparc.store.Store.getInstance();
-    let metaData = this.__metaData = store.getNodeMetaData(key, version);
+    let metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
@@ -552,7 +551,7 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (osparc.store.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (osparc.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               break;
             }
@@ -939,8 +938,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const store = osparc.store.Store.getInstance();
-        store.stopInteractiveService(this.getNodeId());
+        osparc.utils.Services.stopInteractiveService(this.getNodeId());
         this.removeIFrame();
       }
     },

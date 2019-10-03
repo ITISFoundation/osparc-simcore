@@ -22,30 +22,30 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
   extend: osparc.component.filter.UIFilter,
 
   /**
-   * Constructor for TagsFilter creates a workbench TagsFilter.
+   * Constructor for TagsFilter creates a TagsFilter.
    *
    * @extends osparc.component.filter.UIFilter
    */
-  construct: function(filterId, groupId) {
+  construct: function(label, filterId, groupId) {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__dropDown = new qx.ui.toolbar.MenuButton(this.tr("Tags"));
-    this.__dropDown.setMenu(this.__buildMenu());
-    this._add(this.__dropDown);
+    this._dropdown = new qx.ui.toolbar.MenuButton(label);
+    this._add(this._dropdown);
   },
 
   members: {
-    __dropDown: null,
+    _dropdown: null,
     __activeTags: null,
     __tagButtons: null,
+    __menu: null,
 
     /**
      * Implementing IFilter: Function in charge of resetting the filter.
      */
     reset: function() {
       // Remove ticks from menu
-      const menuButtons = this.__dropDown.getMenu().getChildren()
+      const menuButtons = this._dropdown.getMenu().getChildren()
         .filter(child => child instanceof qx.ui.menu.Button);
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
@@ -61,25 +61,6 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
-    __buildMenu: function() {
-      const menu = new qx.ui.menu.Menu();
-
-      osparc.utils.Services.getTypes().forEach(serviceType => {
-        const button = new qx.ui.menu.Button(osparc.utils.Utils.capitalize(serviceType));
-        button.addListener("execute", e => this.__addTag(serviceType, e.getTarget()));
-        menu.add(button);
-      });
-
-      menu.addSeparator();
-
-      osparc.utils.Services.getCategories().forEach(serviceCategory => {
-        const button = new qx.ui.menu.Button(osparc.utils.Utils.capitalize(serviceCategory));
-        button.addListener("execute", e => this.__addTag(serviceCategory, e.getTarget()));
-        menu.add(button);
-      });
-      return menu;
-    },
-
     __addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
@@ -89,7 +70,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         // Add tick
         menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
-        const tagButton = new qx.ui.toolbar.Button(osparc.utils.Utils.capitalize(tagName), "@MaterialIcons/close/12");
+        const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
         this._add(tagButton);
         tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state
@@ -110,6 +91,24 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       delete this.__tagButtons[tagName];
       // Dispatch
       this._filterChange(this.__activeTags);
+    },
+
+    _addOption: function(tagName) {
+      if (this.__menu === null) {
+        this.__menu = new qx.ui.menu.Menu();
+        this._dropdown.setMenu(this.__menu);
+      }
+      const button = new qx.ui.menu.Button(tagName);
+      button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
+      this.__menu.add(button);
+    },
+
+    _addSeparator: function() {
+      if (this.__menu === null) {
+        this.__menu = new qx.ui.menu.Menu();
+        this._dropdown.setMenu(this.__menu);
+      }
+      this.__menu.addSeparator();
     }
   }
 });

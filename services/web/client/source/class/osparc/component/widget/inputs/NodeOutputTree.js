@@ -132,7 +132,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           open: false
         };
         if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
-          const itemList = osparc.store.Store.getInstance().getItemList(node.getKey(), portKey);
+          const itemList = osparc.dev.fake.Data.getItemList(node.getKey(), portKey);
           const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
           const children = osparc.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
           portData.children = children;
