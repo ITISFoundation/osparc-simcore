@@ -195,10 +195,10 @@ async function dashboardNewStudy(page) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitFor('[osparc-test-id="newStudyBtn"]');
+  await page.waitForSelector('[osparc-test-id="newStudyBtn"]');
   await page.click('[osparc-test-id="newStudyBtn"]');
 
-  await page.waitFor('[osparc-test-id="newStudyTitleFld"]');
+  await page.waitForSelector('[osparc-test-id="newStudyTitleFld"]');
   await page.type('[osparc-test-id="newStudyTitleFld"]', 'puppeteering study');
   await page.type('[osparc-test-id="newStudyDescFld"]', 'this is puppeteer creating a new study');
 
@@ -251,7 +251,7 @@ async function __dashboardFilterStudiesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
   await page.waitFor(1000)
-  await page.waitFor('[osparc-test-id="studyFiltersTextFld"]')
+  await page.waitForSelector('[osparc-test-id="studyFiltersTextFld"]')
   await page.click('[osparc-test-id="studyFiltersTextFld"]')
   await page.type('[osparc-test-id="studyFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
