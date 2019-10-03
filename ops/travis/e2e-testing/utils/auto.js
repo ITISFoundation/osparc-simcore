@@ -254,8 +254,6 @@ async function dashboardDeleteFirstStudy(page) {
   await page.waitForSelector('[osparc-test-id="deleteStudiesBtn"]')
   await page.click('[osparc-test-id="deleteStudiesBtn"]')
 
-  // await page.waitFor(500)
-
   await page.waitForSelector('[osparc-test-id="confirmDeleteStudyBtn"]')
   await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
 }
