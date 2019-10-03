@@ -307,13 +307,17 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector(lastChildId)
   await page.click(lastChildId)
 
-  await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
-  await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
-
-  // await page.waitFor(5000)
+  downloadSelectedFile(page)
 
   await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
   await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')
+}
+
+async function downloadSelectedFile(page) {
+  await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
+  await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
+
+  await utils.waitForValidSleeperOutputFile(page)
 }
 
 
@@ -334,4 +338,5 @@ module.exports = {
   openNode,
   openLastNode,
   checkDataProducedByNode,
+  downloadSelectedFile,
 }
