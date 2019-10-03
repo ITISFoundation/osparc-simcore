@@ -38,7 +38,8 @@ async function runTutorial (url) {
   // Run pipeline
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
-  await page.waitFor(5000);
+  const timeForFirstNodeToFinish = 10000;
+  await page.waitFor(timeForFirstNodeToFinish);
 
   // Check results are there
   await auto.openNode(page, 0);
