@@ -43,6 +43,7 @@ async function run () {
   await page.waitFor(2000);
 
   await auto.dashboardDataBrowser(page);
+  await page.waitFor(2000);
 
   // LOGOUT
   if (demo) {

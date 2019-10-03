@@ -129,19 +129,6 @@ async function dashboardDataBrowser(page) {
   // expand first study
   await page.waitForSelector('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
   await page.click('.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
-
-  await page.waitFor(2000)
-  /*
-  // expand service
-  await page.waitForSelector('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
-  await page.click('div:nth-child(1) > div > div > div:nth-child(5) > div:nth-child(3)')
-
-  // seelct file
-  await page.waitForSelector('div > div:nth-child(2) > div > .qx-toolbar-button-hovered > div:nth-child(1)')
-  await page.click('div > div:nth-child(2) > div > .qx-toolbar-button-hovered > div:nth-child(1)')
-
-  await page.waitFor(2000)
-  */
 }
 
 async function dashboardStudyBrowser(page) {
@@ -241,8 +228,6 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.waitForSelector('[osparc-test-id="newStudySubmitBtn"]')
   await page.click('[osparc-test-id="newStudySubmitBtn"]')
 
-  await page.waitFor(2000);
-
   await page.waitForSelector('[osparc-test-id="runStudyBtn"]')
   await page.click('[osparc-test-id="runStudyBtn"]')
 }
@@ -250,12 +235,10 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
 async function __dashboardFilterStudiesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
-  await page.waitFor(1000)
   await page.waitForSelector('[osparc-test-id="studyFiltersTextFld"]')
   await page.click('[osparc-test-id="studyFiltersTextFld"]')
   await page.type('[osparc-test-id="studyFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
-  await page.waitFor(1000)
 }
 
 async function dashboardDeleteFirstStudy(page) {
@@ -270,7 +253,7 @@ async function dashboardDeleteFirstStudy(page) {
   await page.waitForSelector('[osparc-test-id="deleteStudiesBtn"]')
   await page.click('[osparc-test-id="deleteStudiesBtn"]')
 
-  await page.waitFor(500)
+  // await page.waitFor(500)
 
   await page.waitForSelector('[osparc-test-id="confirmDeleteStudyBtn"]')
   await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
@@ -310,7 +293,17 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
+  /*
+  page.on("response", resp => {
+    const header = resp.headers();
+    const url = resp.url();
+    if (url.includes("storage/locations/0/files/metadata?uuid_filter=")) {
+      console.log("response header", header);
+    }
+  });
   await page.waitFor(10000)
+  */
+  await utils.waitForResponse(page, "storage/locations/0/files/metadata?uuid_filter=");
 
   const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
   console.log(children);
@@ -344,7 +337,7 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
   await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
 
-  await page.waitFor(5000)
+  // await page.waitFor(5000)
 
   await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
   await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')
