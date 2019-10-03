@@ -277,7 +277,7 @@ async function dashboardDeleteFirstStudy(page) {
 }
 
 async function openNode(page, pos) {
-  console.log("Opening Last Node");
+  console.log("Opening Node in position", pos);
 
   const children = await utils.getNodeTreeItemIDs(page);
   console.log("children", children);
@@ -285,9 +285,9 @@ async function openNode(page, pos) {
     console.log("Node tree items not found");
     return;
   }
-  const lastChildId = '[osparc-test-id="' + children[pos] + '"]';
-  await page.waitForSelector(lastChildId);
-  await page.click(lastChildId);
+  const childId = '[osparc-test-id="' + children[pos] + '"]';
+  await page.waitForSelector(childId);
+  await page.click(childId);
 
   await page.waitForSelector('[osparc-test-id="openServiceBtn"]');
   await page.click('[osparc-test-id="openServiceBtn"]');
@@ -297,17 +297,11 @@ async function openLastNode(page) {
   console.log("Opening Last Node");
 
   const children = await utils.getNodeTreeItemIDs(page);
-  console.log("children", children);
   if (children.length < 1) {
     console.log("Node tree items not found");
     return;
   }
-  const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
-  await page.waitForSelector(lastChildId);
-  await page.click(lastChildId);
-
-  await page.waitForSelector('[osparc-test-id="openServiceBtn"]');
-  await page.click('[osparc-test-id="openServiceBtn"]');
+  this.openNode(page, children.length-1);
 }
 
 async function checkDataProducedByNode(page) {
