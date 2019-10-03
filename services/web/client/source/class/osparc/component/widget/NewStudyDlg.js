@@ -47,8 +47,6 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
     this._setLayout(newPrjLayout);
 
     this.__createForm(template);
-
-    this.__attachEventHandlers();
   },
 
   events: {
@@ -56,8 +54,6 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
   },
 
   members: {
-    __createBtn: null,
-
     __createForm: function(template) {
       const prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
@@ -91,7 +87,7 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         prjFormLayout.add(templateLayout);
       }
 
-      const createBtn = this.__createBtn = new qx.ui.form.Button(this.tr("Create"));
+      const createBtn = new qx.ui.form.Button(this.tr("Create"), null, new qx.ui.command.Command("Enter"));
       osparc.utils.Utils.setIdToWidget(createBtn, "newStudySubmitBtn");
       prjFormLayout.add(createBtn);
 
@@ -135,15 +131,6 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         bottom: 10,
         left: 10
       });
-    },
-
-    __attachEventHandlers: function() {
-      // Listen to "Enter" key
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Enter") {
-          this.__createBtn.execute();
-        }
-      }, this);
     }
   }
 });
