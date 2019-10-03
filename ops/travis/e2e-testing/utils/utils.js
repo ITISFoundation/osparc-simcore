@@ -124,7 +124,6 @@ async function waitForResponse(page, url) {
   return new Promise(resolve => {
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
-        console.log("Got it")
         resolve(resp)
         page.removeListener("response", callback)
       }

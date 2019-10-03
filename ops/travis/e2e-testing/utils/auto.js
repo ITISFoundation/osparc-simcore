@@ -293,16 +293,6 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
-  /*
-  page.on("response", resp => {
-    const header = resp.headers();
-    const url = resp.url();
-    if (url.includes("storage/locations/0/files/metadata?uuid_filter=")) {
-      console.log("response header", header);
-    }
-  });
-  await page.waitFor(10000)
-  */
   await utils.waitForResponse(page, "storage/locations/0/files/metadata?uuid_filter=");
 
   const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
