@@ -4,7 +4,7 @@ const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
-const demo = true;
+const demo = false;
 
 let user = null;
 let pass = null;
@@ -35,6 +35,7 @@ async function runTutorial (url) {
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
+  await utils.waitForResponse(page, "projects?type=template");
   // Run pipeline
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);

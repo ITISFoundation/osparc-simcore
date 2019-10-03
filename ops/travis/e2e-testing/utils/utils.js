@@ -124,12 +124,42 @@ async function waitForResponse(page, url) {
   return new Promise(resolve => {
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
-        resolve(resp)
         page.removeListener("response", callback)
+        resolve(resp)
       }
     })
   })
 }
+
+async function waitForValidSleeperOutputFile(page) {
+  return new Promise((resolve, reject) => {
+    page.on("response", function callback(resp) {
+      const header = resp.headers();
+      if (header['content-type'] === "binary/octet-stream") {
+        resp.text().then(
+          b => {
+            if (b>=0 && b<=10) {
+              console.log('Succeed. Number in file: ', b)
+              page.removeListener("response", callback)
+              resolve(resp)
+            }
+            else {
+              console.error('Invalid value', b)
+              page.removeListener("response", callback)
+              reject("Sleeper should have a number between 0 and 10 in the output")
+            }
+          },
+          e => {
+            console.error('Failed', e)
+            page.removeListener("response", callback)
+            reject("Failed downloading file")
+          }
+        );
+      }
+    })
+  })
+}
+
 
 module.exports = {
   getPageTitle,
@@ -144,5 +174,6 @@ module.exports = {
   addPageListeners,
   removePageListeners,
   waitForResponse,
+  waitForValidSleeperOutputFile,
   dragAndDrop,
 }

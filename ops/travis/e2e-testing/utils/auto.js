@@ -205,6 +205,7 @@ async function dashboardOpenFirstTemplateAndRun(page, templateName) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
+  await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
   if (templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
   }
@@ -293,8 +294,9 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
-  await utils.waitForResponse(page, "storage/locations/0/files/metadata?uuid_filter=");
+  await utils.waitForResponse(page, "storage/locations/0/files/metadata?uuid_filter=")
 
+  await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]')
   const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
   console.log(children);
   if (children.length < 4) { // 4 = location + study + node + file
@@ -305,25 +307,6 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector(lastChildId)
   await page.click(lastChildId)
 
-  page.on("response", resp => {
-    const header = resp.headers();
-    if (header['content-type'] === "binary/octet-stream") {
-      resp.text().then(
-        b => {
-          if (b<0 && b>10) {
-            throw("Sleeper should have a number between 0 and 10 in in the output");
-          }
-          else {
-            console.log('Succeed. Number in file: ', b);
-          }
-        },
-        e => {
-          console.error('Failed', e);
-          throw("Failed downloading file");
-        }
-      );
-    }
-  });
   await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
   await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
 
