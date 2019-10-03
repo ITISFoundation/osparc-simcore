@@ -43,8 +43,6 @@ async function runTutorial (url) {
 
   // Check results are there
   await auto.openNode(page, 0);
-  // await auto.openLastNode(page);
-  await page.waitFor(5000);
 
   try {
     await auto.checkDataProducedByNode(page);
