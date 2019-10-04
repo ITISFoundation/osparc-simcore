@@ -182,7 +182,7 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
             children: []
           };
           let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-          const itemProps = osparc.store.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
+          const itemProps = osparc.dev.fake.Data.getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
           if (itemProps) {
             let form = new osparc.component.form.Auto(itemProps, this.getNode());
             let propsWidget = new osparc.component.form.renderer.PropForm(form);
@@ -272,7 +272,7 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
         .push(newItem);
       if (willBeBranch) {
         // Hmmmm not sure about the double getKey :(
-        const itemProps = osparc.store.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
+        const itemProps = osparc.dev.fake.Data.getItem(null, fromPortKey, newItem.getKey().getKey());
         if (itemProps) {
           let form = new osparc.component.form.Auto(itemProps, this.getNode());
           let propsWidget = new osparc.component.form.renderer.PropForm(form);

@@ -33,6 +33,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
     const windowHeight = 800;
     this.set({
       layout: new qx.ui.layout.Grow(),
+      autoDestroy: true,
       contentPadding: 10,
       showMinimize: false,
       resizable: true,

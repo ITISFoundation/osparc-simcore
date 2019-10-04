@@ -25,8 +25,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     osparc.utils.UuidToName.getInstance().setStudy(study);
 
-    this.__studyResources = osparc.io.rest.ResourceFactory.getInstance().createStudyResources();
-
     this.setStudy(study);
 
     let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({
@@ -66,7 +64,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   members: {
-    __studyResources: null,
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -150,7 +147,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
-      let workbench = this.getStudy().getWorkbench();
+      const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("retrieveInputs", e => {
@@ -204,11 +201,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
         // open file picker in window
         const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+          appearance: "service-window",
           layout: new qx.ui.layout.Grow(),
+          autoDestroy: true,
           contentPadding: 0,
           width: 570,
           height: 450,
-          appearance: "service-window",
           showMinimize: false,
           modal: true
         });
@@ -506,21 +504,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const newObj = this.getStudy().serializeStudy();
       const prjUuid = this.getStudy().getUuid();
 
-      let resource = this.__studyResources.project;
-      resource.addListenerOnce("putSuccess", ev => {
+      const params = {
+        url: {
+          "project_id": prjUuid,
+          run
+        },
+        data: newObj
+      };
+      osparc.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
         this.__lastSavedPrj = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }
-      }, this);
-      resource.addListenerOnce("putError", ev => {
+      }).catch(error => {
         this.getLogger().error("root", "Error updating pipeline");
-      }, this);
-      resource.put({
-        "project_id": prjUuid,
-        run
-      }, newObj);
+      });
     },
 
     closeStudy: function() {

@@ -71,7 +71,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputListIcon", {
       }
     });
 
-    const itemList = osparc.store.Store.getInstance().getItemList(node.getKey(), portKey);
+    const itemList = osparc.dev.fake.Data.getItemList(node.getKey(), portKey);
     const listModel = osparc.data.Converters.fromAPIListToVirtualListModel(itemList);
     let model = qx.data.marshal.Json.createModel(listModel, true);
     list.setModel(model);

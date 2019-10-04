@@ -215,6 +215,15 @@ qx.Theme.define("osparc.theme.Appearance", {
     "textfilter": {},
     "textfilter/textfield": "toolbar-textfield",
 
+    "autocompletefilter": {},
+    "autocompletefilter/autocompletefield/textfield": {
+      include: "toolbar-textfield",
+      style: state => ({
+        paddingRight: 15
+      })
+    },
+    "autocompletefilter/autocompletefield/button": {},
+
     "toolbar-selectbox": {
       include: "textfield",
       alias: "selectbox",

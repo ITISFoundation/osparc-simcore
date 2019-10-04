@@ -64,109 +64,80 @@ qx.Class.define("osparc.auth.Manager", {
       if (osparc.auth.Data.getInstance().isLogout()) {
         errorCb.call(ctx);
       } else {
-        const request = new osparc.io.request.ApiRequest("/me", "GET");
-        request.addListener("success", e => {
-          if (e.getTarget().getResponse().error) {
-            errorCb.call(ctx);
-          } else {
-            this.__loginUser(e.getTarget().getResponse().data.login);
-            successCb.call(ctx, e.getTarget().getResponse().data);
-          }
-        });
-        request.addListener("statusError", e => {
-          errorCb.call(ctx);
-        });
-        request.send();
+        osparc.data.Resources.getOne("profile", {}, null, false)
+          .then(profile => {
+            this.__loginUser(profile.login);
+            successCb.call(ctx, profile);
+          })
+          .catch(err => {
+            errorCb.call(ctx, err);
+          });
       }
     },
 
     login: function(email, password, successCbk, failCbk, context) {
-      // TODO: consider qx.promise instead of having two callbacks an d a context might be nicer to work with
-
-      let request = new osparc.io.request.ApiRequest("/auth/login", "POST");
-      request.set({
-        requestData: {
+      const params = {
+        data: {
           email,
           password
         }
-      });
-
-      request.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
-
-        // TODO: validate data against specs???
-        // TODO: activate tokens!?
-        this.__loginUser(email);
-        successCbk.call(context, data);
-      }, this);
-
-      this.__bindDefaultFailCallback(request, failCbk, context);
-
-      request.send();
+      };
+      osparc.data.Resources.fetch("auth", "postLogin", params)
+        .then(data => {
+          this.__loginUser(email);
+          successCbk.call(context, data);
+        })
+        .catch(err => failCbk.call(context, err.message));
     },
 
     logout: function() {
-      const request = new osparc.io.request.ApiRequest("/auth/logout", "GET");
-      request.send();
+      osparc.data.Resources.fetch("auth", "getLogout");
       this.__logoutUser();
       this.fireEvent("logout");
     },
 
     register: function(userData, successCbk, failCbk, context) {
       console.debug("Registering user ...");
-      // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new osparc.io.request.ApiRequest("/auth/register", "POST");
-      request.set({
-        requestData: userData
-      });
-
-      this.__bindDefaultSuccessCallback(request, successCbk, context);
-      this.__bindDefaultFailCallback(request, failCbk, context);
-
-      request.send();
+      const params = {
+        data: userData
+      };
+      osparc.data.Resources.fetch("auth", "postRegister", params)
+        .then(data => {
+          successCbk.call(context, data);
+        })
+        .catch(err => failCbk.call(context, err.message));
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
       console.debug("Requesting reset password ...");
-      // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new osparc.io.request.ApiRequest("/auth/reset-password", "POST");
-      request.set({
-        requestData: {
-          "email": email
+      const params = {
+        data: {
+          email
         }
-      });
-
-      this.__bindDefaultSuccessCallback(request, successCbk, context);
-      this.__bindDefaultFailCallback(request, failCbk, context);
-
-      request.send();
+      };
+      osparc.data.Resources.fetch("auth", "postRequestResetPassword", params)
+        .then(data => {
+          successCbk.call(context, data);
+        })
+        .catch(err => failCbk.call(context, err.message));
     },
 
     resetPassword: function(newPassword, confirmation, code, successCbk, failCbk, context) {
       console.debug("Reseting password ...");
-      // api/specs/webserver/v0/openapi-auth.yaml
-      let request = new osparc.io.request.ApiRequest("/auth/reset-password/" + encodeURIComponent(code), "POST");
-      request.setRequestData({
-        password: newPassword,
-        confirm: confirmation
-      });
-
-      this.__bindDefaultSuccessCallback(request, successCbk, context);
-      this.__bindDefaultFailCallback(request, failCbk, context);
-
-      request.send();
-    },
-
-    evalPasswordStrength: function(password, callback, context=null) {
-      let request = new osparc.io.request.ApiRequest("/auth/check-password/" + encodeURIComponent(password), "GET");
-      request.addListener("success", evt => {
-        let payload = evt.getTarget().getResponse();
-        callback.call(context, payload.strength, payload.rating, payload.improvements);
-      }, this);
-
-      request.send();
+      const params = {
+        url: {
+          code
+        },
+        data: {
+          password: newPassword,
+          confirm: confirmation
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postResetPassword", params)
+        .then(data => {
+          successCbk.call(context, data);
+        })
+        .catch(err => failCbk.call(context, err.message));
     },
 
     __loginUser: function(email) {
@@ -177,35 +148,6 @@ qx.Class.define("osparc.auth.Manager", {
     __logoutUser: function() {
       osparc.auth.Data.getInstance().resetEmail();
       osparc.auth.Data.getInstance().resetToken();
-    },
-
-    __bindDefaultSuccessCallback: function(request, successCbk, context) {
-      request.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
-
-        // TODO: validate data against specs???
-        // FIXME: Data is an object
-        successCbk.call(context, data);
-      }, this);
-    },
-
-    __bindDefaultFailCallback: function(request, failCbk, context) {
-      request.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-
-        let msg = "";
-        if (error) {
-          for (var i=0; i<error.errors.length; i++) {
-            msg = msg + error.errors[i].message + " ";
-          }
-        }
-        // FIXME: Data is an object
-        failCbk.call(context, msg);
-      }, this);
     }
   }
 });

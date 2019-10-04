@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         prjFormLayout.add(templateLayout);
       }
 
-      const createBtn = new qx.ui.form.Button(this.tr("Create"));
+      const createBtn = new qx.ui.form.Button(this.tr("Create"), null, new qx.ui.command.Command("Enter"));
       osparc.utils.Utils.setIdToWidget(createBtn, "newStudySubmitBtn");
       prjFormLayout.add(createBtn);
 
