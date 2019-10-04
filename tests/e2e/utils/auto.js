@@ -205,11 +205,11 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
+  await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
   if (templateName) {
     await __dashboardFilterStudiesByText(page, templateName);
   }
 
-  await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
   if (children.length === 0) {
     console.log("Creating New Study from template: no template found");
