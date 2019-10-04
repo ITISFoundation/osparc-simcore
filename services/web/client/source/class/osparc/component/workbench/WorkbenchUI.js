@@ -739,7 +739,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__inputNodesLayout.setVisibility("excluded");
           this.__outputNodesLayout.setVisibility("excluded");
         }
-        qx.ui.core.queue.Visibility.flush();
 
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
         for (const nodeUuid in nodes) {
@@ -854,6 +853,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateHint: function() {
+      if (!this.isPropertyInitialized("workbench")) {
+        return;
+      }
       const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {

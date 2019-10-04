@@ -110,12 +110,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(newButton, "newServiceBtn");
       toolbar.add(newButton);
 
-      const deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
-      deleteButton.addListener("execute", e => {
-        this.__deleteNode();
+      toolbar.addSpacer();
+
+      const openButton = new qx.ui.toolbar.Button("Open", "@FontAwesome5Solid/edit/"+iconSize);
+      openButton.addListener("execute", e => {
+        this.__openItem();
       }, this);
-      osparc.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
-      toolbar.add(deleteButton);
+      osparc.utils.Utils.setIdToWidget(openButton, "openServiceBtn");
+      toolbar.add(openButton);
 
       const renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
@@ -123,6 +125,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
       osparc.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
       toolbar.add(renameButton);
+
+      const deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      deleteButton.addListener("execute", e => {
+        this.__deleteNode();
+      }, this);
+      osparc.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
+      toolbar.add(deleteButton);
 
       return toolbar;
     },
@@ -136,24 +145,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __buildTree: function() {
-      let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         decorator: "service-tree",
         openMode: "none",
         contentPadding: 0,
         padding: 0
       });
-      tree.addListener("dbltap", e => {
-        const currentSelection = this.__getOneSelectedRow();
-        if (currentSelection) {
-          this.fireDataEvent("nodeDoubleClicked", currentSelection.getNodeId());
-        }
-      }, this);
-      tree.addListener("tap", e => {
-        const currentSelection = this.__getOneSelectedRow();
-        if (currentSelection) {
-          this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
-        }
-      }, this);
+      osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
       return tree;
     },
 
@@ -175,6 +173,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             c.bindDefaultProperties(item, id);
             c.bindProperty("label", "label", null, item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
+          },
+          configureItem: item => {
+            item.addListener("dbltap", () => {
+              this.__openItem(item.getModel().getNodeId());
+            }, this);
+            item.addListener("tap", e => {
+              this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
+            }, this);
           }
         });
       }
@@ -232,11 +238,24 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __deleteNode: function() {
-      let selectedItem = this.__getSelection();
+      const selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;
       }
       this.fireDataEvent("removeNode", selectedItem.getNodeId());
+    },
+
+    __openItem: function(nodeId) {
+      if (nodeId) {
+        this.fireDataEvent("nodeDoubleClicked", nodeId);
+      } else {
+        const selectedItem = this.__getSelection();
+        if (selectedItem === null) {
+          this.fireDataEvent("nodeDoubleClicked", "root");
+        } else {
+          this.fireDataEvent("nodeDoubleClicked", selectedItem.getNodeId());
+        }
+      }
     },
 
     __openItemRenamer: function() {
