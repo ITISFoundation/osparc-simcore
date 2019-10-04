@@ -65,8 +65,8 @@ async function runTutorial (url) {
 }
 
 const urls = [
-  "http://localhost:9081/"
-  // "http://master.osparc.io/",
+  // "http://localhost:9081/"
+  "https://osparc01.speag.com/",
   // "https://staging.osparc.io/",
   // "https://osparc.io/",
 ];
