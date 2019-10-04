@@ -60,7 +60,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/me.yaml#/TokenIdEnveloped'
+                $ref: './components/schemas/me.yaml#/TokenEnveloped'
 
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'

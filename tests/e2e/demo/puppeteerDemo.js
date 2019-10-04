@@ -35,6 +35,7 @@ async function run () {
   // NEW STUDY from Template
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplateAndRun(page, templateName);
+  await page.waitFor(40000);
   await auto.toDashboard(page);
 
   // First study edition
@@ -42,6 +43,7 @@ async function run () {
   await page.waitFor(2000);
 
   await auto.dashboardDataBrowser(page);
+  await page.waitFor(2000);
 
   // LOGOUT
   if (demo) {

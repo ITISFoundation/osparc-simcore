@@ -247,7 +247,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     },
 
     removeSlot: function(name) {
-      var index = this.__name.indexOf(name);
+      const index = this.__name.indexOf(name);
       if (index > -1) {
         this.getSocket().removeAllListeners(this.__name[index]);
         this.__name.splice(index, 1);

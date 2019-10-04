@@ -21,13 +21,17 @@
 qx.Class.define("osparc.desktop.ServiceFilters", {
   extend: qx.ui.core.Widget,
 
+  /**
+   * Constructor takes the desired groupId for the filters group.
+   * @param {String} groupId Group id of the filter
+   */
   construct: function(groupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
     const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", groupId);
     osparc.utils.Utils.setIdToWidget(textFilter, "serviceFiltersTextFld");
-    const tagsFilter = this.__tagsFilter = new osparc.component.filter.TagsFilter("tags", groupId);
+    const tagsFilter = this.__tagsFilter = new osparc.component.filter.NodeTypeFilter("tags", groupId);
     this._add(textFilter);
     this._add(tagsFilter);
   },
@@ -44,6 +48,9 @@ qx.Class.define("osparc.desktop.ServiceFilters", {
       this.__tagsFilter.reset();
     },
 
+    /**
+     * Returns the text filter widget.
+     */
     getTextFilter: function() {
       return this.__textFilter;
     },

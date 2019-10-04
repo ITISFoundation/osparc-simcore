@@ -255,9 +255,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const chipContainer = this.__chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
         margin: [3, 4]
       });
-      const category = this.getNode().isContainer() ? null : osparc.statics.NodeStatics.getCategory(this.getNode().getMetaData().category);
+      const category = this.getNode().isContainer() ? null : osparc.utils.Services.getCategory(this.getNode().getMetaData().category);
       const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
-      const type = osparc.statics.NodeStatics.getType(nodeType);
+      const type = osparc.utils.Services.getType(nodeType);
       if (type) {
         chipContainer.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
       }
@@ -318,7 +318,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (data.tags && data.tags.length) {
         const category = this.getMetaData().category || "";
         const type = this.getMetaData().type || "";
-        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }
