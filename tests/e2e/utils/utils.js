@@ -95,18 +95,15 @@ async function waitForValidSleeperOutputFile(page) {
         resp.text().then(
           b => {
             if (b>=0 && b<=10) {
-              console.log('Succeed. Number in file: ', b)
               page.removeListener("response", callback)
-              resolve(resp)
+              resolve(b)
             }
             else {
-              console.error('Invalid value', b)
               page.removeListener("response", callback)
               reject("Sleeper should have a number between 0 and 10 in the output")
             }
           },
           e => {
-            console.error('Failed', e)
             page.removeListener("response", callback)
             reject("Failed downloading file")
           }
