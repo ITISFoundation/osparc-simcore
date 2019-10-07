@@ -1,0 +1,11 @@
+StatusEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: object
+      additionalProperties: true
+    error:
+      nullable: true
+      default: null

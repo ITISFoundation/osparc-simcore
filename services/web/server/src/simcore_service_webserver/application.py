@@ -25,6 +25,7 @@ from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .users import setup_users
+from .activity import setup_activity
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_projects(app) # needs storage
     setup_studies_access(app)
+    setup_activity(app)
 
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
