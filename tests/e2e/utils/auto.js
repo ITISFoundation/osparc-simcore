@@ -22,7 +22,8 @@ async function logIn(page, user, pass) {
 
   console.log("Logging in:", user);
   await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
-    visible: true
+    visible: true,
+    timeout: 10000
   });
   console.log("loginUserEmailFld found");
   await page.type('[osparc-test-id="loginUserEmailFld"]', user);
