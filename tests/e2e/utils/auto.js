@@ -25,13 +25,10 @@ async function logIn(page, user, pass) {
     visible: true,
     timeout: 10000
   });
-  console.log("loginUserEmailFld found");
   await page.type('[osparc-test-id="loginUserEmailFld"]', user);
   await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
-  console.log("loginPasswordFld found");
   await page.type('[osparc-test-id="loginPasswordFld"]', pass);
   await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
-  console.log("loginSubmitBtn found");
   await page.click('[osparc-test-id="loginSubmitBtn"]');
 }
 
