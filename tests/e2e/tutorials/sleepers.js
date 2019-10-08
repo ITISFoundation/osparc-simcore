@@ -35,7 +35,9 @@ async function runTutorial (url) {
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
-  await utils.waitForResponse(page, "projects?type=template");
+  // await utils.waitForResponse(page, "projects?type=template");
+  await page.waitFor(5000);
+
   // Run pipeline
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplate(page, templateName);
