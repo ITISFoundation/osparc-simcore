@@ -1,3 +1,5 @@
+const utils = require("./utils")
+
 class ResponsesQueue {
   constructor(page) {
     this.__page = page;
@@ -10,6 +12,7 @@ class ResponsesQueue {
     queue.push(url);
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
+        console.log("-- Queued response received", resp.url());
         page.removeListener("response", callback);
         const index = queue.indexOf(url);
         if (index > -1) {
@@ -20,7 +23,13 @@ class ResponsesQueue {
   }
 
   isResponseInQueue(url) {
-    this.__queue.includes(url);
+    return this.__queue.includes(url);
+  }
+
+  async waitUntilResponse(url) {
+    while (this.isResponseInQueue(url)) {
+      await utils.sleep(200);
+    }
   }
 }
 

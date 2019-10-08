@@ -39,10 +39,7 @@ async function runTutorial (url) {
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
-  // await utils.waitForResponse(page, "projects?type=template");
-  while (responsesQueue.isResponseInQueue("projects?type=template")) {
-    await utils.sleep(100);
-  }
+  await responsesQueue.waitUntilResponse("projects?type=template");
 
   // Run pipeline
   const templateName = "Sleepers";
