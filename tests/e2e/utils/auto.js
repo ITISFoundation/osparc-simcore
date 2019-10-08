@@ -24,10 +24,13 @@ async function logIn(page, user, pass) {
   await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
     visible: true
   });
+  console.log("loginUserEmailFld found");
   await page.type('[osparc-test-id="loginUserEmailFld"]', user);
   await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
+  console.log("loginPasswordFld found");
   await page.type('[osparc-test-id="loginPasswordFld"]', pass);
   await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
+  console.log("loginSubmitBtn found");
   await page.click('[osparc-test-id="loginSubmitBtn"]');
 }
 
