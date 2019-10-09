@@ -312,6 +312,9 @@ async function checkDataProducedByNode(page) {
   const responsesQueue = new responses.ResponsesQueue(page);
   responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
 
+  const responsesQueue = new responses.ResponsesQueue(page);
+  responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
+
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
