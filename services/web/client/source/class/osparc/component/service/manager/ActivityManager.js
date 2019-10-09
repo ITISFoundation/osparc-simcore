@@ -22,7 +22,10 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
 
     this.__createFiltersBar();
     this.__createActivityTree();
+    this.__createFetchingView();
     this.__createActionsBar();
+
+    this.__reloadButton.fireEvent("execute");
   },
 
   statics: {
@@ -35,6 +38,8 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
   members: {
     __tree: null,
     __studyFilter: null,
+    __fetchingView: null,
+    __reloadButton: null,
     /**
      * Creates the top bar that holds the filtering widgets.
      */
@@ -69,6 +74,24 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
     },
 
     /**
+     * Creates a simple view with a fetching icon.
+     */
+    __createFetchingView: function() {
+      this.__fetchingView = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center",
+        alignY: "middle"
+      })).set({
+        visibility: "excluded"
+      });
+      const image = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26");
+      image.getContentElement().addClass("rotate");
+      this.__fetchingView.add(image);
+      this._add(this.__fetchingView, {
+        flex: 1
+      });
+    },
+
+    /**
      * Creates the bottom bar, which has buttons to refresh the tree and execute different actions on selected items.
      */
     __createActionsBar: function() {
@@ -79,9 +102,16 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       toolbar.addSpacer();
       toolbar.add(actionsPart);
 
-      const reloadButton = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/sync-alt/14");
+      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/sync-alt/14");
       tablePart.add(reloadButton);
-      reloadButton.addListener("execute", () => this.__tree.reset());
+      reloadButton.addListener("execute", () => {
+        this.__tree.exclude();
+        this.__fetchingView.show()
+        this.__tree.reset().then(() => {
+          this.__tree.show();
+          this.__fetchingView.exclude();
+        });
+      }, this);
 
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
