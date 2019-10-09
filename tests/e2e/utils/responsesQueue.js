@@ -10,6 +10,13 @@ class ResponsesQueue {
     const page = this.__page;
     const queue = this.__queue;
     queue.push(url);
+    console.log("-- Expected response added to queue", url);
+    page.on("request", function callback(req) {
+      if (req.url().includes(url)) {
+        console.log("-- Queued request sent", req.url());
+        page.removeListener("request", callback);
+      }
+    });
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log("-- Queued response received", resp.url());
@@ -22,13 +29,20 @@ class ResponsesQueue {
     });
   }
 
-  isResponseInQueue(url) {
+  __isResponseInQueue(url) {
     return this.__queue.includes(url);
   }
 
-  async waitUntilResponse(url) {
-    while (this.isResponseInQueue(url)) {
-      await utils.sleep(200);
+  async waitUntilResponse(url, timeout = 10000) {
+    let sleptFor = 0;
+    const sleepFor = 100;
+    while (this.__isResponseInQueue(url) && sleptFor < timeout) {
+      await utils.sleep(sleepFor);
+      sleptFor += sleepFor;
+    }
+    console.log("-- Slept for", sleptFor/1000, "s waiting for", url);
+    if (sleptFor >= timeout) {
+      throw("-- Timeout reached." + new Date().toUTCString());
     }
   }
 }

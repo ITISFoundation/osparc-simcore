@@ -39,7 +39,13 @@ async function runTutorial (url) {
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
-  await responsesQueue.waitUntilResponse("projects?type=template");
+  try {
+    await responsesQueue.waitUntilResponse("projects?type=template");
+  }
+  catch(err) {
+    console.error(err);
+  }
+  
 
   // Run pipeline
   const templateName = "Sleepers";
@@ -54,7 +60,7 @@ async function runTutorial (url) {
     await auto.checkDataProducedByNode(page);
   }
   catch(err) {
-    console.log("Failed checking Data Produced By Node", err);
+    console.error("Failed checking Data Produced By Node", err);
   }
 
   // Remove Study
