@@ -45,7 +45,6 @@ async function runTutorial (url) {
   catch(err) {
     console.error(err);
   }
-  
 
   // Run pipeline
   const templateName = "Sleepers";
