@@ -7,12 +7,12 @@ import json
 @login_required
 async def get_status(request: web.Request):
 
-    def get_container_stats(container):
-        return container.stats(decode=False, stream=False)
-
     def get_container_list():
         client = docker.from_env()
         return client.containers.list(all=True)
+
+    def get_container_stats(container):
+        return container.stats(decode=False, stream=False)
 
     def filter_fun(container):
         if container.labels.get('io.simcore.type'):
@@ -34,19 +34,24 @@ async def get_status(request: web.Request):
 
         return cpu
 
+    def calculate_memory_usage_not_windows(container_stats):
+        memory_stats = container_stats['memory_stats']
+        return memory_stats['usage'] / memory_stats['limit'] * 100
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
         stats = list(zip(containers, executor.map(get_container_stats, containers)))
 
     ret = {}
     for duple in stats:
         cont = duple[0]
-        container_id = cont.labels.get('com.docker.swarm.service.id')
+        node_id = cont.labels.get('com.docker.swarm.service.name').split('_')[1]
         stat = duple[1]
-        ret[container_id] = {}
-        ret[container_id]['key'] = json.loads(cont.labels.get('io.simcore.key')).get('key')
-        ret[container_id]['name'] = json.loads(cont.labels.get('io.simcore.name')).get('name')
-        ret[container_id]['stats'] = {}
-        ret[container_id]['stats']['cpuUsage'] = calculate_cpu_usage_linux(stat)
+        ret[node_id] = {}
+        ret[node_id]['key'] = json.loads(cont.labels.get('io.simcore.key')).get('key')
+        ret[node_id]['name'] = json.loads(cont.labels.get('io.simcore.name')).get('name')
+        ret[node_id]['stats'] = {}
+        ret[node_id]['stats']['cpuUsage'] = calculate_cpu_usage_linux(stat)
+        ret[node_id]['stats']['memoryUsage'] = calculate_memory_usage_not_windows(stat)
     
     return {
         'error': None,

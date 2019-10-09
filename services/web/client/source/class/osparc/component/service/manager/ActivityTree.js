@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       this.tr("Service"),
       this.tr("Status"),
       this.tr("CPU usage"),
-      this.tr("GPU usage")
+      this.tr("Memory usage")
     ]);
     this.base(arguments, this.__model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
@@ -161,8 +161,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
             let parentAdded = false;
             for (let key in study.workbench) {
               const node = study.workbench[key];
-              const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
-              if (metadata && (metadata.type === "computational" || metadata.type === "dynamic")) {
+              if (Object.keys(activity).includes(key)) {
                 if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
                   rows.push([
                     osparc.component.service.manager.ActivityManager.itemTypes.STUDY,
@@ -177,14 +176,9 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 const row = [];
                 row[0] = osparc.component.service.manager.ActivityManager.itemTypes.SERVICE;
                 row[1] = node.label;
-                if (metadata.key && metadata.key.length) {
-                  const splitted = metadata.key.split("/");
-                  row[2] = splitted[splitted.length-1];
-                }
-                const percentage = Math.floor(Math.random()*101);
-                const percentageGpu = Math.floor(Math.random()*101);
-                row[4] = percentage;
-                row[5] = percentageGpu;
+                row[2] = activity[key].name;
+                row[4] = Math.round(activity[key].stats.cpuUsage * 10) / 10;
+                row[5] = Math.round(activity[key].stats.memoryUsage * 10) / 10;
                 rows.push(row);
               }
             }

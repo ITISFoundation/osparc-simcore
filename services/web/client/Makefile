@@ -1,5 +1,5 @@
 # qooxdoo-kit's versions to use. See https://hub.docker.com/r/itisfoundation/qooxdoo-kit/tags
-export QOOXDOO_KIT_TAG=lastbuild
+export QOOXDOO_KIT_TAG=latest
 
 # version controled
 export VCS_URL:=$(shell git config --get remote.origin.url)
