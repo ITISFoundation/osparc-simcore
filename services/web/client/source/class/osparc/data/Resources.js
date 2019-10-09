@@ -311,6 +311,18 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
+      },
+      /*
+       * ACTIVITY
+       */
+      activity: {
+        usesCache: false,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + '/activity/status'
+          }
+        }
       }
     };
   },

@@ -151,15 +151,18 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
      * This functions updates the tree with the most recent data.
      */
     update: function() {
-      osparc.data.Resources.get("studies")
-        .then(studies => {
+      Promise.all([osparc.data.Resources.get("studies"), osparc.data.Resources.getOne("activity")])
+        .then(data => {
+          const studies = data[0];
+          const activity = data[1];
+          console.log(studies, activity);
           const rows = [];
           studies.forEach(study => {
             let parentAdded = false;
             for (let key in study.workbench) {
               const node = study.workbench[key];
               const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
-              if (metadata && metadata.type === "computational") {
+              if (metadata && (metadata.type === "computational" || metadata.type === "dynamic")) {
                 if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
                   rows.push([
                     osparc.component.service.manager.ActivityManager.itemTypes.STUDY,
