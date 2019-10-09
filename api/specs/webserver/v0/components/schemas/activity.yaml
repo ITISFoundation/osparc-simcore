@@ -1,11 +1,27 @@
-StatusEnveloped:
+ActivityEnveloped:
   type: object
   required:
     - data
   properties:
     data:
-      type: object
+      $ref: '#/Activity'
       additionalProperties: true
     error:
       nullable: true
       default: null
+
+Activity:
+  type: object
+  required:
+    - stats
+  properties:
+    stats:
+      $ref: '#/Status'
+
+Status:
+  type: object
+  properties:
+    cpuUsage:
+      type: number
+    memoryUsage:
+      type: number

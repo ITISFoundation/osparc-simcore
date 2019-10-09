@@ -8,15 +8,14 @@
 /**
  * This is a table display the status of running services in real time. Simulates, in some cases, the behavior of a tree.
  * Has sorting and resizing capabilities, and its UI changes depending on its display mode, that changes depending on the activated type of sorting.
- * WiP
  */
 qx.Class.define("osparc.component.service.manager.ActivityTree", {
-  extend: qx.ui.table.Table,
+  extend: osparc.ui.table.Table,
 
   /**
    * Constructor sets the model and general look.
    */
-  construct: function(data) {
+  construct: function() {
     this.__model = new qx.ui.table.model.Simple();
     this.__model.setColumns([
       this.tr("Type"),
@@ -37,7 +36,12 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
     columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475"));
 
+    this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE);
+
     this._applyMode(this.getMode());
+
+    this.__filters = {};
+    this.__sorting = {};
 
     this.__attachEventHandlers();
   },
@@ -49,9 +53,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       init: "hierarchical",
       apply: "_applyMode"
     },
-    data: {
+    selected: {
       check: "Array",
-      apply: "_applyData"
+      init: [],
+      event: "changeSelection"
     }
   },
 
@@ -64,8 +69,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
 
   members: {
     __model: null,
-    __filters: {},
-    __sorting: {},
+    __filters: null,
+    __sorting: null,
 
     _applyMode: function(mode) {
       const columnModel = this.getTableColumnModel();
@@ -89,7 +94,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     _applyFilters: function(filters) {
       this.__filters = filters;
       const filterText = filters.name;
-      const filterStudy = filters.study;
+      // const filterStudy = filters.study;
       // Filtering function
       const filter = row => {
         // By text
@@ -105,9 +110,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
           return true;
         };
         // By study
-        const studyFilterFn = roww => {
-          return true;
-        };
+        const studyFilterFn = roww => true;
         // Compose functions (AND)
         return nameFilterFn(row) && studyFilterFn(row);
       };
@@ -137,12 +140,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       });
     },
 
-    __removeStudies(data) {
+    __removeStudies: function(data) {
       return data.filter(item => item[0] !== osparc.component.service.manager.ActivityManager.itemTypes.STUDY);
-    },
-
-    _applyData: function(data) {
-      this.getTableModel().setData(data, false);
     },
 
     /**
@@ -231,6 +230,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         this.__sorting = e.getData();
         this.setMode(this.self().modes.FLAT);
         this.getTableModel().setData(this.__removeStudies(this.getTableModel().getData()), false);
+      }, this);
+
+      this.getSelectionModel().addListener("changeSelection", e => {
+        this.setSelected(this.getSelection());
       }, this);
     }
   }

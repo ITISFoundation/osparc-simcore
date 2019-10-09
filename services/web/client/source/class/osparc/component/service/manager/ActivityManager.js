@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       tablePart.add(reloadButton);
       reloadButton.addListener("execute", () => {
         this.__tree.exclude();
-        this.__fetchingView.show()
+        this.__fetchingView.show();
         this.__tree.reset().then(() => {
           this.__tree.show();
           this.__fetchingView.exclude();
@@ -124,6 +124,10 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info/14");
       actionsPart.add(infoButton);
       infoButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
+
+      [runButton, stopButton, infoButton].map(button => this.__tree.bind("selected", button, "enabled", {
+        converter: data => data.length > 0
+      }));
 
       this._add(toolbar);
     }

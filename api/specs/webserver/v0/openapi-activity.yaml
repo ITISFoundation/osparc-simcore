@@ -16,6 +16,6 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/activity.yaml#/StatusEnveloped'
+                $ref: './components/schemas/activity.yaml#/ActivityEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
