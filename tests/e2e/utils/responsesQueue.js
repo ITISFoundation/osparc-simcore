@@ -3,18 +3,25 @@ const utils = require("./utils")
 class ResponsesQueue {
   constructor(page) {
     this.__page = page;
+    this.__reqQueue = [];
     this.__respQueue = [];
   }
 
   addResponseListener(url) {
     const page = this.__page;
+    const reqQueue = this.__reqQueue;
     const respQueue = this.__respQueue;
+    reqQueue.push(url);
     respQueue.push(url);
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
         console.log("-- Queued request sent", req.url());
         page.removeListener("request", callback);
+        const index = reqQueue.indexOf(url);
+        if (index > -1) {
+          reqQueue.splice(index, 1);
+        }
       }
     });
     page.on("response", function callback(resp) {
@@ -29,14 +36,18 @@ class ResponsesQueue {
     });
   }
 
-  __isResponseInQueue(url) {
+  isRequestInQueue(url) {
+    return this.__reqQueue.includes(url);
+  }
+
+  isResponseInQueue(url) {
     return this.__respQueue.includes(url);
   }
 
   async waitUntilResponse(url, timeout = 10000) {
     let sleptFor = 0;
     const sleepFor = 100;
-    while (this.__isResponseInQueue(url) && sleptFor < timeout) {
+    while (this.isResponseInQueue(url) && sleptFor < timeout) {
       await utils.sleep(sleepFor);
       sleptFor += sleepFor;
     }
