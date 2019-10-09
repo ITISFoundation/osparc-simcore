@@ -3,13 +3,13 @@ const utils = require("./utils")
 class ResponsesQueue {
   constructor(page) {
     this.__page = page;
-    this.__queue = [];
+    this.__respQueue = [];
   }
 
   addResponseListener(url) {
     const page = this.__page;
-    const queue = this.__queue;
-    queue.push(url);
+    const respQueue = this.__respQueue;
+    respQueue.push(url);
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
@@ -21,16 +21,16 @@ class ResponsesQueue {
       if (resp.url().includes(url)) {
         console.log("-- Queued response received", resp.url());
         page.removeListener("response", callback);
-        const index = queue.indexOf(url);
+        const index = respQueue.indexOf(url);
         if (index > -1) {
-          queue.splice(index, 1);
+          respQueue.splice(index, 1);
         }
       }
     });
   }
 
   __isResponseInQueue(url) {
-    return this.__queue.includes(url);
+    return this.__respQueue.includes(url);
   }
 
   async waitUntilResponse(url, timeout = 10000) {
