@@ -10,6 +10,9 @@ echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
 
+echo "updating certificates..."
+update-ca-certificates
+echo "certificates updated"
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
