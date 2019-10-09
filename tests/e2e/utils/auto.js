@@ -259,7 +259,7 @@ async function runStudy(page, waitFor = 0) {
     reqInQueue = responsesQueue.isRequestInQueue("/start");
   }
   if (reqInQueue) {
-    console.log("Starting pipeline didn't work, pressing run again");
+    console.log("Starting pipeline didn't work, pressing 'Run' again");
     await page.click('[osparc-test-id="runStudyBtn"]');
   }
 
