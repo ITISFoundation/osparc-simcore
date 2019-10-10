@@ -3,6 +3,7 @@
 const startBrowser = require('../utils/startBrowser');
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
+const responses = require('../utils/responsesQueue');
 
 const demo = false;
 
@@ -28,14 +29,18 @@ async function runTutorial (url) {
   const page = await browser.newPage();
   await page.goto(url);
 
+  const responsesQueue = new responses.ResponsesQueue(page);
+
   if (newUser) {
     await auto.register(page, user, pass);
   }
   // Login
+  responsesQueue.addResponseListener("projects?type=template");
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
-  await utils.waitForResponse(page, "projects?type=template");
+  await responsesQueue.waitUntilResponse("projects?type=template");
+
   // Run pipeline
   const templateName = "Sleepers";
   await auto.dashboardOpenFirstTemplate(page, templateName);
