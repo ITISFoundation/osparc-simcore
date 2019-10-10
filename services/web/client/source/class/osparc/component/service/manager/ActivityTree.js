@@ -152,7 +152,6 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         .then(data => {
           const studies = data[0];
           const activity = data[1];
-          console.log(studies, activity);
           const rows = [];
           studies.forEach(study => {
             let parentAdded = false;

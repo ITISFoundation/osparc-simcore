@@ -95,7 +95,12 @@ async def _create_docker_service_params(app: aiohttp.web.Application,
             "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
-        "Init": True
+        "Init": True,
+        "Labels": {
+            "user_id": user_id,
+            "study_id": project_id,
+            "node_id": node_uuid
+        }
     }
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
