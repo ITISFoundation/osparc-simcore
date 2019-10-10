@@ -11,6 +11,7 @@ import aiohttp
 import tenacity
 
 from . import config, docker_utils, exceptions, registry_proxy
+from .config import CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
@@ -239,7 +240,8 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
                 stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
 async def _pass_port_to_service(service_name: str,
                                 port: str,
-                                service_boot_parameters_labels: Dict):
+                                service_boot_parameters_labels: Dict,
+                                session: ClientSession):
     for param in service_boot_parameters_labels:
         await _check_setting_correctness(param)
         if param['name'] == 'published_host':
@@ -252,9 +254,8 @@ async def _pass_port_to_service(service_name: str,
                 config.PUBLISHED_HOST_NAME), "port": str(port)}
             log.debug("creating request %s and query %s",
                       service_url, query_string)
-            async with aiohttp.ClientSession() as session:
-                async with session.post(service_url, data=query_string) as response:
-                    log.debug("query response: %s", await response.text())
+            async with session.post(service_url, data=query_string) as response:
+                log.debug("query response: %s", await response.text())
             return
     log.debug("service %s does not need to know its external port", service_name)
 
@@ -436,7 +437,8 @@ async def _start_docker_service(app: aiohttp.web.Application,
         service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
         service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
-            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels)
+            session = app[CLIENT_SESSION_KEY]
+            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels, session)
 
         container_meta_data = {
             "published_port": published_port,
@@ -614,13 +616,13 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
                                             service_details["service_basepath"])
         log.debug("saving state of service %s...", service_host_name)
         try:
-            async with aiohttp.ClientSession() as session:
-                service_url = "http://" + service_host_name + "/" + "state"
-                async with session.post(service_url) as response:
-                    if 199 < response.status < 300:
-                        log.debug("service %s successfully saved its state", service_host_name)
-                    else:
-                        log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
+            session = app[CLIENT_SESSION_KEY]
+            service_url = "http://" + service_host_name + "/" + "state"
+            async with session.post(service_url) as response:
+                if 199 < response.status < 300:
+                    log.debug("service %s successfully saved its state", service_host_name)
+                else:
+                    log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
         except aiohttp.ClientConnectionError:
             log.exception("service %s could not be contacted, state not saved")
 
