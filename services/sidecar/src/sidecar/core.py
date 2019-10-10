@@ -43,7 +43,7 @@ def session_scope(session_factory):
     finally:
         session.close()
 
-class Sidecar:
+class Sidecar: # pylint: disable=too-many-instance-attributes
     def __init__(self):
         # publish subscribe config
         self._pika = RabbitSettings()
