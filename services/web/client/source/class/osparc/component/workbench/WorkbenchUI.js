@@ -506,7 +506,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return osparc.store.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
+      return osparc.utils.Services.areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {
@@ -854,6 +854,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateHint: function() {
+      if (!this.isPropertyInitialized("workbench")) {
+        return;
+      }
       const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {

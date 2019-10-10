@@ -32,22 +32,66 @@ qx.Class.define("osparc.utils.Services", {
   type: "static",
 
   statics: {
+
+    CATEGORIES: {
+      postpro: {
+        label: "Postpro",
+        icon: "@FontAwesome5Solid/chart-bar/"
+      },
+      notebook: {
+        label: "Notebook",
+        icon: "@FontAwesome5Solid/file-code/"
+      },
+      solver: {
+        label: "Solver",
+        icon: "@FontAwesome5Solid/calculator/"
+      },
+      simulator: {
+        label: "Simulator",
+        icon: "@FontAwesome5Solid/brain/"
+      },
+      modeling: {
+        label: "Modeling",
+        icon: "@FontAwesome5Solid/cube/"
+      },
+      data: {
+        label: "Data",
+        icon: "@FontAwesome5Solid/file/"
+      }
+    },
+
+    TYPES: {
+      computational: {
+        label: "Computational",
+        icon: "@FontAwesome5Solid/cogs/"
+      },
+      dynamic: {
+        label: "Interactive",
+        icon: "@FontAwesome5Solid/mouse-pointer/"
+      },
+      container: {
+        label: "Group of nodes",
+        icon: "@FontAwesome5Solid/box-open/"
+      }
+    },
+
+    reloadingServices: false,
+    servicesCached: {},
+
     getTypes: function() {
-      return [
-        "computational",
-        "dynamic"
-      ];
+      return Object.keys(this.TYPES);
     },
 
     getCategories: function() {
-      return [
-        "data",
-        "modeling",
-        "simulator",
-        "solver",
-        "postpro",
-        "notebook"
-      ];
+      return Object.keys(this.CATEGORIES);
+    },
+
+    getCategory: function(category) {
+      return this.CATEGORIES[category.trim().toLowerCase()];
+    },
+
+    getType: function(type) {
+      return this.TYPES[type.trim().toLowerCase()];
     },
 
     convertArrayToObject: function(servicesArray) {
@@ -107,7 +151,7 @@ qx.Class.define("osparc.utils.Services", {
 
     getLatest: function(services, key) {
       if (key in services) {
-        const versions = osparc.utils.Services.getVersions(services, key);
+        const versions = this.getVersions(services, key);
         return services[key][versions[versions.length - 1]];
       }
       return null;
@@ -130,7 +174,7 @@ qx.Class.define("osparc.utils.Services", {
           let allIn = true;
           const innerServices = service["innerNodes"];
           for (const innerService in innerServices) {
-            allIn &= osparc.utils.Services.isServiceInList(listOfServices, innerServices[innerService].key);
+            allIn &= this.isServiceInList(listOfServices, innerServices[innerService].key);
           }
           if (allIn) {
             filteredServices.push(service);
@@ -140,6 +184,276 @@ qx.Class.define("osparc.utils.Services", {
         }
       }
       return filteredServices;
+    },
+
+    __matchPortType: function(typeA, typeB) {
+      if (typeA === typeB) {
+        return true;
+      }
+      let mtA = osparc.data.MimeType.getMimeType(typeA);
+      let mtB = osparc.data.MimeType.getMimeType(typeB);
+      return mtA && mtB &&
+        new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
+    },
+
+    areNodesCompatible: function(topLevelPort1, topLevelPort2) {
+      console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
+      return topLevelPort1.isInput !== topLevelPort2.isInput;
+    },
+
+    arePortsCompatible: function(port1, port2) {
+      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
+    },
+
+    getNodeMetaData: function(key, version) {
+      let metaData = null;
+      if (key && version) {
+        metaData = this.getFromObject(osparc.store.Store.getInstance().getServices(), key, version);
+        if (metaData) {
+          metaData = osparc.utils.Utils.deepCloneObject(metaData);
+          if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
+            metaData.outputs["modeler"] = {
+              "label": "Modeler",
+              "displayOrder":0,
+              "description": "Modeler",
+              "type": "node-output-tree-api-v0.0.1"
+            };
+            delete metaData.outputs["output_1"];
+          }
+          return metaData;
+        }
+        const allServices = osparc.dev.fake.Data.getFakeServices().concat(this.getBuiltInServices());
+        metaData = this.getFromArray(allServices, key, version);
+        if (metaData) {
+          return osparc.utils.Utils.deepCloneObject(metaData);
+        }
+      }
+      return null;
+    },
+
+    getBuiltInServices: function() {
+      const builtInServices = [{
+        key: "simcore/services/frontend/file-picker",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "File Picker",
+        description: "File Picker",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {},
+        outputs: {
+          outFile: {
+            displayOrder: 0,
+            label: "File",
+            description: "Chosen File",
+            type: "data:*/*"
+          }
+        }
+      }];
+      return builtInServices;
+    },
+
+    servicesToCache: function(services, fromServer) {
+      this.servicesCached = {};
+      this.__addCategoryToServices(services);
+      this.servicesCached = Object.assign(this.servicesCached, services);
+      this.reloadingServices = false;
+    },
+
+    __addCategoryToServices: function(services) {
+      const cats = {
+        "simcore/services/frontend/file-picker": {
+          "category": "Data"
+        },
+        "simcore/services/dynamic/mattward-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/bornstein-viewer": {
+          "category": "Solver"
+        },
+        "simcore/services/dynamic/cc-0d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-1d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-2d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/raw-graphs": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/3d-viewer-gpu": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/jupyter-r-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-base-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-scipy-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/comp/rabbit-ss-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/rabbit-ss-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-gb-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-0d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/human-ord-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/osparc-opencor": {
+          "category": "Solver"
+        },
+
+        "simcore/services/comp/itis/sleeper": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/itis/isolve-emlf": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/itis/neuron-isolve": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-1d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis-2d-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/kember-cardiac-model": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/computational/itis/Solver-LF": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/container/itis/s4l/Simulator/LF": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/MaterialDB": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Modeler": {
+          "category": "Modeling"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity": {
+          "category": "PostPro"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/neuroman": {
+          "category": "Modeling"
+        },
+        "simcore/services/dynamic/kember-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/modeler/webserver": {
+          "category": "Modeling"
+        },
+        "simcore/services/dynamic/modeler/webserverwithrat": {
+          "category": "Modeling"
+        },
+        "simcore/services/frontend/multi-plot": {
+          "category": "PostPro"
+        }
+      };
+      for (const serviceKey in services) {
+        if (Object.prototype.hasOwnProperty.call(services, serviceKey)) {
+          let service = services[serviceKey];
+          if (serviceKey in cats) {
+            for (const version in service) {
+              let serv = service[version];
+              if (Object.prototype.hasOwnProperty.call(service, version)) {
+                serv["category"] = cats[serviceKey]["category"];
+              } else {
+                serv["category"] = "Unknown";
+              }
+            }
+          } else {
+            for (const version in service) {
+              service[version]["category"] = "Unknown";
+            }
+          }
+        }
+      }
+    },
+
+    stopInteractiveService(nodeId) {
+      const params = {
+        url: {
+          nodeId
+        }
+      };
+      osparc.data.Resources.fetch("interactiveServices", "delete", params);
     }
   }
 });
