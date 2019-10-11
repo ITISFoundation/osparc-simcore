@@ -20,6 +20,7 @@ pytest-runner
 Faker
 openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
 tenacity
+docker
 
 # tools
 pylint

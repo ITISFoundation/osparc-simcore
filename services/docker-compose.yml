@@ -86,8 +86,6 @@ services:
     networks:
       - default
       - interactive_services_subnet
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
