@@ -7,6 +7,7 @@
 
 qx.Class.define("osparc.ui.hint.Hint", {
   extend: qx.ui.core.Widget,
+  include: [qx.ui.core.MRemoteChildrenHandling, qx.ui.core.MRemoteLayoutHandling],
 
   construct: function(element, text) {
     this.base(arguments);
@@ -15,7 +16,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
       backgroundColor: "transparent"
     });
 
-    this.__hintContainer = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+    this.__hintContainer = new qx.ui.container.Composite();
     this.__hintContainer.set({
       appearance: "hint"
     });
@@ -26,39 +27,53 @@ qx.Class.define("osparc.ui.hint.Hint", {
     });
     this.__caret.getContentElement().addClass("hint");
     this._add(this.__caret);
-    this.__hintContainer.add(new qx.ui.basic.Label(text).set({
-      rich: true,
-      maxWidth: 250
-    }));
     this._add(this.__hintContainer, {
       flex: 1
     });
 
-    this.positionHint(element);
+    const root = qx.core.Init.getApplication().getRoot();
+    root.add(this, {
+      top: -10000
+    });
+
+    this.addListener("appear", () => this.updatePosition(), this);
+
+    if (element) {
+      this.setElement(element);
+      if (text) {
+        this.__hintContainer.setLayout(new qx.ui.layout.Basic());
+        this.add(new qx.ui.basic.Label(text).set({
+          rich: true,
+          maxWidth: 250
+        }));
+      }
+    }
+  },
+
+  properties: {
+    element: {}
   },
 
   members: {
-    positionHint: function(element) {
-      this.addListener("appear", () => {
-        const {
-          top,
-          left
-        } = qx.bom.element.Location.get(element.getContentElement().getDomElement());
-        const {
-          width,
-          height
-        } = qx.bom.element.Dimension.getSize(element.getContentElement().getDomElement());
-        const selfBounds = this.getBounds();
-        this.setLayoutProperties({
-          top: top + height,
-          left: Math.floor(left + (width - selfBounds.width) / 2)
-        });
-      }, this);
-
-      const root = qx.core.Init.getApplication().getRoot();
-      root.add(this, {
-        top: -10000
+    updatePosition: function() {
+      const {
+        top,
+        left
+      } = qx.bom.element.Location.get(this.getElement().getContentElement().getDomElement());
+      const {
+        width,
+        height
+      } = qx.bom.element.Dimension.getSize(this.getElement().getContentElement().getDomElement());
+      const selfBounds = this.getBounds();
+      this.setLayoutProperties({
+        top: top + height,
+        left: Math.floor(left + (width - selfBounds.width) / 2)
       });
+    },
+
+    // overwritten
+    getChildrenContainer: function() {
+      return this.__hintContainer;
     }
   }
 });
