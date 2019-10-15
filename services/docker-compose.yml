@@ -168,7 +168,7 @@ services:
       - computational_services_subnet
 
   rabbit:
-    image: rabbitmq:3.7.17-management
+    image: rabbitmq:3.8.0-management
     init: true
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
