@@ -4,6 +4,8 @@
 import logging
 import os
 
+from servicelib.client_session import APP_CLIENT_SESSION_KEY
+
 DEBUG_MODE = os.environ.get("DEBUG", False) in ["true", "True", True]
 
 logging.basicConfig(
@@ -46,5 +48,6 @@ SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")
 
 
-# app keys for persistend aiohttp.ClientSession
-CLIENT_SESSION_KEY = __name__ + '.session'
+__all__ = [
+    'APP_CLIENT_SESSION_KEY'
+]

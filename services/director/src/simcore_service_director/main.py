@@ -2,20 +2,14 @@
 
 import logging
 
-from aiohttp import ClientSession, web
+from aiohttp import web
+from servicelib.client_session import persistent_client_session
 from servicelib.monitoring import setup_monitoring
 from simcore_service_director import registry_cache_task, resources
 from simcore_service_director.rest import routing
 
-from .config import CLIENT_SESSION_KEY
 
 log = logging.getLogger(__name__)
-
-
-async def _persistent_session(app: web.Application):
-    app[CLIENT_SESSION_KEY] = session = ClientSession()
-    yield
-    await session.close()
 
 
 def setup_app() -> web.Application:
@@ -28,7 +22,7 @@ def setup_app() -> web.Application:
     if False: #pylint: disable=using-constant-test
         setup_monitoring(app, "simcore_service_director")
 
-    app.cleanup_ctx.append(_persistent_session)
+    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 

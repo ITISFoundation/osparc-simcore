@@ -10,7 +10,7 @@ from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
 from yarl import URL
 
-from .config import CLIENT_SESSION_KEY
+from .config import APP_CLIENT_SESSION_KEY
 
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 
@@ -88,7 +88,7 @@ async def _registry_request(app: web.Application, path: URL, method: str ="GET")
         if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
             else None
 
-    session = app[CLIENT_SESSION_KEY]
+    session = app[APP_CLIENT_SESSION_KEY]
     async with getattr(session, method.lower())(url, auth=auth) as response:
         if response.status == 404:
             _logger.exception("path to registry not found: %s", url)
