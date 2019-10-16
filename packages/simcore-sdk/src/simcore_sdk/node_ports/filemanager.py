@@ -139,11 +139,11 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
             # This package has no app so session is passed as optional arguments
             # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
             #
-            actual_session = session or ClientSession()
+            active_session = session or ClientSession()
             try:
-                await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
+                await _download_link_to_file(active_session, download_link, local_file_path, store_id, s3_object)
             finally:
-                if actual_session is not session:
+                if active_session is not session:
                     warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
                         category=DeprecationWarning)
                     await session.close()
@@ -181,11 +181,11 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
             # This package has no app so session is passed as optional arguments
             # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
             #
-            actual_session = session or ClientSession()
+            active_session = session or ClientSession()
             try:
-                await _upload_file_to_link(session, upload_link, local_file_path)
+                await _upload_file_to_link(active_session, upload_link, local_file_path)
             finally:
-                if actual_session is not session:
+                if active_session is not session:
                     warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
                         category=DeprecationWarning)
                     await session.close()
