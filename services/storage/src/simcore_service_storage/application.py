@@ -4,9 +4,9 @@
 """
 import logging
 
-from aiohttp import web, ClientSession
+from aiohttp import web
 from servicelib.monitoring import setup_monitoring
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY
+from servicelib.client_session import persistent_client_session
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -17,11 +17,6 @@ from .settings import APP_CONFIG_KEY
 log = logging.getLogger(__name__)
 
 
-async def persistent_client_session(app: web.Application):
-    # see https://docs.aiohttp.org/en/latest/client_advanced.html#aiohttp-persistent-session
-    app[APP_CLIENT_SESSION_KEY] = session = ClientSession()
-    yield
-    await session.close()
 
 
 def create(config):

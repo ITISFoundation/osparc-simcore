@@ -10,7 +10,6 @@ from typing import Dict, List, Tuple
 
 import aiobotocore
 import aiofiles
-import aiohttp
 import attr
 import sqlalchemy as sa
 from aiohttp import web
@@ -18,7 +17,7 @@ from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY
+from servicelib.client_session import get_client_session
 from sqlalchemy.sql import and_
 from yarl import URL
 
@@ -60,8 +59,7 @@ async def _setup_dsm(app: web.Application):
     bucket_name = s3_cfg["bucket_name"]
 
     testing = main_cfg["testing"]
-    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing)
-    dsm.app = app
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing, app)
 
     app[APP_DSM_KEY] = dsm
 
@@ -115,6 +113,7 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
+    app: web.Application=None
 
     datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
@@ -437,7 +436,7 @@ class DataStorageManager:
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath, filename)
         url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        session = self.app[APP_CLIENT_SESSION_KEY]
+        session = get_client_session(self.app)
         async with session.get(url) as resp:
             if resp.status == 200:
                 f = await aiofiles.open(local_file_path, mode='wb')
@@ -459,7 +458,7 @@ class DataStorageManager:
 
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath,filename)
-        session = self.app[APP_CLIENT_SESSION_KEY]
+        session = get_client_session(self.app)
 
         async with session.get(dc_link) as resp:
             if resp.status == 200:

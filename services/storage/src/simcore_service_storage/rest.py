@@ -5,10 +5,10 @@ import asyncio
 import logging
 
 from aiohttp import web
-from yarl import URL
-
+from servicelib.client_session import get_client_session
 from servicelib.openapi import create_openapi_specs, get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
+from yarl import URL
 
 from . import rest_routes
 from .rest_config import CONFIG_SECTION_NAME
@@ -33,14 +33,13 @@ def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
 
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    # app_config = app[APP_CONFIG_KEY]['main'] # TODO: define appconfig key based on config schema
-    # api_specs = create_apispecs(app_config)
-
-    loop = asyncio.get_event_loop()
     location = "{}/storage/{}/openapi.yaml".format(cfg["oas_repo"], API_VERSION_TAG)
+
+    # TODO: refactor this and into something more maintainable
+    loop = asyncio.get_event_loop()
     if is_url(location):
-        loop.run_until_complete( assert_enpoint_is_ok(URL(location)) )
+        session = get_client_session(app)
+        loop.run_until_complete( assert_enpoint_is_ok(session, URL(location)) )
     api_specs = loop.run_until_complete( create_openapi_specs(location) )
 
     # validated openapi specs
