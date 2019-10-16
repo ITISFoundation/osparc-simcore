@@ -1,19 +1,18 @@
 import json
 from pathlib import Path
 from typing import Dict
-from .jsonschema_validation import validate_instance
-
 
 from aiohttp import ClientSession
 from jsonschema import ValidationError
 from yarl import URL
+
+from .jsonschema_validation import validate_instance
 
 
 def _load_from_path(filepath: Path) -> Dict:
     with filepath.open() as f:
         spec_dict = json.load(f)
         return spec_dict
-
 
 async def _load_from_url(session: ClientSession, url: URL) -> Dict:
     async with session.get(url) as resp:

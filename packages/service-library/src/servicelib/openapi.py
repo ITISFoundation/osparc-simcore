@@ -9,8 +9,7 @@ from typing import Dict, Tuple
 import openapi_core
 import yaml
 from aiohttp import ClientSession
-from openapi_core.schema.exceptions import (OpenAPIError,  # pylint: disable=W0611
-                                            OpenAPIMappingError)
+from openapi_core.schema.exceptions import OpenAPIError, OpenAPIMappingError
 from openapi_core.schema.specs.models import Spec
 from yarl import URL
 
@@ -37,23 +36,20 @@ def get_base_path(specs: OpenApiSpec) ->str:
     return '/v' + specs.info.version.split('.')[0]
 
 
+# TODO: _load_from_* is also found in jsonshema_specs
 def _load_from_path(filepath: Path) -> Tuple[Dict, str]:
     with filepath.open() as f:
         spec_dict = yaml.safe_load(f)
         return spec_dict, filepath.as_uri()
 
-
-async def _load_from_url(url: URL) -> Tuple[Dict, str]:
-    #TIMEOUT_SECS = 5*60
-    #async with ClientSession(timeout=TIMEOUT_SECS) as session:
-    async with ClientSession() as session:
-        async with session.get(url) as resp:
-            text = await resp.text()
-            spec_dict = yaml.safe_load(text)
-            return spec_dict, str(url)
+async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
+    async with session.get(url) as resp:
+        text = await resp.text()
+        spec_dict = yaml.safe_load(text)
+        return spec_dict, str(url)
 
 
-async def create_openapi_specs(location) -> OpenApiSpec:
+async def create_openapi_specs(location, session: ClientSession=None) -> OpenApiSpec:
     """ Loads specs from a given location (url or path),
         validates them and returns a working instance
 
@@ -69,7 +65,9 @@ async def create_openapi_specs(location) -> OpenApiSpec:
     :rtype: OpenApiSpec
     """
     if URL(str(location)).host:
-        spec_dict, spec_url = await _load_from_url(URL(location))
+        if session is None:
+            raise ValueError("Client session required in arguments")
+        spec_dict, spec_url = await _load_from_url(session, URL(location))
     else:
         path = Path(location).expanduser().resolve() #pylint: disable=no-member
         spec_dict, spec_url = _load_from_path(path)
@@ -95,5 +93,7 @@ def create_specs(openapi_path: Path) -> OpenApiSpec:
 __all__ = (
     'get_base_path',
     'create_openapi_specs',
-    'OpenApiSpec'
+    'OpenApiSpec',
+    'OpenAPIError',
+    'OpenAPIMappingError'
 )
