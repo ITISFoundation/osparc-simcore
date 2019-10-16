@@ -1,11 +1,14 @@
 from aiohttp import web
 from ..login.decorators import login_required
 import aiohttp
+from yarl import URL
 
 @login_required
 async def get_status(request: web.Request):
     async with aiohttp.ClientSession() as session:
-        async with session.get('http://127.0.0.1:9090/api/v1/query?query=irate%28container_cpu_user_seconds_total%7Bcontainer_label_user_id%3D~%22.%2B%22%7D%5B12s%5D%29%20%2A%20100') as resp:
+        query = 'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{container_label_node_id=~".+"}[30s])*100)'
+        url = URL('http://prometheus:9090/api/v1/query').with_query('query=' + query)
+        async with session.get(url) as resp:
             status = resp.status
             result = await resp.text()
             return {
