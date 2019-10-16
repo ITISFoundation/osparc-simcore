@@ -1,5 +1,6 @@
 #pylint: disable=too-many-arguments
 import logging
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
@@ -143,6 +144,8 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
                 await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
             finally:
                 if actual_session is not session:
+                    warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
+                        category=DeprecationWarning)
                     await session.close()
 
             return local_file_path
@@ -183,6 +186,8 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
                 await _upload_file_to_link(session, upload_link, local_file_path)
             finally:
                 if actual_session is not session:
+                    warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
+                        category=DeprecationWarning)
                     await session.close()
 
             return store_id
