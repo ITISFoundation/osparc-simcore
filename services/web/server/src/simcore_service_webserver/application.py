@@ -5,8 +5,9 @@ import json
 import logging
 from typing import Dict
 
-from aiohttp import ClientSession, web
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
+from aiohttp import web
+from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.client_session import persistent_client_session
 from servicelib.monitoring import setup_monitoring
 
 from .application_proxy import setup_app_proxy
@@ -28,13 +29,6 @@ from .users import setup_users
 
 log = logging.getLogger(__name__)
 
-
-
-async def _persistent_session(app: web.Application):
-    # see https://docs.aiohttp.org/en/latest/client_advanced.html#aiohttp-persistent-session
-    app[APP_CLIENT_SESSION_KEY] = session = ClientSession()
-    yield
-    await session.close()
 
 
 def create_application(config: Dict) -> web.Application:
@@ -75,7 +69,8 @@ def create_application(config: Dict) -> web.Application:
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
 
-    app.cleanup_ctx.append(_persistent_session)
+    # The last
+    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 
