@@ -43,7 +43,7 @@ def session_scope(session_factory):
     finally:
         session.close()
 
-class Sidecar:
+class Sidecar: # pylint: disable=too-many-instance-attributes
     def __init__(self):
         # publish subscribe config
         self._pika = RabbitSettings()
@@ -59,6 +59,9 @@ class Sidecar:
 
         # current task
         self._task = None
+
+        # current user id
+        self._user_id = None
 
         # stack name
         self._stack_name = None
@@ -266,6 +269,7 @@ class Sidecar:
 
     def initialize(self, task, user_id):
         self._task = task
+        self._user_id = user_id
 
         HOMEDIR = str(Path.home())
 
@@ -320,7 +324,8 @@ class Sidecar:
                                                             '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
                                                             environment=self._docker.env,
                                                             nano_cpus=config.SERVICES_MAX_NANO_CPUS,
-                                                            mem_limit=config.SERVICES_MAX_MEMORY_BYTES)
+                                                            mem_limit=config.SERVICES_MAX_MEMORY_BYTES,
+                                                            labels={'user_id': str(self._user_id), 'study_id': str(self._task.project_id), 'node_id': str(self._task.node_id)})
         except docker.errors.ImageNotFound:
             log.exception("Run container: Image not found")
         except docker.errors.APIError:
