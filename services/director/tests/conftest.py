@@ -94,9 +94,12 @@ async def aiohttp_mock_app(loop, mocker):
     print("client session started ...")
     session = ClientSession()
 
-    # mocks app[APP_CLIENT_SESSION_KEY]
+    mock_app_storage = {
+        config.APP_CLIENT_SESSION_KEY: session,
+        config.APP_REGISTRY_CACHE_DATA_KEY: dict()
+    }
     def _get_item(self, key):
-        return session if key==config.APP_CLIENT_SESSION_KEY else None
+        return mock_app_storage[key]
 
     aiohttp_app = mocker.patch('aiohttp.web.Application')
     aiohttp_app.__getitem__ = _get_item

@@ -3,9 +3,10 @@
 
 import json
 import time
+
 import pytest
 
-from simcore_service_director import registry_proxy, config
+from simcore_service_director import config, registry_proxy
 
 
 async def test_list_no_services_available(aiohttp_mock_app, docker_registry, configure_registry_access, configure_schemas_location):
@@ -141,21 +142,16 @@ async def test_get_image_details(aiohttp_mock_app, push_services, configure_regi
 
         assert details == service_description
 
-async def test_registry_caching(push_services, configure_registry_access, configure_schemas_location):
-    data_cache = {
-        config.APP_REGISTRY_CACHE_DATA_KEY:{
-
-        }
-    } # mock cache data
+async def test_registry_caching(aiohttp_mock_app, push_services, configure_registry_access, configure_schemas_location):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
     config.REGISTRY_CACHING = True
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(data_cache, registry_proxy.ServiceType.ALL)
+    services = await registry_proxy.list_services(aiohttp_mock_app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_without_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(data_cache, registry_proxy.ServiceType.ALL)
+    services = await registry_proxy.list_services(aiohttp_mock_app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_with_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
     assert time_to_retrieve_with_cache < time_to_retrieve_without_cache
