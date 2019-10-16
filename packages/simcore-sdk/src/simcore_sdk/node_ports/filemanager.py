@@ -2,11 +2,12 @@
 import logging
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
-import aiofiles
-import aiohttp
+from aiohttp import ClientSession
 from yarl import URL
 
+import aiofiles
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
 
@@ -72,7 +73,7 @@ async def _get_download_link(store_id:int, file_id:str, api:UsersApi) -> URL:
 async def _get_upload_link(store_id:int, file_id:str, api:UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
-async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
+async def _download_link_to_file(session:ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
     log.debug("Downloading from %s to %s", url, file_path)
     async with session.get(url) as response:
         if response.status == 404:
@@ -96,14 +97,22 @@ async def _file_sender(file_path:Path):
             yield chunk
             chunk = await file_pointer.read(CHUNK_SIZE)
 
-async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
+async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
     async with session.put(url, data=file_path.open('rb')) as resp:
         if resp.status > 299:
             response_text = await resp.text()
             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
 
-async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_folder: Path) -> Path:
+async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_folder: Path, session: Optional[ClientSession]=None) -> Path:
+    """ Downloads a file to S3
+
+    :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
+    :type session: ClientSession, optional
+    :raises exceptions.NodeportsException
+    :raises exceptions.S3InvalidPathError
+    :return: path to downloaded file
+    """
     log.debug("Downloading from store %s:id %s, s3 object %s, to %s", store_name, store_id, s3_object, local_folder)
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
@@ -123,13 +132,34 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
         # remove an already existing file if present
         if local_file_path.exists():
             local_file_path.unlink()
-        async with aiohttp.ClientSession() as session:
-            await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
+
+            # NOTE: creating a session at every call is inneficient and a persistent session
+            # per app is recommended.
+            # This package has no app so session is passed as optional arguments
+            # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
+            #
+            actual_session = session or ClientSession()
+            try:
+                await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
+            finally:
+                if actual_session is not session:
+                    await session.close()
+
             return local_file_path
 
     raise exceptions.S3InvalidPathError(s3_object)
 
-async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, local_file_path:Path):
+
+
+async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, local_file_path:Path, session: Optional[ClientSession]=None) -> str:
+    """ Uploads a file to S3
+
+    :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
+    :type session: ClientSession, optional
+    :raises exceptions.NodeportsException
+    :raises exceptions.S3InvalidPathError
+    :return: stored id
+    """
     log.debug("Trying to upload file to S3: store name %s, store id %s, s3object %s, file path %s", store_name, store_id, s3_object, local_file_path)
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
@@ -143,8 +173,18 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
         if upload_link:
             upload_link = URL(upload_link)
 
-            async with aiohttp.ClientSession() as session:
+            # NOTE: creating a session at every call is inneficient and a persistent session
+            # per app is recommended.
+            # This package has no app so session is passed as optional arguments
+            # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
+            #
+            actual_session = session or ClientSession()
+            try:
                 await _upload_file_to_link(session, upload_link, local_file_path)
-                return store_id
+            finally:
+                if actual_session is not session:
+                    await session.close()
+
+            return store_id
 
     raise exceptions.S3InvalidPathError(s3_object)
