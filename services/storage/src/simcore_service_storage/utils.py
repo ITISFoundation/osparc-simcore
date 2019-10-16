@@ -31,6 +31,7 @@ async def assert_enpoint_is_ok(url: URL, expected_response:int =200):
     :param expected_response: expected http status, defaults to 200 (OK)
     :param expected_response: int, optional
     """
+    # FIXME:  READ https://docs.aiohttp.org/en/latest/client_advanced.html#persistent-session
     async with ClientSession() as session:
         async with session.get(url) as resp:
             assert resp.status == expected_response
