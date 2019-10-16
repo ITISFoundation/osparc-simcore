@@ -37,10 +37,10 @@ def setup(app: web.Application):
 
     # TODO: refactor this and into something more maintainable
     loop = asyncio.get_event_loop()
+    session = get_client_session(app)
     if is_url(location):
-        session = get_client_session(app)
         loop.run_until_complete( assert_enpoint_is_ok(session, URL(location)) )
-    api_specs = loop.run_until_complete( create_openapi_specs(location) )
+    api_specs = loop.run_until_complete( create_openapi_specs(location, session) )
 
     # validated openapi specs
     app[APP_OPENAPI_SPECS_KEY] = api_specs
