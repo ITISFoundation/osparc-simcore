@@ -3,10 +3,13 @@
 
     SEE https://docs.aiohttp.org/en/latest/client_advanced.html#persistent-session
 """
+import logging
+
 from aiohttp import ClientSession, web
 
 from .application_keys import APP_CLIENT_SESSION_KEY
 
+log = logging.getLogger(__name__)
 
 def get_client_session(app: web.Application) -> ClientSession:
     """ Lazy initialization of ClientSession
@@ -27,9 +30,16 @@ async def persistent_client_session(app: web.Application):
 
     SEE https://docs.aiohttp.org/en/latest/client_advanced.html#aiohttp-persistent-session
     """
+    # lazy creation and holds reference to session at this point
     session = get_client_session(app)
 
     yield
+
+    # closes held session
+    if session is not app.get(APP_CLIENT_SESSION_KEY):
+        log.error("Unexpected client session upon cleanup! expected %s, got %s",
+            session,
+            app.get(APP_CLIENT_SESSION_KEY))
 
     await session.close()
 
