@@ -14,11 +14,25 @@ import pytest
 
 from simcore_service_director import config, exceptions, producer
 
+from aiohttp import ClientSession
 
 @pytest.fixture
 async def aiohttp_mock_app(loop, mocker):
+    print("client session started ...")
+    session = ClientSession()
+
+    # mocks app[APP_CLIENT_SESSION_KEY]
+    def _get_item(self, key):
+        return session if key==config.APP_CLIENT_SESSION_KEY else None
+
     aiohttp_app = mocker.patch('aiohttp.web.Application')
-    return aiohttp_mock_app
+    aiohttp_app.__getitem__ = _get_item
+
+    yield aiohttp_app
+
+    # cleanup session
+    await session.close()
+    print("client session closed")
 
 @pytest.fixture
 async def run_services(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
