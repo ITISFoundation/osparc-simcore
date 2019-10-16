@@ -7,7 +7,7 @@ import asyncio
 import logging
 from pprint import pformat
 
-from aiohttp import web
+from aiohttp import web, ClientSession
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.application_keys import (APP_CONFIG_KEY,
@@ -55,9 +55,14 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(logger, logging.INFO) )
 async def _get_specs(location):
-    specs = await create_jsonschema_specs(location)
+    try:
+        # NOTE: special case since app[CLIENT_SESSION_KEY] is created later in app.cleanup_ctx
+        # FIXME: ideally this would use the app[APP_CLIENT_SESSION_KEY] but it still does not exists at this point
+        session = ClientSession()
+        specs = await create_jsonschema_specs(session, location)
+    finally:
+        session.close()
     return specs
-
 
 
 def setup(app: web.Application, *, enable_fake_data=False) -> bool:
@@ -100,6 +105,7 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
     specs = loop.run_until_complete( _get_specs(project_schema_location) )
+
     if APP_JSONSCHEMA_SPECS_KEY in app:
         app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = specs
     else:
