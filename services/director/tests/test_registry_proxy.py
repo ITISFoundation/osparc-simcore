@@ -7,14 +7,9 @@ import pytest
 
 from simcore_service_director import registry_proxy, config
 
-@pytest.fixture
-async def aiohttp_mock_app(loop, mocker):
-    aiohttp_app = mocker.patch('aiohttp.web.Application')
-    return aiohttp_mock_app
-
 
 async def test_list_no_services_available(aiohttp_mock_app, docker_registry, configure_registry_access, configure_schemas_location):
-    
+
     computational_services = await registry_proxy.list_services(aiohttp_mock_app, registry_proxy.ServiceType.COMPUTATIONAL)
     assert not computational_services # it's empty
     interactive_services = await registry_proxy.list_services(aiohttp_mock_app, registry_proxy.ServiceType.DYNAMIC)

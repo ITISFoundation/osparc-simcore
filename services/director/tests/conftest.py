@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from aiohttp import ClientSession
 
 import simcore_service_director
 from simcore_service_director import config, resources
@@ -86,3 +87,22 @@ def configure_custom_registry(pytestconfig):
     config.REGISTRY_USER = pytestconfig.getoption("registry_user")
     config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
     config.REGISTRY_CACHING = False
+
+
+@pytest.fixture
+async def aiohttp_mock_app(loop, mocker):
+    print("client session started ...")
+    session = ClientSession()
+
+    # mocks app[APP_CLIENT_SESSION_KEY]
+    def _get_item(self, key):
+        return session if key==config.APP_CLIENT_SESSION_KEY else None
+
+    aiohttp_app = mocker.patch('aiohttp.web.Application')
+    aiohttp_app.__getitem__ = _get_item
+
+    yield aiohttp_app
+
+    # cleanup session
+    await session.close()
+    print("client session closed")
