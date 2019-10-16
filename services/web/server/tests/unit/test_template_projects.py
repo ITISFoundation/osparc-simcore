@@ -23,13 +23,12 @@ from yarl import URL
 @pytest.fixture
 async def project_specs(loop, project_schema_file: Path) -> Dict:
     # should not raise any exception
-    async with aiohttp.ClientSession() as session:
-        try:
-            specs = await create_jsonschema_specs(session, project_schema_file)
-        except SchemaError:
-            pytest.fail("validation of schema {} failed".format(project_schema_file))
-        else:
-            yield specs
+    try:
+        specs = await create_jsonschema_specs(project_schema_file, session=None)
+    except SchemaError:
+        pytest.fail("validation of schema {} failed".format(project_schema_file))
+    else:
+        yield specs
 
 
 @pytest.fixture

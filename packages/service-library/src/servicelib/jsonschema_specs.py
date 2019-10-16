@@ -20,7 +20,7 @@ async def _load_from_url(session: ClientSession, url: URL) -> Dict:
         spec_dict = json.loads(text)
         return spec_dict
 
-async def create_jsonschema_specs(session: ClientSession, location: Path) -> Dict:
+async def create_jsonschema_specs(location: Path, session: ClientSession=None) -> Dict:
     """ Loads specs from a given location (url or path),
         validates them and returns a working instance
 
