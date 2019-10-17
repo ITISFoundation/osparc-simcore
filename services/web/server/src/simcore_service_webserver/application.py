@@ -3,12 +3,13 @@
 """
 import json
 import logging
+from typing import Dict
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.monitoring import setup_monitoring
 
+from .activity import setup_activity
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
 from .db import setup_db
@@ -25,11 +26,9 @@ from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .users import setup_users
-from .activity import setup_activity
 
 log = logging.getLogger(__name__)
 
-from typing import Dict
 
 def create_application(config: Dict) -> web.Application:
     """
