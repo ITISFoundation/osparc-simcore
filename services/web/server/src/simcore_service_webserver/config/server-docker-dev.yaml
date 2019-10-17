@@ -37,6 +37,9 @@ rabbit:
 #   bucket_name: ${S3_BUCKET_NAME}
 activity:
   enabled: True
+  prometheus_host: http://prometheus
+  prometheus_port: 9090
+  prometheus_api_version: v1
 login:
   enabled: True
   registration_invitation_required: False
@@ -60,8 +63,4 @@ storage:
   version: v0
 session:
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
-activity:
-  prometheus_host: http://prometheus
-  prometheus_port: 9090
-  prometheus_api_version: v1
 ...

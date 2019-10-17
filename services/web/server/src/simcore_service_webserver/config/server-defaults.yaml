@@ -58,6 +58,7 @@ projects:
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
 activity:
+  enabled: True
   prometheus_host: http://prometheus
   prometheus_port: 9090
   prometheus_api_version: v1
