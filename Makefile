@@ -41,7 +41,6 @@ export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
-SWARM_STACK_TOOL         = tools
 
 # version tags
 export DOCKER_IMAGE_TAG ?= latest
@@ -133,33 +132,33 @@ docker-compose-configs = $(wildcard services/docker-compose*.yml)
 	@docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
 
-.PHONY: up-devel up-prod up-version up-latest up-tools
+.PHONY: up-devel up-prod up-version up-latest up-ops
 
-define deploy_tools_stack
-	@docker stack deploy -c $(CURDIR)/services/docker-compose-tools.yml $(SWARM_STACK_TOOL)
+define deploy_ops_stack
+	@docker stack deploy -c $(CURDIR)/services/docker-compose-ops.yml ops
 endef
 
 up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'tools'
-	@$(call deploy_tools_stack)
+	# Deploy stack 'ops'
+	@$(call deploy_ops_stack)
 	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
-	$(MAKE) -C services/web/client compile-dev flags=--watch
+	## $(MAKE) -C services/web/client compile-dev flags=--watch
 
 up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and tooling
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'tools'
-	@$(call deploy_tools_stack)
+	# Deploy stack 'ops'
+	@$(call deploy_ops_stack)
 
 
 up-version: .docker-compose-version.yml .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'tools'
-	@$(call deploy_tools_stack)
+	# Deploy stack 'ops'
+	@$(call deploy_ops_stack)
 
 
 up-latest:
@@ -167,16 +166,16 @@ up-latest:
 	$(MAKE) up-version
 
 
-up-tools: .init-swarm ## Deploys ONLY tools stack
-	@$(call deploy_tools_stack)
+up-ops: .init-swarm ## Deploys ONLY ops stack (subset of some services in osparc-ops)
+	@$(call deploy_ops_stack)
 
 
 .PHONY: down leave
 down: ## Stops and removes stack
 	# Removing stack '$(SWARM_STACK_NAME)'
 	-docker stack rm $(SWARM_STACK_NAME)
-	# Removing stack 'tools'
-	-docker stack rm tools
+	# Removing stack 'ops'
+	-docker stack rm ops
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
 
@@ -354,8 +353,8 @@ ifneq ($(SWARM_HOSTS), )
 	-@docker stack ps $(SWARM_STACK_NAME)
 	# Services in '$(SWARM_STACK_NAME)' stack
 	-@docker stack services $(SWARM_STACK_NAME)
-	# Services in '$(SWARM_STACK_TOOL)' stack
-	-@docker stack services $(SWARM_STACK_TOOL)
+	# Services in 'ops' stack
+	-@docker stack services ops
 	# Networks
 	@docker network ls
 endif

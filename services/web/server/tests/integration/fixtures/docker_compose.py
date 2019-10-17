@@ -99,7 +99,7 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
 
 @pytest.fixture("module")
 def tools_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
-    """ Filters only services in docker-compose-tools.yml and returns yaml data
+    """ Filters only services in docker-compose-ops.yml and returns yaml data
 
     """
     # ensures .env at git_root_dir
@@ -107,7 +107,7 @@ def tools_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict
     assert env_file.parent == osparc_simcore_root_dir
 
     # target docker-compose path
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-tools.yml"
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     assert docker_compose_path.exists()
 
     # path to resolved docker-compose
