@@ -87,7 +87,7 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
 
     # target docker-compose path
     docker_compose_paths = [osparc_simcore_root_dir / "services" / filename
-        for filename in ("docker-compose.yml", "services/docker-compose.local.yml")]
+        for filename in ("docker-compose.yml", "docker-compose.local.yml")]
     assert all(docker_compose_path.exists() for docker_compose_path in docker_compose_paths)
 
     # path to resolved docker-compose
