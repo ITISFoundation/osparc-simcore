@@ -130,6 +130,7 @@ qx.Class.define("osparc.data.Converters", {
         label,
         location,
         path,
+        itemId: path,
         children
       };
     },
@@ -154,6 +155,7 @@ qx.Class.define("osparc.data.Converters", {
         label,
         location,
         fileId,
+        itemId: fileId,
         lastModified,
         size
       };

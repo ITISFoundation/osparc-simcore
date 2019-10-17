@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
       if (data.tags && data.tags.length) {
         const category = this.getServiceModel().getCategory() || "";
         const type = this.getServiceModel().getType() || "";
-        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }

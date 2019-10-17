@@ -62,6 +62,8 @@ qx.Class.define("osparc.store.Data", {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
       this.__filesByLocationAndDatasetCached = {};
+
+      osparc.store.Store.getInstance().reset("storageLocations");
     },
 
     getLocationsCached: function() {
@@ -73,32 +75,22 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getLocations: function() {
-      // Get available storage locations
       const cachedData = this.getLocationsCached();
       if (cachedData) {
         this.fireDataEvent("myLocations", cachedData);
         return;
       }
-
-      const reqLoc = new osparc.io.request.ApiRequest("/storage/locations", "GET");
-
-      reqLoc.addListener("success", eLoc => {
-        const locations = eLoc.getTarget().getResponse()
-          .data;
-        // Add it to cache
-        this.__locationsCached = locations;
-        this.fireDataEvent("myLocations", locations);
-      }, this);
-
-      reqLoc.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        this.fireDataEvent("myLocations", []);
-        console.error("Failed getting Storage Locations", error);
-      });
-
-      reqLoc.send();
+      // Get available storage locations
+      osparc.data.Resources.get("storageLocations")
+        .then(locations => {
+          // Add it to cache
+          this.__locationsCached = locations;
+          this.fireDataEvent("myLocations", locations);
+        })
+        .catch(err => {
+          this.fireDataEvent("myLocations", []);
+          console.error(err);
+        });
     },
 
     getDatasetsByLocationCached: function(locationId) {
@@ -125,42 +117,37 @@ qx.Class.define("osparc.store.Data", {
         return;
       }
 
-      const endPoint = "/storage/locations/" + locationId + "/datasets";
-      const reqDatasets = new osparc.io.request.ApiRequest(endPoint, "GET");
-
-      reqDatasets.addListener("success", eFiles => {
-        const datasets = eFiles.getTarget().getResponse()
-          .data;
-        const data = {
-          location: locationId,
-          datasets: []
-        };
-        if (datasets && datasets.length>0) {
-          data.datasets = datasets;
+      const params = {
+        url: {
+          locationId
         }
-        // Add it to cache
-        this.__datasetsByLocationCached[locationId] = data.datasets;
-        this.fireDataEvent("myDatasets", data);
-      }, this);
-
-      reqDatasets.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        const data = {
-          location: locationId,
-          datasets: []
-        };
-        this.fireDataEvent("myDatasets", data);
-        console.error("Failed getting Datasets list", error);
-      });
-
-      reqDatasets.send();
+      };
+      osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
+        .then(datasets => {
+          const data = {
+            location: locationId,
+            datasets: []
+          };
+          if (datasets && datasets.length>0) {
+            data.datasets = datasets;
+          }
+          // Add it to cache
+          this.__datasetsByLocationCached[locationId] = data.datasets;
+          this.fireDataEvent("myDatasets", data);
+        })
+        .catch(err => {
+          const data = {
+            location: locationId,
+            datasets: []
+          };
+          this.fireDataEvent("myDatasets", data);
+          console.error(err);
+        });
     },
 
     getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
       const cache = this.__filesByLocationAndDatasetCached;
-      if (locationId in cache && datasetId in cache[locationId] && cache[locationId][datasetId].length) {
+      if (locationId in cache && datasetId in cache[locationId]) {
         const data = {
           location: locationId,
           dataset: datasetId,
@@ -183,66 +170,55 @@ qx.Class.define("osparc.store.Data", {
         return;
       }
 
-      const endPoint = "/storage/locations/" + locationId + "/datasets/" + datasetId + "/metadata";
-      const reqFiles = new osparc.io.request.ApiRequest(endPoint, "GET");
-
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: files && files.length>0 ? files : []
-        };
-        // Add it to cache
-        if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-          this.__filesByLocationAndDatasetCached[locationId] = {};
+      const params = {
+        url: {
+          locationId,
+          datasetId
         }
-        this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-        this.fireDataEvent("myDocuments", data);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: []
-        };
-        this.fireDataEvent("myDocuments", data);
-        console.error("Failed getting Files list", error);
-      });
-
-      reqFiles.send();
+      };
+      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+        .then(files => {
+          const data = {
+            location: locationId,
+            dataset: datasetId,
+            files: files && files.length>0 ? files : []
+          };
+          // Add it to cache
+          if (!(locationId in this.__filesByLocationAndDatasetCached)) {
+            this.__filesByLocationAndDatasetCached[locationId] = {};
+          }
+          this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
+          this.fireDataEvent("myDocuments", data);
+        })
+        .catch(err => {
+          const data = {
+            location: locationId,
+            dataset: datasetId,
+            files: []
+          };
+          this.fireDataEvent("myDocuments", data);
+          console.error(err);
+        });
     },
 
     getNodeFiles: function(nodeId) {
-      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
-      let endPoint = "/storage/locations/0/files/metadata";
-      endPoint += filter;
-      let reqFiles = new osparc.io.request.ApiRequest(endPoint, "GET");
-
-      reqFiles.addListener("success", eFiles => {
-        const files = eFiles.getTarget().getResponse()
-          .data;
-        console.log("Node Files", files);
-        if (files && files.length>0) {
-          this.fireDataEvent("nodeFiles", files);
+      const params = {
+        url: {
+          nodeId: encodeURIComponent(nodeId)
         }
-        this.fireDataEvent("nodeFiles", []);
-      }, this);
-
-      reqFiles.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        this.fireDataEvent("nodeFiles", []);
-        console.error("Failed getting Node Files list", error);
-      });
-
-      reqFiles.send();
+      };
+      osparc.data.Resources.fetch("storageFiles", "getByNode", params)
+        .then(files => {
+          console.log("Node Files", files);
+          if (files && files.length>0) {
+            this.fireDataEvent("nodeFiles", files);
+          }
+          this.fireDataEvent("nodeFiles", []);
+        })
+        .catch(err => {
+          this.fireDataEvent("nodeFiles", []);
+          console.error(err);
+        });
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
@@ -255,33 +231,25 @@ qx.Class.define("osparc.store.Data", {
 
       // GET: Returns download link for requested file
       // POST: Returns upload link or performs copy operation to datcore
-      let res = encodeURIComponent(fileUuid);
-      const endPoint = "/storage/locations/" + locationId + "/files/" + res;
-      // const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
-      const method = download ? "GET" : "PUT";
-      let req = new osparc.io.request.ApiRequest(endPoint, method);
-
-      req.addListener("success", e => {
-        const {
-          data
-        } = e.getTarget().getResponse();
-        const presignedLinkData = {
-          presignedLink: data,
-          locationId: locationId,
-          fileUuid: fileUuid
-        };
-        console.log("presignedLink", presignedLinkData);
-        this.fireDataEvent("presignedLink", presignedLinkData);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error("Failed getting Presigned Link", error);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          locationId,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
+        .then(data => {
+          const presignedLinkData = {
+            presignedLink: data,
+            locationId: locationId,
+            fileUuid: fileUuid
+          };
+          console.log("presignedLink", presignedLinkData);
+          this.fireDataEvent("presignedLink", presignedLinkData);
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
@@ -292,35 +260,30 @@ qx.Class.define("osparc.store.Data", {
       // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
       let fileName = fileUuid.split("/");
       fileName = fileName[fileName.length-1];
-      let endPoint = "/storage/locations/"+toLoc+"/files/";
-      let parameters = encodeURIComponent(pathId + "/" + fileName);
-      parameters += "?extra_location=";
-      parameters += fromLoc;
-      parameters += "&extra_source=";
-      parameters += encodeURIComponent(fileUuid);
-      endPoint += parameters;
-      let req = new osparc.io.request.ApiRequest(endPoint, "PUT");
 
-      req.addListener("success", e => {
-        const data = {
-          data: e.getTarget().getResponse(),
-          locationId: toLoc,
-          fileUuid: pathId + "/" + fileName
-        };
-        this.fireDataEvent("fileCopied", data);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error(error);
-        console.error("Failed copying file", fileUuid, "to", pathId);
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
-        this.fireDataEvent("fileCopied", null);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          toLoc,
+          fileName: encodeURIComponent(pathId + "/" + fileName),
+          fromLoc,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      osparc.data.Resources.fetch("storageFiles", "put", params)
+        .then(files => {
+          const data = {
+            data: files,
+            locationId: toLoc,
+            fileUuid: pathId + "/" + fileName
+          };
+          this.fireDataEvent("fileCopied", data);
+        })
+        .catch(err => {
+          console.error(err);
+          console.error("Failed copying file", fileUuid, "to", pathId);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed copying file"), "ERROR");
+          this.fireDataEvent("fileCopied", null);
+        });
 
       return true;
     },
@@ -331,29 +294,26 @@ qx.Class.define("osparc.store.Data", {
       }
 
       // Deletes File
-      let parameters = encodeURIComponent(fileUuid);
-      const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
-      let req = new osparc.io.request.ApiRequest(endPoint, "DELETE");
-
-      req.addListener("success", e => {
-        const data = {
-          data: e.getTarget().getResponse(),
-          locationId: locationId,
-          fileUuid: fileUuid
-        };
-        this.fireDataEvent("deleteFile", data);
-      }, this);
-
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.error("Failed deleting file", error);
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
-        this.fireDataEvent("deleteFile", null);
-      });
-
-      req.send();
+      const params = {
+        url: {
+          locationId,
+          fileUuid: encodeURIComponent(fileUuid)
+        }
+      };
+      osparc.data.Resources.fetch("storageFiles", "delete", params)
+        .then(files => {
+          const data = {
+            data: files,
+            locationId: locationId,
+            fileUuid: fileUuid
+          };
+          this.fireDataEvent("deleteFile", data);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
+          this.fireDataEvent("deleteFile", null);
+        });
 
       return true;
     }

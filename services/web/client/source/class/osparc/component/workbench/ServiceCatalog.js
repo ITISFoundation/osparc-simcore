@@ -40,12 +40,13 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     this.base();
 
     this.set({
+      appearance: "service-window",
+      autoDestroy: true,
+      caption: this.tr("Service catalog"),
       showMinimize: false,
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      caption: this.tr("Service catalog"),
-      appearance: "service-window",
       contentPadding: 0
     });
 

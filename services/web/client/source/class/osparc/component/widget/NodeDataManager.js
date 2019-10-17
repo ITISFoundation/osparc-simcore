@@ -46,6 +46,8 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       node: node
     });
 
+    osparc.utils.Utils.setIdToWidget(this, "nodeDataManager");
+
     const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeDataManagerLayout);
 
@@ -61,6 +63,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     }, this);
     nodeTreeLayout.add(nodeReloadBtn);
     const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
+    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree");
     nodeFilesTree.setDragMechnism(true);
     nodeFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
@@ -80,6 +83,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     }, this);
     userTreeLayout.add(userReloadBtn);
     const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
+    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
     userFilesTree.setDropMechnism(true);
     userFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("user");

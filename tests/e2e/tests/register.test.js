@@ -7,7 +7,6 @@ const {
 } = utils.getRandUserAndPass();
 
 beforeAll(async () => {
-  // utils.addPageListeners(page);
   await page.goto(url);
 }, ourTimeout);
 

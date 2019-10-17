@@ -128,6 +128,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
       infoPart.add(infoBtn);
 
       const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       buttonsPart.add(filesBtn);
 
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
@@ -271,13 +272,17 @@ qx.Class.define("osparc.component.widget.NodeView", {
       const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
 
       const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
         contentPadding: 0,
-        showMinimize: false,
-        width: 900,
         height: 600,
-        appearance: "service-window"
+        modal: true,
+        showMinimize: false,
+        width: 900
       });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
       win.add(nodeDataManager);
 
       win.center();
