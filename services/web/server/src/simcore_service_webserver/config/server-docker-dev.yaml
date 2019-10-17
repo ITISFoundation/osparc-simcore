@@ -60,4 +60,8 @@ storage:
   version: v0
 session:
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+activity:
+  prometheus_host: http://prometheus
+  prometheus_port: 9090
+  prometheus_api_version: v1
 ...
