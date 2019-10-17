@@ -39,8 +39,9 @@ export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/we
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# swarm
+# swarm stacks
 export SWARM_STACK_NAME ?= simcore
+SWARM_STACK_TOOL         = tools
 
 # version tags
 export DOCKER_IMAGE_TAG ?= latest
@@ -134,15 +135,15 @@ docker-compose-configs = $(wildcard services/docker-compose*.yml)
 
 .PHONY: up-devel up-prod up-version up-latest up-tools
 
-define deploy_tools
-	@docker stack deploy -c services/docker-compose-tools.yml tools
+define deploy_tools_stack
+	@docker stack deploy -c $(CURDIR)/services/docker-compose-tools.yml $(SWARM_STACK_TOOL)
 endef
 
 up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
 	# Deploy stack 'tools'
-	@$(call deploy_tools)
+	@$(call deploy_tools_stack)
 	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
@@ -151,14 +152,14 @@ up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production 
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
 	# Deploy stack 'tools'
-	@$(call deploy_tools)
+	@$(call deploy_tools_stack)
 
 
 up-version: .docker-compose-version.yml .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
 	# Deploy stack 'tools'
-	@$(call deploy_tools)
+	@$(call deploy_tools_stack)
 
 
 up-latest:
@@ -166,8 +167,8 @@ up-latest:
 	$(MAKE) up-version
 
 
-up-tools: .init-swarm ## Deploys tools
-	@$(call deploy_tools)
+up-tools: .init-swarm ## Deploys ONLY tools stack
+	@$(call deploy_tools_stack)
 
 
 .PHONY: down leave
@@ -218,7 +219,10 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ## docker PULL/PUSH  -------------------------------
-
+#
+# TODO: cannot push modified/untracke
+# TODO: cannot push discetedD
+#
 .PHONY: pull-cache pull-version
 pull-cache: .env
 	@export DOCKER_IMAGE_TAG=cache; $(MAKE) pull-version
@@ -350,6 +354,8 @@ ifneq ($(SWARM_HOSTS), )
 	-@docker stack ps $(SWARM_STACK_NAME)
 	# Services in '$(SWARM_STACK_NAME)' stack
 	-@docker stack services $(SWARM_STACK_NAME)
+	# Services in '$(SWARM_STACK_TOOL)' stack
+	-@docker stack services $(SWARM_STACK_TOOL)
 	# Networks
 	@docker network ls
 endif
