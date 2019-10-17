@@ -5,6 +5,7 @@ from yarl import URL
 
 from ..login.decorators import login_required
 
+
 @login_required
 async def get_status(request: aiohttp.web.Request):
 
