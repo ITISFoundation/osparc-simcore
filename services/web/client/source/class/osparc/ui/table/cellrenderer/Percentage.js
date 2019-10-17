@@ -16,7 +16,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.Percentage", {
   members: {
     // overridden
     _getContentHtml: function(cellInfo) {
-      if (cellInfo.value == null || cellInfo.value < 0) {
+      if (cellInfo.value == null || cellInfo.value < 0) { //eslint-disable-line no-eq-null
         return "";
       }
       return "" +
