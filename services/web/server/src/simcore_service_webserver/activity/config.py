@@ -1,7 +1,6 @@
-""" projects activity's configuration
-
+""" Activity manager configuration
     - config-file schema
-    - settings
+    - prometheus endpoint information
 """
 import trafaret as T
 
