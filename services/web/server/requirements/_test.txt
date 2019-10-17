@@ -30,7 +30,7 @@ codecov==2.0.15
 coverage==4.5.3           # via codecov, coveralls, pytest-cov
 coveralls==1.7.0
 cryptography==2.6.1
-docker==4.1.0
+docker==4.0.1
 docopt==0.6.2             # via coveralls
 faker==1.0.7
 globre==0.1.5
