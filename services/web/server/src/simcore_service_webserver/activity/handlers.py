@@ -1,8 +1,12 @@
-from ..login.decorators import login_required
-import aiohttp
-from urllib.parse import quote
 import asyncio
 import json
+from urllib.parse import quote
+
+import aiohttp
+from yarl import URL
+
+from ..login.decorators import login_required
+
 
 @login_required
 async def get_status(request: aiohttp.web.Request):
@@ -12,13 +16,13 @@ async def get_status(request: aiohttp.web.Request):
         url = 'http://prometheus:9090/api/v1/query'
 
         async def get_cpu_usage():
-            async with session.get(url + '?query=' + quote(cpu_query)) as resp:
+            async with session.get(URL(url).with_query(query=cpu_query)) as resp:
                 status = resp.status
                 result = await resp.text()
                 return result
 
         async def get_memory_usage():
-            async with session.get(url + '?query=' + quote(memory_query)) as resp:
+            async with session.get(URL(url).with_query(query=memory_query)) as resp:
                 status = resp.status
                 result = await resp.text()
                 return result
