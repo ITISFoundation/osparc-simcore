@@ -19,6 +19,27 @@ log = logging.getLogger(__name__)
 CHUNK_SIZE = 1*1024*1024
 
 
+class ClientSessionContextManager:
+    #
+    # NOTE: creating a session at every call is inneficient and a persistent session
+    # per app is recommended.
+    # This package has no app so session is passed as optional arguments
+    # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
+    #
+    def __init__(self, session=None):
+        self.active_session = session or ClientSession()
+        self.is_owned = self.active_session is not session
+
+    async def __aenter__(self):
+        return self.active_session
+
+    async def __aexit__(self, exc_type, exc, tb):
+        if self.is_owned:
+            warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
+                category=DeprecationWarning)
+            await self.active_session.close()
+
+
 @contextmanager
 def api_client():
     cfg = Configuration()
@@ -134,21 +155,10 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
         if local_file_path.exists():
             local_file_path.unlink()
 
-            # NOTE: creating a session at every call is inneficient and a persistent session
-            # per app is recommended.
-            # This package has no app so session is passed as optional arguments
-            # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
-            #
-            active_session = session or ClientSession()
-            try:
-                await _download_link_to_file(active_session, download_link, local_file_path, store_id, s3_object)
-            finally:
-                if active_session is not session:
-                    warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
-                        category=DeprecationWarning)
-                    await active_session.close()
+        async with ClientSessionContextManager(session) as active_session:
+            await _download_link_to_file(active_session, download_link, local_file_path, store_id, s3_object)
 
-            return local_file_path
+        return local_file_path
 
     raise exceptions.S3InvalidPathError(s3_object)
 
@@ -176,19 +186,8 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
         if upload_link:
             upload_link = URL(upload_link)
 
-            # NOTE: creating a session at every call is inneficient and a persistent session
-            # per app is recommended.
-            # This package has no app so session is passed as optional arguments
-            # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
-            #
-            active_session = session or ClientSession()
-            try:
+            async with ClientSessionContextManager(session) as active_session:
                 await _upload_file_to_link(active_session, upload_link, local_file_path)
-            finally:
-                if active_session is not session:
-                    warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
-                        category=DeprecationWarning)
-                    await active_session.close()
 
             return store_id
 
