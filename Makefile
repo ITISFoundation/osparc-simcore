@@ -212,7 +212,7 @@ tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_
 	)
 
 tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
-	@export DOCKER_IMAGE_TAG=latest;
+	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) tag-version
 
 
@@ -231,10 +231,11 @@ pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_T
 .PHONY: push-cache push-version push-latest
 
 push-cache: tag-cache ## Pushes service images tagged as 'cache' into current registry
-	@export DOCKER_IMAGE_TAG=cache; $(MAKE) push-version
+	@export DOCKER_IMAGE_TAG=cache; \
+	$(MAKE) push-version
 
 push-latest: tag-latest
-	@export DOCKER_IMAGE_TAG=latest;
+	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
 # NOTE: docker-compose only pushes images with a 'build' section.
