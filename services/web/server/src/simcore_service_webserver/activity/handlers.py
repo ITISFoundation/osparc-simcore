@@ -25,13 +25,25 @@ async def get_status(request: aiohttp.web.Request):
 
         results = await asyncio.gather(get_cpu_usage(), get_memory_usage())
         json_results = list(map(json.loads, results))
+        cpu_usage = json_results[0]['data']['result']
+        mem_usage = json_results[1]['data']['result']
+
+        res = {}
+        for node in cpu_usage:
+            node_id = node['metric']['container_label_node_id']
+            usage = node['value'][1]
+            res[node_id] = {
+                'stats': {
+                    'cpuUsage': usage
+                }
+            }
+
+        for node in mem_usage:
+            node_id = node['metric']['container_label_node_id']
+            usage = node['value'][1]
+            res[node_id]['stats']['memUsage'] = usage
+        
         return {
             'error': None,
-            'data': {
-                'stats': {
-                    'cpuUsage': 0,
-                    'memoryUsage': 0
-                },
-                'result': json_results
-            }
+            'data': res
         }

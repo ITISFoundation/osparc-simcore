@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(2, 80);
 
     columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
-    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475"));
+    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Unit("MB"));
 
     this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE);
 
@@ -174,7 +174,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 row[1] = node.label;
                 row[2] = activity[key].name;
                 row[4] = Math.round(activity[key].stats.cpuUsage * 10) / 10;
-                row[5] = Math.round(activity[key].stats.memoryUsage * 10) / 10;
+                row[5] = Math.round(activity[key].stats.memUsage * 10) / 10;
                 rows.push(row);
               }
             }
