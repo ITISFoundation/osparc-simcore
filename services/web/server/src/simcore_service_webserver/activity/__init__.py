@@ -2,17 +2,14 @@ import asyncio
 import logging
 
 from aiohttp import web
-from . import handlers
-
 from servicelib.application_keys import APP_CONFIG_KEY
-from .config import CONFIG_SECTION_NAME
-
-
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+from . import handlers
+from .config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__name__)
 
