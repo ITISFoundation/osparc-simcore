@@ -98,7 +98,7 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
 
 
 @pytest.fixture("module")
-def tools_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
+def ops_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
     """ Filters only services in docker-compose-ops.yml and returns yaml data
 
     """
@@ -111,7 +111,7 @@ def tools_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict
     assert docker_compose_path.exists()
 
     # path to resolved docker-compose
-    destination_path = temp_folder / "tools_docker_compose.yml"
+    destination_path = temp_folder / "ops_docker_compose.yml"
 
     config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
     return config
@@ -135,14 +135,14 @@ def docker_compose_file(request, temp_folder, simcore_docker_compose):
     return docker_compose_path
 
 @pytest.fixture(scope='module')
-def tools_docker_compose_file(request, temp_folder, tools_docker_compose):
-    """ Creates a docker-compose.yml with services listed in 'tool_services' module variable
+def tools_docker_compose_file(request, temp_folder, ops_docker_compose):
+    """ Creates a docker-compose.yml with services listed in 'ops_services' module variable
         File is created in a temp folder
     """
-    tool_services = getattr(request.module, 'tool_services', [])
-    docker_compose_path = Path(temp_folder / 'tools_docker_compose.filtered.yml')
+    ops_services = getattr(request.module, 'ops_services', [])
+    docker_compose_path = Path(temp_folder / 'ops_docker_compose.filtered.yml')
 
-    _filter_services_and_dump(tool_services, tools_docker_compose, docker_compose_path)
+    _filter_services_and_dump(ops_services, ops_docker_compose, docker_compose_path)
 
     return docker_compose_path
 

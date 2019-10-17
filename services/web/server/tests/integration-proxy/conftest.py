@@ -39,7 +39,7 @@ core_services = [
     'apihub'
 ]
 
-tool_services = [
+ops_services = [
     'adminer',
     'portainer'
 ]
@@ -78,7 +78,7 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return _load_docker_compose(docker_compose_path)
 
 @pytest.fixture("session")
-def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+def ops_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     return _load_docker_compose(docker_compose_path)
 

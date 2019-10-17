@@ -50,7 +50,7 @@ core_services = [
     'storage'
 ]
 
-tool_services = [
+ops_services = [
     'minio'
 #    'adminer',
 #    'portainer'

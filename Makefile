@@ -360,7 +360,6 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-
 .PHONY: clean clean-images
 
 .check-clean:
