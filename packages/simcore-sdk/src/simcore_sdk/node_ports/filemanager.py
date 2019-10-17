@@ -146,7 +146,7 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
                 if active_session is not session:
                     warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
                         category=DeprecationWarning)
-                    await session.close()
+                    await active_session.close()
 
             return local_file_path
 
@@ -188,7 +188,7 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
                 if active_session is not session:
                     warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
                         category=DeprecationWarning)
-                    await session.close()
+                    await active_session.close()
 
             return store_id
 
