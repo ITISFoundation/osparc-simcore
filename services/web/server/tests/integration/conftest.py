@@ -64,9 +64,6 @@ def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    for name in core_services:
-        environ['%s_HOST' % name.upper()] = '127.0.0.1'
-
     services_with_published_ports = [name for name in core_services
                 if 'ports' in simcore_docker_compose['services'][name] ]
 
