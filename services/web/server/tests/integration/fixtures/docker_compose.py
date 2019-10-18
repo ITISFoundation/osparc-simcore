@@ -182,11 +182,17 @@ def _filter_services_and_dump(include: List, services_compose: Dict, docker_comp
             service.pop("build", None)
 
     # updates current docker-compose (also versioned ... do not change by hand)
-    with docker_compose_path.open('wt') as f:
-        print("{:-^30}".format(str(docker_compose_path)))
-        yaml.dump(content, sys.stdout, default_flow_style=False)
-        print("-"*30)
-        yaml.dump(content, f, default_flow_style=False)
+    with docker_compose_path.open('wt') as fh:
+        if 'TRAVIS' in os.environ:
+            # in travis we do not have access to file
+            print("{:-^100}".format(str(docker_compose_path)))
+            yaml.dump(content, sys.stdout, default_flow_style=False)
+            print("-"*100)
+        else:
+            # locally we have access to file
+            print(f"Saving config to '{docker_compose_path}'")
+        yaml.dump(content, fh, default_flow_style=False)
+
 
 
 def _run_docker_compose_config(docker_compose_paths, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
