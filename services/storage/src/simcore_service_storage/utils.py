@@ -11,14 +11,13 @@ RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
-
 @tenacity.retry(
     wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
     stop=tenacity.stop_after_attempt(RETRY_COUNT),
     before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
     #retry=tenacity.retry_if_exception_type(AssertionError)
     )
-async def assert_enpoint_is_ok(url: URL, expected_response:int =200):
+async def assert_enpoint_is_ok(session: ClientSession, url: URL, expected_response:int =200):
     """ Tenace check to GET given url endpoint
 
     Typically used to check connectivity to a given service
@@ -31,9 +30,8 @@ async def assert_enpoint_is_ok(url: URL, expected_response:int =200):
     :param expected_response: expected http status, defaults to 200 (OK)
     :param expected_response: int, optional
     """
-    async with ClientSession() as session:
-        async with session.get(url) as resp:
-            assert resp.status == expected_response
+    async with session.get(url) as resp:
+        assert resp.status == expected_response
 
 def is_url(location):
     return bool(URL(str(location)).host)

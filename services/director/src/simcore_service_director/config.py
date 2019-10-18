@@ -4,6 +4,8 @@
 import logging
 import os
 
+from servicelib.client_session import APP_CLIENT_SESSION_KEY
+
 DEBUG_MODE = os.environ.get("DEBUG", False) in ["true", "True", True]
 
 logging.basicConfig(
@@ -44,3 +46,8 @@ NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
 SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 # useful when developing with an alternative registry namespace
 SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")
+
+
+__all__ = [
+    'APP_CLIENT_SESSION_KEY'
+]
