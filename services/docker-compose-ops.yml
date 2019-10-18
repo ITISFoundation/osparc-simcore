@@ -1,8 +1,20 @@
-# Separate stack with some of the services deployed in osparc-ops
+
+# Minimal docker-compose configuration to deploy a stack that contains a selection
+# of the services deployed with ITISFoundation/osparc-ops
 #
-#  NOTE: this stack cannot be called tools because it collides with default network cerated in services/web/client/tools/docker-compose.yml
+# These configurations avoid having to deploy the entire
+# ITISFoundation/osparc-ops to operate osparc-simcore stack during development
+#
+# By default, the **ops** stack is automatically deployed in all the make up-* targets but
+# can be disabled passing the 'ops_disabled' flag
+#
+# $ make ops_disabled=1 up-devel
+# $ make ops_disabled=1 up-prod
+# $ make ops_disabled=1 up-vesioned
+# $ make ops_disabled=1 up-latest
+#
+#  NOTE: this stack cannot be called tools because it collides with default network created in services/web/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-#
 version: '3.7'
 
 services:

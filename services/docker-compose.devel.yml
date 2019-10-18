@@ -1,6 +1,9 @@
 # Overrides docker-compose.yml config when deploying services in development mode,
 #  i.e. binding with source code in source
 #
+# NOTES:
+# - port 3000 used for ptsv
+#
 version: '3.7'
 services:
 
