@@ -13,7 +13,7 @@ before_install() {
 
 install() {
     bash ops/travis/helpers/ensure_python_pip
-    pip3 install -r ops/travis/system-testing/requirements.txt
+    pip3 install -r tests/system/requirements.txt
     make pull-version || ((make pull-cache || true) && make build tag-version)
 }
 
@@ -26,7 +26,7 @@ before_script() {
 script() {
     # wait for a minute to let the swarm warm up...
     make info-swarm
-    pytest -v ops/travis/system-testing/tests
+    pytest -v tests/system
 }
 
 after_success() {
