@@ -139,7 +139,7 @@ else
 endif
 
 
-up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (To disable ops-stack use 'make ops_disabled=1 up-*')
+up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
@@ -147,12 +147,12 @@ up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## De
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
-up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and ops stack (to disable ops-stack use 'make ops_disabled=1 up-*')
+up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 
-up-version: .docker-compose-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (to disable ops-stack use 'make ops_disabled=1 up-*')
+up-version: .docker-compose-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
@@ -311,7 +311,7 @@ define show-meta
 		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
 endef
 
-info-images:  ## lists tags and labels of built images. For a single image,  make name=webserver info-images
+info-images:  ## lists tags and labels of built images. To display one: 'make name=webserver info-images'
 ifeq ($(name),)
 	@$(foreach service,$(SERVICES_LIST),\
 		echo "## $(service) images:";\
