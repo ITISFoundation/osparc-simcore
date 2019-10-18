@@ -164,9 +164,9 @@ up-latest:
 
 .PHONY: down leave
 down: ## Stops and removes stack
-	# Removing stacks
+	# Removing stacks in reverse order to creation
 	-$(foreach stack,\
-		$(shell docker stack ls --format={{.Name}}),\
+		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
