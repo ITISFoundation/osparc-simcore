@@ -1,3 +1,10 @@
+"""
+PRECONDITION:
+    Assumes simcore stack is deployed, i.e. make ops_disabled=1 up-version
+
+SEE before_script() in ops/travis/system-testing/build_and_run
+"""
+
 # pylint:disable=wildcard-import
 # pylint:disable=unused-import
 # pylint:disable=unused-variable
@@ -86,7 +93,7 @@ def here() -> Path:
     return _here()
 
 def _osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent.parent.resolve()
+    root_dir = here.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
