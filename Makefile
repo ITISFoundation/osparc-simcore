@@ -71,7 +71,7 @@ build: .env ## Builds production images and tags them as 'local/{service-name}:p
 	@$(MAKE) -C services/web/client compile
 	# Building services
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose.build.yml build --parallel
+	docker-compose -f services/docker-compose-build.yml build --parallel
 
 
 .PHONY: rebuild build-nc
@@ -81,7 +81,7 @@ build-nc: .env ## As build but w/o cache (alias: rebuild)
 	@$(MAKE) -C services/web/client clean compile
 	# Building services
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose.build.yml build --parallel --no-cache
+	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache
 
 
 .PHONY: build-devel
@@ -90,7 +90,7 @@ build-devel: .env ## Builds development images and tags them as 'local/{service-
 	@$(MAKE) -C services/web/client compile-dev
 	# Building services
 	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose.build.yml build --parallel
+	docker-compose -f services/docker-compose-build.yml build --parallel
 
 
 .PHONY: build-cache
@@ -100,7 +100,7 @@ build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
 	@export BUILD_TARGET=cache; \
-	docker-compose -f services/docker-compose.build.yml build --parallel
+	docker-compose -f services/docker-compose-build.yml build --parallel
 
 
 $(CLIENT_WEB_OUTPUT):

@@ -3,6 +3,8 @@
 #
 #  - BUILD_TARGET (build_target_required) must be set as 'production', 'development' or 'cache'. Used as image tag
 #
+# NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
+#
 version: '3.7'
 services:
 
