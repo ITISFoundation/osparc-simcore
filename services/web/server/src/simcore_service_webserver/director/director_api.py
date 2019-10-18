@@ -15,6 +15,8 @@ def _get_director_client(app: web.Application) -> URL:
 
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
+    # Use director.
+    # TODO: this is also in app[APP_DIRECTOR_API_KEY] upon startup
     api_endpoint = URL.build(
         scheme='http',
         host=cfg['host'],
