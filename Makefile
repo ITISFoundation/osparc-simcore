@@ -1,10 +1,12 @@
 # osparc-simcore general makefile
 #
-# Recommended: GNU make version 4.2
+# NOTES:
+# 	- GNU make version 4.2 recommended
+# 	- Use 'make -n *' to dry-run during debugging
+# 	- In windows, only WSL is supported
 #
 # by sanderegg, pcrespov
-
-PREDEFINED_VARIABLES := $(.VARIABLES)
+.DEFAULT_GOAL := help
 
 # TOOLS --------------------------------------
 
@@ -14,12 +16,11 @@ IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
 IS_OSX  := $(filter Darwin,$(shell uname -a))
 IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
-IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 
+IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
 
 SHELL := /bin/bash
-
 
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead
@@ -47,14 +48,13 @@ export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
 .PHONY: help
-help: ## displays targets
+help: ## help on rule's targets
 ifeq ($(IS_WIN),)
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 else
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
-.DEFAULT_GOAL := help
 
 
 ## docker BUILD -------------------------------
@@ -62,7 +62,6 @@ endif
 # - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
-
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
 .PHONY: build
@@ -286,13 +285,10 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	@diff -uN $@ $<
 	@false
 
-PHONY: setup-check
-setup-check: .env .vscode/settings.json ## checks whether setup is in sync with templates (e.g. vscode settings or .env file)
 
-
-.PHONY: info info-images info-swarm info-vars info-tools
-info: ## displays selected information
-	# setup
+.PHONY: info info-images info-swarm  info-tools
+info: ## displays setup information
+	# setup info:
 	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
@@ -302,34 +298,21 @@ info: ## displays selected information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
+	# tools version
+	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' jq     : $(shell jq --version)'
+	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
+	@echo ' python : $(shell python3 --version)'
 
 
-info-tools: ## displays tools in place
-	$(info make   : $(shell make --version 2>&1 | head -n 1) )
-	$(info jq     : $(shell jq --version)   )
-	$(info awk    : $(shell awk -W version 2>&1 | head -n 1) )
-	$(info python : $(shell python3 --version))
-	#
-
-
-info-vars: ## displays all parameters of makefile environments (makefile debugging)
-	$(info VARIABLES ------------)
-	$(foreach v,                                                                                  \
-		$(filter-out $(PREDEFINED_VARIABLES) PREDEFINED_VARIABLES PY_FILES, $(sort $(.VARIABLES))), \
-		$(info $(v)=$($(v)) [in $(origin $(v))])                                                    \
-	)
-	#
 
 define show-meta
 	$(foreach iid,$(shell docker images */$(1):* -q | sort | uniq),\
 		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
 endef
 
-info-image: ## list image tags and labels for a given service. E.g. make info-image service=webserver
-	## $(service) images:
-	$(call show-meta, $(service))
-
-info-images:  ## lists created images (mostly for debugging makefile)
+info-images:  ## lists tags and labels of built images. For a single image,  make name=webserver info-images
+ifeq ($(name),)
 	@$(foreach service,$(SERVICES_LIST),\
 		echo "## $(service) images:";\
 			docker images */$(service):*;\
@@ -337,6 +320,10 @@ info-images:  ## lists created images (mostly for debugging makefile)
 		)
 	## Client images:
 	@$(MAKE) -C services/web/client info
+else
+	## $(name) images:
+	@$(call show-meta,$(name))
+endif
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
