@@ -55,3 +55,8 @@ projects:
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: 'tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs='
+activity:
+  enabled: True
+  prometheus_host: http://prometheus
+  prometheus_port: 9090
+  prometheus_api_version: v1
