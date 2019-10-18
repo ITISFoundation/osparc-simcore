@@ -276,9 +276,9 @@ jobs:
       after_failure:
         - unbuffer bash ops/travis/integration-testing/simcore-sdk after_failure
 
-    # system testing build and up ----------------------------------------------------------------
+    # system testing swarm deploy ----------------------------------------------------------------
     - stage: system-testing
-      name: build and up
+      name: swarm deploy
       sudo: required
       language: python
       python:
