@@ -109,10 +109,7 @@ $(CLIENT_WEB_OUTPUT):
 
 
 ## docker SWARM -------------------------------
-SWARM_HOSTS       = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
-
-# docker-compose configs---
-
+SWARM_HOSTS            = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
 
 .docker-compose-development.yml: .env $(docker-compose-configs)
@@ -132,50 +129,46 @@ docker-compose-configs = $(wildcard services/docker-compose*.yml)
 	@docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
 
-.PHONY: up-devel up-prod up-version up-latest up-ops
+.PHONY: up-devel up-prod up-version up-latest .deploy-ops
 
-define deploy_ops_stack
-	@docker stack deploy -c $(CURDIR)/services/docker-compose-ops.yml ops
-endef
+.deploy-ops:
+	# Deploy stack 'ops'
+ifndef ops_disabled
+	@docker stack deploy -c services/docker-compose-ops.yml ops
+else
+	@echo "Explicitly disabled with ops_disabled flag in CLI"
+endif
 
-up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, tools and qx-compile+watch
+
+up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (To disable ops-stack use 'make ops_disabled=1 up-*')
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'ops'
-	@$(call deploy_ops_stack)
+	$(MAKE) .deploy-ops
 	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
-	## $(MAKE) -C services/web/client compile-dev flags=--watch
+	$(MAKE) -C services/web/client compile-dev flags=--watch
 
-up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and tooling
+up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and ops stack (to disable ops-stack use 'make ops_disabled=1 up-*')
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'ops'
-	@$(call deploy_ops_stack)
+	$(MAKE) .deploy-ops
 
-
-up-version: .docker-compose-version.yml .init-swarm ## Deploys stack of services '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)'
+up-version: .docker-compose-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (to disable ops-stack use 'make ops_disabled=1 up-*')
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
-	# Deploy stack 'ops'
-	@$(call deploy_ops_stack)
-
+	$(MAKE) .deploy-ops
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
 
 
-up-ops: .init-swarm ## Deploys ONLY ops stack (subset of some services in osparc-ops)
-	@$(call deploy_ops_stack)
-
-
 .PHONY: down leave
 down: ## Stops and removes stack
-	# Removing stack '$(SWARM_STACK_NAME)'
-	-docker stack rm $(SWARM_STACK_NAME)
-	# Removing stack 'ops'
-	-docker stack rm ops
+	# Removing stacks
+	-$(foreach stack,\
+		$(shell docker stack ls --format={{.Name}}),\
+		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
 
