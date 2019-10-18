@@ -16,11 +16,6 @@ from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
-async def aiohttp_mock_app(loop, mocker):
-    aiohttp_app = mocker.patch('aiohttp.web.Application')
-    return aiohttp_mock_app
-
-@pytest.fixture
 async def run_services(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn, dependant=False):
