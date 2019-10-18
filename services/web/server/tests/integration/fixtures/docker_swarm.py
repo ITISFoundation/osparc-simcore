@@ -27,16 +27,16 @@ def docker_swarm(docker_client):
 
 
 @pytest.fixture(scope='module')
-def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
+def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_docker_compose_file: Path):
     stacks = ['simcore', 'tools' ]
 
     # make up-version
     subprocess.run( f"docker stack deploy -c {docker_compose_file.name} {stacks[0]}",
         shell=True, check=True,
         cwd=docker_compose_file.parent)
-    subprocess.run( f"docker stack deploy -c {tools_docker_compose_file.name} {stacks[1]}",
+    subprocess.run( f"docker stack deploy -c {ops_docker_compose_file.name} {stacks[1]}",
         shell=True, check=True,
-        cwd=tools_docker_compose_file.parent)
+        cwd=ops_docker_compose_file.parent)
 
     def _print_services(msg):
         from pprint import pprint

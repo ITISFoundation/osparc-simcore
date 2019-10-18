@@ -78,16 +78,20 @@ def env_file(osparc_simcore_root_dir, devel_environ):
 
 @pytest.fixture("module")
 def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
-    """ Resolves services/docker-compose.yml and returns yaml data
+    """ Resolves docker-compose for simcore stack in local host
 
     """
+    COMPOSE_FILENAMES = [
+        "docker-compose.yml",
+        "docker-compose.local.yml"
+    ]
     # ensures .env at git_root_dir
     assert env_file.exists()
     assert env_file.parent == osparc_simcore_root_dir
 
     # target docker-compose path
     docker_compose_paths = [osparc_simcore_root_dir / "services" / filename
-        for filename in ("docker-compose.yml", "docker-compose.local.yml")]
+        for filename in COMPOSE_FILENAMES]
     assert all(docker_compose_path.exists() for docker_compose_path in docker_compose_paths)
 
     # path to resolved docker-compose
@@ -135,7 +139,7 @@ def docker_compose_file(request, temp_folder, simcore_docker_compose):
     return docker_compose_path
 
 @pytest.fixture(scope='module')
-def tools_docker_compose_file(request, temp_folder, ops_docker_compose):
+def ops_docker_compose_file(request, temp_folder, ops_docker_compose):
     """ Creates a docker-compose.yml with services listed in 'ops_services' module variable
         File is created in a temp folder
     """
@@ -186,6 +190,11 @@ def _filter_services_and_dump(include: List, services_compose: Dict, docker_comp
 
 
 def _run_docker_compose_config(docker_compose_paths, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
+    """
+        Runs docker-compose config on multiple files 'docker_compose_paths' taking 'osparc_simcore_root_dir'
+        as current working directory and saves the output to 'destination_path'
+    """
+
 
     if not isinstance(docker_compose_paths, list):
         docker_compose_paths = [docker_compose_paths, ]
