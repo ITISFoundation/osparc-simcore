@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -25,10 +26,9 @@ def docker_swarm(docker_client):
     # teardown
     assert docker_client.swarm.leave(force=True)
 
-
 @pytest.fixture(scope='module')
 def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_docker_compose_file: Path):
-    stacks = ['simcore', 'tools' ]
+    stacks = ['simcore', 'ops' ]
 
     # make up-version
     subprocess.run( f"docker stack deploy -c {docker_compose_file.name} {stacks[0]}",
@@ -69,6 +69,8 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_doc
     # done
 
     # make down
+    # NOTE: remove them in reserve order since stacks share common networks
+    stacks.reverse()
     for stack in stacks:
         subprocess.run(f"docker stack rm {stack}", shell=True, check=True)
 
