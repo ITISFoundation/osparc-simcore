@@ -3,6 +3,7 @@
 # NOTES:
 # - Overrides docker-compose.yml config when deploying services locally
 # - Added ports to enforce they are published in the swarm (e.g. for integration testing).
+# - sidecar cannot publish port with ingress mode since it can't be used with dnsrr mode
 #
 version: "3.7"
 services:
@@ -11,6 +12,14 @@ services:
     ports:
       - "8043"
 
+  director:
+    ports:
+      - "8080"
+
+  storage:
+    ports:
+      - "8080"
+
   webserver:
     ports:
       - ${SIMCORE_PORT:-9081}:8080
@@ -18,3 +27,7 @@ services:
   postgres:
     ports:
       - "5432"
+
+  rabbit:
+    ports:
+      - "5672"
