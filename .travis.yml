@@ -318,17 +318,17 @@ jobs:
         directories:
           - node_modules
       before_install:
-        - sudo bash ops/travis/e2e-testing/e2e_testing before_install
+        - sudo bash ops/travis/system-testing/e2e before_install
       install:
-        - unbuffer bash ops/travis/e2e-testing/e2e_testing install
+        - unbuffer bash ops/travis/system-testing/e2e install
       before_script:
-        - unbuffer bash ops/travis/e2e-testing/e2e_testing before_script
+        - unbuffer bash ops/travis/system-testing/e2e before_script
       script:
-        - unbuffer bash ops/travis/e2e-testing/e2e_testing script
+        - unbuffer bash ops/travis/system-testing/e2e script
       after_success:
-        - unbuffer bash ops/travis/e2e-testing/e2e_testing after_success
+        - unbuffer bash ops/travis/system-testing/e2e after_success
       after_failure:
-        - unbuffer bash ops/travis/e2e-testing/e2e_testing after_failure
+        - unbuffer bash ops/travis/system-testing/e2e after_failure
 
     - stage: deployment
       name: master
