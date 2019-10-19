@@ -32,7 +32,7 @@ before_script() {
     make .env
     echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
-    make ops_disabled=1 up-version
+    make up-version
 }
 
 script() {

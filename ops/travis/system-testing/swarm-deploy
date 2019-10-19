@@ -20,7 +20,7 @@ install() {
 before_script() {
     pip list -v
     make info-images
-    make ops_disabled=1 up-version
+    make up-version
 }
 
 script() {
