@@ -33,7 +33,22 @@ WAIT_TIME_SECS = 20
 RETRY_COUNT = 7
 MAX_WAIT_TIME=240
 
-logger = logging.getLogger(__name__)
+
+docker_compose_service_names = [
+    'apihub',
+    'director',
+    'sidecar',
+    'storage',
+    'webserver',
+    'rabbit',
+    'postgres'
+]
+
+stack_name = os.environ.get("SWARM_STACK_NAME", 'simcore')
+
+stack_service_names = sorted([ f"{stack_name}_{name}" for name in docker_compose_service_names ])
+
+
 
 # UTILS --------------------------------
 def _here() -> Path:
@@ -54,10 +69,11 @@ def _services_docker_compose(osparc_simcore_root_dir: Path) -> Dict[str, str]:
     # TODO: add docker config ... to resolve docker-compose*.yml
     osparc_simcore_services_dir = osparc_simcore_root_dir / "services"
     compose = {}
-    for name in ["docker-compose.yml", ]:
+    for name in ["docker-compose.yml", "docker-compose-ops.yml"]:
         content = _load_yaml(osparc_simcore_services_dir / name)
         compose.update(content)
     return compose
+
 
 def get_tasks_summary(tasks):
     msg = ""
@@ -88,6 +104,7 @@ def get_failed_tasks_logs(service, docker_client):
     return failed_logs
 
 # FIXTURES -------------------------------------
+
 @pytest.fixture(scope="session")
 def here() -> Path:
     return _here()
@@ -112,18 +129,9 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return _services_docker_compose(osparc_simcore_root_dir)
 
 
-@pytest.fixture(scope="session")
-def swarm_stack_name():
-    return os.environ.get("SWARM_STACK_NAME", 'simcore')
-
-def _list_core_services():
-    exclude = [ ]
-    content = _services_docker_compose(_osparc_simcore_root_dir(_here()))
-    return [name for name in content["services"].keys() if name not in exclude]
-
 @pytest.fixture(scope="session",
-                params=_list_core_services())
-def core_service_name(request, services_docker_compose):
+                params=stack_service_names)
+def core_service_name(request):
     return str(request.param)
 
 
@@ -132,24 +140,8 @@ def docker_client():
     client = docker.from_env()
     yield client
 
-
-# TESTS -------------------------------
-def test_all_services_up(docker_client, services_docker_compose):
-    running_services = docker_client.services.list()
-
-    service_names = []
-    service_names += services_docker_compose["services"]
-
-    assert len(service_names) == len(running_services)
-
-    for name in service_names:
-        assert any( name in s.name for s in running_services ), f"{name} not in {running_services}"
-
-async def test_core_service_running(swarm_stack_name, core_service_name, docker_client, loop):
-    """
-        NOTE: loop fixture makes this test async
-    """
-    SERVICE_NAMES_PATTERN = re.compile(r'([\w^_]+)_([-\w]+)')
+@pytest.fixture(scope="function")
+def core_services_running(docker_client):
     # Matches service names in stacks as e.g.
     #
     #  'mystack_director'
@@ -159,24 +151,28 @@ async def test_core_service_running(swarm_stack_name, core_service_name, docker_
     # for a stack named 'mystack'
 
     # maps service names in docker-compose with actual services
-    running_services = {}
-    for service in docker_client.services.list():
-        match = SERVICE_NAMES_PATTERN.match(service.name)
-        assert match, f"Could not match service name {service.name}"
-        prefix, service_name = match.groups()
-        assert prefix == swarm_stack_name
-        running_services[service_name] = service
+    running_services = [ s for s in docker_client.services.list() if s.name.startswith(stack_name) ]
+    return running_services
 
-    # find the service
-    assert core_service_name in running_services
-    running_service = running_services[core_service_name]
+# TESTS -------------------------------
+def test_all_services_up(core_services_running):
+    running_services = sorted( [s.name for s in core_services_running] )
+    assert  running_services == stack_service_names
+
+
+async def test_core_service_running(core_service_name, core_services_running, docker_client, loop):
+    """
+        NOTE: loop fixture makes this test async
+    """
+    # find core_service_name
+    running_service = next( s for s in core_services_running  if s.name == core_service_name )
 
     # Every service in the fixture runs a single task, but they might have failed!
     #
-    # $ docker service ps services_storage
+    # $ docker service ps simcore_storage
     # ID                  NAME                     IMAGE                     NODE                DESIRED STATE       CURRENT STATE            ERROR                       PORTS
-    # puiaevvmtbs1        services_storage.1       services_storage:latest   crespo-wkstn        Running             Running 18 minutes ago
-    # j5xtlrnn684y         \_ services_storage.1   services_storage:latest   crespo-wkstn        Shutdown            Failed 18 minutes ago    "task: non-zero exit (1)"
+    # puiaevvmtbs1        simcore_storage.1       simcore_storage:latest   crespo-wkstn        Running             Running 18 minutes ago
+    # j5xtlrnn684y         \_ simcore_storage.1   simcore_storage:latest   crespo-wkstn        Shutdown            Failed 18 minutes ago    "task: non-zero exit (1)"
     tasks = running_service.tasks()
 
     assert len(tasks) == 1, "Expected a single task for '{0}',"\
@@ -203,15 +199,14 @@ async def test_core_service_running(swarm_stack_name, core_service_name, docker_
                 get_failed_tasks_logs(running_service, docker_client))
 
 
-async def test_check_serve_root(docker_client, services_docker_compose):
-    running_services = docker_client.services.list()
-    assert len(services_docker_compose["services"]) == len(running_services)
-
-    req = urllib.request.Request("http://localhost:9081/")
+async def test_check_serve_root():
+    # TODO: this is
+    req = urllib.request.Request("http://127.0.0.1:9081/")
     try:
         resp = urllib.request.urlopen(req)
         charset = resp.info().get_content_charset()
         content = resp.read().decode(charset)
+        # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
         search = "osparc/boot.js"
         if content.find(search) < 0:
             pytest.fail("{} not found in main index.html".format(search))
