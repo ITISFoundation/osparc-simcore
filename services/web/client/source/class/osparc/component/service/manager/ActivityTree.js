@@ -157,26 +157,28 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
             let parentAdded = false;
             for (let key in study.workbench) {
               const node = study.workbench[key];
+              if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
+                rows.push([
+                  osparc.component.service.manager.ActivityManager.itemTypes.STUDY,
+                  study.name,
+                  "",
+                  "",
+                  -1,
+                  -1
+                ]);
+                parentAdded = true;
+              }
+              const row = [];
+              row[0] = osparc.component.service.manager.ActivityManager.itemTypes.SERVICE;
+              row[1] = node.label;
               if (Object.keys(activity).includes(key)) {
-                if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
-                  rows.push([
-                    osparc.component.service.manager.ActivityManager.itemTypes.STUDY,
-                    study.name,
-                    "",
-                    "",
-                    -1,
-                    -1
-                  ]);
-                  parentAdded = true;
-                }
-                const row = [];
-                row[0] = osparc.component.service.manager.ActivityManager.itemTypes.SERVICE;
-                row[1] = node.label;
                 row[2] = activity[key].name;
                 row[4] = Math.round(activity[key].stats.cpuUsage * 10) / 10;
                 row[5] = Math.round(activity[key].stats.memUsage * 10) / 10;
-                rows.push(row);
+              } else {
+                row[3] = this.tr("Not running");
               }
+              rows.push(row);
             }
           });
           this.setData(rows);
