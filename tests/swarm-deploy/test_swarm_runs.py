@@ -51,29 +51,6 @@ stack_service_names = sorted([ f"{stack_name}_{name}" for name in docker_compose
 
 
 # UTILS --------------------------------
-def _here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-def _load_yaml(path: Path) -> Dict:
-    content = {}
-    assert path.exists()
-    with path.open() as f:
-        content = yaml.safe_load(f)
-    return content
-
-
-def _services_docker_compose(osparc_simcore_root_dir: Path) -> Dict[str, str]:
-    # TODO: pip install docker-compose and use
-    # https://github.com/docker/compose/blob/master/compose/cli/main.py#L328
-    # TODO: add docker config ... to resolve docker-compose*.yml
-    osparc_simcore_services_dir = osparc_simcore_root_dir / "services"
-    compose = {}
-    for name in ["docker-compose.yml", "docker-compose-ops.yml"]:
-        content = _load_yaml(osparc_simcore_services_dir / name)
-        compose.update(content)
-    return compose
-
 
 def get_tasks_summary(tasks):
     msg = ""
@@ -107,33 +84,22 @@ def get_failed_tasks_logs(service, docker_client):
 
 @pytest.fixture(scope="session")
 def here() -> Path:
-    return _here()
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-def _osparc_simcore_root_dir(here) -> Path:
+def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
 @pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here) -> Path:
-    return _osparc_simcore_root_dir(here)
-
-@pytest.fixture(scope='session')
 def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
     services_dir = Path(osparc_simcore_root_dir) / "services"
     return services_dir
 
-@pytest.fixture("session")
-def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    return _services_docker_compose(osparc_simcore_root_dir)
-
-
-@pytest.fixture(scope="session",
-                params=stack_service_names)
+@pytest.fixture(scope="session", params=stack_service_names)
 def core_service_name(request):
     return str(request.param)
-
 
 @pytest.fixture(scope="function")
 def docker_client():
