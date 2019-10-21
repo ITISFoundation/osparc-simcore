@@ -19,10 +19,6 @@ services:
       - ./director:/devel/services/director
       - ../packages/service-library:/devel/packages/service-library
       - ../api:/devel/services/api
-    stdin_open: true
-    tty: true
-    ports:
-      - "3004:3000"
 
   webserver:
     volumes:
@@ -31,8 +27,6 @@ services:
       - ../packages:/devel/packages
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-    ports:
-      - "3001:3000"
 
   sidecar:
     volumes:
@@ -44,9 +38,3 @@ services:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
-    environment:
-      - SC_BOOT_MODE=debug-ptvsd
-    ports:
-      - "3003:3000"
-    stdin_open: true
-    tty: true
