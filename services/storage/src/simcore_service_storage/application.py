@@ -25,6 +25,9 @@ def create(config):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
+    # NOTE: ensure this is first thing in place, then any further get_client_sesions will be correctly closed
+    app.cleanup_ctx.append(persistent_client_session)
+
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
@@ -33,8 +36,6 @@ def create(config):
     monitoring = config["main"]["monitoring_enabled"]
     if monitoring:
         setup_monitoring(app, "simcore_service_storage")
-
-    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 

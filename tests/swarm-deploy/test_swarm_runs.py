@@ -2,7 +2,7 @@
 PRECONDITION:
     Assumes simcore stack is deployed, i.e. make ops_disabled=1 up-version
 
-SEE before_script() in ops/travis/system-testing/build_and_run
+SEE before_script() in ops/travis/system-testing/swarm-deploy
 """
 
 # pylint:disable=wildcard-import
