@@ -14,8 +14,6 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    stdin_open: true
-    tty: true
     environment:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_AUTH=${REGISTRY_AUTH}
@@ -50,8 +48,6 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    stdin_open: true
-    tty: true
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -120,8 +116,6 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    stdin_open: true
-    tty: true
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
