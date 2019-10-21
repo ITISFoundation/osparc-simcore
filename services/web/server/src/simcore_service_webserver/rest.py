@@ -14,6 +14,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib import openapi
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.client_session import get_client_session
 from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
 
@@ -28,19 +29,12 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 
-def get_server(servers, url):
-    # Development server: http://{host}:{port}/{basePath}
-    for server in servers:
-        if server.url == url:
-            return server
-    raise ValueError("Cannot find server %s in openapi specs" % url)
-
-
 @retry( wait=wait_fixed(RETRY_WAIT_SECS),
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(log, logging.INFO) )
-async def get_specs(location):
-    specs = await create_openapi_specs(location)
+async def get_specs(app, location):
+    session = get_client_session(app)
+    specs = await create_openapi_specs(location, session)
     return specs
 
 
@@ -51,30 +45,13 @@ def setup(app: web.Application, *, debug=False):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     try:
-        #specs = await create_openapi_specs(location=cfg["location"])
         loop = asyncio.get_event_loop()
         location = cfg["location"]
-        specs = loop.run_until_complete( get_specs(location) )
-
-        # TODO: tmp removed but keep in case ...
-        # sets servers variables to current server's config
-        # extra_api_urls = cfg.get("extra_urls", list())
-        # if debug:
-        #     for host in {'127.0.0.1', 'localhost', main_cfg['host'] }:
-        #         for port in {9081, main_cfg['port']}:
-        #             extra_api_urls.append("http://{}:{}".format(host, port))
-
-        # server = get_server(specs.servers, "{publicUrl}/{basePath}")
-        # for url in extra_api_urls:
-        #     new_server = deepcopy(server)
-        #     new_server.variables['publicUrl'].default = url
-        #     specs.servers.append(new_server)
-
+        specs = loop.run_until_complete( get_specs(app, location) )
 
         # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
         # TODO: should freeze specs here??
         app[APP_OPENAPI_SPECS_KEY] = specs # validated openapi specs
-
 
         # diagnostics routes
         routes = rest_routes.create(specs)

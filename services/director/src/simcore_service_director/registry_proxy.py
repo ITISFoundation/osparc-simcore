@@ -6,10 +6,11 @@ import logging
 from typing import Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, web
-from yarl import URL
-
 from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
+from yarl import URL
+
+from .config import APP_CLIENT_SESSION_KEY
 
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 
@@ -23,7 +24,7 @@ class ServiceType(enum.Enum):
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
 
-async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> Tuple[Dict, Dict]:
+async def _auth_registry_request(url: URL, method: str, auth_headers: Dict, session: ClientSession) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
         raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
     # auth issue let's try some authentication get the auth type
@@ -40,44 +41,43 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict) -> T
 
     # bearer type, it needs a token with all communications
     if auth_type == "Bearer":
-        async with ClientSession() as session:
-            # get the token
-            token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
-            async with session.get(token_url, auth=auth) as token_resp:
-                if not token_resp.status == 200:
-                    raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
-                bearer_code = (await token_resp.json())["token"]
-                headers = {"Authorization": "Bearer {}".format(bearer_code)}
-                async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
-                    if resp_wtoken.status == 404:
-                        _logger.exception("path to registry not found: %s", url)
-                        raise exceptions.ServiceNotAvailableError(url)
-                    if resp_wtoken.status > 399:
-                        _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
-                        raise exceptions.RegistryConnectionError(str(resp_wtoken))
-                    resp_data = await resp_wtoken.json(content_type=None)
-                    resp_headers = resp_wtoken.headers
-                    return (resp_data, resp_headers)
-    elif auth_type == "Basic":
-        async with ClientSession() as session:
-            # basic authentication
-            async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
-                if resp_wbasic.status == 404:
+        # get the token
+        token_url = URL(auth_details["realm"]).with_query(service=auth_details["service"], scope=auth_details["scope"])
+        async with session.get(token_url, auth=auth) as token_resp:
+            if not token_resp.status == 200:
+                raise exceptions.RegistryConnectionError("Unknown error while authentifying with registry: {}".format(str(token_resp)))
+            bearer_code = (await token_resp.json())["token"]
+            headers = {"Authorization": "Bearer {}".format(bearer_code)}
+            async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
+                if resp_wtoken.status == 404:
                     _logger.exception("path to registry not found: %s", url)
                     raise exceptions.ServiceNotAvailableError(url)
-                if resp_wbasic.status > 399:
-                    _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
-                    raise exceptions.RegistryConnectionError(str(resp_wbasic))
-                resp_data = await resp_wbasic.json(content_type=None)
-                resp_headers = resp_wbasic.headers
+                if resp_wtoken.status > 399:
+                    _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
+                    raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                resp_data = await resp_wtoken.json(content_type=None)
+                resp_headers = resp_wtoken.headers
                 return (resp_data, resp_headers)
+    elif auth_type == "Basic":
+        # basic authentication
+        async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+            if resp_wbasic.status == 404:
+                _logger.exception("path to registry not found: %s", url)
+                raise exceptions.ServiceNotAvailableError(url)
+            if resp_wbasic.status > 399:
+                _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
+                raise exceptions.RegistryConnectionError(str(resp_wbasic))
+            resp_data = await resp_wbasic.json(content_type=None)
+            resp_headers = resp_wbasic.headers
+            return (resp_data, resp_headers)
     raise exceptions.RegistryConnectionError("Unknown registry authentification type: {}".format(url))
 
 
 @cache_requests
-async def _registry_request(_: web.Application, path: URL, method: str ="GET") -> Tuple[Dict, Dict]:    
+async def _registry_request(app: web.Application, path: URL, method: str ="GET") -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
+
     url = URL("{scheme}://{url}".format(scheme="https" if config.REGISTRY_SSL else "http",
                                 url=config.REGISTRY_URL))
     url = url.join(path)
@@ -87,22 +87,23 @@ async def _registry_request(_: web.Application, path: URL, method: str ="GET") -
     auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
         if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
             else None
-    async with ClientSession() as session:
-        async with getattr(session, method.lower())(url, auth=auth) as response:
-            if response.status == 404:
-                _logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(path)
-            if response.status == 401:
-                resp_data, resp_headers = await _auth_registry_request(url, method, response.headers)
-            elif response.status > 399:
-                _logger.exception("Unknown error while accessing registry: %s", str(response))
-                raise exceptions.RegistryConnectionError(str(response))
-            else:
-                # registry that does not need an auth
-                resp_data = await response.json(content_type=None)
-                resp_headers = response.headers
 
-            return (resp_data, resp_headers)
+    session = app[APP_CLIENT_SESSION_KEY]
+    async with getattr(session, method.lower())(url, auth=auth) as response:
+        if response.status == 404:
+            _logger.exception("path to registry not found: %s", url)
+            raise exceptions.ServiceNotAvailableError(path)
+        if response.status == 401:
+            resp_data, resp_headers = await _auth_registry_request(url, method, response.headers, session)
+        elif response.status > 399:
+            _logger.exception("Unknown error while accessing registry: %s", str(response))
+            raise exceptions.RegistryConnectionError(str(response))
+        else:
+            # registry that does not need an auth
+            resp_data = await response.json(content_type=None)
+            resp_headers = response.headers
+
+        return (resp_data, resp_headers)
 
 async def _list_repositories(app: web.Application) -> List[str]:
     _logger.debug("listing repositories")
