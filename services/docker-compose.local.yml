@@ -2,6 +2,7 @@
 #
 # NOTES:
 # - Overrides docker-compose.yml config when deploying services locally
+# - Should not introduce a substantial different with respect the configuration deployed
 # - Added ports to enforce they are published in the swarm (e.g. for integration testing).
 # - sidecar cannot publish port with ingress mode since it can't be used with dnsrr mode
 # - Port bindings "300X:3000" reserved for remote debugging
@@ -19,10 +20,15 @@ services:
     ports:
       - "8080"
       - "3004:3000"
+    # TODO: disable all pdb-debug modes if not used !!!
+    #stdin_open: true
+    #tty: true
 
   storage:
-    environment:
-      - SC_BOOT_MODE=debug-ptvsd
+    # FIXME: tests will run with this mode?
+    #environment:
+    #  - SC_BOOT_MODE=debug-ptvsd
+
     ports:
       - "8080"
       - "3003:3000"
