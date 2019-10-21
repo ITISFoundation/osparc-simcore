@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.widget.NewGHIssue", {
       env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
-      let url = "https://github.com/ITISFoundation/osparc-simcore/issues/new";
+      let url = "https://github.com/ITISFoundation/osparc-issues/issues/new";
       url += "?labels=tester_review,UX_improvements";
       url += "&projects=ITISFoundation/3";
       url += "&body=" + body;
