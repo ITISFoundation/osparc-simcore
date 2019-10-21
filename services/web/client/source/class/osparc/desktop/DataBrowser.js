@@ -70,12 +70,6 @@ qx.Class.define("osparc.desktop.DataBrowser", {
         flex: 1
       });
 
-      const showPieChart = false;
-      if (showPieChart) {
-        const chartLayout = this.__createChartLayout();
-        dataManagerLayout.add(chartLayout);
-      }
-
       this._add(dataManagerMainLayout, {
         flex: 1
       });
@@ -155,34 +149,6 @@ qx.Class.define("osparc.desktop.DataBrowser", {
       fileActions.add(selectedFileLayout);
 
       return actionsToolbar;
-    },
-
-    __createChartLayout: function() {
-      let chartLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const label = new qx.ui.basic.Label(this.tr("Data Resources")).set({
-        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 500
-      });
-      chartLayout.add(label);
-
-      const plotlyDivId = "DataResources";
-      const plotly = new osparc.component.widget.PlotlyWidget(plotlyDivId);
-      plotly.addListener("plotlyWidgetReady", e => {
-        if (e.getData()) {
-          this.__pieChart = plotly;
-          const myPlot = document.getElementById(plotlyDivId);
-          myPlot.on("plotly_click", data => {
-            this.__reloadChartData(data["points"][0]["id"][0]);
-          }, this);
-          this.__reloadChartData();
-        }
-      }, this);
-      chartLayout.add(plotly, {
-        flex: 1
-      });
-
-      return chartLayout;
     },
 
     __selectionChanged: function() {
