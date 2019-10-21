@@ -23,7 +23,7 @@ def create(config):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
-    # NOTE: ensure this is first thing in place, then any further get_client_sesions will be correctly closed
+    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
 
     setup_db(app)   # -> postgres service
