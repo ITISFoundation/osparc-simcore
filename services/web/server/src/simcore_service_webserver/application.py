@@ -7,6 +7,7 @@ from typing import Dict
 
 from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.client_session import persistent_client_session
 from servicelib.monitoring import setup_monitoring
 
 from .activity import setup_activity
@@ -68,6 +69,9 @@ def create_application(config: Dict) -> web.Application:
 
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
+
+    # The last
+    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 
