@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+#  This task in the system-testing aims to test some guarantees expected from
+#  the deployment of osparc-simcore in a cluster (swarm).
+#  It follows some of the points enumerated in the https://12factor.net/  methodology.
+#
+
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -euo pipefail
 IFS=$'\n\t'

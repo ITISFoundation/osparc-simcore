@@ -285,17 +285,17 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - sudo bash ops/travis/system-testing/build_and_run before_install
+        - sudo bash ops/travis/system-testing/swarm-deploy before_install
       install:
-        - unbuffer bash ops/travis/system-testing/build_and_run install
+        - unbuffer bash ops/travis/system-testing/swarm-deploy install
       before_script:
-        - unbuffer bash ops/travis/system-testing/build_and_run before_script
+        - unbuffer bash ops/travis/system-testing/swarm-deploy before_script
       script:
-        - unbuffer bash ops/travis/system-testing/build_and_run script
+        - unbuffer bash ops/travis/system-testing/swarm-deploy script
       after_success:
-        - unbuffer bash ops/travis/system-testing/build_and_run after_success
+        - unbuffer bash ops/travis/system-testing/swarm-deploy after_success
       after_failure:
-        - unbuffer bash ops/travis/system-testing/build_and_run after_failure
+        - unbuffer bash ops/travis/system-testing/swarm-deploy after_failure
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
