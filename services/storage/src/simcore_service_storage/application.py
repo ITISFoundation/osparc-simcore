@@ -17,8 +17,6 @@ from .settings import APP_CONFIG_KEY
 log = logging.getLogger(__name__)
 
 
-
-
 def create(config):
     log.debug("Creating and setting up application")
 
