@@ -64,7 +64,7 @@ Using the main Makefile of the oSparc platform allows for testing the director:
   # go to root folder
   make build-devel
   # switch the docker swarm on in development mode
-  make up-swarm-devel
+  make up-devel
 ```
 
 Then open [director-swagger-ui](http://localhost:8080/apidoc/) to see the director API and try out the different routes.

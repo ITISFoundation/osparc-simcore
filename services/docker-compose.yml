@@ -5,18 +5,6 @@ services:
   apihub:
     image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    build:
-      context: ../
-      dockerfile: services/apihub/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/apihub:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
-      target: production
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8043'
     deploy:
@@ -31,18 +19,6 @@ services:
     init: true
     stdin_open: true
     tty: true
-    build:
-      context: ../
-      dockerfile: services/director/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
-      target: production
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8080'
     environment:
@@ -79,44 +55,9 @@ services:
       - default
       - interactive_services_subnet
 
-  webclient:
-    image: services_webclient:build
-    init: true
-    build:
-      context: ./web/client/
-      dockerfile: Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/webclient:cache
-        - services_webclient:latest
-      target: build
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
-      args:
-        - VCS_URL=${VCS_URL}
-        - VCS_REF=${VCS_REF}
-        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
-        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
-    command: >
-      /bin/sh -c "ls -l build-output;cat build-output/version.txt"
-
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    build:
-      context: ../
-      dockerfile: services/web/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
-      target: production
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - ${SIMCORE_PORT:-9081}:8080
     environment:
@@ -156,20 +97,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: '100M'
-    build:
-      # the context for the build is the git repo root directory, this allows to copy
-      # the packages directory into any docker image
-      context: ../
-      dockerfile: services/sidecar/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
-      target: production
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -205,20 +132,6 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    build:
-      # the context for the build is the git repo root directory, this allows to copy
-      # the packages directory into any docker image
-      context: ../
-      dockerfile: services/storage/Dockerfile
-      cache_from:
-        - ${DOCKER_REGISTRY:-itisfoundation}/storage:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
-      target: production
-      labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - "8080"
     environment:
@@ -284,7 +197,7 @@ services:
       - computational_services_subnet
 
   minio:
-    image: minio/minio:RELEASE.2019-05-14T23-57-45Z
+    image: minio/minio:RELEASE.2019-09-26T19-42-35Z
     init: true
     environment:
       - MINIO_ACCESS_KEY=12345678

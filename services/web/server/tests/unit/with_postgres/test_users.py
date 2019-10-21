@@ -7,7 +7,6 @@
 import collections
 import random
 from itertools import repeat
-
 import faker
 import pytest
 from aiohttp import web
@@ -188,9 +187,8 @@ async def test_create_token(client, logged_user, tokens_db, role, expected):
 
     resp = await client.post(url, json=token)
     data, error = await assert_status(resp, expected)
-
     if not error:
-        db_token = await get_token_from_db(tokens_db, token_id=data)
+        db_token = await get_token_from_db(tokens_db, token_data=token)
         assert db_token['token_data'] == token
         assert db_token['user_id'] == logged_user["id"]
 
