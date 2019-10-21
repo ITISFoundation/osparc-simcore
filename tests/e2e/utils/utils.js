@@ -113,6 +113,10 @@ async function waitForValidSleeperOutputFile(page) {
   })
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 module.exports = {
   getRandUserAndPass,
@@ -124,4 +128,5 @@ module.exports = {
   dragAndDrop,
   waitForResponse,
   waitForValidSleeperOutputFile,
+  sleep,
 }

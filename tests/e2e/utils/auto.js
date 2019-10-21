@@ -1,4 +1,5 @@
 const utils = require("./utils")
+const responses = require('./responsesQueue');
 
 async function register(page, user, pass) {
   await page.waitForSelector('[osparc-test-id="loginCreateAccountBtn"]');
@@ -25,13 +26,10 @@ async function logIn(page, user, pass) {
     visible: true,
     timeout: 10000
   });
-  console.log("loginUserEmailFld found");
   await page.type('[osparc-test-id="loginUserEmailFld"]', user);
   await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
-  console.log("loginPasswordFld found");
   await page.type('[osparc-test-id="loginPasswordFld"]', pass);
   await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
-  console.log("loginSubmitBtn found");
   await page.click('[osparc-test-id="loginSubmitBtn"]');
 }
 
@@ -300,13 +298,16 @@ async function openLastNode(page) {
 async function checkDataProducedByNode(page) {
   console.log("checking Data produced by Node")
 
+  const responsesQueue = new responses.ResponsesQueue(page);
+  responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
+
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
-  // await utils.waitForResponse(page, "storage/locations/0/files/metadata?uuid_filter=")
+  await responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=");
 
   await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]')
-  await page.waitFor(10000) // instead of waiting for response
+  await page.waitFor(2000) // instead of waiting for response
   const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
   console.log(children);
   if (children.length < 4) { // 4 = location + study + node + file
