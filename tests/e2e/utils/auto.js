@@ -243,12 +243,35 @@ async function __dashboardFilterStudiesByText(page, templateName) {
 }
 
 async function runStudy(page, waitFor = 0) {
-  console.log("Running study and waiting for", waitFor/1000, "seconds");
+  console.log("Running study");
+
+  const responsesQueue = new responses.ResponsesQueue(page);
+  responsesQueue.addResponseListener("/start");
 
   await page.waitForSelector('[osparc-test-id="runStudyBtn"]')
   await page.click('[osparc-test-id="runStudyBtn"]')
 
-  await page.waitFor(waitFor)
+  // make sure start request was sent
+  const tries = 3;
+  let reqInQueue = responsesQueue.isRequestInQueue("/start");
+  for (let i=0; i<tries && reqInQueue; i++) {
+    await utils.sleep(200);
+    reqInQueue = responsesQueue.isRequestInQueue("/start");
+  }
+  if (reqInQueue) {
+    console.log("Starting pipeline didn't work, pressing 'Run' again");
+    await page.click('[osparc-test-id="runStudyBtn"]');
+  }
+
+  try {
+    await responsesQueue.waitUntilResponse("/start");
+  }
+  catch(err) {
+    throw(err);
+  }
+
+  console.log("Running study and waiting for", waitFor/1000, "seconds");
+  await page.waitFor(waitFor);
 }
 
 async function dashboardDeleteFirstStudy(page) {
@@ -296,7 +319,7 @@ async function openLastNode(page) {
 }
 
 async function checkDataProducedByNode(page) {
-  console.log("checking Data produced by Node")
+  console.log("checking Data produced by Node");
 
   const responsesQueue = new responses.ResponsesQueue(page);
   responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
@@ -304,24 +327,40 @@ async function checkDataProducedByNode(page) {
   await page.waitForSelector('[osparc-test-id="nodeViewFilesBtn"]')
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 
-  await responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=");
+  try {
+    await responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=");
+  }
+  catch(err) {
+    throw(err);
+  }
 
-  await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]')
-  await page.waitFor(2000) // instead of waiting for response
-  const children = await utils.getFileTreeItemIDs(page, "NodeFiles");
-  console.log(children);
+  const tries = 3;
+  let children = [];
+  for (let i=0; i<tries && children.length === 0; i++) {
+    await page.waitFor(2000); // it takes some time to build the tree
+    await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]');
+    children = await utils.getFileTreeItemIDs(page, "NodeFiles");
+    console.log(i+1, 'try: ', children);
+  }
   if (children.length < 4) { // 4 = location + study + node + file
     throw("file items not found");
   }
 
   const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
-  await page.waitForSelector(lastChildId)
-  await page.click(lastChildId)
+  await page.waitForSelector(lastChildId);
+  await page.click(lastChildId);
 
-  await downloadSelectedFile(page)
+  /*
+  try {
+    await downloadSelectedFile(page);
+  }
+  catch(err) {
+    throw(err);
+  }
+  */
 
-  await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]')
-  await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]')
+  await page.waitForSelector('[osparc-test-id="nodeDataManagerCloseBtn"]');
+  await page.click('[osparc-test-id="nodeDataManagerCloseBtn"]');
 }
 
 async function downloadSelectedFile(page) {
@@ -330,15 +369,13 @@ async function downloadSelectedFile(page) {
   await page.waitForSelector('[osparc-test-id="filesTreeDownloadBtn"]')
   await page.click('[osparc-test-id="filesTreeDownloadBtn"]')
 
-  /*
   try {
     const value = await utils.waitForValidSleeperOutputFile(page)
     console.log("valid Sleeper output file value", value)
   }
   catch(err) {
-    console.log("failed validatin Sleeper output file", err)
+    throw(err);
   }
-  */
 }
 
 
