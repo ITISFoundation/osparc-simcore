@@ -69,7 +69,7 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_doc
     # done
 
     # make down
-    # NOTE: remove them in reserve order since stacks share common networks
+    # NOTE: remove them in reverse order since stacks share common networks
     stacks.reverse()
     for stack in stacks:
         subprocess.run(f"docker stack rm {stack}", shell=True, check=True)

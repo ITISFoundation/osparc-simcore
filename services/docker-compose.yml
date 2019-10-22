@@ -32,7 +32,6 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME:-localhost}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
