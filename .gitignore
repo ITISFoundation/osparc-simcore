@@ -147,4 +147,4 @@ prof/
 !ops/**/build
 
 # outputs from make
-.docker-compose-*.yml
+.stack-*.yml
