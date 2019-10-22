@@ -59,17 +59,18 @@ qx.Class.define("osparc.component.widget.ShareStudy", {
       const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy Link"));
       copyLinkBtn.addListener("execute", function() {
         osparc.utils.Utils.copyTextToClipboard(myLink);
+        myLinkTF.selectAllText();
       });
       box11.add(copyLinkBtn);
       box1.add(box11);
 
-      shareStudyLayout.add(box1);
-
-      const box2 = new qx.ui.groupbox.GroupBox(this.tr("Share Study")).set({
+      const box12 = new qx.ui.groupbox.GroupBox(this.tr("Share Study")).set({
         enabled: false
       });
-      box2.setLayout(new qx.ui.layout.VBox(5));
-      shareStudyLayout.add(box2);
+      box12.setLayout(new qx.ui.layout.VBox(5));
+      box1.add(box12);
+
+      shareStudyLayout.add(box1);
 
       this._add(shareStudyLayout, {
         top: 10,
