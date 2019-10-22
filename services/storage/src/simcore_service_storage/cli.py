@@ -72,7 +72,6 @@ def main(args=None):
     log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
-    print("Log level set to %s", log_level)
 
     application.run(config)
 
