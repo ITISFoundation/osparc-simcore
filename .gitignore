@@ -145,3 +145,6 @@ itisfoundation.github.io/
 # pylint-profile output
 prof/
 !ops/**/build
+
+# outputs from make
+.docker-compose-*.yml

@@ -43,11 +43,11 @@ A graph view of services, ports, volumes and service dependencies:
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
 
-  # build core services
-  make build
+  # show setup info and build core services
+  make info build
 
   # starts swarm and deploys services
-  make up-local
+  make up-prod
 
   # display swarm configuration
   make info-swarm
@@ -56,7 +56,6 @@ A graph view of services, ports, volumes and service dependencies:
   #  localhost:9081 - simcore front-end site
   #
   xdg-open http://localhost:9081/
-
 
   # stops
   make down

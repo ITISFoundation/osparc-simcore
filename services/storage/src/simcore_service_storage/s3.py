@@ -1,42 +1,59 @@
 """ Module to access s3 service
 
 """
-import asyncio
 import logging
+from pprint import pformat
 from typing import Dict
 
 from aiohttp import web
-
 from s3wrapper.s3_client import S3Client
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from .settings import APP_CONFIG_KEY, APP_S3_KEY
 from .utils import RETRY_COUNT, RETRY_WAIT_SECS
 
 log = logging.getLogger(__name__)
 
+
 _SERVICE_NAME = 's3'
 
 async def _on_startup_and_cleanup(app):
+    log.debug("setup %s.setup.cleanup_ctx", __name__)
+
     # setup
     s3_client = app[APP_S3_KEY]
     cfg = app[APP_CONFIG_KEY]
 
-    s3_cfg = cfg[_SERVICE_NAME]
-    s3_bucket = s3_cfg["bucket_name"]
+    @retry(wait=wait_fixed(RETRY_WAIT_SECS),
+        stop=stop_after_attempt(RETRY_COUNT),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True)
+    async def do_create_bucket():
+        s3_cfg = cfg[_SERVICE_NAME]
+        s3_bucket = s3_cfg["bucket_name"]
+        log.debug("Creating bucket: %s", pformat(s3_cfg))
+        s3_client.create_bucket(s3_bucket)
 
-    ok, failures_count = False, 0
-    while not ok:
-        try:
-            s3_client.create_bucket(s3_bucket)
-            ok = True
-        except Exception: # pylint: disable=W0703
-            failures_count +=1
-            if failures_count>RETRY_COUNT:
-                raise
-            await asyncio.sleep(RETRY_WAIT_SECS)
+    try:
+        await do_create_bucket()
+    except Exception: #pylint: disable=broad-except
+        log.exception("Impossible to create s3 bucket. Stoping")
+
+    # ok, failures_count = False, 0
+    # while not ok:
+    #     try:
+    #         s3_client.create_bucket(s3_bucket)
+    #         ok = True
+    #     except Exception: # pylint: disable=W0703
+    #         failures_count +=1
+    #         if failures_count>RETRY_COUNT:
+    #             log.exception("")
+    #             raise
+    #         await asyncio.sleep(RETRY_WAIT_SECS)
     yield
-    # tear-down
 
+    # tear-down
+    log.debug("tear-down %s.setup.cleanup_ctx", __name__)
 
 
 def setup(app: web.Application):

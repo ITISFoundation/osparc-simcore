@@ -14,7 +14,7 @@ then
   #--------------------
 
   APP_CONFIG=config-host-dev.yaml
-  
+
   cd services/director
   $SC_PIP install --user -r requirements/dev.txt
   cd /devel

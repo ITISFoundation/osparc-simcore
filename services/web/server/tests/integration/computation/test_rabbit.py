@@ -25,7 +25,7 @@ core_services = [
     'rabbit'
 ]
 
-tool_services = [
+ops_services = [
 ]
 
 @pytest.fixture(scope='session')
