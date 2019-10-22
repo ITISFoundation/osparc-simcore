@@ -7,17 +7,20 @@ const responses = require('../utils/responsesQueue');
 
 const demo = false;
 
+const args = process.argv.slice(2);
+if (args.length < 1) {
+  console.error('Expected at least url argument!');
+  process.exit(1);
+}
+const url = args[0];
 let user = null;
 let pass = null;
 let newUser = true;
-const args = process.argv.slice(2);
-if (args.length === 2) {
-  user = args[0];
-  pass = args[1];
+if (args.length === 3) {
+  user = args[1];
+  pass = args[2];
   newUser = false;
-}
-
-if (newUser) {
+} else {
   const userPass = utils.getRandUserAndPass();
   user = userPass.user;
   pass = userPass.pass;
@@ -39,7 +42,12 @@ async function runTutorial (url) {
   await auto.logIn(page, user, pass);
 
   // Use template to create Sleepers study
-  await responsesQueue.waitUntilResponse("projects?type=template");
+  try {
+    await responsesQueue.waitUntilResponse("projects?type=template");
+  }
+  catch(err) {
+    console.error(err);
+  }
 
   // Run pipeline
   const templateName = "Sleepers";
@@ -54,7 +62,7 @@ async function runTutorial (url) {
     await auto.checkDataProducedByNode(page);
   }
   catch(err) {
-    console.log("Failed checking Data Produced By Node", err);
+    console.error("Failed checking Data Produced By Node", err);
   }
 
   // Remove Study
@@ -69,17 +77,8 @@ async function runTutorial (url) {
   await browser.close();
 }
 
-const urls = [
-  // "http://localhost:9081/",
-  "https://osparc01.speag.com/",
-  // "https://staging.osparc.io/",
-  // "https://osparc.io/",
-];
-
-urls.forEach((url) => {
-  runTutorial(url)
-    .catch((e) => {
-      console.log('Puppeteer error: ' + e);
-      process.exit(1);
-    });
-});
+runTutorial(url)
+  .catch(error => {
+    console.log('Puppeteer error: ' + error);
+    process.exit(1);
+  });
