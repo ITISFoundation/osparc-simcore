@@ -65,17 +65,17 @@ endif
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
 .PHONY: build
-build: .env ## Builds production images and tags them as 'local/{service-name}:production'
+build: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
-ifeq ($(name),)
+ifeq ($(target),)
 	# Building services
 	@export BUILD_TARGET=production; \
 	docker-compose -f services/docker-compose-build.yml build --parallel
 else
-	# Building service $(name)
+	# Building service $(target)
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build $(name)
+	docker-compose -f services/docker-compose-build.yml build $(target)
 endif
 
 .PHONY: rebuild build-nc
@@ -83,23 +83,29 @@ rebuild: build-nc
 build-nc: .env ## As build but w/o cache (alias: rebuild)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
-ifeq ($(name),)
+ifeq ($(target),)
 	# Building services
 	@export BUILD_TARGET=production; \
 	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache
 else
-	# Building service $(name)
+	# Building service $(target)
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache $(name)
+	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache $(target)
 endif
 
 .PHONY: build-devel
-build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'
+build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile-dev
+	@$(MAKE) -C services/web/client touch compile-dev
+ifeq ($(target),)
 	# Building services
 	@export BUILD_TARGET=development; \
 	docker-compose -f services/docker-compose-build.yml build --parallel
+else
+	# Building service $(target)
+	@export BUILD_TARGET=development; \
+	docker-compose -f services/docker-compose-build.yml build $(target)
+endif
 
 
 .PHONY: build-cache
@@ -321,8 +327,8 @@ define show-meta
 		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
 endef
 
-info-images:  ## lists tags and labels of built images. To display one: 'make name=webserver info-images'
-ifeq ($(name),)
+info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'
+ifeq ($(target),)
 	@$(foreach service,$(SERVICES_LIST),\
 		echo "## $(service) images:";\
 			docker images */$(service):*;\
@@ -331,8 +337,8 @@ ifeq ($(name),)
 	## Client images:
 	@$(MAKE) -C services/web/client info
 else
-	## $(name) images:
-	@$(call show-meta,$(name))
+	## $(target) images:
+	@$(call show-meta,$(target))
 endif
 
 info-swarm: ## displays info about stacks and networks
