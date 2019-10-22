@@ -4,10 +4,14 @@
 # Note: context at osparc-simcore/services/web/client expected
 #
 ARG tag
-FROM itisfoundation/qooxdoo-kit:${tag} as build-client
+FROM itisfoundation/qooxdoo-kit:${tag} as touch
 
 WORKDIR /project
 ENV PATH=/home/node/node_modules/.bin:${PATH}
+
+RUN mkdir /project/build-output
+
+FROM touch as build-client
 
 # Installs contributions
 COPY --chown=node:node compile.json compile.json

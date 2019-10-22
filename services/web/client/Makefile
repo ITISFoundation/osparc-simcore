@@ -28,10 +28,14 @@ compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'
 			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
 			--set osparc.vcsOriginUrl='"${VCS_URL}"'
 
-.PHONY: compile
+.PHONY: compile touch
 compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} .
+	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=build-client .
+
+touch: ## minimal image build with /project/output-build inside
+	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
+	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
 
 
 # qx serve --------------------------

@@ -105,7 +105,7 @@ build-nc: .env ## As build but w/o cache (alias: rebuild)
 .PHONY: build-devel
 build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile-dev
+	@$(MAKE) -C services/web/client touch compile-dev
 	# Building services
 	@export BUILD_TARGET=development; \
 	$(DOCKER_COMPOSE) -f services/docker-compose.build.yml build --parallel
