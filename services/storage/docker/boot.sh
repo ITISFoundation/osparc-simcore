@@ -35,8 +35,9 @@ fi
 
 
 # RUNNING application ----------------------------------------
-if [[ ${SC_BOOT_MODE} == "debug" ]]
+if [[ ${SC_BOOT_MODE} == "debug-pdb" ]]
 then
+  # NOTE: needs stdin_open: true and tty: true
   echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
   echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
   python -c "import pdb, simcore_service_storage.cli; \
