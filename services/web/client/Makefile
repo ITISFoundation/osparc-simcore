@@ -38,6 +38,10 @@ touch: ## minimal image build with /project/output-build inside
 	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
 
 
+.PHONY: down
+down: ## tear down docker-compose
+	@${docker_compose} down
+
 # qx serve --------------------------
 
 define qx_serve =

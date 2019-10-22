@@ -43,7 +43,7 @@ core_services = [
     'postgres',
 ]
 
-tool_services = [
+ops_services = [
 #    'adminer'
 ]
 
