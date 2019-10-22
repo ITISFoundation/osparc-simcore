@@ -47,3 +47,5 @@ services:
   rabbit:
     ports:
       - "5672"
+      - "15672"
+      - "15692"
