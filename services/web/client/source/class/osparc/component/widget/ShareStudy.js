@@ -46,7 +46,7 @@ qx.Class.define("osparc.component.widget.ShareStudy", {
       const box1 = new qx.ui.groupbox.GroupBox(this.tr("Link Sharing"));
       box1.setLayout(new qx.ui.layout.VBox(5));
 
-      const box11 = new qx.ui.groupbox.GroupBox(this.tr("Clone Study"));
+      const box11 = new qx.ui.groupbox.GroupBox(this.tr("Copy Study"));
       box11.setLayout(new qx.ui.layout.HBox(5));
       let myLink = window.location.href;
       myLink += "study/" + studyModel.getUuid();
