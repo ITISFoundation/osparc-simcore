@@ -150,8 +150,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     update: function() {
       return Promise.all([osparc.data.Resources.get("studies"), osparc.data.Resources.getOne("activity")])
         .then(data => {
-          const studies = data[0];
-          const activity = data[1];
+          const studies = data[0] || {};
+          const activity = data[1] || {};
           const rows = [];
           studies.forEach(study => {
             let parentAdded = false;
@@ -175,11 +175,17 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               row[2] = splitted[splitted.length - 1];
               if (Object.keys(activity).includes(key)) {
                 const stats = activity[key].stats;
-                row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10;
-                row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10;
-                row[3] = this.tr("Running");
+                const queued = activity[key].queued;
+                if (stats) {
+                  row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10;
+                  row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10;
+                  row[3] = this.tr("Running");
+                }
+                if (queued) {
+                  row[3] = this.tr("Queued");
+                }
               } else {
-                row[3] = this.__getNodeStatus(node);
+                row[3] = this.tr("Not running");
               }
               rows.push(row);
             }
@@ -199,10 +205,6 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         .catch(e => {
           console.error(e);
         });
-    },
-
-    __getNodeStatus: function(node) {
-      return this.tr("Not running");
     },
 
     __hasActiveFilters: function() {

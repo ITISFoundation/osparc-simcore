@@ -28,9 +28,15 @@ async def get_status(request: aiohttp.web.Request):
                 result = await resp.json()
                 return result
 
-        results = await asyncio.gather(get_cpu_usage(), get_memory_usage())
+        async def get_celery_reserved():
+            app = get_celery(request.app)
+            inspect = app.control.inspect()
+            return inspect.reserved()
+
+        results = await asyncio.gather(get_cpu_usage(), get_memory_usage(), get_celery_reserved())
         cpu_usage = results[0]['data']['result']
         mem_usage = results[1]['data']['result']
+        celery_inspect = results[2]
 
         res = {}
         for node in cpu_usage:
@@ -54,11 +60,14 @@ async def get_status(request: aiohttp.web.Request):
                     }
                 }
 
-
-        app = get_celery(request.app)
-        inspect = app.control.inspect()
-        res['celery'] = {
-            'reserved': inspect.reserved()
-        }
+        for worker_id, worker in celery_inspect.items():
+            for task in worker:
+                node_id = eval(task['args'])[2]
+                if node_id in res:
+                    res[node_id]['queued'] = True
+                else:
+                    res[node_id] = {
+                        'queued': True
+                    }
         
         return res
