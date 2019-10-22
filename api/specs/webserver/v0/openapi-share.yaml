@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: resource sharing API
+  version: 0.1.0
+  description: 'Operations on sharing studies'
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+  /share/study/{study_id}:
+    parameters:
+      - name: study_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Gets sharing encoded links for the given study_id
+      operationId: get_study_sharing_links
+      responses:
+        '200':
+          description: got links for sharing study
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/study_sharing_links.yaml#/StudySharingLinksEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+

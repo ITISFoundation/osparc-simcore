@@ -1,0 +1,26 @@
+StudySharingLinks:
+  description: links for doing sharing operation on a study
+  type: object
+  properties:
+    copy:
+      description: encoded link for creating a deep copy of the given study
+      type: string
+    share:
+      description: encoded link for sharing same instance of the given study
+      type: string
+  required:
+    - copy
+  example:
+    copy: 'https://osparc.io/study/share/f608eeac-621e-47b9-baf6-f627c6eadbb2'
+    share: 'https://osparc.io/study/share/d2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+
+StudySharingLinksEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/StudySharingLinks'
+    error:
+      nullable: true
+      default: null
