@@ -6,16 +6,16 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(.py .pylintrc .travis.yml)
 
 before_install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ops/travis/helpers/show_system_versions
+        bash ci/travis/helpers/show_system_versions
     fi
 }
 
 install() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ops/travis/helpers/ensure_python_pip
+        bash ci/travis/helpers/ensure_python_pip
         pip3 install pylint~=2.0
         # Minimal packages to pass linter
         pip install celery docker
@@ -23,7 +23,7 @@ install() {
 }
 
 before_script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip list -v
         pylint --version
@@ -31,7 +31,7 @@ before_script() {
 }
 
 script() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         make pylint
     else
@@ -40,7 +40,7 @@ script() {
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         echo "linting successful"
     fi

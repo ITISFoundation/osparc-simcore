@@ -33,6 +33,6 @@ else
     fi
 fi
 
-slugified_name=$(exec ops/travis/helpers/slugify_name $image_tag)
+slugified_name=$(exec ci/travis/helpers/slugify_name $image_tag)
 
 echo "$slugified_name-latest"
