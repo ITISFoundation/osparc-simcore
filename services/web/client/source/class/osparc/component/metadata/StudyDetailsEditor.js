@@ -90,14 +90,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         marginTop: 10
       });
 
-      const openButton = new qx.ui.form.Button("Open").set({
+      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
       openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
       buttonsLayout.add(openButton);
 
-      const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
+      const modeButton = new qx.ui.form.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/16").set({
         appearance: "md-button",
         visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
@@ -108,6 +108,16 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       buttonsLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
+
+      const shareButton = new qx.ui.form.Button(this.tr("Share"), "@FontAwesome5Solid/share-alt/16").set({
+        appearance: "md-button",
+        visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
+      });
+      osparc.utils.Utils.setIdToWidget(shareButton, "shareBtn");
+      shareButton.addListener("execute", e => {
+        this.__shareStudy();
+      }, this);
+      buttonsLayout.add(shareButton);
 
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
@@ -224,6 +234,24 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
+    },
+
+    __shareStudy: function() {
+      const win = new qx.ui.window.Window(this.tr("Share Study")).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 0,
+        showMinimize: false,
+        showMaximize: false,
+        minWidth: 600,
+        centerOnAppear: true,
+        autoDestroy: true,
+        modal: true,
+        appearance: "service-window"
+      });
+
+      const shareStudy = new osparc.component.widget.ShareStudy(this.__model);
+      win.add(shareStudy);
+      win.open();
     },
 
     __saveAsTemplate: function(btn) {
