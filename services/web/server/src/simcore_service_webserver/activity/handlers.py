@@ -1,8 +1,10 @@
 import asyncio
 
 import aiohttp
+import celery
 from yarl import URL
 
+from ..computation_handlers import get_celery
 from ..login.decorators import login_required
 
 
@@ -43,6 +45,22 @@ async def get_status(request: aiohttp.web.Request):
         for node in mem_usage:
             node_id = node['metric']['container_label_node_id']
             usage = node['value'][1]
-            res[node_id]['stats']['memUsage'] = usage
+            if node_id in res:
+                res[node_id]['stats']['memUsage'] = usage
+            else:
+                res[node_id] = {
+                    'stats': {
+                        'memUsage': usage
+                    }
+                }
+
+
+        app = get_celery(request.app)
+        inspect = app.control.inspect()
+        res['celery'] = {
+            'scheduled': inspect.scheduled(),
+            'active': inspect.active(),
+            'reserved': inspect.reserved()
+        }
         
         return res

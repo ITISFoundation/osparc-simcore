@@ -19,9 +19,10 @@ qx.Class.define("osparc.ui.table.cellrenderer.Percentage", {
       if (cellInfo.value == null || cellInfo.value < 0) { // eslint-disable-line no-eq-null
         return "";
       }
+      const height = typeof cellInfo.value === "number" ? cellInfo.value : 0;
       return "" +
         `<div style="position: absolute; left: 0; right: 0;">${cellInfo.value}%</div>` +
-        `<div style="height: 100%; width: ${cellInfo.value}%; background-color: ${this.__color};"></div>`;
+        `<div style="height: 100%; width: ${height}%; background-color: ${this.__color};"></div>`;
     }
   }
 });

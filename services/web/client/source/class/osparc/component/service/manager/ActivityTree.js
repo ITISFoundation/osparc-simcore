@@ -171,12 +171,15 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               const row = [];
               row[0] = osparc.component.service.manager.ActivityManager.itemTypes.SERVICE;
               row[1] = node.label;
+              const splitted = node.key.split("/");
+              row[2] = splitted[splitted.length - 1];
               if (Object.keys(activity).includes(key)) {
-                row[2] = activity[key].name;
-                row[4] = Math.round(activity[key].stats.cpuUsage * 10) / 10;
-                row[5] = Math.round(activity[key].stats.memUsage * 10) / 10;
+                const stats = activity[key].stats;
+                row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10;
+                row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10;
+                row[3] = this.tr("Running");
               } else {
-                row[3] = this.tr("Not running");
+                row[3] = this.__getNodeStatus(node);
               }
               rows.push(row);
             }
@@ -196,6 +199,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         .catch(e => {
           console.error(e);
         });
+    },
+
+    __getNodeStatus: function(node) {
+      return this.tr("Not running");
     },
 
     __hasActiveFilters: function() {
