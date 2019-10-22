@@ -1,0 +1,250 @@
+configs:
+  rabbit_enabled_plugins:
+    file: /home/crespo/devp/osparc-simcore/services/rabbit/enabled_plugins
+networks:
+  computational_services_subnet:
+    attachable: true
+    driver: overlay
+    internal: false
+    ipam:
+      config:
+      - subnet: 172.9.0.0/16
+      driver: default
+    labels:
+      com.simcore.description: computational services network
+  interactive_services_subnet:
+    attachable: true
+    driver: overlay
+    internal: false
+    ipam:
+      config:
+      - subnet: 172.8.0.0/16
+      driver: default
+    labels:
+      com.simcore.description: interactive services network
+services:
+  apihub:
+    deploy:
+      placement:
+        constraints:
+        - node.platform.os == linux
+    image: local/apihub:production
+    init: true
+    networks:
+      default: {}
+    ports:
+    - target: 8043
+  director:
+    deploy:
+      placement:
+        constraints:
+        - node.platform.os == linux
+        - node.role == manager
+    environment:
+      EXTRA_HOSTS_SUFFIX: undefined
+      POSTGRES_DB: simcoredb
+      POSTGRES_ENDPOINT: postgres:5432
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: adminadmin
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: scu
+      REGISTRY_AUTH: "True"
+      REGISTRY_PW: adminadmin
+      REGISTRY_SSL: "True"
+      REGISTRY_URL: masu.speag.com
+      REGISTRY_USER: admin
+      S3_ACCESS_KEY: '12345678'
+      S3_BUCKET_NAME: simcore
+      S3_ENDPOINT: minio:9000
+      S3_SECRET_KEY: '12345678'
+      SC_BOOT_MODE: default
+      SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
+      STORAGE_ENDPOINT: storage:8080
+    image: local/director:production
+    init: true
+    networks:
+      default: {}
+      interactive_services_subnet: {}
+    ports:
+    - published: 3004
+      target: 3000
+    - target: 8080
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:rw
+  postgres:
+    environment:
+      POSTGRES_DB: simcoredb
+      POSTGRES_PASSWORD: adminadmin
+      POSTGRES_USER: scu
+    image: postgres:10.10
+    init: true
+    networks:
+      computational_services_subnet: {}
+      default: {}
+      interactive_services_subnet: {}
+    ports:
+    - target: 5432
+    volumes:
+    - postgres_data:/var/lib/postgresql/data:rw
+  rabbit:
+    configs:
+    - source: rabbit_enabled_plugins
+      target: /etc/rabbitmq/enabled_plugins
+    environment:
+      RABBITMQ_DEFAULT_PASS: adminadmin
+      RABBITMQ_DEFAULT_USER: admin
+    image: rabbitmq:3.8.0-management
+    init: true
+    networks:
+      computational_services_subnet: {}
+      default: {}
+    ports:
+    - target: 5672
+    - target: 15672
+    - target: 15692
+  sidecar:
+    depends_on:
+    - postgres
+    - rabbit
+    deploy:
+      endpoint_mode: dnsrr
+      mode: replicated
+      resources:
+        reservations:
+          cpus: '0.1'
+          memory: 100M
+    environment:
+      POSTGRES_DB: simcoredb
+      POSTGRES_ENDPOINT: postgres:5432
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: adminadmin
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: scu
+      RABBITMQ_LOG_CHANNEL: comp.backend.channels.log
+      RABBITMQ_PASSWORD: adminadmin
+      RABBITMQ_PROGRESS_CHANNEL: comp.backend.channels.progress
+      RABBITMQ_USER: admin
+      REGISTRY_PW: adminadmin
+      REGISTRY_URL: masu.speag.com
+      REGISTRY_USER: admin
+      S3_ACCESS_KEY: '12345678'
+      S3_BUCKET_NAME: simcore
+      S3_ENDPOINT: minio:9000
+      S3_SECRET_KEY: '12345678'
+      STORAGE_ENDPOINT: storage:8080
+      SWARM_STACK_NAME: simcore
+    image: local/sidecar:production
+    init: true
+    networks:
+      computational_services_subnet: {}
+    volumes:
+    - input:/home/scu/input:rw
+    - log:/home/scu/log:rw
+    - output:/home/scu/output:rw
+    - /var/run/docker.sock:/var/run/docker.sock:rw
+  storage:
+    depends_on:
+    - apihub
+    - postgres
+    deploy:
+      placement:
+        constraints:
+        - node.platform.os == linux
+    environment:
+      APIHUB_HOST: apihub
+      APIHUB_PORT: '8043'
+      BF_API_KEY: none
+      BF_API_SECRET: none
+      POSTGRES_DB: simcoredb
+      POSTGRES_ENDPOINT: postgres:5432
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: adminadmin
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: scu
+      S3_ACCESS_KEY: '12345678'
+      S3_BUCKET_NAME: simcore
+      S3_ENDPOINT: minio:9000
+      S3_SECRET_KEY: '12345678'
+      S3_SECURE: '0'
+      SC_BOOT_MODE: default
+      STORAGE_LOGLEVEL: INFO
+      STORAGE_MONITORING_ENABLED: '1'
+    image: local/storage:production
+    init: true
+    networks:
+      computational_services_subnet: {}
+      default: {}
+      interactive_services_subnet: {}
+    ports:
+    - published: 3003
+      target: 3000
+    - target: 8080
+  webserver:
+    depends_on:
+    - apihub
+    - postgres
+    - rabbit
+    deploy:
+      placement:
+        constraints:
+        - node.platform.os == linux
+        - node.role == manager
+    environment:
+      APIHUB_HOST: apihub
+      APIHUB_PORT: '8043'
+      BF_API_KEY: none
+      BF_API_SECRET: none
+      DIRECTOR_HOST: director
+      DIRECTOR_PORT: '8080'
+      POSTGRES_DB: simcoredb
+      POSTGRES_ENDPOINT: postgres:5432
+      POSTGRES_EXPORTER_DATA_SOURCE_NAME: postgresql://simcore:simcore@postgres:5432/simcoredb?sslmode=disable
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: adminadmin
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: scu
+      RABBITMQ_LOG_CHANNEL: comp.backend.channels.log
+      RABBITMQ_PASSWORD: adminadmin
+      RABBITMQ_PROGRESS_CHANNEL: comp.backend.channels.progress
+      RABBITMQ_USER: admin
+      RABBIT_HOST: rabbit
+      RABBIT_PORT: '5672'
+      REGISTRY_AUTH: "True"
+      REGISTRY_PW: adminadmin
+      REGISTRY_SSL: "True"
+      REGISTRY_URL: masu.speag.com
+      REGISTRY_USER: admin
+      S3_ACCESS_KEY: '12345678'
+      S3_BUCKET_NAME: simcore
+      S3_ENDPOINT: minio:9000
+      S3_SECRET_KEY: '12345678'
+      S3_SECURE: '0'
+      SC_BOOT_MODE: default
+      SMTP_HOST: mail.speag.com
+      SMTP_PORT: '25'
+      STORAGE_ENDPOINT: storage:8080
+      STORAGE_HOST: storage
+      STORAGE_PORT: '8080'
+      WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: '1'
+      WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED: '1'
+      WEBSERVER_LOGLEVEL: INFO
+      WEBSERVER_MONITORING_ENABLED: '1'
+      WEBSERVER_SESSION_SECRET_KEY: REPLACE ME with a key of at least length 32.
+      WEBSERVER_STUDIES_ACCESS_ENABLED: '0'
+    image: local/webserver:production
+    init: true
+    networks:
+      default: {}
+      interactive_services_subnet: {}
+    ports:
+    - published: 3001
+      target: 3000
+    - published: 9081
+      target: 8080
+version: '3.7'
+volumes:
+  input: {}
+  log: {}
+  output: {}
+  postgres_data: {}
+

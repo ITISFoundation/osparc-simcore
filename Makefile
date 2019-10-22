@@ -124,53 +124,59 @@ $(CLIENT_WEB_OUTPUT):
 
 
 ## docker SWARM -------------------------------
+#
+# - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
+#
 SWARM_HOSTS            = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
 
-.docker-compose-development.yml: .env $(docker-compose-configs)
+.stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=development; \
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
 
-.docker-compose-production.yml: .env $(docker-compose-configs)
+.stack-simcore-production.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=production; \
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
-.docker-compose-version.yml: .env $(docker-compose-configs)
+.stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
 	@docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
 
+.stack-ops.yml: .env $(docker-compose-configs)
+	# Creating config for ops stack to $@
+	@docker-compose -f services/docker-compose-ops.yml --log-level=ERROR config > $@
 
 .PHONY: up-devel up-prod up-version up-latest .deploy-ops
 
-.deploy-ops:
+.deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	@docker stack deploy -c services/docker-compose-ops.yml ops
+	@docker stack deploy -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
 
 
-up-devel: .docker-compose-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
-	@docker stack deploy -c .docker-compose-development.yml $(SWARM_STACK_NAME)
+	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
 	$(MAKE) -C services/web/client compile-dev flags=--watch
 
-up-prod: .docker-compose-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy -c .docker-compose-production.yml $(SWARM_STACK_NAME)
+	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 
-up-version: .docker-compose-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy -c .docker-compose-version.yml $(SWARM_STACK_NAME)
+	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 
 up-latest:
