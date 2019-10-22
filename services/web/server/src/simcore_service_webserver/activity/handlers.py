@@ -58,8 +58,6 @@ async def get_status(request: aiohttp.web.Request):
         app = get_celery(request.app)
         inspect = app.control.inspect()
         res['celery'] = {
-            'scheduled': inspect.scheduled(),
-            'active': inspect.active(),
             'reserved': inspect.reserved()
         }
         
