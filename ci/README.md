@@ -1,4 +1,4 @@
-# osparc-simcore -> ops
+# Continuous Integration
 
 ## Travis / Dockerhub setup
 
