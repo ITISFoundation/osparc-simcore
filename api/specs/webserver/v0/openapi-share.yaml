@@ -8,15 +8,11 @@ servers:
     url: '/v0'
 paths:
   /share/study/{study_id}:
-    parameters:
-      - name: study_id
-        in: path
-        required: true
-        schema:
-          type: string
     get:
       summary: Gets sharing encoded links for the given study_id
       operationId: get_study_sharing_links
+      parameters:
+        - $ref: './openapi-share.yaml#/components/parameters/StudyId'
       responses:
         '200':
           description: got links for sharing study
@@ -27,3 +23,14 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
+components:
+  parameters:
+    StudyId:
+      in: path
+      name: study_id
+      required: true
+      description: the uuid of the study
+      schema:
+        type: string
+        # format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
