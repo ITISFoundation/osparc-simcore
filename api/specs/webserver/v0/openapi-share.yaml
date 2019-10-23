@@ -10,7 +10,7 @@ paths:
   /share/study/{study_id}:
     get:
       summary: Gets sharing encoded links for the given study_id
-      operationId: get_study_sharing_links
+      operationId: get_share_study_links
       parameters:
         - $ref: './openapi-share.yaml#/components/parameters/StudyId'
       responses:
@@ -19,7 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/study_sharing_links.yaml#/StudySharingLinksEnveloped'
+                $ref: './components/schemas/share_study_links.yaml#/ShareStudyLinksEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
