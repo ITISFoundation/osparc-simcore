@@ -21,6 +21,7 @@ from .rest import setup_rest
 from .s3 import setup_s3
 from .security import setup_security
 from .session import setup_session
+from .share_study import setup_share_study
 from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
@@ -65,6 +66,7 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_projects(app) # needs storage
     setup_studies_access(app)
+    setup_share_study(app, debug=testing)
 
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
