@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __openActivityManager: function() {
-      const activityWindow = new qx.ui.window.Window(this.tr("Activity manager")).set({
+      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
         height: 600,
         width: 800,
         layout: new qx.ui.layout.Grow(),
