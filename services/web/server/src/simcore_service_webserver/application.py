@@ -41,6 +41,9 @@ def create_application(config: Dict) -> web.Application:
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
+    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
+    app.cleanup_ctx.append(persistent_client_session)
+
     log.debug("Config:\n%s",
         json.dumps(config, indent=2, sort_keys=True))
 
@@ -70,9 +73,6 @@ def create_application(config: Dict) -> web.Application:
 
     if config['director']["enabled"]:
         setup_app_proxy(app) # TODO: under development!!!
-
-    # The last
-    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 

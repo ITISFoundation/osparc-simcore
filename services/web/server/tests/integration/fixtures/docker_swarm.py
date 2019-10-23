@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -25,30 +26,17 @@ def docker_swarm(docker_client):
     # teardown
     assert docker_client.swarm.leave(force=True)
 
-
 @pytest.fixture(scope='module')
-def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
-    docker_compose_ignore_file = docker_compose_file.parent / "docker-compose.ignore.yml"
+def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_docker_compose_file: Path):
+    stacks = ['simcore', 'ops' ]
 
-    cmd = "docker-compose -f {} -f {} config > {}".format(docker_compose_file.name, tools_docker_compose_file.name, docker_compose_ignore_file.name)
-    process = subprocess.run(
-            cmd,
-            shell=True,
-            cwd=docker_compose_file.parent
-        )
-    assert process.returncode == 0, "Error in '{}'. Typically service dependencies missing. Check stdout/err for more details.".format(cmd)
-
-    cmd = "docker stack deploy -c {} services".format(docker_compose_ignore_file.name)
-    process = subprocess.run(
-            cmd,
-            shell=True,
-            cwd=docker_compose_file.parent
-        )
-    assert process.returncode == 0, "Error in '{}'".format(cmd)
-
-
-    with docker_compose_ignore_file.open() as fp:
-        docker_stack_cfg = yaml.safe_load(fp)
+    # make up-version
+    subprocess.run( f"docker stack deploy -c {docker_compose_file.name} {stacks[0]}",
+        shell=True, check=True,
+        cwd=docker_compose_file.parent)
+    subprocess.run( f"docker stack deploy -c {ops_docker_compose_file.name} {stacks[1]}",
+        shell=True, check=True,
+        cwd=ops_docker_compose_file.parent)
 
     def _print_services(msg):
         from pprint import pprint
@@ -59,7 +47,10 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
 
     _print_services("[BEFORE TEST]")
 
-    yield docker_stack_cfg
+    yield {
+        'stacks':stacks,
+        'services': [service.name for service in docker_client.services.list()]
+    }
 
     _print_services("[AFTER TEST]")
 
@@ -77,14 +68,16 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
     # sleep 1;
     # done
 
-    assert subprocess.run("docker stack rm services", shell=True).returncode == 0
+    # make down
+    # NOTE: remove them in reverse order since stacks share common networks
+    stacks.reverse()
+    for stack in stacks:
+        subprocess.run(f"docker stack rm {stack}", shell=True, check=True)
 
-    while docker_client.services.list(filters={"label":"com.docker.stack.namespace=services"}):
-        time.sleep(1)
+        while docker_client.services.list(filters={"label":f"com.docker.stack.namespace={stack}"}):
+            time.sleep(1)
 
-    while docker_client.networks.list(filters={"label":"com.docker.stack.namespace=services"}):
-        time.sleep(1)
-
-    docker_compose_ignore_file.unlink()
+        while docker_client.networks.list(filters={"label":f"com.docker.stack.namespace={stack}"}):
+            time.sleep(1)
 
     _print_services("[AFTER REMOVED]")

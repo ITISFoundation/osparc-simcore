@@ -16,13 +16,14 @@ def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
     app = routing.create_web_app(api_spec_path.parent, api_spec_path.name)
 
+    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
+    app.cleanup_ctx.append(persistent_client_session)
+
     registry_cache_task.setup(app)
 
     # TODO: temporary disabled until service is updated
     if False: #pylint: disable=using-constant-test
         setup_monitoring(app, "simcore_service_director")
-
-    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 

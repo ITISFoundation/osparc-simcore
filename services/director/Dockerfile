@@ -20,6 +20,8 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 # All SC_ variables are customized
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default
+
 
 ENV REGISTRY_AUTH = '' \
     REGISTRY_USER = '' \
@@ -113,7 +115,6 @@ FROM cache as production
 
 
 ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 
@@ -145,7 +146,6 @@ CMD ["/bin/sh", "services/director/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
 
 
 # WORKDIR /build
