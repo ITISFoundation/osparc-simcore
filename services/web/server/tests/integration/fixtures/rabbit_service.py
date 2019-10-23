@@ -12,7 +12,7 @@ import tenacity
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(app_config: Dict, docker_stack: Dict):
+async def rabbit_service(app_config: Dict, docker_stack):
     cfg = app_config["rabbit"]
     host = cfg["host"]
     port = cfg["port"]

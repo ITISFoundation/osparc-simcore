@@ -38,6 +38,7 @@ SERVICES_DEFAULT_ENVS = {
 }
 
 # some services need to know the published host to be functional (paraview)
+# TODO: please review if needed
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",

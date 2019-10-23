@@ -64,7 +64,7 @@ then to **develop** your library/service type
 ```console
 $ pip install -r requirements/dev.txt
 ```
-for **CI** of your your library/service (normally used in ops/travis/...) type
+for **CI** of your your library/service (normally used in ci/travis/...) type
 ```console
 $ pip install -r requirements/ci.txt
 ```
