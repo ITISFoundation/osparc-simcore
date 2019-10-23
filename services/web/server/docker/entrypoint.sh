@@ -35,12 +35,17 @@ then
         else
             addgroup scu $GROUPNAME
         fi
-        
+
         deluser scu &> /dev/null
         adduser -u $USERID -G $GROUPNAME -D -s /bin/sh scu
     fi
 fi
 
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
+then
+  # NOTE: production does NOT pre-installs ptvsd
+  python3 -m pip install ptvsd
+fi
 
 
 su-exec scu "$@"
