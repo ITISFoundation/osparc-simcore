@@ -129,6 +129,10 @@ paths:
   /nodes/{nodeInstanceUUID}/iframe:
     $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe'
 
+  # SHARE
+  /share/study/{study_id}:
+    $ref: './openapi-share.yaml#/paths/~1share~1study~1{study_id}'
+
 components:
   responses:
     DefaultErrorResponse:

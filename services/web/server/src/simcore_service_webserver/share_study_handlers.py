@@ -9,19 +9,19 @@ from .login.decorators import login_required
 logger = logging.getLogger(__name__)
 
 
-async def _process_request(request):
-    study_id = request.match_info.get("study_id", None)
-    if study_id is None:
-        raise web.HTTPBadRequest
-
-    return study_id
-
-
 # HANDLERS ------------------------------------------
 
 # share/study/study_id ------------------------------------------------
-@login_required
+# @login_required
 async def get_share_study_links(request: web.Request) -> web.Response:
+
+    async def _process_request(request):
+        study_id = request.match_info.get("study_id", None)
+        if study_id is None:
+            raise web.HTTPBadRequest
+
+        return study_id
+
     study_id = await _process_request(request)
     logger.debug("Getting sharing links for %s", study_id)
     data = {
