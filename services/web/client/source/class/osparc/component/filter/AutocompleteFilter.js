@@ -68,7 +68,7 @@ qx.Class.define("osparc.component.filter.AutocompleteFilter", {
     },
 
     buildMenu: function(menuData) {
-      this.__autocompleteField.setModel(new qx.data.Array(menuData))
+      this.__autocompleteField.setModel(new qx.data.Array(menuData));
     }
   }
 });

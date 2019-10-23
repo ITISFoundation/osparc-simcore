@@ -104,10 +104,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         }
         if (filterText && filterText.length > 1) {
           const trimmedText = filterText.trim().toLowerCase();
-          return row[1].trim().toLowerCase()
-            .includes(trimmedText)
-            || row[2].trim().toLowerCase()
-            .includes(trimmedText);
+          return row[1].trim().toLowerCase().includes(trimmedText) ||
+            row[2].trim().toLowerCase().includes(trimmedText);
         }
         return true;
       };
@@ -203,8 +201,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 const stats = activity[key].stats;
                 const queued = activity[key].queued;
                 if (stats) {
-                  row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10;
-                  row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10;
+                  row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10; // eslint-disable-line no-eq-null
+                  row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10; // eslint-disable-line no-eq-null
                   row[3] = this.tr("Running");
                 }
                 if (queued) {
