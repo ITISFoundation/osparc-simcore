@@ -71,6 +71,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     __model: null,
     __filters: null,
     __sorting: null,
+    __serviceNames: null,
 
     _applyMode: function(mode) {
       const columnModel = this.getTableColumnModel();
@@ -94,7 +95,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     _applyFilters: function(filters) {
       this.__filters = filters;
       const filterText = filters.name;
-      // const filterStudy = filters.study;
+      const filterStudy = filters.study;
       // Filtering function
       const filter = row => {
         // By text
@@ -149,9 +150,15 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
      */
     update: function() {
       return Promise.all([osparc.data.Resources.get("studies"), osparc.data.Resources.getOne("activity")])
-        .then(data => {
+        .then(async data => {
           const studies = data[0] || {};
           const activity = data[1] || {};
+
+          // Get service names
+          if (this.__serviceNames === null) {
+            this.__serviceNames = await osparc.data.Resources.get("servicesTodo");
+          }
+
           const rows = [];
           studies.forEach(study => {
             let parentAdded = false;
@@ -169,10 +176,17 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 parentAdded = true;
               }
               const row = [];
+              // type
               row[0] = osparc.component.service.manager.ActivityManager.itemTypes.SERVICE;
+              // given name
               row[1] = node.label;
-              const splitted = node.key.split("/");
-              row[2] = splitted[splitted.length - 1];
+              // original name
+              if (this.__serviceNames[node.key]) {
+                row[2] = this.__serviceNames[node.key];
+              } else {
+                const splitted = node.key.split("/");
+                row[2] = splitted[splitted.length - 1];
+              }
               if (Object.keys(activity).includes(key)) {
                 const stats = activity[key].stats;
                 const queued = activity[key].queued;

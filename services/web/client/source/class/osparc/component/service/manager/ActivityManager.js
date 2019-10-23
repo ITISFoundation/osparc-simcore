@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       const textFiltersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const nameFilter = new osparc.component.filter.TextFilter("name", "activityMonitor");
       const studyFilter = this.__studyFilter = new osparc.component.filter.StudyFilter("study", "activityMonitor");
-      const serviceFilter = new osparc.component.filter.ServiceFilter("service", "activityMonitor");
+      const serviceFilter = new osparc.component.filter.AutocompleteFilter("service", "activityMonitor");
       textFiltersContainer.add(nameFilter);
       textFiltersContainer.add(serviceFilter);
       filtersContainer.add(textFiltersContainer);
@@ -61,6 +61,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
 
       this._add(toolbar);
       nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
+      serviceFilter.getChildControl("autocompletefield").setPlaceholder(this.tr("Type to search"));
     },
 
     /**
