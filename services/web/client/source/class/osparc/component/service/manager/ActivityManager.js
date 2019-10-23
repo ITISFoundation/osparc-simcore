@@ -49,19 +49,17 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       toolbar.add(filtersPart);
 
       const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const textFiltersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const nameFilter = new osparc.component.filter.TextFilter("name", "activityMonitor");
       const studyFilter = this.__studyFilter = new osparc.component.filter.StudyFilter("study", "activityMonitor");
-      const serviceFilter = new osparc.component.filter.AutocompleteFilter("service", "activityMonitor");
-      textFiltersContainer.add(nameFilter);
-      textFiltersContainer.add(serviceFilter);
-      filtersContainer.add(textFiltersContainer);
+      filtersContainer.add(nameFilter);
       filtersContainer.add(studyFilter);
       filtersPart.add(filtersContainer);
 
       this._add(toolbar);
       nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
-      serviceFilter.getChildControl("autocompletefield").setPlaceholder(this.tr("Type to search"));
+
+      osparc.data.Resources.get("studies")
+        .then(studies => studyFilter.buildMenu(studies));
     },
 
     /**
@@ -100,10 +98,10 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       const tablePart = new qx.ui.toolbar.Part();
       const actionsPart = new qx.ui.toolbar.Part();
       toolbar.add(tablePart);
-      toolbar.addSpacer();
-      toolbar.add(actionsPart);
+      // toolbar.addSpacer();
+      // toolbar.add(actionsPart);
 
-      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/sync-alt/14");
+      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
       tablePart.add(reloadButton);
       reloadButton.addListener("execute", () => {
         this.__tree.exclude();

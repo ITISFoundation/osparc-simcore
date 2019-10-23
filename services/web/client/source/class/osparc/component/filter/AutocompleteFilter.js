@@ -65,6 +65,10 @@ qx.Class.define("osparc.component.filter.AutocompleteFilter", {
 
     __attachEventHandlers: function() {
       this.__autocompleteField.addListener("changeValue", e => this._filterChange(e.getData()), this);
+    },
+
+    buildMenu: function(menuData) {
+      this.__autocompleteField.setModel(new qx.data.Array(menuData))
     }
   }
 });

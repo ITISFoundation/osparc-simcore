@@ -97,26 +97,38 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       const filterText = filters.name;
       const filterStudy = filters.study;
       // Filtering function
-      const filter = row => {
-        // By text
-        const nameFilterFn = roww => {
-          if (roww[0] === osparc.component.service.manager.ActivityManager.itemTypes.STUDY) {
-            return true;
-          }
-          const name = roww[1];
-          if (filterText.length > 1) {
-            return name.trim().toLowerCase()
-              .includes(filterText.trim().toLowerCase());
-          }
+      // By text
+      const nameFilterFn = row => {
+        if (row[0] === osparc.component.service.manager.ActivityManager.itemTypes.STUDY) {
           return true;
-        };
-        // By study
-        const studyFilterFn = roww => true;
-        // Compose functions (AND)
-        return nameFilterFn(row) && studyFilterFn(row);
+        }
+        if (filterText && filterText.length > 1) {
+          const trimmedText = filterText.trim().toLowerCase();
+          return row[1].trim().toLowerCase()
+            .includes(trimmedText)
+            || row[2].trim().toLowerCase()
+            .includes(trimmedText);
+        }
+        return true;
       };
-      // Apply filters
-      const filteredData = this.getData().filter(row => filter(row));
+      const studyFilterFn = (row, index, array) => {
+        if (row[0] === osparc.component.service.manager.ActivityManager.itemTypes.SERVICE) {
+          return true;
+        }
+        if (filterStudy && filterStudy.length && !filterStudy.includes(row[1])) {
+          // Remove also its services
+          let i = index + 1;
+          let next = array[i];
+          while (next && next[0] === osparc.component.service.manager.ActivityManager.itemTypes.SERVICE && i < array.length) {
+            array.splice(i, 1);
+            next = array[i];
+          }
+          return false;
+        }
+        return true;
+      };
+      // Apply filters (working on a copy of the data)
+      const filteredData = [...this.getData()].filter(studyFilterFn).filter(nameFilterFn);
       this.getTableModel().setData(this.__removeEmptyStudies(filteredData), false);
       if (this.__hasActiveSorting()) {
         const {
