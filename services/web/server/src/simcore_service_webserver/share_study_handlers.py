@@ -25,8 +25,8 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
     study_id = await _process_request(request)
     logger.debug("Getting sharing tokens for %s", study_id)
     data = {
-        'copy': "this_is_a_token_for_copying_" + study_id,
-        'share': "this_is_a_token_for_sharing_" + study_id
+        'copy': "https://osparc.io/share/study/copy-" + study_id,
+        'share': "https://osparc.io/share/study/share-" + study_id
     }
     logger.debug("END OF ROUTINE. Response %s", data)
     return data
