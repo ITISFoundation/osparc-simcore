@@ -2,6 +2,8 @@
 
 import logging
 import uuid
+import random
+import string
 
 from aiohttp import web
 
@@ -35,6 +37,10 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
     logger.debug("END OF ROUTINE. Response %s", data)
     return data
 
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 # shared/study/token_id --------------------------------------------------
 @login_required
@@ -67,8 +73,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
 
     # assign id to copy
     BASE_UUID = uuid.UUID("eb4bd593-348c-498a-a21c-9b858472a3ae")
-    template_parameters = dict(request.query)
-    new_study_id = str( uuid.uuid5(BASE_UUID, source_study_id + str(user_id) + str(template_parameters)) )
+    new_study_id = str( uuid.uuid5(BASE_UUID, source_study_id + str(user_id) + randomString(10)) )
 
     new_study = await clone_project(request, source_study, user_id, forced_copy_project_id=new_study_id)
     db = request.config_dict[APP_PROJECT_DBAPI]
