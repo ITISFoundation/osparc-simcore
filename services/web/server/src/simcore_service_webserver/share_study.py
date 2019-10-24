@@ -23,7 +23,7 @@ def setup(app: web.Application, debug=False):
     assert CONFIG_SECTION_NAME not in app[APP_CONFIG_KEY], "Not section for the moment"
 
     if not APP_OPENAPI_SPECS_KEY in app:
-        log.warning("rest submodule not initialised? share routes will not be defined!")
+        logger.warning("rest submodule not initialised? share routes will not be defined!")
         return
     specs = app[APP_OPENAPI_SPECS_KEY]
     

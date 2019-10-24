@@ -39,7 +39,7 @@ async def study_id(request):
 #@pytest.mark.parametrize('study_id', [str(uuidlib.uuid1()) for i in range(5)])
 async def test_get_shared(client, study_id):
     resp = await client.get(f"/v0/share/study/{study_id}")
-    data, errors = await assert_status(resp, web.HTTPOk)
+    data, _errors = await assert_status(resp, web.HTTPOk)
     assert data.get('copy').endswith(study_id)
 
 
