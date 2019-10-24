@@ -9,17 +9,17 @@ servers:
 paths:
   /share/study/{study_id}:
     get:
-      summary: Gets sharing encoded links for the given study_id
-      operationId: get_share_study_links
+      summary: Gets sharing tokens for the given study_id
+      operationId: get_share_study_tokens
       parameters:
         - $ref: './openapi-share.yaml#/components/parameters/StudyId'
       responses:
         '200':
-          description: got links for sharing study
+          description: got tokens for sharing study
           content:
             application/json:
               schema:
-                $ref: './components/schemas/share_study_links.yaml#/ShareStudyLinksEnveloped'
+                $ref: './components/schemas/share_study_tokens.yaml#/ShareStudyTokensEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 

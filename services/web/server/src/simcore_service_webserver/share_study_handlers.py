@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # share/study/study_id ------------------------------------------------
 # @login_required
-async def get_share_study_links(request: web.Request) -> web.Response:
+async def get_share_study_tokens(request: web.Request) -> web.Response:
 
     async def _process_request(request):
         study_id = request.match_info.get("study_id", None)
@@ -23,10 +23,10 @@ async def get_share_study_links(request: web.Request) -> web.Response:
         return study_id
 
     study_id = await _process_request(request)
-    logger.debug("Getting sharing links for %s", study_id)
+    logger.debug("Getting sharing tokens for %s", study_id)
     data = {
-        'copy': "this_is_a_link_for_copying_" + study_id,
-        'share': "this_is_a_link_for_sharing_" + study_id
+        'copy': "this_is_a_token_for_copying_" + study_id,
+        'share': "this_is_a_token_for_sharing_" + study_id
     }
     logger.debug("END OF ROUTINE. Response %s", data)
     return data
