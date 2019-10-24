@@ -1,7 +1,6 @@
 import asyncio
 
 import aiohttp
-import celery
 from yarl import URL
 
 from ..computation_handlers import get_celery
@@ -58,9 +57,9 @@ async def get_status(request: aiohttp.web.Request):
                     }
                 }
 
-        for worker_id, worker in celery_inspect.items():
+        for dummy_worker_id, worker in celery_inspect.items():
             for task in worker:
-                node_id = eval(task['args'])[2]
+                node_id = task['args'][1:-1].split(', ')[2][1:-1] # Extracts node_id from task's args
                 if node_id in res:
                     res[node_id]['queued'] = True
                 else:
