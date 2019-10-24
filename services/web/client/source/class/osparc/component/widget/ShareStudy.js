@@ -46,31 +46,57 @@ qx.Class.define("osparc.component.widget.ShareStudy", {
       const box1 = new qx.ui.groupbox.GroupBox(this.tr("Link Sharing"));
       box1.setLayout(new qx.ui.layout.VBox(5));
 
+
       const box11 = new qx.ui.groupbox.GroupBox(this.tr("Copy Study"));
       box11.setLayout(new qx.ui.layout.HBox(5));
-      let myLink = window.location.href;
-      myLink += "study/" + studyModel.getUuid();
-      const myLinkTF = new qx.ui.form.TextField(myLink).set({
+      const shareStudyCopyTF = new qx.ui.form.TextField().set({
         readOnly: true
       });
-      box11.add(myLinkTF, {
+      box11.add(shareStudyCopyTF, {
         flex: 1
       });
-      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy Link"));
-      copyLinkBtn.addListener("execute", function() {
-        osparc.utils.Utils.copyTextToClipboard(myLink);
-        myLinkTF.selectAllText();
+      const copyLinkBtn1 = new qx.ui.form.Button(this.tr("Copy Link"));
+      copyLinkBtn1.addListener("execute", function() {
+        const shareStudyCopyToken = shareStudyCopyTF.getValue();
+        osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
+        shareStudyCopyTF.selectAllText();
       });
-      box11.add(copyLinkBtn);
+      box11.add(copyLinkBtn1);
       box1.add(box11);
+
 
       const box12 = new qx.ui.groupbox.GroupBox(this.tr("Share Study")).set({
         enabled: false
       });
-      box12.setLayout(new qx.ui.layout.VBox(5));
+      box12.setLayout(new qx.ui.layout.HBox(5));
+      const shareStudyShareTF = new qx.ui.form.TextField().set({
+        readOnly: true
+      });
+      box12.add(shareStudyShareTF, {
+        flex: 1
+      });
+      const copyLinkBtn2 = new qx.ui.form.Button(this.tr("Copy Link"));
+      copyLinkBtn2.addListener("execute", function() {
+        const shareStudyCopyToken = shareStudyShareTF.getValue();
+        osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
+        shareStudyShareTF.selectAllText();
+      });
+      box12.add(copyLinkBtn2);
       box1.add(box12);
 
       shareStudyLayout.add(box1);
+
+      const params = {
+        url: {
+          "study_id": studyModel.getUuid()
+        }
+      };
+      osparc.data.Resources.getOne("shareStudy", params)
+        .then(tokensList => {
+          shareStudyCopyTF.setValue(tokensList["copy"]);
+          shareStudyShareTF.setValue(tokensList["share"]);
+        })
+        .catch(err => console.error(err));
 
       this._add(shareStudyLayout, {
         top: 10,

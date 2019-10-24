@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
-      if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
+      if (isCurrentUserOwner && !this.__isTemplate) {
         const shareButton = new qx.ui.form.Button(this.tr("Share"), "@FontAwesome5Solid/share-alt/16").set({
           appearance: "md-button",
           visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
@@ -120,18 +120,20 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         }, this);
         buttonsLayout.add(shareButton);
 
-        const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
-          appearance: "md-button"
-        });
-        osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
-        saveAsTemplateButton.addListener("execute", e => {
-          const btn = e.getTarget();
-          btn.setIcon("@FontAwesome5Solid/circle-notch/12");
-          btn.getChildControl("icon").getContentElement()
-            .addClass("rotate");
-          this.__saveAsTemplate(btn);
-        }, this);
-        buttonsLayout.add(saveAsTemplateButton);
+        if (canCreateTemplate) {
+          const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
+            appearance: "md-button"
+          });
+          osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
+          saveAsTemplateButton.addListener("execute", e => {
+            const btn = e.getTarget();
+            btn.setIcon("@FontAwesome5Solid/circle-notch/12");
+            btn.getChildControl("icon").getContentElement()
+              .addClass("rotate");
+            this.__saveAsTemplate(btn);
+          }, this);
+          buttonsLayout.add(saveAsTemplateButton);
+        }
       }
 
       return buttonsLayout;
