@@ -104,8 +104,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         }
         if (filterText && filterText.length > 1) {
           const trimmedText = filterText.trim().toLowerCase();
-          return row[1].trim().toLowerCase().includes(trimmedText) ||
-            row[2].trim().toLowerCase().includes(trimmedText);
+          return row[1].trim().toLowerCase()
+            .includes(trimmedText) ||
+            row[2].trim().toLowerCase()
+              .includes(trimmedText);
         }
         return true;
       };
@@ -172,7 +174,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
           const rows = [];
           studies.forEach(study => {
             let parentAdded = false;
-            for (let key in study.workbench) {
+            for (var key in study.workbench) {
               const node = study.workbench[key];
               if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
                 rows.push([
