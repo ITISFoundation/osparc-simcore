@@ -1,11 +1,12 @@
+import uuid as uuidlib
+
 import pytest
+from aiohttp import web
+
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.share_study import setup_share_study
 from utils_assert import assert_status
-from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
-
-import uuid as uuidlib
 
 
 
