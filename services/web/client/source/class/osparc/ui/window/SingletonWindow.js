@@ -10,7 +10,9 @@ qx.Class.define("osparc.ui.window.SingletonWindow", {
 
   construct: function(id, caption, icon) {
     this.setId(id);
-    const singletonWindows = qx.core.Init.getApplication().getRoot().getChildren().filter(child => child.classname === this.classname);
+    const singletonWindows = qx.core.Init.getApplication().getRoot()
+      .getChildren()
+      .filter(child => child.classname === this.classname);
     const thisWindow = singletonWindows.find(win => win.getId() === id);
     if (thisWindow) {
       console.log(`Trying to create another SingletonWindow with id ${id}, disposing the old one...`);

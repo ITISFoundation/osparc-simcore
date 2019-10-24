@@ -29,9 +29,7 @@ async def get_status(request: aiohttp.web.Request):
                 return result
 
         async def get_celery_reserved():
-            app = get_celery(request.app)
-            inspect = app.control.inspect()
-            return inspect.reserved()
+            return get_celery(request.app).inspect().reserved()
 
         results = await asyncio.gather(get_cpu_usage(), get_memory_usage(), get_celery_reserved())
         cpu_usage = results[0]['data']['result']
