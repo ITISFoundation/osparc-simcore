@@ -133,6 +133,9 @@ paths:
   /share/study/{study_id}:
     $ref: './openapi-share.yaml#/paths/~1share~1study~1{study_id}'
 
+  /shared/study/{token_id}:
+    $ref: './openapi-share.yaml#/paths/~1shared~1study~1{token_id}'
+
 components:
   responses:
     DefaultErrorResponse:
