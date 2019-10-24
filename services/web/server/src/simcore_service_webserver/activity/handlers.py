@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from ..computation_handlers import get_celery
@@ -11,8 +12,11 @@ from ..login.decorators import login_required
 async def get_status(request: aiohttp.web.Request):
 
     async with aiohttp.ClientSession() as session:
-        cpu_query = 'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{container_label_node_id=~".+"}[30s]) * 100)'
-        memory_query = 'sum by (container_label_node_id) (container_memory_usage_bytes{container_label_node_id=~".+"} / 1000000)'
+    
+        user_id = request.get(RQT_USERID_KEY, -1)
+
+        cpu_query = 'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"}[30s]) * 100)'
+        memory_query = 'sum by (container_label_node_id) (container_memory_usage_bytes{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"} / 1000000)'
         
         config = request.app['servicelib.application_keys.config']['activity']
         url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
