@@ -287,7 +287,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
     },
 
-    __createStudyBtnClkd: function(templateData) {
+    __createStudyBtnClkd: function(studyData) {
       if (this.__creatingNewStudy) {
         return;
       }
@@ -305,7 +305,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         appearance: "service-window"
       });
 
-      const newStudyDlg = new osparc.component.widget.NewStudyDlg(templateData);
+      const newStudyDlg = new osparc.component.widget.NewStudyDlg(studyData);
       newStudyDlg.addListenerOnce("createStudy", e => {
         const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
         const data = e.getData();

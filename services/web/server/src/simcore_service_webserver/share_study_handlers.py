@@ -81,7 +81,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
     logger.debug("Study %s copied", new_study_id)
 
     try:
-        redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(new_study_id))
+        redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/shared/study/{}".format(new_study_id))
     except KeyError:
         raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
 

@@ -79,6 +79,10 @@ qx.Class.define("osparc.Application", {
           // Route: /#/study/{id}
           osparc.utils.Utils.cookie.deleteCookie("user");
           osparc.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
+        } else if (urlFragment.nav[0] === "shared" && urlFragment.nav[1] === "study" && urlFragment.nav.length > 1) {
+          // Route: /#/shared/study/{id}
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          osparc.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[2]), this.__loadLoginPage, this);
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
           // Route: /#/registration/?invitation={token}
           osparc.utils.Utils.cookie.deleteCookie("user");
