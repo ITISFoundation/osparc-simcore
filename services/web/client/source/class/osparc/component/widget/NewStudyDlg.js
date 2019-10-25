@@ -88,10 +88,13 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
       let workbench = null;
       if (!template) {
         workbench = new qx.ui.form.TextArea().set({
+          minHeight: 150,
           placeholder: this.tr("Paste a pipeline here")
         });
         osparc.utils.Utils.setIdToWidget(workbench, "newStudyWorkbenchFld");
-        prjFormLayout.add(workbench);
+        prjFormLayout.add(workbench, {
+          flex: 1
+        });
       }
 
       if (template) {
