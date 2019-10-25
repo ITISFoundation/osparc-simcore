@@ -110,11 +110,22 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       });
 
       if (isCurrentUserOwner && !this.__isTemplate) {
-        const shareButton = new qx.ui.form.Button(this.tr("Share"), "@FontAwesome5Solid/share-alt/16").set({
+        const exportButton = new qx.ui.form.Button(this.tr("Export"), "@FontAwesome5Solid/file-export/16").set({
           appearance: "md-button",
           visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
         });
-        osparc.utils.Utils.setIdToWidget(shareButton, "shareBtn");
+        osparc.utils.Utils.setIdToWidget(exportButton, "exportStudyBtn");
+        exportButton.addListener("execute", e => {
+          this.__exportStudy();
+        }, this);
+        buttonsLayout.add(exportButton);
+
+        const shareButton = new qx.ui.form.Button(this.tr("Share"), "@FontAwesome5Solid/share-alt/16").set({
+          appearance: "md-button",
+          visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded",
+          enabled: false
+        });
+        osparc.utils.Utils.setIdToWidget(shareButton, "shareStudyBtn");
         shareButton.addListener("execute", e => {
           this.__shareStudy();
         }, this);
@@ -236,6 +247,24 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
+    },
+
+    __exportStudy: function() {
+      const win = new qx.ui.window.Window(this.tr("Export Study")).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 0,
+        showMinimize: false,
+        showMaximize: false,
+        minWidth: 600,
+        centerOnAppear: true,
+        autoDestroy: true,
+        modal: true,
+        appearance: "service-window"
+      });
+
+      const exportStudy = new osparc.component.widget.ExportStudy(this.__model, this.__workbench);
+      win.add(exportStudy);
+      win.open();
     },
 
     __shareStudy: function() {
