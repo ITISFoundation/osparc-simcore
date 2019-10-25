@@ -118,9 +118,11 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         }
         const title = studyTitle.getValue();
         const desc = description.getValue();
+        const thumb = thumbnail.getValue();
         const data = {
           prjTitle: title,
-          prjDescription: desc ? desc : ""
+          prjDescription: desc ? desc : "",
+          prjThumbnail: thumb ? thumb : ""
         };
         if (template) {
           data["prjTemplateId"] = template.uuid;
