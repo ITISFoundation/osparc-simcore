@@ -67,3 +67,26 @@ def sleeper_service(docker_registry):
     image = client.images.pull(repo)
     assert image
     yield repo
+
+@pytest.fixture(scope="session")
+def jupyter_service(docker_registry):
+    client = docker.from_env()
+
+    # TODO: cleanup
+
+    # pull from dockerhub
+    reponame, tag = "itisfoundation/jupyter-base-notebook:2.13.0".split(":")
+    image = client.images.pull(reponame, tag=tag)
+    assert not image is None
+
+    # push to fixture registry (services/{dynamic|comp})
+    image_name = reponame.split("/")[-1]
+    repo = "f{docker_registry}/simcore/services/dynamic/{image_name}:{tag}"
+    assert image.tag(repo) == True
+    client.images.push(repo)
+
+    # check
+    image = client.images.pull(repo)
+    assert image
+
+    yield repo
