@@ -78,6 +78,13 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         flex: 1
       });
 
+      const thumbnail = new qx.ui.form.TextField().set({
+        placeholder: this.tr("url to the thumbnail"),
+        value: template ? template.thumbnail : ""
+      });
+      osparc.utils.Utils.setIdToWidget(thumbnail, "newStudyThumbnailFld");
+      prjFormLayout.add(thumbnail);
+
       if (template) {
         const templateLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         const label1 = new qx.ui.basic.Label(this.tr("Selected template: "));
