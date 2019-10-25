@@ -79,11 +79,20 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
       });
 
       const thumbnail = new qx.ui.form.TextField().set({
-        placeholder: this.tr("url to the thumbnail"),
+        placeholder: this.tr("URL to the thumbnail"),
         value: template ? template.thumbnail : ""
       });
       osparc.utils.Utils.setIdToWidget(thumbnail, "newStudyThumbnailFld");
       prjFormLayout.add(thumbnail);
+
+      let workbench = null;
+      if (!template) {
+        workbench = new qx.ui.form.TextArea().set({
+          placeholder: this.tr("Paste a pipeline here")
+        });
+        osparc.utils.Utils.setIdToWidget(workbench, "newStudyWorkbenchFld");
+        prjFormLayout.add(workbench);
+      }
 
       if (template) {
         const templateLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -119,10 +128,12 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
         const title = studyTitle.getValue();
         const desc = description.getValue();
         const thumb = thumbnail.getValue();
+        const wb = workbench ? workbench.getValue() : null;
         const data = {
           prjTitle: title,
           prjDescription: desc ? desc : "",
-          prjThumbnail: thumb ? thumb : ""
+          prjThumbnail: thumb ? thumb : "",
+          prjWorkbench: wb ? JSON.parse(wb) : ""
         };
         if (template) {
           data["prjTemplateId"] = template.uuid;

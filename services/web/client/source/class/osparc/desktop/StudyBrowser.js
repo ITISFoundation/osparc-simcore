@@ -312,6 +312,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         minStudyData["name"] = data.prjTitle;
         minStudyData["description"] = data.prjDescription;
         minStudyData["thumbnail"] = data.prjThumbnail;
+        minStudyData["workbench"] = data.prjWorkbench;
         this.__createStudy(minStudyData, data.prjTemplateId);
         win.close();
       }, this);
