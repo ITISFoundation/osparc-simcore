@@ -52,6 +52,8 @@ def test_setup_dependencies(app_config):
     assert setup_foo(app, 1)
     assert setup_needs_foo(app, 2)
 
+    assert setup_needs_foo.metadata()['dependencies'] == [setup_foo.metadata()['module_name'], ]
+
 
 def test_setup_decorator(app_config):
     app = web.Application()

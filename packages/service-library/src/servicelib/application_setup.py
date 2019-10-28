@@ -22,21 +22,36 @@ class DependencyError(Exception):
 
 
 def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
-    depends: Optional[List[str]]=None,
-    logger: Optional[logging.Logger]=None):
-    """ Decorator that marks a function as the setup of a given module within an application
+        depends: Optional[List[str]]=None,
+        logger: Optional[logging.Logger]=None
+    ) -> bool:
+    """ Decorator that marks a function as 'a setup function' for a given module in an application
 
-        - Marks a function as 'setup' of a given subsystem
-        - Pre: Enables/disables execution of function upon 'application setup' (if addon)
-        - Pre/post logging of setup
+        - Marks a function as 'setup' of a given module in an application
+        - Addon modules:
+            - toggles run using 'enabled' entry in config file
+        - logs execution
 
     Usage:
-
         from servicelib.application_setup import mark_as_module_setup
 
         @mark_as_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
         def setup(app: web.Application):
             ...
+
+    See packages/service-library/tests/test_application_setup.py
+
+    :param module_name: [description]
+    :type module_name: str
+    :param category: [description]
+    :type category: ModuleCategory
+    :param depends: [description], defaults to None
+    :type depends: Optional[List[str]], optional
+    :param logger: [description], defaults to None
+    :type logger: Optional[logging.Logger], optional
+    :raises DependencyError: [description]
+    :return: False if setup was skipped
+    :rtype: bool
     """
     # TODO: adds subsystem dependencies dependencies: Optional[List]=None):
     # TODO: ensures runs ONLY once per application (e.g. keep id(app) )
@@ -44,6 +59,8 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
 
     if logger is None:
         logger = log
+
+    depends = depends or []
 
     section = module_name.split(".")[-1]
 
@@ -57,18 +74,18 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
             if APP_SETUP_KEY not in app:
                 app[APP_SETUP_KEY] = []
 
-            if depends:
-                for dependency in depends:
-                    if dependency not in app[APP_SETUP_KEY]:
-                        raise DependencyError(module_name, dependency)
-
             if category == ModuleCategory.ADDON:
                 # NOTE: only addons can be enabled/disabled
                 cfg = app[APP_CONFIG_KEY][section]
 
                 if not cfg.get("enabled", True):
-                    logger.warning("'%s' setup explicitly disabled in config", module_name)
+                    logger.info("Skipping '%s' setup. Explicitly disabled in config", module_name)
                     return False
+
+            if depends:
+                for dependency in depends:
+                    if dependency not in app[APP_SETUP_KEY]:
+                        raise DependencyError(module_name, dependency)
 
             ok = setup_func(app, *args, **kargs)
 
@@ -84,7 +101,8 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
         # info
         def setup_metadata() -> Dict:
             return {
-                'module_name': module_name
+                'module_name': module_name,
+                'dependencies': depends
             }
 
         setup_wrapper.metadata = setup_metadata
