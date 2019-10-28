@@ -18,18 +18,15 @@ from utils_login import LoggedUser
 
 API_VERSION = "v0"
 
-
-logging.getLogger("openapi_spec_validator.validators").setLevel(logging.WARNING)
-logging.getLogger("sqlalchemy.engine.base.Engine").setLevel(logging.WARNING)
+logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 logging.root.setLevel(logging.DEBUG)
 
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
-    cfg = deepcopy(app_cfg["storage"])
-    cfg['port']= aiohttp_unused_port()
-
+def storage_server(loop, aiohttp_server, app_cfg):
+    cfg = app_cfg["storage"]
     app = create_safe_application(cfg)
 
     async def _get_locs(request: web.Request):

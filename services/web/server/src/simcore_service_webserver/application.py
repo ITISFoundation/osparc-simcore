@@ -41,12 +41,14 @@ def create_application(config: Dict) -> web.Application:
     app = create_safe_application(config)
 
     # testing = config["main"].get("testing", False)
-    monitoring = config["main"]["monitoring_enabled"]
-    # TODO: create dependency mechanism and compute setup order
 
-    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
+    # TODO: create dependency mechanism and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+    # TODO: move option to section?
+    monitoring = config["main"]["monitoring_enabled"]
     if monitoring:
+        # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
         setup_monitoring(app, "simcore_service_webserver")
+
     setup_statics(app)
     setup_db(app)
     setup_session(app)

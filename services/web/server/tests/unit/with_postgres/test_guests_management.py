@@ -15,11 +15,11 @@ from utils_projects import create_project
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_service):
 
     # config app
     cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"] = aiohttp_unused_port()
+    port = cfg["main"]["port"]
     cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
     cfg["projects"]["enabled"] = True
 

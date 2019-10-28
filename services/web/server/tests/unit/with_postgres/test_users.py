@@ -33,10 +33,10 @@ API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_service):
     cfg = deepcopy(app_cfg)
 
-    port = cfg["main"]["port"] = aiohttp_unused_port()
+    port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
     assert API_VERSION in cfg["rest"]["location"]
