@@ -31,6 +31,12 @@ from .resources import resources
 
 log = logging.getLogger(__name__)
 
+
+def addon_section(name, optional=False):
+    if optional:
+        return T.Key(name, default=dict(enabled=True), optional=optional)
+    return T.Key(name)
+
 def minimal_addon_schema():
     return T.Dict({
             T.Key("enabled", default=True, optional=True): T.Bool()
@@ -60,14 +66,16 @@ def create_schema():
         email_config.CONFIG_SECTION_NAME: email_config.schema,
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
         storage_config.CONFIG_SECTION_NAME: storage_config.schema,
-        T.Key(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
+        addon_section(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
         session_config.CONFIG_SECTION_NAME: session_config.schema,
-        #s3_config.CONFIG_SECTION_NAME: s3_config.schema
+        #TODO: s3_config.CONFIG_SECTION_NAME: s3_config.schema
         #TODO: enable when sockets are refactored
-        T.Key("reverse_proxy", optional=True): minimal_addon_schema(),
-        T.Key("application_proxy", optional=True): minimal_addon_schema(),
+        # BELOW HERE minimal sections until more options are needed
+        addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
+        addon_section("application_proxy", optional=True): minimal_addon_schema(),
+        addon_section("users", optional=True): minimal_addon_schema(),
+        addon_section("studies_access", optional=True): minimal_addon_schema()
     })
-
 
     section_names = [k.name for k in schema.keys]
     assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names

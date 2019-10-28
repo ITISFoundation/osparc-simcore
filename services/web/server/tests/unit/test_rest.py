@@ -48,7 +48,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
         "main": server_kwargs,
         "rest": {
             "version": "v0",
-            "location": str(api_specs_dir / "v0" / "openapi.yaml")
+            "location": str(api_specs_dir / "v0" / "openapi.yaml"),
+            "enabled": True
         }
     }
     # activates only security+restAPI sub-modules

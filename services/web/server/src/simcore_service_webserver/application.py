@@ -9,6 +9,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
+from servicelib.application_setup import mark_as_module_setup, ModuleCategory
 
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
@@ -27,8 +28,17 @@ from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .users import setup_users
 
+
 log = logging.getLogger(__name__)
 
+
+@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+    config_enabled="main.monitoring_enabled",
+    logger=log)
+def setup_app_monitoring(app: web.Application):
+    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
+    # TODO: move option to section?
+    return setup_monitoring(app, "simcore_service_webserver")
 
 
 def create_application(config: Dict) -> web.Application:
@@ -43,12 +53,7 @@ def create_application(config: Dict) -> web.Application:
     # testing = config["main"].get("testing", False)
 
     # TODO: create dependency mechanism and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-    # TODO: move option to section?
-    monitoring = config["main"]["monitoring_enabled"]
-    if monitoring:
-        # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
-        setup_monitoring(app, "simcore_service_webserver")
-
+    setup_app_monitoring(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)

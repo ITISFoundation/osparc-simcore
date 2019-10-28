@@ -15,8 +15,11 @@ from .rest_config import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+    depends=['simcore_service_webserver.rest'],
+    logger=logger)
 def setup(app: web.Application):
+
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(

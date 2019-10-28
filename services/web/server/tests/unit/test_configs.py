@@ -151,7 +151,7 @@ def test_schema_sections(app_config_schema, app_subsystems):
         Every section in the config-file (except for 'version' and 'main')
         is named after an application's subsystem
     """
-    section_names= [ metadata['config.section'] for metadata in app_subsystems] + ['version', 'main']
+    section_names= [ metadata['config_section'] for metadata in app_subsystems] + ['version', 'main']
 
     for section in app_config_schema.keys:
         assert section.name in section_names, "Check application config schema!"

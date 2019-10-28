@@ -178,7 +178,8 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+    logger=log)
 def setup(app: web.Application):
 
     cfg = app[APP_CONFIG_KEY]["main"]

@@ -162,7 +162,9 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
             info = await res.json()
             return info["url"]
 
-    app = create_safe_application()
+    app = create_safe_application({'reverse_proxy':{
+        'enabled': True
+    }})
 
     # setup
     app["director.client"] = spawner_client

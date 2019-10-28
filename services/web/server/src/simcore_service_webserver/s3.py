@@ -7,7 +7,7 @@ import logging
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+#TODO: from servicelib.application_setup import ModuleCategory, mark_as_module_setup
 
 from .s3_config import CONFIG_SECTION_NAME
 
@@ -15,7 +15,7 @@ from .s3_config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__name__)
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+#TODO: @mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
 def setup(app: web.Application):
     assert CONFIG_SECTION_NAME not in app[APP_CONFIG_KEY], "Temporarily disabled"
 
