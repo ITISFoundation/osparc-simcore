@@ -31,6 +31,11 @@ from .resources import resources
 
 log = logging.getLogger(__name__)
 
+def minimal_addon_schema():
+    return T.Dict({
+            T.Key("enabled", default=True, optional=True): T.Bool()
+        })
+
 
 def create_schema():
     """
@@ -59,6 +64,8 @@ def create_schema():
         session_config.CONFIG_SECTION_NAME: session_config.schema,
         #s3_config.CONFIG_SECTION_NAME: s3_config.schema
         #TODO: enable when sockets are refactored
+        T.Key("reverse_proxy", optional=True): minimal_addon_schema(),
+        T.Key("application_proxy", optional=True): minimal_addon_schema(),
     })
 
 

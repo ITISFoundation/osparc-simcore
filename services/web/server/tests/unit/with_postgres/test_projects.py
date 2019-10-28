@@ -53,7 +53,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_login(app)            # needed for login_utils fixtures
     assert setup_projects(app)
 

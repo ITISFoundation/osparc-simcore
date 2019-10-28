@@ -79,7 +79,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service,
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True) # TODO: why should we need this??
+    setup_rest(app) # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
     assert setup_projects(app), "Shall not skip this setup"

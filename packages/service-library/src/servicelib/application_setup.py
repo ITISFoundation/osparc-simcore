@@ -90,7 +90,8 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
 
             if category == ModuleCategory.ADDON:
                 # NOTE: only addons can be enabled/disabled
-                cfg = app[APP_CONFIG_KEY][section]
+                # TODO: sometimes section is optional, check in config schema
+                cfg = app[APP_CONFIG_KEY].get(section, {})
 
                 if not cfg.get("enabled", True):
                     logger.info("Skipping '%s' setup. Explicitly disabled in config", module_name)
