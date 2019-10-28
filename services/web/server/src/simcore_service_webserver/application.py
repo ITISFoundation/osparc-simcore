@@ -6,8 +6,8 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.client_session import persistent_client_session
+
+from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
 
 from .application_proxy import setup_app_proxy
@@ -35,14 +35,9 @@ def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
+    app = create_safe_application()
+
     log.debug("Initializing app ... ")
-
-    app = web.Application()
-    app[APP_CONFIG_KEY] = config
-
-    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
-    app.cleanup_ctx.append(persistent_client_session)
-
     log.debug("Config:\n%s",
         json.dumps(config, indent=2, sort_keys=True))
 
