@@ -33,8 +33,10 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
     source_study = await get_project_for_user(request, study_id, user_id)
     cloned_study, _nodes_map = clone_project_document(source_study)
     logger.debug("Getting sharing tokens for %s", study_id)
+    token = "copy-" + str(study_id) + "_" + str(user_id)
     data = {
-        'copyToken': "http://localhost:9081/v0/shared/study/copy-" + str(study_id) + "_" + str(user_id),
+        'copyLink': "http://localhost:9081/v0/shared/study/" + token,
+        'copyToken': token,
         'copyObject': cloned_study['workbench']
     }
     logger.debug("END OF ROUTINE. Response %s", data)

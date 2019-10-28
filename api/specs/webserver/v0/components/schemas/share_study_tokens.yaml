@@ -2,17 +2,21 @@ ShareStudyTokens:
   description: tokens for doing sharing operations on a study
   type: object
   properties:
+    copyLink:
+      description: link for creating a deep copy with data of the given study
+      type: string
     copyToken:
       description: token for creating a deep copy with data of the given study
       type: string
     copyObject:
       description: workbench copy without data with the node uuids replaced
-      type: string
+      type: object
   required:
     - copy
   example:
-    copyToken: 'https://osparc.io/study/share/f608eeac-621e-47b9-baf6-f627c6eadbb2'
-    copyObject: 'https://osparc.io/study/share/d2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+    copyLink: 'https://osparc.io/study/share/d2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+    copyToken: 'd2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+    copyObject: '{}'
 
 ShareStudyTokensEnveloped:
   type: object
