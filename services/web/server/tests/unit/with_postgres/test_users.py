@@ -7,11 +7,13 @@
 import collections
 import random
 from itertools import repeat
+
 import faker
 import pytest
 from aiohttp import web
 from yarl import URL
 
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
@@ -28,12 +30,8 @@ from utils_tokens import (create_token_in_db, delete_all_tokens_from_db,
 
 API_VERSION = "v0"
 
-
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-    from servicelib.application import create_safe_application
-    app = create_safe_application()
-
     port = app_cfg["main"]["port"] = aiohttp_unused_port()
 
     assert app_cfg["rest"]["version"] == API_VERSION
@@ -42,7 +40,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     app_cfg["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
-    app[APP_CONFIG_KEY] = app_cfg
+    app = create_safe_application(app_cfg)
 
     setup_db(app)
     setup_session(app)

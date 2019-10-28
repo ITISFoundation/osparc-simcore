@@ -18,10 +18,11 @@ import yaml
 from aiohttp import web
 from yarl import URL
 
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_sdk.models.pipeline_models import (
-    SUCCESS, ComputationalPipeline, ComputationalTask) # uses legacy TODO: upgrade test
+from simcore_sdk.models.pipeline_models import (  # uses legacy TODO: upgrade test
+    SUCCESS, ComputationalPipeline, ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
@@ -55,7 +56,6 @@ ops_services = [
 #    'adminer',
 #    'portainer'
 ]
-
 @pytest.fixture(scope='session')
 def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -76,7 +76,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
         yaml.dump(app_config, f, default_flow_style=False)
 
     # fake config
-    from servicelib.application import create_safe_application
     app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 

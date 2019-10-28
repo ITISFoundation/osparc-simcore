@@ -21,6 +21,7 @@ from typing import Dict, List
 import pytest
 from aiohttp import web
 
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
@@ -95,9 +96,8 @@ def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, a
     app_config['storage']['enabled'] = False
     app_config['rabbit']['enabled'] = False
 
-    from servicelib.application import create_safe_application
-    app = create_safe_application()
-    app[APP_CONFIG_KEY] = app_config
+    app = create_safe_application(app_config)
+
     setup_db(app)
     setup_session(app)
     setup_security(app)

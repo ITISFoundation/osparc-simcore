@@ -19,6 +19,7 @@ from aiohttp.test_utils import TestClient as DTestClient  # renaming avoid pytes
 from yarl import URL
 
 import simcore_service_webserver.reverse_proxy.handlers as reverse_proxy_handlers
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver import reverse_proxy
 from simcore_service_webserver.reverse_proxy import setup_reverse_proxy
@@ -43,7 +44,6 @@ def create_backend_app(name, image, basepath):
             }
         })
 
-    from servicelib.application import create_safe_application
     app = create_safe_application()
     app.router.add_route("*", basepath + "/{proxy_path:.*}", handler)
     return app
@@ -123,7 +123,6 @@ def spawner_server(loop, aiohttp_server):
 
         return web.json_response(info)
 
-    from servicelib.application import create_safe_application
     app = create_safe_application()
 
     # API
@@ -163,7 +162,6 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
             info = await res.json()
             return info["url"]
 
-    from servicelib.application import create_safe_application
     app = create_safe_application()
 
     # setup
