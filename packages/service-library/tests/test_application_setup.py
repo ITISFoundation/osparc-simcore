@@ -11,12 +11,12 @@ import pytest
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import mark_as_module_setup
+from servicelib.application_setup import mark_as_module_setup, ModuleCategory
 
 log = logging.getLogger(__name__)
 
 
-@mark_as_module_setup("foo", logger=log)
+@mark_as_module_setup("foo", ModuleCategory.ADDON, logger=log)
 def setup_subsystem_foo(app: web.Application, arg1, kargs=33):
     return True
 
@@ -38,7 +38,7 @@ def test_setup_decorator(app_config):
 
     assert setup_subsystem_foo(app, 1)
 
-    assert setup_subsystem_foo.metadata()['subsystem_name'] == 'foo'
+    assert setup_subsystem_foo.metadata()['module_name'] == 'foo'
 
     app_config['foo']['enabled'] = False
     assert not setup_subsystem_foo(app, 2)
