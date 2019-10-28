@@ -6,11 +6,13 @@
 import logging
 
 from aiohttp import ClientSession, web
+from yarl import URL
+
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, mark_as_module_setup
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
-from yarl import URL
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import handlers
@@ -19,9 +21,11 @@ from .registry import InteractiveServiceLocalRegistry, set_registry
 
 logger = logging.getLogger(__name__)
 
+module_name = ".".join(__name__.split(".")[:-1])
 
-
-
+@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+    depends=[],
+    logger=logger)
 def setup(app: web.Application,* , disable_login=False):
     """ Sets up director's subsystem
 
@@ -30,13 +34,7 @@ def setup(app: web.Application,* , disable_login=False):
     :param disable_login: disabled auth requirements for subsystem's rest (for debugging), defaults to False
     :param disable_login: bool, optional
     """
-    logger.debug("Setting up %s ...", __name__)
-
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    if not cfg["enabled"]:
-        logger.warning("'%s' explicitly disabled in config", __name__)
-        return
 
     # director service API base url, e.g. http://director:8081/v0
     app[APP_DIRECTOR_API_KEY] = build_api_url(cfg)
