@@ -10,27 +10,19 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, mark_as_module_setup
 from servicelib.rest_routing import (iter_path_operations,
                                      map_handlers_with_operations)
 
 from . import computation_handlers
-from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__file__)
 
 
+@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup(app: web.Application):
-    log.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
-
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    if not cfg["enabled"]:
-        log.warning("Service '%s' explicitly disabled in config", SERVICE_NAME)
-        return
-
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
     app.on_startup.append(subscribe)

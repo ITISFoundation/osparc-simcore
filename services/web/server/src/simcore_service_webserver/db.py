@@ -89,7 +89,7 @@ async def is_service_responsive(app:web.Application):
         return False
 
 
-@mark_as_module_setup("db", ModuleCategory.SYSTEM, logger=log)
+@mark_as_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None
