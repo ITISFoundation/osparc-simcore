@@ -100,6 +100,7 @@ def setup(app: web.Application):
 
     # signals
     app.cleanup_ctx.append(_setup_config_and_pgpool)
+    return True
 
 
 # alias
