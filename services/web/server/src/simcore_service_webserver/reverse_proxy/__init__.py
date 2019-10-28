@@ -13,12 +13,15 @@ import logging
 
 from aiohttp import web
 
+from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+
 from .abc import ServiceResolutionPolicy
-from .routing import ReverseChooser
 from .handlers import jupyter, paraview
-from .settings import URL_PATH, APP_SOCKETS_KEY
+from .routing import ReverseChooser
+from .settings import APP_SOCKETS_KEY, URL_PATH
 
 logger = logging.getLogger(__name__)
+module_name = ".".join(__name__.split(".")[:-1])
 
 MODULE_NAME = __name__.split(".")[-1]
 ROUTE_NAME = MODULE_NAME
@@ -28,13 +31,12 @@ async def _on_shutdown(app: web.Application):
     for ws in app[APP_SOCKETS_KEY]:
         await ws.close()
 
-
+@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+    logger=logger)
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """Sets up reverse-proxy subsystem in the application (a la aiohttp)
 
     """
-    logger.debug("Setting up %s ...", __name__)
-
     chooser = ReverseChooser(resolver=service_resolver)
 
     # Registers reverse proxy handlers customized for specific service types
