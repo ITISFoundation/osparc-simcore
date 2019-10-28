@@ -43,43 +43,63 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
     __createLayout: function(study) {
       const shareStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const box11 = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline + Data"));
-      box11.setLayout(new qx.ui.layout.HBox(5));
-      const shareStudyCopyTF = new qx.ui.form.TextField().set({
+      const withDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline + Data"));
+      withDataGrp.setLayout(new qx.ui.layout.VBox(5));
+
+      const copyLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const shareStudyCopyLinkTF = new qx.ui.form.TextField().set({
         readOnly: true
       });
-      box11.add(shareStudyCopyTF, {
+      copyLinkLayout.add(shareStudyCopyLinkTF, {
         flex: 1
       });
-      const copyLinkBtn1 = new qx.ui.form.Button(this.tr("Copy Link"));
-      copyLinkBtn1.addListener("execute", function() {
-        const shareStudyCopyToken = shareStudyCopyTF.getValue();
-        osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
-        shareStudyCopyTF.selectAllText();
+      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy Link"));
+      copyLinkBtn.addListener("execute", function() {
+        const shareStudyCopyLink = shareStudyCopyLinkTF.getValue();
+        osparc.utils.Utils.copyTextToClipboard(shareStudyCopyLink);
+        shareStudyCopyLinkTF.selectAllText();
       });
-      box11.add(copyLinkBtn1);
-      shareStudyLayout.add(box11);
+      copyLinkLayout.add(copyLinkBtn);
+      withDataGrp.add(copyLinkLayout);
 
-      const box12 = new qx.ui.groupbox.GroupBox(this.tr("Export study: Only pipeline"));
-      box12.setLayout(new qx.ui.layout.HBox(5));
+      const copyTokenLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const shareStudyCopyTokenTF = new qx.ui.form.TextField().set({
+        readOnly: true
+      });
+      copyTokenLayout.add(shareStudyCopyTokenTF, {
+        flex: 1
+      });
+      const copyTokenBtn = new qx.ui.form.Button(this.tr("Copy Token"));
+      copyTokenBtn.addListener("execute", function() {
+        const shareStudyCopyToken = shareStudyCopyTokenTF.getValue();
+        osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
+        shareStudyCopyTokenTF.selectAllText();
+      });
+      copyTokenLayout.add(copyTokenBtn);
+      withDataGrp.add(copyTokenLayout);
+
+      shareStudyLayout.add(withDataGrp);
+
+      const withoutDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Only pipeline"));
+      withoutDataGrp.setLayout(new qx.ui.layout.HBox(5));
       const shareStudyCopyWorkbenchTA = new qx.ui.form.TextArea().set({
         height: 400,
         wrap: false,
         readOnly: true
       });
-      box12.add(shareStudyCopyWorkbenchTA, {
+      withoutDataGrp.add(shareStudyCopyWorkbenchTA, {
         flex: 1
       });
-      const copyLinkBtn2 = new qx.ui.form.Button(this.tr("Copy Pipeline")).set({
+      const copyWorkbenchBtn = new qx.ui.form.Button(this.tr("Copy Pipeline")).set({
         allowGrowY: false
       });
-      copyLinkBtn2.addListener("execute", function() {
+      copyWorkbenchBtn.addListener("execute", function() {
         const shareStudyCopyToken = shareStudyCopyWorkbenchTA.getValue();
         osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
         shareStudyCopyWorkbenchTA.selectAllText();
       });
-      box12.add(copyLinkBtn2);
-      shareStudyLayout.add(box12);
+      withoutDataGrp.add(copyWorkbenchBtn);
+      shareStudyLayout.add(withoutDataGrp);
 
       const params = {
         url: {
@@ -88,7 +108,8 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
       };
       osparc.data.Resources.getOne("shareStudy", params)
         .then(tokensList => {
-          shareStudyCopyTF.setValue(tokensList["copyToken"]);
+          shareStudyCopyLinkTF.setValue(tokensList["copyLink"]);
+          shareStudyCopyTokenTF.setValue(tokensList["copyToken"]);
           const workbenchPretty = JSON.stringify(tokensList["copyObject"], null, 4);
           shareStudyCopyWorkbenchTA.setValue(workbenchPretty);
         })
