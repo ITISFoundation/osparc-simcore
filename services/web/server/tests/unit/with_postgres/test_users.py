@@ -6,6 +6,7 @@
 
 import collections
 import random
+from copy import deepcopy
 from itertools import repeat
 
 import faker
@@ -30,17 +31,20 @@ from utils_tokens import (create_token_in_db, delete_all_tokens_from_db,
 
 API_VERSION = "v0"
 
+
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
+    cfg = deepcopy(app_cfg)
 
-    assert app_cfg["rest"]["version"] == API_VERSION
-    assert API_VERSION in app_cfg["rest"]["location"]
+    port = cfg["main"]["port"] = aiohttp_unused_port()
 
-    app_cfg["db"]["init_tables"] = True # inits postgres_service
+    assert cfg["rest"]["version"] == API_VERSION
+    assert API_VERSION in cfg["rest"]["location"]
+
+    cfg["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
-    app = create_safe_application(app_cfg)
+    app = create_safe_application(cfg)
 
     setup_db(app)
     setup_session(app)

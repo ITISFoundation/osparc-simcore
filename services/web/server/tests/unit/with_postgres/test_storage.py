@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import logging
+from copy import deepcopy
 from urllib.parse import quote
 
 import pytest
@@ -16,10 +18,16 @@ from utils_login import LoggedUser
 
 API_VERSION = "v0"
 
+
+logging.getLogger("openapi_spec_validator.validators").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy.engine.base.Engine").setLevel(logging.WARNING)
+
+logging.root.setLevel(logging.DEBUG)
+
 # TODO: create a fake storage service here
 @pytest.fixture()
 def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
-    cfg = app_cfg["storage"]
+    cfg = deepcopy(app_cfg["storage"])
     cfg['port']= aiohttp_unused_port()
 
     app = create_safe_application(cfg)
@@ -88,13 +96,14 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
             'data': [{"dataset_id": "asdf", "display_name" : "bbb"}, ]
         })
 
-    version = cfg['version']
+    storage_api_version = cfg['version']
+    assert storage_api_version != API_VERSION, "backend service w/ different version as webserver entrypoint"
 
-    app.router.add_get("/%s/locations" % version, _get_locs)
-    app.router.add_get("/%s/locations/0/files/{file_id}/metadata" % version, _get_filemeta)
-    app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
-    app.router.add_get("/%s/locations/0/datasets" % version, _get_datasets)
-    app.router.add_get("/%s/locations/0/datasets/{dataset_id}/metadata" % version, _get_datasets_meta)
+    app.router.add_get(f"/{storage_api_version}/locations" , _get_locs)
+    app.router.add_get(f"/{storage_api_version}/locations/0/files/{{file_id}}/metadata", _get_filemeta)
+    app.router.add_get(f"/{storage_api_version}/locations/0/files/metadata", _get_filtered_list)
+    app.router.add_get(f"/{storage_api_version}/locations/0/datasets", _get_datasets)
+    app.router.add_get(f"/{storage_api_version}/locations/0/datasets/{{dataset_id}}/metadata", _get_datasets_meta)
 
     assert cfg['host']=='localhost'
 

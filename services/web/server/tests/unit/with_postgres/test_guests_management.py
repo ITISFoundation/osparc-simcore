@@ -4,6 +4,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from copy import deepcopy
+
 import pytest
 from aiohttp import web
 
@@ -16,11 +18,12 @@ from utils_projects import create_project
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
 
     # config app
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
-    app_cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
-    app_cfg["projects"]["enabled"] = True
+    cfg = deepcopy(app_cfg)
+    port = cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg["projects"]["enabled"] = True
 
-    app = application.create_application(app_cfg)
+    app = application.create_application(cfg)
 
     # server and client
     return loop.run_until_complete(aiohttp_client(app, server_kwargs={

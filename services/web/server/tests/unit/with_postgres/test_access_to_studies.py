@@ -62,16 +62,17 @@ def qx_client_outdir(tmpdir, mocker):
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service, qx_client_outdir, monkeypatch):
 #def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, qx_client_outdir, monkeypatch): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+    cfg = deepcopy(app_cfg)
 
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
-    app_cfg['main']['host'] = '127.0.0.1'
+    port = cfg["main"]["port"] = aiohttp_unused_port()
+    cfg['main']['host'] = '127.0.0.1'
 
-    app_cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
-    app_cfg['projects']['enabled'] = True
-    app_cfg['storage']['enabled'] = False
-    app_cfg['rabbit']['enabled'] = False
+    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg['projects']['enabled'] = True
+    cfg['storage']['enabled'] = False
+    cfg['rabbit']['enabled'] = False
 
-    app = create_safe_application(app_cfg)
+    app = create_safe_application(cfg)
 
     setup_statics(app)
     setup_db(app)
