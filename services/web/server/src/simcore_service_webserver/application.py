@@ -35,11 +35,10 @@ def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
-    app = create_safe_application(config)
-
-    log.debug("Initializing app ... ")
-    log.debug("Config:\n%s",
+    log.debug("Initializing app with config:\n%s",
         json.dumps(config, indent=2, sort_keys=True))
+
+    app = create_safe_application(config)
 
     # testing = config["main"].get("testing", False)
     monitoring = config["main"]["monitoring_enabled"]
