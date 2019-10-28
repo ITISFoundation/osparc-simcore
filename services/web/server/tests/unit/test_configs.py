@@ -10,6 +10,7 @@ import inspect
 import re
 import unittest.mock as mock
 from pathlib import Path
+from typing import Dict, List
 
 import pytest
 import yaml
@@ -65,6 +66,50 @@ def service_webserver_environ(services_docker_compose_file, devel_environ, ospar
     return webserver_environ
 
 
+
+@pytest.fixture("session")
+def app_submodules_with_setup_funs(package_dir) -> List:
+    """
+        subsystem = all modules in package with a setup function
+    """
+    def is_py_module(path: Path) -> bool:
+        return not path.name.startswith((".", "__")) and \
+            ( path.suffix == ".py" or any(path.glob("__init__.py")) )
+
+    modules = []
+    for path in package_dir.iterdir():
+        if is_py_module(path):
+            name = path.name.replace(path.suffix, "")
+            module = importlib.import_module("." + name, package_dir.name)
+            if module.__name__ != 'simcore_service_webserver.application':
+                if any(inspect.getmembers(module, is_setup_function)):
+                    modules.append(module)
+
+    assert modules, "Expected subsystem setup modules"
+    return modules
+
+
+@pytest.fixture("session")
+def app_subsystems(app_submodules_with_setup_funs) -> List[Dict]:
+    metadata = []
+    for module in app_submodules_with_setup_funs:
+        setup_members = inspect.getmembers(module, is_setup_function)
+        if setup_members:
+            # finds setup for module
+            module_name = module.__name__.replace(".__init__", '')
+            setup_fun = None
+            for name, fun in setup_members:
+                if fun.metadata()['module_name'] == module_name:
+                    setup_fun = fun
+                    break
+
+            assert setup_fun, f"None of {setup_members} are setup funs for {module_name}"
+            metadata.append(setup_fun.metadata())
+
+    return metadata
+
+
+
 # TESTS ----------------------------------------------------------------------
 
 @pytest.mark.parametrize("configfile", [str(n)
@@ -85,38 +130,19 @@ def test_correctness_under_environ(configfile, service_webserver_environ):
         assert config['smtp']['username'] is None
 
 
+def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
+    for module in app_submodules_with_setup_funs:
+        setup_members = inspect.getmembers(module, is_setup_function)
+        if setup_members:
+            # finds setup for module
+            module_name = module.__name__.replace(".__init__", '')
+            setup_fun = None
+            for name, fun in setup_members:
+                if fun.metadata()['module_name'] == module_name:
+                    setup_fun = fun
+                    break
 
-from typing import Dict
-
-@pytest.fixture("session")
-def app_subsystems(package_dir) -> Dict:
-    """
-        subsystem = all modules in package with a setup function
-    """
-    def is_py_module(path: Path) -> bool:
-        return not path.name.startswith((".", "__")) and \
-            ( path.suffix == ".py" or any(path.glob("__init__.py")) )
-
-    subsystems = []
-    for path in package_dir.iterdir():
-        if is_py_module(path):
-            name = path.name.replace(path.suffix, "")
-            module = importlib.import_module("." + name, package_dir.name)
-            if module.__name__ != 'simcore_service_webserver.application':
-                setup_members = inspect.getmembers(module, is_setup_function)
-                if setup_members:
-                    # finds setup for module
-                    module_name = module.__name__.replace(".__init__", '')
-                    setup_fun = None
-                    for name, fun in setup_members:
-                        if fun.metadata()['module_name'] == module_name:
-                            setup_fun = fun
-                            break
-
-                    assert setup_fun, f"None of {setup_members} are setup funs for {module_name}"
-                    subsystems.append(setup_fun.metadata())
-
-    return subsystems
+            assert setup_fun, f"None of {setup_members} are setup funs for {module_name}"
 
 
 def test_schema_sections(app_config_schema, app_subsystems):
