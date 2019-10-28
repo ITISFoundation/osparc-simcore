@@ -9,9 +9,8 @@ import aiohttp_jinja2
 import jinja_app_loader
 from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, mark_as_module_setup
 
-from .email_config import CONFIG_SECTION_NAME
 from .resources import resources
 
 # TODO: move login/utils.py email functionality here!
@@ -22,14 +21,12 @@ from .resources import resources
 log = logging.getLogger(__name__)
 
 
-
+@mark_as_module_setup("db", ModuleCategory.ADDON, logger=log)
 def setup(app: web.Application, debug: bool=False):
-    log.debug("Setting up %s ...", __name__)
-
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]
-
     tmpl_dir = resources.get_path('templates')
-    assert tmpl_dir.exists()
+    if not tmpl_dir.exists():
+        log.error("Cannot find email templates in '%s'", tmpl_dir)
+        return False
 
     env = aiohttp_jinja2.setup(
         app,
