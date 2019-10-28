@@ -35,36 +35,29 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
             - toggles run using 'enabled' entry in config file
         - logs execution
 
-    Usage:
+    See packages/service-library/tests/test_application_setup.py
+
+    :param module_name: typicall __name__ (automaticaly removes '.__init__')
+    :param depends: list of module_names that must be called first, defaults to None
+    :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
+    :raises DependencyError
+    :raises AppSetupBaseError
+    :return: False if setup was skipped
+    :rtype: bool
+
+    :Example:
         from servicelib.application_setup import mark_as_module_setup
 
         @mark_as_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
         def setup(app: web.Application):
             ...
-
-    See packages/service-library/tests/test_application_setup.py
-
-    :param module_name: [description]
-    :type module_name: str
-    :param category: [description]
-    :type category: ModuleCategory
-    :param depends: [description], defaults to None
-    :type depends: Optional[List[str]], optional
-    :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
-    :type config_section: str, optional
-    :param logger: [description], defaults to None
-    :type logger: Optional[logging.Logger], optional
-    :raises DependencyError: [description]
-    :raises AppSetupBaseError: [description]
-    :return: False if setup was skipped
-    :rtype: bool
     """
     # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
 
-    if logger is None:
-        logger = log
+    module_name = module_name.replace(".__init__", "")
     depends = depends or []
     section = config_section or module_name.split(".")[-1]
+    logger = logger or log
 
     def decorate(setup_func):
 
