@@ -32,12 +32,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let newStudyDlg = new osparc.component.widget.NewStudyDlg();
+ *   let newStudyDlg = new osparc.component.widget.newStudy.Dlg();
  *   this.getRoot().add(newStudyDlg);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.NewStudyDlg", {
+qx.Class.define("osparc.component.widget.newStudy.Dlg", {
   extend: qx.ui.core.Widget,
 
   construct: function(template=null) {
@@ -116,7 +116,8 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
       const studyTitleValidator = new qx.ui.form.validation.AsyncValidator(
         function(validator, value) {
           if (value === null || value.length === 0) {
-            validator.setValid(false, "Study title is required");
+            studyTitle.setValue("Untitled Study");
+            validator.setValid(true);
           } else {
             validator.setValid(true);
           }

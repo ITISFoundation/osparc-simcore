@@ -305,7 +305,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         appearance: "service-window"
       });
 
-      const newStudyDlg = new osparc.component.widget.NewStudyDlg(studyData);
+      const newStudyDlg = new osparc.component.widget.newStudy.Dlg(studyData);
       newStudyDlg.addListenerOnce("createStudy", e => {
         const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
         const data = e.getData();
