@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
     __createLayout: function(study) {
       const shareStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const withDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline + Data"));
+      const withDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline with Data"));
       withDataGrp.setLayout(new qx.ui.layout.VBox(5));
 
       const copyLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -53,7 +53,9 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
       copyLinkLayout.add(shareStudyCopyLinkTF, {
         flex: 1
       });
-      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy Link"));
+      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy Link")).set({
+        width: 100
+      });
       copyLinkBtn.addListener("execute", function() {
         const shareStudyCopyLink = shareStudyCopyLinkTF.getValue();
         osparc.utils.Utils.copyTextToClipboard(shareStudyCopyLink);
@@ -69,7 +71,9 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
       copyTokenLayout.add(shareStudyCopyTokenTF, {
         flex: 1
       });
-      const copyTokenBtn = new qx.ui.form.Button(this.tr("Copy Token"));
+      const copyTokenBtn = new qx.ui.form.Button(this.tr("Copy Token")).set({
+        width: 100
+      });
       copyTokenBtn.addListener("execute", function() {
         const shareStudyCopyToken = shareStudyCopyTokenTF.getValue();
         osparc.utils.Utils.copyTextToClipboard(shareStudyCopyToken);
@@ -91,6 +95,7 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
         flex: 1
       });
       const copyWorkbenchBtn = new qx.ui.form.Button(this.tr("Copy Pipeline")).set({
+        width: 100,
         allowGrowY: false
       });
       copyWorkbenchBtn.addListener("execute", function() {
