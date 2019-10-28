@@ -76,7 +76,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
         yaml.dump(app_config, f, default_flow_style=False)
 
     # fake config
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
     pprint(app_config)

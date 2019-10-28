@@ -13,7 +13,9 @@ from utils_projects import create_project
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
+
 
     # config app
     port = app_cfg["main"]["port"] = aiohttp_unused_port()

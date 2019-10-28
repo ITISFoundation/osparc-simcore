@@ -38,7 +38,9 @@ API_PREFIX = "/" + API_VERSION
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
 #def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
+
 
     # config app
     port = app_cfg["main"]["port"] = aiohttp_unused_port()

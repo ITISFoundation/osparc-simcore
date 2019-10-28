@@ -95,12 +95,13 @@ def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, a
     app_config['storage']['enabled'] = False
     app_config['rabbit']['enabled'] = False
 
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_login(app)
     assert setup_projects(app)
 

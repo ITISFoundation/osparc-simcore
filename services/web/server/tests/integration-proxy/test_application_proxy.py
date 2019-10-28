@@ -42,7 +42,8 @@ def webserver_service(docker_stack, loop, app_config, aiohttp_unused_port, aioht
         yaml.dump(app_config, f, default_flow_style=False)
 
     # app
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
     setup_rest(app, debug=True)

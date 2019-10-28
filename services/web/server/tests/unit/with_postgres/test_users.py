@@ -31,7 +31,9 @@ API_VERSION = "v0"
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
+
     port = app_cfg["main"]["port"] = aiohttp_unused_port()
 
     assert app_cfg["rest"]["version"] == API_VERSION

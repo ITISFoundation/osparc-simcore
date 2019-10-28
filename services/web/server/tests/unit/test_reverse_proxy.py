@@ -43,7 +43,8 @@ def create_backend_app(name, image, basepath):
             }
         })
 
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
     app.router.add_route("*", basepath + "/{proxy_path:.*}", handler)
     return app
 
@@ -122,7 +123,9 @@ def spawner_server(loop, aiohttp_server):
 
         return web.json_response(info)
 
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
+
     # API
     app.router.add_get("/services", list_infos)
     app.router.add_get("/services/{serviceId}", info)
@@ -160,7 +163,8 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
             info = await res.json()
             return info["url"]
 
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
 
     # setup
     app["director.client"] = spawner_client

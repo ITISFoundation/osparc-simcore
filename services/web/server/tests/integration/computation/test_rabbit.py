@@ -45,7 +45,8 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, rab
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
-    app = web.Application()
+    from servicelib.application import create_safe_application
+    app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
     setup_computation(app)
