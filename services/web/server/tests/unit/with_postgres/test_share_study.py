@@ -42,7 +42,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     setup_rest(app, debug=True)
     setup_login(app)            # needed for login_utils fixtures
     setup_projects(app)
-    assert setup_share_study(app)
+    assert setup_share_study(app, debug=True)
 
     # server and client
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
