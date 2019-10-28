@@ -85,7 +85,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_login(app)
     setup_projects(app)
     setup_computation(app)

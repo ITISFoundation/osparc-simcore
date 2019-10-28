@@ -46,7 +46,7 @@ def webserver_service(docker_stack, loop, app_config, aiohttp_unused_port, aioht
     app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_director(app, disable_login=True)
     setup_app_proxy(app) # <-----------|UNDER TEST
 
