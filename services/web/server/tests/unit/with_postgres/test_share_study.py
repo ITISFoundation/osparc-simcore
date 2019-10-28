@@ -1,8 +1,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-# import uuid as uuidlib
-
 import pytest
 from aiohttp import web
 
@@ -81,7 +79,10 @@ async def user_project(client, fake_project, logged_user):
 
 async def test_get_shared(client, logged_user, user_project):
     study_id = user_project["uuid"]
+    assert study_id
+
     url = API_PREFIX + "/share/study/" + study_id
+    assert url
 
     resp = await client.get(url)
     data, _errors = await assert_status(resp, web.HTTPOk)
