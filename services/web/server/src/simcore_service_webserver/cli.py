@@ -81,14 +81,20 @@ def parse(args, parser):
 
 
 def main(args=None):
+    # parse & config file
     parser = argparse.ArgumentParser(description='Service to manage data webserver in simcore.')
-
     setup_parser(parser)
     config = parse(args, parser)
 
+    # logging
     # TODO: improve keys!
-    log_level = config["main"]["log_level"]
-    logging.basicConfig(level=getattr(logging, log_level))
-    logging.root.setLevel(getattr(logging, log_level))
+    log_level = getattr(logging, config["main"]["log_level"])
+    logging.basicConfig(level=log_level)
 
+    logging.root.setLevel(log_level)
+    # mute noisy
+    logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
+
+    # run
     run_service(config)

@@ -18,10 +18,6 @@ from utils_login import LoggedUser
 
 API_VERSION = "v0"
 
-logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
-logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-
-logging.root.setLevel(logging.DEBUG)
 
 # TODO: create a fake storage service here
 @pytest.fixture()
