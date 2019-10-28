@@ -10,6 +10,7 @@ from aiohttp import web
 from .login.decorators import RQT_USERID_KEY, login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_db import APP_PROJECT_DBAPI
+from .projects.projects_utils import clone_project_document
 from .statics import INDEX_RESOURCE_NAME
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,12 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
         return user_id, study_id
 
     user_id, study_id = await _process_request(request)
+    source_study = await get_project_for_user(request, study_id, user_id)
+    cloned_study, _nodes_map = clone_project_document(source_study)
     logger.debug("Getting sharing tokens for %s", study_id)
     data = {
-        'copy': "http://localhost:9081/v0/shared/study/copy-" + str(study_id) + "_" + str(user_id),
-        'share': "http://localhost:9081/v0/shared/study/share-" + str(study_id) + "_" + str(user_id)
+        'copyToken': "http://localhost:9081/v0/shared/study/copy-" + str(study_id) + "_" + str(user_id),
+        'copyObject': cloned_study['workbench']
     }
     logger.debug("END OF ROUTINE. Response %s", data)
     return data

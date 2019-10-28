@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.widget.ShareStudy", {
       };
       osparc.data.Resources.getOne("shareStudy", params)
         .then(tokensList => {
-          shareStudyCopyTF.setValue(tokensList["copy"]);
+          shareStudyCopyTF.setValue(tokensList["shareToken"]);
           shareStudyShareTF.setValue(tokensList["share"]);
         })
         .catch(err => console.error(err));
