@@ -46,7 +46,7 @@ def create_application(config: Dict) -> web.Application:
     log.debug("Config:\n%s",
         json.dumps(config, indent=2, sort_keys=True))
 
-    testing = config["main"].get("testing", False)
+    # testing = config["main"].get("testing", False)
     monitoring = config["main"]["monitoring_enabled"]
     # TODO: create dependency mechanism and compute setup order
 
@@ -57,7 +57,7 @@ def create_application(config: Dict) -> web.Application:
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=testing)
+    setup_rest(app)
     setup_email(app)
     setup_computation(app)
     setup_sockets(app)
@@ -68,9 +68,7 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_projects(app) # needs storage
     setup_studies_access(app)
-
-    if config['director']["enabled"]:
-        setup_app_proxy(app) # TODO: under development!!!
+    setup_app_proxy(app) # TODO: under development!!!
 
     return app
 
