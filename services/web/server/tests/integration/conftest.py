@@ -5,7 +5,6 @@
 
 import logging
 import sys
-from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
