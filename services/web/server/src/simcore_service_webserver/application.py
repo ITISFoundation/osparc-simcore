@@ -35,7 +35,7 @@ def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
-    app = create_safe_application()
+    app = create_safe_application(config)
 
     log.debug("Initializing app ... ")
     log.debug("Config:\n%s",
