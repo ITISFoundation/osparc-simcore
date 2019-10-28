@@ -101,3 +101,5 @@ def setup_monitoring(app: web.Application, app_name: str):
 
     # Checks that middleware is in the outermost layer
     app.on_startup.append(check_outermost_middleware)
+
+    return True

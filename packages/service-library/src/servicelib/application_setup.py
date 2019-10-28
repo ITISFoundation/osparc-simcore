@@ -24,7 +24,7 @@ class DependencyError(AppSetupBaseError):
 
 def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
         depends: Optional[List[str]]=None,
-        config_section: str=None,
+        config_section: str=None, config_enabled: str=None,
         logger: Optional[logging.Logger]=None
     ) -> bool:
     """ Decorator that marks a function as 'a setup function' for a given module in an application
@@ -40,6 +40,7 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
     :param module_name: typicall __name__ (automaticaly removes '.__init__')
     :param depends: list of module_names that must be called first, defaults to None
     :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
+    :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
     :raises DependencyError
     :raises AppSetupBaseError
     :return: False if setup was skipped
@@ -56,7 +57,17 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
 
     module_name = module_name.replace(".__init__", "")
     depends = depends or []
+
+    if config_section and config_enabled:
+        raise ValueError("Can only set config_section or config_enabled but not both")
+
     section = config_section or module_name.split(".")[-1]
+    if config_enabled is None:
+        config_enabled = f"{section}.enabled"
+    else:
+        # if passes config_enabled, invalidates info on section
+        section = None
+
     logger = logger or log
 
     def decorate(setup_func):
@@ -69,7 +80,8 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
             return {
                 'module_name': module_name,
                 'dependencies': depends,
-                'config.section': section
+                'config_section': section,
+                'config_enabled': config_enabled
             }
 
         # wrapper
@@ -82,11 +94,24 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
                 app[APP_SETUP_KEY] = []
 
             if category == ModuleCategory.ADDON:
-                # NOTE: only addons can be enabled/disabled
+                # NOTE: ONLY addons can be enabled/disabled
                 # TODO: sometimes section is optional, check in config schema
-                cfg = app[APP_CONFIG_KEY].get(section, {})
+                cfg = app[APP_CONFIG_KEY]
 
-                if not cfg.get("enabled", True):
+                def _get(cfg_, parts):
+                    for part in parts:
+                        if section and part == "enabled": # if section exists, no need to explicitly enable it
+                            cfg_ = cfg_.get(part, True)
+                        else:
+                            cfg_ = cfg_[part]
+                    return cfg_
+
+                try:
+                    is_enabled = _get(cfg, config_enabled.split("."))
+                except KeyError as ee:
+                    raise AppSetupBaseError(f"Cannot find '{config_enabled}' in app config in [ {ee} ]")
+
+                if not is_enabled:
                     logger.info("Skipping '%s' setup. Explicitly disabled in config", module_name)
                     return False
 
