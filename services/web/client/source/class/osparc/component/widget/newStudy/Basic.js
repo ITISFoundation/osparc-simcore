@@ -37,16 +37,15 @@
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.newStudy.Dlg", {
+qx.Class.define("osparc.component.widget.newStudy.Basic", {
   extend: qx.ui.core.Widget,
 
-  construct: function(template=null) {
+  construct: function(template=null, withPipeline=false) {
     this.base(arguments);
 
-    let newPrjLayout = new qx.ui.layout.Canvas();
-    this._setLayout(newPrjLayout);
+    this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__createForm(template);
+    this.__createForm(template, withPipeline);
   },
 
   events: {
@@ -54,47 +53,72 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
   },
 
   members: {
-    __createForm: function(template) {
-      const prjFormLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "studyTitle":
+          control = new qx.ui.form.TextField().set({
+            placeholder: this.tr("Study Title")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "newStudyTitleFld");
+          this.addListener("appear", () => {
+            control.activate();
+            control.focus();
+          });
+          this._add(control);
+          break;
+        case "studyDescription":
+          control = new qx.ui.form.TextArea().set({
+            minHeight: 150,
+            placeholder: this.tr("Describe your study...")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "newStudyDescFld");
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "studyThumbnail":
+          control = new qx.ui.form.TextField().set({
+            placeholder: this.tr("URL to the thumbnail")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "newStudyThumbnailFld");
+          this._add(control);
+          break;
+        case "studyWorkbench":
+          control = new qx.ui.form.TextArea().set({
+            minHeight: 150,
+            placeholder: this.tr("Paste a pipeline here")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "newStudyWorkbenchFld");
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "createButton":
+          control = new qx.ui.form.Button(this.tr("Create"), null, new qx.ui.command.Command("Enter"));
+          osparc.utils.Utils.setIdToWidget(control, "newStudySubmitBtn");
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
-      const studyTitle = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Study Title"),
+    __createForm: function(template, withPipeline) {
+      const studyTitle = this.getChildControl("studyTitle").set({
         value: template ? template.name : ""
       });
-      osparc.utils.Utils.setIdToWidget(studyTitle, "newStudyTitleFld");
-      this.addListener("appear", () => {
-        studyTitle.activate();
-        studyTitle.focus();
-      });
-      prjFormLayout.add(studyTitle);
 
-      const description = new qx.ui.form.TextArea().set({
-        minHeight: 150,
-        placeholder: this.tr("Describe your study..."),
+      const description = this.getChildControl("studyDescription").set({
         value: template ? template.description : ""
       });
-      osparc.utils.Utils.setIdToWidget(description, "newStudyDescFld");
-      prjFormLayout.add(description, {
-        flex: 1
-      });
 
-      const thumbnail = new qx.ui.form.TextField().set({
-        placeholder: this.tr("URL to the thumbnail"),
+      const thumbnail = this.getChildControl("studyThumbnail").set({
         value: template ? template.thumbnail : ""
       });
-      osparc.utils.Utils.setIdToWidget(thumbnail, "newStudyThumbnailFld");
-      prjFormLayout.add(thumbnail);
 
       let workbench = null;
-      if (!template) {
-        workbench = new qx.ui.form.TextArea().set({
-          minHeight: 150,
-          placeholder: this.tr("Paste a pipeline here")
-        });
-        osparc.utils.Utils.setIdToWidget(workbench, "newStudyWorkbenchFld");
-        prjFormLayout.add(workbench, {
-          flex: 1
-        });
+      if (withPipeline) {
+        workbench = this.getChildControl("studyWorkbench");
       }
 
       if (template) {
@@ -103,12 +127,10 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
         const label2 = new qx.ui.basic.Label(template.name);
         templateLayout.add(label1);
         templateLayout.add(label2);
-        prjFormLayout.add(templateLayout);
+        this._add(templateLayout);
       }
 
-      const createBtn = new qx.ui.form.Button(this.tr("Create"), null, new qx.ui.command.Command("Enter"));
-      osparc.utils.Utils.setIdToWidget(createBtn, "newStudySubmitBtn");
-      prjFormLayout.add(createBtn);
+      const createBtn = this.getChildControl("createButton");
 
       // create the form manager
       const manager = new qx.ui.form.validation.Manager();
@@ -117,10 +139,8 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
         function(validator, value) {
           if (value === null || value.length === 0) {
             studyTitle.setValue("Untitled Study");
-            validator.setValid(true);
-          } else {
-            validator.setValid(true);
           }
+          validator.setValid(true);
         }
       );
       manager.add(studyTitle, studyTitleValidator);
@@ -139,22 +159,12 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
           prjThumbnail: thumb ? thumb : "",
           prjWorkbench: wb ? JSON.parse(wb) : {}
         };
-        if (template) {
-          data["prjTemplateId"] = template.uuid;
-        }
         this.fireDataEvent("createStudy", data);
       }, this);
 
       createBtn.addListener("execute", function() {
         manager.validate();
       }, this);
-
-      this._add(prjFormLayout, {
-        top: 10,
-        right: 10,
-        bottom: 10,
-        left: 10
-      });
     }
   }
 });

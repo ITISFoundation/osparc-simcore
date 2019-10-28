@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Widget that provides the form for creating a new study
+ * Widget that provides three different ways for creating a new study
  *
  * After doing some Study title validation the following data event is fired:
  * <pre class='javascript'>
@@ -43,21 +43,26 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
   construct: function(template=null) {
     this.base(arguments);
 
-    var scroller = new qx.ui.container.Scroll();
+    this._setLayout(new qx.ui.layout.VBox(10));
 
-    var container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    container.setPadding(20);
-    container.setAllowStretchX(false);
+    const tabView = new qx.ui.tabview.TabView();
+    [
+      [this.__getBasic, "Basic"],
+      [this.__getWithWorkbench, "With pipeline"],
+      [this.__getWithToken, "With pipeline and data"]
+    ].forEach(pair => {
+      const widget = pair[0].call(this, template);
+      const page = new qx.ui.tabview.Page(pair[1]);
+      page.setLayout(new qx.ui.layout.VBox());
+      page.add(widget, {
+        flex: 1
+      });
+      tabView.add(page);
+    }, this);
 
-    scroller.add(container);
-
-    this.add(scroller, {
-      edge: 0
+    this._add(tabView, {
+      flex: 1
     });
-
-    container.add(this.__getBlank(template));
-    container.add(this.__getWithPipeline());
-    container.add(this.__getWithToken());
   },
 
   events: {
@@ -65,24 +70,24 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
   },
 
   members: {
-    __getBlank: function(template) {
-      const newBlankStudy = new osparc.component.widget.newStudy.Blank(template);
+    __getBasic: function(template) {
+      const newBlankStudy = new osparc.component.widget.newStudy.Basic(template, false);
       newBlankStudy.addListener("createStudy", e => {
         this.fireDataEvent("createStudy", e.getData());
       }, this);
       return newBlankStudy;
     },
 
-    __getWithPipeline: function(template) {
-      const newBlankStudy = new osparc.component.widget.newStudy.WithPipeline(template);
+    __getWithWorkbench: function() {
+      const newBlankStudy = new osparc.component.widget.newStudy.Basic(null, true);
       newBlankStudy.addListener("createStudy", e => {
         this.fireDataEvent("createStudy", e.getData());
       }, this);
       return newBlankStudy;
     },
 
-    __getWithToken: function(template) {
-      const newBlankStudy = new osparc.component.widget.newStudy.WithToken(template);
+    __getWithToken: function() {
+      const newBlankStudy = new osparc.component.widget.newStudy.WithToken();
       newBlankStudy.addListener("createStudy", e => {
         this.fireDataEvent("createStudy", e.getData());
       }, this);

@@ -287,7 +287,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
     },
 
-    __createStudyBtnClkd: function(studyData) {
+    __createStudyBtnClkd: function(template) {
       if (this.__creatingNewStudy) {
         return;
       }
@@ -305,14 +305,14 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         appearance: "service-window"
       });
 
-      const newStudyDlg = new osparc.component.widget.newStudy.Dlg(studyData);
+      const newStudyDlg = new osparc.component.widget.newStudy.Dlg(template);
       newStudyDlg.addListenerOnce("createStudy", e => {
         const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
         const data = e.getData();
         minStudyData["name"] = data.prjTitle;
         minStudyData["description"] = data.prjDescription;
         minStudyData["thumbnail"] = data.prjThumbnail;
-        minStudyData["workbench"] = data.prjWorkbench;
+        minStudyData["workbench"] = data.prjWorkbench ? data.prjWorkbench : {};
         this.__createStudy(minStudyData, data.prjTemplateId);
         win.close();
       }, this);
