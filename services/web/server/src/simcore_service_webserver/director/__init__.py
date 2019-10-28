@@ -21,7 +21,7 @@ from .registry import InteractiveServiceLocalRegistry, set_registry
 
 logger = logging.getLogger(__name__)
 
-module_name = ".".join(__name__.split(".")[:-1])
+module_name = __name__.replace(".__init__", "")
 
 @mark_as_module_setup(module_name, ModuleCategory.ADDON,
     depends=[],

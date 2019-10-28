@@ -24,7 +24,7 @@ from .routes import create_routes
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
-module_name = ".".join(__name__.split(".")[:-1])
+module_name = __name__.replace(".__init__", "")
 
 TIMEOUT_SECS = 5
 

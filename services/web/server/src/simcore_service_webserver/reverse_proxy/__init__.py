@@ -21,11 +21,10 @@ from .routing import ReverseChooser
 from .settings import APP_SOCKETS_KEY, URL_PATH
 
 logger = logging.getLogger(__name__)
-module_name = ".".join(__name__.split(".")[:-1])
 
 MODULE_NAME = __name__.split(".")[-1]
 ROUTE_NAME = MODULE_NAME
-
+module_name = module_name = __name__.replace(".__init__", "")
 
 async def _on_shutdown(app: web.Application):
     for ws in app[APP_SOCKETS_KEY]:

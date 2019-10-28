@@ -15,11 +15,12 @@ import pytest
 import yaml
 from aiohttp import web
 
+from servicelib.application_setup import is_setup_function
+from simcore_service_webserver.application_config import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.resources import resources
-from simcore_service_webserver.application_config import create_schema
+from utils_environs import eval_service_environ, load_env
 
-from utils_environs import load_env, eval_service_environ
 
 @pytest.fixture("session")
 def app_config_schema():
@@ -84,8 +85,11 @@ def test_correctness_under_environ(configfile, service_webserver_environ):
         assert config['smtp']['username'] is None
 
 
+
+from typing import Dict
+
 @pytest.fixture("session")
-def app_subsystems(package_dir):
+def app_subsystems(package_dir) -> Dict:
     """
         subsystem = all modules in package with a setup function
     """
@@ -93,19 +97,24 @@ def app_subsystems(package_dir):
         return not path.name.startswith((".", "__")) and \
             ( path.suffix == ".py" or any(path.glob("__init__.py")) )
 
-    def is_setup_function(fun):
-        return inspect.isfunction(fun) and \
-            fun.__name__ == "setup" and \
-            any(param.annotation == web.Application
-                for name, param in inspect.signature(fun).parameters.items())
-
     subsystems = []
     for path in package_dir.iterdir():
         if is_py_module(path):
             name = path.name.replace(path.suffix, "")
             module = importlib.import_module("." + name, package_dir.name)
-            if any(inspect.getmembers(module, is_setup_function)):
-                subsystems.append(module)
+            if module.__name__ != 'simcore_service_webserver.application':
+                setup_members = inspect.getmembers(module, is_setup_function)
+                if setup_members:
+                    # finds setup for module
+                    module_name = module.__name__.replace(".__init__", '')
+                    setup_fun = None
+                    for name, fun in setup_members:
+                        if fun.metadata()['module_name'] == module_name:
+                            setup_fun = fun
+                            break
+
+                    assert setup_fun, f"None of {setup_members} are setup funs for {module_name}"
+                    subsystems.append(setup_fun.metadata())
 
     return subsystems
 
@@ -116,8 +125,7 @@ def test_schema_sections(app_config_schema, app_subsystems):
         Every section in the config-file (except for 'version' and 'main')
         is named after an application's subsystem
     """
-    section_names= [ getattr(module, "CONFIG_SECTION_NAME", module.__name__.split(".")[-1])
-                        for module in app_subsystems] + ['version', 'main']
+    section_names= [ metadata['config.section'] for metadata in app_subsystems] + ['version', 'main']
 
     for section in app_config_schema.keys:
         assert section.name in section_names, "Check application config schema!"

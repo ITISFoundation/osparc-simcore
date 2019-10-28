@@ -31,7 +31,7 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 logger = logging.getLogger(__name__)
-module_name = ".".join(__name__.split(".")[:-1])
+module_name = __name__.replace(".__init__", "")
 
 def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
     """

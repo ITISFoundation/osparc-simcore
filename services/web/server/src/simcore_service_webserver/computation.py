@@ -17,11 +17,14 @@ from servicelib.rest_routing import (iter_path_operations,
 from . import computation_handlers
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
+from .computation_config import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__file__)
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+    config_section=CONFIG_SECTION_NAME,
+    logger=log)
 def setup(app: web.Application):
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
