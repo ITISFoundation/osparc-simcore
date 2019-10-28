@@ -110,7 +110,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       });
 
       if (isCurrentUserOwner && !this.__isTemplate) {
-        const exportButton = new qx.ui.form.Button(this.tr("Export"), "@FontAwesome5Solid/file-export/16").set({
+        const exportButton = new qx.ui.form.Button(this.tr("Export"), "@FontAwesome5Solid/share-alt/16").set({
           appearance: "md-button",
           visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
         });
@@ -119,17 +119,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           this.__exportStudy(study);
         }, this);
         buttonsLayout.add(exportButton);
-
-        const shareButton = new qx.ui.form.Button(this.tr("Share"), "@FontAwesome5Solid/share-alt/16").set({
-          appearance: "md-button",
-          visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded",
-          enabled: false
-        });
-        osparc.utils.Utils.setIdToWidget(shareButton, "shareStudyBtn");
-        shareButton.addListener("execute", e => {
-          this.__shareStudy(study);
-        }, this);
-        buttonsLayout.add(shareButton);
 
         if (canCreateTemplate) {
           const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({

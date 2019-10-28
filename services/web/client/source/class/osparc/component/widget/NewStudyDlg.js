@@ -136,7 +136,7 @@ qx.Class.define("osparc.component.widget.NewStudyDlg", {
           prjTitle: title,
           prjDescription: desc ? desc : "",
           prjThumbnail: thumb ? thumb : "",
-          prjWorkbench: wb ? JSON.parse(wb) : ""
+          prjWorkbench: wb ? JSON.parse(wb) : {}
         };
         if (template) {
           data["prjTemplateId"] = template.uuid;
