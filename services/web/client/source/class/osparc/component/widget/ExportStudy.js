@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
     __createLayout: function(study) {
       const shareStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const withDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline with Data"));
+      const withDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Pipeline with Data"));
       withDataGrp.setLayout(new qx.ui.layout.VBox(5));
 
       const copyLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
 
       shareStudyLayout.add(withDataGrp);
 
-      const withoutDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Export study: Only pipeline"));
+      const withoutDataGrp = new qx.ui.groupbox.GroupBox(this.tr("Only pipeline"));
       withoutDataGrp.setLayout(new qx.ui.layout.HBox(5));
       const shareStudyCopyWorkbenchTA = new qx.ui.form.TextArea().set({
         height: 400,
