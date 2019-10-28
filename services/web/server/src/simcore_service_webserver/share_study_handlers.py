@@ -45,7 +45,7 @@ def randomString(stringLength=10):
 # shared/study/token_id --------------------------------------------------
 @login_required
 async def get_shared_study(request: web.Request) -> web.Response:
-    from .projects.projects_api import clone_project # TODO: keep here since is async and parser thinks it is a handler
+    from .projects.projects_api import clone_project # TODO: keep here since it is async and parser thinks it is a handler
 
     async def _process_request(request):
         token_id = request.match_info.get("token_id", None)

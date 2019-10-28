@@ -31,16 +31,16 @@
 qx.Class.define("osparc.component.widget.ExportStudy", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyModel, wbObject) {
+  construct: function(study) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.__createLayout(studyModel, wbObject);
+    this.__createLayout(study);
   },
 
   members: {
-    __createLayout: function(studyModel, wbObject) {
+    __createLayout: function(study) {
       const shareStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const box11 = new qx.ui.groupbox.GroupBox(this.tr("Export study: Pipeline + Data"));
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
       });
       const params = {
         url: {
-          "study_id": studyModel.getUuid()
+          "study_id": study.uuid
         }
       };
       osparc.data.Resources.getOne("shareStudy", params)
@@ -73,8 +73,8 @@ qx.Class.define("osparc.component.widget.ExportStudy", {
 
       const box12 = new qx.ui.groupbox.GroupBox(this.tr("Export study: Only pipeline"));
       box12.setLayout(new qx.ui.layout.HBox(5));
-      const wbPretty = JSON.stringify(wbObject, null, 4);
-      const shareStudyCopyWorkbenchTA = new qx.ui.form.TextArea(wbPretty).set({
+      const workbenchPretty = JSON.stringify(study.workbench, null, 4);
+      const shareStudyCopyWorkbenchTA = new qx.ui.form.TextArea(workbenchPretty).set({
         height: 400,
         wrap: false,
         readOnly: true

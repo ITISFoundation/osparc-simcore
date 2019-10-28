@@ -72,14 +72,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __createDisplayView: function(study) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      displayView.add(this.__createButtons());
+      displayView.add(this.__createButtons(study));
       displayView.add(new osparc.component.metadata.StudyDetails(study), {
         flex: 1
       });
       return displayView;
     },
 
-    __createButtons: function() {
+    __createButtons: function(study) {
       const isCurrentUserOwner = this.__isCurrentUserOwner();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
@@ -116,7 +116,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
         osparc.utils.Utils.setIdToWidget(exportButton, "exportStudyBtn");
         exportButton.addListener("execute", e => {
-          this.__exportStudy();
+          this.__exportStudy(study);
         }, this);
         buttonsLayout.add(exportButton);
 
@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
         osparc.utils.Utils.setIdToWidget(shareButton, "shareStudyBtn");
         shareButton.addListener("execute", e => {
-          this.__shareStudy();
+          this.__shareStudy(study);
         }, this);
         buttonsLayout.add(shareButton);
 
@@ -249,7 +249,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
     },
 
-    __exportStudy: function() {
+    __exportStudy: function(study) {
       const win = new qx.ui.window.Window(this.tr("Export Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -262,12 +262,12 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "service-window"
       });
 
-      const exportStudy = new osparc.component.widget.ExportStudy(this.__model, this.__workbench);
+      const exportStudy = new osparc.component.widget.ExportStudy(study);
       win.add(exportStudy);
       win.open();
     },
 
-    __shareStudy: function() {
+    __shareStudy: function(study) {
       const win = new qx.ui.window.Window(this.tr("Share Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -280,7 +280,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "service-window"
       });
 
-      const shareStudy = new osparc.component.widget.ShareStudy(this.__model);
+      const shareStudy = new osparc.component.widget.ShareStudy(study);
       win.add(shareStudy);
       win.open();
     },

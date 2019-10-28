@@ -31,16 +31,16 @@
 qx.Class.define("osparc.component.widget.ShareStudy", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyModel) {
+  construct: function(study) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.__createLayout(studyModel);
+    this.__createLayout(study);
   },
 
   members: {
-    __createLayout: function(studyModel) {
+    __createLayout: function(study) {
       const shareStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const box1 = new qx.ui.groupbox.GroupBox(this.tr("Link Sharing"));
@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.widget.ShareStudy", {
 
       const params = {
         url: {
-          "study_id": studyModel.getUuid()
+          "study_id": study.uuid
         }
       };
       osparc.data.Resources.getOne("shareStudy", params)
