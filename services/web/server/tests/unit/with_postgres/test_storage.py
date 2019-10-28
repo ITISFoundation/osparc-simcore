@@ -7,6 +7,7 @@ from urllib.parse import quote
 import pytest
 from aiohttp import web
 
+from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
 from simcore_service_webserver.security_roles import UserRole
@@ -21,8 +22,7 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
     cfg = app_cfg["storage"]
     cfg['port']= aiohttp_unused_port()
 
-    from servicelib.application import create_safe_application
-    app = create_safe_application()
+    app = create_safe_application(cfg)
 
     async def _get_locs(request: web.Request):
         assert not request.has_body
