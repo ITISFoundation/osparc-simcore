@@ -13,6 +13,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.aiopg_utils import DBAPIError
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.application_setup import mark_as_module_setup,ModuleCategory
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
@@ -87,17 +88,11 @@ async def is_service_responsive(app:web.Application):
         log.debug("%s is NOT responsive: %s", THIS_SERVICE_NAME, err)
         return False
 
+
+@mark_as_module_setup("db", ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
-
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None
-
-    if not cfg["enabled"]:
-        log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
-        return
 
     # async connection to db
     # app.on_startup.append(_init_db) # TODO: review how is this disposed
