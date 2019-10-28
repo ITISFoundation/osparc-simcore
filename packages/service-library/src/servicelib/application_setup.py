@@ -59,9 +59,6 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
     :return: False if setup was skipped
     :rtype: bool
     """
-
-    # TODO: adds subsystem dependencies dependencies: Optional[List]=None):
-    # TODO: ensures runs ONLY once per application (e.g. keep id(app) )
     # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
 
     if logger is None:
@@ -73,6 +70,14 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
 
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
+
+       # metadata info
+        def setup_metadata() -> Dict:
+            return {
+                'module_name': module_name,
+                'dependencies': depends,
+                'config.section': section
+            }
 
         # wrapper
         @functools.wraps(setup_func)
@@ -115,13 +120,6 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
 
             logger.debug("'%s' setup completed [%s]", module_name, ok)
             return ok
-
-        # info
-        def setup_metadata() -> Dict:
-            return {
-                'module_name': module_name,
-                'dependencies': depends
-            }
 
         setup_wrapper.metadata = setup_metadata
         setup_wrapper.MARK = 'setup'
