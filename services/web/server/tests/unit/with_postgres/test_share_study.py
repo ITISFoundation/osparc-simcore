@@ -87,8 +87,8 @@ async def test_get_shared(client, logged_user, user_project):
     resp = await client.get(url)
     data, _errors = await assert_status(resp, web.HTTPOk)
 
-    assert link in data.get('copyLink')
-    assert token in data.get('copyToken')
+    assert study_id in data.get('copyLink')
+    assert study_id in data.get('copyToken')
     assert type(data.get('copyObject')) is dict
 
 
