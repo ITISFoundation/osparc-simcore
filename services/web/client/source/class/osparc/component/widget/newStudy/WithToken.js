@@ -98,6 +98,9 @@ qx.Class.define("osparc.component.widget.newStudy.WithToken", {
         if (!manager.getValid()) {
           return;
         }
+        createBtn.setIcon("@FontAwesome5Solid/circle-notch/12");
+        createBtn.getChildControl("icon").getContentElement()
+          .addClass("rotate");
         const params = {
           url: {
             "token_id": token.getValue()
@@ -105,9 +108,15 @@ qx.Class.define("osparc.component.widget.newStudy.WithToken", {
         };
         osparc.data.Resources.getOne("sharedStudy", params)
           .then(studyId => {
+            createBtn.resetIcon();
+            createBtn.getChildControl("icon").getContentElement()
+              .removeClass("rotate");
             this.fireDataEvent("autoloadStudy", studyId);
           })
-          .catch(err => console.error(err));
+          .catch(err => {
+            createBtn.resetIcon();
+            console.error(err);
+          });
       }, this);
 
       createBtn.addListener("execute", function() {
