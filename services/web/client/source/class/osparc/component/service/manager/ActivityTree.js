@@ -258,7 +258,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       if (this.__filters.name && this.__filters.name.length) {
         return true;
       }
-      if (this.__filters.service && this.__filters.service.length) {
+      if (this.__filters.study && this.__filters.study.length) {
         return true;
       }
       return false;
