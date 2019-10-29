@@ -256,24 +256,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       win.open();
     },
 
-    __shareStudy: function(study) {
-      const win = new qx.ui.window.Window(this.tr("Share Study")).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 0,
-        showMinimize: false,
-        showMaximize: false,
-        minWidth: 600,
-        centerOnAppear: true,
-        autoDestroy: true,
-        modal: true,
-        appearance: "service-window"
-      });
-
-      const shareStudy = new osparc.component.widget.ShareStudy(study);
-      win.add(shareStudy);
-      win.open();
-    },
-
     __saveAsTemplate: function(btn) {
       const params = {
         url: {
