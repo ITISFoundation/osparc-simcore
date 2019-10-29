@@ -16,14 +16,12 @@
 ************************************************************************ */
 
 /**
- * Widget that provides the form for creating a new study
+ * Widget that provides the form for creating a new study for a given token
  *
- * After doing some Study title validation the following data event is fired:
+ * After doing some token validation the following data event is fired:
  * <pre class='javascript'>
  *   {
- *     prjTitle: title,
- *     prjDescription: desc,
- *     prjTemplateId: templ
+ *     studyId: studyId
  *   };
  * </pre>
  *

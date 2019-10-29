@@ -18,12 +18,13 @@
 /**
  * Widget that provides the form for creating a new study
  *
- * After doing some Study title validation the following data event is fired:
+ * After doing some validation the following data event is fired:
  * <pre class='javascript'>
  *   {
  *     prjTitle: title,
  *     prjDescription: desc,
- *     prjTemplateId: templ
+ *     prjThumbnail: thumb,
+ *     prjWorkbench: wb  // (optional)
  *   };
  * </pre>
  *
@@ -32,8 +33,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let newStudyDlg = new osparc.component.widget.newStudy.Dlg();
- *   this.getRoot().add(newStudyDlg);
+ *   let newStudyBasic = new osparc.component.widget.newStudy.Basic();
+ *   this.getRoot().add(newStudyBasic);
  * </pre>
  */
 

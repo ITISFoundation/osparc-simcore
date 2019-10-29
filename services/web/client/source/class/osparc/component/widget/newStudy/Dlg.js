@@ -17,15 +17,11 @@
 
 /**
  * Widget that provides three different ways for creating a new study
- *
- * After doing some Study title validation the following data event is fired:
- * <pre class='javascript'>
- *   {
- *     prjTitle: title,
- *     prjDescription: desc,
- *     prjTemplateId: templ
- *   };
- * </pre>
+ * - Copy study with data
+ *   - With a link
+ *   - With a token
+ * - Copy study without data, only the pipeline/workbench structure
+ *   - By pasting the exported pipeline/workbench
  *
  * *Example*
  *
