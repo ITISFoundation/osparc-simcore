@@ -70,6 +70,10 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       this._add(this.__tree, {
         flex: 1
       });
+      this.__tree.addListener("treeUpdated", () => {
+        osparc.data.Resources.get("studies")
+          .then(studies => this.__studyFilter.buildMenu(studies));
+      }, this);
     },
 
     /**

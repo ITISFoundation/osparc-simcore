@@ -1,5 +1,4 @@
 import asyncio
-import json
 
 import aiohttp
 from servicelib.request_keys import RQT_USERID_KEY
