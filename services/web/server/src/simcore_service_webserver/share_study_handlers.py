@@ -62,7 +62,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
     else:
         raise RuntimeError("No operation found in token.")
 
-    source_study_user_id = token_id.split("copy-",1)[1]
+    source_study_user_id = token_id.split("copy-", 1)[1]
     data = source_study_user_id.split("_")
     source_study_id, source_user_id = data
 

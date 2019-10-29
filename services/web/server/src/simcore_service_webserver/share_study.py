@@ -1,6 +1,5 @@
 """ share study management subsystem
 
-
 """
 import logging
 
@@ -24,7 +23,8 @@ def setup(app: web.Application, debug=False):
 
     if not APP_OPENAPI_SPECS_KEY in app:
         logger.warning("rest submodule not initialised? share routes will not be defined!")
-        return
+        return False
+
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     # routes
