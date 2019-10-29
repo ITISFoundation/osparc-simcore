@@ -59,6 +59,11 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
       check: "Array",
       init: [],
       event: "changeSelection"
+    },
+    alwaysUpdate: {
+      check: "Boolean",
+      init: true,
+      nullable: false
     }
   },
 
@@ -233,6 +238,14 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         })
         .catch(e => {
           console.error(e);
+        })
+        .then(() => {
+          // Give a 2 seconds delay
+          setTimeout(() => {
+            if (this.getAlwaysUpdate()) {
+              this.update();
+            }
+          }, 2000);
         });
     },
 
@@ -273,6 +286,13 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
 
       this.getSelectionModel().addListener("changeSelection", e => {
         this.setSelected(this.getSelection());
+      }, this);
+
+      this.addListener("disappear", () => {
+        this.setAlwaysUpdate(false);
+      }, this);
+      this.addListener("appear", () => {
+        this.setAlwaysUpdate(true);
       }, this);
     }
   }
