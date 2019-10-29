@@ -80,6 +80,7 @@ async def user_project(client, fake_project, logged_user):
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.USER, web.HTTPOk)
 ])
+@pytest.mark.skip(reason="This should go into integration test. Paused until it gets refactored")
 async def test_get_shared(client, logged_user, user_project, expected):
     study_id = user_project["uuid"]
     assert study_id
@@ -98,6 +99,7 @@ async def test_get_shared(client, logged_user, user_project, expected):
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.USER, web.HTTPOk)
 ])
+@pytest.mark.skip(reason="This should go into integration test. Paused until it gets refactored")
 async def test_get_shared_study_with_token(client, logged_user, user_project, expected):
     study_id = user_project["uuid"]
     url = API_PREFIX + "/share/study/" + study_id
