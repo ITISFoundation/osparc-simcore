@@ -23,7 +23,7 @@ import trafaret as T
 from servicelib import application_keys  # pylint:disable=unused-import
 
 from . import (computation_config, db_config, email_config, rest_config,
-               storage_config, session_config)
+               session_config, storage_config)
 from .director import config as director_config
 from .login import config as login_config
 from .projects import config as projects_config
@@ -32,18 +32,18 @@ from .resources import resources
 log = logging.getLogger(__name__)
 
 
-def addon_section(name, optional=False):
+def addon_section(name: str, optional: bool=False) -> T.Key:
     if optional:
         return T.Key(name, default=dict(enabled=True), optional=optional)
     return T.Key(name)
 
-def minimal_addon_schema():
+def minimal_addon_schema() -> T.Dict:
     return T.Dict({
             T.Key("enabled", default=True, optional=True): T.Bool()
         })
 
 
-def create_schema():
+def create_schema() -> T.Dict:
     """
         Build schema for the configuration's file
         by aggregating all the subsystem configurations
