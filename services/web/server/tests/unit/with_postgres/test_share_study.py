@@ -78,7 +78,6 @@ async def user_project(client, fake_project, logged_user):
 
 
 @pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.USER, web.HTTPOk)
 ])
 async def test_get_shared(client, logged_user, user_project, expected):
@@ -97,7 +96,6 @@ async def test_get_shared(client, logged_user, user_project, expected):
 
 
 @pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.USER, web.HTTPOk)
 ])
 async def test_get_shared_study_with_token(client, logged_user, user_project, expected):
