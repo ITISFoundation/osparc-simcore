@@ -92,7 +92,7 @@ async def test_get_shared(client, logged_user, user_project):
     assert type(data.get('copyObject')) is dict
 
 
-async def test_get_shared_study_id_with_token(client, logged_user, user_project):
+async def test_get_shared_study_with_token(client, logged_user, user_project):
     study_id = user_project["uuid"]
     url = API_PREFIX + "/share/study/" + study_id
     resp = await client.get(url)
