@@ -1,5 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
+import json
 import logging
 import uuid
 import random
@@ -56,16 +57,17 @@ async def get_shared_study(request: web.Request) -> web.Response:
         token_id = request.match_info.get("token_id", None)
         if token_id is None:
             raise web.HTTPBadRequest
-        return token_id
+        redirect = True
+        if request.query.get("redirect") in ['false', 'False']:
+            redirect = False
+        return token_id, redirect
 
     user_id = request[RQT_USERID_KEY]
 
-    token_id = await _process_request(request)
+    token_id, redirect = await _process_request(request)
 
     if "copy-" in token_id:
         pass
-    elif "share-" in token_id:
-        raise RuntimeError("Sharing feature not implemented yet.")
     else:
         raise RuntimeError("No operation found in token.")
 
@@ -85,10 +87,14 @@ async def get_shared_study(request: web.Request) -> web.Response:
     await db.add_project(new_study, user_id, force_project_uuid=True)
     logger.debug("Study %s copied", new_study_id)
 
-    try:
-        redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/shared/study/{}".format(new_study_id))
-    except KeyError:
-        raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
+    if redirect:
+        try:
+            redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/shared/study/{}".format(new_study_id))
+        except KeyError:
+            raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
 
-    response = web.HTTPFound(location=redirect_url)
-    raise response
+        response = web.HTTPFound(location=redirect_url)
+    else:
+        response = {'data': new_study_id}
+
+    return response

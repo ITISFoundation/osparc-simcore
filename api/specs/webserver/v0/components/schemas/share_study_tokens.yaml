@@ -28,3 +28,19 @@ ShareStudyTokensEnveloped:
     error:
       nullable: true
       default: null
+
+
+SharedStudyId:
+  description: study id of the generated study
+  type: string
+
+SharedStudyIdEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/SharedStudyId'
+    error:
+      nullable: true
+      default: null

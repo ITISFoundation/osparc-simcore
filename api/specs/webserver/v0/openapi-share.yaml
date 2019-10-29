@@ -30,8 +30,14 @@ paths:
       parameters:
         - $ref: './openapi-share.yaml#/components/parameters/TokenId'
       responses:
+        '200':
+          description: new study_id
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/share_study_tokens.yaml#/SharedStudyIdEnveloped'
         '302':
-          description: url to be rediricted to containing the study ID that was copied/shared
+          description: url to be redirected to containing the study ID that was copied/shared
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 

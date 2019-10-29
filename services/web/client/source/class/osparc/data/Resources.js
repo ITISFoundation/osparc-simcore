@@ -131,6 +131,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      sharedStudy: {
+        usesCache: false,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/shared/study/{token_id}?redirect=False"
+          }
+        }
+      },
       /*
        * CONFIG
        */
