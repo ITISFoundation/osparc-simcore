@@ -87,6 +87,22 @@ async def test_get_shared(client, logged_user, user_project):
     resp = await client.get(url)
     data, _errors = await assert_status(resp, web.HTTPOk)
 
-    assert study_id in data.get('copyLink')
-    assert study_id in data.get('copyToken')
+    assert link in data.get('copyLink')
+    assert token in data.get('copyToken')
     assert type(data.get('copyObject')) is dict
+
+
+async def test_get_shared_study_with_token(client, logged_user, user_project):
+    study_id = user_project["uuid"]
+    url = API_PREFIX + "/share/study/" + study_id
+    resp = await client.get(url)
+    data, _errors = await assert_status(resp, web.HTTPOk)
+
+    token = data.get('copyToken')
+    url = API_PREFIX + "/shared/study/" + token
+    assert url
+
+    resp = await client.get(url)
+    data, _errors = await assert_status(resp, web.HTTPOk)
+
+    assert data
