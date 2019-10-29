@@ -77,7 +77,11 @@ async def user_project(client, fake_project, logged_user):
         print("<----- removed project", project["name"])
 
 
-async def test_get_shared(client, logged_user, user_project):
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.USER, web.HTTPOk)
+])
+async def test_get_shared(client, logged_user, user_project, expected):
     study_id = user_project["uuid"]
     assert study_id
 
@@ -85,14 +89,18 @@ async def test_get_shared(client, logged_user, user_project):
     assert url
 
     resp = await client.get(url)
-    data, _errors = await assert_status(resp, web.HTTPOk)
+    data, _errors = await assert_status(resp, expected)
 
     assert study_id in data.get('copyLink')
     assert study_id in data.get('copyToken')
     assert type(data.get('copyObject')) is dict
 
 
-async def test_get_shared_study_with_token(client, logged_user, user_project):
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.USER, web.HTTPOk)
+])
+async def test_get_shared_study_with_token(client, logged_user, user_project, expected):
     study_id = user_project["uuid"]
     url = API_PREFIX + "/share/study/" + study_id
     resp = await client.get(url)

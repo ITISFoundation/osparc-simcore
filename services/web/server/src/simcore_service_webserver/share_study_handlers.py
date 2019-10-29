@@ -64,8 +64,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
 
     source_study_user_id = token_id.split("copy-",1)[1]
     data = source_study_user_id.split("_")
-    source_study_id = data[0]
-    source_user_id =  data[1]
+    source_study_id, source_user_id = data
 
     source_study = await get_project_for_user(request, source_study_id, source_user_id)
 
