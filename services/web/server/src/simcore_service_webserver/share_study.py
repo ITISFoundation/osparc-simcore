@@ -26,11 +26,13 @@ def setup(app: web.Application, debug=False):
         logger.warning("rest submodule not initialised? share routes will not be defined!")
         return
     specs = app[APP_OPENAPI_SPECS_KEY]
-    
+
     # routes
     routes = create_routes_from_namespace(specs, share_study_handlers, strict=False)
 
     app.router.add_routes(routes)
+
+    return True
 
 # alias
 setup_share_study = setup
