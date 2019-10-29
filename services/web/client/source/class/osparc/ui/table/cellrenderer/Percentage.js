@@ -10,7 +10,19 @@ qx.Class.define("osparc.ui.table.cellrenderer.Percentage", {
 
   construct: function(color) {
     this.base(arguments, "center");
-    this.__color = color;
+    this.setColor(color);
+  },
+
+  properties: {
+    color: {
+      check: "String",
+      nullable: false
+    },
+    unit: {
+      check: "String",
+      nullable: false,
+      init: "%"
+    }
   },
 
   members: {
@@ -19,10 +31,15 @@ qx.Class.define("osparc.ui.table.cellrenderer.Percentage", {
       if (cellInfo.value == null || cellInfo.value < 0) { // eslint-disable-line no-eq-null
         return "";
       }
-      const height = typeof cellInfo.value === "number" ? cellInfo.value : 0;
+      const splitted = cellInfo.value.split("/");
+      const width = typeof parseFloat(splitted[0]) === "number" && splitted.length === 2 ? this._calculateWidthPercentage(splitted[0], splitted[1]) : 0;
       return "" +
-        `<div style="position: absolute; left: 0; right: 0;">${cellInfo.value}%</div>` +
-        `<div style="height: 100%; width: ${height}%; background-color: ${this.__color};"></div>`;
+        `<div style="position: absolute; left: 0; right: 0;">${splitted[0]} ${this.getUnit()}</div>` +
+        `<div style="height: 100%; width: ${width}%; background-color: ${this.getColor()};"></div>`;
+    },
+
+    _calculateWidthPercentage: function(value, limit) {
+      return (value / limit) * 100;
     }
   }
 });

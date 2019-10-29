@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import aiohttp
 from servicelib.request_keys import RQT_USERID_KEY
@@ -15,8 +16,9 @@ async def get_status(request: aiohttp.web.Request):
     
         user_id = request.get(RQT_USERID_KEY, -1)
 
-        cpu_query = 'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"}[30s]) * 100)'
-        memory_query = 'sum by (container_label_node_id) (container_memory_usage_bytes{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"} / 1000000)'
+        cpu_query = 'irate(container_cpu_usage_seconds_total{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"}[30s]) * 100'
+        memory_query = 'container_memory_usage_bytes{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"} / 1000000'
+        just_a_metric = 'container_cpu_user_seconds_total{container_label_node_id=~".+", container_label_user_id="' + str(user_id) + '"}'
         
         config = request.app['servicelib.application_keys.config']['activity']
         url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
@@ -34,9 +36,15 @@ async def get_status(request: aiohttp.web.Request):
         async def get_celery_reserved():
             return get_celery(request.app).control.inspect().reserved()
 
-        results = await asyncio.gather(get_cpu_usage(), get_memory_usage(), get_celery_reserved())
+        async def get_container_metric_for_labels():
+            async with session.get(url.with_query(query=just_a_metric)) as resp:
+                result = await resp.json()
+                return result
+
+        results = await asyncio.gather(get_cpu_usage(), get_memory_usage(), get_celery_reserved(), get_container_metric_for_labels())
         cpu_usage = results[0]['data']['result']
         mem_usage = results[1]['data']['result']
+        metric = results[3]['data']['result']
         celery_inspect = results[2]
 
         res = {}
@@ -60,6 +68,18 @@ async def get_status(request: aiohttp.web.Request):
                         'memUsage': usage
                     }
                 }
+
+        for node in metric:
+            limits = {
+                'cpus': 0,
+                'mem': 0
+            }
+            metric_labels = node['metric']
+            limits['cpus'] = float(metric_labels.get('container_label_nano_cpus', 0)) / pow(10, 9) # Nanocpus to cpus
+            limits['mem'] = float(metric_labels.get('container_label_mem_limit', 0)) / pow(1024, 2) # In MB
+            node_id = metric_labels.get('container_label_node_id')
+            res[node_id]['limits'] = limits
+
 
         for dummy_worker_id, worker in celery_inspect.items():
             for task in worker:

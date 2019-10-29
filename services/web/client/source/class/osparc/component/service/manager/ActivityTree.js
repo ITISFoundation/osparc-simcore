@@ -34,7 +34,9 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(2, 80);
 
     columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
-    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Unit("MB"));
+    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475").set({
+      unit: "MB"
+    }));
 
     this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE);
 
@@ -202,9 +204,10 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
               if (Object.keys(activity).includes(key)) {
                 const stats = activity[key].stats;
                 const queued = activity[key].queued;
+                const limits = activity[key].limits;
                 if (stats) {
-                  row[4] = stats.cpuUsage == null ? "- " : Math.round(stats.cpuUsage * 10) / 10; // eslint-disable-line no-eq-null
-                  row[5] = stats.memUsage == null ? "-" : Math.round(stats.memUsage * 10) / 10; // eslint-disable-line no-eq-null
+                  row[4] = stats.cpuUsage == null ? null : (Math.round(stats.cpuUsage * 10) / 10) + (limits.cpus ? `/${limits.cpus * 100}` : ""); // eslint-disable-line no-eq-null
+                  row[5] = stats.memUsage == null ? null : (Math.round(stats.memUsage * 10) / 10) + (limits.mem ? `/${limits.mem}` : ""); // eslint-disable-line no-eq-null
                   row[3] = this.tr("Running");
                 }
                 if (queued) {
