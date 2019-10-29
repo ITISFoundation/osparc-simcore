@@ -13,7 +13,7 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .abc import ServiceResolutionPolicy
 from .handlers import jupyter, paraview
@@ -30,7 +30,7 @@ async def _on_shutdown(app: web.Application):
     for ws in app[APP_SOCKETS_KEY]:
         await ws.close()
 
-@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+@app_module_setup(module_name, ModuleCategory.ADDON,
     logger=logger)
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """Sets up reverse-proxy subsystem in the application (a la aiohttp)

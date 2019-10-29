@@ -9,7 +9,7 @@ import aiohttp_jinja2
 import jinja_app_loader
 from aiohttp import web
 
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .email_config import CONFIG_SECTION_NAME
 from .resources import resources
@@ -20,7 +20,7 @@ from .resources import resources
 
 log = logging.getLogger(__name__)
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     config_section=CONFIG_SECTION_NAME,
     logger=log)
 def setup(app: web.Application, debug: bool=False):

@@ -13,7 +13,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib import openapi
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
@@ -39,7 +39,7 @@ async def get_specs(app, location):
 
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     depends=['simcore_service_webserver.security'],
     logger=log)
 def setup(app: web.Application):

@@ -12,7 +12,7 @@ from pathlib import Path
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import mark_as_module_setup, ModuleCategory
+from servicelib.application_setup import app_module_setup, ModuleCategory
 
 INDEX_RESOURCE_NAME = "statics.index"
 
@@ -44,7 +44,7 @@ async def index(request: web.Request):
 
 
 
-@mark_as_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
+@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
     # TODO: Should serving front-end ria be configurable?
     # Front-end Rich Interface Application (RIA)

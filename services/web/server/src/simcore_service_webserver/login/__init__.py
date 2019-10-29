@@ -10,7 +10,7 @@ import asyncpg
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from ..db import DSN
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
@@ -74,7 +74,7 @@ async def _setup_config_and_pgpool(app: web.Application):
 
 
 
-@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+@app_module_setup(module_name, ModuleCategory.ADDON,
     depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
     logger=log)
 def setup(app: web.Application):

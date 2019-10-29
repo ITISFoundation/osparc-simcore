@@ -17,7 +17,7 @@ from aiohttp import ClientSession, web
 from yarl import URL
 
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import unwrap_envelope
 
 from .director.config import APP_DIRECTOR_API_KEY
@@ -75,7 +75,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     depends=["simcore_service_webserver.director", ],
     logger=logger)
 def setup(app: web.Application):

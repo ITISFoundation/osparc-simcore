@@ -25,7 +25,7 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .session_config import CONFIG_SECTION_NAME
 
@@ -38,7 +38,7 @@ def generate_key():
     return secret_key
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+@app_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
 def setup_session(app: web.Application):
     """
         Inits and registers a session middleware in aiohttp.web.Application

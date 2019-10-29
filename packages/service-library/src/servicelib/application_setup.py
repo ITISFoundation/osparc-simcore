@@ -22,7 +22,7 @@ class AppSetupBaseError(Exception):
 class DependencyError(AppSetupBaseError):
     pass
 
-def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
+def app_module_setup(module_name: str, category: ModuleCategory,*,
         depends: Optional[List[str]]=None,
         config_section: str=None, config_enabled: str=None,
         logger: Optional[logging.Logger]=None
@@ -47,9 +47,9 @@ def mark_as_module_setup(module_name: str, category: ModuleCategory,*,
     :rtype: bool
 
     :Example:
-        from servicelib.application_setup import mark_as_module_setup
+        from servicelib.application_setup import app_module_setup
 
-        @mark_as_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
+        @app_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
         def setup(app: web.Application):
             ...
     """

@@ -9,7 +9,7 @@ from aiohttp import ClientSession, web
 from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 module_name = __name__.replace(".__init__", "")
 
-@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+@app_module_setup(module_name, ModuleCategory.ADDON,
     depends=[],
     logger=logger)
 def setup(app: web.Application,* , disable_login=False):

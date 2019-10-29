@@ -9,7 +9,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
-from servicelib.application_setup import mark_as_module_setup, ModuleCategory
+from servicelib.application_setup import app_module_setup, ModuleCategory
 
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
@@ -32,7 +32,7 @@ from .users import setup_users
 log = logging.getLogger(__name__)
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     config_enabled="main.monitoring_enabled",
     logger=log)
 def setup_app_monitoring(app: web.Application):

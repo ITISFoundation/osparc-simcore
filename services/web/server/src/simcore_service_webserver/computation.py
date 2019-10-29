@@ -10,7 +10,7 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (iter_path_operations,
                                      map_handlers_with_operations)
 
@@ -22,7 +22,7 @@ from .computation_config import CONFIG_SECTION_NAME
 log = logging.getLogger(__file__)
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     config_section=CONFIG_SECTION_NAME,
     logger=log)
 def setup(app: web.Application):

@@ -12,7 +12,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.application_keys import (APP_CONFIG_KEY,
                                          APP_JSONSCHEMA_SPECS_KEY)
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.jsonschema_specs import create_jsonschema_specs
 from servicelib.rest_routing import (get_handlers_from_namespace,
@@ -63,7 +63,7 @@ async def _get_specs(app, location):
     return specs
 
 
-@mark_as_module_setup(module_name, ModuleCategory.ADDON,
+@app_module_setup(module_name, ModuleCategory.ADDON,
     depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
     logger=logger)
 def setup(app: web.Application, *, enable_fake_data=False) -> bool:

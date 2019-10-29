@@ -10,12 +10,12 @@ from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from . import storage_routes
 from .storage_config import get_config
 
-from servicelib.application_setup import mark_as_module_setup,ModuleCategory
+from servicelib.application_setup import app_module_setup,ModuleCategory
 
 log = logging.getLogger(__name__)
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
 

@@ -11,27 +11,27 @@ import pytest
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import mark_as_module_setup, ModuleCategory, DependencyError, APP_SETUP_KEY
+from servicelib.application_setup import app_module_setup, ModuleCategory, DependencyError, APP_SETUP_KEY
 
 log = logging.getLogger(__name__)
 
 
-@mark_as_module_setup("package.bar", ModuleCategory.ADDON, logger=log)
+@app_module_setup("package.bar", ModuleCategory.ADDON, logger=log)
 def setup_bar(app: web.Application, arg1, kargs=55):
     return True
 
-@mark_as_module_setup("package.foo", ModuleCategory.ADDON, logger=log)
+@app_module_setup("package.foo", ModuleCategory.ADDON, logger=log)
 def setup_foo(app: web.Application, arg1, kargs=33):
     return True
 
-@mark_as_module_setup("package.zee", ModuleCategory.ADDON,
+@app_module_setup("package.zee", ModuleCategory.ADDON,
     config_enabled="main.zee_enabled",
     logger=log)
 def setup_zee(app: web.Application, arg1, kargs=55):
     return True
 
 
-@mark_as_module_setup("package.needs_foo", ModuleCategory.SYSTEM,
+@app_module_setup("package.needs_foo", ModuleCategory.SYSTEM,
     depends=['package.foo',], logger=log)
 def setup_needs_foo(app: web.Application, arg1, kargs=55):
     return True

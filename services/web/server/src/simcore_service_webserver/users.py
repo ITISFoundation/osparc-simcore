@@ -5,7 +5,7 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
@@ -15,7 +15,7 @@ from .rest_config import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     depends=['simcore_service_webserver.rest'],
     logger=logger)
 def setup(app: web.Application):

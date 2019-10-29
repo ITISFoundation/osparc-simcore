@@ -18,7 +18,7 @@ from typing import Dict
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import ModuleCategory, mark_as_module_setup
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .login.decorators import login_required
 from .security_api import is_anonymous, remember
@@ -178,7 +178,7 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-@mark_as_module_setup(__name__, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     logger=log)
 def setup(app: web.Application):
 
