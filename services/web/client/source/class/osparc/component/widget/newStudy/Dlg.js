@@ -66,7 +66,8 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
   },
 
   events: {
-    "createStudy": "qx.event.type.Data"
+    "createStudy": "qx.event.type.Data",
+    "autoloadStudy": "qx.event.type.Data"
   },
 
   members: {
@@ -87,11 +88,11 @@ qx.Class.define("osparc.component.widget.newStudy.Dlg", {
     },
 
     __getWithToken: function() {
-      const newBlankStudy = new osparc.component.widget.newStudy.WithToken();
-      newBlankStudy.addListener("createStudy", e => {
-        this.fireDataEvent("createStudy", e.getData());
+      const newWithTokenStudy = new osparc.component.widget.newStudy.WithToken();
+      newWithTokenStudy.addListener("autoloadStudy", e => {
+        this.fireDataEvent("autoloadStudy", e.getData());
       }, this);
-      return newBlankStudy;
+      return newWithTokenStudy;
     }
   }
 });

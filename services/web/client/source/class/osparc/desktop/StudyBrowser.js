@@ -72,22 +72,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__createStudiesLayout();
         this.__attachEventHandlers();
         if (loadStudyId) {
-          const params = {
-            url: {
-              "project_id": loadStudyId
-            }
-          };
-          osparc.data.Resources.getOne("studies", params, loadStudyId)
-            .then(studyData => {
-              this.__startStudy(studyData);
-            })
-            .catch(err => {
-              if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
-                // If guest fails to load study, log him out
-                osparc.auth.Manager.getInstance().logout();
-              }
-              console.error(err);
-            });
+          this.__autoloadStudy(loadStudyId);
         }
       }
     }, this);
@@ -316,6 +301,11 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__createStudy(minStudyData, data.prjTemplateId);
         win.close();
       }, this);
+      newStudyDlg.addListenerOnce("autoloadStudy", e => {
+        const studyId = e.getData();
+        this.__autoloadStudy(studyId);
+        win.close();
+      }, this);
       win.add(newStudyDlg);
       win.open();
       win.addListener("close", () => {
@@ -350,6 +340,25 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
             console.error(err);
           });
       }
+    },
+
+    __autoloadStudy: function(loadStudyId) {
+      const params = {
+        url: {
+          "project_id": loadStudyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params, loadStudyId)
+        .then(studyData => {
+          this.__startStudy(studyData);
+        })
+        .catch(err => {
+          if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
+            // If guest fails to load study, log him out
+            osparc.auth.Manager.getInstance().logout();
+          }
+          console.error(err);
+        });
     },
 
     __startStudy: function(studyData) {
