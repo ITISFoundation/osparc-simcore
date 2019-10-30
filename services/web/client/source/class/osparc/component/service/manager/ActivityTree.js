@@ -297,7 +297,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
         this.setAlwaysUpdate(false);
       }, this);
       this.addListener("appear", () => {
-        this.setAlwaysUpdate(true);
+        this.resetAlwaysUpdate(true);
       }, this);
     }
   }
