@@ -16,9 +16,7 @@ CONFIG_SECTION_NAME = "share_study"
 
 logger = logging.getLogger(__name__)
 
-def setup(app: web.Application, debug=False):
-    logger.debug("Setting up %s %s...", __name__, "[debug]" if debug else "")
-
+def setup(app: web.Application):
     assert CONFIG_SECTION_NAME not in app[APP_CONFIG_KEY], "Not section for the moment"
 
     if not APP_OPENAPI_SPECS_KEY in app:

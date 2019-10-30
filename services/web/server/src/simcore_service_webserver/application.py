@@ -70,7 +70,7 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_projects(app) # needs storage
     setup_studies_access(app)
-    setup_share_study(app, debug=testing)
+    setup_share_study(app)
     setup_app_proxy(app) # TODO: under development!!!
 
     return app
