@@ -6,15 +6,15 @@ import logging
 
 from aiohttp import web
 
-from .sockets_handlers import sio
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from .sockets_handlers import sio
 
 log = logging.getLogger(__name__)
 
 
+@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
-    log.debug("Setting up %s ...", __name__)
-
     sio.attach(app)
 
 

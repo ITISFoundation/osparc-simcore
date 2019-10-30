@@ -29,6 +29,9 @@ from simcore_service_webserver.resources import resources as app_resources
 
 logger = logging.getLogger(__name__)
 
+# mute noisy loggers
+logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # Maximum time expected for booting core services
 MAX_BOOT_TIME_SECS = 20

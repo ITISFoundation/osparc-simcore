@@ -10,12 +10,13 @@ import asyncpg
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from ..db import DSN
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
-from ..rest_config import CONFIG_SECTION_NAME as REST_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+from ..rest_config import CONFIG_SECTION_NAME as REST_SECTION
 from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
 from .config import CONFIG_SECTION_NAME
@@ -23,6 +24,7 @@ from .routes import create_routes
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
+module_name = __name__.replace(".__init__", "")
 
 TIMEOUT_SECS = 5
 
@@ -72,15 +74,15 @@ async def _setup_config_and_pgpool(app: web.Application):
 
 
 
+@app_module_setup(module_name, ModuleCategory.ADDON,
+    depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
+    logger=log)
 def setup(app: web.Application):
     """ Setting up subsystem in application
 
     :param app: main application
     :type app: web.Application
     """
-
-    log.debug("Setting up %s ...", __name__)
-
     assert REST_SECTION in app[APP_CONFIG_KEY]
     assert SMTP_SECTION in app[APP_CONFIG_KEY]
     assert DB_SECTION in app[APP_CONFIG_KEY]
@@ -89,7 +91,7 @@ def setup(app: web.Application):
     enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )
     if not enabled:
         log.warning("Disabling '%s' since %s or %s were explictily disabled in config", __name__, SMTP_SECTION, DB_SECTION)
-        return
+        return False
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -98,6 +100,7 @@ def setup(app: web.Application):
 
     # signals
     app.cleanup_ctx.append(_setup_config_and_pgpool)
+    return True
 
 
 # alias

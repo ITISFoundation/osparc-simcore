@@ -1,27 +1,24 @@
 """ users management subsystem
 
-
 """
-
 import logging
 
 from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations, get_handlers_from_namespace
+from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.rest_routing import (get_handlers_from_namespace,
+                                     iter_path_operations,
+                                     map_handlers_with_operations)
 
 from . import users_handlers
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
-CONFIG_SECTION_NAME = "users"
-
-
 logger = logging.getLogger(__name__)
 
-def setup(app: web.Application, *, debug=False):
-    logger.debug("Setting up %s %s...", __name__, "[debug]" if debug else "")
-
-    assert CONFIG_SECTION_NAME not in app[APP_CONFIG_KEY], "Not section for the moment"
+@app_module_setup(__name__, ModuleCategory.ADDON,
+    depends=['simcore_service_webserver.rest'],
+    logger=logger)
+def setup(app: web.Application):
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]

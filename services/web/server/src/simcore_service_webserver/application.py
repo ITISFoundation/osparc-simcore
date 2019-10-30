@@ -6,9 +6,10 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.client_session import persistent_client_session
+
+from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
+from servicelib.application_setup import app_module_setup, ModuleCategory
 
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
@@ -28,37 +29,37 @@ from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .users import setup_users
 
+
 log = logging.getLogger(__name__)
 
+
+@app_module_setup(__name__, ModuleCategory.ADDON,
+    config_enabled="main.monitoring_enabled",
+    logger=log)
+def setup_app_monitoring(app: web.Application):
+    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
+    # TODO: move option to section?
+    return setup_monitoring(app, "simcore_service_webserver")
 
 
 def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
-    log.debug("Initializing app ... ")
-
-    app = web.Application()
-    app[APP_CONFIG_KEY] = config
-
-    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
-    app.cleanup_ctx.append(persistent_client_session)
-
-    log.debug("Config:\n%s",
+    log.debug("Initializing app with config:\n%s",
         json.dumps(config, indent=2, sort_keys=True))
 
-    testing = config["main"].get("testing", False)
-    monitoring = config["main"]["monitoring_enabled"]
-    # TODO: create dependency mechanism and compute setup order
+    app = create_safe_application(config)
 
-    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
-    if monitoring:
-        setup_monitoring(app, "simcore_service_webserver")
+    # testing = config["main"].get("testing", False)
+
+    # TODO: create dependency mechanism and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+    setup_app_monitoring(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=testing)
+    setup_rest(app)
     setup_email(app)
     setup_computation(app)
     setup_sockets(app)
@@ -70,9 +71,7 @@ def create_application(config: Dict) -> web.Application:
     setup_projects(app) # needs storage
     setup_studies_access(app)
     setup_share_study(app, debug=testing)
-
-    if config['director']["enabled"]:
-        setup_app_proxy(app) # TODO: under development!!!
+    setup_app_proxy(app) # TODO: under development!!!
 
     return app
 

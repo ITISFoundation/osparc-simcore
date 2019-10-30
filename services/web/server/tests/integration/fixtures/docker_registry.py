@@ -55,9 +55,13 @@ def _wait_till_registry_is_responsive(url):
     docker_client.login(registry=url, username="simcore")
     return True
 
+
 #pull from itisfoundation/sleeper and push into local registry
 @pytest.fixture(scope="session")
-def sleeper_service(docker_registry):
+def sleeper_service(docker_registry) -> str:
+    """ Adds a itisfoundation/sleeper in docker registry
+
+    """
     client = docker.from_env()
     image = client.images.pull("itisfoundation/sleeper", tag="1.0.0")
     assert not image is None
@@ -66,4 +70,30 @@ def sleeper_service(docker_registry):
     client.images.push(repo)
     image = client.images.pull(repo)
     assert image
+    yield repo
+
+@pytest.fixture(scope="session")
+def jupyter_service(docker_registry) -> str:
+    """ Adds a itisfoundation/jupyter-base-notebook in docker registry
+
+    """
+    client = docker.from_env()
+
+    # TODO: cleanup
+
+    # pull from dockerhub
+    reponame, tag = "itisfoundation/jupyter-base-notebook:2.13.0".split(":")
+    image = client.images.pull(reponame, tag=tag)
+    assert not image is None
+
+    # push to fixture registry (services/{dynamic|comp})
+    image_name = reponame.split("/")[-1]
+    repo = f"{docker_registry}/simcore/services/dynamic/{image_name}:{tag}"
+    assert image.tag(repo) == True
+    client.images.push(repo)
+
+    # check
+    image = client.images.pull(repo)
+    assert image
+
     yield repo
