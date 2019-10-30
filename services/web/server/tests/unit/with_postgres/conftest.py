@@ -14,6 +14,7 @@ import json
 import os
 import sys
 from asyncio import Future
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict
 
@@ -31,6 +32,7 @@ from simcore_service_webserver.db_models import confirmations, metadata, users
 
 tests_folder = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent.parent
 sys.path.append(str(tests_folder/ 'helpers'))
+
 
 @pytest.fixture(scope="session")
 def here():
@@ -59,7 +61,8 @@ def osparc_simcore_root_dir(here):
     return root_dir
 
 @pytest.fixture(scope="session")
-def app_cfg(here, osparc_simcore_root_dir):
+def default_app_cfg(here, osparc_simcore_root_dir):
+    # NOTE: ONLY used at the session scopes
     cfg_path = here / "config.yaml"
     assert cfg_path.exists()
 
@@ -70,16 +73,31 @@ def app_cfg(here, osparc_simcore_root_dir):
 
     # validates and fills all defaults/optional entries that normal load would not do
     cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
+
+    # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
+    # FIXME:  free cfg_dict but deepcopy shall be r/w
     return cfg_dict
 
 
+@pytest.fixture(scope="function")
+def app_cfg(default_app_cfg, aiohttp_unused_port):
+    cfg = deepcopy(default_app_cfg)
+
+    # fills ports on the fly
+    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["storage"]["port"] = aiohttp_unused_port()
+
+    # this fixture can be safely modified during test since it is renovated on every call
+    return cfg
+
+
 @pytest.fixture(scope='session')
-def docker_compose_file(here, app_cfg):
+def docker_compose_file(here, default_app_cfg):
     """ Overrides pytest-docker fixture
     """
     old = os.environ.copy()
 
-    cfg = app_cfg["db"]["postgres"]
+    cfg = deepcopy(default_app_cfg["db"]["postgres"])
 
     # docker-compose reads these environs
     os.environ['TEST_POSTGRES_DB']=cfg['database']
@@ -93,10 +111,9 @@ def docker_compose_file(here, app_cfg):
 
     os.environ = old
 
-
 @pytest.fixture(scope='session')
-def postgres_service(docker_services, docker_ip, app_cfg):
-    cfg = app_cfg["db"]["postgres"]
+def postgres_service(docker_services, docker_ip, default_app_cfg):
+    cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg['host'] = docker_ip
     cfg['port'] = docker_services.port_for('postgres', 5432)
 
@@ -130,12 +147,10 @@ def postgres_db(app_cfg, postgres_service):
 
 
 @pytest.fixture
-def server(loop, aiohttp_server, app_cfg, monkeypatch, aiohttp_unused_port, postgres_db): #pylint: disable=R0913
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
-
+def server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db): #pylint: disable=R0913
     app = create_application(app_cfg)
     path_mail(monkeypatch)
-    server = loop.run_until_complete( aiohttp_server(app, port=port) )
+    server = loop.run_until_complete( aiohttp_server(app, port=app_cfg["main"]["port"]) )
     return server
 
 

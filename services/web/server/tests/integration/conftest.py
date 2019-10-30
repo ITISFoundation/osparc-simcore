@@ -5,7 +5,6 @@
 
 import logging
 import sys
-from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -32,6 +31,10 @@ pytest_plugins = [
 ]
 
 log = logging.getLogger(__name__)
+
+# mute noisy loggers
+logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
 API_VERSION = "v0"
