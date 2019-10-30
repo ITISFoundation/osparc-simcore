@@ -12,6 +12,7 @@ import yaml
 from aiohttp import web
 
 import simcore_service_webserver
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
@@ -36,9 +37,10 @@ def spec_dict(openapi_path):
         spec_dict = yaml.safe_load(f)
     return spec_dict
 
+
 @pytest.fixture
 def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
-    app = web.Application()
+    app = create_safe_application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
     # fake config
@@ -46,12 +48,13 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
         "main": server_kwargs,
         "rest": {
             "version": "v0",
-            "location": str(api_specs_dir / "v0" / "openapi.yaml")
+            "location": str(api_specs_dir / "v0" / "openapi.yaml"),
+            "enabled": True
         }
     }
     # activates only security+restAPI sub-modules
     setup_security(app)
-    setup_rest(app, debug=True)
+    setup_rest(app)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli

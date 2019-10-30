@@ -7,13 +7,13 @@
 """
 import asyncio
 import logging
-#from copy import deepcopy
 
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib import openapi
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
@@ -38,10 +38,11 @@ async def get_specs(app, location):
     return specs
 
 
-def setup(app: web.Application, *, debug=False):
-    log.debug("Setting up %s %s...", __name__, "[DEBUG]" if debug else "")
 
-    # main_cfg = app[APP_CONFIG_KEY]["main"]
+@app_module_setup(__name__, ModuleCategory.ADDON,
+    depends=['simcore_service_webserver.security'],
+    logger=log)
+def setup(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     try:
