@@ -1,7 +1,6 @@
 import asyncio
 
 import aiohttp
-from application_setup import get_client
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
@@ -17,9 +16,9 @@ async def get_status(request: aiohttp.web.Request):
 
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    cpu_query = f'irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{str(user_id)}"}}[20s]) * 100'
-    memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{str(user_id)}"}} / 1000000'
-    just_a_metric = f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{str(user_id)}"}}'
+    cpu_query = f'irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s]) * 100'
+    memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
+    just_a_metric = f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}'
     
     config = request.app['servicelib.application_keys.config']['activity']
     url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
