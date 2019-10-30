@@ -50,7 +50,7 @@ async def get_status(request: aiohttp.web.Request):
     res = {}
     for node in cpu_usage:
         node_id = node['metric']['container_label_node_id']
-        usage = node['value'][1]
+        usage = float(node['value'][1])
         res[node_id] = {
             'stats': {
                 'cpuUsage': usage
@@ -59,7 +59,7 @@ async def get_status(request: aiohttp.web.Request):
 
     for node in mem_usage:
         node_id = node['metric']['container_label_node_id']
-        usage = node['value'][1]
+        usage = float(node['value'][1])
         if node_id in res:
             res[node_id]['stats']['memUsage'] = usage
         else:
