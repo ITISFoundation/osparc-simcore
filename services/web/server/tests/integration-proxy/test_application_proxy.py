@@ -4,24 +4,22 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
+
 import pytest
 import yaml
 from aiohttp import web
 from yarl import URL
-import asyncio
-
 
 import simcore_service_webserver.reverse_proxy.handlers.jupyter as rp_jupyter
 import simcore_service_webserver.reverse_proxy.handlers.paraview as rp_paraview
+from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.application import (APP_CONFIG_KEY,
-                                                   setup_app_proxy,
+from simcore_service_webserver.application import (setup_app_proxy,
                                                    setup_director, setup_rest)
 from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
 
-
 API_VERSION = 'v0'
-
 @pytest.fixture
 #def webserver_service(loop, app_config, director_service, aiohttp_unused_port, aiohttp_server, here):
 #def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, here):
@@ -42,10 +40,9 @@ def webserver_service(docker_stack, loop, app_config, aiohttp_unused_port, aioht
         yaml.dump(app_config, f, default_flow_style=False)
 
     # app
-    app = web.Application()
-    app[APP_CONFIG_KEY] = app_config
+    app = create_safe_application(app_config)
 
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_director(app, disable_login=True)
     setup_app_proxy(app) # <-----------|UNDER TEST
 

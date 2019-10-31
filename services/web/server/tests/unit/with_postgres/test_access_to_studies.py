@@ -8,6 +8,7 @@
 # pylint:disable=redefined-outer-name
 
 import textwrap
+from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -16,6 +17,7 @@ import pytest
 from aiohttp import web
 
 import simcore_service_webserver.statics
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import studies_access
@@ -31,8 +33,6 @@ from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
 from utils_login import LoggedUser, UserRole
 from utils_projects import NewProject, delete_all_projects
-from copy import deepcopy
-
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
@@ -60,24 +60,25 @@ def qx_client_outdir(tmpdir, mocker):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service, qx_client_outdir, monkeypatch):
-#def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, qx_client_outdir, monkeypatch): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+def client(loop, aiohttp_client, app_cfg, postgres_service, qx_client_outdir, monkeypatch):
+#def client(loop, aiohttp_client, app_cfg, qx_client_outdir, monkeypatch): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+    cfg = deepcopy(app_cfg)
 
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
-    app_cfg['main']['host'] = '127.0.0.1'
+    port = cfg["main"]["port"]
+    cfg['main']['host'] = '127.0.0.1'
 
-    app_cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
-    app_cfg['projects']['enabled'] = True
-    app_cfg['storage']['enabled'] = False
-    app_cfg['rabbit']['enabled'] = False
+    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg['projects']['enabled'] = True
+    cfg['storage']['enabled'] = False
+    cfg['rabbit']['enabled'] = False
 
-    app = web.Application()
-    app[APP_CONFIG_KEY] = app_cfg
+    app = create_safe_application(cfg)
+
     setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True) # TODO: why should we need this??
+    setup_rest(app) # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
     assert setup_projects(app), "Shall not skip this setup"

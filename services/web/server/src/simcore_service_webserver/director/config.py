@@ -7,10 +7,9 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_CLIENT_SESSION_KEY
 from yarl import URL
 
-APP_DIRECTOR_SESSION_KEY = __name__ + ".director_session"
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
 CONFIG_SECTION_NAME = 'director'
@@ -32,4 +31,4 @@ def get_config(app: web.Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
 def get_client_session(app: web.Application) -> ClientSession:
-    return app[APP_DIRECTOR_SESSION_KEY]
+    return app[APP_CLIENT_SESSION_KEY]

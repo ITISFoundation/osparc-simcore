@@ -7,11 +7,13 @@ import asyncio
 import logging
 from pprint import pformat
 
-from aiohttp import web
+from aiohttp import ClientSession, web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.application_keys import (APP_CONFIG_KEY,
                                          APP_JSONSCHEMA_SPECS_KEY)
+from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.client_session import get_client_session
 from servicelib.jsonschema_specs import create_jsonschema_specs
 from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
@@ -29,6 +31,7 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 logger = logging.getLogger(__name__)
+module_name = __name__.replace(".__init__", "")
 
 def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
     """
@@ -54,12 +57,15 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
 @retry( wait=wait_fixed(RETRY_WAIT_SECS),
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(logger, logging.INFO) )
-async def _get_specs(location):
-    specs = await create_jsonschema_specs(location)
+async def _get_specs(app, location):
+    session = get_client_session(app)
+    specs = await create_jsonschema_specs(location, session)
     return specs
 
 
-
+@app_module_setup(module_name, ModuleCategory.ADDON,
+    depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
+    logger=logger)
 def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     """
 
@@ -70,15 +76,7 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     :return: False if setup skips (e.g. explicitly disabled in config), otherwise True
     :rtype: bool
     """
-    logger.debug("Setting up %s ...", __name__)
-
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], \
-        "{} is missing from configuration".format(CONFIG_SECTION_NAME)
-
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    if "enabled" in cfg and not cfg["enabled"]:
-        logger.warning("'%s' explicitly disabled in config", __name__)
-        return False
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -89,7 +87,6 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     # database API
     setup_projects_db(app)
 
-
     routes = _create_routes("/projects", projects_handlers, specs)
     app.router.add_routes(routes)
 
@@ -99,7 +96,8 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     # json-schemas for projects datasets
     project_schema_location = cfg['location']
     loop = asyncio.get_event_loop()
-    specs = loop.run_until_complete( _get_specs(project_schema_location) )
+    specs = loop.run_until_complete( _get_specs(app, project_schema_location) )
+
     if APP_JSONSCHEMA_SPECS_KEY in app:
         app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = specs
     else:

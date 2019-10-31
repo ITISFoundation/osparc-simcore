@@ -1,0 +1,51 @@
+# This config shall not be used alone but after docker-compose.yml
+#
+# NOTES:
+# - Overrides docker-compose.yml config when deploying services locally
+# - Should not introduce a substantial different with respect the configuration deployed
+# - Added ports to enforce they are published in the swarm (e.g. for integration testing).
+# - sidecar cannot publish port with ingress mode since it can't be used with dnsrr mode
+# - Port bindings "300X:3000" reserved for remote debugging
+#   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
+#   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
+#
+version: "3.7"
+services:
+
+  apihub:
+    ports:
+      - "8043"
+
+  director:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "8080"
+      - "3004:3000"
+    # TODO: disable all pdb-debug modes if not used !!!
+    #stdin_open: true
+    #tty: true
+
+  storage:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "8080"
+      - "3003:3000"
+
+  webserver:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - ${SIMCORE_PORT:-9081}:8080
+      - "3001:3000"
+
+  postgres:
+    ports:
+      - "5432"
+
+  rabbit:
+    ports:
+      - "5672"
+      - "15672"
+      - "15692"

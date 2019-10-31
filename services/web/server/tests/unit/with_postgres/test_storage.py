@@ -2,11 +2,14 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import logging
+from copy import deepcopy
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
 
+from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
 from simcore_service_webserver.security_roles import UserRole
@@ -15,13 +18,13 @@ from utils_login import LoggedUser
 
 API_VERSION = "v0"
 
+
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
+def storage_server(loop, aiohttp_server, app_cfg):
     cfg = app_cfg["storage"]
-    cfg['port']= aiohttp_unused_port()
+    app = create_safe_application(cfg)
 
-    app = web.Application()
     async def _get_locs(request: web.Request):
         assert not request.has_body
 
@@ -86,13 +89,14 @@ def storage_server(loop, aiohttp_server, app_cfg, aiohttp_unused_port):
             'data': [{"dataset_id": "asdf", "display_name" : "bbb"}, ]
         })
 
-    version = cfg['version']
+    storage_api_version = cfg['version']
+    assert storage_api_version != API_VERSION, "backend service w/ different version as webserver entrypoint"
 
-    app.router.add_get("/%s/locations" % version, _get_locs)
-    app.router.add_get("/%s/locations/0/files/{file_id}/metadata" % version, _get_filemeta)
-    app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
-    app.router.add_get("/%s/locations/0/datasets" % version, _get_datasets)
-    app.router.add_get("/%s/locations/0/datasets/{dataset_id}/metadata" % version, _get_datasets_meta)
+    app.router.add_get(f"/{storage_api_version}/locations" , _get_locs)
+    app.router.add_get(f"/{storage_api_version}/locations/0/files/{{file_id}}/metadata", _get_filemeta)
+    app.router.add_get(f"/{storage_api_version}/locations/0/files/metadata", _get_filtered_list)
+    app.router.add_get(f"/{storage_api_version}/locations/0/datasets", _get_datasets)
+    app.router.add_get(f"/{storage_api_version}/locations/0/datasets/{{dataset_id}}/metadata", _get_datasets_meta)
 
     assert cfg['host']=='localhost'
 

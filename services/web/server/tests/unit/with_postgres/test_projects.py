@@ -16,6 +16,7 @@ import pytest
 from aiohttp import web
 from yarl import URL
 
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
@@ -36,22 +37,22 @@ API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service):
-#def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
-    app = web.Application()
+def client(loop, aiohttp_client, app_cfg, postgres_service):
+#def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
-    port = app_cfg["main"]["port"] = aiohttp_unused_port()
-    app_cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
-    app_cfg["projects"]["enabled"] = True
+    cfg = deepcopy(app_cfg)
+    port = cfg["main"]["port"]
+    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg["projects"]["enabled"] = True
 
-    app[APP_CONFIG_KEY] = app_cfg
+    app = create_safe_application(cfg)
 
     # setup app
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, debug=True)
+    setup_rest(app)
     setup_login(app)            # needed for login_utils fixtures
     assert setup_projects(app)
 

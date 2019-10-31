@@ -4,6 +4,8 @@
 import logging
 import os
 
+from servicelib.client_session import APP_CLIENT_SESSION_KEY
+
 DEBUG_MODE = os.environ.get("DEBUG", False) in ["true", "True", True]
 
 logging.basicConfig(
@@ -36,6 +38,7 @@ SERVICES_DEFAULT_ENVS = {
 }
 
 # some services need to know the published host to be functional (paraview)
+# TODO: please review if needed
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
@@ -44,3 +47,8 @@ NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
 SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 # useful when developing with an alternative registry namespace
 SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")
+
+
+__all__ = [
+    'APP_CLIENT_SESSION_KEY'
+]
