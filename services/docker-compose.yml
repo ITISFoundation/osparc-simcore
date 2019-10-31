@@ -154,9 +154,6 @@ services:
     networks:
       - default
       - computational_services_subnet
-    configs:
-      - source: rabbit_enabled_plugins
-        target: /etc/rabbitmq/enabled_plugins
 
   postgres:
     image: postgres:10.10
@@ -199,7 +196,3 @@ networks:
       driver: default
       config:
         - subnet: "172.9.0.0/16"
-
-configs:
-  rabbit_enabled_plugins:
-    file: rabbit/enabled_plugins
