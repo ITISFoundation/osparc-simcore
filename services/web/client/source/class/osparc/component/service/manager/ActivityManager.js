@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
     __createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
       const tablePart = new qx.ui.toolbar.Part();
-      const actionsPart = new qx.ui.toolbar.Part();
+      // const actionsPart = new qx.ui.toolbar.Part();
       toolbar.add(tablePart);
       // toolbar.addSpacer();
       // toolbar.add(actionsPart);
@@ -116,6 +116,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
         });
       }, this);
 
+      /*
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
       runButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
@@ -131,6 +132,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       [runButton, stopButton, infoButton].map(button => this.__tree.bind("selected", button, "enabled", {
         converter: data => data.length > 0
       }));
+      */
 
       this._add(toolbar);
     }

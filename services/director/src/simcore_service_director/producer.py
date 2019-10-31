@@ -193,7 +193,7 @@ async def _create_docker_service_params(app: web.Application,
     log.debug("Converted labels to docker runtime parameters: %s", docker_params)
 
     # set labels for CPU and Memory limits
-    container_spec["Labels"]["nano_cpus"] = str(docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+    container_spec["Labels"]["nano_cpus_limit"] = str(docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
     container_spec["Labels"]["mem_limit"] = str(docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"])
 
     return docker_params

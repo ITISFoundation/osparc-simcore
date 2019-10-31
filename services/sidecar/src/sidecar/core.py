@@ -329,7 +329,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                                                                 'user_id': str(self._user_id),
                                                                 'study_id': str(self._task.project_id),
                                                                 'node_id': str(self._task.node_id),
-                                                                'nano_cpus': str(config.SERVICES_MAX_NANO_CPUS),
+                                                                'nano_cpus_limit': str(config.SERVICES_MAX_NANO_CPUS),
                                                                 'mem_limit': str(config.SERVICES_MAX_MEMORY_BYTES)
                                                             })
         except docker.errors.ImageNotFound:
