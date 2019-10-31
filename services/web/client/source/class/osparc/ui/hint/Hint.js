@@ -11,60 +11,89 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
   construct: function(element, text) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox());
-    this.set({
-      backgroundColor: "transparent"
-    });
-
-    this.__hintContainer = new qx.ui.container.Composite();
-    this.__hintContainer.set({
-      appearance: "hint"
-    });
-
-    this.__caret = new qx.ui.container.Composite().set({
-      height: 5,
-      backgroundColor: "transparent"
-    });
-    this.__caret.getContentElement().addClass("hint");
-    this._add(this.__caret);
-    this._add(this.__hintContainer, {
-      flex: 1
-    });
-
-    const root = qx.core.Init.getApplication().getRoot();
-    root.add(this, {
-      top: -10000
-    });
-
-    this.addListener("appear", () => this.updatePosition(), this);
+    this.__createWidget();
 
     if (element) {
       this.setElement(element);
-      if (text) {
-        this.__hintContainer.setLayout(new qx.ui.layout.Basic());
-        this.add(new qx.ui.basic.Label(text).set({
-          rich: true,
-          maxWidth: 250
-        }));
-      }
+    }
+
+    // If it is a simple label
+    if (text) {
+      this.__hintContainer.setLayout(new qx.ui.layout.Basic());
+      this.add(new qx.ui.basic.Label(text).set({
+        rich: true,
+        maxWidth: 250
+      }));
+    }
+  },
+
+  statics: {
+    orientation:{
+      TOP: 0,
+      RIGHT: 1,
+      BOTTOM: 2,
+      LEFT: 3
     }
   },
 
   properties: {
-    element: {}
+    element: {
+      check: "qx.ui.core.Widget",
+      apply: "_applyElement"
+    },
+    active: {
+      check: "Boolean",
+      apply: "_applyActive",
+      nullable: false,
+      init: true
+    },
+    orientation: {
+      check: "String"
+    }
   },
 
   members: {
-    updatePosition: function() {
+    __hintContainer: null,
+    __caret: null,
+
+    __createWidget: function() {
+      this._setLayout(new qx.ui.layout.VBox());
+      this.set({
+        backgroundColor: "transparent",
+        visibility: "excluded"
+      });
+
+      this.__hintContainer = new qx.ui.container.Composite();
+      this.__hintContainer.set({
+        appearance: "hint"
+      });
+
+      this.__caret = new qx.ui.container.Composite().set({
+        height: 5,
+        backgroundColor: "transparent"
+      });
+      this.__caret.getContentElement().addClass("hint");
+      this._add(this.__caret);
+      this._add(this.__hintContainer, {
+        flex: 1
+      });
+
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(this);
+    },
+
+    __updatePosition: function() {
       const {
         top,
         left
-      } = qx.bom.element.Location.get(this.getElement().getContentElement().getDomElement());
+      } = qx.bom.element.Location.get(this.getElement().getContentElement()
+        .getDomElement());
       const {
         width,
         height
-      } = qx.bom.element.Dimension.getSize(this.getElement().getContentElement().getDomElement());
-      const selfBounds = this.getBounds();
+      } = qx.bom.element.Dimension.getSize(this.getElement().getContentElement()
+        .getDomElement());
+      const selfBounds = this.getBounds() || this.getSizeHint();
       this.setLayoutProperties({
         top: top + height,
         left: Math.floor(left + (width - selfBounds.width) / 2)
@@ -74,6 +103,45 @@ qx.Class.define("osparc.ui.hint.Hint", {
     // overwritten
     getChildrenContainer: function() {
       return this.__hintContainer;
+    },
+
+    _applyElement: function(element, oldElement) {
+      if (oldElement) {
+        oldElement.removeListener("appear", this.__elementVisibilityHandler);
+        oldElement.removeListener("disappear", this.__elementVisibilityHandler);
+        oldElement.removeListener("move", this.__elementVisibilityHandler);
+      }
+      if (element) {
+        const isElementVisible = qx.ui.core.queue.Visibility.isVisible(element);
+        if (isElementVisible && this.isActive()) {
+          this.show();
+          this.__updatePosition();
+        }
+        element.addListener("appear", this.__elementVisibilityHandler, this);
+        element.addListener("disappear", this.__elementVisibilityHandler, this);
+        element.addListener("move", this.__elementVisibilityHandler, this);
+      } else {
+        this.exclude();
+      }
+    },
+
+    __elementVisibilityHandler: function(e) {
+      switch (e.getType()) {
+        case "appear":
+          this.show();
+          this.__updatePosition();
+          break;
+        case "disappear":
+          this.exclude();
+          break;
+        case "move":
+          this.__updatePosition();
+          break;
+      }
+    },
+
+    __attachEventHandlers: function() {
+      this.addListener("appear", () => this.__updatePosition(), this);
     }
   }
 });
