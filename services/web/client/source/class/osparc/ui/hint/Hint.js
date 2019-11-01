@@ -14,7 +14,11 @@ qx.Class.define("osparc.ui.hint.Hint", {
     this.__createWidget();
 
     if (element) {
-      this.setElement(element);
+      if (element.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
+        element.addListenerOnce("appear", () => this.setElement(element), this);
+      } else {
+        this.setElement(element);
+      }
     }
 
     // If it is a simple label
@@ -48,13 +52,16 @@ qx.Class.define("osparc.ui.hint.Hint", {
       init: true
     },
     orientation: {
-      check: "String"
+      check: "Integer",
+      nullable: false,
+      init: 2
     }
   },
 
   members: {
     __hintContainer: null,
     __caret: null,
+    __root: null,
 
     __createWidget: function() {
       this._setLayout(new qx.ui.layout.VBox());
@@ -78,7 +85,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
         flex: 1
       });
 
-      const root = qx.core.Init.getApplication().getRoot();
+      const root = this.__root = qx.core.Init.getApplication().getRoot();
       root.add(this);
     },
 
@@ -108,8 +115,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
       if (oldElement) {
         oldElement.removeListener("appear", this.__elementVisibilityHandler);
         oldElement.removeListener("disappear", this.__elementVisibilityHandler);
-        oldElement.removeListener("move", this.__elementVisibilityHandler);
-        oldElement.removeListener("resize", this.__elementVisibilityHandler);
+        this.__removeListeners(["move", "resize"]);
+        this.__removeListeners(["scrollX", "scrollY"], true);
       }
       if (element) {
         const isElementVisible = qx.ui.core.queue.Visibility.isVisible(element);
@@ -119,10 +126,26 @@ qx.Class.define("osparc.ui.hint.Hint", {
         }
         element.addListener("appear", this.__elementVisibilityHandler, this);
         element.addListener("disappear", this.__elementVisibilityHandler, this);
-        element.addListener("move", this.__elementVisibilityHandler, this);
-        element.addListener("resize", this.__elementVisibilityHandler, this);
+        this.__addListeners(["move", "resize"]);
+        this.__addListeners(["scrollX", "scrollY"], true);
       } else {
         this.exclude();
+      }
+    },
+
+    __addListeners: function(events, skipElement = false) {
+      let widget = skipElement ? this.getElement().getLayoutParent() : this.getElement();
+      while (widget && widget !== this.__root) {
+        events.map(e => widget.addListener(e, this.__elementVisibilityHandler, this));
+        widget = widget.getLayoutParent();
+      }
+    },
+
+    __removeListeners: function(events, skipElement = false) {
+      let widget = skipElement ? this.getElement().getLayoutParent() : this.getElement();
+      while (widget && widget !== this.__root) {
+        events.map(e => widget.removeListener(e, this.__elementVisibilityHandler));
+        widget = widget.getLayoutParent();
       }
     },
 
@@ -137,9 +160,12 @@ qx.Class.define("osparc.ui.hint.Hint", {
           break;
         case "move":
         case "resize":
+        case "scrollX":
+        case "scrollY":
           setTimeout(() => this.__updatePosition(), 50); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
+      console.log(e.getType());
     },
 
     __attachEventHandlers: function() {
