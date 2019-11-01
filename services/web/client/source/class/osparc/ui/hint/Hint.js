@@ -91,8 +91,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
       const {
         width,
         height
-      } = qx.bom.element.Dimension.getSize(this.getElement().getContentElement()
-        .getDomElement());
+      } = this.getElement().getBounds();
       const selfBounds = this.getBounds() || this.getSizeHint();
       this.setLayoutProperties({
         top: top + height,
@@ -110,6 +109,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
         oldElement.removeListener("appear", this.__elementVisibilityHandler);
         oldElement.removeListener("disappear", this.__elementVisibilityHandler);
         oldElement.removeListener("move", this.__elementVisibilityHandler);
+        oldElement.removeListener("resize", this.__elementVisibilityHandler);
       }
       if (element) {
         const isElementVisible = qx.ui.core.queue.Visibility.isVisible(element);
@@ -120,6 +120,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
         element.addListener("appear", this.__elementVisibilityHandler, this);
         element.addListener("disappear", this.__elementVisibilityHandler, this);
         element.addListener("move", this.__elementVisibilityHandler, this);
+        element.addListener("resize", this.__elementVisibilityHandler, this);
       } else {
         this.exclude();
       }
@@ -135,7 +136,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
           this.exclude();
           break;
         case "move":
-          this.__updatePosition();
+        case "resize":
+          setTimeout(() => this.__updatePosition(), 50); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
     },
