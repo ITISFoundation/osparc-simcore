@@ -31,9 +31,6 @@ qx.Class.define("osparc.component.form.FieldWHint", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
-    qx.module.Css.includeStylesheet(hintCssUri);
-
     this.__field = field || new qx.ui.form.TextField();
     if (value) {
       this.__field.setValue(value);
