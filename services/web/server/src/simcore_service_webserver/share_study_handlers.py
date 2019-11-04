@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # share/study/study_id ------------------------------------------------
 @login_required
 async def get_share_study_tokens(request: web.Request) -> web.Response:
+    from .projects.projects_api import clone_project # TODO: keep here since it is async and parser thinks it is a handler
 
     async def _process_request(request):
         study_id = request.match_info.get("study_id", None)
@@ -27,10 +28,14 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
         return user_id, study_id
 
     user_id, study_id = await _process_request(request)
+    logger.debug("Creating sharing tokens for %s", study_id)
+
     source_study = await get_project_for_user(request, study_id, user_id)
-    cloned_study, _nodes_map = clone_project_document(source_study)
-    logger.debug("Getting sharing tokens for %s", study_id)
-    token = "copy-" + str(study_id) + "_" + str(user_id)
+
+    cloned_study = await clone_project(request, source_study, user_id)
+    cloned_study_id = cloned_study["uuid"]
+
+    token = "copy-" + str(cloned_study_id) + "_" + str(user_id)
     data = {
         'copyLink': "http://localhost:9081/v0/shared/study/" + token,
         'copyToken': token,
@@ -68,11 +73,11 @@ async def get_shared_study(request: web.Request) -> web.Response:
 
     source_study = await get_project_for_user(request, source_study_id, source_user_id)
 
-    new_study = await clone_project(request, source_study, user_id)
-    new_study_id = new_study["uuid"]
+    cloned_study = await clone_project(request, source_study, user_id)
+    cloned_study_id = cloned_study["uuid"]
     db = request.config_dict[APP_PROJECT_DBAPI]
-    await db.add_project(new_study, user_id, force_project_uuid=True)
-    logger.debug("Study %s copied", new_study_id)
+    await db.add_project(cloned_study, user_id, force_project_uuid=True)
+    logger.debug("Study %s copied", cloned_study_id)
 
     if redirect:
         try:
@@ -82,6 +87,6 @@ async def get_shared_study(request: web.Request) -> web.Response:
 
         response = web.HTTPFound(location=redirect_url)
     else:
-        response = {'data': new_study_id}
+        response = {'data': cloned_study_id}
 
     return response
