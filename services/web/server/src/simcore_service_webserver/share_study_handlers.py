@@ -34,6 +34,9 @@ async def get_share_study_tokens(request: web.Request) -> web.Response:
 
     cloned_study = await clone_project(request, source_study, user_id)
     cloned_study_id = cloned_study["uuid"]
+    db = request.config_dict[APP_PROJECT_DBAPI]
+    user_id = 0 # TODO: temporary hack: cloned study is assigned to user with id 0
+    await db.add_project(cloned_study, user_id, force_project_uuid=True)
 
     token = "copy-" + str(cloned_study_id) + "_" + str(user_id)
     data = {
