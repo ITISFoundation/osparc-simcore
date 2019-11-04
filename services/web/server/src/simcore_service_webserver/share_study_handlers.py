@@ -61,6 +61,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
 
     token_id, redirect = await _process_request(request)
+    logger.debug("Creating study from token %s", token_id)
 
     if "copy-" in token_id:
         pass
