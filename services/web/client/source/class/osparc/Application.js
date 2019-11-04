@@ -117,6 +117,9 @@ qx.Class.define("osparc.Application", {
       if (isLogged) {
         this.__loadMainPage();
       } else {
+        // Reset store (cache)
+        osparc.store.Store.getInstance().invalidate();
+
         osparc.auth.Manager.getInstance().validateToken(data => {
           if (data.role === "Guest") {
             // Logout a guest trying to access the Dashboard
