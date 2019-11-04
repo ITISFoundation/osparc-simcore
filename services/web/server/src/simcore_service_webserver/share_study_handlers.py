@@ -7,7 +7,6 @@ from aiohttp import web
 from .login.decorators import RQT_USERID_KEY, login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_db import APP_PROJECT_DBAPI
-from .projects.projects_utils import clone_project_document
 from .statics import INDEX_RESOURCE_NAME
 
 logger = logging.getLogger(__name__)
@@ -85,7 +84,7 @@ async def get_shared_study(request: web.Request) -> web.Response:
 
     if redirect:
         try:
-            redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/shared/study/{}".format(new_study_id))
+            redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/shared/study/{}".format(cloned_study_id))
         except KeyError:
             raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
 
