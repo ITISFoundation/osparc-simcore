@@ -20,7 +20,7 @@ import logging
 
 import trafaret as T
 
-from servicelib import application_keys  # pylint:disable=unused-import
+from servicelib import application_keys, tracing  # pylint:disable=unused-import
 
 from . import (computation_config, db_config, email_config, rest_config,
                session_config, storage_config)
@@ -58,8 +58,10 @@ def create_schema() -> T.Dict:
             "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
             "testing": T.Bool(),
             T.Key("studies_access_enabled", default=False): T.Or(T.Bool(), T.Int),
+
             T.Key("monitoring_enabled", default=False): T.Or(T.Bool(), T.Int), # Int added to use environs
         }),
+        addon_section("tracing", optional=True): tracing.schema,
         db_config.CONFIG_SECTION_NAME: db_config.schema,
         director_config.CONFIG_SECTION_NAME: director_config.schema,
         rest_config.CONFIG_SECTION_NAME: rest_config.schema,
