@@ -33,6 +33,8 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
