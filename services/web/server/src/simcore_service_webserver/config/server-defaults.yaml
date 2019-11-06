@@ -7,6 +7,9 @@ main:
   testing: true
   studies_access_enabled: True
   monitoring_enabled: True
+tracing:
+  enabled: True
+  zipkin_endpoint: http://jaeger:9411
 director:
   host: director
   port: 8001
