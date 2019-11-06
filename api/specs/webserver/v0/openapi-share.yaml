@@ -10,7 +10,7 @@ paths:
   /share/study/{study_id}:
     get:
       summary: Gets sharing tokens for the given study_id
-      operationId: get_share_study_tokens
+      operationId: get_export_study_tokens
       parameters:
         - $ref: './openapi-share.yaml#/components/parameters/StudyId'
       responses:
@@ -19,7 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/share_study_tokens.yaml#/ShareStudyTokensEnveloped'
+                $ref: './components/schemas/export_study_tokens.yaml#/ExportStudyTokensEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -35,7 +35,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/share_study_tokens.yaml#/SharedStudyIdEnveloped'
+                $ref: './components/schemas/export_study_tokens.yaml#/ExportStudyIdEnveloped'
         '302':
           description: url to be redirected to containing the study ID that was copied/shared
         default:

@@ -1,5 +1,5 @@
-ShareStudyTokens:
-  description: tokens for doing sharing operations on a study
+ExportStudyTokens:
+  description: tokens for doing exporting operations on a study
   type: object
   properties:
     copyLink:
@@ -20,29 +20,29 @@ ShareStudyTokens:
     copyToken: 'd2091ac2-dfbc-48e3-a5e9-80d6139199c9'
     copyObject: '{}'
 
-ShareStudyTokensEnveloped:
+ExportStudyTokensEnveloped:
   type: object
   required:
     - data
   properties:
     data:
-      $ref: '#/ShareStudyTokens'
+      $ref: '#/ExportStudyTokens'
     error:
       nullable: true
       default: null
 
 
-SharedStudyId:
+ExportStudyId:
   description: study id of the generated study
   type: string
 
-SharedStudyIdEnveloped:
+ExportStudyIdEnveloped:
   type: object
   required:
     - data
   properties:
     data:
-      $ref: '#/SharedStudyId'
+      $ref: '#/ExportStudyId'
     error:
       nullable: true
       default: null

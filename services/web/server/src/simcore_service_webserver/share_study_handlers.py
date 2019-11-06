@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # share/study/study_id ------------------------------------------------
 @login_required
-async def get_share_study_tokens(request: web.Request) -> web.Response:
+async def get_export_study_tokens(request: web.Request) -> web.Response:
     from .projects.projects_api import clone_project # TODO: keep here since it is async and parser thinks it is a handler
 
     async def _process_request(request):
