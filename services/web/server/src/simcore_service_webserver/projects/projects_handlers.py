@@ -256,7 +256,6 @@ async def get_export_study_tokens(request: web.Request) -> web.Response:
 
     if ptype != 'export':
         raise web.HTTPBadRequest
-    user_id, project_id = await _process_request(request)
     log.debug("Creating sharing tokens for %s", project_id)
 
     source_project = await get_project_for_user(request, project_id, user_id)
