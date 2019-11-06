@@ -138,6 +138,8 @@ services:
       - S3_SECURE=${S3_SECURE}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     depends_on:
       - postgres
       - apihub
