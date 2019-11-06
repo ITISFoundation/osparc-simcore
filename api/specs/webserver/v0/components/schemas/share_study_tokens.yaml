@@ -12,7 +12,9 @@ ShareStudyTokens:
       description: workbench copy without data with the node uuids replaced
       type: object
   required:
-    - copy
+    - copyLink
+    - copyToken
+    - copyObject
   example:
     copyLink: 'https://osparc.io/study/share/d2091ac2-dfbc-48e3-a5e9-80d6139199c9'
     copyToken: 'd2091ac2-dfbc-48e3-a5e9-80d6139199c9'
