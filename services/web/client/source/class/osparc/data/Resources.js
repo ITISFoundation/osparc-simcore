@@ -127,7 +127,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getOne: {
             method: "GET",
-            url: statics.API + "/share/study/{study_id}"
+            url: statics.API + "/projects/{study_id}/token?type=export"
           }
         }
       },

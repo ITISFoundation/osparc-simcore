@@ -14,38 +14,6 @@ logger = logging.getLogger(__name__)
 
 # HANDLERS ------------------------------------------
 
-# share/study/study_id ------------------------------------------------
-@login_required
-async def get_export_study_tokens(request: web.Request) -> web.Response:
-    from .projects.projects_api import clone_project # TODO: keep here since it is async and parser thinks it is a handler
-
-    async def _process_request(request):
-        study_id = request.match_info.get("study_id", None)
-        if study_id is None:
-            raise web.HTTPBadRequest
-        user_id = request[RQT_USERID_KEY]
-        return user_id, study_id
-
-    user_id, study_id = await _process_request(request)
-    logger.debug("Creating sharing tokens for %s", study_id)
-
-    source_study = await get_project_for_user(request, study_id, user_id)
-
-    cloned_study = await clone_project(request, source_study, user_id)
-    cloned_study_id = cloned_study["uuid"]
-    db = request.config_dict[APP_PROJECT_DBAPI]
-    user_id = 0 # TODO: temporary hack: cloned study is assigned to user with id 0
-    await db.add_project(cloned_study, user_id, force_project_uuid=True)
-
-    token = "copy-" + str(cloned_study_id) + "_" + str(user_id)
-    data = {
-        'copyLink': "http://localhost:9081/v0/shared/study/" + token,
-        'copyToken': token,
-        'copyObject': cloned_study['workbench']
-    }
-    logger.debug("END OF ROUTINE. Response %s", data)
-    return data
-
 # shared/study/token_id --------------------------------------------------
 @login_required
 async def get_shared_study(request: web.Request) -> web.Response:

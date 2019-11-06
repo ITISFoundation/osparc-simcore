@@ -7,22 +7,6 @@ servers:
   - description: API server
     url: '/v0'
 paths:
-  /share/study/{study_id}:
-    get:
-      summary: Gets sharing tokens for the given study_id
-      operationId: get_export_study_tokens
-      parameters:
-        - $ref: './openapi-share.yaml#/components/parameters/StudyId'
-      responses:
-        '200':
-          description: got tokens for sharing study
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/export_study_tokens.yaml#/ExportStudyTokensEnveloped'
-        default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
-
   /shared/study/{token_id}:
     get:
       summary: Gets shared study for the given token_id
@@ -43,15 +27,6 @@ paths:
 
 components:
   parameters:
-    StudyId:
-      in: path
-      name: study_id
-      required: true
-      description: the uuid of the study
-      schema:
-        type: string
-        # format: uuid
-        example: 123e4567-e89b-12d3-a456-426655440000
     TokenId:
       in: path
       name: token_id

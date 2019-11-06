@@ -243,3 +243,35 @@ async def delete_project(request: web.Request):
     # TODO: fire&forget???
 
     raise web.HTTPNoContent(content_type='application/json')
+
+# projects/{project_id}/token ------------------------------------------------
+@login_required
+async def get_export_study_tokens(request: web.Request) -> web.Response:
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user, clone_project
+
+    user_id = request[RQT_USERID_KEY]
+    project_id = request.match_info.get("project_id")
+    ptype = request.query.get('type', 'export')
+
+    if ptype != 'export':
+        raise web.HTTPBadRequest
+    user_id, project_id = await _process_request(request)
+    log.debug("Creating sharing tokens for %s", project_id)
+
+    source_project = await get_project_for_user(request, project_id, user_id)
+
+    cloned_project = await clone_project(request, source_project, user_id)
+    cloned_project_id = cloned_project["uuid"]
+    db = request.config_dict[APP_PROJECT_DBAPI]
+    user_id = 0 # TODO: temporary hack: cloned project is assigned to user with id 0
+    await db.add_project(cloned_project, user_id, force_project_uuid=True)
+
+    token = "copy-" + str(cloned_project_id) + "_" + str(user_id)
+    data = {
+        'copyLink': "http://localhost:9081/v0/shared/study/" + token,
+        'copyToken': token,
+        'copyObject': cloned_project['workbench']
+    }
+    log.debug("END OF ROUTINE. Response %s", data)
+    return data
