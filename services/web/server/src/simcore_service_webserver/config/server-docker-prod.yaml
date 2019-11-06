@@ -9,6 +9,9 @@ main:
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}
   monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
+tracing:
+  enabled: ${TRACING_ENABLED}
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
