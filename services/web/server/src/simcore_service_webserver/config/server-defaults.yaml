@@ -25,6 +25,8 @@ db:
     password: simcore
     port: 5432
     user: simcore
+resource_manager:
+  enabled: True
 rabbit:
   enabled: True
   host: rabbit

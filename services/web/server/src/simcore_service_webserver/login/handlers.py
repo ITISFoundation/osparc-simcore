@@ -132,10 +132,16 @@ async def login(request: web.Request):
     await remember(request, response, identity)
     return response
 
+from simcore_service_webserver import signals
 
+#TODO: ask @crespov why was login_required not part of logout??
+@login_required
 async def logout(request: web.Request):
+    user_id = request[RQT_USERID_KEY]    
+    
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     await forget(request, response)
+    await signals.user_disconnected_event(user_id)
     return response
 
 

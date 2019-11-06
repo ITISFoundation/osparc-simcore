@@ -28,6 +28,7 @@ from .director import config as director_config
 from .activity import config as activity_config
 from .login import config as login_config
 from .projects import config as projects_config
+from .resource_manager import config as resource_manager_config
 from .resources import resources
 
 log = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ def create_schema() -> T.Dict:
         addon_section(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
         session_config.CONFIG_SECTION_NAME: session_config.schema,
         activity_config.CONFIG_SECTION_NAME: activity_config.schema,
+        resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
         #TODO: s3_config.CONFIG_SECTION_NAME: s3_config.schema
         #TODO: enable when sockets are refactored
         # BELOW HERE minimal sections until more options are needed

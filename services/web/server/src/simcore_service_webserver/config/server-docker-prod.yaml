@@ -25,6 +25,8 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+resource_manager:
+  enabled: True
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}

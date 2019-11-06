@@ -7,6 +7,7 @@ from yarl import URL
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
+# from ..resource_manager.decorators import track_resource
 from .config import get_client_session, get_config
 from .registry import get_registry
 
@@ -52,6 +53,7 @@ async def services_get(request: web.Request) -> web.Response:
 
 
 @login_required
+# @track_resource(type=service, resource="service_uuid", user_id=RQT_USERID_KEY)
 async def running_interactive_services_post(request: web.Request) -> web.Response:
     """ Starts an interactive service for a given user and
         returns running service's metainfo
