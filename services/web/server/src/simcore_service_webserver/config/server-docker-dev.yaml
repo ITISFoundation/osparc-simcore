@@ -11,7 +11,7 @@ main:
   monitoring_enabled: True
 tracing:
   enabled: True
-  zipkin_endpoint: http://jaeger:9411
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}

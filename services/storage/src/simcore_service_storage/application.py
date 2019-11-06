@@ -5,8 +5,10 @@
 import logging
 
 from aiohttp import web
-from servicelib.monitoring import setup_monitoring
+
 from servicelib.client_session import persistent_client_session
+from servicelib.monitoring import setup_monitoring
+from servicelib.tracing import setup_tracing
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -25,7 +27,10 @@ def create(config):
 
     # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
-
+    tracing = config["tracing"]["enabled"]
+    if tracing:
+        setup_tracing(app, "simcore_service_storage", 
+                        config["main"]["host"], config["main"]["port"], config["tracing"])
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done

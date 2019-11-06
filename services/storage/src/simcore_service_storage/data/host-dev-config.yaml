@@ -27,3 +27,6 @@ s3:
 rest:
   oas_repo: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs
   #oas_repo: http://localhost:8043/api/specs
+tracing:
+  enabled: True
+  zipkin_endpoint: http://jaeger:9411
