@@ -25,6 +25,7 @@ six==1.12.0               # via jsonschema, openapi-core, openapi-spec-validator
 sqlalchemy[postgresql_psycopg2binary]==1.3.4
 strict-rfc3339==0.7       # via openapi-core
 tenacity==6.0.0
+trafaret==2.0.0
 typing-extensions==3.7.2  # via aiohttp
 ujson==1.35
 werkzeug==0.15.4

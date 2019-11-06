@@ -16,3 +16,4 @@ jsonschema
 prometheus_client  # TODO: add as optional service-library[monitoring]
 tenacity
 attrs
+trafaret
