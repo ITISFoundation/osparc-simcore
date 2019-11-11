@@ -9,7 +9,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
 from .computation_config import CONFIG_SECTION_NAME
-from .sockets import sio
+from .socketio import sio
 
 log = logging.getLogger(__file__)
 

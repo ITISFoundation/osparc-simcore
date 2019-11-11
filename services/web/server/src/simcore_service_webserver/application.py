@@ -25,7 +25,7 @@ from .rest import setup_rest
 from .s3 import setup_s3
 from .security import setup_security
 from .session import setup_session
-from .sockets import setup_sockets
+from .socketio import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
