@@ -83,6 +83,7 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
         if resp.status == 200:
             # TODO: currently director API does not specify resp. 200
             payload = await resp.json()
+            registry.as_started(userid, service_uuid)
         else:
             url = endpoint.with_query(request.query).update_query(
                 user_id=userid,
