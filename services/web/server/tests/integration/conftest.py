@@ -82,7 +82,7 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
     return environ
 
 @pytest.fixture(scope='module')
-def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict, aiohttp_unused_port) -> Dict:
+def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     """
         Swarm with integration stack already started
 
@@ -97,7 +97,6 @@ def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict, aiohttp_un
         cfg = yaml.safe_load(f)
         # test webserver works in host
         cfg["main"]['host'] = '127.0.0.1'
-        cfg["main"]["port"] = aiohttp_unused_port()
 
     with config_file_path.open('wt') as f:
         yaml.dump(cfg, f, default_flow_style=False)
@@ -121,10 +120,11 @@ def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict, aiohttp_un
     return cfg_dict
 
 @pytest.fixture(scope="function")
-def app_config(webserver_dev_config: Dict) -> Dict:
+def app_config(webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     """
         Swarm with integration stack already started
         This fixture can be safely modified during test since it is renovated on every call
     """
     cfg = deepcopy(webserver_dev_config)
+    cfg["main"]["port"] = aiohttp_unused_port()
     return cfg
