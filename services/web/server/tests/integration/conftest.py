@@ -1,5 +1,10 @@
 """ Configuration for integration tests
 
+    During integration testing,
+        - the app under test (i.e. the webserver) will be installed and started in the host
+        - every test module (i.e. integration/**/test_*.py) deploys a stack in a swarm fixture with a seleciton of core and op-services
+        - the selection of core/op services are listed in the 'core_services' and 'ops_serices' variables in each test module
+
   NOTE: services/web/server/tests/conftest.py is pre-loaded
 
 """
