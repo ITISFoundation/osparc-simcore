@@ -8,10 +8,8 @@
 
 import logging
 
-import socketio
 from aiohttp import web
-from aiohttp_session import get_session
-
+from . import sio
 from .. import signals
 from ..login.decorators import RQT_USERID_KEY, login_required
 from .config import get_socket_registry
@@ -21,8 +19,9 @@ _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
 
 log = logging.getLogger(__file__)
 
-# TODO: how this is supposed to be handled in aiohttp no singleton policy is currently unclear
-sio = socketio.AsyncServer(async_mode="aiohttp", logging=log)
+def register_handlers():
+    # fake function to force registration of socket.io handlers
+    pass
 
 @sio.on('connect')
 async def connect(sid, environ):
