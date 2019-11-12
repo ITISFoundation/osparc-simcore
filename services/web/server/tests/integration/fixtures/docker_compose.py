@@ -72,7 +72,7 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
     """
     # preserves .env at git_root_dir after test if already exists
     env_path = osparc_simcore_root_dir / ".env"
-    backup_path = osparc_simcore_root_dir / ".env-bak"
+    backup_path = osparc_simcore_root_dir / ".env.bak"
     if env_path.exists():
         shutil.copy(env_path, backup_path)
 
