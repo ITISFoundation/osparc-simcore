@@ -32,7 +32,10 @@ def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
-def webserver_service(loop, aiohttp_server, app_config, rabbit_service):
+def client(loop, aiohttp_client,
+        app_config,    ## waits until swarm with *_services are up
+        rabbit_service ## waits until rabbit is responsive
+    ):
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]
 
@@ -45,15 +48,11 @@ def webserver_service(loop, aiohttp_server, app_config, rabbit_service):
 
     setup_computation(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=app_config["main"]["port"]))
-    yield server
-    # cleanup
+    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
+        'port': app_config["main"]["port"],
+        'host': app_config['main']['host']
+    }))
 
-
-@pytest.fixture
-def client(loop, webserver_service, aiohttp_client):
-    client = loop.run_until_complete(aiohttp_client(webserver_service))
-    return client
 
 @pytest.fixture
 def rabbit_config(app_config):

@@ -42,6 +42,31 @@ ops_services = [
 ]
 
 
+@pytest.fixture
+def client(loop, aiohttp_client,
+        app_config,    ## waits until swarm with *_services are up
+    ):
+    assert app_config["rest"]["version"] == API_VERSION
+    assert API_VERSION in app_config["rest"]["location"]
+
+    app_config['storage']['enabled'] = False
+    app_config['rabbit']['enabled'] = False
+
+    app = create_safe_application(app_config)
+
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app)
+    setup_login(app)
+    assert setup_projects(app)
+
+    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
+        'port': app_config["main"]["port"],
+        'host': app_config['main']['host']
+    }))
+
+
 @pytest.fixture(scope="session")
 def fake_template_projects(package_dir: Path) -> Dict:
     projects_file = package_dir / "data" / "fake-template-projects.json"
@@ -73,32 +98,6 @@ def fake_db():
 def fake_project_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         return json.load(fp)
-
-@pytest.fixture
-def webserver_service(loop, docker_stack, aiohttp_server, api_specs_dir, app_config):
-# def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<< DEVELOPMENT
-    assert app_config["rest"]["version"] == API_VERSION
-    assert API_VERSION in app_config["rest"]["location"]
-
-    app_config['storage']['enabled'] = False
-    app_config['rabbit']['enabled'] = False
-
-    app = create_safe_application(app_config)
-
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)
-    assert setup_projects(app)
-
-    yield loop.run_until_complete( aiohttp_server(app, port=app_config["main"]["port"]) )
-
-@pytest.fixture
-def client(loop, webserver_service, aiohttp_client):
-    client = loop.run_until_complete(aiohttp_client(webserver_service))
-    yield client
-
 
 @pytest.fixture
 async def logged_user(client): #, role: UserRole):

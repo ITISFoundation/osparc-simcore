@@ -10,14 +10,12 @@ from pathlib import Path
 from pprint import pprint
 
 import pytest
-import yaml
 from aiohttp import web
 from yarl import URL
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-
-from simcore_sdk.models.pipeline_models import (  # uses legacy TODO: upgrade test
+from simcore_sdk.models.pipeline_models import (
     SUCCESS, ComputationalPipeline, ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
@@ -30,6 +28,8 @@ from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 from utils_login import LoggedUser
 from utils_projects import NewProject
+
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -52,22 +52,17 @@ ops_services = [
 #    'portainer'
 ]
 
-
-@pytest.fixture(scope='session')
-def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, here, docker_compose_file):
+def client(loop, aiohttp_client,
+        app_config,    ## waits until swarm with *_services are up
+    ):
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
     app_config["db"]["init_tables"] = True # inits postgres_service
 
-    final_config_path = here / "config.app.yaml"
-    with final_config_path.open('wt') as f:
-        yaml.dump(app_config, f, default_flow_style=False)
+    pprint(app_config)
 
     # fake config
     app = create_safe_application()
@@ -88,28 +83,24 @@ def client(loop, aiohttp_client, app_config, here, docker_compose_file):
         'host': app_config['main']['host']
     }))
 
-    # cleanup
-    final_config_path.unlink()
-
 
 @pytest.fixture
 def project_id() -> str:
     return str(uuid.uuid4())
 
-
-@pytest.fixture
-def mock_workbench_payload(here):
-    file_path = here / "workbench_sleeper_payload.json"
+@pytest.fixture(scope='session')
+def mock_workbench_payload():
+    file_path = current_dir / "workbench_sleeper_payload.json"
     with file_path.open() as fp:
         return json.load(fp)
 
-@pytest.fixture
-def mock_workbench_adjacency_list(here):
-    file_path = here / "workbench_sleeper_dag_adjacency_list.json"
+@pytest.fixture(scope='session')
+def mock_workbench_adjacency_list():
+    file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def mock_project(fake_data_dir, mock_workbench_payload):
     with (fake_data_dir / "fake-project.json").open() as fp:
         project = json.load(fp)
@@ -147,6 +138,7 @@ def assert_db_contents(project_id, postgres_session,
         mock_workbench_payload, mock_workbench_adjacency_list,
         check_outputs:bool
     ):
+    # pylint: disable=no-member
     pipeline_db = postgres_session.query(ComputationalPipeline)\
         .filter(ComputationalPipeline.project_id == project_id).one()
     assert pipeline_db.project_id == project_id
@@ -172,6 +164,7 @@ def assert_db_contents(project_id, postgres_session,
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 def assert_sleeper_services_completed(project_id, postgres_session):
+    # pylint: disable=no-member
     # we wait 15 secs before testing...
     time.sleep(15)
     pipeline_db = postgres_session.query(ComputationalPipeline)\
