@@ -1,8 +1,16 @@
+"""
+
+    Main Makefile produces a set of docker-compose configuration files
+    Here we can find fixtures of most of these configurations
+
+"""
+
 # pylint:disable=wildcard-import
 # pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 
 import os
 import re
@@ -13,14 +21,14 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pytest
 import yaml
 
 
 @pytest.fixture("session")
-def devel_environ(env_devel_file) -> Dict[str, str]:
+def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     """ Loads and extends .env-devel
 
     """
@@ -50,14 +58,19 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
 
     return env_devel
 
+
 @pytest.fixture(scope="module")
 def temp_folder(request, tmpdir_factory) -> Path:
     tmp = Path(tmpdir_factory.mktemp("docker_compose_{}".format(request.module.__name__)))
     yield tmp
 
+
 @pytest.fixture(scope="module")
-def env_file(osparc_simcore_root_dir, devel_environ):
-    # ensures .env at git_root_dir
+def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Path:
+    """
+        Creates a .env file from the .env-devel
+    """
+    # preserves .env at git_root_dir after test if already exists
     env_path = osparc_simcore_root_dir / ".env"
     backup_path = osparc_simcore_root_dir / ".env-bak"
     if env_path.exists():
@@ -75,15 +88,18 @@ def env_file(osparc_simcore_root_dir, devel_environ):
         shutil.copy(backup_path, env_path)
         backup_path.unlink()
 
+
 @pytest.fixture("module")
-def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
+def simcore_docker_compose(osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path) -> Dict:
     """ Resolves docker-compose for simcore stack in local host
 
+        Produces same as  `make .stack-simcore-version.yml`
     """
     COMPOSE_FILENAMES = [
         "docker-compose.yml",
         "docker-compose.local.yml"
     ]
+
     # ensures .env at git_root_dir
     assert env_file.exists()
     assert env_file.parent == osparc_simcore_root_dir
@@ -100,11 +116,12 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
     return config
 
 @pytest.fixture("module")
-def ops_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
+def ops_docker_compose(osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path) -> Dict:
     """ Filters only services in docker-compose-ops.yml and returns yaml data
 
+        Produces same as  `make .stack-ops.yml`
     """
-    # ensures .env at git_root_dir
+    # ensures .env at git_root_dir, which will be used as current directory
     assert env_file.exists()
     assert env_file.parent == osparc_simcore_root_dir
 
@@ -117,6 +134,9 @@ def ops_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
 
     config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
     return config
+
+
+
 
 @pytest.fixture(scope='module')
 def docker_compose_file(request, temp_folder, simcore_docker_compose):
@@ -189,24 +209,25 @@ def _filter_services_and_dump(include: List, services_compose: Dict, docker_comp
         yaml.dump(content, fh, default_flow_style=False)
 
 
-
-def _run_docker_compose_config(docker_compose_paths, destination_path: Path, osparc_simcore_root_dir: Path) -> Dict:
+def _run_docker_compose_config(
+    docker_compose_paths: Union[List[Path], Path],
+    destination_path: Path,
+    workdir: Path) -> Dict:
     """
-        Runs docker-compose config on multiple files 'docker_compose_paths' taking 'osparc_simcore_root_dir'
-        as current working directory and saves the output to 'destination_path'
+        - Runs `docker-compose config` on multiple files passed in 'docker_compose_paths'
+        - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
+        - Saves resolved output config to 'destination_path'
     """
-
-
-    if not isinstance(docker_compose_paths, list):
+    if not isinstance(docker_compose_paths, List):
         docker_compose_paths = [docker_compose_paths, ]
 
-    config_paths = [ f"-f {os.path.relpath(docker_compose_path, osparc_simcore_root_dir)}" for docker_compose_path in docker_compose_paths]
+    config_paths = [ f"-f {os.path.relpath(docker_compose_path, workdir)}" for docker_compose_path in docker_compose_paths]
     configs_prefix = " ".join(config_paths)
 
     # TODO: use instead python api of docker-compose!
     subprocess.run( f"docker-compose {configs_prefix} config > {destination_path}",
         shell=True, check=True,
-        cwd=osparc_simcore_root_dir)
+        cwd=workdir)
 
     with destination_path.open() as f:
         config = yaml.safe_load(f)
