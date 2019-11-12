@@ -82,7 +82,7 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
         for key, value in devel_environ.items():
             print(f"{key}={value}", file=fh)
 
-    yield env_path.resolved()
+    yield env_path
 
     env_path.unlink()
     if backup_path.exists():
