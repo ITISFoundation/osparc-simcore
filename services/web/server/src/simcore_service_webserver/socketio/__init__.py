@@ -12,12 +12,10 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .config import (APP_CLIENT_SOCKET_REGISTRY_KEY,
                      APP_CLIENT_SOCKET_SERVER_KEY, CONFIG_SECTION_NAME)
+from .handlers import register_handlers
 from .registry import InMemoryUserSocketRegistry
 
 log = logging.getLogger(__name__)
-
-# TODO: how this is supposed to be handled in aiohttp no singleton policy is currently unclear
-sio = None
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
@@ -28,16 +26,15 @@ def setup(app: web.Application):
             mq_config = cfg["message_queue"]
             url = f"amqp://{mq_config['user']}:{mq_config['password']}@{mq_config['host']}:{mq_config['port']}"
             mgr = AsyncAioPikaManager(url=url, logger=log)
-    global sio
+
     sio = AsyncServer(async_mode="aiohttp", client_manager=mgr, logging=log)
     sio.attach(app)
-    from .handlers import register_handlers
     app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
     app[APP_CLIENT_SOCKET_REGISTRY_KEY] = InMemoryUserSocketRegistry()
+    register_handlers(app)
 
 # alias
 setup_sockets = setup
 __all__ = (
     "setup_sockets"
-    "sio"
 )

@@ -14,6 +14,7 @@ from socketio import AsyncServer
 CONFIG_SECTION_NAME = 'websocket'
 APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".websocket_socketio"
 APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".websocket_registry"
+APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = __name__ + ".websocket_handlers"
 
 schema = T.Dict({
     T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
