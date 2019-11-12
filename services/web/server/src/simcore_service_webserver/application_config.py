@@ -28,6 +28,7 @@ from .director import config as director_config
 from .activity import config as activity_config
 from .login import config as login_config
 from .projects import config as projects_config
+from .socketio import config as socketio_config
 from .resource_manager import config as resource_manager_config
 from .resources import resources
 
@@ -71,6 +72,7 @@ def create_schema() -> T.Dict:
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
         storage_config.CONFIG_SECTION_NAME: storage_config.schema,
         addon_section(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
+        addon_section(socketio_config.CONFIG_SECTION_NAME, optional=True): socketio_config.schema,
         session_config.CONFIG_SECTION_NAME: session_config.schema,
         activity_config.CONFIG_SECTION_NAME: activity_config.schema,
         resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,

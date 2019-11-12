@@ -16,7 +16,14 @@ APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".websocket_socketio"
 APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".websocket_registry"
 
 schema = T.Dict({
-    T.Key("enabled", default=True, optional=True): T.Bool(),
+    T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
+    T.Key("message_queue", default=True, optional=True): T.Dict({
+        T.Key("host", default='rabbit', optional=True): T.String(),
+        T.Key("port", default=5672, optional=True): T.Int(),
+        "user": T.String(),
+        "password": T.String(),
+        T.Key("channel", default="socketio"): T.String()
+    }),
 })
 
 def get_config(app: web.Application) -> Dict:

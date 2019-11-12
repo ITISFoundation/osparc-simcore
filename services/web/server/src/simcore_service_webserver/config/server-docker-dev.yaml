@@ -9,6 +9,13 @@ main:
   testing: True
   studies_access_enabled: True
   monitoring_enabled: True
+websocket:
+  enabled: True
+  message_queue:
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    user: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
 tracing:
   enabled: True
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
