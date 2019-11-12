@@ -1,19 +1,22 @@
 import logging
 
+from aiohttp import web
+
 log = logging.getLogger(__name__)
 
+OBSERVERS = []
 
-OBSERVERS = list()
+def subscribe(observer):
+    if not observer in OBSERVERS:
+        log.debug("subscribing observer %s", observer)
+        OBSERVERS.append(observer)
 
-def subscribe(callable):
-    if not callable in OBSERVERS:
-        OBSERVERS.append(callable)
+def unsubscribe(observer):
+    if observer in OBSERVERS:
+        log.debug("unsubscribing observer %s", observer)
+        OBSERVERS.remove(observer)
 
-def unsubscribe(callable):
-    if callable in OBSERVERS:
-        OBSERVERS.remove(callable)
-
-async def user_disconnected_event(user_id: str) -> None:
-    log.warning("I am disconnected and my id is %s", user_id)
+async def user_disconnected_event(request: web.Request) -> None:
+    log.warning("I am disconnected through request %s", request)
     for observer in OBSERVERS:
-        observer(user_id)
+        observer.notify(request)

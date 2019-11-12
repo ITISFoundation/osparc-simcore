@@ -152,16 +152,22 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
 @login_required
 async def running_interactive_services_delete_all(request: web.Request) -> web.Response:
     await check_permission(request, "services.interactive.*")
-
     params, query, body = await extract_and_validate(request)
 
     assert not params
     assert not query
     assert not body
 
+    resp = await _delete_all_services(request)
+    return resp
+
+from copy import deepcopy
+
+async def _delete_all_services(request: web.Request) -> web.Response:
     registry = get_registry(request.app)
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    services = registry.user_to_services_map[userid]
+    # beware that services returned by registry is a reference.
+    services = deepcopy(registry.user_to_services_map[userid])
 
     if services:
         session = get_client_session(request.app)
@@ -183,3 +189,9 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
             return web.json_response(payload, status=status)
 
     return web.json_response({'data': ''}, status=204)
+
+import asyncio
+def notify(request: web.Request) -> None:
+    new_url = request.app.router["running_interactive_services_delete_all"].url_for()
+    new_request = request.clone(method="DELETE",rel_url=new_url)
+    asyncio.ensure_future(_delete_all_services(new_request))

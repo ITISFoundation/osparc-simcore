@@ -14,6 +14,7 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
 
+from .. import signals
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import handlers
 from .config import APP_DIRECTOR_API_KEY, CONFIG_SECTION_NAME, build_api_url
@@ -68,6 +69,9 @@ def setup(app: web.Application,* , disable_login=False):
         strict=True
     )
     app.router.add_routes(routes)
+
+    # add observer
+    signals.subscribe(handlers)
 
 
 # alias
