@@ -1,3 +1,8 @@
+""" Configuration for integration tests
+
+  NOTE: services/web/server/tests/conftest.py is pre-loaded
+
+"""
 # pylint: disable=unused-argument
 # pylint: disable=bare-except
 # pylint:disable=redefined-outer-name
@@ -21,7 +26,6 @@ from simcore_service_webserver.resources import resources as app_resources
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
-    "fixtures.standard_directories",
     "fixtures.docker_compose",
     "fixtures.docker_swarm",
     "fixtures.docker_registry",
@@ -30,19 +34,11 @@ pytest_plugins = [
     "fixtures.postgres_service"
 ]
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
 
-# mute noisy loggers
-logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
-logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-
-sys.path.append(str(Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent / 'helpers'))
 API_VERSION = "v0"
 
-
-@pytest.fixture(scope='session')
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope="module")
 def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str, str]:
@@ -82,8 +78,8 @@ def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str
     return environ
 
 @pytest.fixture(scope='module')
-def app_config(here, webserver_environ) -> Dict:
-    config_file_path = here / "config.yaml"
+def app_config(webserver_environ) -> Dict:
+    config_file_path = current_dir / "config.yaml"
     def _recreate_config_file():
         with app_resources.stream("config/server-docker-dev.yaml") as f:
             cfg = yaml.safe_load(f)
