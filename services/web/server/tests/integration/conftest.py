@@ -7,7 +7,6 @@
 # pylint: disable=bare-except
 # pylint:disable=redefined-outer-name
 
-
 import logging
 import sys
 from copy import deepcopy
@@ -15,11 +14,12 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict
 
-import docker
+
 import pytest
 import trafaret_config
 import yaml
-from tenacity import after_log, retry, stop_after_attempt, wait_fixed
+
+from utils_docker import get_service_published_port
 
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
@@ -38,7 +38,6 @@ pytest_plugins = [
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
-
 
 @pytest.fixture(scope="module")
 def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict) -> Dict[str, str]:
@@ -129,22 +128,3 @@ def app_config(webserver_dev_config: Dict) -> Dict:
     """
     cfg = deepcopy(webserver_dev_config)
     return cfg
-
-
-## HELPERS ---
-
-@retry(wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN))
-def get_service_published_port(service_name: str) -> str:
-    # WARNING: ENSURE that service name defines a port
-    # NOTE: retries since services can take some time to start
-    client = docker.from_env()
-    services = [x for x in client.services.list() if service_name in x.name]
-    if not services:
-        raise RuntimeError("Cannot find published port for service '%s'. Probably services still not up" % service_name)
-    service_endpoint = services[0].attrs["Endpoint"]
-
-    if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
-        raise RuntimeError("Cannot find published port for service '%s' in endpoint. Probably services still not up" % service_name)
-
-    published_port = service_endpoint["Ports"][0]["PublishedPort"]
-    return str(published_port)

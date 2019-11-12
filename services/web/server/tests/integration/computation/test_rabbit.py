@@ -1,4 +1,3 @@
-# pylint:disable=wildcard-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -34,14 +33,10 @@ def here() -> Path:
 
 @pytest.fixture
 def webserver_service(loop, aiohttp_server, app_config, rabbit_service):
-    port = app_config["main"]["port"]
-    host = app_config['main']['host']
-
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
-
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
@@ -50,7 +45,7 @@ def webserver_service(loop, aiohttp_server, app_config, rabbit_service):
 
     setup_computation(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=port))
+    server = loop.run_until_complete(aiohttp_server(app, port=app_config["main"]["port"]))
     yield server
     # cleanup
 

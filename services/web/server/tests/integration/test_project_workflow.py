@@ -3,27 +3,20 @@
         e.g. run, pull, push ,... pipelines
         This one here is too similar to unit/with_postgres/test_projects.py
 """
-
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import json
-import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
 from typing import Dict, List
 
 import pytest
 from aiohttp import web
 
 from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
@@ -84,8 +77,6 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
 @pytest.fixture
 def webserver_service(loop, docker_stack, aiohttp_server, api_specs_dir, app_config):
 # def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<< DEVELOPMENT
-    port = app_config["main"]["port"]
-
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]
 
@@ -101,7 +92,7 @@ def webserver_service(loop, docker_stack, aiohttp_server, api_specs_dir, app_con
     setup_login(app)
     assert setup_projects(app)
 
-    yield loop.run_until_complete( aiohttp_server(app, port=port) )
+    yield loop.run_until_complete( aiohttp_server(app, port=app_config["main"]["port"]) )
 
 @pytest.fixture
 def client(loop, webserver_service, aiohttp_client):

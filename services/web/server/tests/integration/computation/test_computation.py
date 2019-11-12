@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -8,10 +6,8 @@ import json
 import sys
 import time
 import uuid
-from contextlib import contextmanager
 from pathlib import Path
 from pprint import pprint
-from typing import Dict
 
 import pytest
 import yaml
@@ -20,7 +16,7 @@ from yarl import URL
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_responses import unwrap_envelope
+
 from simcore_sdk.models.pipeline_models import (  # uses legacy TODO: upgrade test
     SUCCESS, ComputationalPipeline, ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
@@ -31,7 +27,6 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
 from utils_login import LoggedUser
 from utils_projects import NewProject
@@ -56,15 +51,14 @@ ops_services = [
 #    'adminer',
 #    'portainer'
 ]
+
+
 @pytest.fixture(scope='session')
 def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_config, here, docker_compose_file):
-    port = app_config["main"]["port"]
-    host = app_config['main']['host']
-
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]
 
@@ -90,8 +84,8 @@ def client(loop, aiohttp_client, app_config, here, docker_compose_file):
     setup_computation(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
-        'port': port,
-        'host': 'localhost'
+        'port': app_config["main"]["port"],
+        'host': app_config['main']['host']
     }))
 
     # cleanup
@@ -101,7 +95,6 @@ def client(loop, aiohttp_client, app_config, here, docker_compose_file):
 @pytest.fixture
 def project_id() -> str:
     return str(uuid.uuid4())
-
 
 
 @pytest.fixture
