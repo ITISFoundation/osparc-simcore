@@ -75,7 +75,6 @@ def env_file(osparc_simcore_root_dir, devel_environ):
         shutil.copy(backup_path, env_path)
         backup_path.unlink()
 
-
 @pytest.fixture("module")
 def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
     """ Resolves docker-compose for simcore stack in local host
@@ -100,7 +99,6 @@ def simcore_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Di
     config = _run_docker_compose_config(docker_compose_paths, destination_path, osparc_simcore_root_dir)
     return config
 
-
 @pytest.fixture("module")
 def ops_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
     """ Filters only services in docker-compose-ops.yml and returns yaml data
@@ -119,8 +117,6 @@ def ops_docker_compose(osparc_simcore_root_dir, env_file, temp_folder) -> Dict:
 
     config = _run_docker_compose_config(docker_compose_path, destination_path, osparc_simcore_root_dir)
     return config
-
-
 
 @pytest.fixture(scope='module')
 def docker_compose_file(request, temp_folder, simcore_docker_compose):
@@ -149,7 +145,6 @@ def ops_docker_compose_file(request, temp_folder, ops_docker_compose):
     _filter_services_and_dump(ops_services, ops_docker_compose, docker_compose_path)
 
     return docker_compose_path
-
 
 
 

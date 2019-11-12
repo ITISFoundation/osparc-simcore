@@ -4,17 +4,21 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+# FIXME: overlaps of these fixtures with those in tests/unit/conftest.py
+
+
 import sys
 from pathlib import Path
 
 import pytest
-
 import simcore_service_webserver
+
+current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
 def fixture_dir() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+    return current_dir
 
 @pytest.fixture(scope='session')
 def package_dir() -> Path:
@@ -24,9 +28,15 @@ def package_dir() -> Path:
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(fixture_dir: Path) -> Path:
-    root_dir = fixture_dir.parent.parent.parent.parent.parent.parent.resolve()
+    """
+        NOTE: This fixture will only work if folders under version control (i.e. contain '.git' folder)
+    """
+    root_dir = fixture_dir.resolve()
+    while not any(root_dir.glob(".git")) and root_dir != Path("/"):
+        root_dir = root_dir.parent
+
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
+    assert any(root_dir.glob("services/web/server")), f"'{root_dir}' does not look like the git root directory of osparc-simcore"
     return root_dir
 
 @pytest.fixture(scope='session')
@@ -52,23 +62,6 @@ def fake_data_dir(tests_dir: Path) -> Path:
     fake_data_dir = tests_dir / "data"
     assert fake_data_dir.exists()
     return fake_data_dir
-
-# @pytest.fixture(scope='session')
-# def mock_dir(fixture_dir):
-#     dirpath = fixture_dir / "mock"
-#     assert dirpath.exists()
-#     return dirpath
-
-# @pytest.fixture(scope='session')
-# def docker_compose_file(mock_dir):
-#     """
-#       Path to docker-compose configuration files used for testing
-
-#       - fixture defined in pytest-docker
-#     """
-#     fpath = mock_dir / 'docker-compose.yml'
-#     assert fpath.exists()
-#     return str(fpath)
 
 @pytest.fixture(scope="session")
 def server_test_configfile(mock_dir):
