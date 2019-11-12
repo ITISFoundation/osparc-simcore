@@ -14,16 +14,14 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict
 
-
 import pytest
 import trafaret_config
 import yaml
 
-from utils_docker import get_service_published_port
-
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
+from utils_docker import get_service_published_port
 
 # imports the fixtures for the integration tests
 pytest_plugins = [

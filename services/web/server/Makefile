@@ -19,9 +19,9 @@ install: ## install app in edit mode for development [DEV]
 .PHONY: tests
 tests: ## runs all tests [DEV]
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --pdb $(CURDIR)/tests/unit
+	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
 	# running integration tests
-	@$(VENV_DIR)/bin/pytest -vv -x --pdb $(CURDIR)/tests/integration
+	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build
