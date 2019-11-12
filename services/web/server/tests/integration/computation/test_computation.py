@@ -61,9 +61,9 @@ def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_compose_file):
-    port = app_config["main"]["port"] = aiohttp_unused_port()
-    host = app_config['main']['host'] = '127.0.0.1'
+def client(loop, aiohttp_client, app_config, here, docker_compose_file):
+    port = app_config["main"]["port"]
+    host = app_config['main']['host']
 
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]

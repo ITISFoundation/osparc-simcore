@@ -48,9 +48,6 @@ ops_services = [
 #    'adminer'
 ]
 
-@pytest.fixture(scope='session')
-def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture(scope="session")
 def fake_template_projects(package_dir: Path) -> Dict:
@@ -85,10 +82,9 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
         return json.load(fp)
 
 @pytest.fixture
-def webserver_service(loop, docker_stack, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config):
+def webserver_service(loop, docker_stack, aiohttp_server, api_specs_dir, app_config):
 # def webserver_service(loop, aiohttp_server, aiohttp_unused_port, api_specs_dir, app_config): # <<< DEVELOPMENT
-    port = app_config["main"]["port"] = aiohttp_unused_port()
-    app_config['main']['host'] = '127.0.0.1'
+    port = app_config["main"]["port"]
 
     assert app_config["rest"]["version"] == API_VERSION
     assert API_VERSION in app_config["rest"]["location"]

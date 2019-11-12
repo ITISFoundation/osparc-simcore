@@ -10,6 +10,7 @@
 
 import logging
 import sys
+from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -35,15 +36,19 @@ pytest_plugins = [
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-log = logging.getLogger(__name__)
 
-API_VERSION = "v0"
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str, str]:
-    """ Environment variables for the webserver application
+def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict) -> Dict[str, str]:
+    """
+        Started already swarm with integration stack (via dependency with 'docker_stack')
 
+        Environment variable expected for the web-server application in
+        an test-integration context, i.e. web-server runs in host and the
+        remaining services (defined in variable 'core_services') are deployed
+        in containers
     """
     assert "webserver" not in docker_stack["services"]
 
@@ -74,52 +79,59 @@ def webserver_environ(request, simcore_docker_compose, docker_stack) -> Dict[str
         environ['%s_PORT' % name.upper()] = published_port
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
 
-    pprint(environ)
+    pprint(environ) # NOTE: displayed only if error
     return environ
 
 @pytest.fixture(scope='module')
-def app_config(webserver_environ) -> Dict:
-    config_file_path = current_dir / "config.yaml"
-    def _recreate_config_file():
-        with app_resources.stream("config/server-docker-dev.yaml") as f:
-            cfg = yaml.safe_load(f)
-            # test webserver works in host
-            cfg["main"]['host'] = '127.0.0.1'
+def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict, aiohttp_unused_port) -> Dict:
+    """
+        Swarm with integration stack already started
 
-        with config_file_path.open('wt') as f:
-            yaml.dump(cfg, f, default_flow_style=False)
+        Configuration for a webserver provided it runs in host
 
-    _recreate_config_file()
+        NOTE: Prefer using 'app_config' instead of this as a fixture
+    """
+    config_file_path = current_dir / "webserver_dev_config.yaml"
+
+    # recreate config-file
+    with app_resources.stream("config/server-docker-dev.yaml") as f:
+        cfg = yaml.safe_load(f)
+        # test webserver works in host
+        cfg["main"]['host'] = '127.0.0.1'
+        cfg["main"]["port"] = aiohttp_unused_port()
+
+    with config_file_path.open('wt') as f:
+        yaml.dump(cfg, f, default_flow_style=False)
 
     # Emulates cli
     config_environ = {}
     config_environ.update(webserver_environ)
     config_environ.update( create_environ(skip_host_environ=True) ) # TODO: can be done monkeypathcing os.environ and calling create_environ as well
+
     # validates
     cfg_dict = trafaret_config.read_and_validate(config_file_path, app_schema, vars=config_environ)
 
+    # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
+    # FIXME:  free cfg_dict but deepcopy shall be r/w
     yield cfg_dict
 
     # clean up
     # to debug configuration uncomment next line
     config_file_path.unlink()
 
-## HELPERS
-def resolve_environ(service, environ):
-    _environs = {}
-    for item in service.get("environment", list()):
-        key, value = item.split("=")
-        if value.startswith("${") and value.endswith("}"):
-            value = value[2:-1]
-            if ":" in value:
-                variable, default = value.split(":")
-                value = environ.get(variable, default[1:])
-            else:
-                value = environ.get(value, value)
-        _environs[key] = value
-    return _environs
+    return cfg_dict
+
+@pytest.fixture(scope="function")
+def app_config(webserver_dev_config: Dict) -> Dict:
+    """
+        Swarm with integration stack already started
+        This fixture can be safely modified during test since it is renovated on every call
+    """
+    cfg = deepcopy(webserver_dev_config)
+    return cfg
 
 
+## HELPERS ---
 
 @retry(wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN))
 def get_service_published_port(service_name: str) -> str:
