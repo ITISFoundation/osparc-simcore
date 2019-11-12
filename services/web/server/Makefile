@@ -10,30 +10,31 @@ ROOT_DIR     = $(realpath $(CURDIR)/../../../)
 VENV_DIR    ?= $(realpath $(ROOT_DIR)/.venv)
 
 
-.PHONY: install-dev
-install-dev: ## install app in edit mode for development
+.PHONY: install
+install: ## install app in edit mode for development [DEV]
 	# installing in edit mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
+
 .PHONY: tests
-tests: ## runs tests
+tests: ## runs all tests [DEV]
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest --cov=simcore_service_${APP_NAME} --cov-append -v -m "not travis" $(CURDIR)/tests/unit
+	@$(VENV_DIR)/bin/pytest -vv -x --pdb $(CURDIR)/tests/unit
+	# running integration tests
+	@$(VENV_DIR)/bin/pytest -vv -x --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build
-build: ## builds docker image
+build: ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} build
 
 
-.PHONY: clean .check-clean
-.check-clean:
+.PHONY: clean
+clean: ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
 	@git clean -ndxf -e .vscode/
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 
