@@ -1,3 +1,9 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 from pprint import pprint
 
 import pytest
@@ -6,6 +12,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.activity import setup_activity
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
@@ -36,7 +43,7 @@ ops_services = [
 ]
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_compose_file):
+def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here):
     port = app_config["main"]["port"] = aiohttp_unused_port()
     host = app_config['main']['host'] = '127.0.0.1'
 
@@ -63,10 +70,11 @@ def client(loop, aiohttp_unused_port, aiohttp_client, app_config, here, docker_c
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
+    setup_activity(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
         'port': port,
-        'host': 'localhost'
+        'host': host
     }))
 
     # cleanup
@@ -92,7 +100,7 @@ async def logged_user(client, user_role: UserRole):
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_with_prometheus(client, user_role, expected_response):
-    url = client.app.router["get_status"]
-    resp = client.get(url)
-    (data, error) = await assert_status(resp, expected_response)
+async def test_with_prometheus(client, postgres_session, logged_user, expected_response):
+    url = client.app.router["get_status"].url_for()
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected_response)
