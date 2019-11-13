@@ -17,18 +17,24 @@ log = logging.getLogger(__name__)
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARN))
 def get_service_published_port(service_name: str) -> str:
-    # WARNING: ENSURE that service name defines a port
+    """
+        WARNING: ENSURE that service name exposes a port in  Dockerfile file or docker-compose config file
+    """
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
+
     services = [x for x in client.services.list() if service_name in x.name]
     if not services:
-        raise RuntimeError("Cannot find published port for service '%s'. Probably services still not up" % service_name)
-    service_endpoint = services[0].attrs["Endpoint"]
+        raise RuntimeError(f"Cannot find published port for service '{service_name}'. Probably services still not started.")
 
-    if "Ports" not in service_endpoint or not service_endpoint["Ports"]:
-        raise RuntimeError("Cannot find published port for service '%s' in endpoint. Probably services still not up" % service_name)
+    service_ports = services[0].attrs["Endpoint"].get("Ports")
+    if not service_ports:
+        raise RuntimeError(f"Cannot find published port for service '{service_name}' in endpoint. Probably services still not started.")
 
-    published_port = service_endpoint["Ports"][0]["PublishedPort"]
+    if len(service_ports)>1:
+        log.warning("Multiple porst published in service '%s'. Defaulting to first from %s", service_name, service_ports)
+
+    published_port = service_ports[0]["PublishedPort"]
     return str(published_port)
 
 
@@ -54,7 +60,6 @@ def run_docker_compose_config(
     config_paths = [ f"-f {os.path.relpath(docker_compose_path, workdir)}" for docker_compose_path in docker_compose_paths]
     configs_prefix = " ".join(config_paths)
 
-    # TODO: use instead python api of docker-compose!
     subprocess.run( f"docker-compose {configs_prefix} config > {destination_path}",
         shell=True, check=True,
         cwd=workdir)

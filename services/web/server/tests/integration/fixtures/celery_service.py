@@ -13,8 +13,8 @@ import tenacity
 
 
 @pytest.fixture(scope="module")
-def celery_service(webserver_dev_config, docker_stack):
-    cfg = deepcopy(webserver_dev_config["rabbit"])
+def celery_service(_webserver_dev_config, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["rabbit"])
     host = cfg["host"]
     port = cfg["port"]
     user = cfg["user"]

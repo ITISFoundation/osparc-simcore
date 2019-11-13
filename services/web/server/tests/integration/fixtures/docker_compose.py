@@ -142,7 +142,7 @@ def core_services_config_file(request, temp_folder, simcore_docker_compose):
     """ Creates a docker-compose config file for every stack of services in'core_services' module variable
         File is created in a temp folder
     """
-    core_services = getattr(request.module, 'core_services', []) # TODO: PC->SAN could also be defined as a fixture (as with docker_compose)
+    core_services = getattr(request.module, 'core_services', []) # TODO: PC->SAN could also be defined as a fixture instead of a single variable (as with docker_compose)
     assert core_services, f"Expected at least one service in 'core_services' within '{request.module.__name__}'"
 
     docker_compose_path = Path(temp_folder / 'simcore_docker_compose.filtered.yml')

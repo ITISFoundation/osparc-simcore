@@ -13,8 +13,8 @@ import tenacity
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(webserver_dev_config: Dict, docker_stack):
-    cfg = deepcopy(webserver_dev_config["rabbit"])
+async def rabbit_service(_webserver_dev_config: Dict, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["rabbit"])
     host = cfg["host"]
     port = cfg["port"]
     user = cfg["user"]

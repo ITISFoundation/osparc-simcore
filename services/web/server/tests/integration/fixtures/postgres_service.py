@@ -16,8 +16,8 @@ from simcore_service_webserver.db import DSN
 
 
 @pytest.fixture(scope='module')
-def postgres_db(webserver_dev_config, webserver_environ, docker_stack):
-    cfg = deepcopy(webserver_dev_config["db"]["postgres"])
+def postgres_db(_webserver_dev_config, webserver_environ, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["db"]["postgres"])
     url = DSN.format(**cfg)
 
     # NOTE: Comment this to avoid postgres_service

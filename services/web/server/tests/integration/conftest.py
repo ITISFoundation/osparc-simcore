@@ -85,13 +85,13 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
     return environ
 
 @pytest.fixture(scope='module')
-def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
+def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     """
         Swarm with integration stack already started
 
         Configuration for a webserver provided it runs in host
 
-        NOTE: Prefer using 'app_config' instead of this as a fixture
+        NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
     config_file_path = current_dir / "webserver_dev_config.yaml"
 
@@ -113,7 +113,7 @@ def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     cfg_dict = trafaret_config.read_and_validate(config_file_path, app_schema, vars=config_environ)
 
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
-    # FIXME:  free cfg_dict but deepcopy shall be r/w
+    # FIXME:  freeze read/only json obj
     yield cfg_dict
 
     # clean up
@@ -123,11 +123,11 @@ def webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     return cfg_dict
 
 @pytest.fixture(scope="function")
-def app_config(webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
+def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     """
         Swarm with integration stack already started
         This fixture can be safely modified during test since it is renovated on every call
     """
-    cfg = deepcopy(webserver_dev_config)
+    cfg = deepcopy(_webserver_dev_config)
     cfg["main"]["port"] = aiohttp_unused_port()
     return cfg
