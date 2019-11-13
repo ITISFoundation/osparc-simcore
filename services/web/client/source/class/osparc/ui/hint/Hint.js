@@ -40,8 +40,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
     if (text) {
       this.__hintContainer.setLayout(new qx.ui.layout.Basic());
       this.add(new qx.ui.basic.Label(text).set({
-        rich: true,
-        maxWidth: 250
+        rich: true
       }));
     }
   },
@@ -69,7 +68,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
     orientation: {
       check: "Integer",
       nullable: false,
-      init: 1
+      init: 2,
+      apply: "_applyOrientation"
     }
   },
 
@@ -93,8 +93,6 @@ qx.Class.define("osparc.ui.hint.Hint", {
       switch (this.getOrientation()) {
         case this.self().orientation.TOP:
         case this.self().orientation.LEFT:
-          this.__caret.resetWidth();
-          this.__caret.setHeight(5);
           this.__caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.LEFT ? "hint-left" : "hint-top");
           this._setLayout(this.getOrientation() === this.self().orientation.LEFT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(this.__hintContainer, {
@@ -104,8 +102,6 @@ qx.Class.define("osparc.ui.hint.Hint", {
           break;
         case this.self().orientation.RIGHT:
         case this.self().orientation.BOTTOM:
-          this.__caret.resetHeight();
-          this.__caret.setWidth(5);
           this.__caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.RIGHT ? "hint-right" : "hint-bottom");
           this._setLayout(this.getOrientation() === this.self().orientation.RIGHT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(this.__caret);
@@ -114,18 +110,31 @@ qx.Class.define("osparc.ui.hint.Hint", {
           });
           break;
       }
+      switch (this.getOrientation()) {
+        case this.self().orientation.RIGHT:
+        case this.self().orientation.LEFT:
+          this.__caret.setHeight(0);
+          this.__caret.setWidth(5);
+          break;
+        case this.self().orientation.TOP:
+        case this.self().orientation.BOTTOM:
+          this.__caret.setWidth(0);
+          this.__caret.setHeight(5);
+          break;
+      }
     },
 
     __updatePosition: function() {
+      const element = this.getElement().getContentElement()
+        .getDomElement();
       const {
         top,
         left
-      } = qx.bom.element.Location.get(this.getElement().getContentElement()
-        .getDomElement());
+      } = qx.bom.element.Location.get(element);
       const {
         width,
         height
-      } = this.getElement().getBounds();
+      } = qx.bom.element.Dimension.getSize(element);
       const selfBounds = this.getBounds() || this.getSizeHint();
       let properties = {};
       switch (this.getOrientation()) {
@@ -147,6 +156,11 @@ qx.Class.define("osparc.ui.hint.Hint", {
           break;
       }
       this.setLayoutProperties(properties);
+    },
+
+    _applyOrientation: function() {
+      this.__createWidget();
+      this.__updatePosition();
     },
 
     // overwritten
@@ -176,16 +190,16 @@ qx.Class.define("osparc.ui.hint.Hint", {
       }
     },
 
-    __addListeners: function(events, skipElement = false) {
-      let widget = skipElement ? this.getElement().getLayoutParent() : this.getElement();
+    __addListeners: function(events, skipThis = false) {
+      let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
       while (widget && widget !== this.__root) {
         events.map(e => widget.addListener(e, this.__elementVisibilityHandler, this));
         widget = widget.getLayoutParent();
       }
     },
 
-    __removeListeners: function(events, skipElement = false) {
-      let widget = skipElement ? this.getElement().getLayoutParent() : this.getElement();
+    __removeListeners: function(events, skipThis = false) {
+      let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
       while (widget && widget !== this.__root) {
         events.map(e => widget.removeListener(e, this.__elementVisibilityHandler));
         widget = widget.getLayoutParent();
