@@ -38,33 +38,33 @@ log = logging.getLogger(__name__)
         reraise=True)
 async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
-    sa_engine = sa.create_engine(DSN.format(**params))
-    metadata.create_all(sa_engine)
+    try:
+        url = DSN.format(**params) + f"?application_name=webserver_init"
+        sa_engine = sa.create_engine(url)
+        metadata.create_all(sa_engine)
+    finally:
+        sa_engine.dispose()
 
 async def pg_engine(app: web.Application):
-    engine = None
-    try:
-        cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-        params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
 
-        if cfg.get("init_tables"):
+    if cfg.get("init_tables"):
+        try:
             # TODO: get keys from __name__ (see notes in servicelib.application_keys)
             await __create_tables(**params)
+        except DBAPIError:
+            log.exception("Could init db. Stopping :\n %s", cfg)
+            raise
 
-        engine = await create_engine(**params)
-
-    except DBAPIError:
-        log.exception("Could init db. Stopping :\n %s", cfg)
-        raise
-    else:
+    # TODO: get name from app. Distinguish replica?
+    with create_engine(application_name="webserver", **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
-    yield
+        yield
 
-    engine = app.get(APP_DB_ENGINE_KEY)
-    if engine:
-        engine.close()
-        await engine.wait_closed()
+        if engine is not app.get(APP_DB_ENGINE_KEY):
+            log.error("app does not hold right db engine")
 
 
 def is_service_enabled(app: web.Application):
