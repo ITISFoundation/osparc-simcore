@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import attr
 from aiohttp import web
@@ -12,8 +12,6 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
-
-from typing import Optional
 
 log = logging.getLogger(__file__)
 
@@ -39,6 +37,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
                 ret = await conn.execute(query)
                 res = await ret.fetchone()
             except psycopg2.Error as err:
+                # NOTE: Happened in #880 amd #1160
                 log.debug("Failure in db query: %s", err)
                 return None
             else:
@@ -51,7 +50,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         # TODO: why users.c.user_login_key!=users.c.email
-        user = self._safe_execute( users.select().where(
+        user = await self._safe_execute( users.select().where(
             sa.and_(users.c.email == identity,
                     users.c.status != UserStatus.BANNED)
         ))
@@ -69,7 +68,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             log.debug("Invalid indentity [%s] of permission [%s]. Denying access.", identity, permission)
             return False
 
-        user = self._safe_execute( users.select().where(
+        user = await self._safe_execute( users.select().where(
             sa.and_(users.c.email == identity,
                     users.c.status != UserStatus.BANNED)
             )
