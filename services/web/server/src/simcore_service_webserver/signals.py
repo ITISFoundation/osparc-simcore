@@ -1,22 +1,26 @@
+import asyncio
 import logging
-
-from aiohttp import web
+from collections import defaultdict
+from functools import wraps
 
 log = logging.getLogger(__name__)
 
-OBSERVERS = []
+event_registry = defaultdict(list)
 
-def subscribe(observer):
-    if not observer in OBSERVERS:
-        log.debug("subscribing observer %s", observer)
-        OBSERVERS.append(observer)
+async def emit(event: str, *args, **kwargs):
+    if not event_registry[event]:
+        return
 
-def unsubscribe(observer):
-    if observer in OBSERVERS:
-        log.debug("unsubscribing observer %s", observer)
-        OBSERVERS.remove(observer)
+    coroutines = [observer(*args, **kwargs) for observer in event_registry[event]]
+    # all coroutine called in //
+    await asyncio.gather(*coroutines, return_exceptions=True)
 
-async def user_disconnected_event(request: web.Request) -> None:
-    log.warning("I am disconnected through request %s", request)
-    for observer in OBSERVERS:
-        observer.notify(request)
+def observe(event: str):
+    def decorator(func):
+        if func not in event_registry[event]:
+            event_registry[event].append(func)
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapped
+    return decorator

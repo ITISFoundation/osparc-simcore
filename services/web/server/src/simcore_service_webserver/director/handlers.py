@@ -1,12 +1,15 @@
 import logging
+from copy import deepcopy
 
 from aiohttp import web
+from yarl import URL
+
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
-from yarl import URL
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
+from ..signals import observe
 # from ..resource_manager.decorators import track_resource
 from .config import get_client_session, get_config
 from .registry import get_registry
@@ -16,8 +19,12 @@ ANONYMOUS_USER_ID = -1
 log = logging.getLogger(__name__)
 
 
-def _resolve_url(request: web.Request) -> URL:
-    cfg = get_config(request.app)
+def _forward_url(app: web.Application, url: URL) -> URL:
+    # replace raw path, to keep the quotes and
+    # strip webserver API version number from basepath
+    # >>> URL('http://localhost:8091/v0/services/').raw_parts[2:]
+    #    ('services', '')
+    cfg = get_config(app)
 
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
@@ -25,15 +32,13 @@ def _resolve_url(request: web.Request) -> URL:
         scheme='http',
         host=cfg['host'],
         port=cfg['port']).with_path(cfg["version"])
-
-    # replace raw path, to keep the quotes and
-    # strip webserver API version number from basepath
-    # >>> URL('http://localhost:8091/v0/services/').raw_parts[2:]
-    #    ('services', '')
-    tail = "/".join(request.url.raw_parts[2:])
+    tail = "/".join(url.raw_parts[2:])
 
     url = (endpoint / tail)
     return url
+
+def _resolve_url(request: web.Request) -> URL:
+    return _forward_url(request.app, request.url)
 
 # HANDLERS -------------------------------------------------------------------
 
@@ -157,21 +162,21 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     assert not params
     assert not query
     assert not body
-
-    resp = await _delete_all_services(request)
+    
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)    
+    resp = await _delete_all_services(request.app, userid)
     return resp
 
-from copy import deepcopy
-
-async def _delete_all_services(request: web.Request) -> web.Response:
-    registry = get_registry(request.app)
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+@observe(event="user_disconnected")
+async def _delete_all_services(user_id: str, app: web.Application) -> web.Response:
+    registry = get_registry(app)
     # beware that services returned by registry is a reference.
-    services = deepcopy(registry.user_to_services_map[userid])
+    services = deepcopy(registry.user_to_services_map[user_id])
 
     if services:
-        session = get_client_session(request.app)
-        endpoint = _resolve_url(request)
+        session = get_client_session(app)
+        new_url = app.router["running_interactive_services_delete_all"].url_for()
+        endpoint = _forward_url(app, new_url)
 
         errors = []
         for service_uuid in services:
@@ -190,8 +195,3 @@ async def _delete_all_services(request: web.Request) -> web.Response:
 
     return web.json_response({'data': ''}, status=204)
 
-import asyncio
-def notify(request: web.Request) -> None:
-    new_url = request.app.router["running_interactive_services_delete_all"].url_for()
-    new_request = request.clone(method="DELETE",rel_url=new_url)
-    asyncio.ensure_future(_delete_all_services(new_request))
