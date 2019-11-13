@@ -75,7 +75,8 @@ def docker_stack(docker_swarm, docker_client, core_services_config_file: Path, o
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
     WAIT_BEFORE_RETRY_SECS = 1
-    for stack in stacks_up.reverse():
+    stacks_up.reverse()
+    for stack in stacks_up:
         subprocess.run(f"docker stack rm {stack}", shell=True, check=True)
 
         while docker_client.services.list(filters={"label":f"com.docker.stack.namespace={stack}"}):
