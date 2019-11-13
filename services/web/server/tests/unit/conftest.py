@@ -29,16 +29,18 @@ def here():
     assert cdir == current_dir, "Somebody changing current_dir?"
     return cdir
 
+
 @pytest.fixture(scope='session')
-def mock_dir() -> Path:
-    dirpath = current_dir / "mock"
-    assert dirpath.exists()
-    return dirpath
+def fake_static_dir(fake_data_dir: Path) -> Dict:
+    return fake_data_dir / "static"
+
 
 @pytest.fixture
 def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
+
+
 
 @pytest.fixture
 def project_schema_file(api_specs_dir: Path) -> Path:
