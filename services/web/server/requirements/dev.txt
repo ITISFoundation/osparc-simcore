@@ -19,5 +19,8 @@ watchdog[watchmedo]
 -e ../../../packages/service-library/
 -e ../../../packages/director-sdk/python
 
+# installs watchdog utility
+watchdog[watchmedo]
+
 # installs current package
 -e .
