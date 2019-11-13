@@ -45,9 +45,11 @@ async def __create_tables(**params):
     finally:
         sa_engine.dispose()
 
+
 async def pg_engine(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
+
 
     if cfg.get("init_tables"):
         try:
@@ -58,7 +60,7 @@ async def pg_engine(app: web.Application):
             raise
 
     # TODO: get name from app. Distinguish replica?
-    with create_engine(application_name="webserver", **params) as engine:
+    async with create_engine(application_name="webserver_main", **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
         yield
