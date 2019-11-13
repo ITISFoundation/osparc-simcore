@@ -1,1 +1,1 @@
-# Colletion of tests fixtures for integration testing
+# Collection of tests fixtures for integration testing
