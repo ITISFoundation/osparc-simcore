@@ -26,17 +26,21 @@ def docker_swarm(docker_client):
     # teardown
     assert docker_client.swarm.leave(force=True)
 
+
 @pytest.fixture(scope='module')
-def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_docker_compose_file: Path):
-    stacks = ['simcore', 'ops' ]
+def docker_stack(docker_swarm, docker_client, core_services_config_file: Path, ops_services_config_file: Path):
+    stacks = {
+        'simcore': core_services_config_file,
+        'ops': ops_services_config_file
+    }
 
     # make up-version
-    subprocess.run( f"docker stack deploy -c {docker_compose_file.name} {stacks[0]}",
-        shell=True, check=True,
-        cwd=docker_compose_file.parent)
-    subprocess.run( f"docker stack deploy -c {ops_docker_compose_file.name} {stacks[1]}",
-        shell=True, check=True,
-        cwd=ops_docker_compose_file.parent)
+    stacks_up = []
+    for stack_name, stack_config_file in stacks.items():
+        subprocess.run( f"docker stack deploy -c {stack_config_file.name} {stack_name}",
+            shell=True, check=True,
+            cwd=stack_config_file.parent)
+        stacks_up.append(stack_name)
 
     def _print_services(msg):
         from pprint import pprint
@@ -48,7 +52,7 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_doc
     _print_services("[BEFORE TEST]")
 
     yield {
-        'stacks':stacks,
+        'stacks': stacks_up,
         'services': [service.name for service in docker_client.services.list()]
     }
 
@@ -70,14 +74,15 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, ops_doc
 
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
-    stacks.reverse()
-    for stack in stacks:
+    WAIT_BEFORE_RETRY_SECS = 1
+    stacks_up.reverse()
+    for stack in stacks_up:
         subprocess.run(f"docker stack rm {stack}", shell=True, check=True)
 
         while docker_client.services.list(filters={"label":f"com.docker.stack.namespace={stack}"}):
-            time.sleep(1)
+            time.sleep(WAIT_BEFORE_RETRY_SECS)
 
         while docker_client.networks.list(filters={"label":f"com.docker.stack.namespace={stack}"}):
-            time.sleep(1)
+            time.sleep(WAIT_BEFORE_RETRY_SECS)
 
     _print_services("[AFTER REMOVED]")

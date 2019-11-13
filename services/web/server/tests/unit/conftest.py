@@ -1,3 +1,9 @@
+""" Configuration for unit testing
+
+    - Any interaction with other app MUST be emulated with fakes/mocks
+    - ONLY external apps allowed is postgress (see unit/with_postgres)
+"""
+
 # pylint: disable=unused-argument
 # pylint: disable=bare-except
 # pylint:disable=redefined-outer-name
