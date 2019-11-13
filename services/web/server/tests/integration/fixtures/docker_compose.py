@@ -95,7 +95,7 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
 def simcore_docker_compose(osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path) -> Dict:
     """ Resolves docker-compose for simcore stack in local host
 
-        Produces same as  `make .stack-simcore-version.yml`
+        Produces same as  `make .stack-simcore-version.yml` in a temporary folder
     """
     COMPOSE_FILENAMES = [
         "docker-compose.yml",
@@ -121,7 +121,7 @@ def simcore_docker_compose(osparc_simcore_root_dir: Path, env_file: Path, temp_f
 def ops_docker_compose(osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path) -> Dict:
     """ Filters only services in docker-compose-ops.yml and returns yaml data
 
-        Produces same as  `make .stack-ops.yml`
+        Produces same as  `make .stack-ops.yml` in a temporary folder
     """
     # ensures .env at git_root_dir, which will be used as current directory
     assert env_file.exists()

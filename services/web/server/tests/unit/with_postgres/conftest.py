@@ -1,8 +1,9 @@
-""" Fixtures for this folder's tests
+""" Configuration for unit testing with a postgress fixture
 
-    Notice pytest loads 'services/web/server/tests/unit/conftest.py' here, which means:
-        - can use all fixtures defined there
-        - includes 'services/web/server/tests/helpers' in sys.path
+    - Unit testing of webserver app with a postgress service as fixture
+    - Starts test session by running a postgres container as a fixture (see postgress_service)
+
+    IMPORTANT: remember that these are still unit-tests!
 """
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument

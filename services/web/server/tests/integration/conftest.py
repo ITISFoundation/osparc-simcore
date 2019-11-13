@@ -1,4 +1,4 @@
-""" Configuration for integration tests
+""" Configuration for integration testing
 
     During integration testing,
         - the app under test (i.e. the webserver) will be installed and started in the host
