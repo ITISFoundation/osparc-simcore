@@ -16,12 +16,13 @@ import prometheus_client
 from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 
+
 log = logging.getLogger(__name__)
 
 
 def middleware_factory(app_name):
     @web.middleware
-    async def middleware_handler(request, handler):
+    async def middleware_handler(request: web.Request, handler):
         # See https://prometheus.io/docs/concepts/metric_types
         try:
             request['start_time'] = time.time()
@@ -35,10 +36,17 @@ def middleware_factory(app_name):
             resp = exc
             raise
         except Exception as exc: #pylint: disable=broad-except
-            # Prevents issue #1025. FIXME: why middleware below is not non-http exception safe?
-            log.exception("Unexpected exception. \
-                Error middleware below should only raise web.HTTPExceptions.")
+            # Prevents issue #1025.
             resp = web.HTTPInternalServerError(reason=str(exc))
+            resp_time = time.time() - request['start_time']
+
+            # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
+            log.exception('Unexpected server error "%s" from access: %s "%s %s" done in %3.2f secs. Responding with status %s',
+                type(exc),
+                request.remote, request.method, request.path,
+                resp_time,
+                resp.status
+            )
         finally:
             # metrics on the same request
             resp_time = time.time() - request['start_time']
