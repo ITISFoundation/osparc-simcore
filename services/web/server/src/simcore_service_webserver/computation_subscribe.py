@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from functools import wraps
 
 import aio_pika
 from aiohttp import web
@@ -8,20 +9,42 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
-from .computation_config import CONFIG_SECTION_NAME
-from .socketio import sio
+from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
+                                 CONFIG_SECTION_NAME)
+from .socketio.config import get_socket_registry, get_socket_server
 
 log = logging.getLogger(__file__)
 
 
-async def on_message(message: aio_pika.IncomingMessage):
+def rabbit_handler(app: web.Application):
+    """this decorator allows passing additional paramters to python-socketio compatible handlers.
+    I.e. aiopika handler expect functions of type `async def function(message)`
+    This allows to create a function of type `async def function(message, app: web.Application)
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            return await func(*args, **kwargs, app=app)
+        return wrapped
+    return decorator
+
+
+async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
+    sio = get_socket_server(app)
+    socket_registry = get_socket_registry(app)
+
     with message.process():
         data = json.loads(message.body)
         log.debug(data)
-        if data["Channel"] == "Log":
-            await sio.emit("logger", data = json.dumps(data))
-        elif data["Channel"] == "Progress":
-            await sio.emit("progress", data = json.dumps(data))
+        user_id = data["user_id"]
+        socket_ids = socket_registry.find_sockets(user_id)
+        for sid in socket_ids:
+            # we only send the data to the right sockets
+            await sio.emit(
+                "logger" if data["Channel"] == "Log" else "progress",
+                data = json.dumps(data),
+                room=sid
+            )
         asyncio.sleep(2)
 
 async def subscribe(app: web.Application):
@@ -62,4 +85,6 @@ async def subscribe(app: web.Application):
     await queue.bind(progress_exchange)
 
     # Start listening the queue with name 'task_queue'
-    await queue.consume(on_message)
+    partial_on_message = rabbit_handler(app)(on_message)
+    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_on_message]
+    await queue.consume(partial_on_message)

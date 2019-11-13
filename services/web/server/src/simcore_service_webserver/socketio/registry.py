@@ -4,7 +4,7 @@ This is not usable when scaling the webserver. Prefer a DB-based version
 
 import logging
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import attr
 
@@ -32,6 +32,9 @@ class InMemoryUserSocketRegistry:
                 socket_ids.remove(socket_id)
                 log.debug("user %s disconnected socket %s", user_id, socket_id)
                 break
+
+    def find_sockets(self, user_id: str) -> List[str]:
+        return self.user_to_sockets_map[user_id]
 
     def find_owner(self, socket_id: str) -> Optional[str]:
         for user_id, socket_ids in self.user_to_sockets_map.items():

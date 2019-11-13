@@ -14,6 +14,11 @@ director:
   host: director
   port: 8001
   version: v0
+websocket:
+  enabled: True
+  message_queue:
+    user: simcore
+    password: simcore
 db:
   init_tables: False
   postgres:

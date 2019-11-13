@@ -1,5 +1,5 @@
-""" socket io subsystem
-
+""" websocket subsystem based on socket-io
+    and https://github.com/miguelgrinberg/python-socketio
 
 """
 import logging
@@ -10,9 +10,9 @@ from socketio import AsyncAioPikaManager, AsyncServer
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from . import handlers, handlers_utils
 from .config import (APP_CLIENT_SOCKET_REGISTRY_KEY,
                      APP_CLIENT_SOCKET_SERVER_KEY, CONFIG_SECTION_NAME)
-from .handlers import register_handlers
 from .registry import InMemoryUserSocketRegistry
 
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def setup(app: web.Application):
     sio.attach(app)
     app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
     app[APP_CLIENT_SOCKET_REGISTRY_KEY] = InMemoryUserSocketRegistry()
-    register_handlers(app)
+    handlers_utils.register_handlers(app, handlers)
 
 # alias
 setup_sockets = setup

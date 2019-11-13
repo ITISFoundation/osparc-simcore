@@ -1,4 +1,4 @@
-""" director subsystem's configuration
+""" websocket subsystem's configuration
 
     - config-file schema
     - settings
