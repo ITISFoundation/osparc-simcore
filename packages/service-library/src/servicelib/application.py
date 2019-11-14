@@ -17,5 +17,4 @@ def create_safe_application(config: Optional[Dict]=None) -> web.Application:
     # then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
 
-
     return app
