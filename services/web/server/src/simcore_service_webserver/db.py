@@ -60,7 +60,7 @@ async def pg_engine(app: web.Application):
             raise
 
     # TODO: get name from app. Distinguish replica?
-    async with create_engine(application_name=__name__, **params) as engine:
+    async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
         yield

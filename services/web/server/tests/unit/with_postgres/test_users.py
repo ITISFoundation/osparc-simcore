@@ -310,6 +310,8 @@ async def test_get_profile_with_failing_db_connection(logged_user, client,
     assert str(url) == "/v0/me"
 
     resp = await client.get(url)
-    assert mock_failing_connection.call_count == 1, "Expected mock failure raised in AuthorizationPolicy.authorized_userid"
+
+    NUM_RETRY = 3
+    assert mock_failing_connection.call_count == NUM_RETRY, "Expected mock failure raised in AuthorizationPolicy.authorized_userid after severals"
 
     data, error = await assert_status(resp, expected)

@@ -2,18 +2,30 @@ import logging
 from typing import Dict, Optional, Tuple, Union
 
 import attr
-from aiohttp import web
-
 import psycopg2
 import sqlalchemy as sa
+from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from aiopg.sa import Engine
+from tenacity import (RetryCallState, after_log, retry,
+                      retry_if_exception_type, stop_after_attempt, wait_fixed)
+
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
 
 log = logging.getLogger(__file__)
+
+
+
+def raise_http_unavailable_error(retry_state: RetryCallState):
+    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop.
+    # TODO: add header with Retry-After
+    #obj, query = retry_state.args
+    #obj.app.register_incidents
+    # https://tools.ietf.org/html/rfc7231#section-7.1.3
+    raise web.HTTPServiceUnavailable()
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -31,18 +43,19 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         #return self.app.config_dict[APP_DB_ENGINE_KEY]
         return self.app[APP_DB_ENGINE_KEY]
 
+    @retry(
+        retry=retry_if_exception_type(psycopg2.DatabaseError),
+        wait=wait_fixed(2),
+        stop=stop_after_attempt(3),
+        after=after_log(log, logging.ERROR),
+        retry_error_callback=raise_http_unavailable_error)
     async def _safe_execute(self, query):
+        # NOTE: psycopg2.DatabaseError in #880 and #1160
+        # http://initd.org/psycopg/docs/module.html
         async with self.engine.acquire() as conn:
-            try:
-                ret = await conn.execute(query)
-                res = await ret.fetchone()
-            except psycopg2.DatabaseError as err:
-                # http://initd.org/psycopg/docs/module.html
-                # NOTE: Happened in #880 and #1160
-                log.debug("Failure in db query. Cannot execute auth operation: %s", err)
-                return None
-            else:
-                return res
+            ret = await conn.execute(query)
+            res = await ret.fetchone()
+        return res
 
     async def authorized_userid(self, identity: str) -> Optional[str]:
         """ Retrieve authorized user id.
