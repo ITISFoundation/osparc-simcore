@@ -8,7 +8,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 from servicelib.aiopg_utils import DBAPIError
 
 from .models import metadata
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DB_SESSION_KEY
+from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -22,37 +22,30 @@ CONNECT_TIMEOUT_SECS = 30
 
 @retry( wait=wait_fixed(RETRY_WAIT_SECS),
         stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(log, logging.INFO) )
+        before_sleep=before_sleep_log(log, logging.INFO),
+        reraise=True)
 async def __create_tables(**params):
-    sa_engine = sa.create_engine(DSN.format(**params))
-    metadata.create_all(sa_engine)
-    sa_engine.dispose()
+    try:
+        url = DSN.format(**params) + f"?application_name={__name__}_init"
+        sa_engine = sa.create_engine(url)
+        metadata.create_all(sa_engine)
+    finally:
+        sa_engine.dispose()
 
 async def pg_engine(app: web.Application):
-    engine = None
-    try:
-        cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
-        params = {k:cfg[k] for k in 'database user password host port'.split()}
-        await __create_tables(**params)
-        engine = await create_engine(**params)
+    cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
+    params = {key:cfg[key] for key in 'database user password host port'.split()}
 
-    except Exception: # pylint: disable=W0703
-        log.exception("Could not create engine")
+    # TODO: set this as optional?
+    await __create_tables(**params)
 
-    session = None
-    app[APP_DB_ENGINE_KEY] = engine
-    app[APP_DB_SESSION_KEY] = session
+    async with create_engine(application_name=__name__, **params) as engine:
+        app[APP_DB_ENGINE_KEY] = engine
 
-    yield
+        yield
 
-    session = app.get(APP_DB_SESSION_KEY)
-    if session:
-        session.close()
-
-    engine = app.get(APP_DB_ENGINE_KEY)
-    if engine:
-        engine.close()
-        await engine.wait_closed()
+        if engine is not app.get(APP_DB_ENGINE_KEY):
+            log.error("app does not hold right db engine")
 
 async def is_service_responsive(app:web.Application):
     """ Returns true if the app can connect to db service

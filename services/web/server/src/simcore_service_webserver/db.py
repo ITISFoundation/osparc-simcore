@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
     try:
-        url = DSN.format(**params) + f"?application_name=webserver_init"
+        url = DSN.format(**params) + f"?application_name={__name__}_init"
         sa_engine = sa.create_engine(url)
         metadata.create_all(sa_engine)
     finally:
@@ -60,7 +60,7 @@ async def pg_engine(app: web.Application):
             raise
 
     # TODO: get name from app. Distinguish replica?
-    async with create_engine(application_name="webserver_main", **params) as engine:
+    async with create_engine(application_name=__name__, **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
         yield
