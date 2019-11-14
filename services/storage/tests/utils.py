@@ -101,7 +101,7 @@ def insert_metadata(url: str, fmd: FileMetaData):
     engine = sa.create_engine(url)
     conn = engine.connect()
     conn.execute(ins)
-    engine.()
+    engine.dispose()
 
 def create_full_tables(url):
     meta = sa.MetaData()
