@@ -59,11 +59,10 @@ async def pg_engine(app: web.Application):
             log.exception("Could init db. Stopping :\n %s", cfg)
             raise
 
-    # TODO: get name from app. Distinguish replica?
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
-        yield
+        yield #-------------------
 
         if engine is not app.get(APP_DB_ENGINE_KEY):
             log.error("app does not hold right db engine")
