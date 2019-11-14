@@ -26,6 +26,7 @@ CONNECT_TIMEOUT_SECS = 30
 async def __create_tables(**params):
     sa_engine = sa.create_engine(DSN.format(**params))
     metadata.create_all(sa_engine)
+    sa_engine.dispose()
 
 async def pg_engine(app: web.Application):
     engine = None
