@@ -32,9 +32,13 @@ def session_scope(session_factory):
 class DbSettings:
     def __init__(self):
         self._db_settings_config = db_config()
-        self.db = create_engine(self._db_settings_config.endpoint, client_encoding='utf8')
+        # FIXME: this is a SYNC engine!
+        self.db = create_engine(
+            self._db_settings_config.endpoint + f"?application_name={__name__}",
+            client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         # self.session = self.Session()
+
 
 class _NodeModelEncoder(json.JSONEncoder):
     def default(self, o): # pylint: disable=E0202
