@@ -290,8 +290,8 @@ def mock_failing_connection(mocker) -> MagicMock:
     conn_execute.side_effect=OperationalError("MOCK: server closed the connection unexpectedly")
     return conn_execute
 
-@pytest.mark.parametrize("role, expected", [
-    (UserRole.USER, web.HTTPUnauthorized),
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.USER, web.HTTPServiceUnavailable),
 ])
 async def test_get_profile_with_failing_db_connection(logged_user, client,
     mock_failing_connection: MagicMock,
