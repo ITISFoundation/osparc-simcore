@@ -62,17 +62,14 @@ async def is_service_responsive(app:web.Application):
         return False
 
 def setup_db(app: web.Application):
-
     disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
 
     if THIS_SERVICE_NAME in disable_services:
-        app[APP_DB_ENGINE_KEY] = app[APP_DB_SESSION_KEY] = None
+        app[APP_DB_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
         return
 
     app[APP_DB_ENGINE_KEY] = None
-    app[APP_DB_SESSION_KEY] = None
-
 
     # app is created at this point but not yet started
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
