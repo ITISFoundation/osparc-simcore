@@ -41,11 +41,14 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    dsn = DSN.format(**db_cfg) + "?application_name=webserver_login"
-    pool = await asyncpg.create_pool(dsn=dsn,
-        min_size=5,
+    #TODO: setup lifetime of this pool?
+    #TODO: determin min/max size of the pool
+    pool = await asyncpg.create_pool(
+        dsn=DSN.format(**db_cfg) + f"?application_name={__name__}",
+        min_size=2,
         max_size=10,
         loop=asyncio.get_event_loop())
+
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
 
     # config
