@@ -45,8 +45,8 @@ async def _setup_config_and_pgpool(app: web.Application):
     #TODO: determin min/max size of the pool
     pool = await asyncpg.create_pool(
         dsn=DSN.format(**db_cfg) + f"?application_name={__name__}",
-        min_size=2,
-        max_size=10,
+        min_size=db_cfg['minsize'],
+        max_size=db_cfg['maxsize'],
         loop=asyncio.get_event_loop())
 
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
