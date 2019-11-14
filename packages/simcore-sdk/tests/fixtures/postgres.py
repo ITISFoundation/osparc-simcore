@@ -28,6 +28,8 @@ def is_responsive(url):
     except sa.exc.OperationalError:
         logging.exception("Connection to db failed")
         return False
+    finally:
+        eng.dispose()
 
     return True
 

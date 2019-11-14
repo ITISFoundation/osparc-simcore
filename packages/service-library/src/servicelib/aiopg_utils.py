@@ -30,6 +30,7 @@ class AiopgExecutor:
 
     @property
     def sa_engine(self):
+        # TODO: unsafe to leave an engine
         return sa.create_engine(
             self.dsn,
             strategy="mock",

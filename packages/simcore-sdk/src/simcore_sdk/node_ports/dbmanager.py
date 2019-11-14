@@ -32,7 +32,7 @@ def session_scope(session_factory):
 class DbSettings:
     def __init__(self):
         self._db_settings_config = db_config()
-        # FIXME: this is a SYNC engine!
+        # FIXME: this is a SYNCRONOUS engine! And not disposed!?
         self.db = create_engine(
             self._db_settings_config.endpoint + f"?application_name={__name__}",
             client_encoding='utf8')

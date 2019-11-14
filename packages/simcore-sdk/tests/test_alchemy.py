@@ -1,9 +1,7 @@
 import pytest
-# pylint:disable=unused-import
-from pytest_docker import docker_ip, docker_services
-from sqlalchemy import JSON, Column, Integer, String, create_engine
+
+from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
 # pylint:disable=redefined-outer-name
