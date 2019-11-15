@@ -3,7 +3,6 @@ import os
 
 import pytest
 import sqlalchemy as sa
-from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
