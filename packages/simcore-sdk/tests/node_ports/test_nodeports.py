@@ -9,11 +9,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
-from helpers import helpers  # pylint: disable=no-name-in-module
 from simcore_sdk import node_ports
 from simcore_sdk.node_ports import exceptions
 
+import helpers  # pylint: disable=no-name-in-module
 
 
 def _check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
