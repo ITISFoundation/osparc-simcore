@@ -8,18 +8,19 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import aiobotocore
 import aiofiles
 import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
+from sqlalchemy.sql import and_
+from yarl import URL
+
+import aiobotocore
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
 from servicelib.client_session import get_client_session
-from sqlalchemy.sql import and_
-from yarl import URL
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (DatasetMetaData, FileMetaData, FileMetaDataEx,

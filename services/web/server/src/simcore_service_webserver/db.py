@@ -13,12 +13,11 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.aiopg_utils import DBAPIError
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from servicelib.application_setup import app_module_setup,ModuleCategory
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
 
-# SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name. TODO: sync with config
@@ -26,8 +25,6 @@ DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Na
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
-# --------------------------------------------------------------
-
 
 log = logging.getLogger(__name__)
 
