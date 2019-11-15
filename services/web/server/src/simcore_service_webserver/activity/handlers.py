@@ -10,6 +10,27 @@ from ..login.decorators import login_required
 
 from servicelib.application_keys import APP_CONFIG_KEY # ??
 
+async def get_cpu_usage(session, url, user_id):
+    cpu_query = f'irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s]) * 100'
+    async with session.get(url.with_query(query=cpu_query)) as resp:
+        result = await resp.json()
+        return result
+
+async def get_memory_usage(session, url, user_id):
+    memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
+    async with session.get(url.with_query(query=memory_query)) as resp:
+        result = await resp.json()
+        return result
+
+async def get_celery_reserved(app):
+    return get_celery(app).control.inspect().reserved()
+
+async def get_container_metric_for_labels(session, url, user_id):
+    just_a_metric = f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}'
+    async with session.get(url.with_query(query=just_a_metric)) as resp:
+        result = await resp.json()
+        return result
+
 @login_required
 async def get_status(request: aiohttp.web.Request):
 
@@ -17,32 +38,16 @@ async def get_status(request: aiohttp.web.Request):
 
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    cpu_query = f'irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s]) * 100'
-    memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
-    just_a_metric = f'container_cpu_user_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}'
 
     config = request.app[APP_CONFIG_KEY]['activity']
     url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
 
-    async def get_cpu_usage():
-        async with session.get(url.with_query(query=cpu_query)) as resp:
-            result = await resp.json()
-            return result
-
-    async def get_memory_usage():
-        async with session.get(url.with_query(query=memory_query)) as resp:
-            result = await resp.json()
-            return result
-
-    async def get_celery_reserved():
-        return get_celery(request.app).control.inspect().reserved()
-
-    async def get_container_metric_for_labels():
-        async with session.get(url.with_query(query=just_a_metric)) as resp:
-            result = await resp.json()
-            return result
-
-    results = await asyncio.gather(get_cpu_usage(), get_memory_usage(), get_celery_reserved(), get_container_metric_for_labels())
+    results = await asyncio.gather(
+        get_cpu_usage(session, url, user_id),
+        get_memory_usage(session, url, user_id),
+        get_celery_reserved(request.app),
+        get_container_metric_for_labels(session, url, user_id)
+    )
     cpu_usage = results[0]['data']['result']
     mem_usage = results[1]['data']['result']
     metric = results[3]['data']['result']

@@ -4,14 +4,18 @@
 
 from pathlib import Path
 
-import pytest
 import yaml
+
+import pytest
 from aiohttp import web
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import setup_activity
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login.decorators import login_required
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 
 
@@ -29,23 +33,18 @@ def mocked_loged_in_user(mocker):
 def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
     with open(fake_data_dir/"test_activity_config.yml") as fh:
         content = fh.read()
-        content.replace("${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir))
+        config = content.replace("${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir))
 
-    cfg = yaml.load(content)
-    return cfg
+    return yaml.load(config)
 
 
 
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_config):
-    #app = create_application(app_config)
-
-    ## OR
-
+    # app = create_application(app_config)
     app = create_safe_application(app_config)
 
-    setup_db(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
