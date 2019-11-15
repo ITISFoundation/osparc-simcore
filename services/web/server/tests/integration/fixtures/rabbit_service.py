@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from copy import deepcopy
 from typing import Dict
 
 import aio_pika
@@ -12,8 +13,8 @@ import tenacity
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(app_config: Dict, docker_stack):
-    cfg = app_config["rabbit"]
+async def rabbit_service(_webserver_dev_config: Dict, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["rabbit"])
     host = cfg["host"]
     port = cfg["port"]
     user = cfg["user"]
