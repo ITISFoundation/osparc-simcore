@@ -26,11 +26,14 @@ then
   echo "  PIP :"
   $SC_PIP list | sed 's/^/    /'
 
+  #------------
+  echo "  setting entrypoint to use watchmedo autorestart..."
+  entrypoint='watchmedo auto-restart --recursive --pattern="*.py" --'
 
 elif [[ ${SC_BUILD_TARGET} == "production" ]]
 then
   APP_CONFIG=docker-prod-config.yaml
-
+  entrypoint=''
 fi
 
 
@@ -40,12 +43,12 @@ then
   # NOTE: needs stdin_open: true and tty: true
   echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
   echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-  python -c "import pdb, simcore_service_storage.cli; \
+  eval "$entrypoint" python -c "import pdb, simcore_service_storage.cli; \
              pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
 elif [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
   echo "PTVSD Debugger initializing in port 3003 with ${APP_CONFIG}"
-  python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG
+  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG
 else
   simcore-service-storage --config $APP_CONFIG
 fi

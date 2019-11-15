@@ -25,6 +25,7 @@ then
   echo "  PIP :"
   $SC_PIP list | sed 's/^/    /'
 
+  #------------
   echo "  setting entrypoint to use watchmedo autorestart..."
   entrypoint='watchmedo auto-restart --recursive --pattern="*.py" --'
 
@@ -49,5 +50,5 @@ then
   echo "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
   eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_webserver --config $APP_CONFIG
 else
-  eval "$entrypoint" simcore-service-webserver --config $APP_CONFIG
+  simcore-service-webserver --config $APP_CONFIG
 fi
