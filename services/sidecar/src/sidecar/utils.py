@@ -4,17 +4,16 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 
-import tenacity
-from sqlalchemy import and_, create_engine
-from sqlalchemy.orm import sessionmaker
-
 import docker
+import tenacity
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
+from sqlalchemy import and_, create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def wrap_async_call(fct: asyncio.coroutine):
