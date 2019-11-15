@@ -11,7 +11,7 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.node_ports import node_config
 
-import helpers
+import np_helpers
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -22,7 +22,7 @@ def user_id()->int:
 
 @pytest.fixture
 def s3_simcore_location() ->str:
-    yield helpers.SIMCORE_STORE
+    yield np_helpers.SIMCORE_STORE
 
 @pytest.fixture
 def filemanager_cfg(storage, user_id, bucket):
@@ -47,7 +47,7 @@ def file_uuid(project_id, node_uuid)->str:
             project = project_id
         if node is None:
             node = node_uuid
-        return helpers.file_uuid(file_path, project, node)
+        return np_helpers.file_uuid(file_path, project, node)
     yield create
 
 @pytest.fixture(scope='session')
