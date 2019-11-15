@@ -11,6 +11,8 @@ director:
   enabled: False
   host: director
   port: 8001
+websocket:
+  enabled: True
 application_proxy:
   enabled: False
 db:
@@ -24,6 +26,8 @@ db:
     maxsize: 5
     minsize: 1
     endpoint: postgres:5432
+resource_manager:
+  enabled: False
 rabbit:
   enabled: False
   channels:

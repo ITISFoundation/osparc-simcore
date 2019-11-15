@@ -22,12 +22,12 @@ log = logging.getLogger(__file__)
 
 async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io
-    
+
     Arguments:
         sid {str} -- the socket ID
         environ {Dict} -- the WSGI environ, among other contains the original request
         app {web.Application} -- the aiohttp app
-    
+
     Returns:
         [type] -- True if socket.io connection accepted
     """
@@ -58,7 +58,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
 
 async def disconnect(sid: str, app: web.Application):
     """socketio reserved handler for when the socket.io connection is disconnected.
-    
+
     Arguments:
         sid {str} -- the socket ID
         app {web.Application} -- the aiohttp app
@@ -66,11 +66,11 @@ async def disconnect(sid: str, app: web.Application):
     sio = get_socket_server(app)
     registry = get_socket_registry(app)
     async with sio.session(sid) as session:
-        request = session["request"]
+        # request = session["request"]
         #TODO: how to handle different sessions from the same user? (i.e. multiple tabs)
         user_id = registry.find_owner(sid)
         if not registry.remove_socket(sid):
             # mark user for disconnection
             # signal if no socket ids are left
-            await signals.emit("user_disconnected", user_id, app)
+            await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, app)
     log.debug("client %s disconnected", sid)

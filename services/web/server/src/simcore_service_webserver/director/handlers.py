@@ -9,7 +9,7 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
-from ..signals import observe
+from ..signals import observe, SignalType
 # from ..resource_manager.decorators import track_resource
 from .config import get_client_session, get_config
 from .registry import get_registry
@@ -167,7 +167,7 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     resp = await _delete_all_services(request.app, userid)
     return resp
 
-@observe(event="user_disconnected")
+@observe(event=SignalType.SIGNAL_USER_DISCONNECT)
 async def _delete_all_services(user_id: str, app: web.Application) -> web.Response:
     registry = get_registry(app)
     # beware that services returned by registry is a reference.
