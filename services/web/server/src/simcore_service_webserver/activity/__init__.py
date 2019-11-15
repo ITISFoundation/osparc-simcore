@@ -29,7 +29,7 @@ def setup(app: web.Application,* , disable_login=False):
         return any( tail in path  for tail in ['/activity/status'] )
 
     handlers_dict = {
-        'get_status': handlers.get_status        
+        'get_status': handlers.get_status
     }
 
     # Disables login_required decorator for testing purposes
