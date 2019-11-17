@@ -193,6 +193,9 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       let permissions = osparc.data.Permissions.getInstance();
       permissions.addListener("userProfileRecieved", e => {
         this.__userReady = e.getData();
+        if (this.__userReady === false) {
+          qx.core.Init.getApplication().logout();
+        }
       }, this);
       permissions.loadUserRoleFromBackend();
     },

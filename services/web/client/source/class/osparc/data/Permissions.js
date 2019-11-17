@@ -223,7 +223,11 @@ qx.Class.define("osparc.data.Permissions", {
           this.__userLogin = profileData.login;
           this.fireDataEvent("userProfileRecieved", true);
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs("Server unavailable.\nPlease, try again later", "ERROR");
+          this.fireDataEvent("userProfileRecieved", false);
+          console.error(err);
+        });
     }
   }
 });
