@@ -20,13 +20,15 @@ from utils_assert import assert_status
 
 
 @pytest.fixture
-def mocked_loged_in_user(mocker):
-    # https://pypi.org/project/pytest-mock/
-    #
-    get_status.get_cpu_usage
-    get_memory_usage
-    get_celery_reserved
-    get_container_metric_for_labels
+def mocked_login_required(mocker):
+    patched = mocker.patch('simcore_service_webserver.login.decorators.login_required')
+    patched.return_value = lambda *args, **kwargs: lambda f: f
+    patched.start()
+    
+
+@pytest.fixture
+def mocked_prometeheus_failure(mocker):
+    mocker.patch('simcore_service_webserver.activity.handlers.get_cpu_usage').return_value = None
 
 
 @pytest.fixture
@@ -36,8 +38,6 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
         config = content.replace("${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir))
 
     return yaml.load(config)
-
-
 
 
 @pytest.fixture
@@ -54,18 +54,6 @@ def client(loop, aiohttp_client, app_config):
     return cli
 
 
-async def test_get_status(client, mocker):
-    login_required_mock = mocker.mock(login_required)
-    login_required_mock.return_value = lambda h:h
-
-    mock_get_cpu_usage = mocker.patch(get_cpu_usage)
-    fut = Future()
-    fut.set_result()
-    mock_get_cpu_usage.execute.return_value = fut
-
-
-
+async def test_get_status(mocked_login_required, client, mocked_prometeheus_failure):
     resp = await client.get('/v0/activity/status')
-    data, _ = await assert_status(resp, web.HTTOK)
-
-    assert data['stats']['cpuUsage'] == 5
+    data, _ = await assert_status(resp, web.HTTPOk)

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
     category=ModuleCategory.ADDON,
     depends=['simcore_service_webserver.rest'],
     logger=logger)
-def setup(app: web.Application,* , disable_login=False):
+def setup(app: web.Application):
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -31,12 +31,6 @@ def setup(app: web.Application,* , disable_login=False):
     handlers_dict = {
         'get_status': handlers.get_status
     }
-
-    # Disables login_required decorator for testing purposes
-    if disable_login:
-        for name, hnds in handlers_dict.items():
-            if hasattr(hnds, '__wrapped__'):
-                handlers_dict[name] = hnds.__wrapped__
 
     routes = map_handlers_with_operations(
         handlers_dict,

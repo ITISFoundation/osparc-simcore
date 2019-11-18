@@ -38,7 +38,6 @@ async def get_status(request: aiohttp.web.Request):
 
     user_id = request.get(RQT_USERID_KEY, -1)
 
-
     config = request.app[APP_CONFIG_KEY]['activity']
     url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
 
