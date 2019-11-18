@@ -33,7 +33,6 @@ async def get_container_metric_for_labels(session, url, user_id):
 
 @login_required
 async def get_status(request: aiohttp.web.Request):
-
     session = get_client_session(request.app)
 
     user_id = request.get(RQT_USERID_KEY, -1)
@@ -45,8 +44,11 @@ async def get_status(request: aiohttp.web.Request):
         get_cpu_usage(session, url, user_id),
         get_memory_usage(session, url, user_id),
         get_celery_reserved(request.app),
-        get_container_metric_for_labels(session, url, user_id)
+        get_container_metric_for_labels(session, url, user_id),
+        return_exceptions=True
     )
+
+
     cpu_usage = results[0]['data']['result']
     mem_usage = results[1]['data']['result']
     metric = results[3]['data']['result']
