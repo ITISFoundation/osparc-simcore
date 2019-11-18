@@ -74,4 +74,4 @@ chown -R $USERNAME:$GROUPNAME /home/scu/input
 chown -R $USERNAME:$GROUPNAME /home/scu/output
 chown -R $USERNAME:$GROUPNAME /home/scu/log
 
-su-exec scu "$@"
+exec su-exec scu "$@"

@@ -41,4 +41,4 @@ else
   CONCURRENCY=2
 fi
 
-celery worker --app sidecar.celery:app --concurrency ${CONCURRENCY} --loglevel=${DEBUG_LEVEL}
+exec celery worker --app sidecar.celery:app --concurrency ${CONCURRENCY} --loglevel=${DEBUG_LEVEL}
