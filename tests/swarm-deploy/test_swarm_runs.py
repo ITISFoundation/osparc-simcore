@@ -4,28 +4,24 @@ PRECONDITION:
 
 SEE before_script() in ci/travis/system-testing/swarm-deploy
 """
-
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import asyncio
-import datetime
 import logging
 import os
-import re
 import sys
+import time
 import urllib
 from pathlib import Path
 from pprint import pformat
-from typing import Dict
+from typing import List
 
 import docker
 import pytest
-import tenacity
-import yaml
+from docker import DockerClient
+from docker.models.services import Service
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +60,18 @@ def get_tasks_summary(tasks):
     return msg
 
 
+failed_states = [
+    "COMPLETE",
+    "FAILED",
+    "SHUTDOWN",
+    "REJECTED",
+    "ORPHANED",
+    "REMOVE",
+    "CREATED"
+]
+
+
 def get_failed_tasks_logs(service, docker_client):
-    failed_states = ["COMPLETE", "FAILED",
-                     "SHUTDOWN", "REJECTED", "ORPHANED", "REMOVE"]
     failed_logs = ""
     for t in service.tasks():
         if t['Status']['State'].upper() in failed_states:
@@ -87,16 +92,17 @@ def get_failed_tasks_logs(service, docker_client):
 
 
 @pytest.fixture(scope="session", params=stack_service_names)
-def core_service_name(request):
+def core_service_name(request) -> str:
     return str(request.param)
 
-@pytest.fixture(scope="function")
-def docker_client():
+
+@pytest.fixture
+def docker_client() -> DockerClient:
     client = docker.from_env()
     yield client
 
-@pytest.fixture(scope="function")
-def core_services_running(docker_client):
+@pytest.fixture
+def core_services_running(docker_client: DockerClient) -> List[Service]:
     # Matches service names in stacks as e.g.
     #
     #  'mystack_director'
@@ -109,13 +115,20 @@ def core_services_running(docker_client):
     running_services = [ s for s in docker_client.services.list() if s.name.startswith(stack_name) ]
     return running_services
 
+
+
+
 # TESTS -------------------------------
-def test_all_services_up(core_services_running):
+def test_all_services_up(core_services_running: str):
     running_services = sorted( [s.name for s in core_services_running] )
     assert  running_services == stack_service_names
 
 
-async def test_core_service_running(core_service_name, core_services_running, docker_client, loop):
+async def test_core_service_running(
+    core_service_name: str,
+    core_services_running: List[Service],
+    docker_client: DockerClient,
+    loop: asyncio.BaseEventLoop):
     """
         NOTE: loop fixture makes this test async
     """
@@ -155,7 +168,6 @@ async def test_core_service_running(core_service_name, core_services_running, do
 
 
 async def test_check_serve_root():
-    # TODO: this is
     req = urllib.request.Request("http://127.0.0.1:9081/")
     try:
         resp = urllib.request.urlopen(req)
@@ -169,3 +181,64 @@ async def test_check_serve_root():
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
     except urllib.error.URLError as err:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
+
+
+
+
+@pytest.mark.skip(reason="TODO: under development")
+async def test_graceful_restart_services(
+    core_service_name: str,
+    docker_client: DockerClient,
+    loop: asyncio.BaseEventLoop):
+    """
+        NOTE: loop fixture makes this test async
+        NOTE: needs to run AFTER test_core_service_running
+    """
+
+    # TODO: check ps ax has TWO processes
+    name = core_service_name.name.replace("simcore_", "")
+    cmd = f"docker exec -it $(docker ps | grep {name} | awk '{{print $1}}') /bin/sh -c 'ps ax'"
+    # $ docker exec -it $(docker ps | grep storage | awk '{print $1}') /bin/sh -c 'ps ax'
+    # PID   USER     TIME  COMMAND
+    #   1 root      0:00 /sbin/docker-init -- /bin/sh services/storage/docker/entry
+    #   6 scu       0:02 {simcore-service} /usr/local/bin/python /usr/local/bin/sim
+    #  54 root      0:00 ps ax
+
+    # $ docker exec -it $(docker ps | grep sidecar | awk '{print $1}') /bin/sh -c 'ps ax'
+    # PID   USER     TIME  COMMAND
+    #  1 root      0:00 /sbin/docker-init -- /bin/sh services/sidecar/docker/entry
+    #  6 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke
+    # 26 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke
+    # 27 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke
+
+
+    service = docker_client.services.get(core_service_name)
+    assert service, f"expected {core_service_name}"
+
+    assert service.force_update()
+
+    running_tasks = service.tasks(filters={'desired-state': 'running'})
+    shutdown_tasks = service.tasks(filters={'desired-state': 'shutdown'})
+
+
+    # "Status": {
+    #     "Timestamp": "2019-11-18T19:33:30.448132327Z",
+    #     "State": "shutdown",
+    #     "Message": "shutdown",
+    #     "ContainerStatus": {
+    #         "ContainerID": "f2921c983ad934b4daa0c514543bbfd1a9ea89189bd1ad98b67d63b9f98f05be",
+    #         "PID": 0,
+    #         "ExitCode": 143
+    #     },
+    #     "PortStatus": {}
+    # },
+    # "DesiredState": "shutdown",
+
+    # assert len(shutdown_tasks) == 1
+
+    for task in shutdown_tasks:
+        while task['Status']['State'] != task['DesiredState'] and task['Status']['ContainerStatus']['ExitCode'] == -1:
+            print(service.name, task['Status']['State'], task['Status']['ContainerStatus']['ExitCode'])
+            time.sleep(1)
+
+        assert task['Status']['ContainerStatus']['ExitCode'] == 0, f"{service.name} task: \n {pformat(task['Status'])}"
