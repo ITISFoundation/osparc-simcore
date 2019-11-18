@@ -1,4 +1,4 @@
-""" websocket subsystem's configuration
+""" socketio subsystem's configuration
 
     - config-file schema
     - settings
@@ -11,18 +11,18 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from socketio import AsyncServer
 
-CONFIG_SECTION_NAME = 'websocket'
-APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".websocket_socketio"
-APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".websocket_registry"
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = __name__ + ".websocket_handlers"
+CONFIG_SECTION_NAME = 'socketio'
+APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".socketio_socketio"
+APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".socketio_registry"
+APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = __name__ + ".socketio_handlers"
 
 schema = T.Dict({
     T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
-    T.Key("message_queue", default=True, optional=True): T.Dict({
+    T.Key("message_queue", optional=True): T.Dict({
         T.Key("host", default='rabbit', optional=True): T.String(),
         T.Key("port", default=5672, optional=True): T.Int(),
-        "user": T.String(),
-        "password": T.String(),
+        "user": T.String(allow_blank=True),
+        "password": T.String(allow_blank=True),
         T.Key("channel", default="socketio"): T.String()
     }),
 })

@@ -112,8 +112,12 @@ def fake_progress_message(node_uuid: str):
 
 # ------------------------------------------
 async def test_rabbit_log_connection(loop, client, log_channel, fake_log_message, mocker):
-    mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
-    mock.return_value.set_result("")
+    mock_socketio_server = mocker.patch('socketio.AsyncServer')
+    mock_socketio_server.return_value.emit.return_value = Future()
+    mock_socketio_server.return_value.emit.return_value.set_result("emited")
+
+    mock_get_server = mocker.patch('simcore_service_webserver.computation_subscribe.get_socket_server', return_value=mock_socketio_server)
+    mock_registry = mocker.patch('simcore_service_webserver.computation_subscribe.get_socket_registry')
 
     for i in range(1000):
         await log_channel.publish(
@@ -123,7 +127,8 @@ async def test_rabbit_log_connection(loop, client, log_channel, fake_log_message
             )
 
 
-    mock.assert_called_with("logger", data=json.dumps(fake_log_message))
+    mock_socketio_server.assert_called_with("logger", 
+                                    data=json.dumps(fake_log_message))
 
 async def test_rabbit_progress_connection(loop, client, progress_channel, fake_progress_message, mocker):
     mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())

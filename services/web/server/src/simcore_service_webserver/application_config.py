@@ -20,7 +20,7 @@ import logging
 
 import trafaret as T
 
-from servicelib import application_keys, tracing  # pylint:disable=unused-import
+from servicelib import application_keys  # pylint:disable=unused-import
 
 from . import (computation_config, db_config, email_config, rest_config,
                session_config, storage_config)
@@ -31,6 +31,8 @@ from .projects import config as projects_config
 from .socketio import config as socketio_config
 from .resource_manager import config as resource_manager_config
 from .resources import resources
+from . import tracing
+
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ def create_schema() -> T.Dict:
 
             T.Key("monitoring_enabled", default=False): T.Or(T.Bool(), T.Int), # Int added to use environs
         }),
-        addon_section("tracing", optional=True): tracing.schema,
+        addon_section(tracing.tracing_section_name, optional=True): tracing.schema,
         db_config.CONFIG_SECTION_NAME: db_config.schema,
         director_config.CONFIG_SECTION_NAME: director_config.schema,
         rest_config.CONFIG_SECTION_NAME: rest_config.schema,

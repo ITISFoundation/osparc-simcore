@@ -10,6 +10,8 @@ import logging
 from typing import Dict
 
 from aiohttp import web
+from socketio.exceptions import \
+    ConnectionRefusedError as socket_io_connection_error
 
 from .. import signals
 from ..login.decorators import RQT_USERID_KEY, login_required
@@ -31,14 +33,13 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     Returns:
         [type] -- True if socket.io connection accepted
     """
+    log.debug("client connecting in room %s", sid)
     request = environ[_SOCKET_IO_AIOHTTP_REQUEST_KEY]
     try:
         await authenticate_user(sid, app, request)
     except web.HTTPUnauthorized:
-        log.exception("Websocket connection unauthorized")
-        return False
+        raise socket_io_connection_error("authentification failed")
 
-    log.debug("client %s connects", sid)
     return True
 
 @login_required
@@ -46,6 +47,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request.
     """
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    log.debug("client %s authenticated", userid)
     registry = get_socket_registry(app)
     registry.add_socket(userid, sid)
     sio = get_socket_server(app)
@@ -53,7 +55,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     async with sio.session(sid) as socketio_session:
         socketio_session["user_id"] = userid
         socketio_session["request"] = request
-    log.info("websocket connection from user %s", userid)
+    log.info("socketio connection from user %s", userid)
 
 
 async def disconnect(sid: str, app: web.Application):
@@ -63,14 +65,15 @@ async def disconnect(sid: str, app: web.Application):
         sid {str} -- the socket ID
         app {web.Application} -- the aiohttp app
     """
-    sio = get_socket_server(app)
+    log.debug("client in room %s disconnecting", sid)
+    # sio = get_socket_server(app)
     registry = get_socket_registry(app)
-    async with sio.session(sid) as session:
+    # async with sio.session(sid) as session:
         # request = session["request"]
         #TODO: how to handle different sessions from the same user? (i.e. multiple tabs)
-        user_id = registry.find_owner(sid)
-        if not registry.remove_socket(sid):
-            # mark user for disconnection
-            # signal if no socket ids are left
-            await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, app)
-    log.debug("client %s disconnected", sid)
+    user_id = registry.find_owner(sid)
+    if not registry.remove_socket(sid):
+        # mark user for disconnection
+        # signal if no socket ids are left
+        await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, app)
+    log.debug("client %s disconnected from room %s", user_id, sid)

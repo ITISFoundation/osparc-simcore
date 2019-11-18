@@ -14,7 +14,7 @@ director:
   host: director
   port: 8001
   version: v0
-websocket:
+socketio:
   enabled: True
   message_queue:
     user: simcore

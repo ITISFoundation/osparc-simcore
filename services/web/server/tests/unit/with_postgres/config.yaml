@@ -11,7 +11,7 @@ director:
   enabled: False
   host: director
   port: 8001
-websocket:
+socketio:
   enabled: True
 application_proxy:
   enabled: False

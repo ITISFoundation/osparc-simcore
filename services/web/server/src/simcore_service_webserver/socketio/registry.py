@@ -18,6 +18,8 @@ def _default_dict_factory():
 class InMemoryUserSocketRegistry:
     """ Keeps a record of connect sockets
     """
+    # pylint: disable=unsubscriptable-object
+    # pylint: disable=no-member
     user_to_sockets_map: Dict = attr.Factory(_default_dict_factory)
 
     def add_socket(self, user_id: str, socket_id: str) -> int:

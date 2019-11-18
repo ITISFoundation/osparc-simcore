@@ -1,4 +1,4 @@
-""" websocket subsystem based on socket-io
+""" socketio subsystem based on socket-io
     and https://github.com/miguelgrinberg/python-socketio
 
 """

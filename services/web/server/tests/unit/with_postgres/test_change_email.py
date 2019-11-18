@@ -58,17 +58,17 @@ async def test_change_and_confirm(client, capsys):
         out, err = capsys.readouterr()
         link = parse_link(out)
 
+        # try new email but logout first
+        rsp = await client.get(logout_url)
+        assert rsp.url_obj.path == logout_url.path
+        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
+
         # click email's link
         rsp = await client.get(link)
         txt = await rsp.text()
 
         assert rsp.url_obj.path == index_url.path
         assert "welcome to fake web front-end" in txt
-
-        # try new email but logout first
-        rsp = await client.get(logout_url)
-        assert rsp.url_obj.path == logout_url.path
-        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
 
         rsp = await client.post(login_url, json={
             'email': NEW_EMAIL,

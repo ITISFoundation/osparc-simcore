@@ -21,8 +21,7 @@ def socket_io_handler(app: web.Application):
 
 def has_socket_io_handler_signature(fun) -> bool:
     # last parameter is web.Application
-    return any(param.annotation == web.Application
-        for name, param in inspect.signature(fun).parameters.items())
+    return list(inspect.signature(fun).parameters.values())[-1].annotation == web.Application
 
 def register_handlers(app: web.Application, module: ModuleType):
     sio = get_socket_server(app)

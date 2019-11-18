@@ -12,7 +12,7 @@ main:
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
-websocket:
+socketio:
   message_queue:
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}

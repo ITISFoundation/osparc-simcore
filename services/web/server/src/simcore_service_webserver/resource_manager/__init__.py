@@ -18,11 +18,11 @@ MODULE_NAME = __name__.split(".")[-1]
 module_name = module_name = __name__.replace(".__init__", "")
 
 @app_module_setup(module_name, ModuleCategory.SYSTEM, logger=logger)
-def setup(app: web.Application) -> bool:
+def setup(_: web.Application) -> bool:
     """Sets up resource manager subsystem in the application
 
     """
-    
+
     # cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     return True
 
