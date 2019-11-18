@@ -29,6 +29,9 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
 WAIT_TIME_SECS = 20
 RETRY_COUNT = 7
 MAX_WAIT_TIME=240
@@ -82,20 +85,6 @@ def get_failed_tasks_logs(service, docker_client):
 
 # FIXTURES -------------------------------------
 
-@pytest.fixture(scope="session")
-def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.resolve()
-    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
-    return root_dir
-
-@pytest.fixture(scope='session')
-def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
-    services_dir = Path(osparc_simcore_root_dir) / "services"
-    return services_dir
 
 @pytest.fixture(scope="session", params=stack_service_names)
 def core_service_name(request):

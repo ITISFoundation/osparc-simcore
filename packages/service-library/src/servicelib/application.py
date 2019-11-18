@@ -20,7 +20,7 @@ def create_safe_application(config: Optional[Dict]=None) -> web.Application:
     app[APP_CONFIG_KEY] = config or {}
 
     app.on_startup.append(startup_info)
-    app.cleanup_ctx.append(shutdown_info)
+    app.op_cleanup.append(shutdown_info)
 
     # Ensures persistent client session
     # NOTE: Ensures client session context is run first,
