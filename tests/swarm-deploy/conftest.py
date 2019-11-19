@@ -84,6 +84,8 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
         cwd=osparc_simcore_root_dir
     )
 
+    subprocess.run(f"docker network prune -f", shell=True, check=False)
+
     for stack in stack_configs.keys():
         while True:
             online = docker_client.services.list(filters={"label":f"com.docker.stack.namespace={stack}"})
@@ -93,6 +95,13 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
             else:
                 break
 
+        while True:
+            networks = docker_client.networks.list(filters={"label":f"com.docker.stack.namespace={stack}"})
+            if networks:
+                print(f"Waiting until {len(networks)} networks stop: {[n.name for n in networks]}")
+                time.sleep(WAIT_BEFORE_RETRY_SECS)
+            else:
+                break
 
     (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink()
     (osparc_simcore_root_dir / ".stack-ops.yml").unlink()
