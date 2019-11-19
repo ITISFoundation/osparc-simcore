@@ -12,7 +12,7 @@ paths:
       operationId: get_status      
       responses:
         '200':
-          description: Object containing queuing, CPU and Memery usage/limits information of services
+          description: Object containing queuing, CPU and Memory usage/limits information of services
           content:
             application/json:
               schema:
