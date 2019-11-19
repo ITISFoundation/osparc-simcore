@@ -2,13 +2,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from asyncio import Future
 import importlib
 from pathlib import Path
 
 import yaml
 
 import pytest
+from functools import wraps
 from aiohttp import web
+from aiohttp.client_exceptions import ClientConnectionError
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.application import create_application
@@ -19,16 +22,35 @@ from simcore_service_webserver.session import setup_session
 from utils_assert import assert_status
 
 
+def raise_exception(exception):
+    def wrapper(*args, **kwargs):
+        raise exception()
+    return wrapper
+    
+def async_return(result):
+    f = Future()
+    f.set_result(result)
+    return f
+
 @pytest.fixture
 def mocked_login_required(mocker):
-    patched = mocker.patch('simcore_service_webserver.login.decorators.login_required', lambda f: f)
+    patched = mocker.patch(
+        'simcore_service_webserver.login.decorators.login_required',
+        lambda h: h)
     importlib.reload(handlers)
     return patched
     
 
 @pytest.fixture
-def mocked_prometeheus_failure(mocker):
-    mocker.patch('simcore_service_webserver.activity.handlers.get_cpu_usage').return_value = None
+def mocked_monitoring_down(loop, mocker):
+    patched = mocker.patch('simcore_service_webserver.activity.handlers.query_prometheus')
+    patched.return_value = Future()
+    patched.return_value.set_result = "" #ClientConnectionError()
+    patched_celery = mocker.patch('simcore_service_webserver.activity.handlers.get_celery_reserved')
+    patched_celery.return_value = Future()
+    patched_celery.return_value.set_result = ClientConnectionError()
+    return mocker
+
 
 
 @pytest.fixture
@@ -42,7 +64,6 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_config):
-    # app = create_application(app_config)
     app = create_safe_application(app_config)
 
     setup_session(app)
@@ -54,6 +75,13 @@ def client(loop, aiohttp_client, app_config):
     return cli
 
 
-async def test_get_status(mocked_login_required, client, mocked_prometeheus_failure):
+async def test_monitoring_down(mocked_login_required, mocker, client):
+    mocker.patch(
+        'simcore_service_webserver.activity.handlers.query_prometheus',
+        side_effect=ClientConnectionError)
+    mocker.patch(
+        'simcore_service_webserver.activity.handlers.celery_reserved',
+        side_effect=ClientConnectionError)
+
     resp = await client.get('/v0/activity/status')
-    data, _ = await assert_status(resp, web.HTTPOk)
+    _data, _error = await assert_status(resp, web.HTTPNoContent)
