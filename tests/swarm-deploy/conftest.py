@@ -5,13 +5,17 @@
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Dict
 
+import docker
 import pytest
 import yaml
+from docker import DockerClient
 
 current_dir = Path( sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir() -> Path:
@@ -29,21 +33,36 @@ def osparc_simcore_root_dir() -> Path:
     return root_dir
 
 
+@pytest.fixture(scope='session')
+def docker_client() -> DockerClient:
+    client = docker.from_env()
+    yield client
+
+
+@pytest.fixture(scope='session')
+def docker_swarm_node(docker_client: DockerClient) -> None:
+    # SAME node along ALL session
+    docker_client.swarm.init()
+    yield  #--------------------
+    assert docker_client.swarm.leave(force=True)
+
+
 @pytest.fixture(scope='module')
-def osparc_deploy(osparc_simcore_root_dir: Path) -> Dict:
-    print(f'Deploying from  registry {os.environ.get("DOCKER_REGISTRY")} \
-        and tag {os.environ.get("DOCKER_IMAGE_TAG")}')
+def osparc_deploy(  osparc_simcore_root_dir: Path,
+                    docker_client: DockerClient,
+                    docker_swarm_node) -> Dict:
 
-    subprocess.run(
-        "make down",
-        shell=True, check=False,
-        cwd=osparc_simcore_root_dir
-    )
+    environ = dict(os.environ)
+    if "TRAVIS" not in environ:
+        environ["DOCKER_REGISTRY"] = "local"
+        environ["DOCKER_IMAGE_TAG"] = "production"
 
+    print(f'Deploying from  registry {environ.get("DOCKER_REGISTRY")} \
+        and tag {environ.get("DOCKER_IMAGE_TAG")}')
 
     subprocess.run(
         "make up-version info-swarm",
-        shell=True, check=True,
+        shell=True, check=True, env=environ,
         cwd=osparc_simcore_root_dir
     )
 
@@ -52,16 +71,30 @@ def osparc_deploy(osparc_simcore_root_dir: Path) -> Dict:
     with open( osparc_simcore_root_dir / ".stack-ops.yml" ) as fh:
         ops_config = yaml.safe_load(fh)
 
-    yield {
+    stack_configs = {
         'simcore': simcore_config,
         'ops': ops_config
     }
 
+    yield stack_configs #-------------------------------------------------
+
+    WAIT_BEFORE_RETRY_SECS = 1
+
     subprocess.run(
         "make down",
-        shell=True, check=True,
+        shell=True, check=True, env=environ,
         cwd=osparc_simcore_root_dir
     )
+
+    for stack in stack_configs.keys():
+        while True:
+            online = docker_client.services.list(filters={"label":f"com.docker.stack.namespace={stack}"})
+            if online:
+                print(f"Waiting until {len(online)} services stop: {[s.name for s in online]}")
+                time.sleep(WAIT_BEFORE_RETRY_SECS)
+            else:
+                break
+
 
     (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink()
     (osparc_simcore_root_dir / ".stack-ops.yml").unlink()

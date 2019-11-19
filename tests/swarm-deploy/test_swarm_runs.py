@@ -11,7 +11,6 @@ from pathlib import Path
 from pprint import pformat
 from typing import Dict, List
 
-import docker
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
@@ -67,10 +66,6 @@ def core_service_name(request) -> str:
     return str(request.param)
 
 
-@pytest.fixture
-def docker_client() -> DockerClient:
-    client = docker.from_env()
-    yield client
 
 
 @pytest.fixture

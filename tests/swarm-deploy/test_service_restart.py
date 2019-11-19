@@ -3,26 +3,23 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+import subprocess
 import sys
 import time
 from pathlib import Path
 from pprint import pformat
-from typing import Dict
+from typing import Dict, List
 
 import pytest
+from docker import DockerClient
+from docker.models.services import Service
+from tenacity import before_log, retry, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 
 current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-import subprocess
-import docker
-from tenacity import retry, wait_fixed, stop_after_attempt, before_log
 
-from docker.models.services import Service
-from typing import List
-
-logger = logging.getLogger(__name__)
 
 # time measured from command 'up' finished until *all* tasks are running
 MAX_TIME_TO_DEPLOY_SECS = 60
@@ -30,18 +27,17 @@ MAX_TIME_TO_RESTART_SERVICE = 5
 
 
 @pytest.fixture("module")
-def deployed_simcore_stack(osparc_deploy: Dict) -> List[Service]:
+def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> List[Service]:
     # NOTE: the goal here is NOT to test time-to-deplopy but
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
-    cli = docker.from_env()
 
     @retry( wait=wait_fixed(MAX_TIME_TO_DEPLOY_SECS),
             stop=stop_after_attempt(3),
             before=before_log(logger, logging.WARNING) )
     def ensure_deployed():
-        for service in cli.services.list():
+        for service in docker_client.services.list():
             for task in service.tasks():
                 assert task['Status']['State'] == task['DesiredState'], \
                     f'{service.name} still not ready: {pformat(task)}'
@@ -58,7 +54,8 @@ def deployed_simcore_stack(osparc_deploy: Dict) -> List[Service]:
         # ...
         subprocess.run("docker stack ps simcore", shell=True, check=False)
 
-    return [service for service in cli.services.list() if service.name.startswith("simcore_")]
+    return [service for service in docker_client.services.list()
+        if service.name.startswith("simcore_")]
 
 
 
