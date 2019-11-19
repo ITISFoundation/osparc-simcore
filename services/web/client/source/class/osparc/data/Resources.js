@@ -311,6 +311,22 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
+      },
+      /*
+       * Test entrypoint
+       */
+      checkEP: {
+        usesCache: false,
+        endpoints: {
+          postFail: {
+            method: "POST",
+            url: statics.API + "/check/fail"
+          },
+          postEcho: {
+            method: "POST",
+            url: statics.API + "/check/echo"
+          }
+        }
       }
     };
   },
