@@ -41,7 +41,11 @@ def fake_project(fake_data_dir: Path) -> Dict:
         yield json.load(fp)
 
 
-
 @pytest.fixture
 def project_schema_file(api_specs_dir: Path) -> Path:
     return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
+
+@pytest.fixture
+def activity_data(fake_data_dir: Path) -> Dict:
+    with (fake_data_dir / "activity_data.json").open() as fp:
+        yield json.load(fp)

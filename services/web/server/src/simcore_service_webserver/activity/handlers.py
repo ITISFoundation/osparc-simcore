@@ -22,7 +22,7 @@ def celery_reserved(app):
 # Functions getting the data to be executed async
 #
 async def get_cpu_usage(session, url, user_id):
-    cpu_query = f'irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s]) * 100'
+    cpu_query = f'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s])) * 100'
     return await query_prometheus(session, url, cpu_query)
 
 async def get_memory_usage(session, url, user_id):
@@ -52,7 +52,6 @@ async def get_status(request: aiohttp.web.Request):
 
     config = request.app[APP_CONFIG_KEY]['activity']
     url = URL(config.get('prometheus_host')).with_port(config.get('prometheus_port')).with_path('api/' + config.get('prometheus_api_version') + '/query')
-    # results = await asyncio.gather(get_cpu_usage(session, url, user_id), return_exceptions=True)
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
         get_memory_usage(session, url, user_id),
@@ -101,13 +100,14 @@ async def get_status(request: aiohttp.web.Request):
     if (hasattr(celery_inspect, 'items')):
         for dummy_worker_id, worker in celery_inspect.items():
             for task in worker:
-                node_id = task['args'][1:-1].split(', ')[2][1:-1] # Extracts node_id from task's args
-                if node_id in res:
-                    res[node_id]['queued'] = True
-                else:
-                    res[node_id] = {
-                        'queued': True
-                    }
+                if (task['args'][1:-1].split(', ')[0] == str(user_id)): # Extracts user_id from task's args
+                    node_id = task['args'][1:-1].split(', ')[2][1:-1] # Extracts node_id from task's args
+                    if node_id in res:
+                        res[node_id]['queued'] = True
+                    else:
+                        res[node_id] = {
+                            'queued': True
+                        }
 
     if (not res):
         raise aiohttp.web.HTTPNoContent
