@@ -66,8 +66,6 @@ def core_service_name(request) -> str:
     return str(request.param)
 
 
-
-
 @pytest.fixture
 def core_services_running(docker_client: DockerClient) -> List[Service]:
     # Matches service names in stacks as e.g.

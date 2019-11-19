@@ -48,26 +48,24 @@ def docker_swarm_node(docker_client: DockerClient) -> None:
 
 
 @pytest.fixture(scope='module')
-def osparc_deploy(  osparc_simcore_root_dir: Path,
-                    docker_client: DockerClient,
-                    docker_swarm_node) -> Dict:
+def osparc_deploy( osparc_simcore_root_dir: Path,
+                   docker_client: DockerClient,
+                   docker_swarm_node) -> Dict:
 
     environ = dict(os.environ)
     if "TRAVIS" not in environ:
         environ["DOCKER_REGISTRY"] = "local"
         environ["DOCKER_IMAGE_TAG"] = "production"
 
-    print(f'Deploying from  registry {environ.get("DOCKER_REGISTRY")} \
-        and tag {environ.get("DOCKER_IMAGE_TAG")}')
-
     subprocess.run(
-        "make up-version info-swarm",
+        "make info up-version info-swarm",
         shell=True, check=True, env=environ,
         cwd=osparc_simcore_root_dir
     )
 
     with open( osparc_simcore_root_dir / ".stack-simcore-version.yml" ) as fh:
         simcore_config = yaml.safe_load(fh)
+
     with open( osparc_simcore_root_dir / ".stack-ops.yml" ) as fh:
         ops_config = yaml.safe_load(fh)
 
