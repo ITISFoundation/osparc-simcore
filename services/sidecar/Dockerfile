@@ -20,6 +20,7 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 # All SC_ variables are customized
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default
 
 # environment variables
 ENV SWARM_STACK_NAME = '' \
@@ -98,7 +99,6 @@ FROM cache as production
 
 
 ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 
@@ -126,7 +126,6 @@ CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
 
 
 #  TODO: consider installing tooling in a separate virtualenv?

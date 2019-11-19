@@ -137,6 +137,7 @@ pytest.ini
 # Any output directory
 *output/
 itisfoundation.github.io/
+TODO.*
 
 # backup files
 *~
@@ -145,3 +146,6 @@ itisfoundation.github.io/
 # pylint-profile output
 prof/
 !ops/**/build
+
+# outputs from make
+.stack-*.yml

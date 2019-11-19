@@ -11,6 +11,8 @@ director:
   enabled: False
   host: director
   port: 8001
+application_proxy:
+  enabled: False
 db:
   init_tables: False
   postgres:

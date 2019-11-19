@@ -29,6 +29,9 @@ from simcore_service_webserver.resources import resources as app_resources
 
 logger = logging.getLogger(__name__)
 
+# mute noisy loggers
+logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # Maximum time expected for booting core services
 MAX_BOOT_TIME_SECS = 20
@@ -39,7 +42,7 @@ core_services = [
     'apihub'
 ]
 
-tool_services = [
+ops_services = [
     'adminer',
     'portainer'
 ]
@@ -78,8 +81,8 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     return _load_docker_compose(docker_compose_path)
 
 @pytest.fixture("session")
-def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-tools.yml"
+def ops_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     return _load_docker_compose(docker_compose_path)
 
 
