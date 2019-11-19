@@ -13,12 +13,11 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.aiopg_utils import DBAPIError
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from servicelib.application_setup import app_module_setup,ModuleCategory
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
 
-# SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name. TODO: sync with config
@@ -26,8 +25,6 @@ DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Na
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
-# --------------------------------------------------------------
-
 
 log = logging.getLogger(__name__)
 
@@ -38,33 +35,34 @@ log = logging.getLogger(__name__)
         reraise=True)
 async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
-    sa_engine = sa.create_engine(DSN.format(**params))
-    metadata.create_all(sa_engine)
+    try:
+        url = DSN.format(**params) + f"?application_name={__name__}_init"
+        sa_engine = sa.create_engine(url)
+        metadata.create_all(sa_engine)
+    finally:
+        sa_engine.dispose()
+
 
 async def pg_engine(app: web.Application):
-    engine = None
-    try:
-        cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-        params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
 
-        if cfg.get("init_tables"):
+
+    if cfg.get("init_tables"):
+        try:
             # TODO: get keys from __name__ (see notes in servicelib.application_keys)
             await __create_tables(**params)
+        except DBAPIError:
+            log.exception("Could init db. Stopping :\n %s", cfg)
+            raise
 
-        engine = await create_engine(**params)
-
-    except DBAPIError:
-        log.exception("Could init db. Stopping :\n %s", cfg)
-        raise
-    else:
+    async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
-    yield
+        yield #-------------------
 
-    engine = app.get(APP_DB_ENGINE_KEY)
-    if engine:
-        engine.close()
-        await engine.wait_closed()
+        if engine is not app.get(APP_DB_ENGINE_KEY):
+            log.error("app does not hold right db engine")
 
 
 def is_service_enabled(app: web.Application):

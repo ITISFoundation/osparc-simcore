@@ -82,6 +82,7 @@ def docker_compose_file(default_app_cfg):
 
     os.environ = old
 
+
 @pytest.fixture(scope='session')
 def postgres_service(docker_services, docker_ip, default_app_cfg):
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -96,6 +97,7 @@ def postgres_service(docker_services, docker_ip, default_app_cfg):
         timeout=30.0,
         pause=0.1,
     )
+
     return url
 
 @pytest.fixture
@@ -116,15 +118,15 @@ def postgres_db(app_cfg, postgres_service):
     engine.dispose()
 
 @pytest.fixture
-def server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db): #pylint: disable=R0913
+def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     app = create_application(app_cfg)
     path_mail(monkeypatch)
     server = loop.run_until_complete( aiohttp_server(app, port=app_cfg["main"]["port"]) )
     return server
 
 @pytest.fixture
-def client(loop, aiohttp_client, server):
-    client = loop.run_until_complete(aiohttp_client(server))
+def client(loop, aiohttp_client, web_server):
+    client = loop.run_until_complete(aiohttp_client(web_server))
     return client
 
 @pytest.fixture

@@ -1,13 +1,18 @@
-import pytest
-# pylint:disable=unused-import
-from pytest_docker import docker_ip, docker_services
-from sqlalchemy import JSON, Column, Integer, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.attributes import flag_modified
-
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-import
 
+import pytest
+# FIXME: Not sure why but if this import is removed pytest_docker
+# gets the docker_compose_file wrong in tests_nodes.
+#  Somehow the fixture in packages/simcore-sdk/tests/node_ports/conftest.py
+# does not override override of docker_compose_file from pytest_docker!
+from pytest_docker import docker_ip, docker_services
+from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
+                                                ComputationalTask,
+                                                comp_pipeline, comp_tasks)
+from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.attributes import flag_modified
 
 BASE = declarative_base()
 class User(BASE):
@@ -15,8 +20,6 @@ class User(BASE):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     data = Column(JSON)
-
-
 
 
 @pytest.mark.enable_travis
@@ -45,9 +48,6 @@ def test_alchemy(engine, session):
 
     alpha2 = session.query(User).filter(User.name == 'alpha').one()
     assert alpha2.data['counter'] == 42
-
-
-from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask, comp_pipeline, comp_tasks
 
 
 def test_legacy_queries_with_mapper_adapter():

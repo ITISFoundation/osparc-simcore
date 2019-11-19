@@ -47,9 +47,13 @@ def safe(if_fails_return=False):
 #@retry(wait=wait_fixed(0.1), stop=stop_after_delay(60))
 def _ping(url):
     """checks whether database is responsive"""
-    engine = sa.create_engine(str(url))
-    conn = engine.connect()
-    conn.close()
+    try:
+        engine = sa.create_engine(str(url))
+        conn = engine.connect()
+        conn.close()
+    finally:
+        engine.dispose()
+
 
 
 @safe(if_fails_return=None)

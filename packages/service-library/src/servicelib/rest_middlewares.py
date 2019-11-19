@@ -27,15 +27,16 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def _process_and_raise_unexpected_error(err):
+def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
     # TODO: send info + trace to client ONLY in debug mode!!!
-    logger.exception("Unexpected exception on server side")
-    exc = create_error_response(
-            [err,],
-            "Unexpected Server error",
-            web.HTTPInternalServerError
-        )
-    raise exc
+    resp = create_error_response( [err,], "Unexpected Server error", web.HTTPInternalServerError)
+
+    logger.exception('Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
+        type(err),
+        request.remote, request.method, request.path,
+        resp.status
+    )
+    raise resp
 
 
 def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
@@ -78,7 +79,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                         payload = wrap_as_envelope(data=payload)
                         ex.text = json.dumps(payload)
                 except Exception as err:  # pylint: disable=W0703
-                    _process_and_raise_unexpected_error(err)
+                    _process_and_raise_unexpected_error(request, err)
             raise ex
 
         except web.HTTPRedirection as ex:
@@ -86,7 +87,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             raise
 
         except Exception as err:  # pylint: disable=W0703
-            _process_and_raise_unexpected_error(err)
+            _process_and_raise_unexpected_error(request, err)
 
     return _middleware
 
