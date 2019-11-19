@@ -23,4 +23,9 @@ def get_specs(app: web.Application) -> Spec:
 
 
 OpenApiSpec = Spec
-create_specs = create_specs
+
+__all__ = (
+    'set_specs', 'get_specs',
+    'OpenApiSpec',
+    'create_specs'
+)

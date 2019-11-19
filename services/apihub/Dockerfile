@@ -10,3 +10,6 @@ VOLUME /srv/http
 FROM base as production
 
 COPY api/specs /srv/http/api/specs
+
+# Identical as production
+FROM production as cache

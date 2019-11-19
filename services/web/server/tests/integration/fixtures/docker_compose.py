@@ -86,7 +86,7 @@ def osparc_simcore_docker_compose_all(osparc_simcore_root_dir, devel_environ, te
         cmd = f"docker-compose {options} config > {destination_path}"
         process = subprocess.run(
                 cmd,
-                shell=True,
+                shell=True, check=True,
                 cwd=osparc_simcore_root_dir
             )
         assert process.returncode == 0, "Error in '{}'. Typically service dependencies missing. Check stdout/err for more details.".format(cmd)

@@ -6,6 +6,7 @@ import logging
 
 from aiohttp import web
 from servicelib.monitoring import setup_monitoring
+from servicelib.client_session import persistent_client_session
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -14,6 +15,9 @@ from .s3 import setup_s3
 from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
+
+
+
 
 def create(config):
     log.debug("Creating and setting up application")
@@ -29,6 +33,8 @@ def create(config):
     monitoring = config["main"]["monitoring_enabled"]
     if monitoring:
         setup_monitoring(app, "simcore_service_storage")
+
+    app.cleanup_ctx.append(persistent_client_session)
 
     return app
 

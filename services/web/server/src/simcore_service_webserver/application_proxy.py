@@ -13,8 +13,8 @@ import logging
 import os
 
 import attr
-from aiohttp import web
-from aiohttp.client import ClientSession
+from aiohttp import web, ClientSession
+from servicelib.application_keys import APP_CLIENT_SESSION_KEY
 from yarl import URL
 
 from servicelib.rest_responses import unwrap_envelope
@@ -23,7 +23,6 @@ from .director.config import APP_DIRECTOR_API_KEY
 from .reverse_proxy import setup_reverse_proxy
 from .reverse_proxy.abc import ServiceResolutionPolicy
 
-THIS_CLIENT_SESSION = __name__ + ".session"
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +32,8 @@ class ServiceMonitor(ServiceResolutionPolicy):
     base_url: URL
 
     @property
-    def session(self):
-        return self.app[THIS_CLIENT_SESSION]
+    def session(self) -> ClientSession:
+        return self.app[APP_CLIENT_SESSION_KEY]
 
     async def _request_info(self, service_identifier: str):
         data = {}
@@ -74,13 +73,6 @@ class ServiceMonitor(ServiceResolutionPolicy):
         return base_url
 
 
-async def _cleanup_ctx(app: web.Application):
-    app[THIS_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
-    yield
-    session = app.get(THIS_CLIENT_SESSION)
-    if session:
-        await session.close()
-
 
 def setup(app: web.Application):
     monitor = ServiceMonitor(app, base_url=app[APP_DIRECTOR_API_KEY])
@@ -89,7 +81,6 @@ def setup(app: web.Application):
     assert "reverse_proxy" in app.router
     app["reverse_proxy.basemount"] = monitor.base_mountpoint
 
-    app.cleanup_ctx.append(_cleanup_ctx)
 
 # alias
 setup_app_proxy = setup

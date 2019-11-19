@@ -21,10 +21,10 @@ No development as the code is automatically generated.
 ### local testing
 
 Do the following:
-1. Start the oSparc swarm
+1. Start the simcore stack
 ```bash
-make build
-make up-swarm
+make build tag-version
+make up-version
 ```
 2. Execute __sample.py__ as an example
 3. Observe logs

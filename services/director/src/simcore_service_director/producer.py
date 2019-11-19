@@ -7,10 +7,11 @@ from enum import Enum
 from typing import Dict, List, Tuple
 
 import aiodocker
-import aiohttp
 import tenacity
+from aiohttp import ClientConnectionError, ClientSession, web
 
 from . import config, docker_utils, exceptions, registry_proxy
+from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
@@ -53,7 +54,7 @@ async def _check_setting_correctness(setting: Dict):
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-async def _read_service_settings(app: aiohttp.web.Application, key: str, tag: str) -> Dict:
+async def _read_service_settings(app: web.Application, key: str, tag: str) -> Dict:
     # pylint: disable=C0103
     image_labels = await registry_proxy.get_image_labels(app, key, tag)
     runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS]) if SERVICE_RUNTIME_SETTINGS in image_labels else {}
@@ -61,7 +62,7 @@ async def _read_service_settings(app: aiohttp.web.Application, key: str, tag: st
     return runtime_parameters
 
 
-async def _get_service_boot_parameters_labels(app: aiohttp.web.Application, key: str, tag: str) -> Dict:
+async def _get_service_boot_parameters_labels(app: web.Application, key: str, tag: str) -> Dict:
     # pylint: disable=C0103
     image_labels = await registry_proxy.get_image_labels(app, key, tag)
     boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS]) if SERVICE_RUNTIME_BOOTSETTINGS in image_labels else {}
@@ -70,7 +71,7 @@ async def _get_service_boot_parameters_labels(app: aiohttp.web.Application, key:
 
 
 # pylint: disable=too-many-branches
-async def _create_docker_service_params(app: aiohttp.web.Application,
+async def _create_docker_service_params(app: web.Application,
                                         client: aiodocker.docker.Docker,
                                         service_key: str,
                                         service_tag: str,
@@ -239,7 +240,8 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
                 stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
 async def _pass_port_to_service(service_name: str,
                                 port: str,
-                                service_boot_parameters_labels: Dict):
+                                service_boot_parameters_labels: Dict,
+                                session: ClientSession):
     for param in service_boot_parameters_labels:
         await _check_setting_correctness(param)
         if param['name'] == 'published_host':
@@ -252,9 +254,8 @@ async def _pass_port_to_service(service_name: str,
                 config.PUBLISHED_HOST_NAME), "port": str(port)}
             log.debug("creating request %s and query %s",
                       service_url, query_string)
-            async with aiohttp.ClientSession() as session:
-                async with session.post(service_url, data=query_string) as response:
-                    log.debug("query response: %s", await response.text())
+            async with session.post(service_url, data=query_string) as response:
+                log.debug("query response: %s", await response.text())
             return
     log.debug("service %s does not need to know its external port", service_name)
 
@@ -361,7 +362,7 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
     log.debug("Waited for service %s to start", service_name)
 
 
-async def _get_repos_from_key(app: aiohttp.web.Application, service_key: str) -> List[Dict]:
+async def _get_repos_from_key(app: web.Application, service_key: str) -> List[Dict]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
         service_key: await registry_proxy.list_image_tags(app, service_key)
@@ -376,7 +377,7 @@ async def _get_repos_from_key(app: aiohttp.web.Application, service_key: str) ->
     return list_of_images
 
 
-async def _get_dependant_repos(app: aiohttp.web.Application, service_key: str, service_tag: str) -> Dict:
+async def _get_dependant_repos(app: web.Application, service_key: str, service_tag: str) -> Dict:
     list_of_images = await _get_repos_from_key(app, service_key)
     tag = await _find_service_tag(list_of_images, service_key, service_tag)
     # look for dependencies
@@ -400,7 +401,7 @@ async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag:
     log.debug("Service tag found is %s ", service_tag)
     return tag
 
-async def _start_docker_service(app: aiohttp.web.Application,
+async def _start_docker_service(app: web.Application,
                                 client: aiodocker.docker.Docker,
                                 user_id: str,
                                 project_id: str,
@@ -436,7 +437,8 @@ async def _start_docker_service(app: aiohttp.web.Application,
         service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
         service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
-            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels)
+            session = app[APP_CLIENT_SESSION_KEY]
+            await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels, session)
 
         container_meta_data = {
             "published_port": published_port,
@@ -463,14 +465,14 @@ async def _start_docker_service(app: aiohttp.web.Application,
             service_key, service_tag) from err
 
 
-async def _silent_service_cleanup(app: aiohttp.web.Application, node_uuid):
+async def _silent_service_cleanup(app: web.Application, node_uuid):
     try:
         await stop_service(app, node_uuid)
     except exceptions.DirectorException:
         pass
 
 
-async def _create_node(app: aiohttp.web.Application,
+async def _create_node(app: web.Application,
                         client: aiodocker.docker.Docker,
                         user_id: str,
                         project_id: str,
@@ -520,11 +522,10 @@ async def _get_service_key_version_from_docker_service(service: Dict) -> Tuple[s
 
 async def _get_service_basepath_from_docker_service(service: Dict) -> str:
     envs_list = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
-    envs_dict = {key: value for key, value in (
-        x.split("=") for x in envs_list)}
+    envs_dict = dict(x.split("=") for x in envs_list)
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
-async def start_service(app: aiohttp.web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
+async def start_service(app: web.Application, user_id: str, project_id: str, service_key: str, service_tag: str, node_uuid: str, node_base_path: str) -> Dict:
     # pylint: disable=C0103
     log.debug("starting service %s:%s using uuid %s, basepath %s",
               service_key, service_tag, node_uuid, node_base_path)
@@ -548,7 +549,7 @@ async def start_service(app: aiohttp.web.Application, user_id: str, project_id: 
         # we return only the info of the main service
         return node_details
 
-async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> Dict:
+async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
@@ -593,7 +594,7 @@ async def get_service_details(app: aiohttp.web.Application, node_uuid: str) -> D
                 "Error while accessing container", err) from err
 
 
-async def stop_service(app: aiohttp.web.Application, node_uuid: str):
+async def stop_service(app: web.Application, node_uuid: str):
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
     async with docker_utils.docker_client() as client: # pylint: disable=not-async-context-manager
@@ -615,14 +616,14 @@ async def stop_service(app: aiohttp.web.Application, node_uuid: str):
                                             service_details["service_basepath"])
         log.debug("saving state of service %s...", service_host_name)
         try:
-            async with aiohttp.ClientSession() as session:
-                service_url = "http://" + service_host_name + "/" + "state"
-                async with session.post(service_url) as response:
-                    if 199 < response.status < 300:
-                        log.debug("service %s successfully saved its state", service_host_name)
-                    else:
-                        log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
-        except aiohttp.ClientConnectionError:
+            session = app[APP_CLIENT_SESSION_KEY]
+            service_url = "http://" + service_host_name + "/" + "state"
+            async with session.post(service_url) as response:
+                if 199 < response.status < 300:
+                    log.debug("service %s successfully saved its state", service_host_name)
+                else:
+                    log.warning("service %s does not allow saving state, answered %s", service_host_name, await response.text())
+        except ClientConnectionError:
             log.exception("service %s could not be contacted, state not saved")
 
 

@@ -16,11 +16,6 @@ from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
-async def aiohttp_mock_app(loop, mocker):
-    aiohttp_app = mocker.patch('aiohttp.web.Application')
-    return aiohttp_mock_app
-
-@pytest.fixture
 async def run_services(aiohttp_mock_app, configure_registry_access, configure_schemas_location, push_services, docker_swarm, user_id, project_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn, dependant=False):
@@ -101,7 +96,7 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert len(docker_tasks) > 0
         task = docker_tasks[0]
         envs_list = task["Spec"]["ContainerSpec"]["Env"]
-        envs_dict = {key:value for key,value in (x.split("=") for x in envs_list)}
+        envs_dict = dict(x.split("=") for x in envs_list)
 
         assert "POSTGRES_ENDPOINT" in envs_dict
         assert "POSTGRES_USER" in envs_dict

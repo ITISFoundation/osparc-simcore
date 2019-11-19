@@ -10,17 +10,16 @@ from typing import Dict, List, Tuple
 
 import aiobotocore
 import aiofiles
-import aiohttp
 import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
-from sqlalchemy.sql import and_
-from yarl import URL
-
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError
+from servicelib.client_session import get_client_session
+from sqlalchemy.sql import and_
+from yarl import URL
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (DatasetMetaData, FileMetaData, FileMetaDataEx,
@@ -60,7 +59,7 @@ async def _setup_dsm(app: web.Application):
     bucket_name = s3_cfg["bucket_name"]
 
     testing = main_cfg["testing"]
-    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing)
+    dsm = DataStorageManager(s3_client, engine, loop, pool, bucket_name, not testing, app)
 
     app[APP_DSM_KEY] = dsm
 
@@ -114,6 +113,7 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
+    app: web.Application=None
 
     datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
@@ -200,7 +200,7 @@ class DataStorageManager:
                             .where(user_to_projects.c.user_id == user_id)
 
                         async for row in conn.execute(query):
-                            proj_data = {key:value for key,value in row.items()}
+                            proj_data = dict(row.items())
 
                             uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
                             wb = proj_data['workbench']
@@ -322,7 +322,7 @@ class DataStorageManager:
                         query = sa.select([projects]).select_from(joint_table)\
                                 .where(user_to_projects.c.user_id == user_id)
                         async for row in conn.execute(query):
-                            proj_data = {key:value for key,value in row.items()}
+                            proj_data = dict(row.items())
                             dmd = DatasetMetaData(dataset_id=proj_data["uuid"],
                                 display_name=proj_data["name"])
                             data.append(dmd)
@@ -436,15 +436,15 @@ class DataStorageManager:
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath, filename)
         url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    f = await aiofiles.open(local_file_path, mode='wb')
-                    await f.write(await resp.read())
-                    await f.close()
-                    # and then upload
-                    await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
-                        destination_id=dest_uuid)
+        session = get_client_session(self.app)
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                f = await aiofiles.open(local_file_path, mode='wb')
+                await f.write(await resp.read())
+                await f.close()
+                # and then upload
+                await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
+                    destination_id=dest_uuid)
         shutil.rmtree(tmp_dirpath)
 
     async def copy_file_datcore_s3(self, user_id: str, dest_uuid: str, source_uuid: str, filename_missing: bool=False):
@@ -458,16 +458,17 @@ class DataStorageManager:
 
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath,filename)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(dc_link) as resp:
-                if resp.status == 200:
-                    f = await aiofiles.open(local_file_path, mode='wb')
-                    await f.write(await resp.read())
-                    await f.close()
-                    s3_upload_link = URL(s3_upload_link)
-                    async with session.put(s3_upload_link, data=Path(local_file_path).open('rb')) as resp:
-                        if resp.status > 299:
-                            _response_text = await resp.text()
+        session = get_client_session(self.app)
+
+        async with session.get(dc_link) as resp:
+            if resp.status == 200:
+                f = await aiofiles.open(local_file_path, mode='wb')
+                await f.write(await resp.read())
+                await f.close()
+                s3_upload_link = URL(s3_upload_link)
+                async with session.put(s3_upload_link, data=Path(local_file_path).open('rb')) as resp:
+                    if resp.status > 299:
+                        _response_text = await resp.text()
 
         return dest_uuid
 

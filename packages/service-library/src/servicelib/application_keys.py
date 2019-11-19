@@ -26,6 +26,8 @@ APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
 APP_DB_SESSION_KEY     = __name__ + '.db_session'
 APP_DB_POOL_KEY        = __name__ + '.db_pool'
 
+APP_CLIENT_SESSION_KEY = f"{__name__ }.session"
+
 # RSP=response
 
 
