@@ -26,17 +26,18 @@ paths:
       summary: service test endpoint
       operationId: check_action
       parameters:
-        - in: query
-          name: data
-          schema:
-            type: string
         - in: path
           required: true
           name: action
+          required: true
           schema:
             type: string
             default: 'echo'
             enum: ['fail', 'echo']
+        - in: query
+          name: data
+          schema:
+            type: string
       requestBody:
         content:
           application/json:

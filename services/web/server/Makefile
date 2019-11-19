@@ -9,6 +9,10 @@ APP_CLI_NAME  = simcore-service-${APP_NAME}
 ROOT_DIR     = $(abspath $(CURDIR)/../../../)
 VENV_DIR    ?= $(abspath $(ROOT_DIR)/.venv)
 
+.PHONY: devenv
+devenv: ## build development environment (using main services/docker-compose-build.yml)
+	@$(MAKE) -C ${ROOT_DIR} $@
+
 
 .PHONY: install
 install: ## install app in edit mode for development [DEV]
@@ -31,7 +35,7 @@ tests-integration: ## runs integration tests against local+production images
 
 .PHONY: build
 build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} build
+	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} $@
 
 
 .PHONY: clean

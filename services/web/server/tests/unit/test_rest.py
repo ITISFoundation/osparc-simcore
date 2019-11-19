@@ -74,10 +74,7 @@ async def test_check_health(client):
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
-async def test_check_action(client):
-    QUERY = 'value'
-    ACTION = 'echo'
-    FAKE = {
+FAKE = {
         'path_value': 'one',
         'query_value': 'two',
         'body_value': {
@@ -86,7 +83,11 @@ async def test_check_action(client):
         }
     }
 
-    resp = await client.post("/v0/check/{}?data={}".format(ACTION, QUERY), json=FAKE)
+async def test_check_action(client):
+    QUERY = 'value'
+    ACTION = 'echo'
+
+    resp = await client.post(f"/v0/check/{ACTION}?data={QUERY}", json=FAKE)
     payload = await resp.json()
     data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
@@ -99,6 +100,17 @@ async def test_check_action(client):
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
     assert data['body_value'] == FAKE
+
+
+
+async def test_check_fail(client):
+    url = client.app.router["check_action"].url_for(action="fail").with_query(data="foo")
+    assert str(url) == "/v0/check/fail?data=foo"
+    resp = await client.post(url, json=FAKE)
+
+    _, error = await assert_status(resp, web.HTTPInternalServerError)
+    assert "some random failure" in str(error)
+
 
 
 async def test_frontend_config(client):
