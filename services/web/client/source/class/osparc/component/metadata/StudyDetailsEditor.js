@@ -286,7 +286,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __isCurrentUserOwner: function() {
       if (this.__model) {
-        return this.__model.getPrjOwner() === osparc.data.Permissions.getInstance().getLogin();
+        return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }

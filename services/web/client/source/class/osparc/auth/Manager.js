@@ -67,6 +67,7 @@ qx.Class.define("osparc.auth.Manager", {
         osparc.data.Resources.getOne("profile", {}, null, false)
           .then(profile => {
             this.__loginUser(profile.login);
+            osparc.data.Permissions.getInstance().setRole(profile.role);
             successCb.call(ctx, profile);
           })
           .catch(err => {

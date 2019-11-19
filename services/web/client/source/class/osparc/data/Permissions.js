@@ -92,6 +92,10 @@ qx.Class.define("osparc.data.Permissions", {
       this.__userRole = role;
     },
 
+    arePermissionsReady() {
+      return this.getRole() !== null;
+    },
+
     getChildrenRoles(role) {
       role = role.toLowerCase();
       const childrenRoles = [];
