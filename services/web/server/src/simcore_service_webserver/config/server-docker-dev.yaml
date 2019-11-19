@@ -38,7 +38,7 @@ rabbit:
 login:
   enabled: True
   registration_invitation_required: False
-  registration_confirmation_required: True
+  registration_confirmation_required: False
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}

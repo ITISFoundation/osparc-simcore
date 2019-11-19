@@ -57,6 +57,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         this._removeAll();
         iframe.dispose();
         this.__createServicesLayout();
+        this.__attachEventHandlers();
       }
     }, this);
     userTimer.start();
@@ -66,17 +67,30 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
   members: {
     __servicesReady: null,
+    __serviceFilters: null,
     __allServices: null,
     __servicesList: null,
     __versionsList: null,
     __searchTextfield: null,
+
+    /**
+     * Function that resets the selected item by reseting the filters and the service selection
+     */
+    resetSelection: function() {
+      if (this.__serviceFilters) {
+        this.__serviceFilters.reset();
+      }
+      if (this.__servicesList) {
+        this.__servicesList.setSelection([]);
+      }
+    },
 
     __initResources: function() {
       this.__getServicesPreload();
     },
 
     __getServicesPreload: function() {
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       store.addListener("servicesRegistered", e => {
         // Do not validate if are not taking actions
         // this.__nodeCheck(e.getData());
@@ -86,24 +100,24 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      const servicesList = this.__createServicesList();
+      const servicesList = this.__createServicesListLayout();
       this._add(servicesList);
 
-      const serviceDescription = this.__createServiceDescription();
+      const serviceDescription = this.__createServiceDescriptionLayout();
       this._add(serviceDescription, {
         flex: 1
       });
     },
 
-    __createServicesList: function() {
+    __createServicesListLayout: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      const serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
+      const serviceFilters = this.__serviceFilters = new qxapp.desktop.ServiceFilters("serviceBrowser");
       servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
-        minWidth: 500,
+        minWidth: 400,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
@@ -112,7 +126,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           this.__serviceSelected(selectedKey);
         }
       }, this);
-      const store = qxapp.data.Store.getInstance();
+      const store = qxapp.store.Store.getInstance();
       const latestServices = [];
       const services = this.__allServices = store.getServices();
       for (const serviceKey in services) {
@@ -133,6 +147,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
+          ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
@@ -157,10 +172,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createServiceDescription: function() {
-      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    __createServiceDescriptionLayout: function() {
+      const descriptionView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
+
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
 
       const label = new qx.ui.basic.Label(this.tr("Description")).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
@@ -169,16 +186,18 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       titleContainer.add(label);
 
       titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
-      const versions = this.__versionsList = new qx.ui.form.SelectBox();
-      titleContainer.add(versions);
 
+      const versions = this.__versionsList = new qx.ui.form.SelectBox();
+      qxapp.utils.Utils.setIdToWidget(versions, "serviceBrowserVersionsDrpDwn");
+      titleContainer.add(versions);
       versions.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length) {
           this.__versionSelected(e.getData()[0].getLabel());
         }
       }, this);
-
       descriptionView.add(titleContainer);
+
+      const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
       descriptionView.add(descriptionContainer, {
         flex: 1
       });
@@ -186,15 +205,33 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVBoxWLabel: function(text) {
-      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
 
-      let label = new qx.ui.basic.Label(text).set({
+      const label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
         minWidth: 150
       });
       vBoxLayout.add(label);
 
       return vBoxLayout;
+    },
+
+    __attachEventHandlers: function() {
+      const textfield = this.__serviceFilters.getTextFilter().getChildControl("textfield", true);
+      textfield.addListener("appear", () => {
+        qxapp.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
+        textfield.focus();
+      }, this);
+      textfield.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          const selectables = this.__servicesList.getSelectables();
+          if (selectables) {
+            this.__servicesList.setSelection([selectables[0]]);
+          }
+        }
+      }, this);
     },
 
     __serviceSelected: function(serviceKey) {
@@ -214,6 +251,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
               this.__versionSelected(lastItem.getLabel());
             }
           }
+        } else {
+          this.__updateServiceDescription(null);
         }
       }
     },
@@ -229,9 +268,13 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
     __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
-      if (selectedService && serviceDescription) {
-        const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
-        serviceDescription.add(serviceInfo);
+      if (serviceDescription) {
+        if (selectedService) {
+          const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+          serviceDescription.add(serviceInfo);
+        } else {
+          serviceDescription.add(null);
+        }
       }
     },
 

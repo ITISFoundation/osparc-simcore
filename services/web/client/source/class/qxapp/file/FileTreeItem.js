@@ -17,7 +17,7 @@
 ************************************************************************ */
 
 /**
- * VirtualTreeItem used mainly by FilesTreePopulator
+ * VirtualTreeItem used by FilesTree
  *
  *   It consists of an entry icon, label, size, path/location and uuid that can be set through props
  *

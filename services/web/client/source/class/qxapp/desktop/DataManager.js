@@ -42,7 +42,10 @@ qx.Class.define("qxapp.desktop.DataManager", {
     this._setLayout(prjBrowserLayout);
 
     this.__createDataManagerLayout();
-    this.__initResources();
+
+    this.addListener("appear", () => {
+      this.__initResources(null);
+    }, this);
   },
 
   members: {
@@ -50,34 +53,16 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function(locationId = null) {
+    __initResources: function(locationId) {
       this.__filesTree.populateTree(null, locationId);
     },
 
+    __resetCache: function() {
+      this.__filesTree.resetCache();
+    },
+
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
-
-      const label = new qx.ui.basic.Label(this.tr("Data Manager")).set({
-        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 150
-      });
-      dataManagerMainLayout.add(label);
-
-      const dataManagerControl = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-
-      // button for refetching data
-      const reloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/16"
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__initResources();
-      }, this);
-      dataManagerControl.add(reloadBtn);
-
-      const toDatCore = new qxapp.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
-      dataManagerControl.add(toDatCore);
-
-      dataManagerMainLayout.add(dataManagerControl);
+      const dataManagerMainLayout = this.__createVBoxWLabel(this.tr("Data Manager"));
 
       const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
@@ -95,27 +80,51 @@ qx.Class.define("qxapp.desktop.DataManager", {
         dataManagerLayout.add(chartLayout);
       }
 
-      this._add(dataManagerMainLayout);
+      this._add(dataManagerMainLayout, {
+        flex: 1
+      });
+    },
+
+    __createVBoxWLabel: function(text) {
+      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
+
+      const label = new qx.ui.basic.Label(text).set({
+        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        minWidth: 150
+      });
+      vBoxLayout.add(label);
+
+      return vBoxLayout;
     },
 
     __createTreeLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
+      // button for refetching data
+      const reloadBtn = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/16",
+        allowGrowX: false
+      });
+      reloadBtn.addListener("execute", function() {
+        this.__resetCache();
+        this.__initResources(null);
+      }, this);
+      treeLayout.add(reloadBtn);
+
       const filesTree = this.__filesTree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
-        dropMechnism: true,
-        minHeight: 600
+        dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {
         this.__selectionChanged();
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
-          this.__initResources();
+          this.__initResources(null);
         }
-      }, this);
-      filesTree.addListener("modelChanged", () => {
-        this.__reloadChartData();
       }, this);
       treeLayout.add(filesTree, {
         flex: 1

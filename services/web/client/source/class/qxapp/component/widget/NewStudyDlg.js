@@ -61,6 +61,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
         placeholder: this.tr("Study Title"),
         value: template ? template.name : ""
       });
+      qxapp.utils.Utils.setIdToWidget(studyTitle, "newStudyTitleFld");
       this.addListener("appear", () => {
         studyTitle.activate();
         studyTitle.focus();
@@ -72,6 +73,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
         placeholder: this.tr("Describe your study..."),
         value: template ? template.description : ""
       });
+      qxapp.utils.Utils.setIdToWidget(description, "newStudyDescFld");
       prjFormLayout.add(description, {
         flex: 1
       });
@@ -86,6 +88,7 @@ qx.Class.define("qxapp.component.widget.NewStudyDlg", {
       }
 
       const createBtn = new qx.ui.form.Button(this.tr("Create"));
+      qxapp.utils.Utils.setIdToWidget(createBtn, "newStudySubmitBtn");
       prjFormLayout.add(createBtn);
 
       // create the form manager

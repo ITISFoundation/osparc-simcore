@@ -50,6 +50,50 @@
                 "Fast Counter"
             ]
         },
+        "thumbnail": {
+            "type": "string",
+            "description": "url to the thumbanil",
+            "examples": [
+                "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+            ]
+        },
+        "badges": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "image", "url"],
+                "additionalProperties": false,
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the subject",
+                        "examples": [
+                            "travis-ci",
+                            "coverals.io",
+                            "github.io"
+                        ]
+                    },
+                    "image": {
+                        "type": "string",
+                        "description": "Url to the shield",
+                        "examples": [
+                            "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+                            "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+                            "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+                        ]
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "Link to status",
+                        "examples": [
+                            "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+                            "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+                            "https://itisfoundation.github.io/"
+                        ]
+                    }
+                }
+            }
+        },
         "description": {
             "type": "string",
             "description": "human readable description of the purpose of the node",

@@ -10,9 +10,9 @@ source $(dirname $0)/.env
 echo "client dir: " ${CLIENT_DIR}
 echo "fonts dir : " ${FONTS_DIR}
 
-# Removes contrib folder and json file
-rm -r ${CLIENT_DIR}/contrib 2> /dev/null
-rm ${CLIENT_DIR}/contrib.json 2> /dev/null
+# Removes packages folder and json file
+rm -r ${CLIENT_DIR}/qx_packages 2> /dev/null
+rm ${CLIENT_DIR}/qx-lock.json 2> /dev/null
 
 # Removes links to
 rm ${FONTS_DIR}/fontawesome5 2> /dev/null

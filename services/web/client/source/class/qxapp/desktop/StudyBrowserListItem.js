@@ -25,12 +25,15 @@
  */
 
 qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
-  extend: qx.ui.core.Widget,
-  implement : [qx.ui.form.IModel],
-  include : [qx.ui.form.MModelProperty],
+  extend: qx.ui.form.ToggleButton,
+  implement : [qx.ui.form.IModel, qxapp.component.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, qxapp.component.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
+    this.set({
+      width: 210
+    });
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
@@ -38,7 +41,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    let layout = new qx.ui.layout.VBox().set({
+    let layout = new qx.ui.layout.VBox(5).set({
       alignY: "middle"
     });
     this._setLayout(layout);
@@ -47,8 +50,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     this.addListener("pointerout", this._onPointerOut, this);
   },
 
-  events:
-  {
+  events: {
     /** (Fired by {@link qx.ui.form.List}) */
     "action" : "qx.event.type.Event"
   },
@@ -59,13 +61,12 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
       init : "pb-listitem"
     },
 
-    icon: {
+    uuid: {
       check: "String",
-      apply : "_applyIcon",
-      nullable : true
+      apply : "_applyUuid"
     },
 
-    prjTitle: {
+    studyTitle: {
       check: "String",
       apply : "_applyStudyTitle",
       nullable : true
@@ -97,34 +98,51 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon":
-          control = new qx.ui.basic.Image(this.getIcon());
-          this._add(control);
-          break;
-        case "prjTitle":
-          control = new qx.ui.basic.Label(this.getPrjTitle()).set({
+        case "studyTitle":
+          control = new qx.ui.basic.Label(this.getStudyTitle()).set({
             margin: [5, 0],
-            font: "title-14"
+            font: "title-14",
+            anonymous: true
           });
-          this._add(control);
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_title");
+          this._addAt(control, 0);
+          break;
+        case "icon":
+          control = new qx.ui.basic.Image(this.getIcon()).set({
+            anonymous: true,
+            scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
+            maxHeight: 120
+          });
+          this._addAt(control, 1);
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
             rich: true,
-            allowGrowY: false
+            allowGrowY: false,
+            anonymous: true
           });
-          this._addAt(control);
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
+          this._addAt(control, 2);
           break;
         case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            allowGrowY: false
+            allowGrowY: false,
+            anonymous: true
           });
-          this._addAt(control);
+          qxapp.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
+          this._addAt(control, 3);
           break;
       }
 
       return control || this.base(arguments, id);
+    },
+
+    // overriden
+    _applyUuid: function(value, old) {
+      qxapp.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
     _applyIcon: function(value, old) {
@@ -136,7 +154,7 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
     },
 
     _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("prjTitle");
+      let label = this.getChildControl("studyTitle");
       label.setValue(value);
     },
 
@@ -167,6 +185,41 @@ qx.Class.define("qxapp.desktop.StudyBrowserListItem", {
      */
     _onPointerOut : function() {
       this.removeState("hovered");
+    },
+
+    /**
+     * Event handler for filtering events.
+     */
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        const checks = [
+          this.getStudyTitle(),
+          this.getCreator()
+        ];
+        for (let i=0; i<checks.length; i++) {
+          const label = checks[i].trim().toLowerCase();
+          if (label.indexOf(data.text) !== -1) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.text && data.text.length > 1) {
+        return true;
+      }
+      return false;
     }
   },
 

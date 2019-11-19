@@ -24,13 +24,13 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let store = qxapp.data.Store.getInstance();
- *   store.addListenerOnce("nodeFiles", e => {
+ *   let dataStore = qxapp.store.Data.getInstance();
+ *   dataStore.addListenerOnce("nodeFiles", e => {
  *     const files = e.getData();
  *     const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
  *     this.__addTreeData(newChildren);
  *   }, this);
- *   store.getNodeFiles(nodeId);
+ *   dataStore.getNodeFiles(nodeId);
  * </pre>
  */
 

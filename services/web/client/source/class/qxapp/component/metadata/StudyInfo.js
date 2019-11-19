@@ -3,10 +3,30 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
+ */
+
+/**
+ * Widget that contains the StudyDetails of the given study metadata.
+ *
+ * It also provides a button that opens a window with the same information.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *    const serviceInfo = new qxapp.component.metadata.ServiceInfo(selectedService);
+ *    this.add(serviceInfo);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
+
+  /**
+    * @param study {Object|qxapp.data.model.Study} Study (metadata)
+    */
   construct: function(study) {
     this.base(arguments);
 
@@ -18,87 +38,29 @@ qx.Class.define("qxapp.component.metadata.StudyInfo", {
 
     this.__study = study;
 
-    const main = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-    main.add(this.__createStudyThumbnail());
-    main.add(this.__createMainInfo(), {
+    this._add(this.__createExpandButton());
+    const windowWidth = 500;
+    const thumbnailWidth = (windowWidth - 250)/1.67;
+    this._add(new qxapp.component.metadata.StudyDetails(study, thumbnailWidth), {
       flex: 1
     });
-    this._add(main);
-
-    const extraInfo = this.__createExtraInfo();
-    const more = new qxapp.desktop.PanelView(this.tr("more information"), extraInfo).set({
-      caretSize: 14,
-      collapsed: true
-    });
-    more.getChildControl("title").setFont("text-12");
-    this._add(more);
   },
 
   members: {
     __study: null,
 
-    __createMainInfo: function() {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
-        alignY: "middle"
-      }));
-
-      const title = new qx.ui.basic.Label(this.__study.getName()).set({
-        font: "title-16",
-        rich: true
+    __createExpandButton: function() {
+      const expandButton = new qx.ui.form.Button().set({
+        label: this.tr("Show all"),
+        icon: "@FontAwesome5Solid/external-link-alt/16",
+        allowGrowX: false
       });
-      container.add(title);
-
-      const description = new qx.ui.basic.Label(this.__study.getDescription()).set({
-        rich: true
-      });
-      container.add(description);
-
-      const author = new qx.ui.basic.Label(this.tr("Owner") + ": <b>" + this.__study.getPrjOwner() + "</b>").set({
-        rich: true
-      });
-      container.add(author);
-
-      return container;
-    },
-
-    __createStudyThumbnail: function() {
-      return new qx.ui.basic.Image(qxapp.utils.Utils.getThumbnailFromUuid(this.__study.getUuid())).set({
-        scale: true,
-        width: 200,
-        height: 120
-      });
-    },
-
-    __createExtraInfo: function() {
-      const layout = new qx.ui.layout.Grid(8);
-      layout.setColumnAlign(0, "right", "middle");
-      layout.setColumnAlign(1, "left", "middle");
-
-      const container = new qx.ui.container.Composite(layout);
-
-      const dateFormatter = date => date.toLocaleString();
-
-      container.add(new qx.ui.basic.Label(this.tr("Creation date")), {
-        column: 0,
-        row: 0
-      });
-      const creation = new qx.ui.basic.Label(dateFormatter(this.__study.getCreationDate()));
-      container.add(creation, {
-        column: 1,
-        row: 0
-      });
-
-      container.add(new qx.ui.basic.Label(this.tr("Last modified")), {
-        column: 0,
-        row: 1
-      });
-      const last = new qx.ui.basic.Label(dateFormatter(this.__study.getCreationDate()));
-      container.add(last, {
-        column: 1,
-        row: 1
-      });
-
-      return container;
+      expandButton.addListener("execute", function() {
+        const win = new qxapp.component.metadata.StudyDetailsWindow(this.__study);
+        win.center();
+        win.open();
+      }, this);
+      return expandButton;
     }
   }
 });

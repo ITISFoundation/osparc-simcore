@@ -64,7 +64,7 @@ qx.Class.define("qxapp.data.model.Node", {
       version
     });
 
-    let store = qxapp.data.Store.getInstance();
+    let store = qxapp.store.Store.getInstance();
     let metaData = this.__metaData = store.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
@@ -552,7 +552,7 @@ qx.Class.define("qxapp.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (qxapp.data.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (qxapp.store.Store.getInstance().arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               break;
             }
@@ -939,7 +939,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     stopInteractiveService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const store = qxapp.data.Store.getInstance();
+        const store = qxapp.store.Store.getInstance();
         store.stopInteractiveService(this.getNodeId());
         this.removeIFrame();
       }

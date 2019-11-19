@@ -58,8 +58,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
     this.addListener("pointerout", this._onPointerOut, this);
   },
 
-  events:
-  {
+  events: {
     /** (Fired by {@link qx.ui.form.List}) */
     "action" : "qx.event.type.Event"
   },
@@ -67,7 +66,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
   properties: {
     appearance: {
       refine : true,
-      init : "pb-listitem"
+      init : "selectable"
+    },
+
+    key: {
+      check: "String",
+      apply : "_applyKey"
     },
 
     title: {
@@ -154,6 +158,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       return control || this.base(arguments, id);
     },
 
+    _applyKey: function(value, old) {
+      const parts = value.split("/");
+      const id = parts.pop();
+      qxapp.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
+    },
+
     _applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
@@ -169,6 +179,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
+    /**
+     * Event handler for filtering events.
+     */
     _filter: function() {
       this.exclude();
     },

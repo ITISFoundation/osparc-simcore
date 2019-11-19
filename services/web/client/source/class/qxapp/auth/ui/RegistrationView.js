@@ -35,34 +35,37 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
 
     // overrides base
     _buildPage: function() {
-      let validator = new qx.ui.form.validation.Manager();
+      const validator = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Registration"));
 
       // email, pass1 == pass2
-      let email = new qx.ui.form.TextField().set({
+      const email = new qx.ui.form.TextField().set({
         required: true,
         placeholder: this.tr("Introduce your email")
       });
       this.add(email);
+      qxapp.utils.Utils.setIdToWidget(email, "registrationEmailFld");
       this.__email = email;
 
-      // let uname = new qx.ui.form.TextField().set({
+      // const uname = new qx.ui.form.TextField().set({
       //   required: true,
       //   placeholder: this.tr("Introduce a user name")
       // });
       // this.add(uname);
 
-      let pass1 = new qx.ui.form.PasswordField().set({
+      const pass1 = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Introduce a password")
       });
+      qxapp.utils.Utils.setIdToWidget(pass1, "registrationPass1Fld");
       this.add(pass1);
 
-      let pass2 = new qx.ui.form.PasswordField().set({
+      const pass2 = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype the password")
       });
+      qxapp.utils.Utils.setIdToWidget(pass2, "registrationPass2Fld");
       this.add(pass2);
 
       const urlFragment = qxapp.utils.Utils.parseURLFragment();
@@ -81,21 +84,22 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
 
 
       // submit & cancel buttons
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      qxapp.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
       grp.add(submitBtn, {
         flex:1
-
       });
 
-      let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      qxapp.utils.Utils.setIdToWidget(cancelBtn, "registrationCancelBtn");
       grp.add(cancelBtn, {
         flex:1
       });
 
       // interaction
-      submitBtn.addListener("execute", function(e) {
+      submitBtn.addListener("execute", e => {
         const valid = validator.validate();
         if (valid) {
           this.__submit({
@@ -107,9 +111,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationView", {
         }
       }, this);
 
-      cancelBtn.addListener("execute", function(e) {
-        this.fireDataEvent("done", null);
-      }, this);
+      cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },

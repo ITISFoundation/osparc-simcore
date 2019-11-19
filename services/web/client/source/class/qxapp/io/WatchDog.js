@@ -40,7 +40,7 @@ qx.Class.define("qxapp.io.WatchDog", {
     let resource = qxapp.io.rest.ResourceFactory.getInstance().createHealthCheck();
     this.__healthCheckResource = resource.healthCheck;
 
-    const interval = 2000;
+    const interval = 5000;
     this.__timer = new qx.event.Timer(interval);
 
     window.addEventListener("online", this.__updateOnlineStatus, this);
