@@ -40,6 +40,7 @@ def osparc_deploy(osparc_simcore_root_dir: Path) -> Dict:
         cwd=osparc_simcore_root_dir
     )
 
+
     subprocess.run(
         "make up-version info-swarm",
         shell=True, check=True,
