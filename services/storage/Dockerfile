@@ -25,6 +25,7 @@ ENV HOME /home/scu
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_PIP2 pip2 --no-cache-dir
 ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default
 
 EXPOSE 8080
 
@@ -69,7 +70,7 @@ RUN $SC_PIP install \
 FROM build as development
 
 ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
+ENV SC_BOOT_MODE debug-ptvsd
 
 WORKDIR /devel
 VOLUME  /devel/packages
@@ -103,7 +104,6 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
 
 
 WORKDIR /home/scu

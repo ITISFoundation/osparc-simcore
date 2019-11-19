@@ -28,6 +28,19 @@
  * <pre class='javascript'>
  *   let studies = osparc.store.Store.getInstance().getStudies();
  * </pre>
+ *
+ * To invalidate the cache for any of the entities, config for example, just do:
+ * <pre class="javascript">
+ *   osparc.store.Store.getInstance().resetConfig();
+ * </pre>
+ * or
+ * <pre class="javascript">
+ *   osparc.store.Store.getInstance().invalidate("config");
+ * </pre>
+ * To invalidate the entire cache:
+ * <pre class="javascript">
+ *   osparc.store.Store.getInstance().invalidate();
+ * </pre>
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
@@ -151,6 +164,28 @@ qx.Class.define("osparc.store.Store", {
         return null;
       }
       return osparc.utils.Services.servicesCached;
+    },
+
+    /**
+     * Invalidates the cache for the given resources.
+     * If resource is a string, it will invalidate that resource.
+     * If it is an array, it will try to invalidate every resource in the array.
+     * If it is not provided, it will invalidate all resources.
+     *
+     * @param {(string|string[])} [resources] Property or array of property names that must be reset
+     */
+    invalidate: function(resources) {
+      if (typeof resources === "string" || resources instanceof String) {
+        this.reset(resources);
+      } else {
+        let propertyArray;
+        if (resources == null) { // eslint-disable-line no-eq-null
+          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+        } else if (Array.isArray(resources)) {
+          propertyArray = resources;
+        }
+        propertyArray.map(propName => this.reset(propName));
+      }
     }
   }
 });

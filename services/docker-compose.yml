@@ -1,12 +1,9 @@
-# osparc-simcore stack (framework stack)
 version: '3.7'
 services:
 
   apihub:
     image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    ports:
-      - '8043'
     deploy:
       placement:
        constraints:
@@ -17,14 +14,7 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    stdin_open: true
-    tty: true
-    ports:
-      - '8080'
     environment:
-    # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
-    # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
-    # on a windows machine
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_AUTH=${REGISTRY_AUTH}
       - REGISTRY_USER=${REGISTRY_USER}
@@ -42,7 +32,6 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
-      - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
@@ -58,8 +47,6 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    ports:
-      - ${SIMCORE_PORT:-9081}:8080
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -71,12 +58,9 @@ services:
       - WEBSERVER_LOGLEVEL=INFO
     env_file:
       - ../.env
-    stdin_open: true
-    tty: true
     depends_on:
       - apihub
       - postgres
-      - minio
       - rabbit
     deploy:
       placement:
@@ -121,19 +105,16 @@ services:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
     depends_on:
       - rabbit
       - postgres
-      - minio
     networks:
       - computational_services_subnet
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    ports:
-      - "8080"
     environment:
       - APIHUB_HOST=apihub
       - APIHUB_PORT=8043
@@ -152,10 +133,7 @@ services:
       - S3_SECURE=${S3_SECURE}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
-    stdin_open: true
-    tty: true
     depends_on:
-      - minio
       - postgres
       - apihub
     deploy:
@@ -168,14 +146,11 @@ services:
       - computational_services_subnet
 
   rabbit:
-    image: rabbitmq:3.7.17-management
+    image: itisfoundation/rabbitmq:3.8.0-management
     init: true
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-    ports:
-      - "5672"
-      - "15672"
     networks:
       - default
       - computational_services_subnet
@@ -189,24 +164,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432"
-    networks:
-      - default
-      - interactive_services_subnet
-      - computational_services_subnet
-
-  minio:
-    image: minio/minio:RELEASE.2019-09-26T19-42-35Z
-    init: true
-    environment:
-      - MINIO_ACCESS_KEY=12345678
-      - MINIO_SECRET_KEY=12345678
-    ports:
-      - "9001:9000"
-    command: server /data
-    volumes:
-      - minio:/data
     networks:
       - default
       - interactive_services_subnet
@@ -217,7 +174,6 @@ volumes:
   output: {}
   log: {}
   postgres_data: {}
-  minio: {}
 
 networks:
   interactive_services_subnet:

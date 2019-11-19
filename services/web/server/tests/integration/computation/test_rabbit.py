@@ -11,8 +11,8 @@ from uuid import uuid4
 
 import aio_pika
 import pytest
-from aiohttp import web
 
+from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 from simcore_service_webserver.computation import setup_computation
@@ -25,7 +25,7 @@ core_services = [
     'rabbit'
 ]
 
-tool_services = [
+ops_services = [
 ]
 
 @pytest.fixture(scope='session')
@@ -45,7 +45,7 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, rab
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
-    app = web.Application()
+    app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
     setup_computation(app)

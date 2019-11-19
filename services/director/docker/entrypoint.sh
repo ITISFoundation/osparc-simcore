@@ -43,6 +43,12 @@ then
 fi
 
 
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
+then
+  # NOTE: production does NOT pre-installs ptvsd
+  python3 -m pip install ptvsd
+fi
+
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
 

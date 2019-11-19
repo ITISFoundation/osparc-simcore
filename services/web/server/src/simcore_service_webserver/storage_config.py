@@ -7,10 +7,7 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-
-from servicelib.application_keys import APP_CONFIG_KEY
-
-APP_STORAGE_SESSION_KEY = __name__ + ".storage_session"
+from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = 'storage'
 
@@ -25,4 +22,4 @@ def get_config(app: web.Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
 def get_client_session(app: web.Application) -> ClientSession:
-    return app[APP_STORAGE_SESSION_KEY]
+    return app[APP_CLIENT_SESSION_KEY]

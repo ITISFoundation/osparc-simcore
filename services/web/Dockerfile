@@ -10,6 +10,7 @@ FROM python:3.6-alpine as base
 
 LABEL maintainer=pcrespov
 
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
@@ -23,6 +24,9 @@ ENV SC_PIP  pip --no-cache-dir
 ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
 # TODO: eliminate this variable!
 ENV IS_CONTAINER_CONTEXT Yes
+
+ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default
 
 EXPOSE 8080
 
@@ -133,7 +137,7 @@ CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
+
 ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel

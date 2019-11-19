@@ -6,6 +6,7 @@ import logging
 
 from aiohttp import web
 from servicelib.monitoring import setup_monitoring
+from servicelib.client_session import persistent_client_session
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -15,11 +16,15 @@ from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
+
 def create(config):
     log.debug("Creating and setting up application")
 
     app = web.Application()
     app[APP_CONFIG_KEY] = config
+
+    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
+    app.cleanup_ctx.append(persistent_client_session)
 
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service

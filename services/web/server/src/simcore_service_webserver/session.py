@@ -23,12 +23,13 @@ import aiohttp_session
 from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
+
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .session_config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__file__)
-
 
 def generate_key():
     # secret_key must be 32 url-safe base64-encoded bytes
@@ -37,13 +38,11 @@ def generate_key():
     return secret_key
 
 
-def setup(app: web.Application):
+@app_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+def setup_session(app: web.Application):
     """
         Inits and registers a session middleware in aiohttp.web.Application
     """
-    logger.debug("Setting up %s ...", __name__)
-
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY], "app config section %s missing" % CONFIG_SECTION_NAME
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     # secret key needed by EncryptedCookieStorage: is *bytes* key with length of *32*
@@ -64,7 +63,6 @@ def setup(app: web.Application):
 
 # alias
 get_session = aiohttp_session.get_session
-setup_session = setup
 
 
 __all__ = (
