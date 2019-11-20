@@ -13,11 +13,11 @@ from simcore_service_director import docker_utils
 
 async def test_docker_client(loop):
     async with docker_utils.docker_client() as client:
-        await client.images.pull("ubuntu:latest")
+        await client.images.pull("alpine:latest")
         container = await client.containers.create_or_replace(
             config={
-                'Cmd': ['/bin/bash', '-c', 'echo "hello world"'],
-                'Image': 'ubuntu:latest',
+                'Cmd': ['/bin/ash', '-c', 'echo "hello world"'],
+                'Image': 'alpine:latest',
             },
             name='testing',
         )

@@ -14,7 +14,7 @@ Python 2.7 and 3.4+
 ## Installation & Usage
 ### pip install
 
-If the python package is hosted on Github, you can install directly from Github
+If the python package is hosted on a repository, you can install directly using:
 
 ```sh
 pip install git+https://github.com/GIT_USER_ID/GIT_REPO_ID.git
@@ -51,7 +51,10 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+
+# Defining host is optional and default to http://localhost:8080/v0
+configuration.host = "http://localhost:8080/v0"
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi(simcore_director_sdk.ApiClient(configuration))
 
 try:
@@ -72,6 +75,7 @@ Class | Method | HTTP request | Description
 *UsersApi* | [**root_get**](docs/UsersApi.md#root_get) | **GET** / | Service health-check endpoint
 *UsersApi* | [**running_interactive_services_delete**](docs/UsersApi.md#running_interactive_services_delete) | **DELETE** /running_interactive_services/{service_uuid} | Stops and removes an interactive service from the oSparc platform
 *UsersApi* | [**running_interactive_services_get**](docs/UsersApi.md#running_interactive_services_get) | **GET** /running_interactive_services/{service_uuid} | Succesfully returns if a service with the defined uuid is up and running
+*UsersApi* | [**running_interactive_services_list_get**](docs/UsersApi.md#running_interactive_services_list_get) | **GET** /running_interactive_services | Returns a list of interactive services
 *UsersApi* | [**running_interactive_services_post**](docs/UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform
 *UsersApi* | [**services_by_key_version_get**](docs/UsersApi.md#services_by_key_version_get) | **GET** /services/{service_key}/{service_version} | Returns details of the selected service if available in the oSparc platform
 *UsersApi* | [**services_get**](docs/UsersApi.md#services_get) | **GET** /services | Lists available services in the oSparc platform
@@ -81,10 +85,12 @@ Class | Method | HTTP request | Description
 
  - [InlineResponse200](docs/InlineResponse200.md)
  - [InlineResponse2001](docs/InlineResponse2001.md)
- - [InlineResponse2001Authors](docs/InlineResponse2001Authors.md)
+ - [InlineResponse2001Data](docs/InlineResponse2001Data.md)
+ - [InlineResponse2002](docs/InlineResponse2002.md)
+ - [InlineResponse2002Authors](docs/InlineResponse2002Authors.md)
+ - [InlineResponse2002Badges](docs/InlineResponse2002Badges.md)
  - [InlineResponse200Data](docs/InlineResponse200Data.md)
  - [InlineResponse201](docs/InlineResponse201.md)
- - [InlineResponse201Data](docs/InlineResponse201Data.md)
  - [InlineResponseDefault](docs/InlineResponseDefault.md)
  - [InlineResponseDefaultError](docs/InlineResponseDefaultError.md)
  - [SimcoreNode](docs/SimcoreNode.md)
@@ -93,7 +99,6 @@ Class | Method | HTTP request | Description
 ## Documentation For Authorization
 
  All endpoints do not require authorization.
-
 
 ## Author
 

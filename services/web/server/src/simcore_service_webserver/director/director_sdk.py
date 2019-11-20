@@ -2,7 +2,7 @@
 import simcore_director_sdk
 from aiohttp import web
 from simcore_director_sdk import UsersApi
-from simcore_director_sdk.rest import ApiException  # pylint: disable=W0611
+from simcore_director_sdk import ApiException  # pylint: disable=W0611
 from yarl import URL
 
 from .config import get_config

@@ -1,11 +1,11 @@
-# InlineResponse201Data
+# InlineResponse2001Data
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **entry_point** | **str** | The entry point where the service provides its interface if specified | [optional] 
 **published_port** | **int** | The ports where the service provides its interface | 
-**service_basepath** | **str** | different base path where current service is mounted otherwise defaults to root | [optional] 
+**service_basepath** | **str** | different base path where current service is mounted otherwise defaults to root | [optional] [default to '']
 **service_host** | **str** | service host name within the network | 
 **service_key** | **str** | distinctive name for the node based on the docker registry path | 
 **service_message** | **str** | the service message | [optional] 

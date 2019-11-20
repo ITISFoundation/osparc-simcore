@@ -1,4 +1,4 @@
-# InlineResponse2001Authors
+# InlineResponse2002Authors
 
 ## Properties
 Name | Type | Description | Notes

@@ -16,12 +16,12 @@ from __future__ import absolute_import
 import unittest
 
 import simcore_director_sdk
-from simcore_director_sdk.models.inline_response_default import InlineResponseDefault  # noqa: E501
+from simcore_director_sdk.models.inline_response2002_badges import InlineResponse2002Badges  # noqa: E501
 from simcore_director_sdk.rest import ApiException
 
 
-class TestInlineResponseDefault(unittest.TestCase):
-    """InlineResponseDefault unit test stubs"""
+class TestInlineResponse2002Badges(unittest.TestCase):
+    """InlineResponse2002Badges unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,10 +29,10 @@ class TestInlineResponseDefault(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testInlineResponseDefault(self):
-        """Test InlineResponseDefault"""
+    def testInlineResponse2002Badges(self):
+        """Test InlineResponse2002Badges"""
         # FIXME: construct object with mandatory attributes with example values
-        # model = simcore_director_sdk.models.inline_response_default.InlineResponseDefault()  # noqa: E501
+        # model = simcore_director_sdk.models.inline_response2002_badges.InlineResponse2002Badges()  # noqa: E501
         pass
 
 

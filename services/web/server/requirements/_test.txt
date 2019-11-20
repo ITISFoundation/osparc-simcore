@@ -46,6 +46,7 @@ kombu==4.5.0
 lazy-object-proxy==1.4.1
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
+mock==3.0.5
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2
 openapi-core==0.8.0

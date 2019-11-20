@@ -7,6 +7,7 @@ Method | HTTP request | Description
 [**root_get**](UsersApi.md#root_get) | **GET** / | Service health-check endpoint
 [**running_interactive_services_delete**](UsersApi.md#running_interactive_services_delete) | **DELETE** /running_interactive_services/{service_uuid} | Stops and removes an interactive service from the oSparc platform
 [**running_interactive_services_get**](UsersApi.md#running_interactive_services_get) | **GET** /running_interactive_services/{service_uuid} | Succesfully returns if a service with the defined uuid is up and running
+[**running_interactive_services_list_get**](UsersApi.md#running_interactive_services_list_get) | **GET** /running_interactive_services | Returns a list of interactive services
 [**running_interactive_services_post**](UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform
 [**services_by_key_version_get**](UsersApi.md#services_by_key_version_get) | **GET** /services/{service_key}/{service_version} | Returns details of the selected service if available in the oSparc platform
 [**services_get**](UsersApi.md#services_get) | **GET** /services | Lists available services in the oSparc platform
@@ -20,6 +21,7 @@ Service health-check endpoint
 Some general information on the API and state of the service behind
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -27,7 +29,7 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
 
 try:
@@ -54,6 +56,12 @@ No authorization required
  - **Content-Type**: Not defined
  - **Accept**: application/json
 
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Service information |  -  |
+**0** | Unexpected error |  -  |
+
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_delete**
@@ -64,6 +72,7 @@ Stops and removes an interactive service from the oSparc platform
 Stops and removes an interactive service from the oSparc platform
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -71,9 +80,9 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid of the service
+service_uuid = '123e4567-e89b-12d3-a456-426655440000' # str | The uuid of the service
 
 try:
     # Stops and removes an interactive service from the oSparc platform
@@ -101,6 +110,14 @@ No authorization required
  - **Content-Type**: Not defined
  - **Accept**: application/json
 
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Succesfully stopped and removed the service from the oSparc platform |  -  |
+**400** | Malformed function call, missing field |  -  |
+**404** | Service not found |  -  |
+**0** | Unexpected error |  -  |
+
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_get**
@@ -111,6 +128,7 @@ Succesfully returns if a service with the defined uuid is up and running
 Succesfully returns if a service with the defined uuid is up and running
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -118,9 +136,9 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid of the service
+service_uuid = '123e4567-e89b-12d3-a456-426655440000' # str | The uuid of the service
 
 try:
     # Succesfully returns if a service with the defined uuid is up and running
@@ -149,6 +167,69 @@ No authorization required
  - **Content-Type**: Not defined
  - **Accept**: application/json
 
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK service exists and runs. Returns service location. |  -  |
+**400** | Malformed function call, missing field |  -  |
+**404** | Service not found |  -  |
+**0** | Unexpected error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **running_interactive_services_list_get**
+> InlineResponse2001 running_interactive_services_list_get(user_id=user_id, project_id=project_id)
+
+Returns a list of interactive services
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import simcore_director_sdk
+from simcore_director_sdk.rest import ApiException
+from pprint import pprint
+
+# Create an instance of the API class
+api_instance = simcore_director_sdk.UsersApi()
+user_id = 'user_id_example' # str |  (optional)
+project_id = 'project_id_example' # str |  (optional)
+
+try:
+    # Returns a list of interactive services
+    api_response = api_instance.running_interactive_services_list_get(user_id=user_id, project_id=project_id)
+    pprint(api_response)
+except ApiException as e:
+    print("Exception when calling UsersApi->running_interactive_services_list_get: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **user_id** | **str**|  | [optional] 
+ **project_id** | **str**|  | [optional] 
+
+### Return type
+
+[**InlineResponse2001**](InlineResponse2001.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Returns the running services instances |  -  |
+**0** | Unexpected error |  -  |
+
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_post**
@@ -157,6 +238,7 @@ No authorization required
 Starts an interactive service in the oSparc platform
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -164,14 +246,14 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-user_id = asdfgj233 # str | The ID of the user that starts the service
-project_id = asdfgj233 # str | The ID of the project in which the service starts
-service_key = ["simcore/services/comp/itis/sleeper","simcore/services/dynamic/3dviewer"] # str | The key (url) of the service
-service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid to assign the service with
-service_tag = ["1.0.0","0.0.1"] # str | The tag/version of the service (optional)
-service_basepath = /x/EycCXbU0H/ # str | predefined basepath for the backend service otherwise uses root (optional)
+user_id = 'asdfgj233' # str | The ID of the user that starts the service
+project_id = 'asdfgj233' # str | The ID of the project in which the service starts
+service_key = '[\"simcore/services/comp/itis/sleeper\",\"simcore/services/dynamic/3dviewer\"]' # str | The key (url) of the service
+service_uuid = '123e4567-e89b-12d3-a456-426655440000' # str | The uuid to assign the service with
+service_tag = '[\"1.0.0\",\"0.0.1\"]' # str | The tag/version of the service (optional)
+service_basepath = '' # str | predefined basepath for the backend service otherwise uses root (optional) (default to '')
 
 try:
     # Starts an interactive service in the oSparc platform
@@ -190,7 +272,7 @@ Name | Type | Description  | Notes
  **service_key** | **str**| The key (url) of the service | 
  **service_uuid** | **str**| The uuid to assign the service with | 
  **service_tag** | **str**| The tag/version of the service | [optional] 
- **service_basepath** | **str**| predefined basepath for the backend service otherwise uses root | [optional] 
+ **service_basepath** | **str**| predefined basepath for the backend service otherwise uses root | [optional] [default to &#39;&#39;]
 
 ### Return type
 
@@ -205,16 +287,27 @@ No authorization required
  - **Content-Type**: Not defined
  - **Accept**: application/json
 
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**201** | Succesfully created the service in the oSparc platform. Returns the location where the service runs. |  -  |
+**400** | Malformed function call, missing field |  -  |
+**401** | Unauthorized access |  -  |
+**404** | Service not found |  -  |
+**409** | A service with the same uuid already exists |  -  |
+**0** | Unexpected error |  -  |
+
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **services_by_key_version_get**
-> InlineResponse2001 services_by_key_version_get(service_key, service_version)
+> InlineResponse2002 services_by_key_version_get(service_key, service_version)
 
 Returns details of the selected service if available in the oSparc platform
 
 Returns details of the selected service if available in the oSparc platform
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -222,10 +315,10 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-service_key = ["simcore/services/comp/itis/sleeper","simcore/services/dynamic/3dviewer"] # str | The key (url) of the service
-service_version = ["1.0.0","0.0.1"] # str | The tag/version of the service
+service_key = '[\"simcore/services/comp/itis/sleeper\",\"simcore/services/dynamic/3dviewer\"]' # str | The key (url) of the service
+service_version = '[\"1.0.0\",\"0.0.1\"]' # str | The tag/version of the service
 
 try:
     # Returns details of the selected service if available in the oSparc platform
@@ -244,7 +337,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2001**](InlineResponse2001.md)
+[**InlineResponse2002**](InlineResponse2002.md)
 
 ### Authorization
 
@@ -255,16 +348,25 @@ No authorization required
  - **Content-Type**: Not defined
  - **Accept**: application/json
 
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Success, returns the details of the service |  -  |
+**401** | Unauthorized access |  -  |
+**404** | Service not found |  -  |
+**0** | Unexpected error |  -  |
+
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **services_get**
-> InlineResponse2001 services_get(service_type=service_type)
+> InlineResponse2002 services_get(service_type=service_type)
 
 Lists available services in the oSparc platform
 
 Lists available services in the oSparc platform
 
 ### Example
+
 ```python
 from __future__ import print_function
 import time
@@ -272,9 +374,9 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 from pprint import pprint
 
-# create an instance of the API class
+# Create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-service_type = computational # str | The service type:   * computational - a computational service   * interactive - an interactive service  (optional)
+service_type = 'computational' # str | The service type:   * computational - a computational service   * interactive - an interactive service  (optional)
 
 try:
     # Lists available services in the oSparc platform
@@ -292,7 +394,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2001**](InlineResponse2001.md)
+[**InlineResponse2002**](InlineResponse2002.md)
 
 ### Authorization
 
@@ -302,6 +404,13 @@ No authorization required
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Success, returns the list of available services |  -  |
+**401** | Unauthorized access |  -  |
+**0** | Unexpected error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
