@@ -93,7 +93,7 @@ def client(loop, aiohttp_client, app_config):
 
 async def test_has_login_required(client):
     resp = await client.get('/v0/activity/status')
-    _data, _error = await assert_status(resp, web.HTTPUnauthorized)
+    await assert_status(resp, web.HTTPUnauthorized)
 
 async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
     resp = await client.get('/v0/activity/status')
@@ -115,4 +115,4 @@ async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
 
 async def test_monitoring_down(mocked_login_required, mocked_monitoring_down, client):
     resp = await client.get('/v0/activity/status')
-    _data, _error = await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, web.HTTPNoContent)
