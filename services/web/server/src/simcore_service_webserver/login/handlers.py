@@ -134,13 +134,11 @@ async def login(request: web.Request):
     return response
 
 
-
-#TODO: ask @crespov why was login_required not part of logout??
 @login_required
 async def logout(request: web.Request):
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     user_id = request.get(RQT_USERID_KEY, -1)
-    await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, request.app)
+    await signals.emit(signals.SignalType.SIGNAL_USER_LOGOUT, user_id, request.app)
     await forget(request, response)
     return response
 

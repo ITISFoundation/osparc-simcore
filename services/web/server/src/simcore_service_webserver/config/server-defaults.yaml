@@ -32,6 +32,7 @@ db:
     user: simcore
 resource_manager:
   enabled: True
+  service_deletion_timeout_seconds: 900
 rabbit:
   enabled: True
   host: rabbit

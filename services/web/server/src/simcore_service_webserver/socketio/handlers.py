@@ -46,16 +46,17 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
 async def authenticate_user(sid: str, app: web.Application, request: web.Request) -> None:
     """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request.
     """
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    log.debug("client %s authenticated", userid)
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    log.debug("client %s authenticated", user_id)
     registry = get_socket_registry(app)
-    registry.add_socket(userid, sid)
+    registry.add_socket(user_id, sid)
+    await signals.emit(signals.SignalType.SIGNAL_USER_CONNECT, user_id, app)
     sio = get_socket_server(app)
     # here we keep the original HTTP request in the socket session storage
     async with sio.session(sid) as socketio_session:
-        socketio_session["user_id"] = userid
+        socketio_session["user_id"] = user_id
         socketio_session["request"] = request
-    log.info("socketio connection from user %s", userid)
+    log.info("socketio connection from user %s", user_id)
 
 
 async def disconnect(sid: str, app: web.Application):

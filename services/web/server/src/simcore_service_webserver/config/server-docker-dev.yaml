@@ -34,6 +34,7 @@ db:
     port: ${POSTGRES_PORT}
 resource_manager:
   enabled: True
+  service_deletion_timeout_seconds:  ${WEBSERVER_SERVICES_DELETION_TIMEOUT_SECONDS}
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}

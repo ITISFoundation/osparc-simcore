@@ -194,6 +194,6 @@ async def _delete_all_services(user_id: str, app: web.Application) -> web.Respon
 
     return web.json_response({'data': ''}, status=204)
 
-@observe(event=SignalType.SIGNAL_USER_DISCONNECT)
+@observe(event=SignalType.SIGNAL_USER_LOGOUT)
 async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> web.Response:
     await _delete_all_services(user_id, app)

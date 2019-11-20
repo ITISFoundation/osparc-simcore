@@ -131,6 +131,35 @@ paths:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
   /running_interactive_services:
+    get:
+      tags:
+        - users
+      summary: Returns a list of interactive services
+      operationId: running_interactive_services_list_get
+      parameters:
+        - in: query
+          name: user_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string        
+      responses:
+        "200":
+          description: Returns the running services instances
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
     post:
       tags:
         - users
