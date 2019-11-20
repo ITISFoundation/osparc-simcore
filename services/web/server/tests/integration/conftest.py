@@ -35,7 +35,8 @@ pytest_plugins = [
     "fixtures.docker_registry",
     "fixtures.rabbit_service",
     "fixtures.celery_service",
-    "fixtures.postgres_service"
+    "fixtures.postgres_service",
+    "fixtures.websocket_client"
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

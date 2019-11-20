@@ -11,16 +11,27 @@ from uuid import uuid4
 import aio_pika
 import pytest
 
+from mock import call
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
+from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.socketio import setup_sockets
+from utils_login import LoggedUser
 
 API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
+    'apihub',
+    'postgres',
     'rabbit'
 ]
 
@@ -45,14 +56,31 @@ def client(loop, aiohttp_client,
     # fake config
     app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
-
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app)
+    setup_login(app)
     setup_computation(app)
+    setup_sockets(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
         'port': app_config["main"]["port"],
         'host': app_config['main']['host']
     }))
 
+@pytest.fixture
+async def logged_user(client, user_role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds = user_role!=UserRole.ANONYMOUS
+    ) as user:
+        yield user
 
 @pytest.fixture
 def rabbit_config(app_config):
@@ -70,76 +98,76 @@ async def pika_connection(loop, rabbit_broker):
     yield connection
     await connection.close()
 
-@pytest.fixture
-async def log_channel(loop, rabbit_config, pika_connection):
-    channel = await pika_connection.channel()
-    pika_log_channel = rabbit_config["channels"]["log"]
-    logs_exchange = await channel.declare_exchange(
-        pika_log_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
-    )
-    yield logs_exchange
-
-@pytest.fixture
-async def progress_channel(loop, rabbit_config, pika_connection):
-    channel = await pika_connection.channel()
-    pika_progress_channel = rabbit_config["channels"]["log"]
-    progress_exchange = await channel.declare_exchange(
-        pika_progress_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
-    )
-    yield progress_exchange
-
 @pytest.fixture(scope="session")
 def node_uuid() -> str:
     return str(uuid4())
 
 @pytest.fixture(scope="session")
-def fake_log_message(node_uuid: str):
-    yield {
-        "Channel":"Log",
-        "Messages": ["Some fake message"],
-        "Node": node_uuid
-    }
+def user_id() -> str:
+    return "some_id"
 
 @pytest.fixture(scope="session")
-def fake_progress_message(node_uuid: str):
-    yield {
-        "Channel":"Progress",
-        "Progress": 0.56,
-        "Node": node_uuid
-    }
+def project_id() -> str:
+    return "some_project_id"
 
 # ------------------------------------------
-async def test_rabbit_log_connection(loop, client, log_channel, fake_log_message, mocker):
-    mock_socketio_server = mocker.patch('socketio.AsyncServer')
-    mock_socketio_server.return_value.emit.return_value = Future()
-    mock_socketio_server.return_value.emit.return_value.set_result("emited")
 
-    mock_get_server = mocker.patch('simcore_service_webserver.computation_subscribe.get_socket_server', return_value=mock_socketio_server)
-    mock_registry = mocker.patch('simcore_service_webserver.computation_subscribe.get_socket_registry')
+@pytest.fixture(params=["log", "progress"])
+async def all_in_one(request, loop, rabbit_config, pika_connection, node_uuid, user_id, project_id):
+    # create rabbit pika exchange channel
+    channel = await pika_connection.channel()
+    pika_channel = rabbit_config["channels"][request.param]
+    pika_exchange = await channel.declare_exchange(
+        pika_channel, aio_pika.ExchangeType.FANOUT,
+        auto_delete=True
+    )
 
+    # create corresponding message
+    message = {
+        "Channel":request.param.title(),
+        "Progress": 0.56,
+        "Node": node_uuid,
+        "user_id": user_id,
+        "project_id": project_id
+    }
+
+    # socket event
+    socket_event_name = "logger" if request.param is "log" else "progress"
+    yield {"rabbit_channel": pika_exchange, "data": message, "socket_name": socket_event_name}
+
+@pytest.mark.parametrize("user_role", [    
+    (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
+])
+async def test_rabbit_websocket_connection(logged_user, 
+                                            socketio_client, mocker, 
+                                            all_in_one):
+    rabbit_channel = all_in_one["rabbit_channel"]
+    channel_message = all_in_one["data"]
+    socket_event_name = all_in_one["socket_name"]
+
+    sio = await socketio_client()
+    # register mock function
+    log_fct = mocker.Mock()    
+    sio.on(socket_event_name, handler=log_fct)    
+    # the user id is not the one from the logged user, there should be no call to the function
     for i in range(1000):
-        await log_channel.publish(
+        await rabbit_channel.publish(
             aio_pika.Message(
-                body=json.dumps(fake_log_message).encode(),
+                body=json.dumps(channel_message).encode(),
                 content_type="text/json"), routing_key = ""
             )
+    log_fct.assert_not_called()
 
-
-    mock_socketio_server.assert_called_with("logger", 
-                                    data=json.dumps(fake_log_message))
-
-async def test_rabbit_progress_connection(loop, client, progress_channel, fake_progress_message, mocker):
-    mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
-    mock.return_value.set_result("")
-
+    # let's set the correct user id
+    channel_message["user_id"] = logged_user["id"]
     for i in range(1000):
-        await progress_channel.publish(
+        await rabbit_channel.publish(
             aio_pika.Message(
-                body=json.dumps(fake_progress_message).encode(),
+                body=json.dumps(channel_message).encode(),
                 content_type="text/json"), routing_key = ""
             )
-
-
-    mock.assert_called_with("progress", data=json.dumps(fake_progress_message))
+    log_fct.assert_called()
+    calls = [call(json.dumps(channel_message))]
+    log_fct.assert_has_calls(calls)

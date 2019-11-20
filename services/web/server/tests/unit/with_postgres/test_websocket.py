@@ -120,27 +120,40 @@ async def test_websocket_connections(client, logged_user, socketio_client, expec
     assert socket_registry.find_owner(sio.sid) == logged_user["id"]
     assert sio.sid in socket_registry.find_sockets(logged_user["id"])
     assert len(socket_registry.find_sockets(logged_user["id"])) == 1
-    # this does not seem to work in windows at least... let's see linux
+    # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
     await sio.disconnect()
+    assert not socket_registry.find_owner(sio.sid)
+    assert not sio.sid in socket_registry.find_sockets(logged_user["id"])
+    assert not socket_registry.find_sockets(logged_user["id"])
 
-    # assert not socket_registry.find_owner(sio.sid)
-    # assert not sio.sid in socket_registry.find_sockets(logged_user["id"])
-    # assert not socket_registry.find_sockets(logged_user["id"])
-
-    # sio2 = await socketio_client()
-    # assert socket_registry.find_owner(sio2.sid) == logged_user["id"]
-    # assert sio2.sid in socket_registry.find_sockets(logged_user["id"])
-    # assert len(socket_registry.find_sockets(logged_user["id"])) == 2
-
-
-    # assert not socket_registry.find_owner(sio.sid)
-    # assert not sio.sid in socket_registry.find_sockets(logged_user["id"])
-
-    # assert socket_registry.find_owner(sio2.sid) == logged_user["id"]
-    # assert sio2.sid in socket_registry.find_sockets(logged_user["id"])
-    # assert len(socket_registry.find_sockets(logged_user["id"])) == 1
-
-    # await sio2.disconnect()
-    # assert not socket_registry.find_owner(sio2.sid)
-    # assert not sio2.sid in socket_registry.find_sockets(logged_user["id"])
-    # assert not socket_registry.find_sockets(logged_user["id"])
+@pytest.mark.parametrize("user_role,expected", [
+    # (UserRole.ANONYMOUS),
+    (UserRole.GUEST, web.HTTPOk),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_multiple_websocket_connections(client, logged_user, socketio_client, expected):
+    app = client.server.app
+    socket_registry = get_socket_registry(app)
+    NUMBER_OF_SOCKETS = 5
+    # connect multiple clients
+    clients = []
+    for socket in range(NUMBER_OF_SOCKETS):        
+        sio = await socketio_client()
+        assert socket_registry.find_owner(sio.sid) == logged_user["id"]
+        assert sio.sid in socket_registry.find_sockets(logged_user["id"])
+        assert len(socket_registry.find_sockets(logged_user["id"])) == (socket+1)
+        clients.append(sio)
+    
+    # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
+    # disconnect multiple clients
+    for sio in clients:
+        sid = sio.sid
+        await sio.disconnect()
+        assert not sio.sid
+        assert not socket_registry.find_owner(sio.sid)
+        assert not sid in socket_registry.find_sockets(logged_user["id"])
+    
+    assert not socket_registry.user_to_sockets_map[logged_user["id"]]
+    assert not socket_registry.find_sockets(logged_user["id"])
+    assert not socket_registry.find_sockets(logged_user["id"])

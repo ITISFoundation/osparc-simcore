@@ -32,7 +32,6 @@ def rabbit_handler(app: web.Application):
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
     sio = get_socket_server(app)
     socket_registry = get_socket_registry(app)
-
     with message.process():
         data = json.loads(message.body)
         log.debug(data)
@@ -45,7 +44,7 @@ async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
                 data = json.dumps(data),
                 room=sid
             )
-        asyncio.sleep(2)
+        asyncio.sleep(1)
 
 async def subscribe(app: web.Application):
     # TODO: catch and deal with missing connections:

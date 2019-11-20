@@ -15,6 +15,7 @@ pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
+websockets
 
 # fixtures
 Faker
