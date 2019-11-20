@@ -96,19 +96,27 @@ async def test_has_login_required(client):
     await assert_status(resp, web.HTTPUnauthorized)
 
 async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
+    QUEUED_NODE_ID = '35f95ad4-67b8-4ed8-bd55-84a5d600e687'
+    RUNNING_NODE_ID = '894dd8d5-de3b-4767-950c-7c3ed8f51d8c'
+
     resp = await client.get('/v0/activity/status')
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert '35f95ad4-67b8-4ed8-bd55-84a5d600e687' in data, 'Queued node not present'
-    assert '894dd8d5-de3b-4767-950c-7c3ed8f51d8c' in data, 'Queued node not present'
-    celery = data.get('35f95ad4-67b8-4ed8-bd55-84a5d600e687')
-    prometheus = data.get('894dd8d5-de3b-4767-950c-7c3ed8f51d8c')
+    assert QUEUED_NODE_ID in data, 'Queued node not present'
+    assert RUNNING_NODE_ID in data, 'Running node not present'
+
+    celery = data.get(QUEUED_NODE_ID)
+    prometheus = data.get(RUNNING_NODE_ID)
+
     assert 'queued' in celery, 'There is no queued key for queued node'
+    assert celery.get('queued'), 'Queued should be True for queued node'
+
     assert 'limits' in prometheus, 'There is no limits key for executing node'
     assert 'stats' in prometheus, 'There is no stats key for executed node'
-    assert celery.get('queued'), 'Queued should be True for queued node'
+
     limits = prometheus.get('limits')
     assert limits.get('cpus') == 4.0, 'Incorrect value: Cpu limit'
     assert limits.get('mem') == 2048.0, 'Incorrect value: Memory limit'
+    
     stats = prometheus.get('stats')
     assert stats.get('cpuUsage') == 3.9952102200000006, 'Incorrect value: Cpu usage'
     assert stats.get('memUsage') == 177.664, 'Incorrect value: Memory usage'
