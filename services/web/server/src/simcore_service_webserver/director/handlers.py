@@ -167,7 +167,6 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     resp = await _delete_all_services(request.app, userid)
     return resp
 
-@observe(event=SignalType.SIGNAL_USER_DISCONNECT)
 async def _delete_all_services(user_id: str, app: web.Application) -> web.Response:
     registry = get_registry(app)
     # beware that services returned by registry is a reference.
@@ -195,3 +194,6 @@ async def _delete_all_services(user_id: str, app: web.Application) -> web.Respon
 
     return web.json_response({'data': ''}, status=204)
 
+@observe(event=SignalType.SIGNAL_USER_DISCONNECT)
+async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> web.Response:
+    await _delete_all_services(user_id, app)

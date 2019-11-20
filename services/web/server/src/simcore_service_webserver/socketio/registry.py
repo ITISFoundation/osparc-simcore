@@ -28,12 +28,13 @@ class InMemoryUserSocketRegistry:
             log.debug("user %s is connected with sockets: %s", user_id, self.user_to_sockets_map[user_id])
         return len(self.user_to_sockets_map[user_id])
 
-    def remove_socket(self, socket_id: str):
+    def remove_socket(self, socket_id: str) -> Optional[int]:
         for user_id, socket_ids in self.user_to_sockets_map.items():
             if socket_id in socket_ids:
                 socket_ids.remove(socket_id)
                 log.debug("user %s disconnected socket %s", user_id, socket_id)
-                break
+                return len(socket_ids)
+        return None
 
     def find_sockets(self, user_id: str) -> List[str]:
         return self.user_to_sockets_map[user_id]
