@@ -32,9 +32,9 @@ setup(
     include_package_data=True,
     package_data={
         '': [
+            'api/*.y*ml',
             'config/*.y*ml',
             'data/*.json',
-            'data/*.yaml'
             'templates/**/*.html',
             ]
     },

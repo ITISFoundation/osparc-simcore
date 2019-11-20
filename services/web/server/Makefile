@@ -11,7 +11,7 @@ VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
 API_SPECS_DIR := ${ROOT_DIR}/api/specs/webserver/v0
 OAS_SOURCES    = $(shell find $(API_SPECS_DIR)/ -type f -name '*.y*ml')
-OAS_TARGET    := $(CURDIR)/src/simcore_service_webserver/data/openapi.yaml
+OAS_TARGET    := $(CURDIR)/src/simcore_service_webserver/api/openapi.yaml
 
 
 
