@@ -34,6 +34,7 @@ setup(
         '': [
             'config/*.y*ml',
             'data/*.json',
+            'data/*.yaml'
             'templates/**/*.html',
             ]
     },
