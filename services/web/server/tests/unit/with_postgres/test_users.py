@@ -8,10 +8,13 @@ import collections
 import random
 from copy import deepcopy
 from itertools import repeat
+from unittest.mock import MagicMock
 
 import faker
 import pytest
 from aiohttp import web
+from aiopg.sa.connection import SAConnection
+from psycopg2 import OperationalError
 from yarl import URL
 
 from servicelib.application import create_safe_application
@@ -139,7 +142,6 @@ async def test_get_profile(logged_user, client, role, expected):
         assert data['first_name'] == logged_user["name"]
         assert data['last_name'] == ""
         assert data['role'] == role.name.capitalize()
-
 
 @pytest.mark.parametrize("role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -273,3 +275,43 @@ async def test_delete_token(client, logged_user, tokens_db, fake_tokens, role, e
 
     if not error:
         assert not (await get_token_from_db(tokens_db, token_service=sid))
+
+
+## BUG FIXES #######################################################
+
+@pytest.fixture
+def mock_failing_connection(mocker) -> MagicMock:
+    """
+        async with engine.acquire() as conn:
+            await conn.execute(query)  --> will raise OperationalError
+    """
+    # See http://initd.org/psycopg/docs/module.html
+    conn_execute = mocker.patch.object(SAConnection, "execute")
+    conn_execute.side_effect=OperationalError("MOCK: server closed the connection unexpectedly")
+    return conn_execute
+
+@pytest.mark.parametrize("role,expected", [
+    (UserRole.USER, web.HTTPServiceUnavailable),
+])
+async def test_get_profile_with_failing_db_connection(logged_user, client,
+    mock_failing_connection: MagicMock,
+    role: UserRole,
+    expected: web.HTTPException):
+    """
+        Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
+
+        A logged user fails to get profie because though authentication because
+
+        i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
+
+        ISSUES: #880, #1160
+    """
+    url = client.app.router["get_my_profile"].url_for()
+    assert str(url) == "/v0/me"
+
+    resp = await client.get(url)
+
+    NUM_RETRY = 3
+    assert mock_failing_connection.call_count == NUM_RETRY, "Expected mock failure raised in AuthorizationPolicy.authorized_userid after severals"
+
+    data, error = await assert_status(resp, expected)

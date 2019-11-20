@@ -79,7 +79,7 @@ async def test_login_inactive_user(client):
 
 async def test_login_successfully(client):
     url = client.app.router['auth_login'].url_for()
-    r = await client.get(url)
+
     async with NewUser() as user:
         r = await client.post(url, json={
             'email': user['email'],
@@ -91,7 +91,3 @@ async def test_login_successfully(client):
     assert not error
     assert data
     assert cfg.MSG_LOGGED_IN in data['message']
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main([__file__, '--maxfail=1'])

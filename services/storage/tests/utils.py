@@ -101,6 +101,7 @@ def insert_metadata(url: str, fmd: FileMetaData):
     engine = sa.create_engine(url)
     conn = engine.connect()
     conn.execute(ins)
+    engine.dispose()
 
 def create_full_tables(url):
     meta = sa.MetaData()
@@ -143,9 +144,11 @@ def create_full_tables(url):
     #             with open(csv_file, 'r') as file:
     #                 data_df = pd.read_csv(file)
     #                 data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
+    engine.dispose()
 
 def drop_all_tables(url):
     meta = sa.MetaData()
     engine = sa.create_engine(url)
 
     meta.drop_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])
+    engine.dispose()

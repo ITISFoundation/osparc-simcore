@@ -47,5 +47,4 @@ then
   python3 -m pip install ptvsd
 fi
 
-
-su-exec scu "$@"
+exec su-exec scu "$@"
