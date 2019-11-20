@@ -76,11 +76,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: run
-        in: path
-        required: false
-        schema:
-          type: boolean
     get:
       summary: Gets given project
       operationId: get_project
@@ -96,6 +91,12 @@ paths:
     put:
       summary: Enclosed entity replaces given project
       operationId: replace_project
+      parameters:
+        - name: run
+          in: query
+          required: false
+          schema:
+            type: boolean
       requestBody:
         content:
           application/json:

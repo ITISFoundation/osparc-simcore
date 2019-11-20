@@ -18,7 +18,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/locations.yaml#FileLocationArray'
+                $ref: './components/schemas/locations.yaml#/FileLocationArray'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -38,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/datasets.yaml#DatasetMetaDataArray'
+                $ref: './components/schemas/datasets.yaml#/DatasetMetaDataArray'
         default:
           $ref:  './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -59,7 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/files.yaml#FileMetaDataArray'
+                $ref: './components/schemas/files.yaml#/FileMetaDataArray'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -84,7 +84,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/files.yaml#FileMetaDataArray'
+                $ref: './components/schemas/files.yaml#/FileMetaDataArray'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 

@@ -13,6 +13,6 @@ ConfigSchema:
   type: object
   properties:
     invitation_required:
-      type: bool
+      type: boolean
   example:
     invitation_required: true

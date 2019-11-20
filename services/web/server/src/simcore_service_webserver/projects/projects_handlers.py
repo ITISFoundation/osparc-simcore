@@ -171,7 +171,7 @@ async def replace_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    replace_pipeline = request.match_info.get("run", False)
+    replace_pipeline = request.query.get("run", False) # TODO: this is not the pleace to do this!?
     new_project = await request.json()
 
 
