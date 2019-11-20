@@ -4,6 +4,7 @@
 """
 import json
 import logging
+from asyncio import ensure_future
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -229,10 +230,8 @@ async def delete_project(request: web.Request):
         # TODO: add flag in query to determine whether to respond if error?
         raise web.HTTPNotFound
 
-    # requests storage to delete all project's stored data
-    # TODO: fire & forget
-    await delete_data_folders_of_project(request.app, project_uuid, user_id)
-
+    # requests storage to delete all project's stored data, fire&forget
+    ensure_future(delete_data_folders_of_project(request.app, project_uuid, user_id))
 
     # TODO: delete all the dynamic services used by this project when this happens (fire & forget) #
     # import asyncio
