@@ -3,10 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import importlib
-import json
-import os
 from asyncio import Future
-from functools import wraps
 from pathlib import Path
 
 import yaml
@@ -16,13 +13,9 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
-from simcore_service_webserver.application import create_application
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.statics import setup_statics
 from utils_assert import assert_status
 
 
