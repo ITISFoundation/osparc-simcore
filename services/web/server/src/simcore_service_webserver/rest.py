@@ -5,9 +5,11 @@
     - Activates middlewares
 
 """
-import asyncio
+#import asyncio
 import logging
 
+import openapi_core
+import yaml
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
@@ -17,6 +19,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
+from simcore_service_webserver.resources import resources
 
 from . import rest_routes
 from .rest_config import APP_OPENAPI_SPECS_KEY, CONFIG_SECTION_NAME
@@ -38,7 +41,6 @@ async def get_specs(app, location):
     return specs
 
 
-
 @app_module_setup(__name__, ModuleCategory.ADDON,
     depends=['simcore_service_webserver.security'],
     logger=log)
@@ -46,9 +48,15 @@ def setup(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     try:
-        loop = asyncio.get_event_loop()
-        location = cfg["location"]
-        specs = loop.run_until_complete( get_specs(app, location) )
+        #loop = asyncio.get_event_loop()
+        #location = cfg["location"]
+        #specs = loop.run_until_complete( get_specs(app, location) )
+        # FIXME: remove location from config
+        # FIXME: openapi_core has a bug and cannot support additionalProperties: false/true
+        spec_path = resources.get_path('api/openapi.yaml')
+        with spec_path.open() as fh:
+            spec_dict = yaml.safe_load(fh)
+        specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
 
         # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
         # TODO: should freeze specs here??

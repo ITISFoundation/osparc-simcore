@@ -3322,7 +3322,7 @@ paths:
                       title: simcore node
                       description: Description of a simcore node 'class' with input and output
                       type: object
-                      additionalProperties: false
+                      # additionalProperties: false
                       required:
                         - key
                         - version
@@ -3374,7 +3374,7 @@ paths:
                               - name
                               - image
                               - url
-                            additionalProperties: false
+                            # additionalProperties: false
                             properties:
                               name:
                                 type: string
@@ -3411,7 +3411,7 @@ paths:
                             required:
                               - name
                               - email
-                            additionalProperties: false
+                            # additionalProperties: false
                             properties:
                               name:
                                 type: string
@@ -3445,7 +3445,7 @@ paths:
                             '^[-_a-zA-Z0-9]+$':
                               type: object
                               description: all the input configurable for this service
-                              additionalProperties: false
+                              # additionalProperties: false
                               required:
                                 - displayOrder
                                 - label
@@ -3508,7 +3508,7 @@ paths:
                                   description: custom widget to use instead of the default one determined from the data-type
                                   anyOf:
                                     - type: object
-                                      additionalProperties: false
+                                      # additionalProperties: false
                                       required:
                                         - type
                                       properties:
@@ -3522,7 +3522,7 @@ paths:
                                           type: integer
                                           minimum: 1
                                     - type: object
-                                      additionalProperties: false
+                                      # additionalProperties: false
                                       required:
                                         - type
                                         - structure
@@ -3537,7 +3537,7 @@ paths:
                                           minItems: 1
                                           items:
                                             type: object
-                                            additionalProperties: false
+                                            # additionalProperties: false
                                             required:
                                               - key
                                               - label
@@ -3554,7 +3554,7 @@ paths:
                                                   label: The Rat
                                                 - key: dog
                                                   label: Bello the Dog
-                          additionalProperties: true
+                          # additionalProperties: true
                         outputs:
                           type: object
                           description: definition of the outputs of this node
@@ -3562,7 +3562,7 @@ paths:
                             '^[-_a-zA-Z0-9]+$':
                               type: object
                               description: all the output produced by this node
-                              additionalProperties: false
+                              # additionalProperties: false
                               required:
                                 - displayOrder
                                 - label
@@ -3608,7 +3608,7 @@ paths:
                                   example:
                                     - dir/input1.txt: key_1
                                       dir33/input2.txt: key2
-                          additionalProperties: true
+                          # additionalProperties: true
                   error:
                     nullable: true
                     default: null
@@ -4888,7 +4888,7 @@ paths:
                       title: simcore project
                       description: Description of a simcore project
                       type: object
-                      additionalProperties: false
+                      # additionalProperties: false
                       required:
                         - uuid
                         - name
@@ -4940,7 +4940,7 @@ paths:
                           x-patternProperties:
                             ^\S+$:
                               type: object
-                              additionalProperties: false
+                              # additionalProperties: false
                               required:
                                 - key
                                 - version
@@ -4987,7 +4987,7 @@ paths:
                                             - number
                                             - 'null'
                                         - type: object
-                                          additionalProperties: false
+                                          # additionalProperties: false
                                           required:
                                             - nodeUuid
                                             - output
@@ -4997,7 +4997,7 @@ paths:
                                             output:
                                               type: string
                                         - type: object
-                                          additionalProperties: false
+                                          # additionalProperties: false
                                           required:
                                             - store
                                             - path
@@ -5044,7 +5044,7 @@ paths:
                                             - number
                                             - 'null'
                                         - type: object
-                                          additionalProperties: false
+                                          # additionalProperties: false
                                           required:
                                             - store
                                             - path
@@ -5066,7 +5066,7 @@ paths:
                                   pattern: ^\S+$
                                 position:
                                   type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - x
                                     - 'y'
@@ -5075,7 +5075,7 @@ paths:
                                       type: integer
                                     'y':
                                       type: integer
-                          additionalProperties: true
+                          # additionalProperties: true
                   error:
                     nullable: true
                     default: null
@@ -5183,7 +5183,7 @@ paths:
               title: simcore project
               description: Description of a simcore project
               type: object
-              additionalProperties: false
+              # additionalProperties: false
               required:
                 - uuid
                 - name
@@ -5235,7 +5235,7 @@ paths:
                   x-patternProperties:
                     ^\S+$:
                       type: object
-                      additionalProperties: false
+                      # additionalProperties: false
                       required:
                         - key
                         - version
@@ -5282,7 +5282,7 @@ paths:
                                     - number
                                     - 'null'
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - nodeUuid
                                     - output
@@ -5292,7 +5292,7 @@ paths:
                                     output:
                                       type: string
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - store
                                     - path
@@ -5339,7 +5339,7 @@ paths:
                                     - number
                                     - 'null'
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - store
                                     - path
@@ -5361,7 +5361,7 @@ paths:
                           pattern: ^\S+$
                         position:
                           type: object
-                          additionalProperties: false
+                          # additionalProperties: false
                           required:
                             - x
                             - 'y'
@@ -5370,7 +5370,7 @@ paths:
                               type: integer
                             'y':
                               type: integer
-                  additionalProperties: true
+                  # additionalProperties: true
       responses:
         '201':
           description: project created
@@ -5385,7 +5385,7 @@ paths:
                     title: simcore project
                     description: Description of a simcore project
                     type: object
-                    additionalProperties: false
+                    # additionalProperties: false
                     required:
                       - uuid
                       - name
@@ -5437,7 +5437,7 @@ paths:
                         x-patternProperties:
                           ^\S+$:
                             type: object
-                            additionalProperties: false
+                            # additionalProperties: false
                             required:
                               - key
                               - version
@@ -5484,7 +5484,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - nodeUuid
                                           - output
@@ -5494,7 +5494,7 @@ paths:
                                           output:
                                             type: string
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -5541,7 +5541,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -5563,7 +5563,7 @@ paths:
                                 pattern: ^\S+$
                               position:
                                 type: object
-                                additionalProperties: false
+                                # additionalProperties: false
                                 required:
                                   - x
                                   - 'y'
@@ -5572,7 +5572,7 @@ paths:
                                     type: integer
                                   'y':
                                     type: integer
-                        additionalProperties: true
+                        # additionalProperties: true
                   error:
                     nullable: true
                     default: null
@@ -5683,7 +5683,7 @@ paths:
                     title: simcore project
                     description: Description of a simcore project
                     type: object
-                    additionalProperties: false
+                    # additionalProperties: false
                     required:
                       - uuid
                       - name
@@ -5735,7 +5735,7 @@ paths:
                         x-patternProperties:
                           ^\S+$:
                             type: object
-                            additionalProperties: false
+                            # additionalProperties: false
                             required:
                               - key
                               - version
@@ -5782,7 +5782,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - nodeUuid
                                           - output
@@ -5792,7 +5792,7 @@ paths:
                                           output:
                                             type: string
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -5839,7 +5839,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -5861,7 +5861,7 @@ paths:
                                 pattern: ^\S+$
                               position:
                                 type: object
-                                additionalProperties: false
+                                # additionalProperties: false
                                 required:
                                   - x
                                   - 'y'
@@ -5870,7 +5870,7 @@ paths:
                                     type: integer
                                   'y':
                                     type: integer
-                        additionalProperties: true
+                        # additionalProperties: true
                   error:
                     nullable: true
                     default: null
@@ -5973,7 +5973,7 @@ paths:
               title: simcore project
               description: Description of a simcore project
               type: object
-              additionalProperties: false
+              # additionalProperties: false
               required:
                 - uuid
                 - name
@@ -6025,7 +6025,7 @@ paths:
                   x-patternProperties:
                     ^\S+$:
                       type: object
-                      additionalProperties: false
+                      # additionalProperties: false
                       required:
                         - key
                         - version
@@ -6072,7 +6072,7 @@ paths:
                                     - number
                                     - 'null'
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - nodeUuid
                                     - output
@@ -6082,7 +6082,7 @@ paths:
                                     output:
                                       type: string
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - store
                                     - path
@@ -6129,7 +6129,7 @@ paths:
                                     - number
                                     - 'null'
                                 - type: object
-                                  additionalProperties: false
+                                  # additionalProperties: false
                                   required:
                                     - store
                                     - path
@@ -6151,7 +6151,7 @@ paths:
                           pattern: ^\S+$
                         position:
                           type: object
-                          additionalProperties: false
+                          # additionalProperties: false
                           required:
                             - x
                             - 'y'
@@ -6160,7 +6160,7 @@ paths:
                               type: integer
                             'y':
                               type: integer
-                  additionalProperties: true
+                  # additionalProperties: true
       responses:
         '200':
           description: got detailed project
@@ -6175,7 +6175,7 @@ paths:
                     title: simcore project
                     description: Description of a simcore project
                     type: object
-                    additionalProperties: false
+                    # additionalProperties: false
                     required:
                       - uuid
                       - name
@@ -6227,7 +6227,7 @@ paths:
                         x-patternProperties:
                           ^\S+$:
                             type: object
-                            additionalProperties: false
+                            # additionalProperties: false
                             required:
                               - key
                               - version
@@ -6274,7 +6274,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - nodeUuid
                                           - output
@@ -6284,7 +6284,7 @@ paths:
                                           output:
                                             type: string
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -6331,7 +6331,7 @@ paths:
                                           - number
                                           - 'null'
                                       - type: object
-                                        additionalProperties: false
+                                        # additionalProperties: false
                                         required:
                                           - store
                                           - path
@@ -6353,7 +6353,7 @@ paths:
                                 pattern: ^\S+$
                               position:
                                 type: object
-                                additionalProperties: false
+                                # additionalProperties: false
                                 required:
                                   - x
                                   - 'y'
@@ -6362,7 +6362,7 @@ paths:
                                     type: integer
                                   'y':
                                     type: integer
-                        additionalProperties: true
+                        # additionalProperties: true
                   error:
                     nullable: true
                     default: null
