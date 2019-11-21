@@ -171,7 +171,7 @@ async def replace_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    replace_pipeline = request.query.get("run", False) # TODO: this is not the pleace to do this!?
+    replace_pipeline = request.query.get("run", False) # FIXME: Actually was never called. CHECK if logic still applies (issue #1176)
     new_project = await request.json()
 
 
@@ -188,8 +188,9 @@ async def replace_project(request: web.Request):
         validate_project(request.app, new_project)
 
         await db.update_user_project(new_project, user_id, project_uuid)
-
-        await update_pipeline_db(request.app, project_uuid, new_project["workbench"], replace_pipeline)
+        await update_pipeline_db(request.app,
+            project_uuid, new_project["workbench"],
+            replace_pipeline)
 
     except ValidationError:
         raise web.HTTPBadRequest

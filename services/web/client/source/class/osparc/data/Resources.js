@@ -111,7 +111,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{project_id}" // FIXME: /projects/{project_id}?run={run} <<-- query is missing!!! (issue #1176)
           },
           delete: {
             method: "DELETE",
