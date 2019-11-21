@@ -1,11 +1,11 @@
 import logging
+import urllib
+from typing import Dict, List, Optional
 
 from aiohttp import web
 from yarl import URL
-from typing import Optional, List
-from .config import get_client_session, get_config
-from .registry import get_registry
 
+from .config import get_client_session, get_config
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _get_director_client(app: web.Application) -> URL:
     session = get_client_session(app)
     return session, api_endpoint
 
-async def get_running_interactive_services(app: web.Application, user_id: Optional[str], project_id: Optional[str]) -> List:
+async def get_running_interactive_services(app: web.Application, user_id: Optional[str], project_id: Optional[str]) -> List[Dict]:
     session, api_endpoint = _get_director_client(app)
 
     url = (api_endpoint / "running_interactive_services").with_query({
@@ -38,13 +38,22 @@ async def get_running_interactive_services(app: web.Application, user_id: Option
             return payload["data"]
         return []
 
-async def stop_service(app: web.Application, service_uuid:str):
-    registry = get_registry(app)
+async def stop_service(app: web.Application, service_uuid:str) -> bool:
     session, api_endpoint = _get_director_client(app)
 
     url = (api_endpoint / "running_interactive_services" / service_uuid)
     async with session.delete(url, ssl=False) as resp:
+        return resp.status == 204
+
+async def get_service_by_key_version(app: web.Application, service_key: str, service_version: str) -> Optional[Dict]:
+    session, api_endpoint = _get_director_client(app)
+
+    url = (api_endpoint / "services" / urllib.parse.quote(service_key, safe='') / service_version)
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            return
         payload = await resp.json()
-        if resp.status < 400 or resp.status == 404:
-            registry.as_stopped(service_uuid)
-        return payload, resp.status
+        services = payload["data"]
+        if not services:
+            return
+        return services[0]

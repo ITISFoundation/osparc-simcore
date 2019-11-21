@@ -17,7 +17,6 @@ watchdog[watchmedo]
 -e ../../../packages/postgres-database/
 -e ../../../packages/simcore-sdk/
 -e ../../../packages/service-library/
--e ../../../packages/director-sdk/python
 
 # installs watchdog utility
 watchdog[watchmedo]

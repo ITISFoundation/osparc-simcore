@@ -12,11 +12,10 @@ from aiopg.sa import Engine
 from sqlalchemy import and_
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from simcore_director_sdk.rest import ApiException
 from simcore_postgres_database.webserver_models import (comp_pipeline,
                                                         comp_tasks)
 
-from .director import director_sdk
+from .director import director_api
 
 log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
@@ -53,13 +52,12 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
                         "type":"dynamic"
             }
         return fake_node_details
-    try:
-        services_enveloped = await director_sdk.create_director_api_client(app).services_by_key_version_get(node_key, node_version)
-        node_details = services_enveloped.data[0].to_dict()
-        return node_details
-    except ApiException as err:
-        log.exception("Error could not find service %s:%s", node_key, node_version)
-        raise web_exceptions.HTTPNotFound(reason=str(err))
+    node_details = await director_api.get_service_by_key_version(app, node_key, node_version)
+    if not node_details:
+        log.error("Error could not find service %s:%s", node_key, node_version)    
+        raise web_exceptions.HTTPNotFound(reason=f"details of service {node_key}:{node_version} could not be found")
+    return node_details
+        
 
 async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dict, pipeline_data:Dict, dag_adjacency_list:Dict, app: web.Application)->Dict: # pylint: disable=too-many-arguments
     if node_inputs is None or node_schema is None:
