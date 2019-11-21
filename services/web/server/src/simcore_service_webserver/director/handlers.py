@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 
 from aiohttp import web
 from yarl import URL
@@ -9,10 +8,10 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
-from ..signals import observe, SignalType
+from ..signals import SignalType, observe
 # from ..resource_manager.decorators import track_resource
 from .config import get_client_session, get_config
-from .registry import get_registry
+from .director_api import get_running_interactive_services
 
 ANONYMOUS_USER_ID = -1
 
@@ -77,7 +76,6 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
 
     session = get_client_session(request.app)
 
-    registry = get_registry(request.app)
     service_uuid = query['service_uuid']
 
     project_id = query['project_id']
@@ -88,7 +86,6 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
         if resp.status == 200:
             # TODO: currently director API does not specify resp. 200
             payload = await resp.json()
-            registry.as_started(userid, service_uuid)
         else:
             url = endpoint.with_query(request.query).update_query(
                 user_id=userid,
@@ -98,8 +95,6 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
             )
             # otherwise, start new service
             async with session.post(url, ssl=False) as resp:
-                if resp.status < 400:
-                    registry.as_started(userid, service_uuid)
                 payload = await resp.json()
 
     return web.json_response(payload, status=resp.status)
@@ -138,8 +133,6 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     assert not query
     assert not body
 
-    registry = get_registry(request.app)
-    service_uuid = params['service_uuid']
     endpoint = _resolve_url(request)
 
     # forward to director API
@@ -149,8 +142,6 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     url = endpoint
     async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()
-        if resp.status < 400 or resp.status == 404:
-            registry.as_stopped(service_uuid)
         return web.json_response(payload, status=resp.status)
 
 
@@ -168,9 +159,7 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     return resp
 
 async def _delete_all_services(user_id: str, app: web.Application) -> web.Response:
-    registry = get_registry(app)
-    # beware that services returned by registry is a reference.
-    services = deepcopy(registry.user_to_services_map[user_id])
+    services = await get_running_interactive_services(app, user_id)
 
     if services:
         session = get_client_session(app)
@@ -182,9 +171,7 @@ async def _delete_all_services(user_id: str, app: web.Application) -> web.Respon
             url = (endpoint / service_uuid)
             async with session.delete(url, ssl=False) as resp:
                 payload = await resp.json()
-                if resp.status < 400 or resp.status == 404:
-                    registry.as_stopped(service_uuid)
-                else:
+                if resp.status != 204:
                     errors.append((payload, resp.status))
 
         if errors:

@@ -25,13 +25,16 @@ def _get_director_client(app: web.Application) -> URL:
     session = get_client_session(app)
     return session, api_endpoint
 
-async def get_running_interactive_services(app: web.Application, user_id: Optional[str], project_id: Optional[str]) -> List[Dict]:
+async def get_running_interactive_services(app: web.Application, user_id: Optional[str] = None, project_id: Optional[str] = None) -> List[Dict]:
     session, api_endpoint = _get_director_client(app)
 
-    url = (api_endpoint / "running_interactive_services").with_query({
-        "user_id": user_id,
-        "project_id": project_id
-    })
+    params = {}
+    if user_id:
+        params["user_id"] = user_id
+    if project_id:
+        params["project_id"] = project_id
+
+    url = (api_endpoint / "running_interactive_services").with_query(params)
     async with session.get(url) as resp:
         if resp.status < 400:
             payload = await resp.json()

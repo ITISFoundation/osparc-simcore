@@ -15,7 +15,6 @@ from aiohttp import web
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director import registry as services_registry
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects

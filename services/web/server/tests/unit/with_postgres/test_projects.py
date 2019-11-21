@@ -449,8 +449,11 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock):
+async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock, mocker):
     # DELETE /v0/projects/{project_id}
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 
     resp = await client.delete(url)
