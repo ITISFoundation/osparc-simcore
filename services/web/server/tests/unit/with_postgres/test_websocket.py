@@ -21,6 +21,7 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import registry, setup_sockets
 from simcore_service_webserver.socketio.config import get_socket_registry
 from simcore_service_webserver.users import setup_users
+from utils_assert import assert_status
 from utils_login import LoggedUser
 
 API_VERSION = "v0"
@@ -106,13 +107,13 @@ async def test_anonymous_websocket_connection(socketio_client):
         await socketio_client()
 
 
-@pytest.mark.parametrize("user_role,expected", [
+@pytest.mark.parametrize("user_role", [
     # (UserRole.ANONYMOUS),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
+    (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
 ])
-async def test_websocket_connections(client, logged_user, socketio_client, expected):
+async def test_websocket_connections(client, logged_user, socketio_client, ):
     app = client.server.app
     socket_registry = get_socket_registry(app)
 
@@ -126,13 +127,13 @@ async def test_websocket_connections(client, logged_user, socketio_client, expec
     assert not sio.sid in socket_registry.find_sockets(logged_user["id"])
     assert not socket_registry.find_sockets(logged_user["id"])
 
-@pytest.mark.parametrize("user_role,expected", [
+@pytest.mark.parametrize("user_role", [
     # (UserRole.ANONYMOUS),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
+    (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
 ])
-async def test_multiple_websocket_connections(client, logged_user, socketio_client, expected):
+async def test_multiple_websocket_connections(client, logged_user, socketio_client):
     app = client.server.app
     socket_registry = get_socket_registry(app)
     NUMBER_OF_SOCKETS = 5
@@ -157,3 +158,22 @@ async def test_multiple_websocket_connections(client, logged_user, socketio_clie
     assert not socket_registry.user_to_sockets_map[logged_user["id"]]
     assert not socket_registry.find_sockets(logged_user["id"])
     assert not socket_registry.find_sockets(logged_user["id"])
+
+@pytest.mark.parametrize("user_role", [
+    # (UserRole.ANONYMOUS),
+    (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
+])
+async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client):
+    app = client.server.app
+    socket_registry = get_socket_registry(app)
+
+    sio = await socketio_client()
+    # logout
+    logout_url = client.app.router['auth_logout'].url_for()
+    r = await client.get(logout_url)
+    assert r.url_obj.path == logout_url.path
+    await assert_status(r, web.HTTPOk)
+
+    assert not sio.sid

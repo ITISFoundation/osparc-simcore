@@ -59,6 +59,15 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     log.info("socketio connection from user %s", user_id)
 
 
+@signals.observe(event=signals.SignalType.SIGNAL_USER_LOGOUT)
+async def user_logged_out(user_id: str, app: web.Application):
+    log.debug("user %s must be disconnected", user_id)
+    registry = get_socket_registry(app)
+    sio = get_socket_server(app)
+    sockets = registry.find_sockets(user_id)
+    for socket in sockets:
+        await sio.disconnect(sid=socket)
+
 async def disconnect(sid: str, app: web.Application):
     """socketio reserved handler for when the socket.io connection is disconnected.
 
