@@ -59,6 +59,7 @@ paths:
           schema:
             type: string
         - in: path
+          required: true
           name: action
           schema:
             type: string
