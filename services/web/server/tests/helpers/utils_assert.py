@@ -39,7 +39,7 @@ def do_assert_error(data, error, expected_cls:web.HTTPException, expected_msg: s
     if expected_msg:
         assert expected_msg in err['message']
 
-    if not isinstance(expected_cls, web.HTTPInternalServerError):
+    if expected_cls != web.HTTPInternalServerError:
         # otherwise, code is exactly the name of the Exception class
         assert expected_cls.__name__  == err['code']
 

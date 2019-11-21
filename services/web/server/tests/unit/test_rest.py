@@ -109,7 +109,7 @@ async def test_check_fail(client):
     resp = await client.post(url, json=FAKE)
 
     _, error = await assert_status(resp, web.HTTPInternalServerError)
-    assert "some random failure" in str(error)
+    assert "some randome failure" in str(error)
 
 
 
