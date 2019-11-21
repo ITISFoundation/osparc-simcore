@@ -4,12 +4,13 @@
 """
 import json
 import logging
-from asyncio import ensure_future
+from asyncio import ensure_future, gather
 
 from aiohttp import web
 from jsonschema import ValidationError
 
 from ..computation_api import update_pipeline_db
+from ..director import director_api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
 from ..storage_api import delete_data_folders_of_project
@@ -222,6 +223,16 @@ async def delete_project(request: web.Request):
     project_uuid = request.match_info.get("project_id")
     db = request.config_dict[APP_PROJECT_DBAPI]
 
+    app = request.app
+    # remove all interactive services in project
+    list_of_services = await director_api.get_running_interactive_services(app,
+                                                                            project_id=project_uuid, 
+                                                                            user_id=user_id)
+    stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
+    if stop_tasks:
+        # fire & forget these tasks
+        ensure_future(gather(*stop_tasks))
+
     try:
         # TODO: delete pipeline db tasks
         await db.delete_user_project(user_id, project_uuid)
@@ -232,13 +243,5 @@ async def delete_project(request: web.Request):
 
     # requests storage to delete all project's stored data, fire&forget
     ensure_future(delete_data_folders_of_project(request.app, project_uuid, user_id))
-
-    # TODO: delete all the dynamic services used by this project when this happens (fire & forget) #
-    # import asyncio
-    # from ..director.director_api import stop_service
-    # project = await db.pop_project(project_uuid)
-    # tasks = [ stop_service(request.app, service_uuid) for service_uuid in  project.get('workbench',[]) ]
-    # await asyncio.gather(**tasks)
-    # TODO: fire&forget???
 
     raise web.HTTPNoContent(content_type='application/json')
