@@ -3,28 +3,118 @@
     - aiopg is used as client sdk to interact with postgres database asynchronously
 
 """
+import functools
+import logging
 
+from aiohttp import web
+from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
+from tenacity import (RetryCallState, after_log, retry,
+                      retry_if_exception_type, stop_after_attempt, wait_fixed)
 
-# aiopg reuses DBAPI exceptions
-#
-# StandardError
-# |__ Warning
-# |__ Error
-#     |__ InterfaceError
-#     |__ DatabaseError
-#         |__ DataError
-#         |__ OperationalError
-#         |__ IntegrityError
-#         |__ InternalError
-#         |__ ProgrammingError
-#         |__ NotSupportedError
-#
-# SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
-# SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
+WAIT_SECS = 2
+ATTEMPTS_COUNT = 3
+
+log = logging.getLogger(__name__)
+
+import attr
+
+from typing import Optional, Dict
+
+
+@attr.s(auto_attribs=True)
+class DataSourceName:
+    # postgres db
+    user: str
+    password: str=attr.ib(repr=False)
+    database: str
+    host: str='localhost'
+    port: int=5432
+    # caller info
+    application_name: Optional[str]=None
+
+
+    def asdict(self) -> Dict:
+        return attr.asdict(self)
+
+
+    def to_uri(self, with_query=False) -> str:
+        uri = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        if with_query and self.application_name:
+            uri += f"?ApplicationName={self.application_name}"
+        return uri
+
+
+
+
+def raise_http_unavailable_error(retry_state: RetryCallState):
+    # aiopg reuses DBAPI exceptions
+    #
+    # StandardError
+    # |__ Warning
+    # |__ Error
+    #     |__ InterfaceError
+    #     |__ DatabaseError
+    #         |__ DataError
+    #         |__ OperationalError
+    #         |__ IntegrityError
+    #         |__ InternalError
+    #         |__ ProgrammingError
+    #         |__ NotSupportedError
+    #
+    # SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
+    # SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
+    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop.
+    # TODO: add header with Retry-After
+    #obj, query = retry_state.args
+    #obj.app.register_incidents
+    # https://tools.ietf.org/html/rfc7231#section-7.1.3
+    raise web.HTTPServiceUnavailable()
+
+
+_retry_kwargs = dict(
+        retry=retry_if_exception_type(DatabaseError),
+        wait=wait_fixed(WAIT_SECS),
+        stop=stop_after_attempt(ATTEMPTS_COUNT),
+        after=after_log(log, logging.ERROR),
+        retry_error_callback=raise_http_unavailable_error
+)
+
+
+
+def retry_pg_api(func):
+    _deco_func = retry(**_retry_kwargs)(func)
+    _total_retry_count = 0
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kargs):
+        nonlocal _total_retry_count
+        try:
+            result = await _deco_func(*args, **kargs)
+        finally:
+            stats = _deco_func.retry.statistics
+            _total_retry_count  += int(stats.get('attempt_number', 0))
+        return result
+
+    def total_retry_count():
+        return _total_retry_count
+
+    wrapper.retry = _deco_func.retry
+    wrapper.total_retry_count = total_retry_count
+    return wrapper
+
+from aiopg.sa import SAConnection
+
+@retry(**_retry_kwargs)
+async def execute_with_try(conn: SAConnection, query, *args, **kargs):
+    #
+    # https://aiopg.readthedocs.io/en/stable/sa.html#aiopg.sa.SAConnection
+    #
+    return await conn.execute(query, *args, **kargs)
 
 
 
 __all__ = [
-    'DBAPIError'
+    'DBAPIError',
+    'retry_pg_api'
 ]
