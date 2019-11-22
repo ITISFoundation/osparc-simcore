@@ -16,8 +16,8 @@ socketio:
   message_queue:
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}
-    user: ${RABBITMQ_USER}
-    password: ${RABBITMQ_PASSWORD}
+    user: ${RABBIT_USER}
+    password: ${RABBIT_PASSWORD}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
