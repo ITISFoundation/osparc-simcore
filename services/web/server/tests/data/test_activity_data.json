@@ -1,0 +1,54 @@
+{
+  "prometheus": {
+    "cpu_return": {
+      "data": {
+        "result": [
+          {
+            "metric": {
+              "container_label_node_id": "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
+            },
+            "value": [
+              null,
+              "3.9952102200000006"
+            ]
+          }
+        ]
+      }
+    },
+    "memory_return": {
+      "data": {
+        "result": [
+          {
+            "metric": {
+              "container_label_node_id": "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
+            },
+            "value": [
+              null,
+              "177.664"
+            ]
+          }
+        ]
+      }
+    },
+    "labels_return": {
+      "data": {
+        "result": [
+          {
+            "metric": {
+              "container_label_node_id": "894dd8d5-de3b-4767-950c-7c3ed8f51d8c",
+              "container_label_nano_cpus_limit": "4000000000",
+              "container_label_mem_limit": "2147483648"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "celery": {
+    "celery_return": {
+      "celery@b02a130fc2e1": [{
+        "args": "(-1, '5360fc76-09f0-11ea-a930-02420aff000a', '35f95ad4-67b8-4ed8-bd55-84a5d600e687')"
+      }]
+    }
+  }
+}

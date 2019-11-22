@@ -1,6 +1,6 @@
 # service
 
-[RabbitMQ: Message broquer](https://www.rabbitmq.com/)
+[RabbitMQ: Message broker](https://www.rabbitmq.com/)
 
 ## special configuration
 

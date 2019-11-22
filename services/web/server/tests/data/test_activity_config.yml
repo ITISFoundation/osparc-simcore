@@ -34,7 +34,7 @@ rabbit:
 #   endpoint: play.minio.io:9000
 #   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
 login:
-  enabled: True
+  enabled: False
   registration_invitation_required: False
   registration_confirmation_required: True
 smtp:
@@ -50,11 +50,9 @@ storage:
   version: v0
 rest:
   version: v0
-  location: http://localhost:8043/api/specs/webserver/v0/openapi.yaml
-  extra_urls:
-    - http://localhost:9081
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://localhost:8043/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
 activity:

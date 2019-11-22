@@ -190,10 +190,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createUserBtn: function() {
       const menu = new qx.ui.menu.Menu();
 
-      // Feature OFF
-      // const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
-      // activityManager.addListener("execute", this.__openActivityManager, this);
-      // menu.add(activityManager);
+      const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
+      activityManager.addListener("execute", this.__openActivityManager, this);
+      menu.add(activityManager);
 
       const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
@@ -246,21 +245,20 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         win.center();
         win.open();
       }
-    }
+    },
 
-    // FEATURE OFF
-    // __openActivityManager: function() {
-    //   const activityWindow = new qx.ui.window.Window(this.tr("Activity manager")).set({
-    //     height: 480,
-    //     width: 600,
-    //     layout: new qx.ui.layout.Grow(),
-    //     appearance: "service-window",
-    //     showMinimize: false,
-    //     contentPadding: 0
-    //   });
-    //   activityWindow.add(new osparc.component.service.manager.ActivityManager());
-    //   activityWindow.center();
-    //   activityWindow.open();
-    // }
+    __openActivityManager: function() {
+      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
+        height: 600,
+        width: 800,
+        layout: new qx.ui.layout.Grow(),
+        appearance: "service-window",
+        showMinimize: false,
+        contentPadding: 0
+      });
+      activityWindow.add(new osparc.component.service.manager.ActivityManager());
+      activityWindow.center();
+      activityWindow.open();
+    }
   }
 });
