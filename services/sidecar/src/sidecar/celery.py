@@ -1,26 +1,19 @@
-import logging
-
 from celery import Celery
-from celery.utils.log import get_task_logger
 
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
-# TODO: configure via command line or config file. Add in config.yaml
-logging.basicConfig(level=logging.DEBUG)
+from .celery_log_setup import get_task_logger
 
 log = get_task_logger(__name__)
-log.setLevel(logging.DEBUG)
-
 
 rabbit_config = RabbitConfig()
+
+log.info("Inititalizing celery app ...")
 
 # TODO: make it a singleton?
 app= Celery(rabbit_config.name,
     broker=rabbit_config.broker,
     backend=rabbit_config.backend)
-
-
-
 
 __all__ = [
     "rabbit_config",
