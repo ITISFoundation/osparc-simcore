@@ -56,7 +56,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         # db config
         self._db = DbSettings() # keeps single db engine: sidecar.utils_{id}
-        self._db_manager = DBManager() # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
+        self._db_manager = None # lazy init because still not configured. SEE _get_node_ports
 
         # current task
         self._task = None
@@ -71,6 +71,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         self._executor = ExecutorSettings()
 
     def _get_node_ports(self):
+        if self._db_manager is None:
+            self._db_manager = DBManager() # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
         return node_ports.ports(self._db_manager)
 
     def _create_shared_folders(self):
