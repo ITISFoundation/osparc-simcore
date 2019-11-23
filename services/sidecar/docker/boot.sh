@@ -32,15 +32,28 @@ then
   DEBUG_LEVEL=info
 fi
 
-
 # RUNNING application ----------------------------------------
-if [[ ${SC_BOOT_MODE} == "debug" ]]
+
+# default
+DEBUG_LEVEL=info
+CONCURRENCY=2
+POOL=prefork
+
+
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  # TODO: activate pdb??
+  # NOTE: in this case, remote debugging is only available in development mode!
+  # FIXME: workaround since PTVSD does not support prefork subprocess debugging: https://github.com/microsoft/ptvsd/issues/943
+  POOL=solo
+
+elif [[ ${SC_BOOT_MODE} == "debug" ]]
+then
   DEBUG_LEVEL=debug
   CONCURRENCY=1
-else
-  CONCURRENCY=2
 fi
 
-exec celery worker --app sidecar.celery:app --concurrency ${CONCURRENCY} --loglevel=${DEBUG_LEVEL}
+exec celery worker \
+    --app sidecar.celery:app \
+    --concurrency ${CONCURRENCY} \
+    --loglevel=${DEBUG_LEVEL} \
+    --pool=${POOL}
