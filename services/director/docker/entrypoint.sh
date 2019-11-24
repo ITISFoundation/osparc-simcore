@@ -70,4 +70,4 @@ then
     addgroup scu $GROUPNAME
 fi
 
-su-exec scu "$@"
+exec su-exec scu "$@"
