@@ -9,19 +9,18 @@ ERROR="ERROR: [`basename "$0"`] "
 # - Notice that the container *starts* as --user [default root] but
 #   *runs* as non-root user [scu]
 #
-echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
-echo "  User    :`id $(whoami)`"
-echo "  Workdir :`pwd`"
+echo $INFO "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+echo $INFO "User    :`id $(whoami)`"
+echo $INFO "Workdir :`pwd`"
 
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-
     # NOTE: expects docker run ... -v $(pwd):/devel/services/director
     DEVEL_MOUNT=/devel/services/director
 
     stat $DEVEL_MOUNT &> /dev/null || \
-        (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+        (echo $ERROR "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
 
     USERID=$(stat -c %u $DEVEL_MOUNT)
     GROUPID=$(stat -c %g $DEVEL_MOUNT)
