@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # This entrypoint script:
 #
