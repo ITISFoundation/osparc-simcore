@@ -29,4 +29,4 @@ def wait_till_celery_responsive(url):
 
     status = celery.bin.celery.CeleryCommand.commands['status']()
     status.app = status.get_app()
-    status.run()
+    status.run() # raises celery.bin.base.Error if cannot run
