@@ -149,8 +149,8 @@ services:
     image: itisfoundation/rabbitmq:3.8.0-management
     init: true
     environment:
-      - RABBIT_DEFAULT_USER=${RABBIT_USER}
-      - RABBIT_DEFAULT_PASS=${RABBIT_PASSWORD}
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
     networks:
       - default
       - computational_services_subnet

@@ -87,7 +87,6 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
         environ[host_key] = '127.0.0.1'
         environ[port_key] = published_port
 
-
     pprint(environ) # NOTE: displayed only if error
     return environ
 
