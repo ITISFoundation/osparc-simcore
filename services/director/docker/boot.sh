@@ -1,15 +1,17 @@
 #!/bin/sh
 #
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # BOOTING application ---------------------------------------------
-echo "Booting in ${SC_BOOT_MODE} mode ..."
+echo $INFO "Booting in ${SC_BOOT_MODE} mode ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
 
 LOG_LEVEL=info
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "  Environment :"
+  echo $INFO "Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
@@ -20,10 +22,10 @@ then
   cd /devel
 
   #--------------------
-  echo "  Python :"
+  echo $INFO "Python :"
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
-  echo "  PIP :"
+  echo $INFO "PIP :"
   $SC_PIP list | sed 's/^/    /'
 fi
 
@@ -31,8 +33,9 @@ fi
 if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
   echo
-  echo "PTVSD Debugger initializing in port 3004"
-  python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_director --loglevel=$LOG_LEVEL
+  echo $INFO "PTVSD Debugger initializing in port 3004"
+  python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
+    simcore_service_director --loglevel=$LOG_LEVEL
 else
-  simcore-service-director --loglevel=$LOG_LEVEL
+  exec simcore-service-director --loglevel=$LOG_LEVEL
 fi

@@ -1,15 +1,17 @@
 #!/bin/sh
 #
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # BOOTING application ---------------------------------------------
-echo "Booting in ${SC_BOOT_MODE} mode ..."
+echo $INFO "Booting in ${SC_BOOT_MODE} mode ..."
 
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "  User    :`id $(whoami)`"
-  echo "  Workdir :`pwd`"
-  echo "  Environment :"
+  echo $INFO "User    :`id $(whoami)`"
+  echo $INFO "Workdir :`pwd`"
+  echo $INFO "Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
@@ -20,10 +22,10 @@ then
   cd /devel
 
   #--------------------
-  echo "  Python :"
+  echo $INFO "Python :"
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
-  echo "  PIP :"
+  echo $INFO "PIP :"
   $SC_PIP list | sed 's/^/    /'
 
   #------------
@@ -41,14 +43,15 @@ fi
 if [[ ${SC_BOOT_MODE} == "debug-pdb" ]]
 then
   # NOTE: needs stdin_open: true and tty: true
-  echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
-  echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-  eval "$entrypoint" python -c "import pdb, simcore_service_storage.cli; \
+  echo $INFO "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
+  echo $INFO "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+  eval $INFO "$entrypoint" python -c "import pdb, simcore_service_storage.cli; \
              pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
 elif [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  echo "PTVSD Debugger initializing in port 3003 with ${APP_CONFIG}"
-  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m simcore_service_storage --config $APP_CONFIG
+  echo $INFO "PTVSD Debugger initializing in port 3003 with ${APP_CONFIG}"
+  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
+      simcore_service_storage --config $APP_CONFIG
 else
   exec simcore-service-storage --config $APP_CONFIG
 fi
