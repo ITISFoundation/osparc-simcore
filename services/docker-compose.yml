@@ -87,10 +87,10 @@ services:
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - RABBITMQ_USER=${RABBITMQ_USER}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - RABBITMQ_LOG_CHANNEL=${RABBITMQ_LOG_CHANNEL}
-      - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
+      - RABBIT_USER=${RABBIT_USER}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_LOG_CHANNEL=${RABBIT_LOG_CHANNEL}
+      - RABBIT_PROGRESS_CHANNEL=${RABBIT_PROGRESS_CHANNEL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -149,8 +149,8 @@ services:
     image: itisfoundation/rabbitmq:3.8.0-management
     init: true
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
     networks:
       - default
       - computational_services_subnet

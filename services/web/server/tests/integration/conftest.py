@@ -74,12 +74,18 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
                 if 'ports' in simcore_docker_compose['services'][name] ]
 
     for name in services_with_published_ports:
-        # published port is sometimes dynamically defined by the swarm
-        published_port = get_service_published_port(name)
 
-        environ['%s_HOST' % name.upper()] = '127.0.0.1'
-        environ['%s_PORT' % name.upper()] = published_port
+        host_key = f'{name.upper()}_HOST'
+        port_key = f'{name.upper()}_PORT'
+
+        # published port is sometimes dynamically defined by the swarm
+        assert host_key in environ, "Variables names expected to be prefix with service names in docker-compose"
+        assert port_key in environ
+
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
+        published_port = get_service_published_port(name, int(environ.get(port_key)))
+        environ[host_key] = '127.0.0.1'
+        environ[port_key] = published_port
 
     pprint(environ) # NOTE: displayed only if error
     return environ

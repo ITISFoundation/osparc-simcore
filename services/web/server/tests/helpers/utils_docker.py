@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
     wait=wait_fixed(2),
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARN))
-def get_service_published_port(service_name: str) -> str:
+def get_service_published_port(service_name: str, target_port: Optional[int]=None) -> str:
     """
         WARNING: ENSURE that service name exposes a port in  Dockerfile file or docker-compose config file
     """
@@ -31,10 +31,24 @@ def get_service_published_port(service_name: str) -> str:
     if not service_ports:
         raise RuntimeError(f"Cannot find published port for service '{service_name}' in endpoint. Probably services still not started.")
 
-    if len(service_ports)>1:
-        log.warning("Multiple porst published in service '%s'. Defaulting to first from %s", service_name, service_ports)
+    published_port = None
+    msg = ", ".join( f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports )
 
-    published_port = service_ports[0]["PublishedPort"]
+    if target_port is None:
+        if len(service_ports)>1:
+            log.warning("Multiple ports published in service '%s': %s. Defaulting to first", service_name, msg)
+        published_port = service_ports[0]["PublishedPort"]
+
+    else:
+        target_port = int(target_port)
+        for p in service_ports:
+            if p['TargetPort'] == target_port:
+                published_port = p['PublishedPort']
+                break
+
+    if published_port is None:
+        raise RuntimeError(f"Cannot find published port for {target_port}. Got {msg}")
+
     return str(published_port)
 
 
