@@ -43,8 +43,8 @@ def docker_compose_file(here):
     os.environ['POSTGRES_ENDPOINT']="FOO" # TODO: update config schema!!
     os.environ['MINIO_ACCESS_KEY']=ACCESS_KEY
     os.environ['MINIO_SECRET_KEY']=SECRET_KEY
-    os.environ['RABBITMQ_USER']=RABBIT_USER
-    os.environ['RABBITMQ_PASSWORD']=RABBIT_PWD
+    os.environ['RABBIT_USER']=RABBIT_USER
+    os.environ['RABBIT_PASSWORD']=RABBIT_PWD
 
 
     dc_path = here / 'docker-compose.yml'
@@ -85,8 +85,8 @@ def postgres_service(docker_services, docker_ip):
 @pytest.fixture(scope='session')
 def rabbit_service(docker_services, docker_ip):
     # set env var here that is explicitly used from sidecar
-    os.environ['RABBITMQ_HOST'] = "{host}".format(host=docker_ip)
-    os.environ['RABBITMQ_PORT'] = "{port}".format(port=docker_services.port_for('rabbit', 15672))
+    os.environ['RABBIT_HOST'] = "{host}".format(host=docker_ip)
+    os.environ['RABBIT_PORT'] = "{port}".format(port=docker_services.port_for('rabbit', 15672))
 
     rabbit_service = "dummy"
     return rabbit_service
