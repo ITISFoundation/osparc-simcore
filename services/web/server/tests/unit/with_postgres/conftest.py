@@ -1,27 +1,23 @@
-""" Fixtures for this folder's tests
+""" Configuration for unit testing with a postgress fixture
 
-Notice that fixtures in ../conftest.py are also accessible here
+    - Unit testing of webserver app with a postgress service as fixture
+    - Starts test session by running a postgres container as a fixture (see postgress_service)
 
+    IMPORTANT: remember that these are still unit-tests!
 """
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-
-import json
 import os
 import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
 
 import pytest
 import sqlalchemy as sa
 import trafaret_config
-import yaml
 
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
@@ -30,40 +26,14 @@ from simcore_service_webserver.application_config import \
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
 
-tests_folder = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent.parent.parent
-sys.path.append(str(tests_folder/ 'helpers'))
+## current directory
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-@pytest.fixture(scope="session")
-def mock_dir(here):
-    return here / "../mock"
-
-@pytest.fixture(scope='session')
-def fake_data_dir(here):
-    dirpath = (here / "../../data").resolve()
-    assert dirpath.exists()
-    return dirpath
-
-@pytest.fixture
-def fake_project(fake_data_dir: Path) -> Dict:
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        yield json.load(fp)
-
-@pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.parent.parent.parent.resolve()
-    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
-    return root_dir
-
-@pytest.fixture(scope="session")
-def default_app_cfg(here, osparc_simcore_root_dir):
+def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
     # NOTE: ONLY used at the session scopes
-    cfg_path = here / "config.yaml"
+    cfg_path = current_dir / "config.yaml"
     assert cfg_path.exists()
 
     variables = dict(os.environ)
@@ -74,10 +44,11 @@ def default_app_cfg(here, osparc_simcore_root_dir):
     # validates and fills all defaults/optional entries that normal load would not do
     cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
 
+    assert Path(cfg_dict["main"]["client_outdir"]) == fake_static_dir
+
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w
     return cfg_dict
-
 
 @pytest.fixture(scope="function")
 def app_cfg(default_app_cfg, aiohttp_unused_port):
@@ -90,10 +61,10 @@ def app_cfg(default_app_cfg, aiohttp_unused_port):
     # this fixture can be safely modified during test since it is renovated on every call
     return cfg
 
-
 @pytest.fixture(scope='session')
-def docker_compose_file(here, default_app_cfg):
+def docker_compose_file(default_app_cfg):
     """ Overrides pytest-docker fixture
+
     """
     old = os.environ.copy()
 
@@ -104,12 +75,13 @@ def docker_compose_file(here, default_app_cfg):
     os.environ['TEST_POSTGRES_USER']=cfg['user']
     os.environ['TEST_POSTGRES_PASSWORD']=cfg['password']
 
-    dc_path = here / 'docker-compose.yml'
+    dc_path = current_dir / 'docker-compose.yml'
 
     assert dc_path.exists()
     yield str(dc_path)
 
     os.environ = old
+
 
 @pytest.fixture(scope='session')
 def postgres_service(docker_services, docker_ip, default_app_cfg):
@@ -125,8 +97,8 @@ def postgres_service(docker_services, docker_ip, default_app_cfg):
         timeout=30.0,
         pause=0.1,
     )
-    return url
 
+    return url
 
 @pytest.fixture
 def postgres_db(app_cfg, postgres_service):
@@ -145,20 +117,17 @@ def postgres_db(app_cfg, postgres_service):
     metadata.drop_all(engine)
     engine.dispose()
 
-
 @pytest.fixture
-def server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db): #pylint: disable=R0913
+def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     app = create_application(app_cfg)
     path_mail(monkeypatch)
     server = loop.run_until_complete( aiohttp_server(app, port=app_cfg["main"]["port"]) )
     return server
 
-
 @pytest.fixture
-def client(loop, aiohttp_client, server):
-    client = loop.run_until_complete(aiohttp_client(server))
+def client(loop, aiohttp_client, web_server):
+    client = loop.run_until_complete(aiohttp_client(web_server))
     return client
-
 
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
@@ -180,7 +149,9 @@ async def storage_subsystem_mock(loop, mocker):
     mock1.return_value.set_result("")
     return mock, mock1
 
+
 # helpers ---------------
+
 def path_mail(monkeypatch):
     async def send_mail(*args):
         print('=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}'.format(*args))

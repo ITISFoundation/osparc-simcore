@@ -23,11 +23,14 @@ db:
     port: 5432
     user: simcore
 rabbit:
+  enabled: True
+  host: rabbit
+  port: 5672
+  user: simcore
+  password: simcore
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
-  password: simcore
-  user: simcore
 # s3:
 #   access_key: 'Q3AM3UQ867SPQQA43P2F'
 #   bucket_name: simcore
@@ -57,3 +60,8 @@ projects:
   location: http://localhost:8043/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
+activity:
+  enabled: True
+  prometheus_host: http://prometheus
+  prometheus_port: 9090
+  prometheus_api_version: v1

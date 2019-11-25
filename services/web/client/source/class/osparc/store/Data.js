@@ -50,7 +50,8 @@ qx.Class.define("osparc.store.Data", {
     "myDocuments": "qx.event.type.Data",
     "nodeFiles": "qx.event.type.Data",
     "fileCopied": "qx.event.type.Data",
-    "deleteFile": "qx.event.type.Data"
+    "deleteFile": "qx.event.type.Data",
+    "presignedLink": "qx.event.type.Data"
   },
 
   members: {

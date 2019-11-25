@@ -9,11 +9,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
-from helpers import helpers  # pylint: disable=no-name-in-module
 from simcore_sdk import node_ports
 from simcore_sdk.node_ports import exceptions
 
+import np_helpers  # pylint: disable=no-name-in-module
 
 
 def _check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
@@ -151,7 +150,7 @@ def test_adding_new_ports(special_configuration, session):
         "displayOrder":2,
         "type": "integer"}})
     config_dict["inputs"].update({"in_15":15})
-    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
     # # replace the configuration now, add an output
@@ -161,7 +160,7 @@ def test_adding_new_ports(special_configuration, session):
         "description": "a cool output",
         "displayOrder":2,
         "type": "boolean"}})
-    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 
@@ -175,12 +174,12 @@ def test_removing_ports(special_configuration, session):
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
-    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
-    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 
@@ -239,7 +238,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_15"]["fileToKeyMap"] = {item_alias:"in_15"}
-    helpers.update_configuration(session, project_id, this_node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, this_node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_15"].get()
     assert isinstance(file_path, item_pytype)
@@ -266,7 +265,7 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
-    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
@@ -283,5 +282,5 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
         await PORTS.set_file_by_keymap(invalid_alias)
 
     await PORTS.set_file_by_keymap(file_path)
-    file_id = helpers.file_uuid(file_path, project_id, node_uuid)
+    file_id = np_helpers.file_uuid(file_path, project_id, node_uuid)
     assert PORTS.outputs["out_1"].value == {"store":s3_simcore_location, "path": file_id}

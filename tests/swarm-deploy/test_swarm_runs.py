@@ -1,33 +1,24 @@
-"""
-PRECONDITION:
-    Assumes simcore stack is deployed, i.e. make ops_disabled=1 up-version
-
-SEE before_script() in ci/travis/system-testing/swarm-deploy
-"""
-
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import asyncio
-import datetime
 import logging
 import os
-import re
 import sys
 import urllib
 from pathlib import Path
 from pprint import pformat
-from typing import Dict
+from typing import Dict, List
 
-import docker
 import pytest
-import tenacity
-import yaml
+from docker import DockerClient
+from docker.models.services import Service
 
 logger = logging.getLogger(__name__)
+
+current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 WAIT_TIME_SECS = 20
 RETRY_COUNT = 7
@@ -46,68 +37,37 @@ docker_compose_service_names = [
 
 stack_name = os.environ.get("SWARM_STACK_NAME", 'simcore')
 
-stack_service_names = sorted([ f"{stack_name}_{name}" for name in docker_compose_service_names ])
+stack_service_names = sorted([ f"{stack_name}_{name}"
+    for name in docker_compose_service_names ])
 
+# wait if running pre-state
+# https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
+pre_states = [
+    "NEW",
+    "PENDING",
+    "ASSIGNED",
+    "PREPARING",
+    "STARTING"
+]
 
+failed_states = [
+    "COMPLETE",
+    "FAILED",
+    "SHUTDOWN",
+    "REJECTED",
+    "ORPHANED",
+    "REMOVE",
+    "CREATED"
+]
 
-# UTILS --------------------------------
-
-def get_tasks_summary(tasks):
-    msg = ""
-    for t in tasks:
-        t["Status"].setdefault("Err", '')
-        msg += "- task ID:{ID}, STATE: {Status[State]}, ERROR: '{Status[Err]}' \n".format(
-            **t)
-    return msg
-
-
-def get_failed_tasks_logs(service, docker_client):
-    failed_states = ["COMPLETE", "FAILED",
-                     "SHUTDOWN", "REJECTED", "ORPHANED", "REMOVE"]
-    failed_logs = ""
-    for t in service.tasks():
-        if t['Status']['State'].upper() in failed_states:
-            cid = t['Status']['ContainerStatus']['ContainerID']
-            failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(
-                service.name, t['ID'], "="*10)
-            if cid:
-                container = docker_client.containers.get(cid)
-                failed_logs += container.logs().decode('utf-8')
-            else:
-                failed_logs += "  log unavailable. container does not exists\n"
-            failed_logs += "{2} {0} - {1} END {2}\n".format(
-                service.name, t['ID'], "="*10)
-
-    return failed_logs
-
-# FIXTURES -------------------------------------
-
-@pytest.fixture(scope="session")
-def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.resolve()
-    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
-    return root_dir
-
-@pytest.fixture(scope='session')
-def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
-    services_dir = Path(osparc_simcore_root_dir) / "services"
-    return services_dir
 
 @pytest.fixture(scope="session", params=stack_service_names)
-def core_service_name(request):
+def core_service_name(request) -> str:
     return str(request.param)
 
-@pytest.fixture(scope="function")
-def docker_client():
-    client = docker.from_env()
-    yield client
 
-@pytest.fixture(scope="function")
-def core_services_running(docker_client):
+@pytest.fixture
+def core_services_running(docker_client: DockerClient) -> List[Service]:
     # Matches service names in stacks as e.g.
     #
     #  'mystack_director'
@@ -117,16 +77,27 @@ def core_services_running(docker_client):
     # for a stack named 'mystack'
 
     # maps service names in docker-compose with actual services
-    running_services = [ s for s in docker_client.services.list() if s.name.startswith(stack_name) ]
+    running_services = [ s for s in docker_client.services.list()
+        if s.name.startswith(stack_name) ]
     return running_services
 
-# TESTS -------------------------------
-def test_all_services_up(core_services_running):
+
+def test_all_services_up(core_services_running: str, osparc_deploy:Dict):
     running_services = sorted( [s.name for s in core_services_running] )
     assert  running_services == stack_service_names
 
+    expected = [ f'{stack_name}_{service_name}'
+        for service_name in osparc_deploy[stack_name]['services'].keys()
+    ]
+    assert running_services == sorted(expected)
 
-async def test_core_service_running(core_service_name, core_services_running, docker_client, loop):
+
+async def test_core_service_running(
+    core_service_name: str,
+    core_services_running: List[Service],
+    docker_client: DockerClient,
+    loop: asyncio.BaseEventLoop,
+    osparc_deploy: Dict ):
     """
         NOTE: loop fixture makes this test async
     """
@@ -146,9 +117,6 @@ async def test_core_service_running(core_service_name, core_services_running, do
                                  get_tasks_summary(tasks),
                                  get_failed_tasks_logs(running_service, docker_client))
 
-    # wait if running pre-state
-    # https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-    pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
 
     for n in range(RETRY_COUNT):
         task = running_service.tasks()[0]
@@ -165,8 +133,7 @@ async def test_core_service_running(core_service_name, core_services_running, do
                 get_failed_tasks_logs(running_service, docker_client))
 
 
-async def test_check_serve_root():
-    # TODO: this is
+async def test_check_serve_root(osparc_deploy: Dict):
     req = urllib.request.Request("http://127.0.0.1:9081/")
     try:
         resp = urllib.request.urlopen(req)
@@ -180,3 +147,34 @@ async def test_check_serve_root():
         pytest.fail("The server could not fulfill the request.\nError code {}".format(err.code))
     except urllib.error.URLError as err:
         pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
+
+
+
+
+# UTILS --------------------------------
+
+def get_tasks_summary(tasks):
+    msg = ""
+    for t in tasks:
+        t["Status"].setdefault("Err", '')
+        msg += "- task ID:{ID}, STATE: {Status[State]}, ERROR: '{Status[Err]}' \n".format(
+            **t)
+    return msg
+
+
+def get_failed_tasks_logs(service, docker_client):
+    failed_logs = ""
+    for t in service.tasks():
+        if t['Status']['State'].upper() in failed_states:
+            cid = t['Status']['ContainerStatus']['ContainerID']
+            failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(
+                service.name, t['ID'], "="*10)
+            if cid:
+                container = docker_client.containers.get(cid)
+                failed_logs += container.logs().decode('utf-8')
+            else:
+                failed_logs += "  log unavailable. container does not exists\n"
+            failed_logs += "{2} {0} - {1} END {2}\n".format(
+                service.name, t['ID'], "="*10)
+
+    return failed_logs

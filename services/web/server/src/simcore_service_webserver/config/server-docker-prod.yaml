@@ -23,11 +23,13 @@ db:
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
 rabbit:
-  user: ${RABBITMQ_USER}
-  password: ${RABBITMQ_PASSWORD}
+  host: ${RABBIT_HOST}
+  port: ${RABBIT_PORT}
+  user: ${RABBIT_USER}
+  password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBITMQ_PROGRESS_CHANNEL}
-    log: ${RABBITMQ_LOG_CHANNEL}
+    progress: ${RABBIT_PROGRESS_CHANNEL}
+    log: ${RABBIT_LOG_CHANNEL}
 # s3:
 #   endpoint: ${S3_ENDPOINT}
 #   access_key: ${S3_ACCESS_KEY}
@@ -56,4 +58,9 @@ projects:
 session:
   # python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+activity:
+  enabled: True
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
 ...

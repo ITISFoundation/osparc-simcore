@@ -4,6 +4,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from copy import deepcopy
+
 import pytest
 import sqlalchemy as sa
 import tenacity
@@ -14,8 +16,8 @@ from simcore_service_webserver.db import DSN
 
 
 @pytest.fixture(scope='module')
-def postgres_db(app_config, webserver_environ, docker_stack):
-    cfg = app_config["db"]["postgres"]
+def postgres_db(_webserver_dev_config, webserver_environ, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["db"]["postgres"])
     url = DSN.format(**cfg)
 
     # NOTE: Comment this to avoid postgres_service
