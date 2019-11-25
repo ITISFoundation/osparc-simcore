@@ -145,7 +145,7 @@ class Nodeports:
         return serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
 
 
-def ports(db_manager: Optional[dbmanager.DBManager]=None):
+def ports(db_manager: Optional[dbmanager.DBManager]=None) -> Nodeports:
     # FIXME: warning every dbmanager create a new db engine!
     if db_manager is None: # NOTE: keeps backwards compatibility
         db_manager = dbmanager.DBManager()
