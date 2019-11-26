@@ -18,7 +18,8 @@ pytest-runner
 
 # fixtures
 Faker
-openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
+openapi-spec-validator
+jsonschema
 tenacity
 docker
 

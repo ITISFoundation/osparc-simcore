@@ -36,20 +36,21 @@ faker==1.0.7
 globre==0.1.5
 idna-ssl==1.1.0
 idna==2.8
-importlib-metadata==0.16  # via pluggy
+importlib-metadata==0.23
+isodate==0.6.0
 isort==4.3.20             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
 jsondiff==1.1.2
-jsonschema==2.6.0
+jsonschema==3.2.0
 kombu==4.5.0
-lazy-object-proxy==1.4.1
+lazy-object-proxy==1.4.3
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
-more-itertools==7.0.0     # via pytest
+more-itertools==7.2.0
 multidict==4.5.2
-openapi-core==0.8.0
-openapi-spec-validator==0.2.7
+openapi-core==0.12.0
+openapi-spec-validator==0.2.8
 passlib==1.7.1
 passwordmeter==0.1.8
 pika==0.10.0
@@ -60,6 +61,7 @@ ptvsd==4.2.10
 py==1.8.0                 # via pytest
 pycparser==2.19
 pylint==2.3.1
+pyrsistent==0.15.6
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
@@ -91,7 +93,7 @@ websocket-client==0.56.0  # via docker
 werkzeug==0.16.0
 wrapt==1.11.1             # via astroid
 yarl==1.3.0
-zipp==0.5.1               # via importlib-metadata
+zipp==0.6.0
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
