@@ -29,7 +29,6 @@ paths:
         - in: path
           required: true
           name: action
-          required: true
           schema:
             type: string
             default: 'echo'
