@@ -6,8 +6,8 @@
 APP_NAME     := webserver
 APP_CLI_NAME  = simcore-service-${APP_NAME}
 
-ROOT_DIR     = $(realpath $(CURDIR)/../../../)
-VENV_DIR    ?= $(realpath $(ROOT_DIR)/.venv)
+ROOT_DIR     = $(abspath $(CURDIR)/../../../)
+VENV_DIR    ?= $(abspath $(ROOT_DIR)/.venv)
 
 
 .PHONY: install
@@ -16,11 +16,19 @@ install: ## install app in edit mode for development [DEV]
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
 
-.PHONY: tests
-tests: ## runs all tests [DEV]
+.PHONY: tests tunit tintegration
+tests: tunit tintegration## runs all tests [DEV]
+	# All tests run
+
+tunit:
 	# running unit tests
 	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
-	# running integration tests
+
+
+export DOCKER_REGISTRY=local
+export DOCKER_IMAGE_TAG=production
+tintegration:
+	# running integration tests ${DOCKER_REGISTRY}/(service):${DOCKER_IMAGE_TAG} images ...
 	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
 
 

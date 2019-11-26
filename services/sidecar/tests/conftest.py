@@ -78,6 +78,8 @@ def postgres_service(docker_services, docker_ip):
         'host' : docker_ip,
         'port' : docker_services.port_for('postgres', 5432)
     }
+    # FIXME: use monkeypatch.setenv("POSTGRES_ENDPOINT", ...) instead
+
     # set env var here that is explicitly used from sidecar
     os.environ['POSTGRES_ENDPOINT'] = "{host}:{port}".format(host=docker_ip, port=docker_services.port_for('postgres', 5432))
     return postgres_service
@@ -85,8 +87,9 @@ def postgres_service(docker_services, docker_ip):
 @pytest.fixture(scope='session')
 def rabbit_service(docker_services, docker_ip):
     # set env var here that is explicitly used from sidecar
+    # FIXME: use monkeypatch.setenv("RABBIT_HOST", ...) instead
     os.environ['RABBIT_HOST'] = "{host}".format(host=docker_ip)
-    os.environ['RABBIT_PORT'] = "{port}".format(port=docker_services.port_for('rabbit', 15672))
+    os.environ['RABBIT_PORT'] = "{port}".format(port=docker_services.port_for('rabbit', 5672))
 
     rabbit_service = "dummy"
     return rabbit_service
@@ -130,6 +133,7 @@ def minio_service(docker_services, docker_ip):
         pause=0.1,
     )
 
+    # FIXME: use monkeypatch.setenv("S3_BUCKET_NAME", ...) instead
     os.environ['S3_BUCKET_NAME'] = "simcore-testing"
     os.environ['S3_ENDPOINT'] = '{ip}:{port}'.format(ip=docker_ip, port=docker_services.port_for('minio', 9000))
     os.environ['S3_ACCESS_KEY'] = ACCESS_KEY
