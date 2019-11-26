@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
-ROOT_DIR  = $(realpath $(CURDIR)/../../)
-VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
+ROOT_DIR  = $(abspath $(CURDIR)/../../)
+VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
 
 %.txt: %.in

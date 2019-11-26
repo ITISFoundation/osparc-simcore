@@ -280,14 +280,14 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
-devenv: .venv ## creates a python virtual environment with development tools (e.g. pip, pylint, pip-tools, etc ...)
 .venv:
-	$(if $(IS_WIN),python.exe,python3) -m venv .venv
+	python3 -m venv $@
 	$(PY_PIP) install --upgrade pip wheel setuptools
+
+devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
 	$(PY_PIP) install \
 		pylint \
 		autopep8 \
-		virtualenv \
 		pip-tools \
 		rope
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
