@@ -11,10 +11,11 @@ attrs==19.1.0
 chardet==3.0.4            # via aiohttp
 idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, yarl
+isodate==0.6.0            # via openapi-core
 jsonschema==3.0.1
 lazy-object-proxy==1.4.1  # via openapi-core
 multidict==4.5.2          # via aiohttp, yarl
-openapi-core==0.8.0
+openapi-core==0.12.0
 openapi-spec-validator==0.2.7  # via openapi-core
 prometheus-client==0.7.1
 psycopg2-binary==2.8.2
