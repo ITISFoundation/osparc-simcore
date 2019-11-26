@@ -4,24 +4,18 @@
     Here we can find fixtures of most of these configurations
 
 """
-
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 
 import os
 import re
 import shutil
 import socket
-import subprocess
 import sys
-from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import pytest
 import yaml
