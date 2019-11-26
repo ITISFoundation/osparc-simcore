@@ -17,7 +17,10 @@ import socketio
 log = logging.getLogger(__file__)
 
 # TODO: separate API from server application!
-sio = socketio.AsyncServer(async_mode="aiohttp", logging=log)
+sio = socketio.AsyncServer(async_mode="aiohttp",
+    logger=log,
+    cors_allowed_origins='*', # FIXME: deactivate when reverse proxy issue with traefik resolved
+    engineio_logger=log)
 
 
 @sio.on("connect")
