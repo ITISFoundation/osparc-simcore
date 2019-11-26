@@ -11,11 +11,12 @@ attrs==19.1.0             # via aiohttp, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
 idna-ssl==1.1.0           # via aiohttp
 idna==2.8                 # via idna-ssl, yarl
-jsonschema==2.6.0
+isodate==0.6.0            # via openapi-core
+jsonschema==2.6.0         # via openapi-spec-validator
 lazy-object-proxy==1.4.1  # via openapi-core
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2          # via aiohttp, yarl
-openapi-core==0.8.0
+openapi-core==0.12.0
 openapi-spec-validator==0.2.6  # via openapi-core
 pathlib==1.0.1            # via openapi-spec-validator
 pluggy==0.11.0            # via pytest
@@ -23,8 +24,11 @@ py==1.8.0                 # via pytest
 pytest-aiohttp==0.3.0
 pytest==4.5.0
 pyyaml==5.1               # via openapi-spec-validator
-six==1.12.0               # via openapi-core, openapi-spec-validator, pytest
+six==1.12.0               # via isodate, openapi-core, openapi-spec-validator, pytest
 strict-rfc3339==0.7       # via openapi-core
 typing-extensions==3.7.2  # via aiohttp
 wcwidth==0.1.7            # via pytest
 yarl==1.3.0               # via aiohttp
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
