@@ -133,13 +133,17 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         log.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
 
         try:
-            self._docker.client.login(registry=self._docker.registry,
-                username=self._docker.registry_user, password=self._docker.registry_pwd)
+            self._docker.client.login(
+                registry=self._docker.registry,
+                username=self._docker.registry_user,
+                password=self._docker.registry_pwd)
             log.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
+
             self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
         except docker.errors.APIError:
-            log.exception("Pulling image failed")
-            raise docker.errors.APIError
+            msg = f"Failed to pull image '{self._docker.image_name}:{self._docker.image_tag}' from {self._docker.registry,}"
+            log.exception(msg)
+            raise docker.errors.APIError(msg)
 
     def _log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
         log_data = {"Channel" : "Log",
