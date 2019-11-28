@@ -76,7 +76,8 @@ qx.Class.define("osparc.file.FilePicker", {
       if ("location" in fileMetadata && "path" in fileMetadata) {
         this.__setOutputFile(fileMetadata["location"], fileMetadata["path"], fileMetadata["name"]);
       }
-      this.__initResources(fileMetadata["location"]);
+      this.__filesTree.resetCache();
+      this.__initResources();
     }, this);
 
     const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
