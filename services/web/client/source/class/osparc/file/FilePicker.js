@@ -167,7 +167,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __setOutputFile: function(store, path, label) {
-      if (store && path) {
+      if (store !== undefined && path) {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
           store,
