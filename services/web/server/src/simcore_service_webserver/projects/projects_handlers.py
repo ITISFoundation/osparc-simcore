@@ -4,17 +4,14 @@
 """
 import json
 import logging
-from asyncio import ensure_future, gather
 
 from aiohttp import web
 from jsonschema import ValidationError
 
 from ..computation_api import update_pipeline_db
-from ..director import director_api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_api import check_permission
-from ..storage_api import delete_data_folders_of_project
-from .projects_api import validate_project
+from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
@@ -76,7 +73,7 @@ async def create_projects(request: web.Request):
                 project = predefined
 
         # validate data
-        validate_project(request.app, project)
+        projects_api.validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
@@ -123,7 +120,7 @@ async def list_projects(request: web.Request):
     validated_projects = []
     for project in projects_list:
         try:
-            validate_project(request.app, project)
+            projects_api.validate_project(request.app, project)
             validated_projects.append(project)
         except ValidationError:
             log.exception("Skipping invalid project from list")
@@ -187,7 +184,7 @@ async def replace_project(request: web.Request):
     })
 
     try:
-        validate_project(request.app, new_project)
+        projects_api.validate_project(request.app, new_project)
 
         await db.update_user_project(new_project, user_id, project_uuid)
 
@@ -212,7 +209,6 @@ async def replace_project(request: web.Request):
 #    # TODO: implement patch with diff as body!
 #    raise NotImplementedError()
 
-
 @login_required
 async def delete_project(request: web.Request):
 
@@ -221,28 +217,9 @@ async def delete_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    await projects_api.remove_project_interactive_services(request, project_uuid, user_id)
 
-    app = request.app
-    # remove all interactive services in project
-    list_of_services = await director_api.get_running_interactive_services(app,
-                                                                            project_id=project_uuid,
-                                                                            user_id=user_id)
-    stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
-    if stop_tasks:
-        # fire & forget these tasks
-        ensure_future(gather(*stop_tasks))
-
-    try:
-        # TODO: delete pipeline db tasks
-        await db.delete_user_project(user_id, project_uuid)
-
-    except ProjectNotFoundError:
-        # TODO: add flag in query to determine whether to respond if error?
-        raise web.HTTPNotFound
-
-    # requests storage to delete all project's stored data, fire&forget
-    ensure_future(delete_data_folders_of_project(request.app, project_uuid, user_id))
+    await projects_api.delete_project_data(request, project_uuid, user_id)
 
     raise web.HTTPNoContent(content_type='application/json')
 
@@ -274,8 +251,8 @@ async def close_project(request: web.Request) -> web.Response:
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.close")
 
+    user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-
-    # user id closed project uuid
+    await projects_api.remove_project_interactive_services(request, project_uuid, user_id)
 
     raise web.HTTPNoContent(content_type='application/json')

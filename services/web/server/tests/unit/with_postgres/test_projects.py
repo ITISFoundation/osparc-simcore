@@ -10,10 +10,11 @@ import uuid as uuidlib
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import pytest
 from aiohttp import web
+from mock import call
 from yarl import URL
 
 from servicelib.application import create_safe_application
@@ -441,6 +442,14 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
 
 
 
+@pytest.fixture
+def fake_services():
+    def create_fakes(number_services: int) -> List[Dict]:
+        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
+        return fake_services
+
+    yield create_fakes
+
 # DELETE -------
 
 @pytest.mark.parametrize("user_role,expected", [
@@ -449,23 +458,33 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock, mocker):
+async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock, mocker, fake_services):
     # DELETE /v0/projects/{project_id}
+
+    fakes = fake_services(5)
     mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
-    mock_director_api.return_value.set_result("")
+    mock_director_api.return_value.set_result(fakes)
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
 
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
+    if resp.status == web.HTTPNoContent.status_code:
+        mock_director_api.assert_called_once()
+        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
+        mock_director_api_stop_services.has_calls(calls)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_open_project(client, logged_user, user_project, expected):
+    # POST /v0/projects/{project_id}:open
     # open project
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url)
@@ -477,8 +496,15 @@ async def test_open_project(client, logged_user, user_project, expected):
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_close_project(client, logged_user, user_project, expected):
-    # login
+async def test_close_project(client, logged_user, user_project, expected, mocker, fake_services):
+    # POST /v0/projects/{project_id}:close
+    fakes = fake_services(5)
+    assert len(fakes) == 5
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result(fakes)
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
     # open project
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url)
@@ -486,3 +512,7 @@ async def test_close_project(client, logged_user, user_project, expected):
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url)
     await assert_status(resp, expected)
+    if resp.status == web.HTTPNoContent.status_code:
+        mock_director_api.assert_called_once()
+        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
+        mock_director_api_stop_services.has_calls(calls)

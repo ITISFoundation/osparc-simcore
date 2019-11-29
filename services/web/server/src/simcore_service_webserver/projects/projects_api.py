@@ -7,6 +7,7 @@
         - upon failure raise errors that can be also HTTP reponses
 """
 import logging
+from asyncio import ensure_future, gather
 from typing import Dict
 
 from aiohttp import web
@@ -14,8 +15,11 @@ from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
+from ..director import director_api
 from ..security_api import check_permission
-from ..storage_api import copy_data_folders_from_project # mocked in unit-tests
+from ..storage_api import \
+    copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import delete_data_folders_of_project
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
@@ -81,3 +85,28 @@ async def clone_project(request: web.Request, project: Dict, user_id, forced_cop
         project, cloned_project, nodes_map, user_id)
 
     return updated_project
+
+async def remove_project_interactive_services(request: web.Request, project_uuid: str, user_id: str) -> None:
+    app = request.app
+    list_of_services = await director_api.get_running_interactive_services(app,
+                                                                            project_id=project_uuid,
+                                                                            user_id=user_id)
+    stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
+    if stop_tasks:
+        # fire & forget these tasks
+        ensure_future(gather(*stop_tasks))
+
+async def delete_project_data(request: web.Request, project_uuid: str, user_id: str) -> None:
+    app = request.app
+
+    db = request.config_dict[APP_PROJECT_DBAPI]
+    try:
+        # TODO: delete pipeline db tasks
+        await db.delete_user_project(user_id, project_uuid)
+
+    except ProjectNotFoundError:
+        # TODO: add flag in query to determine whether to respond if error?
+        raise web.HTTPNotFound
+
+    # requests storage to delete all project's stored data, fire&forget
+    ensure_future(delete_data_folders_of_project(app, project_uuid, user_id))
