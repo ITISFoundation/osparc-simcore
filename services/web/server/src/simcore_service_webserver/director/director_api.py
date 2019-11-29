@@ -41,6 +41,23 @@ async def get_running_interactive_services(app: web.Application, user_id: Option
             return payload["data"]
         return []
 
+async def start_service(app: web.Application, user_id: str, project_id: str, service_key: str, service_version: str, service_uuid: str) -> Optional[Dict]:
+    session, api_endpoint = _get_director_client(app)
+
+    params = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_uuid": service_uuid,
+        "service_basepath": f"/x/{service_uuid}"
+    }
+
+    url = (api_endpoint / "running_interactive_services").with_query(params)
+    async with session.post(url, ssl=False) as resp:
+        payload = await resp.json()
+        return payload["data"]
+
 async def stop_service(app: web.Application, service_uuid:str) -> bool:
     session, api_endpoint = _get_director_client(app)
 

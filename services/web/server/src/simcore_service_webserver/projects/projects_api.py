@@ -9,6 +9,7 @@
 import logging
 from asyncio import ensure_future, gather
 from typing import Dict
+from uuid import uuid4
 
 from aiohttp import web
 
@@ -85,6 +86,16 @@ async def clone_project(request: web.Request, project: Dict, user_id, forced_cop
         project, cloned_project, nodes_map, user_id)
 
     return updated_project
+
+async def start_project_interactive_services(request: web.Request, project, user_id: str) -> None:
+    start_service_tasks = [director_api.start_service(request.app,
+                                user_id=user_id,
+                                project_id=project["uuid"],
+                                service_key=service["key"],
+                                service_version=service["version"],
+                                service_uuid=uuid4()) for service in project["workbench"]]
+    await gather(*start_service_tasks)
+
 
 async def remove_project_interactive_services(request: web.Request, project_uuid: str, user_id: str) -> None:
     app = request.app
