@@ -23,16 +23,14 @@ import trafaret as T
 from servicelib import application_keys  # pylint:disable=unused-import
 
 from . import (computation_config, db_config, email_config, rest_config,
-               session_config, storage_config)
-from .director import config as director_config
+               session_config, storage_config, tracing)
 from .activity import config as activity_config
+from .director import config as director_config
 from .login import config as login_config
 from .projects import config as projects_config
-from .socketio import config as socketio_config
 from .resource_manager import config as resource_manager_config
 from .resources import resources
-from . import tracing
-
+from .socketio import config as socketio_config
 
 log = logging.getLogger(__name__)
 
