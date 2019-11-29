@@ -117,6 +117,43 @@ paths:
         '204':
           description: project has been successfully deleted
 
+  /projects/{project_id}/open:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Open a given project
+      operationId: open_project
+      responses:
+        '200':
+          description: project successfuly opened
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /projects/{project_id}/close:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Closes a given project
+      operationId: close_project
+      responses:
+        '204':
+          description: project succesfuly closed
+
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
 components:
   schemas:
     Project:

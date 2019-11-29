@@ -120,6 +120,12 @@ paths:
   /projects/{project_id}:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
 
+  /projects/{project_id}:open:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1open'
+
+  /projects/{project_id}:close:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1close'
+
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}'
 

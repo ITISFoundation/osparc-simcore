@@ -458,3 +458,31 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPOk),
+    (UserRole.TESTER, web.HTTPOk),
+])
+async def test_open_project(client, logged_user, user_project, expected):
+    # open project
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url)
+    await assert_status(resp, expected)
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPNoContent),
+])
+async def test_close_project(client, logged_user, user_project, expected):
+    # login
+    # open project
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url)
+    # close project
+    url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url)
+    await assert_status(resp, expected)

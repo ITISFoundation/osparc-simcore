@@ -226,7 +226,7 @@ async def delete_project(request: web.Request):
     app = request.app
     # remove all interactive services in project
     list_of_services = await director_api.get_running_interactive_services(app,
-                                                                            project_id=project_uuid, 
+                                                                            project_id=project_uuid,
                                                                             user_id=user_id)
     stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
     if stop_tasks:
@@ -243,5 +243,39 @@ async def delete_project(request: web.Request):
 
     # requests storage to delete all project's stored data, fire&forget
     ensure_future(delete_data_folders_of_project(request.app, project_uuid, user_id))
+
+    raise web.HTTPNoContent(content_type='application/json')
+
+@login_required
+async def open_project(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.open")
+
+
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+
+    project_uuid = request.match_info.get("project_id")
+
+    project = await get_project_for_user(request,
+        project_uuid=project_uuid,
+        user_id=request[RQT_USERID_KEY],
+        include_templates=True
+    )
+
+    # user id opened project uuid
+
+    return {
+        'data': project
+    }
+
+@login_required
+async def close_project(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.close")
+
+    project_uuid = request.match_info.get("project_id")
+
+    # user id closed project uuid
 
     raise web.HTTPNoContent(content_type='application/json')
