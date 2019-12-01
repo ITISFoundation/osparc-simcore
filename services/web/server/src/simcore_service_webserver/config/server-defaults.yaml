@@ -16,6 +16,10 @@ director:
   version: v0
 socketio:
   enabled: True
+  redis:
+    enabled: True
+    host: redis
+    port: 6379
   message_queue:
     user: simcore
     password: simcore

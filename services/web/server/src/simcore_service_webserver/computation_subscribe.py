@@ -36,7 +36,7 @@ async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
         data = json.loads(message.body)
         log.debug(data)
         user_id = data["user_id"]
-        socket_ids = socket_registry.find_sockets(user_id)
+        socket_ids = await socket_registry.find_sockets(user_id)
         for sid in socket_ids:
             # we only send the data to the right sockets
             await sio.emit(

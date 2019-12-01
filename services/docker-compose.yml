@@ -176,6 +176,12 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
 
+  redis:
+    image: redis:5.0-alpine
+    init: true
+    networks:
+      - default
+
 volumes:
   input: {}
   output: {}

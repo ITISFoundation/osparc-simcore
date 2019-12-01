@@ -483,9 +483,12 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_open_project(client, logged_user, user_project, expected):
+async def test_open_project(client, logged_user, user_project, expected, mocker):
     # POST /v0/projects/{project_id}:open
     # open project
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url)
     await assert_status(resp, expected)

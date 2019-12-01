@@ -13,6 +13,8 @@ director:
   port: 8001
 socketio:
   enabled: True
+  redis:
+    enabled: False
 application_proxy:
   enabled: False
 db:

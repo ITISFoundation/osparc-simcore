@@ -13,11 +13,17 @@ from socketio import AsyncServer
 
 CONFIG_SECTION_NAME = 'socketio'
 APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".socketio_socketio"
+APP_CLIENT_REDIS_CLIENT_KEY = __name__ + ".socketio_redis_client"
 APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".socketio_registry"
 APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = __name__ + ".socketio_handlers"
 
 schema = T.Dict({
     T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
+    T.Key("redis", optional=False): T.Dict({
+        T.Key("enabled", default=True, optional=True): T.Bool(),
+        T.Key("host", default="redis", optional=True): T.String(),
+        T.Key("port", default=6793, optional=True): T.Int(),
+    }),
     T.Key("message_queue", optional=True): T.Dict({
         T.Key("host", default='rabbit', optional=True): T.String(),
         T.Key("port", default=5672, optional=True): T.Int(),
@@ -35,3 +41,6 @@ def get_socket_server(app: web.Application) -> AsyncServer:
 
 def get_socket_registry(app: web.Application):
     return app[APP_CLIENT_SOCKET_REGISTRY_KEY]
+
+def get_redis_client(app: web.Application):
+    return app[APP_CLIENT_REDIS_CLIENT_KEY]

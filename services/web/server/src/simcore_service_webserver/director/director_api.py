@@ -25,6 +25,7 @@ def _get_director_client(app: web.Application) -> URL:
     session = get_client_session(app)
     return session, api_endpoint
 
+
 async def get_running_interactive_services(app: web.Application, user_id: Optional[str] = None, project_id: Optional[str] = None) -> List[Dict]:
     session, api_endpoint = _get_director_client(app)
 
@@ -41,7 +42,8 @@ async def get_running_interactive_services(app: web.Application, user_id: Option
             return payload["data"]
         return []
 
-async def start_service(app: web.Application, user_id: str, project_id: str, service_key: str, service_version: str, service_uuid: str) -> Optional[Dict]:
+
+async def start_service(app: web.Application, user_id: str, project_id: str, service_key: str, service_version: str, service_uuid: str) -> Optional[Dict]: # pylint: disable=too-many-arguments
     session, api_endpoint = _get_director_client(app)
 
     params = {
@@ -58,17 +60,20 @@ async def start_service(app: web.Application, user_id: str, project_id: str, ser
         payload = await resp.json()
         return payload["data"]
 
-async def stop_service(app: web.Application, service_uuid:str) -> bool:
+
+async def stop_service(app: web.Application, service_uuid: str) -> bool:
     session, api_endpoint = _get_director_client(app)
 
     url = (api_endpoint / "running_interactive_services" / service_uuid)
     async with session.delete(url, ssl=False) as resp:
         return resp.status == 204
 
+
 async def get_service_by_key_version(app: web.Application, service_key: str, service_version: str) -> Optional[Dict]:
     session, api_endpoint = _get_director_client(app)
 
-    url = (api_endpoint / "services" / urllib.parse.quote(service_key, safe='') / service_version)
+    url = (api_endpoint / "services" /
+           urllib.parse.quote(service_key, safe='') / service_version)
     async with session.get(url) as resp:
         if resp.status != 200:
             return

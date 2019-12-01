@@ -13,6 +13,9 @@ tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 socketio:
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
   message_queue:
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}

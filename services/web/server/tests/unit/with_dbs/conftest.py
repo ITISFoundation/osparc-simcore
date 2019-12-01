@@ -15,9 +15,12 @@ from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 
+import aioredis
 import pytest
+import redis
 import sqlalchemy as sa
 import trafaret_config
+from yarl import URL
 
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
@@ -167,3 +170,28 @@ def is_postgres_responsive(url):
     except sa.exc.OperationalError:
         return False
     return True
+
+@pytest.fixture(scope='session')
+def redis_service(docker_services, docker_ip):
+
+    host = docker_ip
+    port = docker_services.port_for('redis', 6379)
+    url = URL(f"redis://{host}:{port}")
+
+    docker_services.wait_until_responsive(
+        check=lambda: is_redis_responsive(host, port),
+        timeout=30.0,
+        pause=0.1,
+    )
+    return url
+
+def is_redis_responsive(host: str, port: str) -> bool:
+    r = redis.Redis(host=host, port=port)
+    return r.ping() == True
+
+@pytest.fixture
+async def redis_client(loop, redis_service):
+    client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
+    yield client
+    client.close()
+    await client.wait_closed()

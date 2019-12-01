@@ -49,7 +49,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
     registry = get_socket_registry(app)
-    registry.add_socket(user_id, sid)
+    await registry.add_socket(user_id, sid)
     await signals.emit(signals.SignalType.SIGNAL_USER_CONNECT, user_id, app)
     sio = get_socket_server(app)
     # here we keep the original HTTP request in the socket session storage
@@ -64,7 +64,7 @@ async def user_logged_out(user_id: str, app: web.Application):
     log.debug("user %s must be disconnected", user_id)
     registry = get_socket_registry(app)
     sio = get_socket_server(app)
-    sockets = registry.find_sockets(user_id)
+    sockets = await registry.find_sockets(user_id)
     for socket in sockets:
         await sio.disconnect(sid=socket)
 
@@ -81,8 +81,8 @@ async def disconnect(sid: str, app: web.Application):
     # async with sio.session(sid) as session:
         # request = session["request"]
         #TODO: how to handle different sessions from the same user? (i.e. multiple tabs)
-    user_id = registry.find_owner(sid)
-    if not registry.remove_socket(sid):
+    user_id = await registry.find_owner(sid)
+    if not await registry.remove_socket(sid):
         # mark user for disconnection
         # signal if no socket ids are left
         await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, app)
