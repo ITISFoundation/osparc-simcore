@@ -87,6 +87,8 @@ services:
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_USER=${RABBIT_USER}
       - RABBIT_PASSWORD=${RABBIT_PASSWORD}
       - RABBIT_LOG_CHANNEL=${RABBIT_LOG_CHANNEL}

@@ -73,7 +73,10 @@ class DBManager:
         with session_scope(self._db_settings.Session) as session:
             # pylint: disable=no-member
             # project id should be also defined but was not the case before
-            criteria = (NodeModel.node_id == config.NODE_UUID if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID))
+            criteria = (NodeModel.node_id == config.NODE_UUID
+                if config.PROJECT_ID == 'undefined'
+                else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID)
+            )
             node = session.query(NodeModel).filter(criteria).one()
             if config.PROJECT_ID == 'undefined':
                 config.PROJECT_ID = node.project_id
