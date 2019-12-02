@@ -125,12 +125,8 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       const service = token["service"];
       const key = token["token_key"];
       const secret = token["token_secret"];
+      console.error(key, secret);
 
-      /*
-      | token name label  | token name  | eye | delete |
-      | token key label   | token key                  |
-      | token secret label| token secret               |
-      */
       const height = 20;
       const iconHeight = height-6;
       const gr = new qx.ui.layout.Grid(10, 3);
@@ -152,19 +148,16 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
         column: 1
       });
 
-      const showTokenIcon = "@FontAwesome5Solid/eye/"+iconHeight;
-      const hideTokenIcon = "@FontAwesome5Solid/eye-slash/"+iconHeight;
+      const showTokenIcon = "@FontAwesome5Solid/edit/"+iconHeight;
       const showTokenBtn = new qx.ui.form.Button(null, showTokenIcon);
-      grid.key = key;
-      grid.secret = secret;
       showTokenBtn.addListener("execute", e => {
-        if (showTokenBtn.getIcon() === showTokenIcon) {
-          showTokenBtn.setIcon(hideTokenIcon);
-          this.__showTokens(grid);
-        } else {
-          showTokenBtn.setIcon(showTokenIcon);
-          this.__hideTokens(grid, gr);
-        }
+        const treeItemRenamer = new osparc.component.widget.Renamer(nameVal.getValue());
+        treeItemRenamer.addListener("labelChanged", ev => {
+          const newLabel = ev.getData()["newLabel"];
+          nameVal.setValue(newLabel);
+        }, this);
+        treeItemRenamer.center();
+        treeItemRenamer.open();
       }, this);
       grid.add(showTokenBtn, {
         row: 0,
@@ -191,43 +184,6 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       });
 
       return grid;
-    },
-
-    __hideTokens: function(grid, gr) {
-      grid.remove(gr.getCellWidget(1, 0));
-      grid.remove(gr.getCellWidget(1, 1));
-      grid.remove(gr.getCellWidget(2, 0));
-      grid.remove(gr.getCellWidget(2, 1));
-    },
-
-    __showTokens: function(grid) {
-      const keyLabel = new qx.ui.basic.Label(this.tr("Key"));
-      grid.add(keyLabel, {
-        row: 1,
-        column: 0
-      });
-      const secretLabel = new qx.ui.basic.Label(this.tr("Secret"));
-      grid.add(secretLabel, {
-        row: 2,
-        column: 0
-      });
-
-      const keyVal = new qx.ui.basic.Label(grid.key).set({
-        selectable: true
-      });
-      grid.add(keyVal, {
-        row: 1,
-        column: 1,
-        colSpan: 3
-      });
-      const secretVal = new qx.ui.basic.Label(grid.secret).set({
-        selectable: true
-      });
-      grid.add(secretVal, {
-        row: 2,
-        column: 1,
-        colSpan: 3
-      });
     },
 
     __createPasswordSection: function() {
