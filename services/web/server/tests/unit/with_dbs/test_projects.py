@@ -492,6 +492,12 @@ async def test_open_project(client, logged_user, user_project, expected, mocker)
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url)
     await assert_status(resp, expected)
+    if resp.status == web.HTTPOk.status_code:
+        dynamic_services = {service_uuid:service for service_uuid, service in user_project["workbench"].items() if "/dynamic/" in service["key"]}
+        calls = []
+        for service_uuid, service in dynamic_services.items():
+            calls.append(call(client.server.app, project_id=user_project["uuid"], service_key=service["key"], service_uuid=service_uuid, service_version=service["version"], user_id=logged_user["id"]))
+        mock_director_api_start_service.assert_has_calls(calls)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
