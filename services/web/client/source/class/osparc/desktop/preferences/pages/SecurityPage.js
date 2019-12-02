@@ -40,9 +40,9 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
     __createTokensSection: function() {
       // layout
-      let box = this._createSectionBox(this.tr("Access Tokens"));
+      const box = this._createSectionBox(this.tr("Access Tokens"));
 
-      let label = this._createHelpLabel(this.tr(
+      const label = this._createHelpLabel(this.tr(
         "List of API tokens to access external services. Currently, \
          only DAT-Core API keys are supported."
       ));
@@ -51,9 +51,9 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       let linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       box.add(linkBtn);
 
-      this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const tokensList = this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      box.add(tokensList);
       this.__rebuildTokensList();
-      box.add(this.__tokensList);
 
       return box;
     },
@@ -62,15 +62,14 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       this.__tokensList.removeAll();
       osparc.data.Resources.get("tokens")
         .then(tokensList => {
-          if (tokensList.length === 0) {
-            let emptyForm = this.__createEmptyTokenForm();
-            this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
-          } else {
+          if (tokensList.length) {
             for (let i=0; i<tokensList.length; i++) {
-              const token = tokensList[i];
-              let tokenForm = this.__createValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
-              this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
+              const tokenForm = this.__createValidTokenForm(tokensList[i]);
+              this.__tokensList.add(tokenForm);
             }
+          } else {
+            const emptyForm = this.__createEmptyTokenForm();
+            this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
           }
         })
         .catch(err => console.error(err));
@@ -122,33 +121,57 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       return form;
     },
 
-    __createValidTokenForm: function(service, key, secret) {
-      let form = new qx.ui.form.Form();
+    __createValidTokenForm: function(token) {
+      const service = token["service"];
+      const key = token["token_key"];
+      const secret = token["token_secret"];
 
-      let tokenService = new qx.ui.form.TextField().set({
-        value: service,
-        readOnly: true
+      /*
+      | token name label  | token name  | eye | delete |
+      | token key label   | token key                  |
+      | token secret label| token secret               |
+      */
+      const height = 20;
+      const iconHeight = height-6;
+      const gr = new qx.ui.layout.Grid(10, 3);
+      gr.setColumnFlex(1, 1);
+      gr.setRowHeight(0, height);
+      gr.setRowHeight(1, height);
+      gr.setRowHeight(2, height);
+      const grid = new qx.ui.container.Composite(gr);
+
+      const nameLabel = new qx.ui.basic.Label(this.tr("Token name"));
+      grid.add(nameLabel, {
+        row: 0,
+        column: 0
       });
-      form.add(tokenService, this.tr("Service API"));
 
-      let tokenKey = new qx.ui.form.TextField();
-      tokenKey.set({
-        value: key,
-        readOnly: true
+      const nameVal = new qx.ui.basic.Label(service);
+      grid.add(nameVal, {
+        row: 0,
+        column: 1
       });
-      form.add(tokenKey, this.tr("Key"));
 
-      if (secret) {
-        let tokenSecret = new qx.ui.form.TextField();
-        tokenSecret.set({
-          value: secret,
-          readOnly: true
-        });
-        form.add(tokenSecret, this.tr("Secret"));
-      }
+      const showTokenIcon = "@FontAwesome5Solid/eye/"+iconHeight;
+      const hideTokenIcon = "@FontAwesome5Solid/eye-slash/"+iconHeight;
+      const showTokenBtn = new qx.ui.form.Button(null, showTokenIcon);
+      grid.key = key;
+      grid.secret = secret;
+      showTokenBtn.addListener("execute", e => {
+        if (showTokenBtn.getIcon() === showTokenIcon) {
+          showTokenBtn.setIcon(hideTokenIcon);
+          this.__showTokens(grid);
+        } else {
+          showTokenBtn.setIcon(showTokenIcon);
+          this.__hideTokens(grid, gr);
+        }
+      }, this);
+      grid.add(showTokenBtn, {
+        row: 0,
+        column: 2
+      });
 
-      let delTokenBtn = new qx.ui.form.Button(this.tr("Delete"));
-      delTokenBtn.setWidth(100);
+      const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/"+iconHeight);
       delTokenBtn.addListener("execute", e => {
         if (!osparc.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
           return;
@@ -162,9 +185,49 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
           .then(() => this.__rebuildTokensList())
           .catch(err => console.error(err));
       }, this);
-      form.addButton(delTokenBtn);
+      grid.add(delTokenBtn, {
+        row: 0,
+        column: 3
+      });
 
-      return form;
+      return grid;
+    },
+
+    __hideTokens: function(grid, gr) {
+      grid.remove(gr.getCellWidget(1, 0));
+      grid.remove(gr.getCellWidget(1, 1));
+      grid.remove(gr.getCellWidget(2, 0));
+      grid.remove(gr.getCellWidget(2, 1));
+    },
+
+    __showTokens: function(grid) {
+      const keyLabel = new qx.ui.basic.Label(this.tr("Key"));
+      grid.add(keyLabel, {
+        row: 1,
+        column: 0
+      });
+      const secretLabel = new qx.ui.basic.Label(this.tr("Secret"));
+      grid.add(secretLabel, {
+        row: 2,
+        column: 0
+      });
+
+      const keyVal = new qx.ui.basic.Label(grid.key).set({
+        selectable: true
+      });
+      grid.add(keyVal, {
+        row: 1,
+        column: 1,
+        colSpan: 3
+      });
+      const secretVal = new qx.ui.basic.Label(grid.secret).set({
+        selectable: true
+      });
+      grid.add(secretVal, {
+        row: 2,
+        column: 1,
+        colSpan: 3
+      });
     },
 
     __createPasswordSection: function() {
