@@ -264,10 +264,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         return;
       }
 
-      const treeItemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
+      const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
       treeItemRenamer.addListener("labelChanged", e => {
         const data = e.getData();
         const newLabel = data.newLabel;
+        selectedItem.setLabel(newLabel);
         const nodeId = selectedItem.getNodeId();
         const node = this.getWorkbench().getNode(nodeId);
         if (node) {
