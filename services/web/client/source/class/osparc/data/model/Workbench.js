@@ -171,7 +171,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    createNode: function(key, version, uuid, parent, populateNodeData) {
+    createNode: function(key, version, uuid, parent) {
       const existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
@@ -184,19 +184,15 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
         for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node, true);
+          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node);
         }
       }
       this.__initNodeSignals(node);
-      if (populateNodeData) {
-        node.populateNodeData();
-        node.giveUniqueName();
-      }
+      node.populateNodeData();
+      node.giveUniqueName();
       this.addNode(node, parent);
-      if (populateNodeData) {
-        node.addDynamicButtons();
-        node.startDynamicService();
-      }
+      node.addDynamicButtons();
+      node.startDynamicService();
 
       return node;
     },
@@ -216,7 +212,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const key = nodeToClone.getKey();
       const version = nodeToClone.getVersion();
       const parentNode = this.getNode(nodeToClone.getParentNodeId());
-      let node = this.createNode(key, version, null, parentNode, true);
+      let node = this.createNode(key, version, null, parentNode);
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
@@ -344,11 +340,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         let node = null;
         if (nodeData.key) {
           // not container
-          // this.createNode(nodeData.key, nodeData.version, nodeId, parentNode, false);
           node = new osparc.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
         } else {
           // container
-          // this.createNode(null, null, nodeId, parentNode, false);
           node = new osparc.data.model.Node(this, null, null, nodeId);
         }
         if (node) {
