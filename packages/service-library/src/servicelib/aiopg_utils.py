@@ -95,7 +95,7 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     raise web.HTTPServiceUnavailable()
 
 
-_retry_kwargs = dict(
+_retry_policy_kwargs = dict(
         retry=retry_if_exception_type(DatabaseError),
         wait=wait_fixed(WAIT_SECS),
         stop=stop_after_attempt(ATTEMPTS_COUNT),
@@ -105,7 +105,10 @@ _retry_kwargs = dict(
 
 
 def retry_pg_api(func):
-    _deco_func = retry(**_retry_kwargs)(func)
+    """ Decorator to implement pg api retry policy upon OperationalErrors
+
+    """
+    _deco_func = retry(**_retry_policy_kwargs)(func)
     _total_retry_count = 0
 
     @functools.wraps(func)
@@ -126,7 +129,7 @@ def retry_pg_api(func):
     return wrapper
 
 
-@retry(**_retry_kwargs)
+@retry(**_retry_policy_kwargs)
 async def execute_with_retry(conn: SAConnection, query, *args, **kargs):
     #
     # https://aiopg.readthedocs.io/en/stable/sa.html#aiopg.sa.SAConnection

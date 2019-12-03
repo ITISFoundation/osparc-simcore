@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import aiofiles
 import attr
 import sqlalchemy as sa
 from aiohttp import web
@@ -17,9 +16,10 @@ from sqlalchemy.sql import and_
 from yarl import URL
 
 import aiobotocore
+import aiofiles
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
-from servicelib.aiopg_utils import DBAPIError
+from servicelib.aiopg_utils import DBAPIError, retry_pg_api
 from servicelib.client_session import get_client_session
 
 from .datcore_wrapper import DatcoreWrapper
@@ -395,18 +395,25 @@ class DataStorageManager:
         await dcw.upload_file_to_id(destination_id, local_file_path)
 
         # actually we have to query the master db
+
+
     async def upload_link(self, user_id: str, file_uuid: str):
-        async with self.engine.acquire() as conn:
-            fmd = FileMetaData()
-            fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
-            fmd.user_id = user_id
-            query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
-            # if file already exists, we might want to update a time-stamp
-            rows = await conn.execute(query)
-            exists = await rows.scalar()
-            if exists is None:
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
+
+        @retry_pg_api
+        async def _execute_query():
+            async with self.engine.acquire() as conn:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
+                fmd.user_id = user_id
+                query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
+                # if file already exists, we might want to update a time-stamp
+                rows = await conn.execute(query)
+                exists = await rows.scalar()
+                if exists is None:
+                    ins = file_meta_data.insert().values(**vars(fmd))
+                    await conn.execute(ins)
+
+        _execute_query()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
