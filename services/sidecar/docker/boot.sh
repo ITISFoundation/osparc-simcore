@@ -36,7 +36,7 @@ fi
 
 # default
 DEBUG_LEVEL=info
-CONCURRENCY=2
+CONCURRENCY=1
 POOL=prefork
 
 
