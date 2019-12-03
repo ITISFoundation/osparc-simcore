@@ -1,27 +1,26 @@
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from aiohttp import ClientSession
 from jsonschema import ValidationError
 from yarl import URL
 
 from .jsonschema_validation import validate_instance
-from .utils import resolve_location
 
 
-def load_specs_from_path(filepath: Path) -> Dict:
+def _load_from_path(filepath: Path) -> Dict:
     with filepath.open() as f:
         spec_dict = json.load(f)
         return spec_dict
 
-async def load_specs_from_url(session: ClientSession, url: URL) -> Dict:
+async def _load_from_url(session: ClientSession, url: URL) -> Dict:
     async with session.get(url) as resp:
         text = await resp.text()
         spec_dict = json.loads(text)
         return spec_dict
 
-async def create_jsonschema_specs(location, session: Optional[ClientSession]=None) -> Dict:
+async def create_jsonschema_specs(location: Path, session: ClientSession=None) -> Dict:
     """ Loads specs from a given location (url or path),
         validates them and returns a working instance
 
@@ -31,17 +30,16 @@ async def create_jsonschema_specs(location, session: Optional[ClientSession]=Non
     by the same function call to enforce developer always supporting
     both options. Notice that the url location enforces
     the consumer context to be asyncronous.
+
+    :param location: url or path
+    :return: validated jsonschema specifications object
+    :rtype: Dict
     """
-    loc = resolve_location(location)
-
-    if isinstance(loc, URL):
-        if session is None:
-            raise ValueError("Client session required in arguments")
-
-        spec_dict = await load_specs_from_url(session, loc)
+    if URL(str(location)).host:
+        spec_dict = await _load_from_url(session, URL(location))
     else:
-        assert isinstance(loc, Path)
-        spec_dict = load_specs_from_path(loc)
+        path = Path(location).expanduser().resolve() #pylint: disable=no-member
+        spec_dict = _load_from_path(path)
 
     try:
         # will throw a SchemaError if the schema is bad.

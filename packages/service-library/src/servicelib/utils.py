@@ -5,9 +5,6 @@ IMPORTANT: lowest level module
    DO NOT IMPORT ANYTHING from .
 """
 from pathlib import Path
-from typing import Union
-
-from yarl import URL
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
@@ -30,18 +27,3 @@ def search_osparc_repo_dir(start, max_iterations=8):
         iteration_number += 1
 
     return root_dir if is_osparc_repo_dir(root_dir) else None
-
-
-def resolve_location(location) -> Union[URL,Path]:
-    """ normalizes a resource location into a URL or Path type
-
-    :param location: path or url to a
-    :type location: any type with __str__ or __repr__
-    :return: either a resolved URL or file Path
-    :rtype: Union[URL,Path]
-    """
-    loc = str(location)
-    if URL(loc).is_absolute():
-        return URL(loc)
-
-    return Path(loc).expanduser().resolve()
