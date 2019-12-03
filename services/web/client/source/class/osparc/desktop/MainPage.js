@@ -48,8 +48,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(prjStack, {
       flex: 1
     });
-
-    osparc.io.WatchDog.getInstance().startCheck();
   },
 
   events: {},

@@ -63,6 +63,14 @@ qx.Class.define("osparc.Application", {
         osparc.dev.fake.srv.restapi.Authentication;
       }
 
+      const webSocket = osparc.wrapper.WebSocket.getInstance();
+      webSocket.addListener("connect", () => {
+        osparc.io.WatchDog.getInstance().setOnLine(true);
+      });
+      webSocket.addListener("disconnect", () => {
+        osparc.io.WatchDog.getInstance().setOnLine(false);
+      });
+
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", function() {
         this.__restart();

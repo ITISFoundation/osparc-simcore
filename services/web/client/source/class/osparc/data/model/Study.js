@@ -145,9 +145,7 @@ qx.Class.define("osparc.data.model.Study", {
         }
       };
       osparc.data.Resources.fetch("studies", "open", params)
-        .catch(err => {
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     },
 
     closeStudy: function() {
@@ -157,9 +155,7 @@ qx.Class.define("osparc.data.model.Study", {
         }
       };
       osparc.data.Resources.fetch("studies", "close", params)
-        .catch(err => {
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     },
 
     serializeStudy: function() {

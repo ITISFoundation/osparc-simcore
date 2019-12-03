@@ -843,6 +843,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
 
         default:
+          console.error(serviceState, "service state not supported");
           break;
       }
     },
