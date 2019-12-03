@@ -212,6 +212,14 @@ qx.Class.define("osparc.data.Resources", {
       interactiveServices: {
         usesCache: false,
         endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/running_interactive_services/{nodeId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/running_interactive_services?project_id={projectId}&service_uuid={nodeId}&service_key={serviceKey}&service_tag={serviceVersion}"
+          },
           delete: {
             method: "DELETE",
             url: statics.API + "/running_interactive_services/{nodeId}"
