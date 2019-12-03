@@ -37,9 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
-    * @param initWorkbench {Boolean} True to initialize workbench nodes. Default false
     */
-  construct: function(studyData, initWorkbench = false) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
@@ -54,9 +53,6 @@ qx.Class.define("osparc.data.model.Study", {
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
-    if (initWorkbench) {
-      this.getWorkbench().initWorkbench();
-    }
   },
 
   properties: {
@@ -136,6 +132,22 @@ qx.Class.define("osparc.data.model.Study", {
       if (this.isPropertyInitialized("workbench")) {
         this.getWorkbench().setStudyName(newName);
       }
+    },
+
+    initWorkbench: function() {
+      this.getWorkbench().initWorkbench();
+    },
+
+    openStudy: function() {
+      const params = {
+        url: {
+          "project_id": this.getUuid()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "open", params)
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     closeStudy: function() {
