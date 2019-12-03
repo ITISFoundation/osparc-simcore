@@ -78,10 +78,12 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{project_id}"
           },
           open: {
+            usesCache: false,
             method: "POST",
             url: statics.API + "/projects/{project_id}:open"
           },
           close: {
+            usesCache: false,
             method: "POST",
             url: statics.API + "/projects/{project_id}:close"
           },
@@ -375,7 +377,9 @@ qx.Class.define("osparc.data.Resources", {
 
         res.addListenerOnce(endpoint + "Success", e => {
           const data = e.getRequest().getResponse().data;
-          if (resourceDefinition.usesCache) {
+          const endpointDef = resourceDefinition.endpoints[endpoint];
+          const useCache = ("usesCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.usesCache;
+          if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);
             } else {
