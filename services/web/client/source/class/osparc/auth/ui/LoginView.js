@@ -166,8 +166,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      const manager = osparc.auth.Manager.getInstance();
-
       const successFun = function(log) {
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
@@ -189,6 +187,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
+      const manager = osparc.auth.Manager.getInstance();
       manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
     },
 
