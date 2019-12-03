@@ -54,10 +54,10 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
         return fake_node_details
     node_details = await director_api.get_service_by_key_version(app, node_key, node_version)
     if not node_details:
-        log.error("Error could not find service %s:%s", node_key, node_version)    
+        log.error("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=f"details of service {node_key}:{node_version} could not be found")
     return node_details
-        
+
 
 async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dict, pipeline_data:Dict, dag_adjacency_list:Dict, app: web.Application)->Dict: # pylint: disable=too-many-arguments
     if node_inputs is None or node_schema is None:
@@ -228,7 +228,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
 
 # API ------------------------------------------
 
-async def update_pipeline_db(app: web.Application, project_id, pipeline_data, replace_pipeline = True):
+async def update_pipeline_db(app: web.Application, project_id: str, pipeline_data: Dict, replace_pipeline: bool = True):
     db_engine = app[APP_DB_ENGINE_KEY]
 
     log.info("Pipeline has been updated for project %s", project_id)
@@ -240,3 +240,15 @@ async def update_pipeline_db(app: web.Application, project_id, pipeline_data, re
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
     log.debug("END OF ROUTINE.")
+
+async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
+    db_engine = app[APP_DB_ENGINE_KEY]
+
+    async with db_engine.acquire() as conn:
+        query = comp_tasks.delete().\
+            where(comp_tasks.c.project_id == project_id)
+        await conn.execute(query)
+        query = comp_pipeline.delete().\
+            where(comp_pipeline.c.project_id == project_id)
+        await conn.execute(query)
+
