@@ -734,52 +734,48 @@ qx.Class.define("osparc.data.model.Node", {
 
     startDynamicService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        this.__startService();
+        const metaData = this.getMetaData();
+
+        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeId: this.getNodeId(),
+          msg: msg
+        };
+        this.fireDataEvent("showInLogger", msgData);
+
+        this.setProgress(0);
+        this.setInteractiveStatus("starting");
+
+        const prjId = this.getWorkbench().getStudy()
+          .getUuid();
+        // start the service
+        const url = "/running_interactive_services";
+        let query = "?project_id=" + encodeURIComponent(prjId);
+        query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        query += "&service_key=" + encodeURIComponent(metaData.key);
+        query += "&service_tag=" + encodeURIComponent(metaData.version);
+        let request = new osparc.io.request.ApiRequest(url+query, "POST");
+        request.addListener("success", this.__onInteractiveNodeStarted, this);
+        request.addListener("error", e => {
+          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
+        }, this);
+        request.addListener("fail", e => {
+          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const failMsgData = {
+            nodeId: this.getNodeId(),
+            msg: failMsg
+          };
+          this.setInteractiveStatus("failed");
+          this.fireDataEvent("showInLogger", failMsgData);
+        }, this);
+        request.send();
       }
-    },
-
-    __startService: function() {
-      const metaData = this.getMetaData();
-
-      const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
-      const msgData = {
-        nodeId: this.getNodeId(),
-        msg: msg
-      };
-      this.fireDataEvent("showInLogger", msgData);
-
-      this.setProgress(0);
-      this.setInteractiveStatus("starting");
-
-      const prjId = this.getWorkbench().getStudy()
-        .getUuid();
-      // start the service
-      const url = "/running_interactive_services";
-      let query = "?project_id=" + encodeURIComponent(prjId);
-      query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
-      query += "&service_key=" + encodeURIComponent(metaData.key);
-      query += "&service_tag=" + encodeURIComponent(metaData.version);
-      let request = new osparc.io.request.ApiRequest(url+query, "POST");
-      request.addListener("success", this.__onInteractiveNodeStarted, this);
-      request.addListener("error", e => {
-        const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg: errorMsg
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        this.setInteractiveStatus("failed");
-      }, this);
-      request.addListener("fail", e => {
-        const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-        const failMsgData = {
-          nodeId: this.getNodeId(),
-          msg: failMsg
-        };
-        this.setInteractiveStatus("failed");
-        this.fireDataEvent("showInLogger", failMsgData);
-      }, this);
-      request.send();
     },
     __onNodeState: function(e) {
       let req = e.getTarget();
@@ -937,7 +933,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     __stopDynamicService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        osparc.utils.Services.stopInteractiveService(this.getNodeId());
+        const params = {
+          url: {
+            nodeId: this.getNodeId()
+          }
+        };
+        osparc.data.Resources.fetch("interactiveServices", "delete", params);
         this.removeIFrame();
       }
     },

@@ -535,7 +535,6 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
-      this.__stopInteractiveServicesInStudy(studyData);
       studyData.forEach(study => {
         const params = {
           url: {
@@ -552,17 +551,6 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
             this.__itemSelected(null);
           })
           .catch(err => console.error(err));
-      });
-    },
-
-    __stopInteractiveServicesInStudy: function(studies) {
-      studies.forEach(studyData => {
-        for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
-          const metadata = osparc.utils.Services.getNodeMetaData(nodedata.key, nodedata.version);
-          if (osparc.data.model.Node.isDynamic(metadata) && osparc.data.model.Node.isRealService(metadata)) {
-            osparc.utils.Services.stopInteractiveService(nodeId);
-          }
-        }
       });
     },
 
