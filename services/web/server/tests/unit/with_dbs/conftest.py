@@ -193,5 +193,7 @@ def is_redis_responsive(host: str, port: str) -> bool:
 async def redis_client(loop, redis_service):
     client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
     yield client
+
+    await client.flushall()
     client.close()
     await client.wait_closed()
