@@ -476,6 +476,11 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
         mock_director_api.assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mock_director_api_stop_services.has_calls(calls)
+        # check if database entries are correctly removed, there should be no project available here
+        url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
+
+        resp = await client.get(url)
+        data, error = await assert_status(resp, web.HTTPNotFound)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
