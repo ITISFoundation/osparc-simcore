@@ -2,7 +2,6 @@
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 import sys
-import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -79,7 +78,7 @@ async def postgres_service_with_fake_data(request, loop, postgres_service: DataS
 
 # TESTS ------------
 
-async def test_go(postgres_service_with_fake_data):
+async def test_retry_pg_api_policy(postgres_service_with_fake_data):
     # pylint: disable=no-value-for-parameter
     dsn = postgres_service_with_fake_data.to_uri()
     app_name = postgres_service_with_fake_data.application_name
