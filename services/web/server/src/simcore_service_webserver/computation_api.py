@@ -245,6 +245,7 @@ async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
 
     async with db_engine.acquire() as conn:
+        #pylint: disable=no-value-for-parameter
         query = comp_tasks.delete().\
             where(comp_tasks.c.project_id == project_id)
         await conn.execute(query)

@@ -2,6 +2,7 @@
 """ Handlers for CRUD operations on /projects/
 
 """
+import asyncio
 import json
 import logging
 
@@ -217,9 +218,8 @@ async def delete_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    await projects_api.remove_project_interactive_services(request, project_uuid, user_id)
-
-    await projects_api.delete_project_data(request, project_uuid, user_id)
+    # fire & forget
+    asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
 
     raise web.HTTPNoContent(content_type='application/json')
 
@@ -255,6 +255,6 @@ async def close_project(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    await projects_api.remove_project_interactive_services(request, project_uuid, user_id)
+    asyncio.ensure_future(projects_api.remove_project_interactive_services(request, project_uuid, user_id))
 
     raise web.HTTPNoContent(content_type='application/json')

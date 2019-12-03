@@ -7,7 +7,7 @@
         - upon failure raise errors that can be also HTTP reponses
 """
 import logging
-from asyncio import ensure_future, gather
+from asyncio import gather
 from typing import Dict
 
 from aiohttp import web
@@ -15,6 +15,7 @@ from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
+from ..computation_api import delete_pipeline_db
 from ..director import director_api
 from ..security_api import check_permission
 from ..storage_api import \
@@ -96,6 +97,10 @@ async def start_project_interactive_services(request: web.Request, project: Dict
     await gather(*start_service_tasks)
 
 
+async def delete_project(request: web.Request, project_uuid: str, user_id: str) -> None:
+    await remove_project_interactive_services(request, project_uuid, user_id)
+    await delete_project_data(request, project_uuid, user_id)
+
 async def remove_project_interactive_services(request: web.Request, project_uuid: str, user_id: str) -> None:
     app = request.app
     list_of_services = await director_api.get_running_interactive_services(app,
@@ -103,20 +108,19 @@ async def remove_project_interactive_services(request: web.Request, project_uuid
                                                                             user_id=user_id)
     stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
     if stop_tasks:
-        # fire & forget these tasks
-        ensure_future(gather(*stop_tasks))
+        await gather(*stop_tasks)
 
 async def delete_project_data(request: web.Request, project_uuid: str, user_id: str) -> None:
     app = request.app
 
     db = request.config_dict[APP_PROJECT_DBAPI]
     try:
-        # TODO: delete pipeline db tasks
+        await delete_pipeline_db(request.app, project_uuid)
         await db.delete_user_project(user_id, project_uuid)
 
     except ProjectNotFoundError:
         # TODO: add flag in query to determine whether to respond if error?
         raise web.HTTPNotFound
 
-    # requests storage to delete all project's stored data, fire&forget
-    ensure_future(delete_data_folders_of_project(app, project_uuid, user_id))
+    # requests storage to delete all project's stored data
+    await delete_data_folders_of_project(app, project_uuid, user_id)
