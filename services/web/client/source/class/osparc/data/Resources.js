@@ -313,7 +313,20 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * Test entrypoint
+       * ACTIVITY
+       */
+      activity: {
+        usesCache: false,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/activity/status"
+          }
+        }
+      },
+
+      /*
+       * Test/Diagnonstic entrypoint
        */
       checkEP: {
         usesCache: false,
@@ -327,7 +340,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/check/echo"
           }
         }
-      }
+      },
     };
   },
 
