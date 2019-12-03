@@ -14,7 +14,6 @@ from typing import Dict, Optional
 import attr
 from aiohttp import web
 import sqlalchemy as sa
-from aiopg.sa import SAConnection
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (RetryCallState, after_log, retry,
@@ -127,15 +126,6 @@ def retry_pg_api(func):
     wrapper.retry = _deco_func.retry
     wrapper.total_retry_count = total_retry_count
     return wrapper
-
-
-@retry(**_retry_policy_kwargs)
-async def execute_with_retry(conn: SAConnection, query, *args, **kargs):
-    #
-    # https://aiopg.readthedocs.io/en/stable/sa.html#aiopg.sa.SAConnection
-    #
-    result = await conn.execute(query, *args, **kargs)
-    return result
 
 
 
