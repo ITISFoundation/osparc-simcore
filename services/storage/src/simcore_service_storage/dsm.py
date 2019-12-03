@@ -413,7 +413,7 @@ class DataStorageManager:
                     ins = file_meta_data.insert().values(**vars(fmd))
                     await conn.execute(ins)
 
-        _execute_query()
+        await _execute_query()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
