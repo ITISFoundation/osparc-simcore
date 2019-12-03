@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # This entrypoint script:
 #
@@ -6,7 +9,7 @@
 # - Notice that the container *starts* as --user [default root] but
 #   *runs* as non-root user [scu]
 #
-echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+echo $INFO "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
 echo "  scuUser :`id scu`"
@@ -17,12 +20,12 @@ GROUPNAME=scu
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-    echo "development mode detected..."
+    echo $INFO "development mode detected..."
     # NOTE: expects docker run ... -v $(pwd):/devel/services/sidecar
     DEVEL_MOUNT=/devel/services/sidecar
 
     stat $DEVEL_MOUNT &> /dev/null || \
-        (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+        (echo $ERROR "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
 
     USERID=$(stat -c %u $DEVEL_MOUNT)
     GROUPID=$(stat -c %g $DEVEL_MOUNT)
@@ -30,17 +33,17 @@ then
 
     if [[ $USERID -eq 0 ]]
     then
-        echo "mounted folder from root, adding scu to root..."
+        echo $INFO "mounted folder from root, adding scu to root..."
         addgroup scu root
     else
         # take host's credentials in scu
         if [[ -z "$GROUPNAME" ]]
         then
-            echo "mounted folder from $USERID, creating new group..."
+            echo $INFO "mounted folder from $USERID, creating new group..."
             GROUPNAME=host_group
             addgroup -g $GROUPID $GROUPNAME
         else
-            echo "mounted folder from $USERID, adding scu to $GROUPNAME..."
+            echo $INFO "mounted folder from $USERID, adding scu to $GROUPNAME..."
             addgroup scu $GROUPNAME
         fi
 
@@ -69,9 +72,9 @@ then
     addgroup scu $GROUPNAME
 fi
 
-echo "Starting boot ..."
+echo $INFO "Starting boot ..."
 chown -R $USERNAME:$GROUPNAME /home/scu/input
 chown -R $USERNAME:$GROUPNAME /home/scu/output
 chown -R $USERNAME:$GROUPNAME /home/scu/log
 
-su-exec scu "$@"
+exec su-exec scu "$@"

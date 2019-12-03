@@ -17,6 +17,19 @@
         }
       ]
     },
+      {
+        "name": "Python: Remote Attach sidecar",
+        "type": "python",
+        "request": "attach",
+        "port": 3002,
+        "host": "127.0.0.1",
+        "pathMappings": [
+          {
+            "localRoot": "${workspaceFolder}/services/sidecar",
+            "remoteRoot": "/devel/services/sidecar"
+          }
+        ]
+      },
     {
       "name": "Python: Remote Attach storage",
       "type": "python",

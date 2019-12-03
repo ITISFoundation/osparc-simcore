@@ -15,7 +15,7 @@ def test_uses_same_postgres_version(docker_compose_file, osparc_simcore_root_dir
     assert fixture['services']['postgres']['image'] == expected['services']['postgres']['image']
 
 
-async def test_responsive(server):
-    app = server.app
+async def test_responsive(web_server):
+    app = web_server.app
     assert is_service_enabled(app)
     assert await is_service_responsive(app)

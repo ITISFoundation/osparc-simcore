@@ -47,7 +47,7 @@ core_services = [
 ]
 
 ops_services = [
-    'minio'
+    'minio',
 #    'adminer',
 #    'portainer'
 ]
