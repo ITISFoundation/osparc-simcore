@@ -752,14 +752,8 @@ qx.Class.define("osparc.data.model.Node", {
       const url = "/running_interactive_services";
       let query = "?project_id=" + encodeURIComponent(prjId);
       query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
-      if (metaData.key.includes("/neuroman")) {
-        // HACK: Only Neuroman should enter here
-        query += "&service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver");
-        query += "&service_tag=" + encodeURIComponent("2.8.0");
-      } else {
-        query += "&service_key=" + encodeURIComponent(metaData.key);
-        query += "&service_tag=" + encodeURIComponent(metaData.version);
-      }
+      query += "&service_key=" + encodeURIComponent(metaData.key);
+      query += "&service_tag=" + encodeURIComponent(metaData.version);
       let request = new osparc.io.request.ApiRequest(url+query, "POST");
       request.addListener("success", this.__onInteractiveNodeStarted, this);
       request.addListener("error", e => {
