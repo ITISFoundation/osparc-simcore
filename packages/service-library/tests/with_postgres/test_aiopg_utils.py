@@ -1,19 +1,30 @@
-# pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 import sys
+import time
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
 import yaml
+from aiohttp import web
 from aiopg.sa import Engine, create_engine
 
-from servicelib.aiopg_utils import DataSourceName, retry_pg_api, DatabaseError
+from servicelib.aiopg_utils import (ATTEMPTS_COUNT, DatabaseError,
+                                    DataSourceName, is_postgres_responsive,
+                                    retry_pg_api)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
+metadata = sa.MetaData()
+tbl = sa.Table('tbl', metadata,
+               sa.Column('id', sa.Integer, primary_key=True),
+               sa.Column('val', sa.String(255)))
+
+# FIXTURES ------------
 
 @pytest.fixture(scope='session')
 def docker_compose_file() -> Path:
@@ -22,7 +33,9 @@ def docker_compose_file() -> Path:
 
 
 @pytest.fixture(scope='session')
-def postgres_service(docker_services, docker_ip, docker_compose_file):
+def postgres_service(docker_services, docker_ip, docker_compose_file) -> DataSourceName:
+
+    # container environment
     with open(docker_compose_file) as fh:
         config = yaml.safe_load(fh)
     environ = config['services']['postgres']['environment']
@@ -38,103 +51,109 @@ def postgres_service(docker_services, docker_ip, docker_compose_file):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: is_postgres_responsive(dsn.to_uri()),
+        check=lambda: is_postgres_responsive(dsn),
         timeout=30.0,
         pause=0.1,
     )
     return dsn
 
-from copy import deepcopy
 
 @pytest.fixture
-async def pg_server(loop, postgres_service):
-    async with create_engine(postgres_service.to_uri()) as engine:
-        await create_table(engine)
-    return deepcopy(postgres_service)
+async def postgres_service_with_fake_data(request, loop, postgres_service: DataSourceName)-> DataSourceName:
+    async def _create_table(engine: Engine):
+        async with engine.acquire() as conn:
+            await conn.execute(f'DROP TABLE IF EXISTS {tbl.name}')
+            await conn.execute(f'''CREATE TABLE {tbl.name} (
+                                    id serial PRIMARY KEY,
+                                    val varchar(255))''')
 
-# HELPERS ------------
+    dsn = deepcopy(postgres_service)
+    dsn.application_name = f"setup {request.module.__name__}.{request.function.__name__}"
 
-def is_postgres_responsive(dsn):
-    try:
-        engine = sa.create_engine(dsn)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True
+    async with create_engine(dsn.to_uri(), application_name=dsn.application_name) as engine:
+        await _create_table(engine)
 
-
-async def create_table(engine: Engine):
-    async with engine.acquire() as conn:
-        await conn.execute('DROP TABLE IF EXISTS tbl')
-        await conn.execute('''CREATE TABLE tbl (
-                                  id serial PRIMARY KEY,
-                                  val varchar(255))''')
-
-
-metadata = sa.MetaData()
-tbl = sa.Table('tbl', metadata,
-               sa.Column('id', sa.Integer, primary_key=True),
-               sa.Column('val', sa.String(255)))
-
-async def go(gid="", raise_cls=None):
-    async with engine.acquire() as conn:
-        await conn.execute(tbl.insert().values(val=f'before-{gid}'))
-
-        if raise_cls:
-            raise raise_cls
-
-        await conn.execute(tbl.insert().values(val=f'after-{gid}'))
-
-        async for row in conn.execute(tbl.select()):
-            print(row.id, row.val)
-            assert any(prefix in row.val for prefix in ('before', 'after'))
+    dsn.application_name = f"{request.module.__name__}.{request.function.__name__}"
+    return dsn
 
 
 # TESTS ------------
 
-from aiohttp import web
-import asyncio
-
-
-## number of seconds after which connection is recycled, helps to deal with stale connections in pool, default value is -1, means recycling logic is disabled.
-POOL_RECICLE_SECS = 20
-
-
-
-
-@pytest.mark.skip(reason="UNDER DEVELOPMENT")
-async def test_connections(pg_server):
-
-    async with create_engine(
-        pg_server.to_uri(),
-        minsize=1,
-        maxsize=20,
-        pool_recycle=POOL_RECICLE_SECS,
-        echo=True,
-        application_name=pg_server.application_name) as engine:
-        #  used and free connections
-        size_before = engine.size
-
-        for n in range(10):
-            await go(n)
-
-        assert size_before > engine.size
-
-
-
-async def test_go(pg_server):
+async def test_go(postgres_service_with_fake_data):
     # pylint: disable=no-value-for-parameter
+    dsn = postgres_service_with_fake_data.to_uri()
+    app_name = postgres_service_with_fake_data.application_name
 
-    async with create_engine(pg_server.to_uri(), echo=True) as engine:
-        await go()
+    async with create_engine(dsn, application_name=app_name, echo=True) as engine:
+
+        # goes
+        await go(engine, gid=0)
         print(go.retry.statistics)
         assert go.total_retry_count() == 1
 
+        # goes, fails and max retries
         with pytest.raises(web.HTTPServiceUnavailable):
-            await go(fail=True)
+            await go(engine, gid=1, raise_cls=DatabaseError)
         print(go.retry.statistics)
-        assert go.total_retry_count() == 4
+        assert go.total_retry_count() == ATTEMPTS_COUNT+1
 
-        await go()
-        assert go.total_retry_count() == 5
+        # goes and keeps count of all retrials
+        await go(engine, gid=2)
+        assert go.total_retry_count() == ATTEMPTS_COUNT+2
+
+
+#@pytest.mark.skip(reason="UNDER DEVELOPMENT")
+async def test_connections(postgres_service_with_fake_data):
+    dsn = postgres_service_with_fake_data.to_uri()
+    app_name = postgres_service_with_fake_data.application_name
+    ## number of seconds after which connection is recycled, helps to deal with stale connections in pool, default value is -1, means recycling logic is disabled.
+    POOL_RECYCLE_SECS = 2
+
+
+    async def conn_callback(conn):
+        print(f"Opening {conn.raw}")
+
+
+    async with create_engine(
+        dsn,
+        minsize=20,
+        maxsize=20,
+        # timeout=1,
+        pool_recycle=POOL_RECYCLE_SECS,
+        echo=True,
+        enable_json=True, enable_hstore=True, enable_uuid=True,
+        on_connect=conn_callback,
+        # extra kwargs in https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+        application_name=app_name) as engine:
+
+        #  used and free connections
+        # size_before = engine.size
+
+        for n in range(10):
+            await go(engine, gid=n)
+
+    assert engine
+    assert engine.size == 0
+
+
+
+
+# HELPERS ------------
+
+@retry_pg_api
+async def go(engine: Engine, gid="", raise_cls=None):
+    # pylint: disable=no-value-for-parameter
+    async with engine.acquire() as conn:
+        # writes
+        async with conn.begin():
+            await conn.execute(tbl.insert().values(val=f'first-{gid}'))
+            await conn.execute(tbl.insert().values(val=f'second-{gid}'))
+
+            if raise_cls is not None:
+                raise raise_cls
+
+
+        # reads
+        async for row in conn.execute(tbl.select()):
+            print(row.id, row.val)
+            assert any(prefix in row.val for prefix in ('first', 'second'))

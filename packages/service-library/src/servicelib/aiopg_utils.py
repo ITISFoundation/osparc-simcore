@@ -1,12 +1,20 @@
 """ Helpers for aiopg
 
-    - aiopg is used as client sdk to interact with postgres database asynchronously
+    - aiopg is used as a client sdk to interact asynchronously with postgres service
 
+
+    SEE for aiopg: https://aiopg.readthedocs.io/en/stable/sa.html
+    SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
+    SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
 import functools
 import logging
+from typing import Dict, Optional
 
+import attr
 from aiohttp import web
+import sqlalchemy as sa
+from aiopg.sa import SAConnection
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (RetryCallState, after_log, retry,
@@ -17,26 +25,22 @@ ATTEMPTS_COUNT = 3
 
 log = logging.getLogger(__name__)
 
-import attr
-
-from typing import Optional, Dict
-
 
 @attr.s(auto_attribs=True)
 class DataSourceName:
-    # postgres db
+    # Attributes for postgres db
     user: str
     password: str=attr.ib(repr=False)
     database: str
     host: str='localhost'
     port: int=5432
-    # caller info
+
+    # Attributes about the caller
     application_name: Optional[str]=None
 
 
     def asdict(self) -> Dict:
         return attr.asdict(self)
-
 
     def to_uri(self, with_query=False) -> str:
         uri = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
@@ -44,6 +48,25 @@ class DataSourceName:
             uri += f"?ApplicationName={self.application_name}"
         return uri
 
+
+
+def is_postgres_responsive(dsn: DataSourceName) -> bool:
+    """ Returns True if can connect and operate postgres service
+    """
+    engine = conn = None
+    try:
+        engine = sa.create_engine(dsn.to_uri())
+        conn = engine.connect()
+    except sa.exc.OperationalError:
+        ok = False
+    else:
+        ok = True
+    finally:
+        if conn is not None:
+            conn.close()
+        if engine is not None:
+            engine.dispose()
+    return ok
 
 
 
@@ -81,7 +104,6 @@ _retry_kwargs = dict(
 )
 
 
-
 def retry_pg_api(func):
     _deco_func = retry(**_retry_kwargs)(func)
     _total_retry_count = 0
@@ -103,14 +125,14 @@ def retry_pg_api(func):
     wrapper.total_retry_count = total_retry_count
     return wrapper
 
-from aiopg.sa import SAConnection
 
 @retry(**_retry_kwargs)
-async def execute_with_try(conn: SAConnection, query, *args, **kargs):
+async def execute_with_retry(conn: SAConnection, query, *args, **kargs):
     #
     # https://aiopg.readthedocs.io/en/stable/sa.html#aiopg.sa.SAConnection
     #
-    return await conn.execute(query, *args, **kargs)
+    result = await conn.execute(query, *args, **kargs)
+    return result
 
 
 
