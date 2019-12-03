@@ -151,10 +151,15 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     closeStudy: function() {
-      const nodes = this.getWorkbench().getNodes(true);
-      for (const node of Object.values(nodes)) {
-        node.stopInteractiveService();
-      }
+      const params = {
+        url: {
+          "project_id": this.getUuid()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "close", params)
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     serializeStudy: function() {
