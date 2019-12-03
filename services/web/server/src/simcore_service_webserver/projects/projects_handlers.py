@@ -221,9 +221,6 @@ async def delete_project(request: web.Request):
 
     await projects_api.delete_project_data(request, project_uuid, user_id)
 
-    db = request.config_dict[APP_PROJECT_DBAPI]
-    await db.delete_user_project(user_id, project_uuid)
-    
     raise web.HTTPNoContent(content_type='application/json')
 
 @login_required
