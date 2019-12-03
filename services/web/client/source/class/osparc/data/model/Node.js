@@ -33,7 +33,8 @@
  *   let node = new osparc.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
- *   node.startInteractiveNode();
+ *   node.addDynamicButtons();
+ *   node.startDynamicService();
  * </pre>
  */
 
@@ -711,7 +712,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startInteractiveNode: function() {
+    addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
         const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
@@ -728,7 +729,11 @@ qx.Class.define("osparc.data.model.Node", {
         this.setRestartIFrameButton(restartBtn);
 
         this.__showLoadingIFrame();
+      }
+    },
 
+    startDynamicService: function() {
+      if (this.isDynamic() && this.isRealService()) {
         this.__startService();
       }
     },
@@ -910,7 +915,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.stopInteractiveService();
+      this.__stopDynamicService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -930,7 +935,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    stopInteractiveService: function() {
+    __stopDynamicService: function() {
       if (this.isDynamic() && this.isRealService()) {
         osparc.utils.Services.stopInteractiveService(this.getNodeId());
         this.removeIFrame();

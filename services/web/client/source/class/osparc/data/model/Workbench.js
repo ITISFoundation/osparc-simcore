@@ -194,7 +194,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       this.addNode(node, parent);
       if (populateNodeData) {
-        node.startInteractiveNode();
+        node.addDynamicButtons();
+        node.startDynamicService();
       }
 
       return node;
@@ -372,7 +373,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        node.startInteractiveNode();
+        node.addDynamicButtons();
       }
     },
 
