@@ -368,6 +368,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodes = Object.values(allModels);
       for (const node of nodes) {
         node.addDynamicButtons();
+        node.startDynamicService();
       }
     },
 
