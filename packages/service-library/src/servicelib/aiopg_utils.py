@@ -2,25 +2,25 @@
 
     - aiopg is used as a client sdk to interact asynchronously with postgres service
 
-
     SEE for aiopg: https://aiopg.readthedocs.io/en/stable/sa.html
     SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
+# TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
+
 import functools
 import logging
+from copy import deepcopy
 from typing import Dict, Optional
 
 import attr
 import sqlalchemy as sa
 from aiohttp import web
+from aiopg.sa import create_engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (RetryCallState, after_log, retry,
                       retry_if_exception_type, stop_after_attempt, wait_fixed)
-
-WAIT_SECS = 2
-ATTEMPTS_COUNT = 3
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
     """
     engine = conn = None
     try:
-        engine = sa.create_engine(dsn.to_uri())
+        engine = sa.create_engine(dsn.to_uri(with_query=True))
         conn = engine.connect()
     except sa.exc.OperationalError:
         ok = False
@@ -66,6 +66,17 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
         if engine is not None:
             engine.dispose()
     return ok
+
+
+async def is_postgres_responsive_async(dsn: DataSourceName) -> bool:
+    try:
+        async with create_engine(dsn.to_uri(), application_name=dsn.application_name) as engine:
+            async with engine.acquire() as conn:
+                await conn.execute("SELECT 1 as is_alive")
+                return True
+    except DBAPIError as err:
+        log.debug("%s not responsive: %s", dsn, err)
+        return False
 
 
 
@@ -93,6 +104,8 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     # https://tools.ietf.org/html/rfc7231#section-7.1.3
     raise web.HTTPServiceUnavailable()
 
+WAIT_SECS = 2
+ATTEMPTS_COUNT = 3
 
 postgres_service_retry_policy_kwargs = dict(
     retry=retry_if_exception_type(DatabaseError),
@@ -102,11 +115,31 @@ postgres_service_retry_policy_kwargs = dict(
     retry_error_callback=raise_http_unavailable_error
 )
 
+def get_postgres_service_retry_policy(logger: Optional[logging.Logger]=None):
+    """ Produces key-arguments woth pg service policy to be used in tenacity.retry
+
+        Usage:
+            @retry(**postgres_service_retry_policy_kwargs)
+            def myfun1(...)
+               ...
+
+            @retry(**get_postgres_service_retry_policy(logger))
+            def myfun2(...)
+               ...
+    """
+    if logger is not None:
+        kwargs = deepcopy(postgres_service_retry_policy_kwargs)
+        kwargs['after'] = after_log(logger, logging.ERROR)
+        return kwargs
+
+    return postgres_service_retry_policy_kwargs
+
 
 def retry_pg_api(func):
     """ Decorator to implement postgres service retry policy and
         keep global  statistics on service attempt fails
     """
+    # TODO: temporary. For the time being, use instead postgres_service_retry_policy_kwargs
     _deco_func = retry(**postgres_service_retry_policy_kwargs)(func)
     _total_retry_count = 0
 
@@ -131,5 +164,5 @@ def retry_pg_api(func):
 
 __all__ = [
     'DBAPIError',
-    'retry_pg_api'
+    'postgres_service_retry_policy_kwargs'
 ]
