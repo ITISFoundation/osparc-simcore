@@ -66,6 +66,7 @@ async def user_logged_out(user_id: str, app: web.Application):
     sio = get_socket_server(app)
     sockets = await registry.find_sockets(user_id)
     for socket in sockets:
+        await sio.emit("logout", data={"reason": "user logged out"})
         await sio.disconnect(sid=socket)
 
 async def disconnect(sid: str, app: web.Application):
