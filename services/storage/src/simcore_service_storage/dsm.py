@@ -8,18 +8,20 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import aiofiles
 import attr
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import Engine
 from sqlalchemy.sql import and_
+from tenacity import retry
 from yarl import URL
 
 import aiobotocore
-import aiofiles
+from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
-from servicelib.aiopg_utils import DBAPIError, retry_pg_api
+from servicelib.aiopg_utils import (DBAPIError,
+                                    postgres_service_retry_policy_kwargs)
 from servicelib.client_session import get_client_session
 
 from .datcore_wrapper import DatcoreWrapper
@@ -399,7 +401,7 @@ class DataStorageManager:
 
     async def upload_link(self, user_id: str, file_uuid: str):
 
-        @retry_pg_api
+        @retry(**postgres_service_retry_policy_kwargs)
         async def _execute_query():
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
