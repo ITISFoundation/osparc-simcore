@@ -6,6 +6,7 @@
 # pylint: disable=C0111
 # pylint: disable=W0703
 
+import asyncio
 import logging
 from typing import Dict
 
@@ -65,9 +66,14 @@ async def user_logged_out(user_id: str, app: web.Application):
     registry = get_socket_registry(app)
     sio = get_socket_server(app)
     sockets = await registry.find_sockets(user_id)
-    for socket in sockets:
-        await sio.emit("logout", data={"reason": "user logged out"})
-        await sio.disconnect(sid=socket)
+    logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
+    await asyncio.gather(*logout_tasks, return_exception=True)
+    # let the client react
+    await asyncio.sleep(5)
+    # disconnect the ones that did not react, ciao, ciao...
+    sockets = await registry.find_sockets(user_id)
+    disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
+    await asyncio.gather(*disconnect_tasks, return_exception=True)
 
 async def disconnect(sid: str, app: web.Application):
     """socketio reserved handler for when the socket.io connection is disconnected.
