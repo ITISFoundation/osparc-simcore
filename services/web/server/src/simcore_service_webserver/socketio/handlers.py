@@ -51,11 +51,8 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     log.debug("client %s authenticated", user_id)
     tab_id = request.query.get("tabid", None)
     if not tab_id:
-        # TODO: ensure something sensible happens in that case
         log.error("Tab ID is not available!")
-        # use socket id instead
-        tab_id = sid
-        # raise web.HTTPUnauthorized(reason="missing tab id")
+        raise web.HTTPUnauthorized(reason="missing tab id")
 
     registry = get_socket_registry(app)
     await registry.add_socket(user_id, tab_id, sid)

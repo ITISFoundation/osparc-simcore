@@ -54,45 +54,50 @@ class AbstractSocketRegistry(ABC):
 
 
 
-def _default_dict_factory():
-    return defaultdict(list)
+
+REDIS_HASH_KEY:str = "user_id_{user_id}:tab_id_{tab_id}"
+REDIS_HASH_KEY_ALL_USERS:str = "user_id_*:tab_id_{tab_id}"
+REDIS_HASH_KEY_ALL_TABS:str = "user_id_{user_id}:tab_id_*"
+REDIS_HASH_KEY_ALL:str = "user_id_*:tab_id_*"
+
 @attr.s(auto_attribs=True)
 class RedisUserSocketRegistry(AbstractSocketRegistry):
     """ Keeps a record of connected sockets per user
 
         redis structure is following
-        entry containing the tabs for a user
-        Redis List: key=user_id, value=List[Hash key]
-        then for each entry in the list
-        Redis Hash: key=user_id:tab_id server_id socket_id project_id
+        Redis Hash: key=user_id:tab_id values={server_id socket_id project_id}
     """
     async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
         client = get_redis_client(self.app)
-        await client.sadd(f"user_id:{user_id}", f"{user_id}:{tab_id}")
-        await client.hmset_dict(f"{user_id}:{tab_id}", server=id(__name__), socket_id=socket_id, project_id=None)
-        return await client.scard(f"user_id:{user_id}")
+        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
+        await client.hmset_dict(key, user_id=user_id, tab_id=tab_id, server=id(__name__), socket_id=socket_id)
+        # number of sockets is equal to number of tabs
+        return len(await client.keys(REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)))
 
     async def remove_socket(self, socket_id: str) -> Optional[int]:
         client = get_redis_client(self.app)
-        async for key in client.iscan(match="user_id:*"):
-            if await client.sismember(key, socket_id):
-                await client.srem(key, socket_id)
-                return await client.scard(key)
+        async for key in client.iscan(match=REDIS_HASH_KEY_ALL):
+            if socket_id in await client.hget(key, "socket_id"):
+                user_id = await client.hget(key, "user_id")
+                await client.delete(key)
+                return len(await client.keys(REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)))
+            
         return None
 
 
     async def find_sockets(self, user_id: str) -> List[str]:
         client = get_redis_client(self.app)
-        socket_ids = await client.smembers(f"user_id:{user_id}")
-        return list(socket_ids)
+        socket_ids = []
+        async for key in client.iscan(match=REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)):
+            socket_ids.append(await client.hget(key, "socket_id"))
+        return socket_ids
 
     async def find_owner(self, socket_id: str) -> Optional[str]:
         client = get_redis_client(self.app)
-        async for key in client.iscan(match="user_id:*"):
-            if await client.sismember(key, socket_id):
-                user_id = key.split(":")[1]
+        async for key in client.iscan(match=REDIS_HASH_KEY_ALL):
+            if socket_id in await client.hget(key, "socket_id"):
+                user_id = await client.hget(key, "user_id")
                 return user_id
-
         return None
 
 @attr.s(auto_attribs=True)
