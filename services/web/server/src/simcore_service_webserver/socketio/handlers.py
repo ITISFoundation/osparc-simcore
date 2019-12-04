@@ -49,8 +49,16 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     """
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
+    tab_id = request.query.get("tabid", None)
+    if not tab_id:
+        # TODO: ensure something sensible happens in that case
+        log.error("Tab ID is not available!")
+        # use socket id instead
+        tab_id = sid
+        # raise web.HTTPUnauthorized(reason="missing tab id")
+
     registry = get_socket_registry(app)
-    await registry.add_socket(user_id, sid)
+    await registry.add_socket(user_id, tab_id, sid)
     await signals.emit(signals.SignalType.SIGNAL_USER_CONNECT, user_id, app)
     sio = get_socket_server(app)
     # here we keep the original HTTP request in the socket session storage
@@ -83,11 +91,7 @@ async def disconnect(sid: str, app: web.Application):
         app {web.Application} -- the aiohttp app
     """
     log.debug("client in room %s disconnecting", sid)
-    # sio = get_socket_server(app)
     registry = get_socket_registry(app)
-    # async with sio.session(sid) as session:
-        # request = session["request"]
-        #TODO: how to handle different sessions from the same user? (i.e. multiple tabs)
     user_id = await registry.find_owner(sid)
     if not await registry.remove_socket(sid):
         # mark user for disconnection

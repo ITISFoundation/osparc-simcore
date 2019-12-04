@@ -22,19 +22,18 @@ log = logging.getLogger(__name__)
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
     mgr = None
-    if CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]:
-        cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-        if "message_queue" in cfg and cfg["message_queue"]:
-            mq_config = cfg["message_queue"]
-            url = f"amqp://{mq_config['user']}:{mq_config['password']}@{mq_config['host']}:{mq_config['port']}"
-            mgr = AsyncAioPikaManager(url=url, logger=log)
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    if "message_queue" in cfg and cfg["message_queue"]:
+        mq_config = cfg["message_queue"]
+        url = f"amqp://{mq_config['user']}:{mq_config['password']}@{mq_config['host']}:{mq_config['port']}"
+        mgr = AsyncAioPikaManager(url=url, logger=log)
 
     sio = AsyncServer(async_mode="aiohttp", client_manager=mgr, logging=log)
     sio.attach(app)
     app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
     setup_redis_client(app)
-    app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisUserSocketRegistry(app) if get_redis_client(app) \
-                                    else InMemoryUserSocketRegistry()
+    app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisUserSocketRegistry(app) if cfg["redis"]["enabled"] \
+                                    else InMemoryUserSocketRegistry(app)
     handlers_utils.register_handlers(app, handlers)
 
 # alias

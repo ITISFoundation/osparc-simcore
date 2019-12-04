@@ -5,10 +5,12 @@
 # pylint:disable=redefined-outer-name
 
 from copy import deepcopy
+from uuid import uuid4
 
 import pytest
 import socketio
 from aiohttp import web
+from yarl import URL
 
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
@@ -92,14 +94,19 @@ async def socketio_url(client) -> str:
 @pytest.fixture()
 async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
-    async def connect():
+    async def connect(tab_id):
         sio = socketio.AsyncClient()
-        await sio.connect(socketio_url, headers={'Cookie': security_cookie})
+        url = str(URL(socketio_url).with_query({'tabid': tab_id}))
+        await sio.connect(url, headers={'Cookie': security_cookie})
         clients.append(sio)
         return sio
     yield connect
     for sio in clients:
         await sio.disconnect()
+
+@pytest.fixture()
+async def tab_id() -> str:
+    return str(uuid4())
 
 # async def test_anonymous_websocket_connection(client):
 async def test_anonymous_websocket_connection(socketio_client):
@@ -133,14 +140,14 @@ async def test_websocket_connections(client, logged_user, socketio_client, ):
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_multiple_websocket_connections(client, logged_user, socketio_client):
+async def test_multiple_websocket_connections(client, logged_user, socketio_client, tab_id):
     app = client.server.app
     socket_registry = get_socket_registry(app)
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
     for socket in range(NUMBER_OF_SOCKETS):
-        sio = await socketio_client()
+        sio = await socketio_client(tab_id)
         assert await socket_registry.find_owner(sio.sid) == logged_user["id"]
         assert sio.sid in await socket_registry.find_sockets(logged_user["id"])
         assert len(await socket_registry.find_sockets(logged_user["id"])) == (socket+1)
