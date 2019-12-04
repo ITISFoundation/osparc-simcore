@@ -182,7 +182,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "close",
           "reconnect",
           "reconnecting",
-          "error"
+          "error",
+          "logout"
         ].forEach(event => {
           this.on(event, ev => {
             this.fireDataEvent(event, ev);
@@ -202,6 +203,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       }, this);
 
       dynLoader.start();
+    },
+
+    isConnected: function() {
+      if (this.getSocket()) {
+        return this.getSocket().connected;
+      }
+      return false;
     },
 
     disconnect: function() {

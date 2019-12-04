@@ -63,7 +63,7 @@ qx.Class.define("osparc.Application", {
       // from osparc. unfortunately it is not possible
       // to provide our own message here
       window.addEventListener("beforeunload", e => {
-        if (webSocket.connected) {
+        if (webSocket.isConnected()) {
           // Cancel the event as stated by the standard.
           e.preventDefault();
           // Chrome requires returnValue to be set.
