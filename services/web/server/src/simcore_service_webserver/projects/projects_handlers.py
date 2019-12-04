@@ -240,9 +240,9 @@ async def open_project(request: web.Request) -> web.Response:
         user_id=user_id,
         include_templates=True
     )
-
+    #FIXME: momentarily de-activated cause it conflicts with the call from the frontend.
     # user id opened project uuid
-    await projects_api.start_project_interactive_services(request, project, user_id)
+    # await projects_api.start_project_interactive_services(request, project, user_id)
 
     return {
         'data': project
