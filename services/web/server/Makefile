@@ -16,20 +16,17 @@ install: ## install app in edit mode for development [DEV]
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
 
-.PHONY: tests tunit tintegration
-tests: tunit tintegration## runs all tests [DEV]
-	# All tests run
-
-tunit:
+.PHONY: tests-unit tests-integration
+tests-unit: ## runs unit tests
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
+	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
 
 
-export DOCKER_REGISTRY=local
-export DOCKER_IMAGE_TAG=production
-tintegration:
-	# running integration tests ${DOCKER_REGISTRY}/(service):${DOCKER_IMAGE_TAG} images ...
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
+tests-integration: ## runs integration tests against local+production images
+	# running integration tests local/(service):production images ...
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build

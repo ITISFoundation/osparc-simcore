@@ -35,6 +35,7 @@ services:
       - ../packages:/devel/packages
     environment:
       - SC_BOOT_MODE=debug-ptvsd
+      - SIDECAR_LOGLEVEL=DEBUG
     ports:
       - "3002:3000"
     deploy:

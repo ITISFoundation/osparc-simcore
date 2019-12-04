@@ -108,6 +108,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_LOGLEVEL=INFO
     depends_on:
       - rabbit
       - postgres
