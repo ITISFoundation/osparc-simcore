@@ -14,16 +14,13 @@
 """
 
 import logging
-from collections import defaultdict
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 import attr
 from aiohttp import web
 
 from .config import get_redis_client
-
-
-from abc import ABC, abstractmethod
 
 log = logging.getLogger(__name__)
 

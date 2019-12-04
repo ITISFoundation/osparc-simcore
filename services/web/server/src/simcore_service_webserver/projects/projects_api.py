@@ -88,12 +88,21 @@ async def clone_project(request: web.Request, project: Dict, user_id, forced_cop
     return updated_project
 
 async def start_project_interactive_services(request: web.Request, project: Dict, user_id: str) -> None:
+    # first get the services if they already exist
+    log.debug("getting running interactive services of project %s for user %s", project["uuid"], user_id)
+    running_services = await director_api.get_running_interactive_services(request.app, user_id, project["uuid"])
+    running_service_uuids = [x["service_uuid"] for x in running_services]
+    # now start them if needed
+    project_needed_services = {service_uuid:service for service_uuid, service in project["workbench"].items() \
+                                    if "/dynamic/" in service["key"] and \
+                                        service_uuid not in running_service_uuids}
+
     start_service_tasks = [director_api.start_service(request.app,
-                                user_id=user_id,
-                                project_id=project["uuid"],
-                                service_key=service["key"],
-                                service_version=service["version"],
-                                service_uuid=service_uuid) for service_uuid, service in project["workbench"].items() if "/dynamic/" in service["key"]]
+                            user_id=user_id,
+                            project_id=project["uuid"],
+                            service_key=service["key"],
+                            service_version=service["version"],
+                            service_uuid=service_uuid) for service_uuid, service in project_needed_services.items()]
     await gather(*start_service_tasks)
 
 
