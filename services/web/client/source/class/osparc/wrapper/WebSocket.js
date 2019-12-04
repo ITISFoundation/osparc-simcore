@@ -261,7 +261,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
       const tabID = sessionStorage.getItem("tabid") ? sessionStorage.getItem("tabid") : osparc.utils.Utils.uuidv4();
       sessionStorage.setItem("tabid", tabID);
-      return sessionStorage.tabID;
+      return tabID;
     }
   },
 

@@ -48,20 +48,6 @@ qx.Class.define("osparc.Application", {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
       }
-      // alert the users that they are about to navigate away
-      // from osparc. unfortunately it is not possible
-      // to provide our own message here
-      window.addEventListener("beforeunload", e => {
-        // Cancel the event as stated by the standard.
-        e.preventDefault();
-        // Chrome requires returnValue to be set.
-        e.returnValue = "";
-      });
-      if (qx.core.Environment.get("dev.enableFakeSrv")) {
-        console.debug("Fake server enabled");
-        osparc.dev.fake.srv.restapi.User;
-        osparc.dev.fake.srv.restapi.Authentication;
-      }
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => {
@@ -73,6 +59,22 @@ qx.Class.define("osparc.Application", {
       webSocket.addListener("logout", e => {
         this.logout();
       });
+      // alert the users that they are about to navigate away
+      // from osparc. unfortunately it is not possible
+      // to provide our own message here
+      window.addEventListener("beforeunload", e => {
+        if (webSocket.connected) {
+          // Cancel the event as stated by the standard.
+          e.preventDefault();
+          // Chrome requires returnValue to be set.
+          e.returnValue = "";
+        }
+      });
+      if (qx.core.Environment.get("dev.enableFakeSrv")) {
+        console.debug("Fake server enabled");
+        osparc.dev.fake.srv.restapi.User;
+        osparc.dev.fake.srv.restapi.Authentication;
+      }
 
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", function() {
