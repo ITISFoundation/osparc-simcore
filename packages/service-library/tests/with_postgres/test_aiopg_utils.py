@@ -7,13 +7,11 @@ from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
-import yaml
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
 
 from servicelib.aiopg_utils import (ATTEMPTS_COUNT, DatabaseError,
-                                    DataSourceName, is_postgres_responsive,
-                                    retry_pg_api)
+                                    DataSourceName, retry_pg_api)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -22,39 +20,6 @@ metadata = sa.MetaData()
 tbl = sa.Table('tbl', metadata,
                sa.Column('id', sa.Integer, primary_key=True),
                sa.Column('val', sa.String(255)))
-
-# FIXTURES ------------
-
-@pytest.fixture(scope='session')
-def docker_compose_file() -> Path:
-    # overrides fixture from https://github.com/AndreLouisCaron/pytest-docker
-    return current_dir / 'docker-compose.yml'
-
-
-@pytest.fixture(scope='session')
-def postgres_service(docker_services, docker_ip, docker_compose_file) -> DataSourceName:
-
-    # container environment
-    with open(docker_compose_file) as fh:
-        config = yaml.safe_load(fh)
-    environ = config['services']['postgres']['environment']
-
-    dsn = DataSourceName(
-        user=environ['POSTGRES_USER'],
-        password=environ['POSTGRES_PASSWORD'],
-        host=docker_ip,
-        port=docker_services.port_for('postgres', 5432),
-        database=environ['POSTGRES_DB'],
-        application_name="test-app"
-    )
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=lambda: is_postgres_responsive(dsn),
-        timeout=30.0,
-        pause=0.1,
-    )
-    return dsn
 
 
 @pytest.fixture
