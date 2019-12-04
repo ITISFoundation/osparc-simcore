@@ -127,6 +127,13 @@ paths:
     post:
       summary: Open a given project
       operationId: open_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/TabId'
       responses:
         '200':
           description: project successfuly opened
@@ -147,6 +154,13 @@ paths:
     post:
       summary: Closes a given project
       operationId: close_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/TabId'
       responses:
         '204':
           description: project succesfuly closed
@@ -180,3 +194,6 @@ components:
         error:
           nullable: true
           default: null
+    TabId:
+      type: string
+      example: 5ac57685-c40f-448f-8711-70be1936fd63

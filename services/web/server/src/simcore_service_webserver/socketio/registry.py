@@ -35,11 +35,11 @@ class AbstractSocketRegistry(ABC):
 
     @abstractmethod
     async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
-        pass
+        pass    
 
     @abstractmethod
     async def remove_socket(self, socket_id: str) -> Optional[int]:
-        pass
+        pass    
 
     @abstractmethod
     async def find_sockets(self, user_id: str) -> List[str]:
@@ -47,6 +47,14 @@ class AbstractSocketRegistry(ABC):
 
     @abstractmethod
     async def find_owner(self, socket_id: str) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+        pass
+
+    @abstractmethod
+    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
         pass
 
 
@@ -96,6 +104,16 @@ class RedisUserSocketRegistry(AbstractSocketRegistry):
                 user_id = await client.hget(key, "user_id")
                 return user_id
         return None
+
+    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+        client = get_redis_client(self.app)
+        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
+        await client.hset(key, "project_id", project_id)
+
+    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+        client = get_redis_client(self.app)
+        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
+        await client.hdel(key, "project_id")
 
 @attr.s(auto_attribs=True)
 class InMemoryUserSocketRegistry(AbstractSocketRegistry):
@@ -150,3 +168,9 @@ class InMemoryUserSocketRegistry(AbstractSocketRegistry):
                 if socket_id in tab_props["socket_id"]:
                     return user_id
         return None
+
+    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+        self.user_to_tabs_map[user_id][tab_id]["project_id"] = project_id
+
+    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+        del self.user_to_tabs_map[user_id][tab_id]["project_id"]

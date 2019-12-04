@@ -142,7 +142,8 @@ qx.Class.define("osparc.data.model.Study", {
       const params = {
         url: {
           "project_id": this.getUuid()
-        }
+        },
+        data: sessionStorage.getItem("tabid")
       };
       osparc.data.Resources.fetch("studies", "open", params)
         .catch(err => console.error(err));
@@ -152,7 +153,8 @@ qx.Class.define("osparc.data.model.Study", {
       const params = {
         url: {
           "project_id": this.getUuid()
-        }
+        },
+        data: sessionStorage.getItem("tabid")
       };
       osparc.data.Resources.fetch("studies", "close", params)
         .catch(err => console.error(err));

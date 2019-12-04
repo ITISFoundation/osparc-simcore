@@ -234,12 +234,19 @@ async def open_project(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    tab_id = await request.json()
 
     project = await get_project_for_user(request,
         project_uuid=project_uuid,
         user_id=user_id,
         include_templates=True
     )
+
+    # TODO: de-couple
+    from ..socketio.config import get_socket_registry
+    registry = get_socket_registry(request.app)
+    await registry.set_project(user_id, tab_id, project_uuid)
+
     #FIXME: momentarily de-activated cause it conflicts with the call from the frontend.
     # user id opened project uuid
     # await projects_api.start_project_interactive_services(request, project, user_id)
@@ -255,6 +262,13 @@ async def close_project(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    tab_id = await request.json()
+
+    # TODO: de-couple
+    from ..socketio.config import get_socket_registry
+    registry = get_socket_registry(request.app)
+    await registry.remove_project(user_id, tab_id, project_uuid)
+
     asyncio.ensure_future(projects_api.remove_project_interactive_services(request, project_uuid, user_id))
 
     raise web.HTTPNoContent(content_type='application/json')

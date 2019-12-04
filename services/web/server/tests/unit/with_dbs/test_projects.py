@@ -7,7 +7,7 @@
 import collections
 import json
 import uuid as uuidlib
-from asyncio import Future
+from asyncio import Future, sleep
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
@@ -476,11 +476,17 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
         mock_director_api.assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mock_director_api_stop_services.has_calls(calls)
+        # wait for the fire&forget to run
+        await sleep(2)
         # check if database entries are correctly removed, there should be no project available here
         url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
 
         resp = await client.get(url)
         data, error = await assert_status(resp, web.HTTPNotFound)
+
+@pytest.fixture
+def tab_id() -> str:
+    return str(uuidlib.uuid4())
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -488,14 +494,14 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_open_project(client, logged_user, user_project, expected, mocker):
+async def test_open_project(client, logged_user, user_project, tab_id, expected, mocker):
     # POST /v0/projects/{project_id}:open
     # open project
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url)
+    resp = await client.post(url, json=tab_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {service_uuid:service for service_uuid, service in user_project["workbench"].items() if "/dynamic/" in service["key"]}
@@ -510,7 +516,7 @@ async def test_open_project(client, logged_user, user_project, expected, mocker)
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_close_project(client, logged_user, user_project, expected, mocker, fake_services):
+async def test_close_project(client, logged_user, user_project, tab_id, expected, mocker, fake_services):
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
@@ -521,10 +527,10 @@ async def test_close_project(client, logged_user, user_project, expected, mocker
     mock_director_api_stop_services.return_value.set_result("")
     # open project
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url)
+    resp = await client.post(url, json=tab_id)
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url)
+    resp = await client.post(url, json=tab_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
         mock_director_api.assert_called_once()
