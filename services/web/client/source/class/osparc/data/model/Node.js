@@ -688,7 +688,7 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, true);
+            this.getPropsWidget().retrievedPortData(portKey, true, data["size_bytes"]);
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
