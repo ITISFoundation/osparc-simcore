@@ -54,7 +54,7 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
     """
     engine = conn = None
     try:
-        engine = sa.create_engine(dsn.to_uri(with_query=True))
+        engine = sa.create_engine(dsn.to_uri())
         conn = engine.connect()
     except sa.exc.OperationalError:
         ok = False
