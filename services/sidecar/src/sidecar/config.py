@@ -8,8 +8,8 @@ SWARM_STACK_NAME = os.environ["SWARM_STACK_NAME"]
 
 SIDECAR_LOGLEVEL = getattr(
     logging,
-    name=os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(),
-    default=logging.WARNING)
+    os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(),
+    logging.WARNING)
 
 logging.basicConfig(level=SIDECAR_LOGLEVEL)
 logging.getLogger('sqlalchemy.engine').setLevel(SIDECAR_LOGLEVEL)
