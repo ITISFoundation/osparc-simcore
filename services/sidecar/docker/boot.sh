@@ -24,7 +24,7 @@ then
   which python | sed 's/^/    /'
   echo $INFO "PIP :"
   $SC_PIP list | sed 's/^/    /'
-
+fi
 
 # RUNNING application ----------------------------------------
 
@@ -37,7 +37,7 @@ then
   # NOTE: in this case, remote debugging is only available in development mode!
   # FIXME: workaround since PTVSD does not support prefork subprocess debugging: https://github.com/microsoft/ptvsd/issues/943
   POOL=solo
-
+fi
 
 exec celery worker \
     --app sidecar.celery:app \
