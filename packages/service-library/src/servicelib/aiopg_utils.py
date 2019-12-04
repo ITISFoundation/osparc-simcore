@@ -12,8 +12,8 @@ import logging
 from typing import Dict, Optional
 
 import attr
-from aiohttp import web
 import sqlalchemy as sa
+from aiohttp import web
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (RetryCallState, after_log, retry,
@@ -94,20 +94,20 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     raise web.HTTPServiceUnavailable()
 
 
-_retry_policy_kwargs = dict(
-        retry=retry_if_exception_type(DatabaseError),
-        wait=wait_fixed(WAIT_SECS),
-        stop=stop_after_attempt(ATTEMPTS_COUNT),
-        after=after_log(log, logging.ERROR),
-        retry_error_callback=raise_http_unavailable_error
+postgres_service_retry_policy_kwargs = dict(
+    retry=retry_if_exception_type(DatabaseError),
+    wait=wait_fixed(WAIT_SECS),
+    stop=stop_after_attempt(ATTEMPTS_COUNT),
+    after=after_log(log, logging.ERROR),
+    retry_error_callback=raise_http_unavailable_error
 )
 
 
 def retry_pg_api(func):
-    """ Decorator to implement pg api retry policy upon OperationalErrors
-
+    """ Decorator to implement postgres service retry policy and
+        keep global  statistics on service attempt fails
     """
-    _deco_func = retry(**_retry_policy_kwargs)(func)
+    _deco_func = retry(**postgres_service_retry_policy_kwargs)(func)
     _total_retry_count = 0
 
     @functools.wraps(func)
