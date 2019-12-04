@@ -70,6 +70,9 @@ qx.Class.define("osparc.Application", {
       webSocket.addListener("disconnect", () => {
         osparc.io.WatchDog.getInstance().setOnLine(false);
       });
+      webSocket.addListener("logout", e => {
+        this.logout();
+      });
 
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", function() {

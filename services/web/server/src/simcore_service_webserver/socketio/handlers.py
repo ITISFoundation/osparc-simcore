@@ -67,13 +67,13 @@ async def user_logged_out(user_id: str, app: web.Application):
     sio = get_socket_server(app)
     sockets = await registry.find_sockets(user_id)
     logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
-    await asyncio.gather(*logout_tasks, return_exception=True)
+    await asyncio.gather(*logout_tasks, return_exceptions=True)
     # let the client react
     await asyncio.sleep(5)
     # disconnect the ones that did not react, ciao, ciao...
     sockets = await registry.find_sockets(user_id)
     disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    await asyncio.gather(*disconnect_tasks, return_exception=True)
+    await asyncio.gather(*disconnect_tasks, return_exceptions=True)
 
 async def disconnect(sid: str, app: web.Application):
     """socketio reserved handler for when the socket.io connection is disconnected.

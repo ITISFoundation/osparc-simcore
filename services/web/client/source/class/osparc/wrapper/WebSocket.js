@@ -59,7 +59,9 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     /** socket.io reconnect_failed event */
     "reconnect_failed": "qx.event.type.Event",
     /** socket.io error event */
-    "error": "qx.event.type.Data"
+    "error": "qx.event.type.Data",
+    /** socket.io logout event */
+    "logout": "qx.event.type.Data"
   },
 
   properties: {
