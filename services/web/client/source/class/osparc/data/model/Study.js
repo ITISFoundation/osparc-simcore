@@ -156,6 +156,12 @@ qx.Class.define("osparc.data.model.Study", {
       };
       osparc.data.Resources.fetch("studies", "close", params)
         .catch(err => console.error(err));
+
+      // remove iFrames
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        node.removeIFrame();
+      }
     },
 
     serializeStudy: function() {
