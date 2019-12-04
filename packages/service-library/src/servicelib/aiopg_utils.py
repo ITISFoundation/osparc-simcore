@@ -10,7 +10,6 @@
 
 import functools
 import logging
-from copy import deepcopy
 from typing import Dict, Optional
 
 import attr
@@ -19,7 +18,7 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import (RetryCallState, after_log, retry,
+from tenacity import (RetryCallState, after_log, before_sleep_log, retry,
                       retry_if_exception_type, stop_after_attempt, wait_fixed)
 
 log = logging.getLogger(__name__)
@@ -104,35 +103,43 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     # https://tools.ietf.org/html/rfc7231#section-7.1.3
     raise web.HTTPServiceUnavailable()
 
-WAIT_SECS = 2
-ATTEMPTS_COUNT = 3
 
-postgres_service_retry_policy_kwargs = dict(
-    retry=retry_if_exception_type(DatabaseError),
-    wait=wait_fixed(WAIT_SECS),
-    stop=stop_after_attempt(ATTEMPTS_COUNT),
-    after=after_log(log, logging.ERROR),
-    retry_error_callback=raise_http_unavailable_error
-)
 
-def get_postgres_service_retry_policy(logger: Optional[logging.Logger]=None):
-    """ Produces key-arguments woth pg service policy to be used in tenacity.retry
-
-        Usage:
-            @retry(**postgres_service_retry_policy_kwargs)
-            def myfun1(...)
-               ...
-
-            @retry(**get_postgres_service_retry_policy(logger))
-            def myfun2(...)
-               ...
+class PostgresRetryPolicyUponInitialization:
+    """ Retry policy upon service initialization
     """
-    if logger is not None:
-        kwargs = deepcopy(postgres_service_retry_policy_kwargs)
-        kwargs['after'] = after_log(logger, logging.ERROR)
-        return kwargs
+    WAIT_SECS = 2
+    ATTEMPTS_COUNT = 20
 
-    return postgres_service_retry_policy_kwargs
+    def __init__(self, logger: Optional[logging.Logger]=None):
+        logger = logger or log
+
+        self.kwargs = dict(
+            wait=wait_fixed(self.WAIT_SECS),
+            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
+            before_sleep=before_sleep_log(logger, logging.INFO),
+            reraise=True
+        )
+
+class PostgresRetryPolicyUponOperation:
+    """ Retry policy upon service operation
+    """
+    WAIT_SECS = 2
+    ATTEMPTS_COUNT = 3
+
+    def __init__(self, logger: Optional[logging.Logger]=None):
+        logger = logger or log
+
+        self.kwargs = dict(
+            retry=retry_if_exception_type(DatabaseError),
+            wait=wait_fixed(self.WAIT_SECS),
+            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
+            after=after_log(logger, logging.ERROR),
+            retry_error_callback=raise_http_unavailable_error
+        )
+
+# alias
+postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation().kwargs
 
 
 def retry_pg_api(func):
@@ -164,5 +171,6 @@ def retry_pg_api(func):
 
 __all__ = [
     'DBAPIError',
-    'postgres_service_retry_policy_kwargs'
+    'PostgresRetryPolicyUponInitialization',
+    'PostgresRetryPolicyUponOperation'
 ]

@@ -5,11 +5,11 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from tenacity import retry
 
-from servicelib.aiopg_utils import DBAPIError
+from servicelib.aiopg_utils import (DBAPIError,
+                                    PostgresRetryPolicyUponInitialization)
 
 from .models import metadata
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from servicelib.aiopg_utils import get_postgres_service_retry_policy
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +17,8 @@ THIS_SERVICE_NAME = 'postgres'
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
-@retry(**get_postgres_service_retry_policy(log))
+
+@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def __create_tables(**params):
     try:
         url = DSN.format(**params) + f"?application_name={__name__}_init"

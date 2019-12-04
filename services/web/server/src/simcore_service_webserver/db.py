@@ -12,13 +12,12 @@ from aiopg.sa import create_engine
 from tenacity import retry
 
 from servicelib.aiopg_utils import (DBAPIError,
-                                    get_postgres_service_retry_policy)
+                                    PostgresRetryPolicyUponInitialization)
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
-
 
 THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
@@ -27,7 +26,7 @@ DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Na
 log = logging.getLogger(__name__)
 
 
-@retry(**get_postgres_service_retry_policy(log))
+@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
     try:
@@ -49,7 +48,6 @@ async def pg_engine(app: web.Application):
             await __create_tables(**params)
         except DBAPIError:
             log.exception("Could init db. Stopping :\n %s", cfg)
-            raise
 
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine

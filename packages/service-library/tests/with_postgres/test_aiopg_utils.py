@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
 
-from servicelib.aiopg_utils import (ATTEMPTS_COUNT, DatabaseError,
+from servicelib.aiopg_utils import (PostgresRetryPolicyUponOperation, DatabaseError,
                                     DataSourceName, retry_pg_api)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -59,11 +59,11 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data):
         with pytest.raises(web.HTTPServiceUnavailable):
             await go(engine, gid=1, raise_cls=DatabaseError)
         print(go.retry.statistics)
-        assert go.total_retry_count() == ATTEMPTS_COUNT+1
+        assert go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1
 
         # goes and keeps count of all retrials
         await go(engine, gid=2)
-        assert go.total_retry_count() == ATTEMPTS_COUNT+2
+        assert go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+2
 
 
 #@pytest.mark.skip(reason="UNDER DEVELOPMENT")
