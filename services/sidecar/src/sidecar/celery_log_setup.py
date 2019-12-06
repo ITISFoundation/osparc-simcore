@@ -30,7 +30,6 @@ def setup_task_logger(logger, *_args, **_kwargs):
 
 
 # TODO: configure via command line or config file. Add in config.yaml
-logging.basicConfig(level=logging.DEBUG)
 log = get_task_logger(__name__)
 log.info("Setting up loggers")
 

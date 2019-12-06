@@ -9,9 +9,10 @@ import logging
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import create_engine
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from tenacity import retry
 
-from servicelib.aiopg_utils import DBAPIError
+from servicelib.aiopg_utils import (DBAPIError,
+                                    PostgresRetryPolicyUponInitialization)
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
@@ -22,17 +23,10 @@ THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name. TODO: sync with config
 
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
-
 log = logging.getLogger(__name__)
 
 
-@retry( wait=wait_fixed(RETRY_WAIT_SECS),
-        stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(log, logging.INFO),
-        reraise=True)
+@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
     try:
@@ -54,7 +48,6 @@ async def pg_engine(app: web.Application):
             await __create_tables(**params)
         except DBAPIError:
             log.exception("Could init db. Stopping :\n %s", cfg)
-            raise
 
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
