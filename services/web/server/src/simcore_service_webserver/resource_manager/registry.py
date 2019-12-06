@@ -1,6 +1,6 @@
 """ registry containing data about how a user is connected.
 
-    there is one websocket per opened tab in a browser. 
+    there is one websocket per opened tab in a browser.
     {
         user_id: { # identifies the user
             tab_id: { # identifies the browser tab
@@ -10,7 +10,7 @@
             }
         }
     }
-    
+
 """
 
 import logging
@@ -35,11 +35,11 @@ class AbstractSocketRegistry(ABC):
 
     @abstractmethod
     async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
-        pass    
+        pass
 
     @abstractmethod
     async def remove_socket(self, socket_id: str) -> Optional[int]:
-        pass    
+        pass
 
     @abstractmethod
     async def find_sockets(self, user_id: str) -> List[str]:
@@ -66,7 +66,7 @@ REDIS_HASH_KEY_ALL_TABS:str = "user_id_{user_id}:tab_id_*"
 REDIS_HASH_KEY_ALL:str = "user_id_*:tab_id_*"
 
 @attr.s(auto_attribs=True)
-class RedisUserSocketRegistry(AbstractSocketRegistry):
+class RedisResourceRegistry(AbstractSocketRegistry):
     """ Keeps a record of connected sockets per user
 
         redis structure is following
@@ -86,7 +86,7 @@ class RedisUserSocketRegistry(AbstractSocketRegistry):
                 user_id = await client.hget(key, "user_id")
                 await client.delete(key)
                 return len(await client.keys(REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)))
-            
+
         return None
 
 
@@ -98,6 +98,8 @@ class RedisUserSocketRegistry(AbstractSocketRegistry):
         return socket_ids
 
     async def find_owner(self, socket_id: str) -> Optional[str]:
+        if not socket_id:
+            return None
         client = get_redis_client(self.app)
         async for key in client.iscan(match=REDIS_HASH_KEY_ALL):
             if socket_id in await client.hget(key, "socket_id"):
@@ -116,7 +118,7 @@ class RedisUserSocketRegistry(AbstractSocketRegistry):
         await client.hdel(key, "project_id")
 
 @attr.s(auto_attribs=True)
-class InMemoryUserSocketRegistry(AbstractSocketRegistry):
+class InMemoryResourceRegistry(AbstractSocketRegistry):
     """ Keeps a record of connect sockets
     {
         user_id: { # identifies the user
@@ -147,10 +149,10 @@ class InMemoryUserSocketRegistry(AbstractSocketRegistry):
         return len(self.user_to_tabs_map[user_id])
 
     async def remove_socket(self, socket_id: str) -> Optional[int]:
-        for user_id, tabs in self.user_to_tabs_map.items():            
+        for user_id, tabs in self.user_to_tabs_map.items():
             for tab_id, tab_props in tabs.items():
                 if socket_id in tab_props["socket_id"]:
-                    del tabs[tab_id]                    
+                    del tabs[tab_id]
                     log.debug("user %s disconnected socket %s", user_id, socket_id)
                     return len(self.user_to_tabs_map[user_id])
         return None

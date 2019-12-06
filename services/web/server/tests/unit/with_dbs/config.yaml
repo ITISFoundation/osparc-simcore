@@ -12,11 +12,7 @@ director:
   host: director
   port: 8001
 socketio:
-  enabled: True
-  redis:
-    enabled: True
-    host: redis
-    port: 6379
+  enabled: True  
 application_proxy:
   enabled: False
 db:
@@ -31,7 +27,11 @@ db:
     minsize: 1
     endpoint: postgres:5432
 resource_manager:
-  enabled: False
+  enabled: True
+  redis:
+    enabled: True
+    host: localhost
+    port: 6379
 rabbit:
   enabled: False
   channels:

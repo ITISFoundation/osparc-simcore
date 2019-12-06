@@ -5,10 +5,10 @@ from typing import Dict, List
 from uuid import uuid4
 
 import pytest
-
-from simcore_service_webserver.socketio.config import \
+from simcore_service_webserver.resource_manager.config import \
     APP_CLIENT_REDIS_CLIENT_KEY
-from simcore_service_webserver.socketio.registry import RedisUserSocketRegistry
+from simcore_service_webserver.resource_manager.registry import \
+    RedisResourceRegistry
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def user_ids():
 
 async def test_websocket_registry(loop, fake_app, redis_client, user_ids):
     fake_app[APP_CLIENT_REDIS_CLIENT_KEY] = redis_client
-    registry = RedisUserSocketRegistry(fake_app)
+    registry = RedisResourceRegistry(fake_app)
 
     # create some user ids and socket ids
     NUM_USER_IDS = 5
@@ -37,7 +37,8 @@ async def test_websocket_registry(loop, fake_app, redis_client, user_ids):
     for user in list_user_ids:
         for socket in range(NUM_SOCKET_IDS):
             socket_id = f"{user}_{socket}"
-            num_sockets_for_user = await registry.add_socket(user, socket_id)
+            tab_id = str(uuid4())
+            num_sockets_for_user = await registry.add_socket(user, tab_id, socket_id)
             assert num_sockets_for_user == (socket + 1)
 
             list_of_sockets_of_user = await registry.find_sockets(user)
@@ -60,4 +61,3 @@ async def test_websocket_registry(loop, fake_app, redis_client, user_ids):
 
             socket_user_owner = await registry.find_owner(socket_id)
             assert not socket_user_owner
-

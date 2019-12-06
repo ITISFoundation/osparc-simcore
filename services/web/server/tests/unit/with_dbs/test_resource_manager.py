@@ -7,10 +7,12 @@
 
 from asyncio import Future, sleep
 from copy import deepcopy
+from uuid import uuid4
 
 import pytest
 import socketio
 from aiohttp import web
+from yarl import URL
 
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
@@ -18,14 +20,13 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import (config,
+from simcore_service_webserver.resource_manager import (config, registry,
                                                         setup_resource_manager)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import registry, setup_sockets
-from simcore_service_webserver.socketio.config import get_socket_registry
+from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.utils import now_str
 from utils_assert import assert_status
@@ -81,7 +82,7 @@ def client(mocked_director_handlers, loop, aiohttp_client, app_cfg, postgres_ser
     setup_sockets(app)
     setup_projects(app)
     setup_director(app)
-    setup_resource_manager(app)
+    assert setup_resource_manager(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
         'port': cfg["main"]["port"],
@@ -158,14 +159,19 @@ async def socketio_url(client) -> str:
 async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
 
-    async def connect():
+    async def connect(tab_id):
         sio = socketio.AsyncClient()
-        await sio.connect(socketio_url, headers={'Cookie': security_cookie})
+        url = str(URL(socketio_url).with_query({'tabid': tab_id}))
+        await sio.connect(url, headers={'Cookie': security_cookie})
         clients.append(sio)
         return sio
     yield connect
     for sio in clients:
         await sio.disconnect()
+
+@pytest.fixture()
+async def tab_id() -> str:
+    return str(uuid4())
 
 
 @pytest.fixture
@@ -220,10 +226,12 @@ async def test_interactive_services_remain_after_websocket_reconnection(loop, cl
     # create empty study - empty_user_project fixture
     # create dynamic service - mocked_dynamic_service fixture
     # create first websocket
-    sio = await socketio_client()
+    tab_id = str(uuid4())
+    sio = await socketio_client(tab_id)
     assert sio.sid
     # create second websocket
-    sio2 = await socketio_client()
+    tab_id2 = str(uuid4())
+    sio2 = await socketio_client(tab_id2)
     assert sio2.sid
     assert sio.sid != sio2.sid
     # disconnect first websocket
@@ -239,7 +247,7 @@ async def test_interactive_services_remain_after_websocket_reconnection(loop, cl
     # assert dynamic service is still around for now
     mocked_director_handlers["_delete_all_services"].assert_not_called()
     # reconnect websocket
-    sio = await socketio_client()
+    sio = await socketio_client(tab_id)
     assert sio.sid
     # assert dynamic service is still around
     mocked_director_handlers["_delete_all_services"].assert_not_called()
@@ -261,7 +269,8 @@ async def test_interactive_services_removed_after_websocket_disconnection_for_so
     # create empty study - empty_user_project fixture
     # create dynamic service - mocked_dynamic_service fixture
     # create websocket
-    sio = await socketio_client()
+    tab_id = str(uuid4())
+    sio = await socketio_client(tab_id)
     assert sio.sid
     # disconnect websocket
     await sio.disconnect()

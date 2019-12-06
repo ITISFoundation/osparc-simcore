@@ -6,6 +6,7 @@
 
 import pytest
 import socketio
+from yarl import URL
 
 from servicelib.rest_responses import unwrap_envelope
 
@@ -31,11 +32,13 @@ async def socketio_url(loop, client) -> str:
     return str(client.make_url(SOCKET_IO_PATH))
 
 @pytest.fixture()
-async def socketio_client(loop, socketio_url: str, security_cookie: str):
+async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
-    async def connect():
+
+    async def connect(tab_id):
         sio = socketio.AsyncClient()
-        await sio.connect(socketio_url, headers={'Cookie': security_cookie})
+        url = str(URL(socketio_url).with_query({'tabid': tab_id}))
+        await sio.connect(url, headers={'Cookie': security_cookie})
         clients.append(sio)
         return sio
     yield connect

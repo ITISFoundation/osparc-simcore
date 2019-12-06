@@ -12,10 +12,7 @@ main:
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
-socketio:
-  redis:
-    host: ${REDIS_HOST}
-    port: ${REDIS_PORT}
+socketio:  
   message_queue:
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}
@@ -37,6 +34,9 @@ db:
 resource_manager:
   enabled: True
   service_deletion_timeout_seconds: ${WEBSERVER_SERVICES_DELETION_TIMEOUT_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}

@@ -218,6 +218,11 @@ async def delete_project(request: web.Request):
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    project = await projects_api.get_project_for_user(request,
+        project_uuid=project_uuid,
+        user_id=user_id,
+        include_templates=True
+    )
     # fire & forget
     asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
 
@@ -243,8 +248,8 @@ async def open_project(request: web.Request) -> web.Response:
     )
 
     # TODO: de-couple
-    from ..socketio.config import get_socket_registry
-    registry = get_socket_registry(request.app)
+    from ..resource_manager.config import get_registry
+    registry = get_registry(request.app)
     await registry.set_project(user_id, tab_id, project_uuid)
 
     #FIXME: momentarily de-activated cause it conflicts with the call from the frontend.
@@ -265,8 +270,8 @@ async def close_project(request: web.Request) -> web.Response:
     tab_id = await request.json()
 
     # TODO: de-couple
-    from ..socketio.config import get_socket_registry
-    registry = get_socket_registry(request.app)
+    from ..resource_manager.config import get_registry
+    registry = get_registry(request.app)
     await registry.remove_project(user_id, tab_id, project_uuid)
 
     asyncio.ensure_future(projects_api.remove_project_interactive_services(request, project_uuid, user_id))

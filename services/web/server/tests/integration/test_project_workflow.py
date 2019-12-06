@@ -8,7 +8,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from asyncio import Future
+from asyncio import Future, Task, wait_for
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
@@ -21,6 +21,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
+from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -36,6 +37,7 @@ core_services = [
     'apihub',
     'director',
     'postgres',
+    'redis',
 ]
 
 ops_services = [
@@ -60,6 +62,7 @@ def client(loop, aiohttp_client,
     setup_security(app)
     setup_rest(app)
     setup_login(app)
+    setup_resource_manager(app)
     assert setup_projects(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
@@ -230,6 +233,12 @@ async def test_workflow(client, fake_project_data, logged_user, computational_sy
 
     # delete
     await _request_delete(client, pid)
+
+    # wait for delete tasks to finish
+    tasks = Task.all_tasks()
+    for task in tasks:
+        if "delete_project" in task._coro.__name__:
+            await wait_for(task, timeout=60.0)
 
     # list empty
     projects = await _request_list(client)

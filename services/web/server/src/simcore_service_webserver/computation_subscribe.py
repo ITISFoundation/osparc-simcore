@@ -5,13 +5,13 @@ from functools import wraps
 
 import aio_pika
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
-from .socketio.config import get_socket_registry, get_socket_server
+from .resource_manager.config import get_registry
+from .socketio.config import get_socket_server
 
 log = logging.getLogger(__file__)
 
@@ -31,7 +31,7 @@ def rabbit_handler(app: web.Application):
 
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
     sio = get_socket_server(app)
-    socket_registry = get_socket_registry(app)
+    socket_registry = get_registry(app)
     with message.process():
         data = json.loads(message.body)
         log.debug(data)

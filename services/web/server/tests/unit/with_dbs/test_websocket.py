@@ -16,12 +16,14 @@ from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.resource_manager import (registry,
+                                                        setup_resource_manager)
+from simcore_service_webserver.resource_manager.config import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import registry, setup_sockets
-from simcore_service_webserver.socketio.config import get_socket_registry
+from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
 from utils_assert import assert_status
 from utils_login import LoggedUser
@@ -48,6 +50,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_login(app)
     setup_users(app)
     setup_sockets(app)
+    assert setup_resource_manager(app)
 
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
@@ -109,9 +112,9 @@ async def tab_id() -> str:
     return str(uuid4())
 
 # async def test_anonymous_websocket_connection(client):
-async def test_anonymous_websocket_connection(socketio_client):
+async def test_anonymous_websocket_connection(socketio_client, tab_id):
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await socketio_client()
+        await socketio_client(tab_id)
 
 
 @pytest.mark.parametrize("user_role", [
@@ -120,12 +123,12 @@ async def test_anonymous_websocket_connection(socketio_client):
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_websocket_connections(client, logged_user, socketio_client, ):
+async def test_websocket_connections(client, logged_user, socketio_client, tab_id):
     app = client.server.app
-    socket_registry = get_socket_registry(app)
+    socket_registry = get_registry(app)
 
-    sio = await socketio_client()
-    assert await socket_registry.find_owner(sio.sid) == logged_user["id"]
+    sio = await socketio_client(tab_id)
+    assert await socket_registry.find_owner(sio.sid) == str(logged_user["id"])
     assert sio.sid in await socket_registry.find_sockets(logged_user["id"])
     assert len(await socket_registry.find_sockets(logged_user["id"])) == 1
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
@@ -140,15 +143,16 @@ async def test_websocket_connections(client, logged_user, socketio_client, ):
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_multiple_websocket_connections(client, logged_user, socketio_client, tab_id):
+async def test_multiple_websocket_connections(client, logged_user, socketio_client):
     app = client.server.app
-    socket_registry = get_socket_registry(app)
+    socket_registry = get_registry(app)
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
     for socket in range(NUMBER_OF_SOCKETS):
+        tab_id = str(uuid4())
         sio = await socketio_client(tab_id)
-        assert await socket_registry.find_owner(sio.sid) == logged_user["id"]
+        assert await socket_registry.find_owner(sio.sid) == str(logged_user["id"])
         assert sio.sid in await socket_registry.find_sockets(logged_user["id"])
         assert len(await socket_registry.find_sockets(logged_user["id"])) == (socket+1)
         clients.append(sio)
@@ -162,7 +166,6 @@ async def test_multiple_websocket_connections(client, logged_user, socketio_clie
         assert not await socket_registry.find_owner(sio.sid)
         assert not sid in await socket_registry.find_sockets(logged_user["id"])
 
-    assert not socket_registry.user_to_sockets_map[logged_user["id"]]
     assert not await socket_registry.find_sockets(logged_user["id"])
     assert not await socket_registry.find_sockets(logged_user["id"])
 
@@ -172,11 +175,11 @@ async def test_multiple_websocket_connections(client, logged_user, socketio_clie
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client):
+async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, tab_id):
     app = client.server.app
-    socket_registry = get_socket_registry(app)
+    socket_registry = get_registry(app)
 
-    sio = await socketio_client()
+    sio = await socketio_client(tab_id)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
     r = await client.get(logout_url)

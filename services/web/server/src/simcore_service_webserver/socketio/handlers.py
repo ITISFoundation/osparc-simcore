@@ -16,7 +16,8 @@ from socketio.exceptions import \
 
 from .. import signals
 from ..login.decorators import RQT_USERID_KEY, login_required
-from .config import get_socket_registry, get_socket_server
+from ..resource_manager.config import get_registry
+from .config import get_socket_server
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
@@ -54,7 +55,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
-    registry = get_socket_registry(app)
+    registry = get_registry(app)
     await registry.add_socket(user_id, tab_id, sid)
     await signals.emit(signals.SignalType.SIGNAL_USER_CONNECT, user_id, app)
     sio = get_socket_server(app)
@@ -68,7 +69,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
 @signals.observe(event=signals.SignalType.SIGNAL_USER_LOGOUT)
 async def user_logged_out(user_id: str, app: web.Application):
     log.debug("user %s must be disconnected", user_id)
-    registry = get_socket_registry(app)
+    registry = get_registry(app)
     sio = get_socket_server(app)
     sockets = await registry.find_sockets(user_id)
     logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
@@ -88,7 +89,7 @@ async def disconnect(sid: str, app: web.Application):
         app {web.Application} -- the aiohttp app
     """
     log.debug("client in room %s disconnecting", sid)
-    registry = get_socket_registry(app)
+    registry = get_registry(app)
     user_id = await registry.find_owner(sid)
     if not await registry.remove_socket(sid):
         # mark user for disconnection

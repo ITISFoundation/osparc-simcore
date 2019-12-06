@@ -3,17 +3,21 @@
     Takes care of managing user generated resources such as:
 
     - interactive services
-    - generated data
+        - generated data
 
 """
 import logging
 
 from aiohttp import web
-
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from . import services
-from .config import APP_RESOURCE_MANAGER_TASKS_KEY
+from .config import (APP_CLIENT_SOCKET_REGISTRY_KEY,
+                     APP_RESOURCE_MANAGER_TASKS_KEY, CONFIG_SECTION_NAME,
+                     get_redis_client)
+from .redis import setup_redis_client
+from .registry import InMemoryResourceRegistry, RedisResourceRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +29,11 @@ def setup(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application
 
     """
-    # cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
+    setup_redis_client(app)
+    app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisResourceRegistry(app) if cfg["redis"]["enabled"] \
+                                    else InMemoryResourceRegistry(app)
     return True
 
 
