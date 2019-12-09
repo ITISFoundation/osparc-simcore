@@ -16,3 +16,4 @@ aiopg
 # tools for CI
 pylint
 coveralls
+ptvsd

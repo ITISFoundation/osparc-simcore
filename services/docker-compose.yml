@@ -87,6 +87,8 @@ services:
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_USER=${RABBIT_USER}
       - RABBIT_PASSWORD=${RABBIT_PASSWORD}
       - RABBIT_LOG_CHANNEL=${RABBIT_LOG_CHANNEL}
@@ -106,6 +108,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_LOGLEVEL=INFO
     depends_on:
       - rabbit
       - postgres
