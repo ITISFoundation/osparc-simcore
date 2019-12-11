@@ -50,24 +50,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
       qx.locale.Date.getDateFormat("medium") + " " +
       qx.locale.Date.getTimeFormat("short")
     );
-
-    const openButton = this.getChildControl("open");
-    openButton.addListener("tap", e => {
-      if (this.isOpen() && this.getIsDataset() && !this.getLoaded()) {
-        const locationId = this.getLocation();
-        const datasetId = this.getPath();
-        const data = {
-          locationId,
-          datasetId
-        };
-        this.setLoaded(true);
-        this.fireDataEvent("requestFiles", data);
-      }
-    }, this);
-  },
-
-  events: {
-    "requestFiles": "qx.event.type.Data"
   },
 
   properties: {

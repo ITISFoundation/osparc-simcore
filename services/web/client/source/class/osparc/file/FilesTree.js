@@ -141,13 +141,6 @@ qx.Class.define("osparc.file.FilesTree", {
       } else {
         this.__populateMyLocation(locationId);
       }
-
-      this.getDelegate().configureItem = item => {
-        item.addListener("dbltap", e => {
-          this.__itemSelected();
-        }, this);
-        this.__addDragAndDropMechanisms(item);
-      };
     },
 
     __populateNodeFiles: function(nodeId) {
@@ -237,31 +230,7 @@ qx.Class.define("osparc.file.FilesTree", {
 
       this.setModel(root);
       this.setDelegate({
-        createItem: () => {
-          const fileTreeItem = new osparc.file.FileTreeItem();
-          fileTreeItem.addListener("requestFiles", e => {
-            const {
-              locationId,
-              datasetId
-            } = e.getData();
-
-            if (this.__datasets.has(datasetId)) {
-              return;
-            }
-
-            const filesStore = osparc.store.Data.getInstance();
-            filesStore.addListener("myDocuments", ev => {
-              const {
-                location,
-                dataset,
-                files
-              } = ev.getData();
-              this.__filesToDataset(location, dataset, files);
-            }, this);
-            filesStore.getFilesByLocationAndDataset(locationId, datasetId);
-          }, this);
-          return fileTreeItem;
-        },
+        createItem: () => new osparc.file.FileTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("itemId", "itemId", null, item, id);
@@ -273,8 +242,40 @@ qx.Class.define("osparc.file.FilesTree", {
           c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
+        },
+        configureItem: item => {
+          const openButton = item.getChildControl("open");
+          openButton.addListener("tap", e => {
+            if (item.isOpen() && !item.getLoaded() && item.getIsDataset()) {
+              item.setLoaded(true);
+              const locationId = item.getLocation();
+              const datasetId = item.getPath();
+              this.__requestFiles(locationId, datasetId);
+            }
+          }, this);
+          item.addListener("dbltap", e => {
+            this.__itemSelected();
+          }, this);
+          this.__addDragAndDropMechanisms(item);
         }
       });
+    },
+
+    __requestFiles: function(locationId, datasetId) {
+      if (this.__datasets.has(datasetId)) {
+        return;
+      }
+
+      const filesStore = osparc.store.Data.getInstance();
+      filesStore.addListener("myDocuments", ev => {
+        const {
+          location,
+          dataset,
+          files
+        } = ev.getData();
+        this.__filesToDataset(location, dataset, files);
+      }, this);
+      filesStore.getFilesByLocationAndDataset(locationId, datasetId);
     },
 
     __getLocationModel: function(locationId) {
