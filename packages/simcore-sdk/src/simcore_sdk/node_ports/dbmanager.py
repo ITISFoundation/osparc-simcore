@@ -35,6 +35,7 @@ class DbSettings:
         # FIXME: this is a SYNCRONOUS engine! And not disposed!?
         self.db = create_engine(
             self._db_settings_config.endpoint + f"?application_name={__name__}_{id(self)}",
+            pool_pre_ping=True,
             client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         # self.session = self.Session()
