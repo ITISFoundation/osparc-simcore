@@ -250,7 +250,7 @@ qx.Class.define("osparc.file.FilesTree", {
               item.setLoaded(true);
               const locationId = item.getLocation();
               const datasetId = item.getPath();
-              this.__requestFiles(locationId, datasetId);
+              this.__requestDatasetFiles(locationId, datasetId);
             }
           }, this);
           item.addListener("dbltap", e => {
@@ -261,7 +261,7 @@ qx.Class.define("osparc.file.FilesTree", {
       });
     },
 
-    __requestFiles: function(locationId, datasetId) {
+    __requestDatasetFiles: function(locationId, datasetId) {
       if (this.__datasets.has(datasetId)) {
         return;
       }

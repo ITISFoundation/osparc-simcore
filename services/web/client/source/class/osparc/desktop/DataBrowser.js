@@ -140,12 +140,14 @@ qx.Class.define("osparc.desktop.DataBrowser", {
       actionsToolbar.addSpacer();
       actionsToolbar.add(addFile);
 
+      /*
       const addBtn = new osparc.file.FilesAdd();
       addBtn.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         this.__initResources(fileMetadata["locationId"]);
       }, this);
       addFile.add(addBtn);
+      */
 
       const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
