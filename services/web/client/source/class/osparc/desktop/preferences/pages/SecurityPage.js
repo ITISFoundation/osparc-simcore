@@ -123,9 +123,6 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
     __createValidTokenForm: function(token) {
       const service = token["service"];
-      const key = token["token_key"];
-      const secret = token["token_secret"];
-      console.error(key, secret);
 
       const height = 20;
       const iconHeight = height-6;
