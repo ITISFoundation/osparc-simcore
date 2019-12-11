@@ -5,21 +5,17 @@ from typing import Tuple
 import sqlalchemy as sa
 from aiohttp import web
 from psycopg2 import Error as DbApiError
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
+from tenacity import retry
+
+from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 
 from .models import tokens
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
-RETRY_WAIT_SECS = {"min":1, "max":3}
-RETRY_COUNT = 3
 
-
-@retry(wait=wait_random(**RETRY_WAIT_SECS),
-       stop=stop_after_attempt(RETRY_COUNT),
-       before_sleep=before_sleep_log(log, logging.INFO),
-       reraise=True)
+@retry(**PostgresRetryPolicyUponOperation(log).kwargs)
 async def _get_tokens_from_db(engine, userid):
     async with engine.acquire() as conn:
         stmt = sa.select([tokens, ]).where(tokens.c.user_id == userid)
