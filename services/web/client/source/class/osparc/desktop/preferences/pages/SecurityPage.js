@@ -148,6 +148,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
         column: 1
       });
 
+      /*
       const showTokenIcon = "@FontAwesome5Solid/edit/"+iconHeight;
       const showTokenBtn = new qx.ui.form.Button(null, showTokenIcon);
       showTokenBtn.addListener("execute", e => {
@@ -163,6 +164,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
         row: 0,
         column: 2
       });
+      */
 
       const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/"+iconHeight);
       delTokenBtn.addListener("execute", e => {
