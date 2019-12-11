@@ -9,9 +9,8 @@ from servicelib.rest_utils import extract_and_validate
 from ..login.decorators import login_required
 from ..security_api import check_permission
 from ..signals import SignalType, observe
-# from ..resource_manager.decorators import track_resource
+from . import director_api
 from .config import get_client_session, get_config
-from .director_api import get_running_interactive_services
 
 ANONYMOUS_USER_ID = -1
 
@@ -57,7 +56,6 @@ async def services_get(request: web.Request) -> web.Response:
 
 
 @login_required
-# @track_resource(type=service, resource="service_uuid", user_id=RQT_USERID_KEY)
 async def running_interactive_services_post(request: web.Request) -> web.Response:
     """ Starts an interactive service for a given user and
         returns running service's metainfo
@@ -153,34 +151,11 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     assert not params
     assert not query
     assert not body
-    
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)    
-    resp = await _delete_all_services(request.app, userid)
-    return resp
 
-async def _delete_all_services(user_id: str, app: web.Application) -> web.Response:
-    services = await get_running_interactive_services(app, user_id)
-
-    if services:
-        session = get_client_session(app)
-        new_url = app.router["running_interactive_services_delete_all"].url_for()
-        endpoint = _forward_url(app, new_url)
-
-        errors = []
-        for service_uuid in services:
-            url = (endpoint / service_uuid)
-            async with session.delete(url, ssl=False) as resp:
-                payload = await resp.json()
-                if resp.status != 204:
-                    errors.append((payload, resp.status))
-
-        if errors:
-            # FIXME: append all errors
-            payload, status = errors[0]
-            return web.json_response(payload, status=status)
-
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    await director_api.stop_services(request.app, user_id=userid)
     return web.json_response({'data': ''}, status=204)
 
 @observe(event=SignalType.SIGNAL_USER_LOGOUT)
-async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> web.Response:
-    await _delete_all_services(user_id, app)
+async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> None:
+    await director_api.stop_services(app, user_id=user_id)

@@ -14,165 +14,93 @@
 """
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List, Tuple
 
 import attr
 from aiohttp import web
 
-from .config import get_redis_client
+from .config import APP_CLIENT_SOCKET_REGISTRY_KEY
+from .redis import get_redis_client
 
 log = logging.getLogger(__name__)
 
-
-
-@attr.s(auto_attribs=True)
-class AbstractSocketRegistry(ABC):
-    app: web.Application
-    def __init__(self, app: web.Application):
-        self.app = app
-        super().__init__()
-
-    @abstractmethod
-    async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
-        pass
-
-    @abstractmethod
-    async def remove_socket(self, socket_id: str) -> Optional[int]:
-        pass
-
-    @abstractmethod
-    async def find_sockets(self, user_id: str) -> List[str]:
-        pass
-
-    @abstractmethod
-    async def find_owner(self, socket_id: str) -> Optional[str]:
-        pass
-
-    @abstractmethod
-    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
-        pass
-
-    @abstractmethod
-    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
-        pass
-
-
-
-
-REDIS_HASH_KEY:str = "user_id_{user_id}:tab_id_{tab_id}"
-REDIS_HASH_KEY_ALL_USERS:str = "user_id_*:tab_id_{tab_id}"
-REDIS_HASH_KEY_ALL_TABS:str = "user_id_{user_id}:tab_id_*"
-REDIS_HASH_KEY_ALL:str = "user_id_*:tab_id_*"
+RESOURCE_SUFFIX = "resources"
+ALIVE_SUFFIX = "alive"
 
 @attr.s(auto_attribs=True)
-class RedisResourceRegistry(AbstractSocketRegistry):
+class RedisResourceRegistry:
     """ Keeps a record of connected sockets per user
 
         redis structure is following
         Redis Hash: key=user_id:tab_id values={server_id socket_id project_id}
     """
-    async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
+    app: web.Application
+
+    @classmethod
+    def _hash_key(cls, key: Dict[str, str]) -> str:
+        hash_key = ":".join(f"{item[0]}={item[1]}" for item in key.items())
+        return hash_key
+    
+    @classmethod
+    def _decode_hash_key(cls, hash_key: str) -> Dict[str, str]:
+        tmp_key = hash_key[:-len(f":{RESOURCE_SUFFIX}")] if hash_key.endswith(f":{RESOURCE_SUFFIX}") else hash_key[:-len(f":{ALIVE_SUFFIX}")]
+        key = dict(x.split("=") for x in tmp_key.split(":"))
+        return key
+
+    async def set_resource(self, key: Dict[str, str], resource: Tuple[str, str]) -> None:
         client = get_redis_client(self.app)
-        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
-        await client.hmset_dict(key, user_id=user_id, tab_id=tab_id, server=id(__name__), socket_id=socket_id)
-        # number of sockets is equal to number of tabs
-        return len(await client.keys(REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)))
-
-    async def remove_socket(self, socket_id: str) -> Optional[int]:
+        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        await client.hmset_dict(hash_key, **{resource[0]: resource[1]})
+    
+    async def get_resources(self, key: Dict[str, str]) -> Dict[str, str]:
         client = get_redis_client(self.app)
-        async for key in client.iscan(match=REDIS_HASH_KEY_ALL):
-            if socket_id in await client.hget(key, "socket_id"):
-                user_id = await client.hget(key, "user_id")
-                await client.delete(key)
-                return len(await client.keys(REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)))
-
-        return None
-
-
-    async def find_sockets(self, user_id: str) -> List[str]:
+        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        return await client.hgetall(hash_key)
+    
+    async def remove_resource(self, key: Dict[str, str], resource_name: str) -> None:
         client = get_redis_client(self.app)
-        socket_ids = []
-        async for key in client.iscan(match=REDIS_HASH_KEY_ALL_TABS.format(user_id=user_id)):
-            socket_ids.append(await client.hget(key, "socket_id"))
-        return socket_ids
+        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        await client.hdel(hash_key, resource_name)
 
-    async def find_owner(self, socket_id: str) -> Optional[str]:
-        if not socket_id:
-            return None
+    async def find_resources(self, key: Dict[str, str], resource_name: str) -> List[str]:
         client = get_redis_client(self.app)
-        async for key in client.iscan(match=REDIS_HASH_KEY_ALL):
-            if socket_id in await client.hget(key, "socket_id"):
-                user_id = await client.hget(key, "user_id")
-                return user_id
-        return None
+        resources = []
+        # the key might only be partialy complete
+        partial_hash_key = f"*{self._hash_key(key)}*:{RESOURCE_SUFFIX}"
+        async for key in client.iscan(match=partial_hash_key):
+            if await client.hexists(key, resource_name):
+                resources.append(await client.hget(key, resource_name))
+        return resources
 
-    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+    async def find_keys(self, resource: Tuple[str, str]) -> List[Dict[str, str]]:
+        keys = []
+        if not resource:
+            return keys
         client = get_redis_client(self.app)
-        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
-        await client.hset(key, "project_id", project_id)
+        async for hash_key in client.iscan(match=f"*:{RESOURCE_SUFFIX}"):            
+            if resource[1] == await client.hget(hash_key, resource[0]):
+                keys.append(self._decode_hash_key(hash_key))
+        return keys
 
-    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
+    async def set_key_alive(self, key: Dict[str, str], alive: bool, timeout: int =0) -> None:
         client = get_redis_client(self.app)
-        key = REDIS_HASH_KEY.format(user_id=user_id, tab_id=tab_id)
-        await client.hdel(key, "project_id")
+        hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
+        await client.set(hash_key,
+                    1,
+                    expire=0 if alive else timeout
+                    )
+    async def remove_key(self, key: Dict[str, str]) -> None:
+        client = get_redis_client(self.app)
+        await client.delete(f"{self._hash_key(key)}:{RESOURCE_SUFFIX}", 
+                            f"{self._hash_key(key)}:{ALIVE_SUFFIX}")
+        
+    async def get_all_resource_keys(self) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+        client = get_redis_client(self.app)
+        alive_keys = [self._decode_hash_key(hash_key) async for hash_key in client.iscan(match=f"*:{ALIVE_SUFFIX}")]
+        dead_keys = [self._decode_hash_key(hash_key) async for hash_key in client.iscan(match=f"*:{RESOURCE_SUFFIX}") if self._decode_hash_key(hash_key) not in alive_keys]
 
-@attr.s(auto_attribs=True)
-class InMemoryResourceRegistry(AbstractSocketRegistry):
-    """ Keeps a record of connect sockets
-    {
-        user_id: { # identifies the user
-            tab_id: { # identifies the browser tab
-                server_id: identifies which server serves the socket,
-                socket_id: identifies the socket on the server,
-                project_id: identifies the project opened in the tab
-            }
-        }
-    }
-    """
-    # pylint: disable=unsubscriptable-object
-    # pylint: disable=no-member
-    user_to_tabs_map: Dict = {}
+        return (alive_keys, dead_keys)
 
-    async def add_socket(self, user_id: str, tab_id: str, socket_id: str) -> int:
-        if user_id not in self.user_to_tabs_map:
-            self.user_to_tabs_map[user_id] = {}
 
-        self.user_to_tabs_map[user_id].update({
-            tab_id: {
-                "server_id": id(__name__),
-                "socket_id": socket_id,
-                "project_id": None
-            }
-        })
-        log.debug("user %s is connected with following tabs: %s", user_id, self.user_to_tabs_map[user_id])
-        return len(self.user_to_tabs_map[user_id])
-
-    async def remove_socket(self, socket_id: str) -> Optional[int]:
-        for user_id, tabs in self.user_to_tabs_map.items():
-            for tab_id, tab_props in tabs.items():
-                if socket_id in tab_props["socket_id"]:
-                    del tabs[tab_id]
-                    log.debug("user %s disconnected socket %s", user_id, socket_id)
-                    return len(self.user_to_tabs_map[user_id])
-        return None
-
-    async def find_sockets(self, user_id: str) -> List[str]:
-        if user_id not in self.user_to_tabs_map:
-            return []
-        tabs = self.user_to_tabs_map[user_id]
-        list_sockets = [tab_props["socket_id"] for _tab_id, tab_props in tabs.items()]
-        return list_sockets
-
-    async def find_owner(self, socket_id: str) -> Optional[str]:
-        for user_id, tabs in self.user_to_tabs_map.items():
-            for _tab_id, tab_props in tabs.items():
-                if socket_id in tab_props["socket_id"]:
-                    return user_id
-        return None
-
-    async def set_project(self, user_id: str, tab_id: str, project_id: str) -> None:
-        self.user_to_tabs_map[user_id][tab_id]["project_id"] = project_id
-
-    async def remove_project(self, user_id: str, tab_id: str, project_id: str) -> None:
-        del self.user_to_tabs_map[user_id][tab_id]["project_id"]
+def get_registry(app: web.Application) -> RedisResourceRegistry:
+    return app[APP_CLIENT_SOCKET_REGISTRY_KEY]

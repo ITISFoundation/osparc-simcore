@@ -10,7 +10,7 @@ from simcore_sdk.config.rabbit import eval_broker
 
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
-from .resource_manager.config import get_registry
+from .resource_manager.websocket_manager import managed_resource
 from .socketio.config import get_socket_server
 
 log = logging.getLogger(__file__)
@@ -31,19 +31,19 @@ def rabbit_handler(app: web.Application):
 
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
     sio = get_socket_server(app)
-    socket_registry = get_registry(app)
     with message.process():
         data = json.loads(message.body)
         log.debug(data)
         user_id = data["user_id"]
-        socket_ids = await socket_registry.find_sockets(user_id)
-        for sid in socket_ids:
-            # we only send the data to the right sockets
-            await sio.emit(
-                "logger" if data["Channel"] == "Log" else "progress",
-                data = json.dumps(data),
-                room=sid
-            )
+        with managed_resource(user_id, None, app) as rt:
+            socket_ids = await rt.find_socket_ids()
+            for sid in socket_ids:
+                # we only send the data to the right sockets
+                await sio.emit(
+                    "logger" if data["Channel"] == "Log" else "progress",
+                    data = json.dumps(data),
+                    room=sid
+                )
         asyncio.sleep(1)
 
 async def subscribe(app: web.Application):

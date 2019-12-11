@@ -8,13 +8,14 @@
 """
 import logging
 from asyncio import gather
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 
+from .. import signals
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
 from ..security_api import check_permission
@@ -107,15 +108,16 @@ async def start_project_interactive_services(request: web.Request, project: Dict
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: str) -> None:
-    await remove_project_interactive_services(request, project_uuid, user_id)
+    await remove_project_interactive_services(user_id, project_uuid, request.app)
     await delete_project_data(request, project_uuid, user_id)
 
-async def remove_project_interactive_services(request: web.Request, project_uuid: str, user_id: str) -> None:
-    app = request.app
+@signals.observe(event=signals.SignalType.SIGNAL_PROJECT_CLOSE)
+async def remove_project_interactive_services(user_id: Optional[str], project_uuid: Optional[str], app: web.Application) -> None:
+    assert user_id or project_uuid
     list_of_services = await director_api.get_running_interactive_services(app,
                                                                             project_id=project_uuid,
                                                                             user_id=user_id)
-    stop_tasks = [director_api.stop_service(request.app, service["service_uuid"]) for service in list_of_services]
+    stop_tasks = [director_api.stop_service(app, service) for service in list_of_services]
     if stop_tasks:
         await gather(*stop_tasks)
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import urllib
 from typing import Dict, List, Optional
@@ -6,6 +7,7 @@ from aiohttp import web
 from yarl import URL
 
 from .config import get_client_session, get_config
+from . import director_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -61,13 +63,22 @@ async def start_service(app: web.Application, user_id: str, project_id: str, ser
         return payload["data"]
 
 
-async def stop_service(app: web.Application, service_uuid: str) -> bool:
+async def stop_service(app: web.Application, service_uuid: str) -> None:
     session, api_endpoint = _get_director_client(app)
 
     url = (api_endpoint / "running_interactive_services" / service_uuid)
-    async with session.delete(url, ssl=False) as resp:
-        return resp.status == 204
+    async with session.delete(url, ssl=False) as resp:        
+        if resp.status == 404:
+            raise director_exceptions.ServiceNotFoundError(service_uuid)
+        if resp.status != 204:
+            payload = await resp.json()
+            raise director_exceptions.DirectorException(payload)
 
+async def stop_services(app: web.Application, user_id: Optional[str] = None, project_id: Optional[str] = None) -> None:
+    assert (user_id or project_id)
+    services = await get_running_interactive_services(app, user_id=user_id, project_id=project_id)
+    stop_tasks = [stop_service(app, service_uuid) for service_uuid in services]
+    await asyncio.gather(*stop_tasks)
 
 async def get_service_by_key_version(app: web.Application, service_key: str, service_version: str) -> Optional[Dict]:
     session, api_endpoint = _get_director_client(app)

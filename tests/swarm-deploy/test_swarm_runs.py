@@ -32,7 +32,8 @@ docker_compose_service_names = [
     'storage',
     'webserver',
     'rabbit',
-    'postgres'
+    'postgres',
+    'redis'
 ]
 
 stack_name = os.environ.get("SWARM_STACK_NAME", 'simcore')

@@ -32,7 +32,8 @@ db:
     user: simcore
 resource_manager:
   enabled: True
-  service_deletion_timeout_seconds: 900
+  resource_deletion_timeout_seconds: 900
+  garbage_collection_interval_seconds: 30
   redis:
     enabled: True
     host: redis

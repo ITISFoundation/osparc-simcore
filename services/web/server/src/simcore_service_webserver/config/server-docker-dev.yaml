@@ -34,7 +34,8 @@ db:
     port: ${POSTGRES_PORT}
 resource_manager:
   enabled: True
-  service_deletion_timeout_seconds:  ${WEBSERVER_SERVICES_DELETION_TIMEOUT_SECONDS}
+  resource_deletion_timeout_seconds:  ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}

@@ -34,3 +34,6 @@ def setup_redis_client(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
 
     app.cleanup_ctx.append(redis_client)
+
+def get_redis_client(app: web.Application) -> aioredis.Redis:
+    return app[APP_CLIENT_REDIS_CLIENT_KEY]

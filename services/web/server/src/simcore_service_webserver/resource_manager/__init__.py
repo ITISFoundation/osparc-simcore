@@ -9,15 +9,15 @@
 import logging
 
 from aiohttp import web
+
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from . import services
 from .config import (APP_CLIENT_SOCKET_REGISTRY_KEY,
-                     APP_RESOURCE_MANAGER_TASKS_KEY, CONFIG_SECTION_NAME,
-                     get_redis_client)
+                     APP_RESOURCE_MANAGER_TASKS_KEY, CONFIG_SECTION_NAME)
+from .garbage_collector import setup as setup_garbage_collector
 from .redis import setup_redis_client
-from .registry import InMemoryResourceRegistry, RedisResourceRegistry
+from .registry import RedisResourceRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,8 @@ def setup(app: web.Application) -> bool:
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
     setup_redis_client(app)
     app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisResourceRegistry(app) if cfg["redis"]["enabled"] \
-                                    else InMemoryResourceRegistry(app)
+                                    else None
+    setup_garbage_collector(app)
     return True
 
 

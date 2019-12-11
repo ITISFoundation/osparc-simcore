@@ -16,7 +16,7 @@ from socketio.exceptions import \
 
 from .. import signals
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.config import get_registry
+from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
 
 ANONYMOUS_USER_ID = -1
@@ -55,31 +55,33 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
-    registry = get_registry(app)
-    await registry.add_socket(user_id, tab_id, sid)
-    await signals.emit(signals.SignalType.SIGNAL_USER_CONNECT, user_id, app)
-    sio = get_socket_server(app)
-    # here we keep the original HTTP request in the socket session storage
-    async with sio.session(sid) as socketio_session:
-        socketio_session["user_id"] = user_id
-        socketio_session["request"] = request
-    log.info("socketio connection from user %s", user_id)
-
+    with managed_resource(user_id, tab_id, app) as rt:
+        sio = get_socket_server(app)
+        # here we keep the original HTTP request in the socket session storage
+        async with sio.session(sid) as socketio_session:
+            socketio_session["user_id"] = user_id
+            socketio_session["tab_id"] = tab_id
+            socketio_session["request"] = request
+        log.info("socketio connection from user %s", user_id)
+        await rt.set_socket_id(sid)
 
 @signals.observe(event=signals.SignalType.SIGNAL_USER_LOGOUT)
 async def user_logged_out(user_id: str, app: web.Application):
-    log.debug("user %s must be disconnected", user_id)
-    registry = get_registry(app)
-    sio = get_socket_server(app)
-    sockets = await registry.find_sockets(user_id)
-    logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
-    await asyncio.gather(*logout_tasks, return_exceptions=True)
-    # let the client react
-    await asyncio.sleep(5)
-    # disconnect the ones that did not react, ciao, ciao...
-    sockets = await registry.find_sockets(user_id)
-    disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+    log.debug("user %s must be disconnected", user_id)    
+    # find the sockets related to the user
+    with managed_resource(user_id, None, app) as rt:
+        sockets = await rt.find_socket_ids()    
+    
+        # give any other client a chance to logout properly
+        sio = get_socket_server(app)
+        logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
+        await asyncio.gather(*logout_tasks, return_exceptions=True)
+        # let the client react
+        await asyncio.sleep(5)
+        # ensure disconnection is effective
+        sockets = await rt.find_socket_ids()
+        disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
+        await asyncio.gather(*disconnect_tasks, return_exceptions=True)
 
 async def disconnect(sid: str, app: web.Application):
     """socketio reserved handler for when the socket.io connection is disconnected.
@@ -89,10 +91,10 @@ async def disconnect(sid: str, app: web.Application):
         app {web.Application} -- the aiohttp app
     """
     log.debug("client in room %s disconnecting", sid)
-    registry = get_registry(app)
-    user_id = await registry.find_owner(sid)
-    if not await registry.remove_socket(sid):
-        # mark user for disconnection
-        # signal if no socket ids are left
-        await signals.emit(signals.SignalType.SIGNAL_USER_DISCONNECT, user_id, app)
-    log.debug("client %s disconnected from room %s", user_id, sid)
+    sio = get_socket_server(app)
+    async with sio.session(sid) as socketio_session:
+        user_id = socketio_session["user_id"]
+        tab_id = socketio_session["tab_id"]
+        with managed_resource(user_id, tab_id, app) as rt:
+            log.debug("client %s disconnected from room %s", user_id, sid)
+            await rt.remove_socket_id()

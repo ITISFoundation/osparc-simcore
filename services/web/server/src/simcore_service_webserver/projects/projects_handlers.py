@@ -11,6 +11,7 @@ from jsonschema import ValidationError
 
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
@@ -216,6 +217,7 @@ async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
+    # first check if the project exists
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     project = await projects_api.get_project_for_user(request,
@@ -241,16 +243,13 @@ async def open_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     tab_id = await request.json()
 
-    project = await get_project_for_user(request,
-        project_uuid=project_uuid,
-        user_id=user_id,
-        include_templates=True
-    )
-
-    # TODO: de-couple
-    from ..resource_manager.config import get_registry
-    registry = get_registry(request.app)
-    await registry.set_project(user_id, tab_id, project_uuid)
+    with managed_resource(user_id, tab_id, request.app) as rt:
+        project = await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+        await rt.add("project_id", project_uuid)
 
     #FIXME: momentarily de-activated cause it conflicts with the call from the frontend.
     # user id opened project uuid
@@ -269,11 +268,18 @@ async def close_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     tab_id = await request.json()
 
-    # TODO: de-couple
-    from ..resource_manager.config import get_registry
-    registry = get_registry(request.app)
-    await registry.remove_project(user_id, tab_id, project_uuid)
+    # ensure the project exists
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
 
-    asyncio.ensure_future(projects_api.remove_project_interactive_services(request, project_uuid, user_id))
+    with managed_resource(user_id, tab_id, request.app) as rt:
+        project = await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+
+        asyncio.ensure_future(projects_api.remove_project_interactive_services(user_id, project_uuid, request.app))
+        await rt.remove("project_id")
 
     raise web.HTTPNoContent(content_type='application/json')
