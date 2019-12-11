@@ -70,8 +70,8 @@ qx.Class.define("osparc.file.FilePicker", {
 
     this._add(toolbar);
 
-    const addBtn = this._createChildControlImpl("addButton");
-    addBtn.addListener("fileAdded", e => {
+    const filesAdd = this._createChildControlImpl("filesAdd");
+    filesAdd.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
       if ("location" in fileMetadata && "path" in fileMetadata) {
         this.__setOutputFile(fileMetadata["location"], fileMetadata["path"], fileMetadata["name"]);
@@ -126,7 +126,7 @@ qx.Class.define("osparc.file.FilePicker", {
             flex: 1
           });
           break;
-        case "addButton":
+        case "filesAdd":
           control = new osparc.file.FilesAdd().set({
             node: this.getNode(),
             studyId: this.getStudyId()
