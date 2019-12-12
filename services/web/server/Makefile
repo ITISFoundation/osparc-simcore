@@ -47,10 +47,10 @@ build: api-specs ## builds docker image (using main services/docker-compose-buil
 
 
 
-.PHONY: patch-version minor-version major-version
-patch-version minor-version major-version: api-specs ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
-	# upgrades as $(subst -version,,$@) version, commits and tags
-	@bump2version --verbose --list $(subst -version,,$@)
+.PHONY: patch-bump minor-bump major-bump
+patch-bump minor-bump major-bump: api-specs ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+	# upgrades as $(subst -bump,,$@) version, commits and tags
+	@bump2version --verbose --list $(subst -bump,,$@)
 	# Last commit and tag
 	@git log -1 --pretty
 	@git tag -l -n1
@@ -69,5 +69,5 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 help: ## this colorful help
 	@echo "Recipes for '${APP_NAME}':"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_- ]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
