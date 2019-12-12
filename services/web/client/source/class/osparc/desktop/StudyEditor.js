@@ -23,8 +23,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.utils.UuidToName.getInstance().setStudy(study);
-
     this.setStudy(study);
 
     let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({

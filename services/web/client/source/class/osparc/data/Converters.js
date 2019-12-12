@@ -54,7 +54,6 @@ qx.Class.define("osparc.data.Converters", {
     },
 
     fromDSMToVirtualTreeModel: function(files) {
-      let uuidToName = osparc.utils.UuidToName.getInstance();
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
@@ -70,9 +69,9 @@ qx.Class.define("osparc.data.Converters", {
             const prjId = splitted[0];
             const nodeId = splitted[1];
             const fileId = splitted[2];
-            let prjLabel = file["project_name"] === "" ? uuidToName.convertToName(prjId) : file["project_name"];
-            let nodeLabel = file["node_name"] === "" ? uuidToName.convertToName(nodeId) : file["node_name"];
-            let fileName = file["file_name"] === "" ? fileId : file["file_name"];
+            const prjLabel = file["project_name"];
+            const nodeLabel = file["node_name"];
+            const fileName = file["file_name"] === "" ? fileId : file["file_name"];
             // node file
             fileInTree.children.push(
               this.createDirEntry(
