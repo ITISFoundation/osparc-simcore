@@ -26,8 +26,9 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     find_entry_point, is_node_ready, wrap_async_call)
 
 log = get_task_logger(__name__)
-log.setLevel(logging.DEBUG) # FIXME: set level via config
-node_port_log.setLevel(logging.DEBUG)
+log.setLevel(config.SIDECAR_LOGLEVEL)
+
+node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 @contextmanager
 def session_scope(session_factory):

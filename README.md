@@ -91,7 +91,7 @@ It is also highly recommended using [chocolatey] as packages manager.
 - [Git release workflow](ops/README.md)
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
 - Production in https://osparc.io
-
+- [Staging instructions](docs/staging-instructions.md)
 
 
 
