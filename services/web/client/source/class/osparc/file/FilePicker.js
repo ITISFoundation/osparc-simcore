@@ -61,7 +61,7 @@ qx.Class.define("osparc.file.FilePicker", {
     const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
     filesTree.addListener("selectionChanged", this.__selectionChanged, this);
     filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("filesAddedToTree", this.__filesAdded, this);
+    filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
 
     const toolbar = new qx.ui.toolbar.ToolBar();
     const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
@@ -176,10 +176,6 @@ qx.Class.define("osparc.file.FilePicker", {
           label
         };
       }
-    },
-
-    __filesAdded: function() {
-      this.__checkSelectedFileIsListed();
     },
 
     __checkSelectedFileIsListed: function() {
