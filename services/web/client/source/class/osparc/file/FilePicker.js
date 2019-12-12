@@ -187,8 +187,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __checkSelectedFileIsListed: function() {
-      const outFile = this.__getOutputFile();
       if (this.__isOutputFileSelected()) {
+        const outFile = this.__getOutputFile();
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
       }
