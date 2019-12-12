@@ -1,11 +1,4 @@
-openapi: 3.0.0
-info:
-  title: auth API
-  version: 0.1.0
-  description: data storage services
-servers:
-  - description: API server
-    url: '/v0'
+
 paths:
 
   /storage/locations:

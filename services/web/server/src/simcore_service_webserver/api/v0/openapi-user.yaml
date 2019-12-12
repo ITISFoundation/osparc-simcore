@@ -1,11 +1,4 @@
-openapi: 3.0.0
-info:
-  title: user management API
-  version: 0.1.0
-  description: 'Access to logged-in user settings and profile'
-servers:
-  - description: API server
-    url: '/v0'
+
 paths:
   /me:
     get:

@@ -1,11 +1,4 @@
-openapi: 3.0.0
-info:
-  title: project management API
-  version: 0.1.0
-  description: 'Operations on projects'
-servers:
-  - description: API server
-    url: '/v0'
+
 paths:
   /projects:
     get:

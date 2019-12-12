@@ -1,11 +1,4 @@
-openapi: 3.0.0
-info:
-  title: services API
-  version: 0.1.0
-  description: "Access to interactive and computational services"
-servers:
-  - description: API server
-    url: "/v0"
+
 paths:
   /services:
     get:
