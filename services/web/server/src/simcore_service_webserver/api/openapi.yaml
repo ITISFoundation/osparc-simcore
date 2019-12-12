@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: simcore-service-webserver API
-  version: 0.1.0
+  0.1.1
   description: API definition for simcore-service-webserver service
   contact:
     name: IT'IS Foundation
@@ -52,8 +52,8 @@ paths:
                     example:
                       name: simcore-director-service
                       status: SERVICE_RUNNING
-                      api_version: 0.1.0-dev+NJuzzD9S
-                      version: 0.1.0-dev+N127Mfv9H
+                      api_0.1.1-dev+NJuzzD9S
+                      0.1.1-dev+N127Mfv9H
                   error:
                     nullable: true
                     default: null
