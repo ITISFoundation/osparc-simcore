@@ -141,9 +141,9 @@ qx.Class.define("osparc.file.FilesTree", {
 
     populateTree: function(locationId = null) {
       if (locationId) {
-        this.__populateMyLocation(locationId);
+        this.__populateLocation(locationId);
       } else {
-        this.__populateMyData();
+        this.__populateLocations();
       }
     },
 
@@ -174,7 +174,7 @@ qx.Class.define("osparc.file.FilesTree", {
       filesStore.getNodeFiles(nodeId);
     },
 
-    __populateMyData: function() {
+    __populateLocations: function() {
       this.resetChecks();
 
       const treeName = "My Data";
@@ -195,14 +195,14 @@ qx.Class.define("osparc.file.FilesTree", {
 
           for (let i=0; i<locations.length; i++) {
             const locationId = locations[i]["id"];
-            this.__populateMyLocation(locationId);
+            this.__populateLocation(locationId);
           }
         }
       }, this);
       filesStore.getLocations();
     },
 
-    __populateMyLocation: function(locationId = null) {
+    __populateLocation: function(locationId = null) {
       if (locationId !== null) {
         const locationModel = this.__getLocationModel(locationId);
         if (locationModel) {
