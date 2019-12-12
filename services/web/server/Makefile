@@ -48,12 +48,10 @@ build: api-specs ## builds docker image (using main services/docker-compose-buil
 
 
 .PHONY: patch-bump minor-bump major-bump
-patch-bump minor-bump major-bump: api-specs ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+patch-bump minor-bump major-bump: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
 	# upgrades as $(subst -bump,,$@) version, commits and tags
 	@bump2version --verbose --list $(subst -bump,,$@)
-	# Last commit and tag
-	@git log -1 --pretty
-	@git tag -l -n1
+
 
 .PHONY: clean
 clean: ## cleans all unversioned files in project and temp files create by this makefile
