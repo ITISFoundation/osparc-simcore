@@ -12,15 +12,18 @@ VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 
 
-
-
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} $@
 
 
+.PHONY: api-specs
+api-specs: ## updates and validates openapi specifications
+	$(MAKE) -C $(CURDIR)/src/simcore_service_webserver/api
+
+
 .PHONY: install
-install: ## install app in edit mode for development [DEV]
+install: api-specs ## install app in edit mode for development [DEV]
 	# installing in edit mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
@@ -39,11 +42,18 @@ tests-integration: ## runs integration tests against local+production images
 
 
 .PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
+build: api-specs ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
 
+.PHONY: patch-version minor-version major-version
+patch-version minor-version major-version: api-specs ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+	# upgrades as $(subst -version,,$@) version, commits and tags
+	@bump2version --verbose --list $(subst -version,,$@)
+	# Last commit and tag
+	@git log -1 --pretty
+	@git tag -l -n1
 
 .PHONY: clean
 clean: ## cleans all unversioned files in project and temp files create by this makefile
