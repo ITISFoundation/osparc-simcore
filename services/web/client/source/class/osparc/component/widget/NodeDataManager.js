@@ -149,11 +149,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     },
 
     __reloadNodeTree: function() {
-      this.__nodeFilesTree.populateTree(this.getNode().getNodeId());
+      this.__nodeFilesTree.populateNodeTree(this.getNode().getNodeId());
     },
 
     __reloadUserTree: function(locationId = null) {
-      this.__userFilesTree.populateTree(null, locationId);
+      this.__userFilesTree.populateTree(locationId);
     },
 
     __selectionChanged: function(selectedTree) {

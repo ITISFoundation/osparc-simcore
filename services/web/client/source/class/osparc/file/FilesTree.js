@@ -133,14 +133,22 @@ qx.Class.define("osparc.file.FilesTree", {
       filesStore.resetCache();
     },
 
-    populateTree: function(nodeId = null, locationId = null) {
+    populateNodeTree(nodeId) {
       if (nodeId) {
         this.__populateNodeFiles(nodeId);
-      } else if (locationId === null) {
-        this.__populateMyData();
-      } else {
-        this.__populateMyLocation(locationId);
       }
+    },
+
+    populateTree: function(locationId = null) {
+      if (locationId) {
+        this.__populateMyLocation(locationId);
+      } else {
+        this.__populateMyData();
+      }
+    },
+
+    autoSelectFile: function(store, path) {
+      console.log(store, path);
     },
 
     __populateNodeFiles: function(nodeId) {

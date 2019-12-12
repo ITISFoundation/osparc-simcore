@@ -142,8 +142,8 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    __initResources: function(locationId = null) {
-      this.__filesTree.populateTree(null, locationId);
+    __initResources: function() {
+      this.__filesTree.populateTree();
     },
 
     __selectionChanged: function() {

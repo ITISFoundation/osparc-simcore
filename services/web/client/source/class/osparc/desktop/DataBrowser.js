@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.DataBrowser", {
     __pieChart: null,
 
     __initResources: function(locationId) {
-      this.__filesTree.populateTree(null, locationId);
+      this.__filesTree.populateTree(locationId);
     },
 
     __createDataManagerLayout: function() {
