@@ -129,6 +129,10 @@ paths:
   /nodes/{nodeInstanceUUID}/iframe:
     $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe'
 
+  # ACTIVITY -------------------------------------------------------------------------
+  /activity/status:
+    $ref: './openapi-activity.yaml#/paths/~1activity~1status'
+
 components:
   responses:
     DefaultErrorResponse:

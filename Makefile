@@ -284,7 +284,12 @@ devenv: .venv ## creates a python virtual environment with development tools (e.
 .venv:
 	$(if $(IS_WIN),python.exe,python3) -m venv .venv
 	$(PY_PIP) install --upgrade pip wheel setuptools
-	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
+	$(PY_PIP) install \
+		pylint \
+		autopep8 \
+		virtualenv \
+		pip-tools \
+		rope
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
 
 

@@ -1,14 +1,16 @@
 #!/bin/sh
 #
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # BOOTING application ---------------------------------------------
-echo "Booting in ${SC_BOOT_MODE} mode ..."
+echo $INFO "Booting in ${SC_BOOT_MODE} mode ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "  Environment :"
+  echo $INFO "Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
@@ -16,29 +18,29 @@ then
   $SC_PIP install --user -r requirements/dev.txt
   cd /devel
 
-  DEBUG_LEVEL=debug
   #--------------------
-  echo "  Python :"
+  echo $INFO "Python :"
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
-  echo "  PIP :"
+  echo $INFO "PIP :"
   $SC_PIP list | sed 's/^/    /'
-
-
-elif [[ ${SC_BUILD_TARGET} == "production" ]]
-then
-  DEBUG_LEVEL=info
 fi
-
 
 # RUNNING application ----------------------------------------
-if [[ ${SC_BOOT_MODE} == "debug" ]]
+
+# default
+CONCURRENCY=1
+POOL=prefork
+
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  # TODO: activate pdb??
-  DEBUG_LEVEL=debug
-  CONCURRENCY=1
-else
-  CONCURRENCY=2
+  # NOTE: in this case, remote debugging is only available in development mode!
+  # FIXME: workaround since PTVSD does not support prefork subprocess debugging: https://github.com/microsoft/ptvsd/issues/943
+  POOL=solo
 fi
 
-celery worker --app sidecar.celery:app --concurrency ${CONCURRENCY} --loglevel=${DEBUG_LEVEL}
+exec celery worker \
+    --app sidecar.celery:app \
+    --concurrency ${CONCURRENCY} \
+    --loglevel=${SIDECAR_LOGLEVEL-WARNING} \
+    --pool=${POOL}

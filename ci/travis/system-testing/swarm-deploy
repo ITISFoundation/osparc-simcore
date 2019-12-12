@@ -26,12 +26,9 @@ install() {
 before_script() {
     pip list -v
     make info-images
-    make up-version
 }
 
 script() {
-    # wait for a minute to let the swarm warm up...
-    make info-swarm
     pytest -v tests/swarm-deploy
 }
 

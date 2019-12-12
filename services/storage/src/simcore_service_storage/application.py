@@ -2,37 +2,35 @@
 
     Functions to create, setup and run an aiohttp application provided a configuration object
 """
+import json
 import logging
+from typing import Dict
 
 from aiohttp import web
+
+from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
-from servicelib.client_session import persistent_client_session
 
 from .db import setup_db
 from .dsm import setup_dsm
 from .rest import setup_rest
 from .s3 import setup_s3
-from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
 
-def create(config):
-    log.debug("Creating and setting up application")
+def create(config: Dict) -> web.Application:
+    log.debug("Initializing app with config:\n%s",
+        json.dumps(config, indent=2, sort_keys=True))
 
-    app = web.Application()
-    app[APP_CONFIG_KEY] = config
-
-    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
-    app.cleanup_ctx.append(persistent_client_session)
+    app = create_safe_application(config)
 
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app) # lastly, we expose API to the world
 
-    monitoring = config["main"]["monitoring_enabled"]
-    if monitoring:
+    if config["main"].get("monitoring_enabled", False):
         setup_monitoring(app, "simcore_service_storage")
 
     return app

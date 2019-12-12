@@ -15,11 +15,13 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
-from s3wrapper.s3_client import S3Client
-from servicelib.aiopg_utils import DBAPIError
-from servicelib.client_session import get_client_session
 from sqlalchemy.sql import and_
+from tenacity import retry
 from yarl import URL
+
+from s3wrapper.s3_client import S3Client
+from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
+from servicelib.client_session import get_client_session
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (DatasetMetaData, FileMetaData, FileMetaDataEx,
@@ -30,14 +32,17 @@ from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
                        SIMCORE_S3_STR)
 
-#pylint: disable=W0212
-#FIXME: W0212:Access to a protected member _result_proxy of a client class
 
-#pylint: disable=E1120
-##FIXME: E1120:No value for argument 'dml' in method call
+# pylint: disable=no-value-for-parameter
+# FIXME: E1120:No value for argument 'dml' in method call
+
+# pylint: disable=protected-access
+# FIXME: Access to a protected member _result_proxy of a client class
+
 
 logger = logging.getLogger(__name__)
 
+postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).kwargs
 
 FileMetaDataVec = List[FileMetaData]
 FileMetaDataExVec = List[FileMetaDataEx]
@@ -394,18 +399,25 @@ class DataStorageManager:
         await dcw.upload_file_to_id(destination_id, local_file_path)
 
         # actually we have to query the master db
+
+
     async def upload_link(self, user_id: str, file_uuid: str):
-        async with self.engine.acquire() as conn:
-            fmd = FileMetaData()
-            fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
-            fmd.user_id = user_id
-            query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
-            # if file already exists, we might want to update a time-stamp
-            rows = await conn.execute(query)
-            exists = await rows.scalar()
-            if exists is None:
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
+
+        @retry(**postgres_service_retry_policy_kwargs)
+        async def _execute_query():
+            async with self.engine.acquire() as conn:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
+                fmd.user_id = user_id
+                query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
+                # if file already exists, we might want to update a time-stamp
+                rows = await conn.execute(query)
+                exists = await rows.scalar()
+                if exists is None:
+                    ins = file_meta_data.insert().values(**vars(fmd))
+                    await conn.execute(ins)
+
+        await _execute_query()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid

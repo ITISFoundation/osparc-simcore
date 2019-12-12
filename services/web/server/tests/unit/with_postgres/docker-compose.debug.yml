@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   postgres:
-    image: postgres:10
+    image: postgres:10.10
     restart: always
     environment:
       # defaults are the same as in conftest.yaml so we start compose from command line for debugging

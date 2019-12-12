@@ -27,7 +27,7 @@ install() {
 before_script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip freeze
+        pip list -v
         # pull the test images if registry is set up, else build the images
         make pull-version || ((make pull-cache || true) && make build tag-version)
         make info-images

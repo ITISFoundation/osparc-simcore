@@ -96,7 +96,12 @@ async def _create_docker_service_params(app: web.Application,
             "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
-        "Init": True
+        "Init": True,
+        "Labels": {
+            "user_id": user_id,
+            "study_id": project_id,
+            "node_id": node_uuid
+        }
     }
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
@@ -186,6 +191,11 @@ async def _create_docker_service_params(app: web.Application,
         log.exception("Could not find swarm network")
 
     log.debug("Converted labels to docker runtime parameters: %s", docker_params)
+
+    # set labels for CPU and Memory limits
+    container_spec["Labels"]["nano_cpus_limit"] = str(docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+    container_spec["Labels"]["mem_limit"] = str(docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"])
+
     return docker_params
 
 

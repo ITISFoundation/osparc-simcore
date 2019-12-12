@@ -1,17 +1,19 @@
  #pylint: disable=W0621, unused-argument, too-many-arguments, no-name-in-module
 import json
+import sys
 import uuid
 from pathlib import Path
 from typing import Any, List, Tuple
 
 import pytest
 import yarl
-
-from helpers import helpers
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.node_ports import node_config
 
+import np_helpers
+
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
 def user_id()->int:
@@ -20,7 +22,7 @@ def user_id()->int:
 
 @pytest.fixture
 def s3_simcore_location() ->str:
-    yield helpers.SIMCORE_STORE
+    yield np_helpers.SIMCORE_STORE
 
 @pytest.fixture
 def filemanager_cfg(storage, user_id, bucket):
@@ -45,29 +47,20 @@ def file_uuid(project_id, node_uuid)->str:
             project = project_id
         if node is None:
             node = node_uuid
-        return helpers.file_uuid(file_path, project, node)
+        return np_helpers.file_uuid(file_path, project, node)
     yield create
 
 @pytest.fixture(scope='session')
-def here()->Path:
-    yield Path(__file__).parent
-
-@pytest.fixture(scope='session')
-def docker_compose_file(bucket, pytestconfig, here): # pylint:disable=unused-argument
-    my_path = here /'docker-compose.yml'
-
-    yield my_path
-
-
-
+def docker_compose_file(bucket, pytestconfig): # pylint:disable=unused-argument
+    return current_dir /'docker-compose.yml'
 
 @pytest.fixture
-def default_configuration_file(here):
-    yield here / "config" / "default_config.json"
+def default_configuration_file():
+    return current_dir / "config" / "default_config.json"
 
 @pytest.fixture
-def empty_configuration_file(here):
-    yield here / "config" / "empty_config.json"
+def empty_configuration_file():
+    return current_dir / "config" / "empty_config.json"
 
 @pytest.fixture(scope='module')
 def postgres(engine, session):

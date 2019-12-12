@@ -6,34 +6,40 @@
 APP_NAME     := webserver
 APP_CLI_NAME  = simcore-service-${APP_NAME}
 
-ROOT_DIR     = $(realpath $(CURDIR)/../../../)
-VENV_DIR    ?= $(realpath $(ROOT_DIR)/.venv)
+ROOT_DIR     = $(abspath $(CURDIR)/../../../)
+VENV_DIR    ?= $(abspath $(ROOT_DIR)/.venv)
 
 
-.PHONY: install-dev
-install-dev: ## install app in edit mode for development
+.PHONY: install
+install: ## install app in edit mode for development [DEV]
 	# installing in edit mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
-.PHONY: tests
-tests: ## runs tests
+
+.PHONY: tests-unit tests-integration
+tests-unit: ## runs unit tests
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest --cov=simcore_service_${APP_NAME} --cov-append -v -m "not travis" $(CURDIR)/tests/unit
+	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
+
+
+tests-integration: ## runs integration tests against local+production images
+	# running integration tests local/(service):production images ...
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build
-build: ## builds docker image
+build: ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} build
 
 
-.PHONY: clean .check-clean
-.check-clean:
+.PHONY: clean
+clean: ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
 	@git clean -ndxf -e .vscode/
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
 	@git clean -dxf -e .vscode/
 
 

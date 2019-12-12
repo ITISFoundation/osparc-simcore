@@ -3,16 +3,19 @@
 """
 import json
 import logging
+from typing import Dict
 
-from . import config, exceptions, nodeports  # pylint: disable=R0401
+# FIXME: : nodeports.Nodeports produces recursive import
+from . import config, exceptions, nodeports
 from ._data_item import DataItem
 from ._data_items_list import DataItemsList
 from ._schema_item import SchemaItem
 from ._schema_items_list import SchemaItemsList
+from .dbmanager import DBManager
 
 log = logging.getLogger(__name__)
 
-def create_from_json(db_mgr, auto_read=False, auto_write=False):
+def create_from_json(db_mgr: DBManager, auto_read: bool=False, auto_write: bool=False):
     """ creates a Nodeports object provided a json configuration in form of a callback function
 
     :param db_mgr: interface object to connect to nodeports description
@@ -35,7 +38,7 @@ def create_from_json(db_mgr, auto_read=False, auto_write=False):
     log.debug("Created Nodeports object")
     return nodeports_obj
 
-def create_nodeports_from_uuid(db_mgr, node_uuid):
+def create_nodeports_from_uuid(db_mgr: DBManager, node_uuid: str):
     log.debug("Creating Nodeports object from node uuid: %s", node_uuid)
     if not db_mgr:
         raise exceptions.NodeportsException("Invalid call to create nodeports from uuid")
@@ -90,7 +93,7 @@ class _NodeportsEncoder(json.JSONEncoder):
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
-def __decodeNodePorts(dct):
+def __decodeNodePorts(dct: Dict):
     if not all(k in dct for k in config.NODE_KEYS.keys()):
         raise exceptions.InvalidProtocolError(dct)
     # decode schema

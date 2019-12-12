@@ -18,6 +18,7 @@ def create_db_tables(**kargs):
     url = DSN.format(**kargs)
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     metadata.create_all(bind=engine, tables=[users, tokens], checkfirst=True)
+    engine.dispose()
     return url
 
 

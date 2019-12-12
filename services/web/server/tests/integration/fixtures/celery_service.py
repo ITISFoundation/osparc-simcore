@@ -1,8 +1,8 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+from copy import deepcopy
 
 import celery
 import celery.bin.base
@@ -13,8 +13,8 @@ import tenacity
 
 
 @pytest.fixture(scope="module")
-def celery_service(app_config, docker_stack):
-    cfg = app_config["rabbit"]
+def celery_service(_webserver_dev_config, docker_stack):
+    cfg = deepcopy(_webserver_dev_config["rabbit"])
     host = cfg["host"]
     port = cfg["port"]
     user = cfg["user"]
@@ -29,4 +29,4 @@ def wait_till_celery_responsive(url):
 
     status = celery.bin.celery.CeleryCommand.commands['status']()
     status.app = status.get_app()
-    status.run()
+    status.run() # raises celery.bin.base.Error if cannot run

@@ -3,6 +3,10 @@
 #
 -r python-with-pandas_89f709.txt # TODO: add reference to git@github.com:ITISFoundation/dockerfiles.git/requirements
 
+-r ../../../packages/postgres-database/requirements/_base.in
+-r ../../../packages/service-library/requirements/_base.in
+
+
 urllib3~=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
 psycopg2-binary~=2.7.5  # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
 sqlalchemy~=1.3.3       # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
@@ -12,7 +16,7 @@ boto3==1.9.91           # do not use lastest version, this would require botocor
 aioboto3
 aiohttp
 aiofiles
-aiopg[sa]~=0.15.0     # Fixes 0.16.0 https://github.com/aio-libs/aiopg/issues/535
+aiopg[sa]
 blackfynn
 execnet
 marshmallow

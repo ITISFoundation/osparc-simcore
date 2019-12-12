@@ -41,7 +41,14 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=asyncio.get_event_loop())
+    #TODO: setup lifetime of this pool?
+    #TODO: determin min/max size of the pool
+    pool = await asyncpg.create_pool(
+        dsn=DSN.format(**db_cfg) + f"?application_name={module_name}_{id(app)}",
+        min_size=db_cfg['minsize'],
+        max_size=db_cfg['maxsize'],
+        loop=asyncio.get_event_loop())
+
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
 
     # config
@@ -65,10 +72,12 @@ async def _setup_config_and_pgpool(app: web.Application):
 
     app[APP_LOGIN_CONFIG] = cfg
 
-    yield
+    yield # ----------------
 
+    if config["STORAGE"].pool is not pool:
+        log.error("Somebody has changed the db pool")
     try:
-        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS)
+        await asyncio.wait_for(pool.close(), timeout=TIMEOUT_SECS)
     except asyncio.TimeoutError:
         log.exception("Failed to close login storage loop")
 

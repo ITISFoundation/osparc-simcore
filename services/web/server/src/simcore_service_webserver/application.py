@@ -11,6 +11,7 @@ from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
 from servicelib.application_setup import app_module_setup, ModuleCategory
 
+from .activity import setup_activity
 from .application_proxy import setup_app_proxy
 from .computation import setup_computation
 from .db import setup_db
@@ -69,6 +70,7 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_projects(app) # needs storage
     setup_studies_access(app)
+    setup_activity(app)
     setup_app_proxy(app) # TODO: under development!!!
 
     return app

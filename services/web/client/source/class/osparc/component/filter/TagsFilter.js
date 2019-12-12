@@ -98,6 +98,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         this.__menu = new qx.ui.menu.Menu();
         this._dropdown.setMenu(this.__menu);
       }
+      if (this.__menu.getChildren().find(button => button.getLabel && button.getLabel() === tagName)) {
+        // Don't add repeated options
+        return;
+      }
       const button = new qx.ui.menu.Button(tagName);
       button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
       this.__menu.add(button);

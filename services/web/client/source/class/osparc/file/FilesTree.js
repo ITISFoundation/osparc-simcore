@@ -136,10 +136,10 @@ qx.Class.define("osparc.file.FilesTree", {
     populateTree: function(nodeId = null, locationId = null) {
       if (nodeId) {
         this.__populateNodeFiles(nodeId);
-      } else if (locationId) {
-        this.__populateMyLocation(locationId);
-      } else {
+      } else if (locationId === null) {
         this.__populateMyData();
+      } else {
+        this.__populateMyLocation(locationId);
       }
 
       this.getDelegate().configureItem = item => {

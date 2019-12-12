@@ -48,17 +48,23 @@ def create_tables(url, engine=None):
             client_encoding="utf8",
             connect_args={"connect_timeout": 30},
                 pool_pre_ping=True)
+        Base.metadata.create_all(engine)
+        engine.dispose()
+    else:
+        Base.metadata.create_all(engine)
 
-    Base.metadata.create_all(engine)
 
 def drop_tables(url, engine=None):
-    if not engine:
+    is_owned = not engine
+    if is_owned:
         engine = create_engine(url,
             client_encoding="utf8",
             connect_args={"connect_timeout": 30},
                 pool_pre_ping=True)
 
     Base.metadata.drop_tables(engine)
+    if is_owned:
+        engine.dispose()
 
 def setup_sleepers(url):
     db_engine = create_engine(url,

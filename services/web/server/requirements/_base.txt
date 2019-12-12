@@ -10,14 +10,14 @@ aiohttp-jinja2==1.1.1
 aiohttp-security==0.4.0
 aiohttp-session[secure]==2.7.0
 aiohttp==3.6.2
-aiopg[sa]==0.16.0
+aiopg[sa]==1.0.0
 aiosmtplib==1.0.5
 amqp==2.4.2               # via kombu
 asn1crypto==0.24.0        # via cryptography
 asset==0.6.12             # via passwordmeter
 async-timeout==3.0.1      # via aiohttp
 asyncpg==0.18.3
-attrs==19.1.0             # via aiohttp, openapi-core
+attrs==19.1.0
 billiard==3.6.0.0         # via celery
 celery==4.3.0
 cffi==1.12.3              # via cryptography
@@ -40,6 +40,7 @@ openapi-spec-validator==0.2.7  # via openapi-core
 passlib==1.7.1
 passwordmeter==0.1.8
 pika==0.10.0              # via aio-pika
+prometheus-client==0.7.1
 psycopg2-binary==2.8.2
 pycparser==2.19           # via cffi
 python-engineio==3.9.3    # via python-socketio
@@ -55,5 +56,7 @@ tenacity==5.0.4
 trafaret-config==2.0.2
 trafaret==1.2.0
 typing-extensions==3.7.2  # via aiohttp
+ujson==1.35
 vine==1.3.0               # via amqp, celery
-yarl==1.3.0               # via aio-pika, aiohttp
+werkzeug==0.16.0
+yarl==1.3.0

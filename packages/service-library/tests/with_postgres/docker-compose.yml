@@ -1,0 +1,18 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10.10
+    restart: always
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: secret
+    ports:
+      - '5432:5432'
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres

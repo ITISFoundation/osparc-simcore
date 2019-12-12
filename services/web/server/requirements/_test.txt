@@ -10,7 +10,7 @@ aiohttp-jinja2==1.1.1
 aiohttp-security==0.4.0
 aiohttp-session[secure]==2.7.0
 aiohttp==3.6.2
-aiopg[sa]==0.16.0
+aiopg[sa]==1.0.0
 aiosmtplib==1.0.5
 amqp==2.4.2
 asn1crypto==0.24.0
@@ -22,7 +22,7 @@ atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
 billiard==3.6.0.0
 celery==4.3.0
-certifi==2019.3.9         # via requests
+certifi==2019.9.11        # via requests
 cffi==1.12.3
 change-case==0.5.2
 chardet==3.0.4
@@ -54,6 +54,7 @@ passlib==1.7.1
 passwordmeter==0.1.8
 pika==0.10.0
 pluggy==0.12.0            # via pytest
+prometheus-client==0.7.1
 psycopg2-binary==2.8.2
 ptvsd==4.2.10
 py==1.8.0                 # via pytest
@@ -82,13 +83,15 @@ trafaret-config==2.0.2
 trafaret==1.2.0
 typed-ast==1.3.5          # via astroid
 typing-extensions==3.7.2
-urllib3==1.25.3           # via requests
+ujson==1.35
+urllib3==1.25.6           # via requests
 vine==1.3.0
 wcwidth==0.1.7            # via pytest
 websocket-client==0.56.0  # via docker
+werkzeug==0.16.0
 wrapt==1.11.1             # via astroid
 yarl==1.3.0
 zipp==0.5.1               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.4.0        # via pytest
+# setuptools

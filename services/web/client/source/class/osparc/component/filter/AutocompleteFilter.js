@@ -6,9 +6,9 @@
  */
 
 /**
- * Filter used for filtering services. Gets the list of services and uses them as possible options for the dropdown.
+ * Filter with a dropdown and autocomplete
  */
-qx.Class.define("osparc.component.filter.ServiceFilter", {
+qx.Class.define("osparc.component.filter.AutocompleteFilter", {
   extend: osparc.component.filter.UIFilter,
 
   /**
@@ -20,18 +20,11 @@ qx.Class.define("osparc.component.filter.ServiceFilter", {
     this.base(arguments, filterId, groupId);
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.__autocompleteField = this.getChildControl("autocompletefield").set({
-      placeholder: this.tr("Filter by service")
-    });
+    this.__autocompleteField = this.getChildControl("autocompletefield");
 
     this.getChildControl("clearbutton");
 
-    const services = osparc.store.Store.getInstance().getServices();
-    const dropdownData = Object.keys(services).map(key => {
-      const split = key.split("/");
-      return split[split.length-1];
-    });
-    this.__autocompleteField.setModel(new qx.data.Array(dropdownData));
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -68,6 +61,14 @@ qx.Class.define("osparc.component.filter.ServiceFilter", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __attachEventHandlers: function() {
+      this.__autocompleteField.addListener("changeValue", e => this._filterChange(e.getData()), this);
+    },
+
+    buildMenu: function(menuData) {
+      this.__autocompleteField.setModel(new qx.data.Array(menuData));
     }
   }
 });

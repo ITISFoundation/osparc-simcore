@@ -1,6 +1,6 @@
 version: '1.0'
 main:
-  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/unit/mock/static
+  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/data/static
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
@@ -57,3 +57,5 @@ projects:
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: 'tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs='
+activity:
+  enabled: False

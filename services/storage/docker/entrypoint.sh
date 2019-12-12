@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+INFO="INFO: [`basename "$0"`] "
+ERROR="ERROR: [`basename "$0"`] "
 
 # This entrypoint script:
 #
@@ -6,13 +9,13 @@
 # - Notice that the container *starts* as --user [default root] but
 #   *runs* as non-root user [scu]
 #
-echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+echo $INFO "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "  User    :`id $(whoami)`"
 echo "  Workdir :`pwd`"
 
-echo "updating certificates..."
+echo $INFO "updating certificates..."
 update-ca-certificates
-echo "certificates updated"
+echo $INFO "certificates updated"
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
@@ -20,7 +23,7 @@ then
     DEVEL_MOUNT=/devel/services/storage
 
     stat $DEVEL_MOUNT &> /dev/null || \
-        (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+        (echo $ERROR "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
 
     USERID=$(stat -c %u $DEVEL_MOUNT)
     GROUPID=$(stat -c %g $DEVEL_MOUNT)
@@ -50,5 +53,5 @@ then
   python3 -m pip install ptvsd
 fi
 
-echo "Starting boot ..."
-su-exec scu "$@"
+echo $INFO "Starting boot ..."
+exec su-exec scu "$@"
