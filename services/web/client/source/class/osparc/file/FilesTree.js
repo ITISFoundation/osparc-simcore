@@ -395,10 +395,6 @@ qx.Class.define("osparc.file.FilesTree", {
       return null;
     },
 
-    addFileEntry: function(fileMetadata) {
-      console.log("file copied", fileMetadata);
-    },
-
     __getFilesInTree: function(item, leaves) {
       if (item.getChildren == null) { // eslint-disable-line no-eq-null
         leaves.push(item);

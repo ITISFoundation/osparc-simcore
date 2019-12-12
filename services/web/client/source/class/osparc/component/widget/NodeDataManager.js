@@ -91,7 +91,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     userFilesTree.addListener("fileCopied", e => {
       const fileMetadata = e.getData();
       if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata);
+        console.log("file copied", fileMetadata);
       }
     }, this);
     userTreeLayout.add(userFilesTree, {

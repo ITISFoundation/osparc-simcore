@@ -67,6 +67,7 @@ qx.Class.define("osparc.file.FileTreeItem", {
 
     itemId: {
       check: "String",
+      event: "changeItemId",
       apply: "_applyItemId",
       nullable: true
     },
