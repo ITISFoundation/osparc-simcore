@@ -1,5 +1,5 @@
 $schema: http://json-schema.org/draft-07/schema#
-$id: https://simcore.io/api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml
+$id: https://simcore.io/api/specs/common/schemas/node-output-list-api-v0.0.1.yaml
 
 title: node output list api
 description: nodes using the list representation for the output
