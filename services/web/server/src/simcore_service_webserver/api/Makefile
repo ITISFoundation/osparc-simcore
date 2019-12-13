@@ -8,10 +8,14 @@ OAS_TARGET    = $(CURDIR)/openapi.yaml
 WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 
 
-# TODO: container with https://www.npmjs.com/package/swagger-cli
-${OAS_TARGET}: ${OAS_SOURCES}
+.PHONY: .update-schemas
+.update-schemas:
 	# Updating schemas
-	# TODO: $(MAKE) -C ${API_SPECS_DIR}/components/schemas
+	@$(MAKE) -C ${API_SPECS_DIR}/components/schemas
+
+
+# TODO: container with https://www.npmjs.com/package/swagger-cli
+${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
 	@swagger-cli bundle -o $@ -t yaml -r "${API_SPECS_DIR}/openapi.yaml"
 

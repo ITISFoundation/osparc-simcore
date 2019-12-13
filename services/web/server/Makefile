@@ -17,13 +17,13 @@ devenv: ## build development environment (using main services/docker-compose-bui
 	@$(MAKE) -C ${REPO_BASE_DIR} $@
 
 
-.PHONY: api-specs
-api-specs: ## updates and validates openapi specifications
-	$(MAKE) -C $(CURDIR)/src/simcore_service_webserver/api
+.PHONY: openapi-specs
+openapi-specs: ## updates and validates openapi specifications
+	$(MAKE) -C $(CURDIR)/src/simcore_service_webserver/api $@
 
 
 .PHONY: install
-install: api-specs ## install app in edit mode for development [DEV]
+install: openapi-specs ## install app in edit mode for development [DEV]
 	# installing in edit mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
 
@@ -42,7 +42,7 @@ tests-integration: ## runs integration tests against local+production images
 
 
 .PHONY: build
-build: api-specs ## builds docker image (using main services/docker-compose-build.yml)
+build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
