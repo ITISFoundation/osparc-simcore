@@ -23,9 +23,9 @@ openapi-specs: ## updates and validates openapi specifications
 
 
 .PHONY: install
-install: openapi-specs ## install app in edit mode for development [DEV]
-	# installing in edit mode
-	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
+install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
+	# installing in $(subst install-,,$@) mode
+	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests-unit tests-integration
@@ -46,11 +46,16 @@ build: openapi-specs ## builds docker image (using main services/docker-compose-
 	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
+.PHONY: version-patch version-minor version-major
+version-patch version-minor version-major: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+	# upgrades as $(subst version-,,$@) version, commits and tags
+	@bump2version --verbose --list $(subst version-,,$@)
 
-.PHONY: patch-bump minor-bump major-bump
-patch-bump minor-bump major-bump: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
-	# upgrades as $(subst -bump,,$@) version, commits and tags
-	@bump2version --verbose --list $(subst -bump,,$@)
+
+.PHONY: info
+info: ## displays
+	# installed
+	@pip list
 
 
 .PHONY: clean
