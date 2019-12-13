@@ -50,10 +50,8 @@ storage:
   version: v5 # FAKE API VERSION
 rest:
   version: v0
-  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
 projects:
   enabled: False
-  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: 'tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs='

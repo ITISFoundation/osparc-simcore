@@ -53,10 +53,8 @@ smtp:
   password: Null
 rest:
   version: v0
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-
+  enabled: True
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
