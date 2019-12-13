@@ -16,6 +16,8 @@ from typing import Dict
 
 import pytest
 
+from simcore_service_webserver.resources import resources
+
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -42,8 +44,11 @@ def fake_project(fake_data_dir: Path) -> Dict:
 
 
 @pytest.fixture
-def project_schema_file(api_specs_dir: Path) -> Path:
-    return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
+def project_schema_file() -> Path:
+    prj_schema_path = resources.get_path("api/v0/components/schemas/project-v0.0.1.json")
+    assert prj_schema_path.exists()
+    return prj_schema_path
+
 
 @pytest.fixture
 def activity_data(fake_data_dir: Path) -> Dict:

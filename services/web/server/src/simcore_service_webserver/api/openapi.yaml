@@ -52,8 +52,8 @@ paths:
                     example:
                       name: simcore-director-service
                       status: SERVICE_RUNNING
-                      api_0.1.2-dev+NJuzzD9S
-                      0.1.2-dev+N127Mfv9H
+                      api_version: 0.1.0-dev+NJuzzD9S
+                      version: 0.1.0-dev+N127Mfv9H
                   error:
                     nullable: true
                     default: null

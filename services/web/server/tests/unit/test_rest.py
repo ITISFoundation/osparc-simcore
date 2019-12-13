@@ -1,35 +1,19 @@
-# pylint:disable=unused-import
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
-import sys
-from pathlib import Path
-
-import openapi_core
 import pytest
 import yaml
 from aiohttp import web
 
-import simcore_service_webserver
 from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
-from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver import resources, rest
+from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from utils_assert import assert_status
 
-logging.basicConfig(level=logging.INFO)
-
-
 # TODO: reduce log from openapi_core loggers
 
-@pytest.fixture
-def openapi_path(api_specs_dir):
-    specs_path = api_specs_dir / 'oas3/v0/openapi.yaml'
-    assert specs_path.exits()
-    return specs_path
 
 @pytest.fixture
 def spec_dict(openapi_path):
@@ -39,7 +23,7 @@ def spec_dict(openapi_path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
+def client(loop, aiohttp_unused_port, aiohttp_client):
     app = create_safe_application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
@@ -48,7 +32,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
         "main": server_kwargs,
         "rest": {
             "version": "v0",
-            "location": str(api_specs_dir / "v0" / "openapi.yaml"),
+            "location": str(resources.get_path("api/openapi.yaml")),
             "enabled": True
         }
     }
@@ -59,7 +43,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
 
-# ------------------------------------------
+
+
+
 
 async def test_check_health(client):
     resp = await client.get("/v0/")

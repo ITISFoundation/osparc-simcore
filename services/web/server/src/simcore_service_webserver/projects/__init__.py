@@ -58,10 +58,12 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(logger, logging.INFO) )
 async def _get_specs(app, location):
+    # TODO: deprecated
     session = get_client_session(app)
     specs = await create_jsonschema_specs(location, session)
     return specs
 
+from ..resources import resources
 
 @app_module_setup(module_name, ModuleCategory.ADDON,
     depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
@@ -94,7 +96,10 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     app.router.add_routes(routes)
 
     # json-schemas for projects datasets
-    project_schema_location = cfg['location']
+    project_schema_location = resources.get_path("api/v0/components/schemas/project-v0.0.1.json")
+    if not project_schema_location.exists():
+        project_schema_location = cfg['location']
+
     loop = asyncio.get_event_loop()
     specs = loop.run_until_complete( _get_specs(app, project_schema_location) )
 
