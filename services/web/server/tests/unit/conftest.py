@@ -42,10 +42,13 @@ def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
 
+@pytest.fixture
+def api_version_prefix() -> str:
+    return "v0"
 
 @pytest.fixture
-def project_schema_file() -> Path:
-    prj_schema_path = resources.get_path("api/v0/components/schemas/project-v0.0.1.json")
+def project_schema_file(api_version_prefix) -> Path:
+    prj_schema_path = resources.get_path(f"api/{api_version_prefix}/components/schemas/project-v0.0.1.json")
     assert prj_schema_path.exists()
     return prj_schema_path
 

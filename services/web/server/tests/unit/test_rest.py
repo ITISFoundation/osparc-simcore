@@ -1,6 +1,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
+
+import jsonschema
+import jsonschema.validators
 import pytest
 import yaml
 from aiohttp import web
@@ -31,8 +35,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     app[APP_CONFIG_KEY] = {
         "main": server_kwargs,
         "rest": {
-            "version": "v0",
-            "location": str(resources.get_path("api/openapi.yaml")),
             "enabled": True
         }
     }
@@ -44,11 +46,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     return cli
 
 
-
-
-
-async def test_check_health(client):
-    resp = await client.get("/v0/")
+async def test_check_health(client, api_version_prefix):
+    resp = await client.get(f"/{api_version_prefix}/")
     payload = await resp.json()
 
     assert resp.status == 200, str(payload)
@@ -69,11 +68,13 @@ FAKE = {
         }
     }
 
-async def test_check_action(client):
+
+
+async def test_check_action(client, api_version_prefix):
     QUERY = 'value'
     ACTION = 'echo'
 
-    resp = await client.post(f"/v0/check/{ACTION}?data={QUERY}", json=FAKE)
+    resp = await client.post(f"/{api_version_prefix}/check/{ACTION}?data={QUERY}", json=FAKE)
     payload = await resp.json()
     data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
@@ -89,9 +90,9 @@ async def test_check_action(client):
 
 
 
-async def test_check_fail(client):
+async def test_check_fail(client, api_version_prefix):
     url = client.app.router["check_action"].url_for(action="fail").with_query(data="foo")
-    assert str(url) == "/v0/check/fail?data=foo"
+    assert str(url) == f"/{api_version_prefix}/check/fail?data=foo"
     resp = await client.post(url, json=FAKE)
 
     _, error = await assert_status(resp, web.HTTPInternalServerError)
@@ -99,12 +100,12 @@ async def test_check_fail(client):
 
 
 
-async def test_frontend_config(client):
+async def test_frontend_config(client, api_version_prefix):
     url = client.app.router["get_config"].url_for()
-    assert str(url) == "/v0/config"
+    assert str(url) == f"/{api_version_prefix}/config"
 
     # default
-    response = await client.get("/v0/config")
+    response = await client.get(f"/{api_version_prefix}/config")
 
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data["invitation_required"]
@@ -112,7 +113,25 @@ async def test_frontend_config(client):
     # w/ invitation explicitly
     for enabled in (True, False):
         client.app[APP_CONFIG_KEY]['login'] = {'registration_invitation_required': enabled}
-        response = await client.get("/v0/config")
+        response = await client.get(f"/{api_version_prefix}/config")
 
         data, _ = await assert_status(response, web.HTTPOk)
         assert data["invitation_required"] is enabled
+
+
+
+
+
+@pytest.mark.parametrize("resource_name", [n for n in
+    resources.listdir("api/v0/components/schemas") if n.endswith(".json") ]
+)
+def test_validate_component_schema(resource_name, api_version_prefix):
+    try:
+        with resources.stream(f"api/{api_version_prefix}/components/schemas/{resource_name}") as fh:
+            schema_under_test = json.load(fh)
+
+        validator = jsonschema.validators.validator_for(schema_under_test)
+        validator.check_schema(schema_under_test)
+
+    except jsonschema.SchemaError as err:
+        pytest.fail(msg=str(err))
