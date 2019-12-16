@@ -251,6 +251,11 @@ async def open_project(client, project_uuid: str, tab_id: str) -> None:
     resp = await client.post(url, json=tab_id)
     await assert_status(resp, web.HTTPOk)
 
+async def close_project(client, project_uuid: str, tab_id: str) -> None:
+    url = client.app.router["close_project"].url_for(project_id=project_uuid)
+    resp = await client.post(url, json=tab_id)
+    await assert_status(resp, web.HTTPNoContent)
+
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(socketio_client, tab_id):
     with pytest.raises(socketio.exceptions.ConnectionError):
@@ -493,3 +498,39 @@ async def test_interactive_services_removed_per_tab(loop, client, logged_user, e
             call(client.server.app, service3["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)
     mocked_director_api["stop_service"].reset_mock()
+
+@pytest.mark.parametrize("user_role", [
+    # (UserRole.ANONYMOUS),
+    # (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
+])
+async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
+    SERVICE_DELETION_DELAY = 1
+    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
+    # create server with delay set to DELAY
+    # login - logged_user fixture
+    # create empty study in project - empty_user_project fixture
+    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    # open project in tab1
+    tab_id1 = tab_id()
+    sio1 = await socketio_client(tab_id1)
+    await open_project(client, empty_user_project["uuid"], tab_id1)
+    # open project in tab2
+    tab_id2 = tab_id()
+    sio2 = await socketio_client(tab_id2)
+    await open_project(client, empty_user_project["uuid"], tab_id2)
+    # close project in tab1
+    await close_project(client, empty_user_project["uuid"], tab_id1)
+    # wait the defined delay
+    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
+    # assert dynamic service is still around
+    mocked_director_api["stop_service"].assert_not_called()
+    # close project in tab2
+    await close_project(client, empty_user_project["uuid"], tab_id2)
+    # wait the defined delay
+    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
+    mocked_director_api["stop_service"].assert_has_calls([
+        call(client.server.app, service["service_uuid"])
+    ])

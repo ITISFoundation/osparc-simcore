@@ -29,7 +29,7 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
         await registry.set_key_alive(self._resource_key(), True)
-    
+
     async def remove_socket_id(self) -> None:
         log.debug("user %s/tab %s removing socket from registry...", self.user_id, self.tab_id)
         registry = get_registry(self.app)
@@ -45,12 +45,20 @@ class WebsocketRegistry:
     async def add(self, key: str, value: str) -> None:
         log.debug("user %s/tab %s adding %s:%s in registry...", self.user_id, self.tab_id, key, value)
         registry = get_registry(self.app)
-        await registry.set_resource(self._resource_key(), (key,value))        
+        await registry.set_resource(self._resource_key(), (key,value))
 
     async def remove(self, key: str) -> None:
         log.debug("user %s/tab %s removing %s from registry...", self.user_id, self.tab_id, key)
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
+
+    #TODO: test it
+    async def find_users_of_resource(self, key: str, value: str) -> List[str]:
+        log.debug("user %s/tab %s finding %s:%s in registry..." ,self.user_id, self.tab_id, key, value)
+        registry = get_registry(self.app)
+        registry_keys = await registry.find_keys((key, value))
+        users = [x["user_id"] for x in registry_keys]
+        return users
 
 @contextmanager
 def managed_resource(user_id: str, tab_id: str, app: web.Application) -> WebsocketRegistry:

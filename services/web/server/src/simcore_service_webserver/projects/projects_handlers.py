@@ -225,6 +225,15 @@ async def delete_project(request: web.Request):
         user_id=user_id,
         include_templates=True
     )
+    with managed_resource(user_id, None, request.app) as rt:
+        other_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if other_users:
+            message = "Project is opened by another user. It cannot be deleted."
+            if user_id in other_users:
+                message = "Project is still open. It cannot be deleted until it is closed."
+            # we cannot delete that project
+            raise web.HTTPUnauthorized(reason=message)
+
     # fire & forget
     asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
 
@@ -278,8 +287,11 @@ async def close_project(request: web.Request) -> web.Response:
             user_id=user_id,
             include_templates=True
         )
-
-        asyncio.ensure_future(projects_api.remove_project_interactive_services(user_id, project_uuid, request.app))
         await rt.remove("project_id")
+        other_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if not other_users:
+            # only remove the services if no one else is using them now
+            asyncio.ensure_future(projects_api.remove_project_interactive_services(user_id, project_uuid, request.app))
+
 
     raise web.HTTPNoContent(content_type='application/json')
