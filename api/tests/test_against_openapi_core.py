@@ -40,12 +40,6 @@ async def _load_from_url(url: URL) -> Tuple[Dict, str]:
             return spec_dict, str(url)
 
 
-@pytest.fixture
-def webserver_oas(api_specs_dir):
-    oas_path = api_specs_dir / "webserver/v0/openapi.yaml"
-    assert oas_path.exists()
-    return oas_path
-
 
 @pytest.fixture
 def apispecs_server(loop, aiohttp_server, api_specs_dir ):

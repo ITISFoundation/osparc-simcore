@@ -1,6 +1,7 @@
 import json
 import sys
 from pathlib import Path
+from typing import List
 
 import yaml
 
@@ -13,7 +14,7 @@ def specs_folder():
     return here.parent / "specs"
 
 
-def list_files_in_api_specs(wildcard):
+def list_files_in_api_specs(wildcard: str) -> List[str]:
     """ Helper function to parameterize tests with list of files
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
@@ -26,7 +27,7 @@ def list_files_in_api_specs(wildcard):
     return list(str(p) for p in specs_dir.rglob(wildcard))
 
 
-def list_all_openapi():
+def list_all_openapi() -> List[str]:
     """ Lists str paths for all openapi.yaml in api/specs
     """
     return [ pathstr for pathstr in list_files_in_api_specs("openapi.y*ml")
