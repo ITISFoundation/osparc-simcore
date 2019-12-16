@@ -6,48 +6,52 @@
 APP_NAME     := $(notdir $(CURDIR))
 APP_CLI_NAME  = simcore-service-${APP_NAME}
 
-ROOT_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
-
-API_SPECS_DIR := ${ROOT_DIR}/api/specs/${APP_NAME}/v0
-OAS_SOURCES    = $(shell find $(API_SPECS_DIR)/ -type f -name '*.y*ml')
-OAS_TARGET    := $(CURDIR)/src/simcore_service_${APP_NAME}/api/openapi.yaml
+REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
+VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 
 
 
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE) -C ${ROOT_DIR} $@
+	@$(MAKE) -C ${REPO_BASE_DIR} $@
+
+
+.PHONY: openapi-specs
+openapi-specs: ## updates and validates openapi specifications
+	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
 .PHONY: install
-install: ## install app in edit mode for development [DEV]
-	# installing in edit mode
-	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
+install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
+	# installing in $(subst install-,,$@) mode
+	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests
-tests: ## runs all tests [DEV]
+tests: ## runs unit tests
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)/tests
+	@pytest -vv -x --ff --pdb $(CURDIR)/tests
+
 
 
 .PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} $@
+build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
-# TODO: container with https://www.npmjs.com/package/swagger-cli
-${OAS_TARGET}: $(OAS_SOURCES)
-	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
-	swagger-cli bundle -o $@ -t yaml -r "${API_SPECS_DIR}/openapi.yaml"
+.PHONY: version-patch version-minor version-major
+version-patch version-minor version-major: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+	# upgrades as $(subst version-,,$@) version, commits and tags
+	@bump2version --verbose --list $(subst version-,,$@)
 
-.PHONY: openapi-specs
-openapi-specs: ${OAS_TARGET} ## creates and validates OpenAPI specs
-	# Validating bundled '${OAS_TARGET}'
-	swagger-cli validate $<
 
+.PHONY: info
+info: ## displays
+	# version
+	@cat setup.py | grep version=
+	# installed
+	@pip list
 
 
 .PHONY: clean
@@ -64,5 +68,5 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 help: ## this colorful help
 	@echo "Recipes for '${APP_NAME}':"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_- ]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
