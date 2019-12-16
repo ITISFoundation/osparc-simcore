@@ -46,8 +46,8 @@ build: openapi-specs ## builds docker image (using main services/docker-compose-
 	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
-.PHONY: version-patch version-minor version-major
-version-patch version-minor version-major: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+.PHONY: version-patch version-minor
+version-patch version-minor: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
 	# upgrades as $(subst version-,,$@) version, commits and tags
 	@bump2version --verbose --list $(subst version-,,$@)
 
@@ -56,6 +56,8 @@ version-patch version-minor version-major: ## commits version as patch (bug fixe
 info: ## displays
 	# installed
 	@pip list
+	# version
+	@cat setup.py | grep version=
 
 
 .PHONY: clean
