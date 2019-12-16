@@ -85,8 +85,13 @@ qx.Class.define("osparc.auth.Manager", {
       };
       osparc.data.Resources.fetch("auth", "postLogin", params)
         .then(data => {
-          this.__loginUser(email);
-          successCbk.call(context, data);
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(profile => {
+              this.__loginUser(profile.login);
+              osparc.data.Permissions.getInstance().setRole(profile.role);
+              successCbk.call(context, data);
+            })
+            .catch(err => failCbk.call(context, err.message));
         })
         .catch(err => failCbk.call(context, err.message));
     },
