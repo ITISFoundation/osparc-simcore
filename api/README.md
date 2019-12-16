@@ -2,32 +2,35 @@
 
 # Concept
 
-REST APIs and models (defined as openAPI- or JSON-schemas) are defined in a central location [``api/specs``](api/specs) to allow for **design-first development**.
+Common REST API specifications and models (defined as openAPI- or JSON-schemas) are defined in a central location [``api/specs``](api/specs) to allow for **design-first development**.
 
-# Development guidelines
-
-## Standards
+# Standards
 
 The oSparc platform uses the following standards:
-- REST API: [Open API v3](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md)
-- Models and configuration [JSON Schema](https://json-schema.org/)
+- [Open API v3](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md) for REST API
+- [JSONSchema] for models and configuration schemas
 
-## Folder structure
+## In every service:
+
+  The api is defined in
+
+  - ``/api/Makefile`` bundles oas-parts into openapi.yaml and validates it
+  - ``/api/v0``
+    - ``/api/v0/openapi.yaml`` is the output of api/Makefile. DO NOT EDIT MANUALLY. Use instead Makefile
+    - ``/api/v0/oas-parts/*`` folder contains all parts of the open-api specs as well as json schemas of models. This is the folder that the user shall modify.
+
+
+## In common folder:
 
 ```bash
 /api/specs/                                  # base folder
-/api/specs/director/                         # service name folder (e.g. for director service)
-/api/specs/director/v0/                      # service version (v0 for development, then v1, v2... only major)
-/api/specs/director/v0/openapi.yaml          # openapi specifications in YAML
-/api/specs/director/v0/schemas/              # schemas only used by the director API
-/api/specs/director/v0/schemas/services.yaml # openapi encoded service only schema
 
 /api/specs/shared/                           # shared api/specs/schemas base folder
 /api/specs/shared/schemas/                   # sub folder for schemas
 /api/specs/shared/schemas/health_check.yaml  # openapi encoded shared schema
 /api/specs/shared/schemas/node-meta.json     # jsonschema encoded shared schema
-/api/specs/shared/schemas/v1/error.yaml      # openapi encoded shaared schema for version 1
-/api/specs/shared/schemas/v2/error.yaml      # openapi encoded shaared schema for version 2
+/api/specs/shared/schemas/v1/error.yaml      # openapi encoded shared schema for version 1
+/api/specs/shared/schemas/v2/error.yaml      # openapi encoded shared schema for version 2
 
 /tests/                                 # python tests folder to check schemas validity
 /tests/requirements.txt                 # requirements for python tests
@@ -41,7 +44,7 @@ Each API is defined within a file __openapi.yaml__ in YAML format. The file shal
 
 #### Version subfolder
 
-For initial development, the version shall be 0.1.0 and the subfolder v0
+For initial development, the version shall be 0.1.0 and the subfolder ``v0``
 For release, the version shall start from 1.0.0 and subfolder v1.
 The subolder digit corresponds to the version major digits. It shall be modified only when changes are not backwards compatible (e.g. changing a return value, removing parameters or resource, ...).
 
@@ -59,32 +62,24 @@ If these schemas are shared with other APIs they should be located in the __/sha
 NOTE: If shared schemas need backward incompatible changes, then a new major version of this specific shared schema is necessary and all APIs that rely on this specific schema will need to be upgraded.
 In that case, a version subfolder shall be added in the __/shared/__ subfolder and the relevant schemas shall be moved there.
 
-### Schemas defined with JSONSchema format that are used together with OpenAPI
+### Schemas defined with [JSONSchema] format that are used together with [OpenAPI]
 
-Mixing JSONSchema with OpenAPI schema needs some additional steps:
+Mixing [JSONSchema] with OpenAPI schema needs some additional steps:
 
-1. Define the JSONSchema schema.
-2. Convert the JSONSchema formatted file to OpenAPI formatted file using a [converter](scripts/json-schema-to-openapi-schema) tool.
+1. Define the [JSONSchema] schema.
+2. Convert the [JSONSchema] formatted file to OpenAPI formatted file using a [converter](scripts/json-schema-to-openapi-schema) tool.
 3. In the openapi specifications file ref the converted OpenAPI schema file
 
-This is automated for instance in [api/specs/webserver/v0/components/schemas/Makefile](api/specs/webserver/v0/components/schemas/Makefile)
+This is automated in the makefiles as dependencies
 
-
-## Using the openAPI
-
-### Python: Current status (using aiohttp-apiset)
-
-The current python-based packages use the aiohttp-apiset library to create routes from the defined API. The aiohttp-apiset library requires a physical file to create the routes. Therefore one needs to generate that file by following:
-
-1. Generate a 1 file OpenAPI formatted file using [prance](https://pypi.org/project/prance/). By using [openapi-resolver](../scripts/openapi/oas_resolver).
-2. Copy the generated file in a folder in the python-based code and use it.
-
-### Python: in development and should be available soon
-
-- Using the library [openapi-core](https://github.com/p1c2u/openapi-core) the library is able to download the api at starting point.
-- The [apihub service](../services/apihub) serves the apis and schemas to the internal parts of the oSparc platform.
 
 ## references
 
 - [Defining reusable components - good practices](https://dev.to/mikeralphson/defining-reusable-components-with-the-openapi-specification-4077)
-- [official guidelines on OAS re-usability](https://github.com/OAI/OpenAPI-Specification/blob/master/guidelines/v2.0/REUSE.md)
+- [Official guidelines on OAS re-usability](https://github.com/OAI/OpenAPI-Specification/blob/master/guidelines/v2.0/REUSE.md)
+
+
+
+<!--Add links below this line-->
+[JSONSchema]:https://json-schema.org/
+[OpenAPI]:https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md

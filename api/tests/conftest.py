@@ -17,30 +17,20 @@ log = logging.getLogger(__name__)
 SHARED = 'shared'
 OPENAPI_MAIN_FILENAME = 'openapi.yaml'
 
-
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
-def here():
-    return current_dir
-
-
-@pytest.fixture(scope='session')
-def this_repo_root_dir(here):
-    root_dir = here.parent.parent
+def this_repo_root_dir():
+    root_dir = current_dir.parent.parent
     assert root_dir
     assert any(root_dir.glob(".git"))
     return root_dir
 
 
 @pytest.fixture(scope='session')
-def api_specs_dir(here):
-    return _api_specs_dir_impl(here)
-
-def _api_specs_dir_impl(here):
-    specs_dir = Path(here.parent / "specs")
-    return specs_dir
+def api_specs_dir():
+    return current_dir.parent / "specs"
 
 
 @pytest.fixture(scope='session')
@@ -90,7 +80,7 @@ def list_openapi_tails():
         SEE api_specs_tail to get one at a time
     """
     tails = []
-    specs_dir = _api_specs_dir_impl(current_dir)
+    specs_dir = current_dir.parent / "specs"
     for tail in _all_api_specs_tails_impl(specs_dir):
         specs = load_specs( specs_dir / tail)
         if not is_json_schema(specs):
@@ -117,4 +107,4 @@ def api_specs_tail(request, api_specs_dir):
 def webserver_api_dir(this_repo_root_dir):
     src_dir = this_repo_root_dir / "services"/ "web" / "server" / "src"
     api_dir = next(src_dir.rglob("api"))
-    return api_dir
+    return api_dir / "v0"
