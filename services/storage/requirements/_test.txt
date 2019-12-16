@@ -31,6 +31,7 @@ execnet==1.6.0
 future==0.17.1
 idna-ssl==1.1.0
 idna==2.8
+isodate==0.6.0
 isort==4.3.20             # via pylint
 jmespath==0.9.4
 jsonschema==2.6.0
@@ -40,7 +41,7 @@ mccabe==0.6.1             # via pylint
 more-itertools==7.0.0     # via pytest
 multidict==4.5.2
 numpy==1.16.3
-openapi-core==0.8.0
+openapi-core==0.12.0
 openapi-spec-validator==0.2.8
 pandas==0.24.2
 pluggy==0.11.0            # via pytest
