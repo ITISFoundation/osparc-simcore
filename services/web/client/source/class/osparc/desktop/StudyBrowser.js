@@ -51,10 +51,14 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       visibility: "excluded",
       padding: [0, 15]
     });
-    this._addAt(this.__studiesPane, 0, {
+    const scroll1 = new qx.ui.container.Scroll();
+    scroll1.add(this.__studiesPane);
+    this._add(scroll1, {
       flex: 1
     });
-    this._addAt(this.__editPane, 1);
+    const scroll2 = new qx.ui.container.Scroll();
+    scroll2.add(this.__editPane);
+    this._add(scroll2);
 
     let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesPane.add(iframe, {
