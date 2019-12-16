@@ -14,7 +14,7 @@ logging.basicConfig(
     )
 
 API_VERSION = "v0"
-API_ROOT = "oas3"
+API_ROOT = "api"
 
 REGISTRY_CACHING = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
 REGISTRY_CACHING_TTL = os.environ.get("REGISTRY_CACHING_TTL", 15*60)

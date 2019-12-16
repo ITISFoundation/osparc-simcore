@@ -16,7 +16,7 @@ API_VERSIONS = ('v0', )
 
 @pytest.fixture
 def spec_basepath():
-    basepath = Path(pkg_resources.resource_filename(simcore_service_director.__name__, 'oas3'))
+    basepath = Path(pkg_resources.resource_filename(simcore_service_director.__name__, 'api'))
     return basepath
 
 

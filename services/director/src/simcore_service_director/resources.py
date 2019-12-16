@@ -4,7 +4,7 @@ from pathlib import Path
 import pkg_resources
 from simcore_service_director import config
 
-RESOURCE_OPENAPI_ROOT = "oas3"
+RESOURCE_OPENAPI_ROOT = "api"
 RESOURCE_OPEN_API = "{root}/{version}/openapi.yaml".format(root=RESOURCE_OPENAPI_ROOT, version=config.API_VERSION)
 RESOURCE_NODE_SCHEMA = config.NODE_SCHEMA_LOCATION
 
