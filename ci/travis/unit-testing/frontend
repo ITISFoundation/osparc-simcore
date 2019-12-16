@@ -8,7 +8,7 @@ FOLDER_CHECKS=(js eslintrc json .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/show_system_versions
+        bash ci/helpers/show_system_versions
     fi
 }
 

@@ -1,0 +1,33 @@
+#!/bin/bash
+# Usage: build_docker_image_tag
+# returns the slugified name of the image tag that shall be used
+# e.g.: current git branch name
+# if on travis,
+#   if on a branch: returns the name of the travis branch
+#   if on a pull request: returns the name of the originating branch
+#   if on master: returns "build"
+
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+if [ ! -v GITHUB_ACTIONS ] || [ $GITHUB_ACTIONS = "false" ]; then
+    # no travis here so let's use the git name directly
+    image_tag=$(git rev-parse --abbrev-ref HEAD)
+else
+    if [ "${GITHUB_REF}" = "master" ]; then
+        # this is master branch and here we use a specific name to prevent naming colision
+        # with the master-latest build
+        image_tag="${GITHUB_REF}-testbuild"
+    elif [ "${GITHUB_REF}" = "staging" ]; then
+        # this is staging branch and here we use a specific name to prevent naming colision
+        # with the staging-latest build
+        image_tag="${GITHUB_REF}-testbuild"
+    else
+        image_tag=${GITHUB_REF}
+    fi
+fi
+
+slugified_name=$(exec ci/helpers/slugify_name $image_tag)
+
+echo "$slugified_name-latest"

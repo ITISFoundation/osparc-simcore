@@ -3,7 +3,6 @@ name: CI
 on: [push]
 
 env:
-  DOCKER_IMAGE_TAG: ${{ github.ref }}
   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
 
 jobs:
@@ -12,9 +11,13 @@ jobs:
     name: build the test docker images
     steps:
     - uses: actions/checkout@v1
+    - name: debugging
+      run: |
+        echo image tag is ${DOCKER_IMAGE_TAG}
+        echo registry is ${DOCKER_REGISTRY}
     - name: pull image cache/ image last build from registry
-      run: ./ci/travis/build/test-images before_script
+      run: ./ci/github/build/test-images before_script
     - name: build images
       run: |
-        ./ci/travis/build/test-images script
-        ./ci/travis/build/test-images after_success
+        ./ci/github/build/test-images script
+        ./ci/github/build/test-images after_success
