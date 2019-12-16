@@ -8,5 +8,5 @@ import trafaret as T
 CONFIG_SECTION_NAME = "projects"
 
 schema = T.Dict({
-    T.Key("enabled", default=True, optional=True): T.Bool(),
+    T.Key("enabled", default=True, optional=True): T.Bool()
 })

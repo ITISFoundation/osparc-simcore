@@ -15,19 +15,15 @@ properties:
   uuid:
     type: string
     description: project unique identifier
-    example:
-      - 07640335-a91f-468c-ab69-a374fa82078d
-      - 9bcf8feb-c1b1-41b6-b201-639cd6ccdba8
+    example: 07640335-a91f-468c-ab69-a374fa82078d
   name:
     type: string
     description: project name
-    example:
-      - Temporal Distortion Simulator
+    example: Temporal Distortion Simulator
   description:
     type: string
     description: longer one-line description about the project
-    example:
-      - Dabbling in temporal transitions ...
+    example: Dabbling in temporal transitions ...
   prjOwner:
     type: string
     description: user uuid
@@ -36,20 +32,17 @@ properties:
     description: project creation date
     pattern: >-
       \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-    example:
-      - '2018-07-01T11:13:43Z'
+    example: '2018-07-01T11:13:43Z'
   lastChangeDate:
     type: string
     description: last save date
     pattern: >-
       \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-    example:
-      - '2018-07-01T11:13:43Z'
+    example: '2018-07-01T11:13:43Z'
   thumbnail:
     type: string
     description: url of the latest screenshot of the project
-    example:
-      - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+    example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
   workbench:
     type: object
     x-patternProperties:

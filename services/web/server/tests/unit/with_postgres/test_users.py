@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -42,7 +40,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
-    assert API_VERSION in cfg["rest"]["location"]
 
     cfg["db"]["init_tables"] = True # inits postgres_service
 

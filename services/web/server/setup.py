@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     package_data={
         '': [
-            'api/openapi.yaml',
+            'api/v0/openapi.yaml',
             'api/**/components/schemas/*.json',
             'config/*.y*ml',
             'data/*.json',

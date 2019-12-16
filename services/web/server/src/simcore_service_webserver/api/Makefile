@@ -1,10 +1,10 @@
 .DEFAULT_GOAL := openapi-specs
 
-API_MAJOR_VERSION = 0
+API_MAJOR_VERSION = $(shell echo 0.1.0 | cut -f1 -d.)
 API_SPECS_DIR = $(CURDIR)/v${API_MAJOR_VERSION}
 API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../../api/specs/shared)
 OAS_SOURCES   = $(shell find ${API_SPECS_DIR}/oas-parts -type f -name '*.y*ml')
-OAS_TARGET    = $(CURDIR)/openapi.yaml
+OAS_TARGET    = $(API_SPECS_DIR)/openapi.yaml
 
 WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 
@@ -14,7 +14,7 @@ WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 	# Updating common schemas
 	@$(MAKE) -C ${API_SHARED_DIR}/schemas
 	# Updating schemas
-	@$(MAKE) -C ${API_SPECS_DIR}/components/schemas
+	@$(MAKE) -C ${API_SPECS_DIR}/oas-parts/components/schemas
 
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas

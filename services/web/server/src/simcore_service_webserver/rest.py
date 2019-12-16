@@ -12,12 +12,13 @@ import yaml
 from aiohttp import web
 
 from servicelib import openapi
+
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_middlewares import append_rest_middlewares
 from simcore_service_webserver.resources import resources
 
 from . import rest_routes
-from .rest_config import APP_OPENAPI_SPECS_KEY
+from .rest_config import APP_OPENAPI_SPECS_KEY, get_rest_config
 
 log = logging.getLogger(__name__)
 
@@ -26,9 +27,13 @@ log = logging.getLogger(__name__)
     depends=['simcore_service_webserver.security'],
     logger=log)
 def setup(app: web.Application):
+
+    cfg = get_rest_config(app) # TODO: can be automaticaly injected by app_module_setup??
+
     try:
         # FIXME: openapi_core has a bug and cannot support additionalProperties: false/true
-        spec_path = resources.get_path('api/openapi.yaml')
+        api_version_dir = cfg["version"]
+        spec_path = resources.get_path(f'api/{api_version_dir}/openapi.yaml')
         with spec_path.open() as fh:
             spec_dict = yaml.safe_load(fh)
         specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())

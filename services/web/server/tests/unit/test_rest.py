@@ -18,7 +18,6 @@ from utils_assert import assert_status
 
 # TODO: reduce log from openapi_core loggers
 
-
 @pytest.fixture
 def spec_dict(openapi_path):
     with openapi_path.open() as f:
@@ -27,7 +26,7 @@ def spec_dict(openapi_path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client):
+def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     app = create_safe_application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
@@ -35,7 +34,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     app[APP_CONFIG_KEY] = {
         "main": server_kwargs,
         "rest": {
-            "enabled": True
+            "enabled": True,
+            "version": api_version_prefix
         }
     }
     # activates only security+restAPI sub-modules
@@ -121,13 +121,13 @@ async def test_frontend_config(client, api_version_prefix):
 
 
 
-
+# FIXME: hard-coded v0
 @pytest.mark.parametrize("resource_name", [n for n in
-    resources.listdir("api/v0/components/schemas") if n.endswith(".json") ]
+    resources.listdir("api/v0/oas-parts/components/schemas") if n.endswith(".json") ]
 )
 def test_validate_component_schema(resource_name, api_version_prefix):
     try:
-        with resources.stream(f"api/{api_version_prefix}/components/schemas/{resource_name}") as fh:
+        with resources.stream(f"api/{api_version_prefix}/oas-parts/components/schemas/{resource_name}") as fh:
             schema_under_test = json.load(fh)
 
         validator = jsonschema.validators.validator_for(schema_under_test)
