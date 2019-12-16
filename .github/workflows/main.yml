@@ -2,14 +2,19 @@ name: CI
 
 on: [push]
 
+env:
+  DOCKER_IMAGE_TAG: ${{ github.ref }}
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+
 jobs:
   build:
-
     runs-on: ubuntu-18.04
-
+    name: build the test docker images
     steps:
     - uses: actions/checkout@v1
+    - name: pull image cache/ image last build from registry
+      run: ./ci/travis/build/test-images before_script
     - name: build images
       run: |
-        ./ci/travis/build/test-images before_script
-        ./ci/travis/build/test-images script    
+        ./ci/travis/build/test-images script
+        ./ci/travis/build/test-images after_success
