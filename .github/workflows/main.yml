@@ -11,6 +11,8 @@ jobs:
     name: build the test docker images
     steps:
     - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1        
     - name: show system version
       run: ./ci/github/build/test-images before_install
     - name: pull image cache/ image last build from registry
