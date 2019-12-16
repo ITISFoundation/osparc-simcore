@@ -1,0 +1,428 @@
+openapi: 3.0.0
+info:
+  description: API definition for simcore-service-storage service
+  version: 0.1.0
+  title: simcore-service-storage API
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+servers:
+  - description: API server
+    url: '/v0'
+  - description: Development server
+    url: http://{host}:{port}/{basePath}
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '11111'
+      basePath:
+        enum:
+          - v0
+        default: v0
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: tests
+  description: Operations available for testing
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags:
+        - users
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      operationId: health_check
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /check/{action}:
+    post:
+      tags:
+        - users
+      summary: Test checkpoint to ask server to fail or echo back the transmitted data
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/fake.yaml#/components/schemas/FakeType'
+      responses:
+        '200':
+          description: Echoes response based on action
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yaml#/components/schemas/FakeEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /locations:
+    get:
+      tags:
+        - users
+      summary: Get available storage locations
+      operationId : get_storage_locations
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'List of available storage locations'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/location_array.yaml#/components/schemas/FileLocationArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/datasets:
+    get:
+      tags:
+        - users
+      summary: Get datasets metadata
+      operationId: get_datasets_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of dataset meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/dataset_meta_data_array.yaml#/components/schemas/DatasetMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/files/metadata:
+    get:
+      tags:
+        - users
+      summary: Get Files Metadata
+      operationId: get_files_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: uuid_filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/datasets/{dataset_id}/metadata:
+    get:
+      tags:
+        - users
+      summary: Get Files Metadata
+      operationId: get_files_metadata_dataset
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: dataset_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/files/{fileId}/metadata:
+    get:
+      tags:
+        - users
+      summary: Get File Metadata
+      operationId: get_file_metadata
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    patch:
+      tags:
+        - users
+      summary: Update File Metadata
+      operationId: update_file_meta_data
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/FileMetaDataBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /locations/{location_id}/files/{fileId}:
+    get:
+      tags:
+        - users
+      summary: Returns download link for requested file
+      operationId: download_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PresignedLink_200'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+        - users
+      summary: Returns upload link or performs copy operation to datcore
+      operationId: upload_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: extra_location
+        in : query
+        required: false
+        schema:
+          type: string
+      - name: extra_source
+        in : query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PresignedLink_200'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - users
+      summary: Deletes File
+      operationId: delete_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OK_NoContent_204'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /simcore-s3/folders:
+    post:
+      tags:
+        - users
+      summary: Deep copies of all data from source to destination project in s3
+      operationId: copy_folders_from_project
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source:
+                  $ref: './openapi.yaml#/components/schemas/Project'
+                destination:
+                  $ref: './openapi.yaml#/components/schemas/Project'
+                nodes_map:
+                  type: object
+                  description: maps source and destination node uuids
+                  additionalProperties:
+                    type: string
+      responses:
+        '201':
+          description: Data from destination project copied and returns project
+          content:
+            application/json:
+              schema:
+                $ref: './openapi.yaml#/components/schemas/Project'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /simcore-s3/folders/{folder_id}:
+    delete:
+      tags:
+        - users
+      summary: Deletes all objects with folder_id prefix
+      operationId: delete_folders_of_project
+      parameters:
+      - name: folder_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: folder has been successfully deleted
+
+components:
+  schemas:
+    Project:
+      $ref: '../../webserver/v0/openapi-projects.yaml#/components/schemas/Project'
+  responses:
+    OK_NoContent_204:
+      description: everything is OK, but there is no content to return
+
+    DefaultErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+    FileMetaData_200:
+      description: 'Returns file metadata'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataEnveloped'
+
+    PresignedLink_200:
+      description: 'Returns presigned link'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/presigned_link.yaml#/components/schemas/PresignedLinkEnveloped'
+
+  requestBodies:
+    FileMetaDataBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataType'
