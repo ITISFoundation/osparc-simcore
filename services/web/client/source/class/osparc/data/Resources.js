@@ -323,6 +323,23 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/activity/status"
           }
         }
+      },
+
+      /*
+       * Test/Diagnonstic entrypoint
+       */
+      checkEP: {
+        usesCache: false,
+        endpoints: {
+          postFail: {
+            method: "POST",
+            url: statics.API + "/check/fail"
+          },
+          postEcho: {
+            method: "POST",
+            url: statics.API + "/check/echo"
+          }
+        }
       }
     };
   },

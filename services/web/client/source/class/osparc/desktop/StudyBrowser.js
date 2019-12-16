@@ -185,16 +185,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __initResources: function() {
-      this.__getUserProfile();
+      this.__userReady = osparc.data.Permissions.getInstance().arePermissionsReady();
       this.__getServicesPreload();
-    },
-
-    __getUserProfile: function() {
-      let permissions = osparc.data.Permissions.getInstance();
-      permissions.addListener("userProfileRecieved", e => {
-        this.__userReady = e.getData();
-      }, this);
-      permissions.loadUserRoleFromBackend();
     },
 
     __getServicesPreload: function() {
@@ -525,7 +517,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
 
     __updateDeleteButtons: function(studyData, isTemplate) {
       const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
-      const isCurrentUserOwner = studyData.prjOwner === osparc.data.Permissions.getInstance().getLogin();
+      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
       let deleteButton = this.__studiesDeleteButton;
       if (isTemplate) {
         this.__studiesDeleteButton.exclude();
