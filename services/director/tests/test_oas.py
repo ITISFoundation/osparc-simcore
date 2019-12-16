@@ -8,14 +8,10 @@ from openapi_spec_validator.exceptions import OpenAPIValidationError
 from simcore_service_director import resources
 
 
-@pytest.fixture
-def current_openapi_specs():
-    return f"{resources.RESOURCE_OPENAPI_ROOT}/openapi.yaml"
 
-
-def test_openapi_specs(current_openapi_specs):
-    openapi_path = resources.get_path(current_openapi_specs)
-    with resources.stream(current_openapi_specs) as fh:
+def test_openapi_specs():
+    openapi_path = resources.get_path(resources.RESOURCE_OPEN_API)
+    with resources.stream(resources.RESOURCE_OPEN_API) as fh:
         specs = yaml.safe_load(fh)
         try:
             validate_spec(specs, spec_url=openapi_path.as_uri())
@@ -23,8 +19,8 @@ def test_openapi_specs(current_openapi_specs):
             pytest.fail(err.message)
 
 
-def test_server_specs(current_openapi_specs):
-    with resources.stream(current_openapi_specs) as fh:
+def test_server_specs():
+    with resources.stream(resources.RESOURCE_OPEN_API) as fh:
         specs = yaml.safe_load(fh)
 
         # client-sdk current limitation
