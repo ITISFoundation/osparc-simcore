@@ -11,10 +11,6 @@ jobs:
     name: build the test docker images
     steps:
     - uses: actions/checkout@v1
-    - name: debugging
-      run: |
-        echo image tag is ${DOCKER_IMAGE_TAG}
-        echo registry is ${DOCKER_REGISTRY}
     - name: pull image cache/ image last build from registry
       run: ./ci/github/build/test-images before_script
     - name: build images
