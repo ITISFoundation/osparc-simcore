@@ -528,7 +528,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         deleteButton = this.__templateDeleteButton;
       } else {
         this.__templateDeleteButton.exclude();
-        this.__studiesDeleteButton.setLabel(this.__userStudyContainer.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
+        const nSelected = this.__userStudyContainer.getSelection().length;
+        this.__studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
       }
       deleteButton.show();
       deleteButton.setEnabled(isCurrentUserOwner && (!isTemplate || canDeleteTemplate));
