@@ -566,19 +566,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       const win = new osparc.ui.window.Dialog("Confirmation", null,
         `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`
       );
-      const btnNo = new qx.ui.toolbar.Button("No");
-      osparc.utils.Utils.setIdToWidget(btnNo, "cancelDeleteStudyBtn");
       const btnYes = new qx.ui.toolbar.Button("Yes");
       osparc.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
-      btnNo.addListener("execute", e => {
-        win["value"] = 0;
-        win.close(0);
-      }, this);
       btnYes.addListener("execute", e => {
         win["value"] = 1;
         win.close(1);
       }, this);
-      win.addButton(btnNo);
+      win.addCancelButton();
       win.addButton(btnYes);
       return win;
     }
