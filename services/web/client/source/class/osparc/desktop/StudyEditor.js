@@ -20,14 +20,11 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(studyData) {
+  construct: function(study) {
     this.base(arguments, "horizontal");
 
-    const study = new osparc.data.model.Study(studyData, true);
     study.openStudy();
     study.initWorkbench();
-
-    osparc.utils.UuidToName.getInstance().setStudy(study);
 
     this.setStudy(study);
 
