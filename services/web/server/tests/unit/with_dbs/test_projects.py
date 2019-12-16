@@ -487,7 +487,7 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
         data, error = await assert_status(resp, web.HTTPNotFound)
 
 @pytest.fixture
-def tab_id() -> str:
+def client_session_id() -> str:
     return str(uuidlib.uuid4())
 
 @pytest.mark.parametrize("user_role,expected", [
@@ -496,14 +496,14 @@ def tab_id() -> str:
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_open_project(client, logged_user, user_project, tab_id, expected, mocker):
+async def test_open_project(client, logged_user, user_project, client_session_id, expected, mocker):
     # POST /v0/projects/{project_id}:open
     # open project
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=tab_id)
+    resp = await client.post(url, json=client_session_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {service_uuid:service for service_uuid, service in user_project["workbench"].items() if "/dynamic/" in service["key"]}
@@ -519,7 +519,7 @@ async def test_open_project(client, logged_user, user_project, tab_id, expected,
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])
-async def test_close_project(client, logged_user, user_project, tab_id, expected, mocker, fake_services):
+async def test_close_project(client, logged_user, user_project, client_session_id, expected, mocker, fake_services):
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
@@ -530,10 +530,10 @@ async def test_close_project(client, logged_user, user_project, tab_id, expected
     mock_director_api_stop_services.return_value.set_result("")
     # open project
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=tab_id)
+    resp = await client.post(url, json=client_session_id)
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=tab_id)
+    resp = await client.post(url, json=client_session_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
         mock_director_api.assert_called_once()

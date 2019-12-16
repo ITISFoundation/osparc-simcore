@@ -250,9 +250,9 @@ async def open_project(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    tab_id = await request.json()
+    client_session_id = await request.json()
 
-    with managed_resource(user_id, tab_id, request.app) as rt:
+    with managed_resource(user_id, client_session_id, request.app) as rt:
         project = await get_project_for_user(request,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -275,13 +275,13 @@ async def close_project(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    tab_id = await request.json()
+    client_session_id = await request.json()
 
     # ensure the project exists
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
 
-    with managed_resource(user_id, tab_id, request.app) as rt:
+    with managed_resource(user_id, client_session_id, request.app) as rt:
         project = await get_project_for_user(request,
             project_uuid=project_uuid,
             user_id=user_id,

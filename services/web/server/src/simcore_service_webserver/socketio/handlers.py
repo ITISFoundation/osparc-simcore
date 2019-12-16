@@ -50,28 +50,28 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     """
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
-    tab_id = request.query.get("tabid", None)
-    if not tab_id:
+    client_session_id = request.query.get("tabid", None)
+    if not client_session_id:
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
-    with managed_resource(user_id, tab_id, app) as rt:
+    with managed_resource(user_id, client_session_id, app) as rt:
         sio = get_socket_server(app)
         # here we keep the original HTTP request in the socket session storage
         async with sio.session(sid) as socketio_session:
             socketio_session["user_id"] = user_id
-            socketio_session["tab_id"] = tab_id
+            socketio_session["client_session_id"] = client_session_id
             socketio_session["request"] = request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
 
 @signals.observe(event=signals.SignalType.SIGNAL_USER_LOGOUT)
 async def user_logged_out(user_id: str, app: web.Application):
-    log.debug("user %s must be disconnected", user_id)    
+    log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     with managed_resource(user_id, None, app) as rt:
-        sockets = await rt.find_socket_ids()    
-    
+        sockets = await rt.find_socket_ids()
+
         # give any other client a chance to logout properly
         sio = get_socket_server(app)
         logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
@@ -94,7 +94,7 @@ async def disconnect(sid: str, app: web.Application):
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
         user_id = socketio_session["user_id"]
-        tab_id = socketio_session["tab_id"]
-        with managed_resource(user_id, tab_id, app) as rt:
+        client_session_id = socketio_session["client_session_id"]
+        with managed_resource(user_id, client_session_id, app) as rt:
             log.debug("client %s disconnected from room %s", user_id, sid)
             await rt.remove_socket_id()

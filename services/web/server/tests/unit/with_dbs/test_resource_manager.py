@@ -198,9 +198,9 @@ async def socketio_url(client) -> str:
 async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
 
-    async def connect(tab_id):
+    async def connect(client_session_id):
         sio = socketio.AsyncClient()
-        url = str(URL(socketio_url).with_query({'tabid': tab_id}))
+        url = str(URL(socketio_url).with_query({'tabid': client_session_id}))
         await sio.connect(url, headers={'Cookie': security_cookie})
         assert sio.sid
         clients.append(sio)
@@ -211,7 +211,7 @@ async def socketio_client(socketio_url: str, security_cookie: str):
         assert not sio.sid
 
 @pytest.fixture()
-def tab_id():
+def client_session_id():
     def create() -> str():
         return str(uuid4())
     return create
@@ -260,20 +260,20 @@ async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_d
 def set_service_deletion_delay(delay: int, app: web.Application):
     app[config.APP_CONFIG_KEY][config.CONFIG_SECTION_NAME]["resource_deletion_timeout_seconds"] = delay
 
-async def open_project(client, project_uuid: str, tab_id: str) -> None:
+async def open_project(client, project_uuid: str, client_session_id: str) -> None:
     url = client.app.router["open_project"].url_for(project_id=project_uuid)
-    resp = await client.post(url, json=tab_id)
+    resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPOk)
 
-async def close_project(client, project_uuid: str, tab_id: str) -> None:
+async def close_project(client, project_uuid: str, client_session_id: str) -> None:
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
-    resp = await client.post(url, json=tab_id)
+    resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
 
 # ------------------------ TESTS -------------------------------
-async def test_anonymous_websocket_connection(socketio_client, tab_id):
+async def test_anonymous_websocket_connection(socketio_client, client_session_id):
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await socketio_client(tab_id())
+        await socketio_client(client_session_id())
 
 @pytest.mark.parametrize("user_role", [
     # (UserRole.ANONYMOUS),
@@ -281,13 +281,13 @@ async def test_anonymous_websocket_connection(socketio_client, tab_id):
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_websocket_resource_management(client, logged_user, socketio_client, tab_id):
+async def test_websocket_resource_management(client, logged_user, socketio_client, client_session_id):
     app = client.server.app
     socket_registry = get_registry(app)
-    cur_tab_id = tab_id()
-    sio = await socketio_client(cur_tab_id)
+    cur_client_session_id = client_session_id()
+    sio = await socketio_client(cur_client_session_id)
     sid = sio.sid
-    resource_key = {"user_id":str(logged_user["id"]), "tab_id": cur_tab_id}
+    resource_key = {"user_id":str(logged_user["id"]), "client_session_id": cur_client_session_id}
     assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
     assert sio.sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
@@ -304,16 +304,16 @@ async def test_websocket_resource_management(client, logged_user, socketio_clien
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_websocket_multiple_connections(client, logged_user, socketio_client, tab_id):
+async def test_websocket_multiple_connections(client, logged_user, socketio_client, client_session_id):
     app = client.server.app
     socket_registry = get_registry(app)
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
     for socket in range(NUMBER_OF_SOCKETS):
-        cur_tab_id = tab_id()
-        sio = await socketio_client(cur_tab_id)
-        resource_key = {"user_id": str(logged_user["id"]), "tab_id": cur_tab_id}
+        cur_client_session_id = client_session_id()
+        sio = await socketio_client(cur_client_session_id)
+        resource_key = {"user_id": str(logged_user["id"]), "client_session_id": cur_client_session_id}
         assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
         assert [sio.sid] == await socket_registry.find_resources(resource_key, "socket_id")
         assert len(await socket_registry.find_resources({"user_id": str(logged_user["id"])}, "socket_id")) == (socket+1)
@@ -337,11 +337,11 @@ async def test_websocket_multiple_connections(client, logged_user, socketio_clie
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, tab_id, expected):
+async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, client_session_id, expected):
     app = client.server.app
     socket_registry = get_registry(app)
-    cur_tab_id = tab_id()
-    sio = await socketio_client(cur_tab_id)
+    cur_client_session_id = client_session_id()
+    sio = await socketio_client(cur_client_session_id)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
     r = await client.get(logout_url)
@@ -377,7 +377,7 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(loop, client, logged_user, expected, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
+async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(loop, client, logged_user, expected, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
     SERVICE_DELETION_DELAY = 5
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
 
@@ -386,17 +386,17 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # create dynamic service - mocked_dynamic_service fixture
     service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     # create first websocket
-    tab_id1 = tab_id()
-    sio = await socketio_client(tab_id1)
+    client_session_id1 = client_session_id()
+    sio = await socketio_client(client_session_id1)
     # open project in client 1
-    await open_project(client, empty_user_project["uuid"], tab_id1)
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
 
     # create second websocket
-    tab_id2 = tab_id()
-    sio2 = await socketio_client(tab_id2)
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id2)
     assert sio.sid != sio2.sid
     # open project in second client
-    await open_project(client, empty_user_project["uuid"], tab_id2)
+    await open_project(client, empty_user_project["uuid"], client_session_id2)
     # disconnect first websocket
     await sio.disconnect()
     assert not sio.sid
@@ -412,7 +412,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # assert dynamic service is still around for now
     mocked_director_api["stop_service"].assert_not_called()
     # reconnect websocket
-    sio2 = await socketio_client(tab_id2)
+    sio2 = await socketio_client(client_session_id2)
     # assert dynamic service is still around
     mocked_director_api["stop_service"].assert_not_called()
     # event after waiting some time
@@ -433,7 +433,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_interactive_services_removed_per_project(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
+async def test_interactive_services_removed_per_project(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
     SERVICE_DELETION_DELAY = 5
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -447,13 +447,13 @@ async def test_interactive_services_removed_per_project(loop, client, logged_use
     service2 = await mocked_dynamic_service(logged_user["id"], empty_user_project2["uuid"])
     service3 = await mocked_dynamic_service(logged_user["id"], empty_user_project2["uuid"])
     # create websocket1 from tab1
-    tab_id1 = tab_id()
-    sio1 = await socketio_client(tab_id1)
-    await open_project(client, empty_user_project["uuid"], tab_id1)
+    client_session_id1 = client_session_id()
+    sio1 = await socketio_client(client_session_id1)
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
     # create websocket2 from tab2
-    tab_id2 = tab_id()
-    sio2 = await socketio_client(tab_id2)
-    await open_project(client, empty_user_project2["uuid"], tab_id2)
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id2)
+    await open_project(client, empty_user_project2["uuid"], client_session_id2)
     # disconnect websocket1
     await sio1.disconnect()
     assert not sio1.sid
@@ -485,7 +485,7 @@ async def test_interactive_services_removed_per_project(loop, client, logged_use
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
+async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
     SERVICE_DELETION_DELAY = 1
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -494,21 +494,21 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, l
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     # open project in tab1
-    tab_id1 = tab_id()
-    sio1 = await socketio_client(tab_id1)
-    await open_project(client, empty_user_project["uuid"], tab_id1)
+    client_session_id1 = client_session_id()
+    sio1 = await socketio_client(client_session_id1)
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
-    tab_id2 = tab_id()
-    sio2 = await socketio_client(tab_id2)
-    await open_project(client, empty_user_project["uuid"], tab_id2)
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id2)
+    await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
-    await close_project(client, empty_user_project["uuid"], tab_id1)
+    await close_project(client, empty_user_project["uuid"], client_session_id1)
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service is still around
     mocked_director_api["stop_service"].assert_not_called()
     # close project in tab2
-    await close_project(client, empty_user_project["uuid"], tab_id2)
+    await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
     mocked_director_api["stop_service"].assert_has_calls([
@@ -521,7 +521,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, l
     (UserRole.USER, web.HTTPForbidden),
     (UserRole.TESTER, web.HTTPForbidden),
 ])
-async def test_deletion_forbidden_if_delete_from_one_tab(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id, expected):
+async def test_deletion_forbidden_if_delete_from_one_tab(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected):
     SERVICE_DELETION_DELAY = 1
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -530,12 +530,12 @@ async def test_deletion_forbidden_if_delete_from_one_tab(loop, client, logged_us
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     # open project in tab1
-    tab_id1 = tab_id()
-    sio1 = await socketio_client(tab_id1)
-    await open_project(client, empty_user_project["uuid"], tab_id1)
+    client_session_id1 = client_session_id()
+    sio1 = await socketio_client(client_session_id1)
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
     # delete project in tab2
-    tab_id2 = tab_id()
-    sio2 = await socketio_client(tab_id2)
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id2)
     url = client.app.router["delete_project"].url_for(project_id=empty_user_project["uuid"])
     resp = await client.delete(url)
     await assert_status(resp, expected)

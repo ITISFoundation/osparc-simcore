@@ -139,7 +139,7 @@ async def all_in_one(request, loop, rabbit_config, pika_connection, node_uuid, u
     yield {"rabbit_channel": pika_exchange, "data": message, "socket_name": socket_event_name}
 
 @pytest.fixture
-def tab_id():
+def client_session_id():
     return str(uuid4())
 
 @pytest.mark.parametrize("user_role", [
@@ -149,12 +149,12 @@ def tab_id():
 ])
 async def test_rabbit_websocket_connection(logged_user,
                                             socketio_client, mocker,
-                                            all_in_one, tab_id):
+                                            all_in_one, client_session_id):
     rabbit_channel = all_in_one["rabbit_channel"]
     channel_message = all_in_one["data"]
     socket_event_name = all_in_one["socket_name"]
 
-    sio = await socketio_client(tab_id)
+    sio = await socketio_client(client_session_id)
     # register mock function
     log_fct = mocker.Mock()
     sio.on(socket_event_name, handler=log_fct)
