@@ -12,7 +12,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
         "401":
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
@@ -34,31 +34,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
@@ -71,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
@@ -87,19 +87,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
@@ -114,19 +114,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 

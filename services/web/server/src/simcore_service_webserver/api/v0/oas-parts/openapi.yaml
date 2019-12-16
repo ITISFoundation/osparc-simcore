@@ -1,0 +1,143 @@
+openapi: 3.0.0
+info:
+  title: simcore-service-webserver API
+  version: 0.1.1
+  description: API definition for simcore-service-webserver service
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+servers:
+  - description: API server
+    url: '/v0'
+  - description: Development server
+    url: http://{host}:{port}/{basePath}
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+      basePath:
+        enum:
+          - v0
+        default: v0
+paths:
+
+  # DIAGNOSTICS ---------------------------------------------------------
+  /:
+    $ref: './openapi-diagnostics.yaml#/paths/~1'
+
+  /check/{action}:
+    $ref: './openapi-diagnostics.yaml#/paths/~1check~1{action}'
+
+  /config:
+    $ref: './openapi-diagnostics.yaml#/paths/~1config'
+
+  # AUTHENTICATION & AUTHORIZATION --------------------------------------
+
+  /auth/register:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1register'
+
+  /auth/login:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1login'
+
+  /auth/logout:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1logout'
+
+  /auth/reset-password:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password'
+
+  /auth/reset-password/{code}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password~1{code}'
+
+  /auth/change-email:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1change-email'
+
+  /auth/change-password:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1change-password'
+
+  /auth/confirmation/{code}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}'
+
+  /auth/check-password/{password}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1check-password~1{password}'
+
+  # USER SETTINGS ------------------------------------------------------------------
+
+  /me:
+    $ref: './openapi-user.yaml#/paths/~1me'
+
+  /me/tokens:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens'
+
+  /me/tokens/{service}:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens~1{service}'
+
+  # DATA STORAGE SERVICES ----------------------------------------------------------
+
+  /storage/locations:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations'
+
+  /storage/locations/{location_id}/files/metadata:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1metadata'
+
+  /storage/locations/{location_id}/files/{fileId}:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{fileId}'
+
+  /storage/locations/{location_id}/files/{fileId}/metadata:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{fileId}~1metadata'
+
+  /storage/locations/{location_id}/datasets/{dataset_id}/metadata:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets~1{dataset_id}~1metadata'
+
+  /storage/locations/{location_id}/datasets:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets'
+
+
+  # SERVICES ------------------------------------------------------------------------
+  /services:
+    $ref: './openapi-services.yaml#/paths/~1services'
+
+  /running_interactive_services:
+    $ref: './openapi-services.yaml#/paths/~1running_interactive_services'
+
+  /running_interactive_services/{service_uuid}:
+    $ref: './openapi-services.yaml#/paths/~1running_interactive_services~1{service_uuid}'
+
+  /computation/pipeline/{project_id}:
+    $ref: './openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}'
+
+  /computation/pipeline/{project_id}/start:
+    $ref: './openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}~1start'
+
+  # PROJECT SERVICES -----------------------------------------------------------------
+
+  /projects:
+    $ref: './openapi-projects.yaml#/paths/~1projects'
+
+  /projects/{project_id}:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
+
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}'
+
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}~1{apiCall}'
+
+  /nodes/{nodeInstanceUUID}/iframe:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe'
+
+  # ACTIVITY -------------------------------------------------------------------------
+  /activity/status:
+    $ref: './openapi-activity.yaml#/paths/~1activity~1status'
+
+components:
+  responses:
+    DefaultErrorResponse:
+      description: Default http error response body
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'

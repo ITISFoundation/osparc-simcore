@@ -3,7 +3,7 @@
 API_MAJOR_VERSION = 0
 API_SPECS_DIR = $(CURDIR)/v${API_MAJOR_VERSION}
 API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../../api/specs/shared)
-OAS_SOURCES   = $(shell find ${API_SPECS_DIR}/ -type f -name '*.y*ml')
+OAS_SOURCES   = $(shell find ${API_SPECS_DIR}/oas-parts -type f -name '*.y*ml')
 OAS_TARGET    = $(CURDIR)/openapi.yaml
 
 WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
