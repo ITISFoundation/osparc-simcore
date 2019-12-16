@@ -19,7 +19,7 @@ OAS_TARGET     = $(API_SPECS_DIR)/openapi.yaml
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
-	@swagger-cli bundle -o $@ -t yaml -r "${API_SPECS_DIR}/oas-parts/main.yaml"
+	@swagger-cli bundle --outfile $@ --type yaml --dereference $ "${API_SPECS_DIR}/oas-parts/main.yaml"
 
 
 .PHONY: openapi-specs
