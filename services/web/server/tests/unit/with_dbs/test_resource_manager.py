@@ -115,6 +115,20 @@ async def logged_user(client, user_role: UserRole):
         yield user
         print("<----- logged out user", user_role)
 
+@pytest.fixture()
+async def logged_user2(client, user_role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds=user_role != UserRole.ANONYMOUS
+    ) as user:
+        print("-----> logged in user", user_role)
+        yield user
+        print("<----- logged out user", user_role)
 
 @pytest.fixture
 def empty_project():
@@ -352,6 +366,7 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     r = await client.get(logout_url)
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
+
     # assert dynamic service is removed
     calls = [call(client.server.app, service["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)
@@ -412,48 +427,13 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     calls = [call(client.server.app, service["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
-
 @pytest.mark.parametrize("user_role", [
     # (UserRole.ANONYMOUS),
     (UserRole.GUEST),
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_interactive_services_removed_after_websocket_disconnection_for_some_time(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
-    SERVICE_DELETION_DELAY = 3
-    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
-    # create server with delay set to DELAY
-    # login - logged_user fixture
-    # create empty study - empty_user_project fixture
-    # service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    # create dynamic service - mocked_dynamic_service fixture
-    service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    service2 = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    # create websocket
-    cur_tab_id = tab_id()
-    sio = await socketio_client(cur_tab_id)
-    # open the project
-    await open_project(client, empty_user_project["uuid"], cur_tab_id)
-    # disconnect websocket
-    await sio.disconnect()
-    assert not sio.sid
-    # assert dynamic service is still around
-    mocked_director_api["stop_service"].assert_not_called()
-    # wait the defined delay
-    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
-    # assert dynamic service are removed
-    calls = [call(client.server.app, service["service_uuid"]),
-            call(client.server.app, service2["service_uuid"])]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
-    mocked_director_api["stop_service"].reset_mock()
-
-@pytest.mark.parametrize("user_role", [
-    # (UserRole.ANONYMOUS),
-    (UserRole.GUEST),
-    (UserRole.USER),
-    (UserRole.TESTER),
-])
-async def test_interactive_services_removed_per_tab(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
+async def test_interactive_services_removed_per_project(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id):
     SERVICE_DELETION_DELAY = 5
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -534,3 +514,28 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, l
     mocked_director_api["stop_service"].assert_has_calls([
         call(client.server.app, service["service_uuid"])
     ])
+
+@pytest.mark.parametrize("user_role, expected", [
+    # (UserRole.ANONYMOUS),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPForbidden),
+    (UserRole.TESTER, web.HTTPForbidden),
+])
+async def test_deletion_forbidden_if_delete_from_one_tab(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, tab_id, expected):
+    SERVICE_DELETION_DELAY = 1
+    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
+    # create server with delay set to DELAY
+    # login - logged_user fixture
+    # create empty study in project - empty_user_project fixture
+    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    # open project in tab1
+    tab_id1 = tab_id()
+    sio1 = await socketio_client(tab_id1)
+    await open_project(client, empty_user_project["uuid"], tab_id1)
+    # delete project in tab2
+    tab_id2 = tab_id()
+    sio2 = await socketio_client(tab_id2)
+    url = client.app.router["delete_project"].url_for(project_id=empty_user_project["uuid"])
+    resp = await client.delete(url)
+    await assert_status(resp, expected)

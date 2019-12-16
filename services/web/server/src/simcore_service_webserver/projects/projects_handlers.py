@@ -232,7 +232,7 @@ async def delete_project(request: web.Request):
             if user_id in other_users:
                 message = "Project is still open. It cannot be deleted until it is closed."
             # we cannot delete that project
-            raise web.HTTPUnauthorized(reason=message)
+            raise web.HTTPForbidden(reason=message)
 
     # fire & forget
     asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
