@@ -27,7 +27,7 @@
  *   const dataStore = osparc.store.Data.getInstance();
  *   dataStore.addListenerOnce("nodeFiles", e => {
  *     const files = e.getData();
- *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
+ *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
  *     this.__addTreeData(newChildren);
  *   }, this);
  *   dataStore.getNodeFiles(nodeId);
@@ -53,7 +53,7 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
-    fromDSMToVirtualTreeModel: function(files) {
+    fromDSMToVirtualTreeModel: function(datasetId, files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
@@ -85,6 +85,7 @@ qx.Class.define("osparc.data.Converters", {
                   [this.createFileEntry(
                     fileName,
                     file["location_id"],
+                    datasetId,
                     file["file_id"],
                     file["last_modified"],
                     file["file_size"])
@@ -110,6 +111,7 @@ qx.Class.define("osparc.data.Converters", {
           let fileInfo = this.createFileEntry(
             splitted[splitted.length-1],
             file["location_id"],
+            datasetId,
             file["file_id"],
             file["last_modified"],
             file["file_size"]);
@@ -134,7 +136,7 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, fileId, lastModified, size) {
+    createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
@@ -153,6 +155,7 @@ qx.Class.define("osparc.data.Converters", {
       return {
         label,
         location,
+        datasetId,
         fileId,
         itemId: fileId,
         lastModified,
