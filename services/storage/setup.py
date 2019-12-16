@@ -40,7 +40,7 @@ setup_config = dict(
             'data/*.json',
             'data/*.yml',
             'data/*.yaml',
-            'api/*.y*ml'
+            'api/**/*.y*ml'
             ],
     },
     entry_points={

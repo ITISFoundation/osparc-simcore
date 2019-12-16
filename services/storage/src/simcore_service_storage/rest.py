@@ -32,7 +32,7 @@ def setup(app: web.Application):
     """
     log.debug("Setting up %s ...", __name__)
 
-    spec_path = resources.stream('api/openapi.yaml')
+    spec_path = resources.get_path('api/v0/openapi.yaml')
     with spec_path.open() as fh:
         spec_dict = yaml.safe_load(fh)
     api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
