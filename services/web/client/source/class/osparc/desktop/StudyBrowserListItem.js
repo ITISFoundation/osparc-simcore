@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
             scale: true,
             allowStretchX: true,
             allowStretchY: true,
-            maxHeight: 120
+            height: 120
           });
           this._addAt(control, 1);
           break;
