@@ -54,16 +54,17 @@ paths:
         - users
       summary: Test checkpoint to ask server to fail or echo back the transmitted data
       parameters:
-        - in: query
-          name: data
-          schema:
-            type: string
         - in: path
+          required: true
           name: action
           schema:
             type: string
             default: 'echo'
             enum: ['fail', 'echo']
+        - in: query
+          name: data
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -393,7 +394,7 @@ paths:
 components:
   schemas:
     Project:
-      $ref: '../../webserver/v0/openapi-projects.yaml#/components/schemas/Project'
+      $ref: '../../../../../../../api/specs/shared/schemas/project.yaml#/components/schemas/Project'
   responses:
     OK_NoContent_204:
       description: everything is OK, but there is no content to return
