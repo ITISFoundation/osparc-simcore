@@ -28,17 +28,10 @@ install-dev install-prod install-ci: openapi-specs ## install app in development
 	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests-unit tests-integration
-tests-unit: ## runs unit tests
+.PHONY: tests
+tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
-
-
-tests-integration: ## runs integration tests against local+production images
-	# running integration tests local/(service):production images ...
-	@export DOCKER_REGISTRY=local; \
-	export DOCKER_IMAGE_TAG=production; \
-	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
+	@pytest -vv -x --ff --pdb $(CURDIR)/tests
 
 
 .PHONY: build
@@ -54,6 +47,8 @@ version-patch version-minor version-major: ## commits version as patch (bug fixe
 
 .PHONY: info
 info: ## displays
+	# version
+	@cat setup.py | grep version=
 	# installed
 	@pip list
 

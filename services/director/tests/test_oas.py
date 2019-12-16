@@ -1,30 +1,30 @@
-import yaml
-import pytest
+# pylint: disable=redefined-outer-name
 
+import pytest
+import yaml
 from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import (
-    OpenAPIValidationError
-)
+from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from simcore_service_director import resources
 
-API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
-@pytest.mark.parametrize('version', API_VERSIONS)
-def test_openapi_specs(version):
-    name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
-    openapi_path = resources.get_path(name)
-    with resources.stream(name) as fh:
+@pytest.fixture
+def current_openapi_specs():
+    return f"{resources.RESOURCE_OPENAPI_ROOT}/openapi.yaml"
+
+
+def test_openapi_specs(current_openapi_specs):
+    openapi_path = resources.get_path(current_openapi_specs)
+    with resources.stream(current_openapi_specs) as fh:
         specs = yaml.safe_load(fh)
         try:
             validate_spec(specs, spec_url=openapi_path.as_uri())
         except OpenAPIValidationError as err:
             pytest.fail(err.message)
 
-@pytest.mark.parametrize('version', API_VERSIONS)
-def test_server_specs(version):
-    name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
-    with resources.stream(name) as fh:
+
+def test_server_specs(current_openapi_specs):
+    with resources.stream(current_openapi_specs) as fh:
         specs = yaml.safe_load(fh)
 
         # client-sdk current limitation
