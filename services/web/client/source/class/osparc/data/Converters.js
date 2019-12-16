@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataStore = osparc.store.Data.getInstance();
+ *   const dataStore = osparc.store.Data.getInstance();
  *   dataStore.addListenerOnce("nodeFiles", e => {
  *     const files = e.getData();
  *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);

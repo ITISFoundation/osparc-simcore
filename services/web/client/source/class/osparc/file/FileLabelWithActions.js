@@ -108,7 +108,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        let dataStore = osparc.store.Data.getInstance();
+        const dataStore = osparc.store.Data.getInstance();
         dataStore.addListenerOnce("presignedLink", e => {
           const presignedLinkData = e.getData();
           console.log(presignedLinkData.presignedLink);
@@ -135,7 +135,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
           return false;
         }
-        let dataStore = osparc.store.Data.getInstance();
+        const dataStore = osparc.store.Data.getInstance();
         dataStore.addListenerOnce("deleteFile", e => {
           if (e) {
             this.fireDataEvent("fileDeleted", e.getData());

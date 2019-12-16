@@ -112,7 +112,7 @@ qx.Class.define("osparc.file.FilesAdd", {
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
-      let dataStore = osparc.store.Data.getInstance();
+      const dataStore = osparc.store.Data.getInstance();
       dataStore.addListenerOnce("presignedLink", e => {
         const presignedLinkData = e.getData();
         file["location"] = presignedLinkData.locationId;
@@ -152,6 +152,7 @@ qx.Class.define("osparc.file.FilesAdd", {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
+          file.dataset = this.getStudyId();
           this.fireDataEvent("fileAdded", file);
         } else {
           console.log(xhr.response);
