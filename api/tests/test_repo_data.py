@@ -51,9 +51,9 @@ def _load_data(fpath: Path):
     scope="module",
     params=SYNCED_VERSIONS_SUFFIX
 )
-def project_schema(request, api_specs_dir):
+def project_schema(request, webserver_api_dir):
     suffix = request.param
-    schema_path = api_specs_dir / "webserver/v0/components/schemas/project-v0.0.1{}".format(suffix)
+    schema_path = webserver_api_dir / "v0/components/schemas/project-v0.0.1{}".format(suffix)
     return _load_data(schema_path)
 
 # TESTS --------------------------------------------------

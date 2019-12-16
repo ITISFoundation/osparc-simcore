@@ -111,3 +111,10 @@ def api_specs_tail(request, api_specs_dir):
     specs_tail = request.param
     assert exists(api_specs_dir / specs_tail)
     return Path(specs_tail)
+
+
+@pytest.fixture(scope="session")
+def webserver_api_dir(this_repo_root_dir):
+    src_dir = this_repo_root_dir / "services"/ "web" / "server" / "src"
+    api_dir = next(src_dir.rglob("api"))
+    return api_dir
