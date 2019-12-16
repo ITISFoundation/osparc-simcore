@@ -563,26 +563,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createConfirmWindow: function(isMulti) {
-      const win = new qx.ui.window.Window("Confirmation").set({
-        layout: new qx.ui.layout.VBox(10),
-        width: 300,
-        height: 60,
-        modal: true,
-        showMaximize: false,
-        showMinimize: false,
-        showClose: false,
-        autoDestroy: false,
-        appearance: "service-window"
-      });
-
-      const message = `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`;
-      const text = new qx.ui.basic.Label(this.tr(message));
-      win.add(text);
-
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
-      const btnNo = new qx.ui.form.Button("No");
+      const win = new osparc.ui.window.Dialog("Confirmation", null,
+        `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`
+      );
+      const btnNo = new qx.ui.toolbar.Button("No");
       osparc.utils.Utils.setIdToWidget(btnNo, "cancelDeleteStudyBtn");
-      const btnYes = new qx.ui.form.Button("Yes");
+      const btnYes = new qx.ui.toolbar.Button("Yes");
       osparc.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
       btnNo.addListener("execute", e => {
         win["value"] = 0;
@@ -592,10 +578,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         win["value"] = 1;
         win.close(1);
       }, this);
-      buttons.add(btnNo);
-      buttons.add(btnYes);
-      win.add(buttons);
-
+      win.addButton(btnNo);
+      win.addButton(btnYes);
       return win;
     }
   }
