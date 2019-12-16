@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := openapi-specs
 
 
-API_MAJOR_VERSION = $(shell echo 0.1.0 | cut -f -d.)
+API_MAJOR_VERSION = $(shell echo 0.1.0 | cut -f1 -d.)
 API_SPECS_DIR = $(CURDIR)/v${API_MAJOR_VERSION}
 API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../api/specs/shared)
 OAS_SOURCES   = $(shell find ${API_SPECS_DIR}/oas-parts -type f -name '*.y*ml')
