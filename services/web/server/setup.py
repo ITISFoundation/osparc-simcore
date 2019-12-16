@@ -33,7 +33,7 @@ setup(
     package_data={
         '': [
             'api/v0/openapi.yaml',
-            'api/**/components/schemas/*.json',
+            'api/v0/oas-parts/components/schemas/*.json',
             'config/*.y*ml',
             'data/*.json',
             'templates/**/*.html',
