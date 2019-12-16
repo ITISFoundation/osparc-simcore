@@ -1,27 +1,19 @@
 """ RESTful API for simcore_service_storage
 
 """
-#import asyncio
 import logging
 
 import openapi_core
 import yaml
 from aiohttp import web
 
-#from servicelib.client_session import get_client_session
-#from servicelib.openapi import create_openapi_specs,
 from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
 from .resources import resources
-#from .rest_config import CONFIG_SECTION_NAME
-#from .settings import APP_CONFIG_KEY, API_VERSION_TAG, APP_OPENAPI_SPECS_KEY
 from .settings import APP_OPENAPI_SPECS_KEY
 
-#from yarl import URL
-
-#from .utils import assert_enpoint_is_ok, is_url
 
 log = logging.getLogger(__name__)
 
@@ -40,17 +32,7 @@ def setup(app: web.Application):
     """
     log.debug("Setting up %s ...", __name__)
 
-    #cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    #location = "{}/storage/{}/openapi.yaml".format(cfg["oas_repo"], API_VERSION_TAG)
-
-    # TODO: refactor this and into something more maintainable
-    #loop = asyncio.get_event_loop()
-    #session = get_client_session(app)
-    #if is_url(location):
-    #    loop.run_until_complete( assert_enpoint_is_ok(session, URL(location)) )
-    #api_specs = loop.run_until_complete( create_openapi_specs(location, session) )
-
-    spec_path = resources.get_path('api/openapi.yaml')
+    spec_path = resources.stream('api/openapi.yaml')
     with spec_path.open() as fh:
         spec_dict = yaml.safe_load(fh)
     api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
