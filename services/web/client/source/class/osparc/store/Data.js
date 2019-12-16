@@ -19,20 +19,6 @@
  * Singleton class that is used as entrypoint to the webserver.
  *
  * All data transfer communication goes through the osparc.store.Store.
- *
- * *Example*
- *
- * Here is a little example of how to use the class.
- *
- * <pre class='javascript'>
- *    const filesStore = osparc.store.Data.getInstance();
- *    filesStore.addListenerOnce("nodeFiles", e => {
- *      const files = e.getData();
- *      const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
- *      this.__filesToRoot(newChildren);
- *    }, this);
- *    filesStore.getNodeFiles(nodeId);
- * </pre>
  */
 
 qx.Class.define("osparc.store.Data", {
