@@ -32,7 +32,6 @@ from .projects_fakes import Fake
 logger = logging.getLogger(__name__)
 module_name = __name__.replace(".__init__", "")
 
-import pdb; pdb.set_trace()
 
 def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
     """
