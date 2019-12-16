@@ -5,62 +5,62 @@ paths:
       description: Lists available services in catalog
       operationId: services_get
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ServiceType"
+        - $ref: "#/components/parameters/ServiceType"
       responses:
         "200":
           description: Returns list of services in catalog
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+                $ref: "#/components/schemas/ServicesEnveloped"
         "401":
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /running_interactive_services:
     post:
       description: "Starts an interactive service in the oSparc platform and returns its entrypoint"
       operationId: running_interactive_services_post
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ProjectIdQuery"
-        - $ref: "./openapi-services.yaml#/components/parameters/ServiceKey"
-        - $ref: "./openapi-services.yaml#/components/parameters/ServiceVersion"
-        - $ref: "./openapi-services.yaml#/components/parameters/AssignmentUuid"
+        - $ref: "#/components/parameters/ProjectIdQuery"
+        - $ref: "#/components/parameters/ServiceKey"
+        - $ref: "#/components/parameters/ServiceVersion"
+        - $ref: "#/components/parameters/AssignmentUuid"
       responses:
         "201":
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+                $ref: "#/components/schemas/RunningServiceEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
     delete:
       description: Stops and removes all user interactive services from the platform
@@ -71,83 +71,83 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /running_interactive_services/{service_uuid}:
     get:
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ServiceUuid"
+        - $ref: "#/components/parameters/ServiceUuid"
       responses:
         "204":
           description: OK service exists and runs
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
     delete:
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ServiceUuid"
+        - $ref: "#/components/parameters/ServiceUuid"
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: "../../../../../../../../../api/specs/common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /computation/pipeline/{project_id}:
     put:
       description: "Update a pipeline using workbench section from given project"
       operationId: update_pipeline
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ProjectId"
       responses:
         "204":
           description: Succesfully updated the pipeline
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /computation/pipeline/{project_id}/start:
     post:
       description: Starts a pipeline of a given project
       operationId: start_pipeline
       parameters:
-        - $ref: "./openapi-services.yaml#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ProjectId"
       responses:
         "200":
           description: Succesffully started the pipeline
@@ -156,10 +156,11 @@ paths:
               schema:
                 $ref: "./components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped"
         default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   # PROJECT SERVICES -----------------------------------------------------------------
 components:
+
   parameters:
     ProjectId:
       in: path
@@ -234,3 +235,15 @@ components:
       schema:
         type: string
         example: "1.4"
+
+  schemas:
+    ServicesEnveloped:
+      $ref: "../../../../../../../../api/specs/shared/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+    RunningServiceEnveloped:
+      $ref: "../../../../../../../../api/specs/shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+    ErrorEnveloped:
+      $ref: "../../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+
+  responses:
+    DefaultErrorResponse:
+      $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'

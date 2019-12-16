@@ -30,9 +30,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectArrayEnveloped'
+                $ref: '#/components/schemas/ProjectArrayEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
     post:
       summary: Create new project
       operationId: create_projects
@@ -51,16 +51,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/Project'
+              $ref: '#/components/schemas/Project'
       responses:
         '201':
           description: project created
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: '#/components/schemas/ProjectEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
 
   /projects/{project_id}:
     parameters:
@@ -78,9 +78,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: '#/components/schemas/ProjectEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
     put:
       summary: Enclosed entity replaces given project
       operationId: replace_project
@@ -94,16 +94,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/Project'
+              $ref: '#/components/schemas/Project'
       responses:
         '200':
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: '#/components/schemas/ProjectEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
     delete:
       summary: Delete given project
       operationId: delete_project
@@ -112,28 +112,15 @@ paths:
           description: project has been successfully deleted
 
 components:
+
   schemas:
     Project:
-      $ref: './components/schemas/project-v0.0.1-converted.yaml'
+      $ref: '../../../../../../../../api/specs/shared/schemas/project.yaml#/components/schemas/Project'
     ProjectEnveloped:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          $ref: './openapi-projects.yaml#/components/schemas/Project'
-        error:
-          nullable: true
-          default: null
+      $ref: '../../../../../../../../api/specs/shared/schemas/project.yaml#/components/schemas/ProjectEnveloped'
     ProjectArrayEnveloped:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            $ref: './openapi-projects.yaml#/components/schemas/Project'
-        error:
-          nullable: true
-          default: null
+      $ref: '../../../../../../../../api/specs/shared/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped'
+
+  responses:
+    DefaultErrorResponse:
+      $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'

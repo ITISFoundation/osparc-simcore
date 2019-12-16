@@ -54,7 +54,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
     post:
@@ -136,3 +136,6 @@ components:
           type: object
     outputApiResponse:
       type: object
+
+    ErrorEnveloped:
+      $ref: '../../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
