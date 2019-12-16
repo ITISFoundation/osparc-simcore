@@ -19,7 +19,7 @@ WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
-	@swagger-cli bundle -o $@ -t yaml -r "${API_SPECS_DIR}/openapi.yaml"
+	@swagger-cli bundle -o $@ -t yaml -r "${API_SPECS_DIR}/oas-parts/openapi.yaml"
 
 
 .PHONY: openapi-specs
