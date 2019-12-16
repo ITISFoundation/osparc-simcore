@@ -11,6 +11,8 @@ jobs:
     name: build the test docker images
     steps:
     - uses: actions/checkout@v1
+    - name: extract branch name
+      run: echo running on branch ${GITHUB_REF##*/}
     - name: pull image cache/ image last build from registry
       run: ./ci/github/build/test-images before_script
     - name: build images
