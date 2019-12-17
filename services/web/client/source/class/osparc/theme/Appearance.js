@@ -478,6 +478,31 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         font: state.checked ? "title-16" : "text-16"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      EditLabel
+    ---------------------------------------------------------------------------
+    */
+    "editlabel/label": {
+      include: "atom/label",
+      style: state => ({
+        font: "title-16",
+        decorator: state.hovered ? "border-editable" : null,
+        marginLeft: state.hovered ? 0 : 1,
+        padding: 2,
+        cursor: "text"
+      })
+    },
+    "editlabel/input": {
+      include: "textfield",
+      style: state => ({
+        font: "text-16",
+        paddingTop: 4,
+        paddingLeft: 3,
+        minWidth: 80
+      })
     }
   }
 });

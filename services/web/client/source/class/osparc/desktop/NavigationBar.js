@@ -78,6 +78,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
+    const title = new osparc.ui.form.EditLabel("Titulo del estudio");
+    this._add(title);
+
     let hBox = new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     });
@@ -134,6 +137,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
+      }
+      if (nodeIds.length === 1) {
+        return;
       }
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
