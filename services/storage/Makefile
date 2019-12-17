@@ -1,15 +1,9 @@
-#
-# TODO: under development
-#
 .DEFAULT_GOAL := help
-
-APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME  = simcore-service-${APP_NAME}
 
 REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
-
+APP_NAME     := $(notdir $(CURDIR))
 
 
 .PHONY: devenv
@@ -31,7 +25,7 @@ install-dev install-prod install-ci: openapi-specs ## install app in development
 .PHONY: tests
 tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv -x --ff --pdb $(CURDIR)/tests
+	@pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests
 
 
 

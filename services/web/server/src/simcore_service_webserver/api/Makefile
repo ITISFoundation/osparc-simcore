@@ -2,7 +2,9 @@
 
 API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../../api/specs/shared)
 
-API_MAJOR_VERSION = $(shell echo 0.1.0 | cut -f1 -d.)
+APP_DIR = $(abspath $(CURDIR)../../../../)
+
+API_MAJOR_VERSION = $(shell cat ${APP_DIR}/VERSION | cut -f1 -d.)
 API_SPECS_DIR = $(CURDIR)/v${API_MAJOR_VERSION}
 API_PARTS_DIR = ${API_SPECS_DIR}/oas-parts
 
@@ -11,7 +13,7 @@ OAS_TARGET    = $(API_SPECS_DIR)/openapi.yaml
 
 API_SHARED_JSON_SCHEMAS = $(shell find ${API_SHARED_DIR}/schemas -type f -name '*.json')
 
-WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
+WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
 
 
 .PHONY: .update-schemas

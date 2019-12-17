@@ -3,12 +3,10 @@
 #
 .DEFAULT_GOAL := help
 
-APP_NAME     := webserver
-APP_CLI_NAME  = simcore-service-${APP_NAME}
-
 REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
 VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
+APP_NAME     := webserver
 
 
 
@@ -19,7 +17,7 @@ devenv: ## build development environment (using main services/docker-compose-bui
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
-	$(MAKE) -C $(CURDIR)/src/simcore_service_webserver/api $@
+	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
 .PHONY: install
@@ -31,14 +29,14 @@ install-dev install-prod install-ci: openapi-specs ## install app in development
 .PHONY: tests-unit tests-integration
 tests-unit: ## runs unit tests
 	# running unit tests
-	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
+	@pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests/unit
 
 
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
+	pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build

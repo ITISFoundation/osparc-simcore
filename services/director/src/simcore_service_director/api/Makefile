@@ -2,7 +2,9 @@
 
 API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../api/specs/shared)
 
-API_MAJOR_VERSION = $(shell echo 0.1.0 | cut -f1 -d.)
+APP_DIR = $(abspath $(CURDIR)../../../../)
+
+API_MAJOR_VERSION = $(shell cat ${APP_DIR}/VERSION | cut -f1 -d.)
 API_SPECS_DIR  = $(CURDIR)/v${API_MAJOR_VERSION}
 API_PARTS_DIR = ${API_SPECS_DIR}/oas-parts
 
