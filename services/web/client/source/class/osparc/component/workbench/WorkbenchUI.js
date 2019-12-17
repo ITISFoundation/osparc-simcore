@@ -94,6 +94,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       visibility: "excluded"
     });
     this.__desktopCanvas.add(this.__startHint);
+    this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
+      font: "workbench-start-hint",
+      textColor: "workbench-start-hint",
+      visibility: "excluded"
+    });
+    this.__desktopCanvas.add(this.__dropHint);
 
     this.__svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
@@ -828,6 +834,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
 
         qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
+
+        const domEl = this.getContentElement().getDomElement();
+        domEl.addEventListener("dragenter", this.__dragEnter.bind(this), false);
+        domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
+        domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
+        domEl.addEventListener("drop", this.__drop.bind(this), false);
       });
       this.addListener("disappear", () => {
         // Reset filters
@@ -851,6 +863,59 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
+    },
+
+    __dragEnter: function(e) {
+      console.log("dragEnter", e);
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.__dragging(true);
+    },
+
+    __dragOver: function(e) {
+      console.log("dragOver", e);
+      e.preventDefault();
+      e.stopPropagation();
+    },
+
+    __dragLeave: function(e) {
+      console.log("dragLeave", e);
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.__dragging(false);
+    },
+
+    __drop: function(e) {
+      console.log("drop", e);
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.__dragging(false);
+
+      const fileList = e.dataTransfer.files;
+      if (fileList.length) {
+        console.log(fileList);
+      }
+    },
+
+    __dragging: function(dragging) {
+      if (!this.isPropertyInitialized("workbench")) {
+        return;
+      }
+      this.__dropHint.setVisibility(dragging ? "visible" : "excluded");
+      if (dragging) {
+        const hintBounds = this.__dropHint.getBounds() || this.__dropHint.getSizeHint();
+        const {
+          height,
+          width
+        } = this.__desktopCanvas.getBounds();
+        this.__dropHint.setLayoutProperties({
+          top: Math.round((height - hintBounds.height) / 2) + 30,
+          left: Math.round((width - hintBounds.width) / 2)
+        });
+      }
     },
 
     __updateHint: function() {
