@@ -7,7 +7,7 @@
 #
 
 # installs watchdog utility
-watchdog[watchmedo]
+watchdog
 
 # installs base + tests requirements
 -r _test.txt
@@ -17,9 +17,6 @@ watchdog[watchmedo]
 -e ../../../packages/postgres-database/
 -e ../../../packages/simcore-sdk/
 -e ../../../packages/service-library/
-
-# installs watchdog utility
-watchdog[watchmedo]
 
 # installs current package
 -e .
