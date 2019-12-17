@@ -394,7 +394,8 @@ paths:
 components:
   schemas:
     Project:
-      $ref: '../../../../../../../api/specs/shared/schemas/project.yaml#/components/schemas/Project'
+      $ref: '../shared/schemas/project.yaml#/components/schemas/Project'
+
   responses:
     OK_NoContent_204:
       description: everything is OK, but there is no content to return

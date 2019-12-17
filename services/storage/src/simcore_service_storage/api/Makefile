@@ -1,33 +1,37 @@
 .DEFAULT_GOAL := openapi-specs
 
-API_SHARED_DIR = $(abspath $(CURDIR)../../../../../../api/specs/shared)
+APP_DIR  := $(abspath $(CURDIR)../../../../)
+APP_NAME := $(notdir $(APP_DIR))
 
-APP_DIR = $(abspath $(CURDIR)../../../../)
+API_MAJOR_VERSION := $(shell cat ${APP_DIR}/VERSION | cut -f1 -d.)
+APP_API_DIR       := $(CURDIR)/v${API_MAJOR_VERSION}
+OAS_TARGET        := ${APP_API_DIR}/openapi.yaml
 
-API_MAJOR_VERSION = $(shell cat ${APP_DIR}/VERSION | cut -f1 -d.)
-API_SPECS_DIR = $(CURDIR)/v${API_MAJOR_VERSION}
-API_PARTS_DIR = ${API_SPECS_DIR}/oas-parts
+API_SPECS_DIR = $(abspath $(CURDIR)../../../../../../api/specs)
+API_PARTS_DIR = ${API_SPECS_DIR}/${APP_NAME}
+OAS_SOURCES   = $(shell find  ${API_PARTS_DIR} -type f -name '*.y*ml')
 
-OAS_SOURCES   = $(shell find ${API_PARTS_DIR} -type f -name '*.y*ml')
-OAS_TARGET    = $(API_SPECS_DIR)/openapi.yaml
-
-API_SHARED_JSON_SCHEMAS = $(shell find ${API_SHARED_DIR}/schemas -type f -name '*.json')
+API_SHARED_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/shared/schemas -type f -name '*.json')
 
 
 .PHONY: .update-schemas
 .update-schemas:
 	# Updating common schemas
-	@$(MAKE) -C ${API_SHARED_DIR}/schemas
+	@$(MAKE) -C ${API_SPECS_DIR}/shared/schemas
 	# Updating ${API_SPECS_DIR}/schemas with common json-schemas
-	@cp --target-directory=${API_SPECS_DIR}/schemas \
+	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \
 		--update  \
 		${API_SHARED_JSON_SCHEMAS}
 
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
-	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
-	@swagger-cli bundle --dereference --outfile $@ --type yaml  $ ${API_PARTS_DIR}/openapi.yaml
+	# bundling '${API_SPECS_DIR}/${APP_NAME}' to '${OAS_TARGET}' ...
+	@swagger-cli bundle \
+		--dereference \
+		--outfile $@ \
+		--type yaml  \
+		"${API_SPECS_DIR}/${APP_NAME}/openapi.yaml"
 
 
 .PHONY: openapi-specs
