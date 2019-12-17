@@ -40,15 +40,15 @@ paths:
         json payloads and responses for the api calls available at this endpoint
       operationId: get_node_output_ui
       parameters:
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
+        - $ref: '#/components/parameters/nodeInstanceUUID'
+        - $ref: '#/components/parameters/outputKey'
       responses:
         "200":
           description: Service Information
           content:
             application/json:
               schema:
-                $ref: './openapi-node-v0.0.1.yaml#/components/schemas/outputUi'
+                $ref: '#/components/schemas/outputUi'
         default:
           description: Unexpected error
           content:
@@ -63,18 +63,18 @@ paths:
       summary: send data back to the output api ... protocol depends on the definition
       operationId: send_to_node_output_api
       parameters:
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/apiCall'
+        - $ref: '#/components/parameters/nodeInstanceUUID'
+        - $ref: '#/components/parameters/outputKey'
+        - $ref: '#/components/parameters/apiCall'
       requestBody:
          content:
             application/json:
               schema:
                  oneOf:
-                  - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/request'
-                  - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/request'
-                  - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/request'
-                  - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/request'
+                  - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                  - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/request'
+                  - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                  - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/request'
       responses:
         default:
           description: node type specific api call according to the node type presented
@@ -82,10 +82,10 @@ paths:
             application/json:
               schema:
                 oneOf:
-                    - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/response'
-                    - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/response'
-                    - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
-                    - $ref: '../../../../../../../../api/specs/shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
+                    - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                    - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/response'
+                    - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                    - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
 
   /nodes/{nodeInstanceUUID}/iframe:
     get:
@@ -94,7 +94,7 @@ paths:
       summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
       operationId: get_node_output_iframe
       parameters:
-        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
+        - $ref: '#/components/parameters/nodeInstanceUUID'
       responses:
         default:
           description: "any response appropriate in the iframe context"
@@ -138,4 +138,4 @@ components:
       type: object
 
     ErrorEnveloped:
-      $ref: '../../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+      $ref: '../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
