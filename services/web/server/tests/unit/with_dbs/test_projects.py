@@ -117,6 +117,14 @@ def computational_system_mock(mocker):
     mock_fun.return_value.set_result("")
     return mock_fun
 
+@pytest.fixture
+def fake_services():
+    def create_fakes(number_services: int) -> List[Dict]:
+        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
+        return fake_services
+
+    yield create_fakes
+
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
@@ -445,15 +453,6 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
         assert_replaced(current_project=data, update_data=project_update)
 
 
-
-@pytest.fixture
-def fake_services():
-    def create_fakes(number_services: int) -> List[Dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
-
-    yield create_fakes
-
 # DELETE -------
 
 @pytest.mark.parametrize("user_role,expected", [
@@ -501,7 +500,7 @@ async def test_open_project(client, logged_user, user_project, client_session_id
     mock_director_api_start_service.return_value.set_result("")
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id)
+    resp = await client.post(url, json=client_session_id())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {service_uuid:service for service_uuid, service in user_project["workbench"].items() if "/dynamic/" in service["key"]}
@@ -527,48 +526,46 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
     mock_director_api_stop_services.return_value.set_result("")
     # open project
+    client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id)
+    resp = await client.post(url, json=client_id)
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id)
+    resp = await client.post(url, json=client_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
         mock_director_api.assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mock_director_api_stop_services.has_calls(calls)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+@pytest.mark.parametrize("user_role, expected", [
+    # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_active_projects(client, logged_user, user_project, client_session_id, expected, socketio_client):
+async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client):
     # login with socket using client session id
-    sio = await socketio_client(client_session_id)
+    client_id = client_session_id()
+    sio = await socketio_client(client_id)
     assert sio.sid
     # get active projects -> empty
-    get_active_projects_url = client.app.router["get_active_project"].url_for()
+    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id)
     resp = await client.get(get_active_projects_url)
-    data, error = await assert_status(resp, expected)
+    data, error = await assert_status(resp, web.HTTPNotFound)
     if resp.status == web.HTTPOk.status_code:
         assert data == []
         assert not error
 
-    for n in range(3):
-        # open project
-        open_project_url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-        resp = await client.post(open_project_url, json=client_session_id)
-        await assert_status(resp, expected)
-        resp = await client.get(get_active_projects_url, json=client_session_id)
-        await assert_status(resp, expected)
-        if resp.status == web.HTTPOk.status_code:
-            assert data
-            assert not error
-            for item in data:
-                assert item["project_id"] == user_project["uuid"]
-                assert item["client_session_id"] == client_session_id
-        # get active projects -> check project uuid and client session id
-        # open another project
-        # get active projects
+    # open project
+    open_project_url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(open_project_url, json=client_id)
+    data, error = await assert_status(resp, expected)
+    resp = await client.get(get_active_projects_url)
+    data, error = await assert_status(resp, expected)
+    if resp.status == web.HTTPOk.status_code:            
+        assert not error
+        assert data == user_project
+    # get active projects -> check project uuid and client session id
+    # open another project
+    # get active projects

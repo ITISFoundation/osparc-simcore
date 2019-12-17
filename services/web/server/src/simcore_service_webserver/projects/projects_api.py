@@ -42,7 +42,6 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id, *, i
     :rtype: Dict
     """
     await check_permission(request, "project.read")
-
     try:
         db = request.config_dict[APP_PROJECT_DBAPI]
 
