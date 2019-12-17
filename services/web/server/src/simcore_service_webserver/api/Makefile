@@ -9,6 +9,8 @@ API_PARTS_DIR = ${API_SPECS_DIR}/oas-parts
 OAS_SOURCES   = $(shell find ${API_PARTS_DIR} -type f -name '*.y*ml')
 OAS_TARGET    = $(API_SPECS_DIR)/openapi.yaml
 
+API_SHARED_JSON_SCHEMAS = $(shell find ${API_SHARED_DIR}/schemas -type f -name '*.json')
+
 WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 
 
@@ -16,11 +18,17 @@ WEB_CLIENT_DIR = $(abspath $(CURDIR)../../../../../client)
 .update-schemas:
 	# Updating common schemas
 	@$(MAKE) -C ${API_SHARED_DIR}/schemas
+	# Updating ${API_SPECS_DIR}/schemas with common json-schemas
+	@cp --target-directory=${API_SPECS_DIR}/schemas \
+		--verbose \
+		--update  \
+		${API_SHARED_JSON_SCHEMAS}
+
 
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 	# bundling '${API_SPECS_DIR}' to '${OAS_TARGET}' ...
-	@swagger-cli bundle --outfile $@ --type yaml --dereference ${API_PARTS_DIR}/openapi.yaml
+	@swagger-cli bundle --dereference --outfile $@ --type yaml  ${API_PARTS_DIR}/openapi.yaml
 
 
 .PHONY: openapi-specs
