@@ -133,8 +133,7 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         case "filesAdd":
           control = new osparc.file.FilesAdd().set({
-            node: this.getNode(),
-            studyId: this.getStudyId()
+            node: this.getNode()
           });
           this.__mainButtons.add(control);
           break;
