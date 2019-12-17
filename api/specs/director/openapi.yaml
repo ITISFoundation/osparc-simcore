@@ -3,7 +3,6 @@ info:
   description: This is the oSparc's director API
   version: 0.1.0
   title: Director API
-  # put the contact info for your development or API team
   contact:
     name: IT'IS Foundation
     email: support@simcore.com
@@ -57,13 +56,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+                $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
   /services:
     get:
@@ -80,19 +79,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+                $ref: '#/components/schemas/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
   /services/{service_key}/{service_version}:
     get:
@@ -110,25 +109,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+                $ref: '#/components/schemas/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
   /running_interactive_services:
     post:
@@ -149,37 +148,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+                $ref: '#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
   /running_interactive_services/{service_uuid}:
     get:
@@ -196,25 +195,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+                $ref: '#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
     delete:
       tags:
         - users
@@ -231,19 +230,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../../../../api/specs/shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
 components:
   parameters:
@@ -361,3 +360,16 @@ components:
         example:
           - 1.0.0
           - 0.0.1
+
+  schemas:
+    ErrorEnveloped:
+      $ref: '../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+    RunningServiceEnveloped:
+      $ref: '../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+
+    ServicesEnveloped:
+      $ref: '../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+
+    HealthCheckEnveloped:
+      $ref: '../shared/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
