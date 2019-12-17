@@ -217,9 +217,9 @@ components:
           default: null
     ProjectID:
       type: object
+      required:
+        - project_id
       properties:
-        required:
-          - project_id
         project_id:
           type: string
           example: 5ac57sdd-c4ds-448a-as22-456844565456

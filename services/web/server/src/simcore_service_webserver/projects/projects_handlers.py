@@ -298,8 +298,10 @@ async def close_project(request: web.Request) -> web.Response:
 
 @login_required
 async def get_active_project(request: web.Request) -> web.Response:
-    await check_permission(request, "project.read")
+    # await check_permission(request, "project.read")
+    import pdb; pdb.set_trace()
+    user_id = request[RQT_USERID_KEY]
 
     return {
-        "data": []
+        "data": [{"project_id": "blahblah"}]
     }
