@@ -164,6 +164,12 @@ qx.Theme.define("osparc.theme.Appearance", {
         maxHeight: state.maximized ? null : 500
       })
     },
+
+    "dialog-window-content": {
+      style: () => ({
+        backgroundColor: "material-button-background"
+      })
+    },
     /*
     ---------------------------------------------------------------------------
       PanelView

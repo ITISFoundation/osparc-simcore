@@ -213,7 +213,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()));
+      newIssueBtn.addListener("execute", this.__openIssueInfoDialog, this);
       osparc.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
       menu.add(newIssueBtn);
 
@@ -265,6 +265,20 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       activityWindow.add(new osparc.component.service.manager.ActivityManager());
       activityWindow.center();
       activityWindow.open();
+    },
+
+    __openIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()), this);
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
     }
   }
 });
