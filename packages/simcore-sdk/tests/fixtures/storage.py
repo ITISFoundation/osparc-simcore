@@ -33,7 +33,7 @@ def storage(bucket, engine, docker_ip, docker_services):
     keep_alive_timer.start()
     docker_services.wait_until_responsive(
         check=lambda: _is_responsive(endpoint, 200),
-        timeout=30.0,
+        timeout=60.0,
         pause=1.0,
     )
     keep_alive_timer.cancel()
