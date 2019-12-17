@@ -16,8 +16,6 @@ from utils import list_files_in_api_specs
 _REQUIRED_FIELDS = ["data", ]
 CONVERTED_SUFFIX = "-converted.yaml"
 
-API_DIR_RE = re.compile(r'v(\d{1})')
-
 
 # TESTS ----------------------------------------------------------
 # NOTE: parametrizing tests per file makes more visible which file failed
@@ -52,19 +50,14 @@ def test_versioning_and_basepath(openapi_path):
     openapi_path = Path(openapi_path)
 
     # version in folder name is only major!
-    assert API_DIR_RE.match(openapi_path.parent.name), "Expected e.g. service-name/v0/openapi.yaml"
-    version_in_folder = int(API_DIR_RE.match(openapi_path.parent.name).groups()[0])
-
     with openapi_path.open() as f:
         oas_dict = yaml.safe_load(f)
 
     # version in specs info is M.m.n
     version_in_info = [ int(i) for i in oas_dict["info"]["version"].split(".") ]
 
-    assert version_in_folder == version_in_info[0]
-
     # basepath in servers must also be as '/v0'
     for server in oas_dict["servers"]:
         kwargs = { key: value["default"] for key, value in server.get("variables", {}).items() }
         url = URL( server["url"].format(**kwargs) )
-        assert url.path == "/v%d" % version_in_folder, "Wrong basepath in server: %s" % server
+        assert url.path == "/v%d" % version_in_info[0], "Wrong basepath in server: %s" % server
