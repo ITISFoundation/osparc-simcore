@@ -299,9 +299,14 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 async def get_active_project(request: web.Request) -> web.Response:
     # await check_permission(request, "project.read")
-    import pdb; pdb.set_trace()
     user_id = request[RQT_USERID_KEY]
-
-    return {
-        "data": [{"project_id": "blahblah"}]
-    }
+    client_session_id = request.query["client_session_id"]
+    with managed_resource(user_id, client_session_id, request.app) as rt:
+        # get user's projects
+        list_project_ids = await rt.find("project_id")
+        if not list_project_ids:
+            raise web.HTTPNotFound
+        assert len(list_project_ids) > 1
+        return {
+            "data": [list_project_ids[0]]
+        }

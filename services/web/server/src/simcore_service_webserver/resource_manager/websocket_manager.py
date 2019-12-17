@@ -37,10 +37,15 @@ class WebsocketRegistry:
         await registry.set_key_alive(self._resource_key(), False, get_service_deletion_timeout(self.app))
 
     async def find_socket_ids(self) -> List[str]:
-        log.debug("user %s/tab %s finding sockets from registry...", self.user_id, self.client_session_id)
-        registry = get_registry(self.app)
-        user_sockets = await registry.find_resources({"user_id": self.user_id}, SOCKET_ID_KEY)
+        user_sockets = await self.find(SOCKET_ID_KEY)
         return user_sockets
+
+    #TODO: add test
+    async def find(self, key: str) -> List[str]:
+        log.debug("user %s/tab %s finding %s from registry...", self.user_id, self.client_session_id, key)
+        registry = get_registry(self.app)
+        user_resources = await registry.find_resources({"user_id": self.user_id}, key)
+        return user_resources
 
     async def add(self, key: str, value: str) -> None:
         log.debug("user %s/tab %s adding %s:%s in registry...", self.user_id, self.client_session_id, key, value)

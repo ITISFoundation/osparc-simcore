@@ -177,15 +177,15 @@ paths:
 
   /projects/active:
     get:
-      summary: Gets active projects
+      summary: Gets active project
       operationId: get_active_project
       responses:
         '200':
-          description: returns active projects ids with corresponding client_session_ids
+          description: returns active project
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectIDArrayEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -212,29 +212,6 @@ components:
           type: array
           items:
             $ref: './openapi-projects.yaml#/components/schemas/Project'
-        error:
-          nullable: true
-          default: null
-    ProjectID:
-      type: object
-      required:
-        - project_id
-      properties:
-        project_id:
-          type: string
-          example: 5ac57sdd-c4ds-448a-as22-456844565456
-        client_session_id:
-          type: string
-          example: 5ac57685-c40f-448f-8711-70be1936fd63
-    ProjectIDArrayEnveloped:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            $ref: './openapi-projects.yaml#/components/schemas/ProjectID'
         error:
           nullable: true
           default: null

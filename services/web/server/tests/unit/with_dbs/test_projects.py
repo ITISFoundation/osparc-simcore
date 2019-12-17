@@ -28,6 +28,7 @@ from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.utils import now_str, to_datetime
 from utils_assert import assert_status
 from utils_login import LoggedUser
@@ -57,7 +58,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_rest(app)
     setup_login(app)            # needed for login_utils fixtures
     setup_resource_manager(app)
-    import pdb; pdb.set_trace()
+    setup_sockets(app)
     assert setup_projects(app)
 
     # server and client
@@ -487,10 +488,6 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
         resp = await client.get(url)
         data, error = await assert_status(resp, web.HTTPNotFound)
 
-@pytest.fixture
-def client_session_id() -> str:
-    return str(uuidlib.uuid4())
-
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
@@ -542,16 +539,16 @@ async def test_close_project(client, logged_user, user_project, client_session_i
         mock_director_api_stop_services.has_calls(calls)
 
 @pytest.mark.parametrize("user_role,expected", [
-    # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPOk),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_active_projects(client, logged_user, user_project, client_session_id, expected):
+async def test_get_active_projects(client, logged_user, user_project, client_session_id, expected, socketio_client):
     # login with socket using client session id
+    sio = await socketio_client(client_session_id)
+    assert sio.sid
     # get active projects -> empty
-    import pdb; pdb.set_trace()
-
     get_active_projects_url = client.app.router["get_active_project"].url_for()
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)

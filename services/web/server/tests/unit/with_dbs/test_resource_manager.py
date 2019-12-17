@@ -172,51 +172,6 @@ async def empty_user_project2(client, empty_project, logged_user):
         print("<----- removed project", project["name"])
 
 
-@pytest.fixture()
-async def security_cookie(client) -> str:
-    # get the cookie by calling the root entrypoint
-    resp = await client.get("/v0/")
-    payload = await resp.json()
-    assert resp.status == 200, str(payload)
-    data, error = unwrap_envelope(payload)
-    assert data
-    assert not error
-
-    cookie = ""
-    if "Cookie" in resp.request_info.headers:
-        cookie = resp.request_info.headers["Cookie"]
-    yield cookie
-
-
-@pytest.fixture()
-async def socketio_url(client) -> str:
-    SOCKET_IO_PATH = '/socket.io/'
-    return str(client.make_url(SOCKET_IO_PATH))
-
-
-@pytest.fixture()
-async def socketio_client(socketio_url: str, security_cookie: str):
-    clients = []
-
-    async def connect(client_session_id):
-        sio = socketio.AsyncClient()
-        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
-        await sio.connect(url, headers={'Cookie': security_cookie})
-        assert sio.sid
-        clients.append(sio)
-        return sio
-    yield connect
-    for sio in clients:
-        await sio.disconnect()
-        assert not sio.sid
-
-@pytest.fixture()
-def client_session_id():
-    def create() -> str():
-        return str(uuid4())
-    return create
-
-
 @pytest.fixture
 async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_director_api):
     services = {}
