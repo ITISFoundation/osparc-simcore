@@ -843,8 +843,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const x = e.getViewportLeft() - this.getBounds().left;
         const y = e.getViewportTop();
         const pos = {
-          x: x,
-          y: y
+          x,
+          y
         };
         const srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
