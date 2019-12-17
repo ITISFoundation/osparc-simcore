@@ -19,6 +19,13 @@ paths:
             default: 'all'
             enum: [template, user, all]
           description: if true only templates otherwise only users
+        - name: state
+          in: query
+          schema:
+            type: string
+            default: 'active'
+            enum: [active]
+          description: if set only active projects are returned. if type=template this parameter is ignored.
         - name: start
           in: query
           schema:
@@ -168,6 +175,20 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
+  /projects/active:
+    get:
+      summary: Gets active projects
+      operationId: get_active_project
+      responses:
+        '200':
+          description: returns active projects ids with corresponding client_session_ids
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectIDArrayEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
 components:
   schemas:
     Project:
@@ -194,7 +215,29 @@ components:
         error:
           nullable: true
           default: null
-
+    ProjectID:
+      type: object
+      properties:
+        required:
+          - project_id
+        project_id:
+          type: string
+          example: 5ac57sdd-c4ds-448a-as22-456844565456
+        client_session_id:
+          type: string
+          example: 5ac57685-c40f-448f-8711-70be1936fd63
+    ProjectIDArrayEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './openapi-projects.yaml#/components/schemas/ProjectID'
+        error:
+          nullable: true
+          default: null
     ClientSessionId:
       type: string
       example: 5ac57685-c40f-448f-8711-70be1936fd63

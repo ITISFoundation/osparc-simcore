@@ -295,3 +295,11 @@ async def close_project(request: web.Request) -> web.Response:
 
 
     raise web.HTTPNoContent(content_type='application/json')
+
+@login_required
+async def get_active_project(request: web.Request) -> web.Response:
+    await check_permission(request, "project.read")
+
+    return {
+        "data": []
+    }
