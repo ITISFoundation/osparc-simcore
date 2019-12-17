@@ -14,6 +14,7 @@ import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
+from typing import Dict
 from uuid import uuid4
 
 import aioredis
@@ -22,6 +23,7 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
+from aiohttp import web
 from yarl import URL
 
 import simcore_service_webserver.utils
@@ -31,6 +33,7 @@ from simcore_service_webserver.application_config import \
     app_schema as app_schema
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
+from utils_assert import assert_status
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -242,4 +245,73 @@ async def socketio_client(socketio_url: str, security_cookie: str):
 def client_session_id() -> str:
     def create() -> str():
         return str(uuid4())
+    return create
+
+
+@pytest.fixture
+async def mocked_director_api(loop, mocker):
+    mocks = {}
+    mocked_running_services = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services',
+                                        return_value=Future())
+    mocked_running_services.return_value.set_result("")
+    mocks["get_running_interactive_services"] = mocked_running_services
+    mocked_stop_service = mocker.patch('simcore_service_webserver.director.director_api.stop_service',
+                    return_value=Future())
+    mocked_stop_service.return_value.set_result("")
+    mocks["stop_service"] = mocked_stop_service
+    yield mocks
+
+@pytest.fixture
+async def mocked_director_handler(loop, mocker):
+    # Note: this needs to be activated before the setup takes place
+    running_service_dict = {
+        "published_port": "23423",
+        "service_uuid": "some_service_uuid",
+        "service_key": "some_service_key",
+        "service_version": "some_service_version",
+        "service_host": "some_service_host",
+        "service_port": "some_service_port",
+        "service_state": "some_service_state"
+    }
+    mock = mocker.patch('simcore_service_webserver.director.handlers.running_interactive_services_post',
+                     return_value=web.json_response({"data": running_service_dict}, status=web.HTTPCreated.status_code))
+    yield mock
+
+@pytest.fixture
+async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_director_api):
+    services = {}
+    async def create(user_id, project_id) -> Dict:
+        SERVICE_UUID = str(uuid4())
+        SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
+        SERVICE_VERSION = "1.4.2"
+        url = client.app.router["running_interactive_services_post"].url_for().with_query(
+            {
+                "user_id": user_id,
+                "project_id": project_id,
+                "service_key": SERVICE_KEY,
+                "service_tag": SERVICE_VERSION,
+                "service_uuid": SERVICE_UUID
+            })
+
+        running_service_dict = {
+            "published_port": "23423",
+            "service_uuid": SERVICE_UUID,
+            "service_key": SERVICE_KEY,
+            "service_version": SERVICE_VERSION,
+            "service_host": "some_service_host",
+            "service_port": "some_service_port",
+            "service_state": "some_service_state"
+        }
+
+        mocked_director_handler.return_value = web.json_response({"data": running_service_dict}, status=web.HTTPCreated.status_code)
+        mocked_director_handler.reset_mock()
+        resp = await client.post(url)
+        data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
+        mocked_director_handler.assert_called_once()
+
+        services.update({SERVICE_UUID: running_service_dict})
+        # reset the future or an invalidStateError will appear as set_result sets the future to done
+        mocked_director_api["get_running_interactive_services"].return_value = Future()
+        mocked_director_api["get_running_interactive_services"].return_value.set_result(services)
+        return running_service_dict
     return create

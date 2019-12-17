@@ -39,34 +39,6 @@ from utils_projects import NewProject
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 5
 
-@pytest.fixture
-async def mocked_director_handler(loop, mocker):
-    # Note: this needs to be activated before the setup takes place
-    running_service_dict = {
-        "published_port": "23423",
-        "service_uuid": "some_service_uuid",
-        "service_key": "some_service_key",
-        "service_version": "some_service_version",
-        "service_host": "some_service_host",
-        "service_port": "some_service_port",
-        "service_state": "some_service_state"
-    }
-    mock = mocker.patch('simcore_service_webserver.director.handlers.running_interactive_services_post',
-                     return_value=web.json_response({"data": running_service_dict}, status=web.HTTPCreated.status_code))
-    yield mock
-
-@pytest.fixture
-async def mocked_director_api(loop, mocker):
-    mocks = {}
-    mocked_running_services = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services',
-                                        return_value=Future())
-    mocked_running_services.return_value.set_result("")
-    mocks["get_running_interactive_services"] = mocked_running_services
-    mocked_stop_service = mocker.patch('simcore_service_webserver.director.director_api.stop_service',
-                    return_value=Future())
-    mocked_stop_service.return_value.set_result("")
-    mocks["stop_service"] = mocked_stop_service
-    yield mocks
 
 @pytest.fixture
 def client(mocked_director_handler, loop, aiohttp_client, app_cfg, postgres_service):
@@ -130,21 +102,7 @@ async def logged_user2(client, user_role: UserRole):
         yield user
         print("<----- logged out user", user_role)
 
-@pytest.fixture
-def empty_project():
-    def create():
-        empty_project = {
-            "uuid": f"project-{uuid4()}",
-            "name": "Empty name",
-            "description": "some description of an empty project",
-            "prjOwner": "I'm the empty project owner, hi!",
-            "creationDate": now_str(),
-            "lastChangeDate": now_str(),
-            "thumbnail": "",
-            "workbench": {}
-        }
-        return empty_project
-    return create
+
 
 
 @pytest.fixture
@@ -172,44 +130,7 @@ async def empty_user_project2(client, empty_project, logged_user):
         print("<----- removed project", project["name"])
 
 
-@pytest.fixture
-async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_director_api):
-    services = {}
-    async def create(user_id, project_id) -> Dict:
-        SERVICE_UUID = str(uuid4())
-        SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
-        SERVICE_VERSION = "1.4.2"
-        url = client.app.router["running_interactive_services_post"].url_for().with_query(
-            {
-                "user_id": user_id,
-                "project_id": project_id,
-                "service_key": SERVICE_KEY,
-                "service_tag": SERVICE_VERSION,
-                "service_uuid": SERVICE_UUID
-            })
 
-        running_service_dict = {
-            "published_port": "23423",
-            "service_uuid": SERVICE_UUID,
-            "service_key": SERVICE_KEY,
-            "service_version": SERVICE_VERSION,
-            "service_host": "some_service_host",
-            "service_port": "some_service_port",
-            "service_state": "some_service_state"
-        }
-
-        mocked_director_handler.return_value = web.json_response({"data": running_service_dict}, status=web.HTTPCreated.status_code)
-        mocked_director_handler.reset_mock()
-        resp = await client.post(url)
-        data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
-        mocked_director_handler.assert_called_once()
-
-        services.update({SERVICE_UUID: running_service_dict})
-        # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = Future()
-        mocked_director_api["get_running_interactive_services"].return_value.set_result(services)
-        return running_service_dict
-    return create
 
 # ------------------------ UTILS ----------------------------------
 def set_service_deletion_delay(delay: int, app: web.Application):
@@ -470,27 +391,3 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, l
         call(client.server.app, service["service_uuid"])
     ])
 
-@pytest.mark.parametrize("user_role, expected", [
-    # (UserRole.ANONYMOUS),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPForbidden),
-    (UserRole.TESTER, web.HTTPForbidden),
-])
-async def test_deletion_forbidden_if_delete_from_one_tab(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected):
-    SERVICE_DELETION_DELAY = 1
-    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
-    # create server with delay set to DELAY
-    # login - logged_user fixture
-    # create empty study in project - empty_user_project fixture
-    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    # open project in tab1
-    client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
-    await open_project(client, empty_user_project["uuid"], client_session_id1)
-    # delete project in tab2
-    client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
-    url = client.app.router["delete_project"].url_for(project_id=empty_user_project["uuid"])
-    resp = await client.delete(url)
-    await assert_status(resp, expected)

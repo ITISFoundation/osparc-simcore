@@ -22,6 +22,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
@@ -40,7 +41,7 @@ API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_service, mocked_director_handler):
 #def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
@@ -48,7 +49,9 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     port = cfg["main"]["port"]
     cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
     cfg["projects"]["enabled"] = True
-
+    cfg["director"]["enabled"] = True
+    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 3 # increase speed of garbage collection
+    cfg["resource_manager"]["resource_deletion_timeout_seconds"] = 3 # reduce deletion delay
     app = create_safe_application(cfg)
 
     # setup app
@@ -59,6 +62,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_login(app)            # needed for login_utils fixtures
     setup_resource_manager(app)
     setup_sockets(app)
+    setup_director(app)
     assert setup_projects(app)
 
     # server and client
@@ -569,3 +573,26 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
     # get active projects -> check project uuid and client session id
     # open another project
     # get active projects
+
+
+@pytest.mark.parametrize("user_role, expected", [
+    # (UserRole.ANONYMOUS),
+    (UserRole.GUEST, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPForbidden),
+    (UserRole.TESTER, web.HTTPForbidden),
+])
+async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected):
+    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
+    # open project in tab1
+    client_session_id1 = client_session_id()
+    sio1 = await socketio_client(client_session_id1)
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url, json=client_session_id1)
+    await assert_status(resp, web.HTTPOk)    
+    # delete project in tab2
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id2)
+    url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.delete(url)
+    await assert_status(resp, expected)
