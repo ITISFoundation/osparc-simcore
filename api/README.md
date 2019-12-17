@@ -25,12 +25,12 @@ The oSparc platform uses the following standards:
 ```bash
 /api/specs/                                  # base folder
 
-/api/specs/shared/                           # shared api/specs/schemas base folder
-/api/specs/shared/schemas/                   # sub folder for schemas
-/api/specs/shared/schemas/health_check.yaml  # openapi encoded shared schema
-/api/specs/shared/schemas/node-meta.json     # jsonschema encoded shared schema
-/api/specs/shared/schemas/v1/error.yaml      # openapi encoded shared schema for version 1
-/api/specs/shared/schemas/v2/error.yaml      # openapi encoded shared schema for version 2
+/api/specs/common/                           # common api/specs/schemas base folder
+/api/specs/common/schemas/                   # sub folder for schemas
+/api/specs/common/schemas/health_check.yaml  # openapi encoded common schema
+/api/specs/common/schemas/node-meta.json     # jsonschema encoded common schema
+/api/specs/common/schemas/v1/error.yaml      # openapi encoded common schema for version 1
+/api/specs/common/schemas/v2/error.yaml      # openapi encoded common schema for version 2
 
 /tests/                                 # python tests folder to check schemas validity
 /tests/requirements.txt                 # requirements for python tests
@@ -55,12 +55,12 @@ Schemas shall always be defined in separate files.
 Schemas format shall be either OpenAPI v3 or JSON schema Draft#7.
 
 If these schemas are pertinent only to the current API they shall be contained together with the openapi specifications file inside a __schemas__ subfolder.
-If these schemas are shared with other APIs they should be located in the __/shared/schemas__ subfolder.
+If these schemas are common with other APIs they should be located in the __/common/schemas__ subfolder.
 
-#### Versioning shared schemas
+#### Versioning common schemas
 
-NOTE: If shared schemas need backward incompatible changes, then a new major version of this specific shared schema is necessary and all APIs that rely on this specific schema will need to be upgraded.
-In that case, a version subfolder shall be added in the __/shared/__ subfolder and the relevant schemas shall be moved there.
+NOTE: If common schemas need backward incompatible changes, then a new major version of this specific common schema is necessary and all APIs that rely on this specific schema will need to be upgraded.
+In that case, a version subfolder shall be added in the __/common/__ subfolder and the relevant schemas shall be moved there.
 
 ### Schemas defined with [JSONSchema] format that are used together with [OpenAPI]
 

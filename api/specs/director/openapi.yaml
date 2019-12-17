@@ -363,13 +363,13 @@ components:
 
   schemas:
     ErrorEnveloped:
-      $ref: '../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+      $ref: '../common/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
     RunningServiceEnveloped:
-      $ref: '../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
 
     ServicesEnveloped:
-      $ref: '../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+      $ref: '../common/schemas/services.yaml#/components/schemas/ServicesEnveloped'
 
     HealthCheckEnveloped:
-      $ref: '../shared/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+      $ref: '../common/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'

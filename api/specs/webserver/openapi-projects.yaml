@@ -115,11 +115,11 @@ components:
 
   schemas:
     Project:
-      $ref: '../shared/schemas/project.yaml#/components/schemas/Project'
+      $ref: '../common/schemas/project.yaml#/components/schemas/Project'
     ProjectEnveloped:
-      $ref: '../shared/schemas/project.yaml#/components/schemas/ProjectEnveloped'
+      $ref: '../common/schemas/project.yaml#/components/schemas/ProjectEnveloped'
     ProjectArrayEnveloped:
-      $ref: '../shared/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped'
+      $ref: '../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped'
 
   responses:
     DefaultErrorResponse:

@@ -238,11 +238,11 @@ components:
 
   schemas:
     ServicesEnveloped:
-      $ref: "../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+      $ref: "../common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
     RunningServiceEnveloped:
-      $ref: "../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
     ErrorEnveloped:
-      $ref: "../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+      $ref: "../common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
 
   responses:
     DefaultErrorResponse:

@@ -14,7 +14,7 @@ import pytest
 log = logging.getLogger(__name__)
 
 # Conventions
-SHARED = 'shared'
+COMMON = 'common'
 OPENAPI_MAIN_FILENAME = 'openapi.yaml'
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -42,12 +42,12 @@ def api_specs_info(api_specs_dir):
     """
         Returns a namedtuple with info on every
     """
-    service_dirs = [d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+    service_dirs = [d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
 
     info_cls = namedtuple("ApiSpecsInfo", "service version openapi_path url_path".split())
     info = []
     for srv_dir in service_dirs:
-        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
         for ver_dir in version_dirs:
             openapi_path = ver_dir / OPENAPI_MAIN_FILENAME
             if openapi_path.exists():

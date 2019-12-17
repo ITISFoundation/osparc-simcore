@@ -10,7 +10,7 @@ import requests
 from collections import namedtuple
 
 
-SHARED = 'shared'
+COMMON = 'common'
 OPENAPI_MAIN_FILENAME = 'openapi.yaml'
 
 log = logging.getLogger(__name__)
@@ -33,12 +33,12 @@ def osparc_simcore_api_specs(osparc_simcore_root_dir):
     apis_dir = osparc_simcore_root_dir / "api" / "specs"
     assert apis_dir.exists()
 
-    service_dirs = [d for d in apis_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+    service_dirs = [d for d in apis_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
 
     info_cls = namedtuple("Info", "service version openapi_path url_path".split())
     info = []
     for srv_dir in service_dirs:
-        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
         for ver_dir in version_dirs:
             openapi_path = ver_dir / OPENAPI_MAIN_FILENAME
             if openapi_path.exists():

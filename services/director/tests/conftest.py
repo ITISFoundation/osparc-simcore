@@ -37,8 +37,8 @@ def docker_compose_file(pytestconfig):
 
 
 @pytest.fixture(scope='session')
-def shared_schemas_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "shared" / "schemas"
+def common_schemas_specs_dir(osparc_simcore_root_dir):
+    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "common" / "schemas"
     assert specs_dir.exists()
     return specs_dir
 
@@ -49,8 +49,8 @@ def package_dir():
     return dirpath
 
 @pytest.fixture
-def configure_schemas_location(package_dir, shared_schemas_specs_dir):
-    config.NODE_SCHEMA_LOCATION = str(shared_schemas_specs_dir / "node-meta-v0.0.1.json")
+def configure_schemas_location(package_dir, common_schemas_specs_dir):
+    config.NODE_SCHEMA_LOCATION = str(common_schemas_specs_dir / "node-meta-v0.0.1.json")
     resources.RESOURCE_NODE_SCHEMA = os.path.relpath(config.NODE_SCHEMA_LOCATION, package_dir)
 
 

@@ -71,10 +71,10 @@ paths:
             application/json:
               schema:
                  oneOf:
-                  - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/request'
-                  - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/request'
-                  - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/request'
-                  - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/request'
+                  - $ref: '../common/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                  - $ref: '../common/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/request'
+                  - $ref: '../common/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                  - $ref: '../common/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/request'
       responses:
         default:
           description: node type specific api call according to the node type presented
@@ -82,10 +82,10 @@ paths:
             application/json:
               schema:
                 oneOf:
-                    - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/response'
-                    - $ref: '../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/response'
-                    - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
-                    - $ref: '../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
+                    - $ref: '../common/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                    - $ref: '../common/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/response'
+                    - $ref: '../common/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                    - $ref: '../common/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
 
   /nodes/{nodeInstanceUUID}/iframe:
     get:
@@ -138,4 +138,4 @@ components:
       type: object
 
     ErrorEnveloped:
-      $ref: '../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+      $ref: '../common/schemas/error.yaml#/components/schemas/ErrorEnveloped'

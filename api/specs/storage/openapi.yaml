@@ -394,7 +394,7 @@ paths:
 components:
   schemas:
     Project:
-      $ref: '../shared/schemas/project.yaml#/components/schemas/Project'
+      $ref: '../common/schemas/project.yaml#/components/schemas/Project'
 
   responses:
     OK_NoContent_204:

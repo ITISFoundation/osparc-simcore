@@ -11,7 +11,7 @@ API_SPECS_DIR = $(abspath $(CURDIR)../../../../../../../api/specs)
 API_PARTS_DIR = ${API_SPECS_DIR}/${APP_NAME}
 OAS_SOURCES   = $(shell find  ${API_PARTS_DIR} -type f -name '*.y*ml')
 
-API_SHARED_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/shared/schemas -type f -name '*.json')
+API_COMMON_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/common/schemas -type f -name '*.json')
 
 WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
 
@@ -19,12 +19,12 @@ WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
 .PHONY: .update-schemas
 .update-schemas:
 	# Updating common schemas
-	@$(MAKE) -C ${API_SPECS_DIR}/shared/schemas
+	@$(MAKE) -C ${API_SPECS_DIR}/common/schemas
 	# Updating ${APP_API_DIR}/schemas with common json-schemas
 	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \
 		--update  \
-		${API_SHARED_JSON_SCHEMAS}
+		${API_COMMON_JSON_SCHEMAS}
 
 
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas

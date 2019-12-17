@@ -19,7 +19,7 @@ def list_files_in_api_specs(wildcard: str) -> List[str]:
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
 
-    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[/home/crespo/devp/osparc-simcore/api/specs/shared/schemas/node-meta-v0.0.1.json] PASSED
+    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[/home/crespo/devp/osparc-simcore/api/specs/common/schemas/node-meta-v0.0.1.json] PASSED
     """
     specs_dir = specs_folder()
 
