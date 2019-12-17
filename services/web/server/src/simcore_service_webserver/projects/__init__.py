@@ -87,7 +87,7 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
 
     # json-schemas for projects datasets
     # FIXME: schemas are hard-coded to api/V0!!!
-    with resources.stream("api/v0/oas-parts/components/schemas/project-v0.0.1.json") as fh:
+    with resources.stream("api/v0/schemas/project-v0.0.1.json") as fh:
         project_schema = json.load(fh)
 
     if APP_JSONSCHEMA_SPECS_KEY in app:
