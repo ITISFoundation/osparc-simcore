@@ -37,7 +37,7 @@ async def socketio_client(socketio_url: str, security_cookie: str):
 
     async def connect(client_session_id):
         sio = socketio.AsyncClient()
-        url = str(URL(socketio_url).with_query({'tabid': client_session_id}))
+        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
         await sio.connect(url, headers={'Cookie': security_cookie})
         clients.append(sio)
         return sio

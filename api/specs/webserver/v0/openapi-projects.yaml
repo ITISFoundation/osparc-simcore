@@ -133,7 +133,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/TabId'
+              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
       responses:
         '200':
           description: project successfuly opened
@@ -160,7 +160,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/TabId'
+              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
       responses:
         '204':
           description: project succesfuly closed
@@ -194,6 +194,7 @@ components:
         error:
           nullable: true
           default: null
-    TabId:
+
+    ClientSessionId:
       type: string
       example: 5ac57685-c40f-448f-8711-70be1936fd63

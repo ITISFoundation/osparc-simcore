@@ -172,7 +172,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "reconnection delay": this.getReconnectionDelay(),
           "max reconnection attempts": this.getMaxReconnectionAttemps(),
           "force new connection": true,
-          "query": "tabid="+this.__getTabID()
+          "query": "client_session_id="+this.__getClientSessionID()
         });
         this.setSocket(mySocket);
 
@@ -265,11 +265,11 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       }
     },
 
-    __getTabID: function() {
+    __getClientSessionID: function() {
       // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const tabID = sessionStorage.getItem("tabid") ? sessionStorage.getItem("tabid") : osparc.utils.Utils.uuidv4();
-      sessionStorage.setItem("tabid", tabID);
-      return tabID;
+      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
+      sessionStorage.setItem("clientsessionid", clientSessionID);
+      return clientSessionID;
     }
   },
 

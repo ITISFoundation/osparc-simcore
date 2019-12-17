@@ -50,7 +50,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
     """
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
-    client_session_id = request.query.get("tabid", None)
+    client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
