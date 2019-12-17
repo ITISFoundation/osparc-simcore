@@ -21,7 +21,7 @@ def _is_responsive(url, code=200):
         from pprint import pprint
         client = docker.from_env()
         print(f"running services:")
-        for service in client.services.list():
+        for service in client.containers.list():
             pprint(service.attrs)
         logging.exception("Connection to storage failed")
         return False
