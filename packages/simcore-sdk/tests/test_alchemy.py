@@ -1,11 +1,8 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-import
-
+# pylint:disable=unused-argument
 import pytest
-# FIXME: Not sure why but if this import is removed pytest_docker
-# gets the docker_compose_file wrong in tests_nodes.
-#  Somehow the fixture in packages/simcore-sdk/tests/node_ports/conftest.py
-# does not override override of docker_compose_file from pytest_docker!
+
 from pytest_docker import docker_ip, docker_services
 from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
                                                 ComputationalTask,
@@ -14,6 +11,15 @@ from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.attributes import flag_modified
 
+
+core_services = [
+    'postgres',
+]
+
+ops_services = [
+#    'adminer'
+]
+
 BASE = declarative_base()
 class User(BASE):
     __tablename__ = 'users'
@@ -21,32 +27,37 @@ class User(BASE):
     name = Column(String)
     data = Column(JSON)
 
+@pytest.fixture
+def tables(postgres_db):
+    BASE.metadata.create_all(postgres_db)
+    yield
+    BASE.metadata.drop_all(postgres_db)
 
 @pytest.mark.enable_travis
-def test_alchemy(engine, session):
-    BASE.metadata.create_all(engine)
+def test_alchemy(tables, postgres_session):
+    
     users = ['alpha', 'beta', 'gamma']
 
     for u in users:
         data = {}
         data['counter'] = 0
         user = User(name=u, data=data)
-        session.add(user)
-        session.commit()
+        postgres_session.add(user)
+        postgres_session.commit()
 
-    users2 = session.query(User).all()
+    users2 = postgres_session.query(User).all()
     assert len(users2) == len(users)
 
-    alpha = session.query(User).filter(User.name == 'alpha').one()
+    alpha = postgres_session.query(User).filter(User.name == 'alpha').one()
 
     assert alpha
 
     assert alpha.data['counter'] == 0
     alpha.data['counter'] = 42
     flag_modified(alpha, "data")
-    session.commit()
+    postgres_session.commit()
 
-    alpha2 = session.query(User).filter(User.name == 'alpha').one()
+    alpha2 = postgres_session.query(User).filter(User.name == 'alpha').one()
     assert alpha2.data['counter'] == 42
 
 

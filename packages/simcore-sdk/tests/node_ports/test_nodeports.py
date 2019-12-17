@@ -14,6 +14,15 @@ from simcore_sdk.node_ports import exceptions
 
 import np_helpers  # pylint: disable=no-name-in-module
 
+core_services = [
+    'postgres',
+    'apihub',
+    'storage'
+]
+
+ops_services = [
+    # 'minio'
+]
 
 def _check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
     assert getattr(ports, port_type)[key].key == key_name
@@ -114,7 +123,7 @@ async def test_port_value_accessors(special_configuration, item_type, item_value
     ("data:text/*", __file__, Path, {"store":"0", "path":__file__}),
     ("data:text/py", __file__, Path, {"store":"0", "path":__file__}),
 ])
-async def test_port_file_accessors(special_configuration, storage, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
+async def test_port_file_accessors(special_configuration, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)

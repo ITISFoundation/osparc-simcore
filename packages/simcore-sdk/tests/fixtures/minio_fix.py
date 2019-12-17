@@ -61,7 +61,7 @@ def minio_image_name(repo_folder_path):
     """ Ensures it uses same image as defined in services/docker-compose.yml """
     DEFAULT_IMAGE = "minio/minio:latest"
 
-    with open(repo_folder_path / "services" / "docker-compose.yml") as fh:
+    with open(repo_folder_path / "services" / "docker-compose-ops.yml") as fh:
         image_name = yaml.safe_load(fh) \
                 .get('services', {})    \
                 .get('minio', {})       \
@@ -69,7 +69,7 @@ def minio_image_name(repo_folder_path):
     return image_name
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def external_minio(minio_image_name)->Dict:
     client = docker.from_env()
     minio_config = {"host":_get_ip(), "port":9001, "s3access":"s3access", "s3secret":"s3secret"}
@@ -93,13 +93,13 @@ def external_minio(minio_image_name)->Dict:
     log.info("tearing down minio container")
     container.remove(force=True)
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def s3_client(external_minio:Dict)->S3Client: # pylint:disable=redefined-outer-name
     s3_endpoint = "{}:{}".format(external_minio["host"], external_minio["port"])
     yield S3Client(s3_endpoint, external_minio["s3access"], external_minio["s3secret"], False)
     # tear down
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def bucket(s3_client:S3Client)->str: # pylint: disable=W0621
     bucket_name = "simcore-test"
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)

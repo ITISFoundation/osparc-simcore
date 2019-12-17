@@ -5,9 +5,16 @@ from simcore_sdk.node_ports import config
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 
+core_services = [
+    'postgres',
+]
+
+ops_services = [
+#    'adminer'
+]
+
 def test_db_manager_read_config(default_configuration):
     config_dict = default_configuration
-
     db_manager = DBManager()
     ports_configuration_str = db_manager.get_ports_configuration_from_node_uuid(config.NODE_UUID)
 

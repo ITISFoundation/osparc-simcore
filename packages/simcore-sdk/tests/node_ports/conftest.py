@@ -3,15 +3,15 @@ import json
 import sys
 import uuid
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pytest
-import yarl
+
+import np_helpers
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.node_ports import node_config
-
-import np_helpers
+from utils_docker import get_service_published_port
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -25,9 +25,10 @@ def s3_simcore_location() ->str:
     yield np_helpers.SIMCORE_STORE
 
 @pytest.fixture
-def filemanager_cfg(storage, user_id, bucket):
-    storage_endpoint = yarl.URL(storage)
-    node_config.STORAGE_ENDPOINT = "{}:{}".format(storage_endpoint.host, storage_endpoint.port)
+def filemanager_cfg(docker_stack: Dict, devel_environ: Dict, user_id, bucket):
+    assert "simcore_storage" in docker_stack["services"]
+    storage_port = devel_environ['STORAGE_ENDPOINT'].split(':')[1]
+    node_config.STORAGE_ENDPOINT = f"127.0.0.1:{get_service_published_port('storage', storage_port)}"
     node_config.USER_ID = user_id
     node_config.BUCKET = bucket
     yield
@@ -50,11 +51,6 @@ def file_uuid(project_id, node_uuid)->str:
         return np_helpers.file_uuid(file_path, project, node)
     yield create
 
-@pytest.fixture(scope='session')
-def docker_compose_file(bucket, pytestconfig): # pylint:disable=unused-argument
-    print("Hello I'm here: reading the right compose...")
-    return current_dir /'docker-compose.yml'
-
 @pytest.fixture
 def default_configuration_file():
     return current_dir / "config" / "default_config.json"
@@ -64,13 +60,14 @@ def empty_configuration_file():
     return current_dir / "config" / "empty_config.json"
 
 @pytest.fixture(scope='module')
-def postgres(engine, session):
+def postgres(postgres_db, postgres_session):
     # prepare database with default configuration
-    Base.metadata.create_all(engine)
-    yield session
+    Base.metadata.create_all(postgres_db)
+    yield postgres_session
+    Base.metadata.drop_all(postgres_db)
 
 @pytest.fixture()
-def default_configuration(postgres, default_configuration_file, project_id, node_uuid):
+def default_configuration(bucket, postgres, default_configuration_file, project_id, node_uuid):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
 
@@ -105,7 +102,7 @@ def store_link(s3_client, bucket, file_uuid, s3_simcore_location):
     yield create_store_link
 
 @pytest.fixture(scope="function")
-def special_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
+def special_configuration(bucket, postgres, empty_configuration_file: Path, project_id, node_uuid):
     def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, project_id:str =project_id, node_id:str = node_uuid):
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
@@ -122,7 +119,7 @@ def special_configuration(postgres, empty_configuration_file: Path, project_id, 
     postgres.commit()
 
 @pytest.fixture(scope="function")
-def special_2nodes_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
+def special_2nodes_configuration(bucket, postgres, empty_configuration_file: Path, project_id, node_uuid):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
                     inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None,
                     project_id:str =project_id, previous_node_id:str = node_uuid, node_id:str = "asdasdadsa"):

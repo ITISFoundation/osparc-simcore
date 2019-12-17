@@ -5,8 +5,17 @@ from pathlib import Path
 import pytest
 from simcore_sdk.node_ports import exceptions, filemanager
 
+core_services = [
+    'postgres',
+    'apihub',
+    'storage'
+]
 
-async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+ops_services = [
+    # 'minio'
+]
+
+async def test_valid_upload_download(tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -22,7 +31,7 @@ async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, u
     assert filecmp.cmp(download_file_path, file_path)
 
 
-async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_invalid_file_path(tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -38,7 +47,7 @@ async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_
         await filemanager.download_file(store_id=store, s3_object=file_id, local_folder=download_folder)
 
 
-async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id, s3_simcore_location):
+async def test_invalid_fileid(tmpdir, bucket, filemanager_cfg, user_id, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -56,7 +65,7 @@ async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id,
         await filemanager.download_file(store_id=store, s3_object="file_id", local_folder=download_folder)
 
 
-async def test_invalid_store(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_invalid_store(tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
