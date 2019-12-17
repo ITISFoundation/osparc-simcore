@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import io
-import re
 from pathlib import Path
 
 import pytest
