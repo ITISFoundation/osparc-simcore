@@ -43,7 +43,7 @@ _CONFIG = dict(
     package_data={
         '': [
             'api/v0/openapi.yaml',
-            'api/v0/oas-parts/schemas/*.json'
+            'api/v0/schemas/*.json'
             ],
     },
     entry_points={

@@ -34,11 +34,7 @@ def docker_compose_file(pytestconfig):
     my_path = current_dir / "docker-compose.yml"
     return my_path
 
-@pytest.fixture(scope='session')
-def api_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "director"
-    assert specs_dir.exists()
-    return specs_dir
+
 
 @pytest.fixture(scope='session')
 def shared_schemas_specs_dir(osparc_simcore_root_dir):
