@@ -18,10 +18,11 @@ def _is_responsive(url, code=200):
             return True
     except Exception:  #pylint: disable=W0703
         import docker
+        from pprint import pprint
         client = docker.from_env()
         print(f"running services:")
         for service in client.services.list():
-            print(service.attrs)
+            pprint(service.attrs)
         logging.exception("Connection to storage failed")
         return False
 
