@@ -51,10 +51,14 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       visibility: "excluded",
       padding: [0, 15]
     });
-    this._addAt(this.__studiesPane, 0, {
+    const scroll1 = new qx.ui.container.Scroll();
+    scroll1.add(this.__studiesPane);
+    this._add(scroll1, {
       flex: 1
     });
-    this._addAt(this.__editPane, 1);
+    const scroll2 = new qx.ui.container.Scroll();
+    scroll2.add(this.__editPane);
+    this._add(scroll2);
 
     let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesPane.add(iframe, {
@@ -185,16 +189,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __initResources: function() {
-      this.__getUserProfile();
+      this.__userReady = osparc.data.Permissions.getInstance().arePermissionsReady();
       this.__getServicesPreload();
-    },
-
-    __getUserProfile: function() {
-      let permissions = osparc.data.Permissions.getInstance();
-      permissions.addListener("userProfileRecieved", e => {
-        this.__userReady = e.getData();
-      }, this);
-      permissions.loadUserRoleFromBackend();
     },
 
     __getServicesPreload: function() {
@@ -528,14 +524,15 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
 
     __updateDeleteButtons: function(studyData, isTemplate) {
       const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
-      const isCurrentUserOwner = studyData.prjOwner === osparc.data.Permissions.getInstance().getLogin();
+      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
       let deleteButton = this.__studiesDeleteButton;
       if (isTemplate) {
         this.__studiesDeleteButton.exclude();
         deleteButton = this.__templateDeleteButton;
       } else {
         this.__templateDeleteButton.exclude();
-        this.__studiesDeleteButton.setLabel(this.__userStudyContainer.getSelection().length > 1 ? this.tr("Delete selected") : this.tr("Delete"));
+        const nSelected = this.__userStudyContainer.getSelection().length;
+        this.__studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
       }
       deleteButton.show();
       deleteButton.setEnabled(isCurrentUserOwner && (!isTemplate || canDeleteTemplate));

@@ -24,25 +24,22 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let itemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
+ *   let itemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
  *   itemRenamer.addListener("labelChanged", e => {
  *     const data = e.getData();
  *     const newLabel = data.newLabel;
- *     const nodeId = selectedItem.getNodeId();
- *     let node = this.getWorkbench().getNode(nodeId);
- *     node.setLabel(newLabel);
+ *     selectedItem.setLabel(newLabel);
  *   }, this);
  *   itemRenamer.open();
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.TreeItemRenamer", {
+qx.Class.define("osparc.component.widget.Renamer", {
   extend: qx.ui.window.Window,
 
-  construct: function(selectedItem) {
+  construct: function(oldLabel) {
     this.base(arguments, "Rename");
 
-    const oldLabel = selectedItem.getLabel();
     const maxWidth = 350;
     const minWidth = 100;
     const labelWidth = Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth);
@@ -56,7 +53,7 @@ qx.Class.define("osparc.component.widget.TreeItemRenamer", {
       showMinimize: false,
       width: labelWidth
     });
-    this.__populateNodeLabelEditor(selectedItem, labelWidth);
+    this.__populateNodeLabelEditor(oldLabel, labelWidth);
   },
 
   events: {
@@ -64,9 +61,7 @@ qx.Class.define("osparc.component.widget.TreeItemRenamer", {
   },
 
   members: {
-    __populateNodeLabelEditor: function(selectedItem, labelWidth) {
-      const oldLabel = selectedItem.getLabel();
-
+    __populateNodeLabelEditor: function(oldLabel, labelWidth) {
       // Create a text field in which to edit the data
       let labelEditor = new qx.ui.form.TextField(oldLabel).set({
         allowGrowX: true,
@@ -85,12 +80,10 @@ qx.Class.define("osparc.component.widget.TreeItemRenamer", {
       let save = new qx.ui.form.Button("Save");
       save.addListener("execute", e => {
         const newLabel = labelEditor.getValue();
-        selectedItem.setLabel(newLabel);
         const data = {
-          newLabel: newLabel
+          newLabel
         };
         this.fireDataEvent("labelChanged", data);
-
         this.close();
       }, this);
       this.add(save);
