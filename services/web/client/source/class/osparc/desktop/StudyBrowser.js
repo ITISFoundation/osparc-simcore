@@ -208,6 +208,9 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createStudiesLayout: function() {
       const studyFilters = this.__studyFilters = new osparc.component.filter.TextFilter("text", "studyBrowser");
       osparc.utils.Utils.setIdToWidget(studyFilters, "studyFiltersTextFld");
+      studyFilters.getChildControl("textfield").set({
+        width: 210
+      });
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
