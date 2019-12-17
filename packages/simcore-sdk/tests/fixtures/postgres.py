@@ -65,6 +65,7 @@ def engine(docker_ip, docker_services):
     os.environ["POSTGRES_DB"]="test"
     yield engine
     # cleanup
+    _metadata.drop_all(bind=engine, tables=[_tokens, ], checkfirst=True)
     engine.dispose()
 
 
