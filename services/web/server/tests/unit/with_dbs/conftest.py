@@ -14,6 +14,7 @@ import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
+from uuid import uuid4
 
 import aioredis
 import pytest
@@ -238,7 +239,7 @@ async def socketio_client(socketio_url: str, security_cookie: str):
         assert not sio.sid
 
 @pytest.fixture()
-def client_session_id():
+def client_session_id() -> str:
     def create() -> str():
         return str(uuid4())
     return create
