@@ -17,6 +17,11 @@ def _is_responsive(url, code=200):
         if requests.get(url).status_code == code:
             return True
     except Exception:  #pylint: disable=W0703
+        import docker
+        client = docker.from_env()
+        print(f"running services:")
+        for service in client.services.list():
+            print(service.attrs)
         logging.exception("Connection to storage failed")
         return False
 
@@ -24,6 +29,8 @@ def _is_responsive(url, code=200):
 
 @pytest.fixture(scope="module")
 def storage(bucket, engine, docker_ip, docker_services):
+
+
     host = docker_ip
     port = docker_services.port_for('storage', 8080)
     endpoint = "http://{}:{}/{}/".format(host, port, API_VERSION)

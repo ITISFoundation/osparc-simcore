@@ -52,6 +52,7 @@ def file_uuid(project_id, node_uuid)->str:
 
 @pytest.fixture(scope='session')
 def docker_compose_file(bucket, pytestconfig): # pylint:disable=unused-argument
+    print("Hello I'm here: reading the right compose...")
     return current_dir /'docker-compose.yml'
 
 @pytest.fixture
