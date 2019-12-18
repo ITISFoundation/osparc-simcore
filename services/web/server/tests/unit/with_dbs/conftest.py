@@ -279,7 +279,7 @@ async def mocked_director_handler(loop, mocker):
 
 @pytest.fixture
 async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_director_api):
-    services = {}
+    services = []
     async def create(user_id, project_id) -> Dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
@@ -309,7 +309,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_handler, mocked_d
         data, _error = await assert_status(resp, expected_cls=web.HTTPCreated)
         mocked_director_handler.assert_called_once()
 
-        services.update({SERVICE_UUID: running_service_dict})
+        services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_api["get_running_interactive_services"].return_value = Future()
         mocked_director_api["get_running_interactive_services"].return_value.set_result(services)
