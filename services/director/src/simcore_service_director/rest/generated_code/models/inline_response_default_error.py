@@ -1,9 +1,8 @@
 # coding: utf-8
 
-from __future__ import absolute_import
-from datetime import date, datetime  # noqa: F401
+from datetime import date, datetime
 
-from typing import List, Dict  # noqa: F401
+from typing import List, Dict, Type
 
 from .base_model_ import Model
 from .. import util
@@ -15,20 +14,17 @@ class InlineResponseDefaultError(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, errors=None, message=None, status=None):  # noqa: E501
+    def __init__(self, errors: List[object]=None, message: str=None, status: int=None):
         """InlineResponseDefaultError - a model defined in OpenAPI
 
-        :param errors: The errors of this InlineResponseDefaultError.  # noqa: E501
-        :type errors: List[object]
-        :param message: The message of this InlineResponseDefaultError.  # noqa: E501
-        :type message: str
-        :param status: The status of this InlineResponseDefaultError.  # noqa: E501
-        :type status: int
+        :param errors: The errors of this InlineResponseDefaultError.
+        :param message: The message of this InlineResponseDefaultError.
+        :param status: The status of this InlineResponseDefaultError.
         """
         self.openapi_types = {
-            'errors': 'List[object]',
-            'message': 'str',
-            'status': 'int'
+            'errors': List[object],
+            'message': str,
+            'status': int
         }
 
         self.attribute_map = {
@@ -42,13 +38,11 @@ class InlineResponseDefaultError(Model):
         self._status = status
 
     @classmethod
-    def from_dict(cls, dikt) -> 'InlineResponseDefaultError':
+    def from_dict(cls, dikt: dict) -> 'InlineResponseDefaultError':
         """Returns the dict as a model
 
         :param dikt: A dict.
-        :type: dict
-        :return: The inline_response_default_error of this InlineResponseDefaultError.  # noqa: E501
-        :rtype: InlineResponseDefaultError
+        :return: The inline_response_default_error of this InlineResponseDefaultError.
         """
         return util.deserialize_model(dikt, cls)
 
@@ -77,7 +71,7 @@ class InlineResponseDefaultError(Model):
     def message(self):
         """Gets the message of this InlineResponseDefaultError.
 
-        Error message  # noqa: E501
+        Error message
 
         :return: The message of this InlineResponseDefaultError.
         :rtype: str
@@ -88,13 +82,13 @@ class InlineResponseDefaultError(Model):
     def message(self, message):
         """Sets the message of this InlineResponseDefaultError.
 
-        Error message  # noqa: E501
+        Error message
 
         :param message: The message of this InlineResponseDefaultError.
         :type message: str
         """
         if message is None:
-            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
+            raise ValueError("Invalid value for `message`, must not be `None`")
 
         self._message = message
 
@@ -102,7 +96,7 @@ class InlineResponseDefaultError(Model):
     def status(self):
         """Gets the status of this InlineResponseDefaultError.
 
-        Error code  # noqa: E501
+        Error code
 
         :return: The status of this InlineResponseDefaultError.
         :rtype: int
@@ -113,12 +107,12 @@ class InlineResponseDefaultError(Model):
     def status(self, status):
         """Sets the status of this InlineResponseDefaultError.
 
-        Error code  # noqa: E501
+        Error code
 
         :param status: The status of this InlineResponseDefaultError.
         :type status: int
         """
         if status is None:
-            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
+            raise ValueError("Invalid value for `status`, must not be `None`")
 
         self._status = status

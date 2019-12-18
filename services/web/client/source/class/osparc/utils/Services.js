@@ -451,15 +451,6 @@ qx.Class.define("osparc.utils.Services", {
           }
         }
       }
-    },
-
-    stopInteractiveService(nodeId) {
-      const params = {
-        url: {
-          nodeId
-        }
-      };
-      osparc.data.Resources.fetch("interactiveServices", "delete", params);
     }
   }
 });

@@ -1,11 +1,11 @@
 # coding: utf-8
 
-from __future__ import absolute_import
-from datetime import date, datetime  # noqa: F401
+from datetime import date, datetime
 
-from typing import List, Dict  # noqa: F401
+from typing import List, Dict, Type
 
 from .base_model_ import Model
+from .inline_response2001_data import InlineResponse2001Data
 from .. import util
 
 
@@ -15,17 +15,15 @@ class InlineResponse2001(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data=None, error=None):  # noqa: E501
+    def __init__(self, data: List[InlineResponse2001Data]=None, error: object=None):
         """InlineResponse2001 - a model defined in OpenAPI
 
-        :param data: The data of this InlineResponse2001.  # noqa: E501
-        :type data: List[SimcoreNode]
-        :param error: The error of this InlineResponse2001.  # noqa: E501
-        :type error: object
+        :param data: The data of this InlineResponse2001.
+        :param error: The error of this InlineResponse2001.
         """
         self.openapi_types = {
-            'data': 'List[SimcoreNode]',
-            'error': 'object'
+            'data': List[InlineResponse2001Data],
+            'error': object
         }
 
         self.attribute_map = {
@@ -37,13 +35,11 @@ class InlineResponse2001(Model):
         self._error = error
 
     @classmethod
-    def from_dict(cls, dikt) -> 'InlineResponse2001':
+    def from_dict(cls, dikt: dict) -> 'InlineResponse2001':
         """Returns the dict as a model
 
         :param dikt: A dict.
-        :type: dict
-        :return: The inline_response_200_1 of this InlineResponse2001.  # noqa: E501
-        :rtype: InlineResponse2001
+        :return: The inline_response_200_1 of this InlineResponse2001.
         """
         return util.deserialize_model(dikt, cls)
 
@@ -53,7 +49,7 @@ class InlineResponse2001(Model):
 
 
         :return: The data of this InlineResponse2001.
-        :rtype: List[SimcoreNode]
+        :rtype: List[InlineResponse2001Data]
         """
         return self._data
 
@@ -63,10 +59,10 @@ class InlineResponse2001(Model):
 
 
         :param data: The data of this InlineResponse2001.
-        :type data: List[SimcoreNode]
+        :type data: List[InlineResponse2001Data]
         """
         if data is None:
-            raise ValueError("Invalid value for `data`, must not be `None`")  # noqa: E501
+            raise ValueError("Invalid value for `data`, must not be `None`")
 
         self._data = data
 

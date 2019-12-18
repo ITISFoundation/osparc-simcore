@@ -13,6 +13,7 @@ import pytest
 from aiohttp import web, web_exceptions
 
 from helpers import json_schema_validator
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_director import config, main, resources, rest
 
 API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
@@ -221,6 +222,65 @@ async def test_running_services_post_and_delete_no_swarm(client, push_services, 
 
 async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
     await _start_get_stop_services(client, push_services, user_id, project_id)
+
+
+async def test_running_interactive_services_list_get(client, push_services, docker_swarm):
+    """Test case for running_interactive_services_list_get
+
+    Returns a list of interactive services
+    """
+    user_ids = ["first_user_id", "second_user_id"]
+    project_ids = ["first_project_id", "second_project_id", "third_project_id"]
+    # prepare services
+    NUM_SERVICES = 1
+    created_services = push_services(0,NUM_SERVICES)
+    assert len(created_services) == NUM_SERVICES
+    # start the services
+    for user_id in user_ids:
+        for project_id in project_ids:
+            for created_service in created_services:
+                service_description = created_service["service_description"]
+                params = {}
+                params["user_id"] = user_id
+                params["project_id"] = project_id
+                params["service_key"] = service_description["key"]
+                params["service_tag"] = service_description["version"]
+                params["service_uuid"] = str(uuid.uuid4())
+                # start the service
+                web_response = await client.post("/v0/running_interactive_services", params=params)
+                assert web_response.status == 201
+    # get the list of services
+    for user_id in user_ids:
+        for project_id in project_ids:
+            params = {}
+            # list by user_id
+            params["user_id"] = user_id
+            response = await client.get(path='/v0/running_interactive_services', params=params)
+            assert response.status == 200, 'Response body is : ' + (await response.read()).decode('utf-8')
+            data, error = unwrap_envelope(await response.json())
+            assert data
+            assert not error
+            services_list = data
+            assert len(services_list) == len(project_ids) * NUM_SERVICES
+            # list by user_id and project_id
+            params["project_id"] = project_id
+            response = await client.get(path='/v0/running_interactive_services', params=params)
+            assert response.status == 200, 'Response body is : ' + (await response.read()).decode('utf-8')
+            data, error = unwrap_envelope(await response.json())
+            assert data
+            assert not error
+            services_list = data
+            assert len(services_list) == NUM_SERVICES
+            # list by project_id
+            params = {}
+            params["project_id"] = project_id
+            response = await client.get(path='/v0/running_interactive_services', params=params)
+            assert response.status == 200, 'Response body is : ' + (await response.read()).decode('utf-8')
+            data, error = unwrap_envelope(await response.json())
+            assert data
+            assert not error
+            services_list = data
+            assert len(services_list) == len(user_ids) * NUM_SERVICES
 
 
 @pytest.mark.skip(reason="test needs credentials to real registry")

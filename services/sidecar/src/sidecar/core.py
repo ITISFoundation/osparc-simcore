@@ -149,6 +149,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
     def _log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
         log_data = {"Channel" : "Log",
             "Node": self._task.node_id,
+            "user_id": self._user_id,
+            "project_id": self._task.project_id,
             "Messages" : msg if isinstance(msg, list) else [msg]
             }
         log_body = json.dumps(log_data)

@@ -1,9 +1,8 @@
 # coding: utf-8
 
-from __future__ import absolute_import
-from datetime import date, datetime  # noqa: F401
+from datetime import date, datetime
 
-from typing import List, Dict  # noqa: F401
+from typing import List, Dict, Type
 
 from .base_model_ import Model
 from .. import util
@@ -15,23 +14,19 @@ class InlineResponse200Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, api_version=None, name=None, status=None, version=None):  # noqa: E501
+    def __init__(self, api_version: str=None, name: str=None, status: str=None, version: str=None):
         """InlineResponse200Data - a model defined in OpenAPI
 
-        :param api_version: The api_version of this InlineResponse200Data.  # noqa: E501
-        :type api_version: str
-        :param name: The name of this InlineResponse200Data.  # noqa: E501
-        :type name: str
-        :param status: The status of this InlineResponse200Data.  # noqa: E501
-        :type status: str
-        :param version: The version of this InlineResponse200Data.  # noqa: E501
-        :type version: str
+        :param api_version: The api_version of this InlineResponse200Data.
+        :param name: The name of this InlineResponse200Data.
+        :param status: The status of this InlineResponse200Data.
+        :param version: The version of this InlineResponse200Data.
         """
         self.openapi_types = {
-            'api_version': 'str',
-            'name': 'str',
-            'status': 'str',
-            'version': 'str'
+            'api_version': str,
+            'name': str,
+            'status': str,
+            'version': str
         }
 
         self.attribute_map = {
@@ -47,13 +42,11 @@ class InlineResponse200Data(Model):
         self._version = version
 
     @classmethod
-    def from_dict(cls, dikt) -> 'InlineResponse200Data':
+    def from_dict(cls, dikt: dict) -> 'InlineResponse200Data':
         """Returns the dict as a model
 
         :param dikt: A dict.
-        :type: dict
-        :return: The inline_response_200_data of this InlineResponse200Data.  # noqa: E501
-        :rtype: InlineResponse200Data
+        :return: The inline_response_200_data of this InlineResponse200Data.
         """
         return util.deserialize_model(dikt, cls)
 

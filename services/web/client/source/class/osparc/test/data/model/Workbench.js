@@ -53,8 +53,7 @@ qx.Class.define("osparc.test.data.model.Workbench",
         const version = null;
         const uuid = null;
         const parent = null;
-        const populateNodeData = true;
-        return this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
+        return this.__workbench.createNode(key, version, uuid, parent);
       },
 
       /*
