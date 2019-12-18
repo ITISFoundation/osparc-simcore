@@ -9,11 +9,6 @@ import pytest
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / 'helpers'))
 
-# FIXTURES
-pytest_plugins = [
-    "shared_fixtures.minio_fix",
-]
-
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir() -> Path:
     """ osparc-simcore repo root dir """
