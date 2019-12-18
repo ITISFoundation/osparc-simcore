@@ -57,16 +57,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
   
   unit-test-director:
     name: Unit-testing director 
@@ -96,16 +86,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
 
   unit-test-frontend:
     name: Unit-testing frontend
@@ -135,16 +115,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
   
   unit-test-python-linting:
     name: Unit-testing python-linting
@@ -200,16 +170,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
 
   unit-test-sidecar:
     name: Unit-testing sidecar
@@ -239,16 +199,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
 
   unit-test-storage:
     name: Unit-testing storage
@@ -278,16 +228,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
 
   unit-test-webserver:
     name: Unit-testing webserver 
@@ -317,13 +257,4 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: coveralls parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
+    
