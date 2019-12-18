@@ -42,7 +42,8 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     value: {
       check: "String",
       event: "changeValue",
-      init: ""
+      init: "",
+      apply: "_applyValue"
     },
     fetching: {
       check: "Boolean",
@@ -115,6 +116,9 @@ qx.Class.define("osparc.ui.form.EditLabel", {
         this.__label.setEnabled(true);
         this._remove(this.__loadingIcon);
       }
+    },
+    _applyValue: function() {
+      this.setMode(this.self().modes.DISPLAY);
     }
   }
 });
