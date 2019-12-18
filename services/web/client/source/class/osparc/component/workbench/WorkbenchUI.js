@@ -569,6 +569,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
     },
 
+    __getPointEventPosition: function(pointerEvent) {
+      const navBarHeight = 50;
+      const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
+      const x = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
+      const y = pointerEvent.getViewportTop() - navBarHeight;
+      return [x, y];
+    },
+
     __startTempEdge: function(pointerEvent) {
       if (this.__tempEdgeNodeId === null) {
         return;
@@ -587,10 +595,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return;
       }
 
-      const navBarHeight = 50;
-      const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
-      this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
-      this.__pointerPosY = pointerEvent.getViewportTop() - navBarHeight;
+      [this.__pointerPosX, this.__pointerPosY] = this.__getPointEventPosition(pointerEvent);
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
@@ -852,8 +857,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.addListener("dbltap", e => {
-        const x = e.getViewportLeft() - this.getBounds().left;
-        const y = e.getViewportTop();
+        const [x, y] = this.__getPointEventPosition(e);
         const pos = {
           x,
           y
@@ -866,7 +870,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragEnter: function(e) {
-      console.log("dragEnter", e);
       e.preventDefault();
       e.stopPropagation();
 
@@ -874,13 +877,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragOver: function(e) {
-      console.log("dragOver", e);
       e.preventDefault();
       e.stopPropagation();
     },
 
     __dragLeave: function(e) {
-      console.log("dragLeave", e);
       e.preventDefault();
       e.stopPropagation();
 
@@ -888,11 +889,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __drop: function(e) {
-      console.log("drop", e);
       e.preventDefault();
       e.stopPropagation();
 
       this.__dragging(false);
+
+      const [x, y] = this.__getPointEventPosition(e);
+      const pos = {
+        x,
+        y
+      };
 
       const fileList = e.dataTransfer.files;
       if (fileList.length) {
