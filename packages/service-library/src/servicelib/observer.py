@@ -1,15 +1,18 @@
+"""observer pattern module
+Allows loose coupling subject and an observer.
+
+"""
+
 import asyncio
 import logging
 from collections import defaultdict
 from functools import wraps
 
-from .types import SignalType
-
 log = logging.getLogger(__name__)
 
 event_registry = defaultdict(list)
 
-async def emit(event: SignalType, *args, **kwargs):
+async def emit(event: str, *args, **kwargs):
     if not event_registry[event]:
         return
 
@@ -17,7 +20,7 @@ async def emit(event: SignalType, *args, **kwargs):
     # all coroutine called in //
     await asyncio.gather(*coroutines, return_exceptions=True)
 
-def observe(event: SignalType):
+def observe(event: str):
     def decorator(func):
         if func not in event_registry[event]:
             log.debug("registering %s to event %s", func, event)
@@ -28,10 +31,3 @@ def observe(event: SignalType):
             return func(*args, **kwargs)
         return wrapped
     return decorator
-
-
-__all__ = (
-    'SignalType'
-    'observe'
-    'emit'
-)

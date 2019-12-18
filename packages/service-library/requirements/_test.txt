@@ -36,6 +36,7 @@ pyrsistent==0.15.2
 pytest-aiohttp==0.3.0
 pytest-cov==2.7.1
 pytest-docker==0.6.1
+pytest-mock==1.13.0
 pytest-runner==5.1
 pytest==4.5.0
 pyyaml==5.1

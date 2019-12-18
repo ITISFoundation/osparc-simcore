@@ -11,10 +11,11 @@ import logging
 from typing import Dict
 
 from aiohttp import web
+
+from servicelib.observer import observe
 from socketio.exceptions import \
     ConnectionRefusedError as socket_io_connection_error
 
-from .. import signals
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
@@ -65,7 +66,7 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
 
-@signals.observe(event=signals.SignalType.SIGNAL_USER_LOGOUT)
+@observe(event="SIGNAL_USER_LOGOUT")
 async def user_logged_out(user_id: str, app: web.Application):
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user

@@ -3,12 +3,12 @@ import logging
 from aiohttp import web
 from yarl import URL
 
+from servicelib.observer import observe
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
-from ..signals import SignalType, observe
 from . import director_api
 from .config import get_client_session, get_config
 
@@ -156,6 +156,6 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     await director_api.stop_services(request.app, user_id=userid)
     return web.json_response({'data': ''}, status=204)
 
-@observe(event=SignalType.SIGNAL_USER_LOGOUT)
+@observe(event="SIGNAL_USER_LOGOUT")
 async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> None:
     await director_api.stop_services(app, user_id=user_id)

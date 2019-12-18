@@ -1,7 +1,7 @@
 """The garbage collector runs as an aiohttp background task at pre-defined interval until the aiohttp app is closed.
 
     Its tasks are to collect resources that are no longer "alive".
-    The tasks are defined as alive when the registry alive key is no longer available (see (registry.py)), 
+    The tasks are defined as alive when the registry alive key is no longer available (see (registry.py)),
     thus the corresponding key is deamed as dead, and so are its attached resources if any.
     The garbage collector shall then close/delete these resources.
 """
@@ -10,6 +10,8 @@ import asyncio
 import logging
 
 from aiohttp import web
+
+from servicelib.observer import emit
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
@@ -49,8 +51,7 @@ async def collect_garbage(registry: RedisResourceRegistry,  app: web.Application
                     await asyncio.gather(*remove_tasks)
                 logger.debug(
                     "the resources %s:%s of %s may be now safely closed", resource_name, resource_value, key)
-                from ..signals import emit, SignalType
-                await emit(event=SignalType.SIGNAL_PROJECT_CLOSE, user_id=None, project_uuid=resource_value, app=app)
+                await emit(event="SIGNAL_PROJECT_CLOSE", user_id=None, project_uuid=resource_value, app=app)
 
 
 async def garbage_collector_task(app: web.Application):

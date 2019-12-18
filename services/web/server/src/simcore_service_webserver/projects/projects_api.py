@@ -14,8 +14,8 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
+from servicelib.observer import observe
 
-from .. import signals
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
 from ..security_api import check_permission
@@ -110,7 +110,7 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: str) 
     await remove_project_interactive_services(user_id, project_uuid, request.app)
     await delete_project_data(request, project_uuid, user_id)
 
-@signals.observe(event=signals.SignalType.SIGNAL_PROJECT_CLOSE)
+@observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(user_id: Optional[str], project_uuid: Optional[str], app: web.Application) -> None:
     assert user_id or project_uuid
     list_of_services = await director_api.get_running_interactive_services(app,
