@@ -1,7 +1,7 @@
 dist: xenial
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.25.0
+    - DOCKER_COMPOSE_VERSION=1.23.2
 services:
   - docker
 addons:
@@ -169,7 +169,7 @@ jobs:
         - bash ci/travis/unit-testing/service-library after_success
       after_failure:
         - bash ci/travis/unit-testing/service-library after_failure
-
+    
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: simcore-sdk

@@ -4,9 +4,6 @@ set -euo pipefail
 IFS=$'\n\t'
 
 export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
-# enables docker Buildkit
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
 
 before_install() {
     bash ci/travis/helpers/install_docker_compose;
