@@ -258,3 +258,66 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
+  integration-test-webserver:
+    name: Integration-testing webserver
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6, 3.7, 3.8]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - name: install
+      run: ./ci/github/integration-testing/webserver install
+    - name: test
+      run: ./ci/github/integration-testing/webserver test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/integration-testing/webserver clean_up
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} #required
+        flags: integrationtests #optional
+
+  integration-test-simcore-sdk:
+    name: Integration-testing simcore-sdk
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6, 3.7, 3.8]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - name: install
+      run: ./ci/github/integration-testing/simcore-sdk install
+    - name: test
+      run: ./ci/github/integration-testing/simcore-sdk test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/integration-testing/simcore-sdk clean_up
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} #required
+        flags: integrationtests
