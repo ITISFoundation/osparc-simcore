@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         iframe.dispose();
         this.__createStudiesLayout();
         this.__attachEventHandlers();
-        const loadStudyId = osparc.store.Store.getCurrentStudy();
+        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudy();
         if (loadStudyId) {
           const params = {
             url: {
