@@ -172,7 +172,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "reconnection delay": this.getReconnectionDelay(),
           "max reconnection attempts": this.getMaxReconnectionAttemps(),
           "force new connection": true,
-          "query": "client_session_id="+this.__getClientSessionID()
+          "query": "client_session_id="+osparc.utils.Utils.getClientSessionID()
         });
         this.setSocket(mySocket);
 
@@ -263,13 +263,6 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         this.getSocket().removeAllListeners(this.__name[index]);
         this.__name.splice(index, 1);
       }
-    },
-
-    __getClientSessionID: function() {
-      // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
-      sessionStorage.setItem("clientsessionid", clientSessionID);
-      return clientSessionID;
     }
   },
 
