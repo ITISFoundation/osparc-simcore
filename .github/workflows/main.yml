@@ -351,3 +351,63 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: integrationtests
+
+  system-test-swarm-deploy:
+    name: System-testing deploy simcore
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-16.04, ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - name: install
+      run: ./ci/github/system-testing/swarm-deploy install
+    - name: test
+      run: ./ci/github/system-testing/swarm-deploy test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/system-testing/swarm-deploy clean_up
+
+  system-test-e2e:
+    name: System-testing e2e
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        node: [10]
+        os: [ubuntu-16.04, ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - name: install
+      run: ./ci/github/system-testing/e2e install
+    - name: test
+      run: ./ci/github/system-testing/e2e test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/system-testing/swarm-deploy clean_up

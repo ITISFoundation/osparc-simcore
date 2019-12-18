@@ -1,0 +1,53 @@
+#!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+# https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
+set -euo pipefail
+IFS=$'\n\t'
+
+# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
+export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
+
+install() {
+    # Enable user namespace cloning
+    sysctl kernel.unprivileged_userns_clone=1
+
+    # Launch XVFB
+    export DISPLAY=:99.0
+    sh -e /etc/init.d/xvfb start
+    cp tests/e2e/package.json .
+    cp tests/e2e/package-lock.json .
+    npm install
+    make pull-version || ((make pull-cache || true) && make build tag-version)
+    make info-images
+    # disable email registration
+    make .env
+    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
+    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+    make up-version
+}
+
+test() {
+    # wait for the services to run
+    pytest -v tests/swarm-deploy
+
+    make info-swarm
+    cp tests/e2e/jest.config.js .
+    cp tests/e2e/jest-puppeteer.config.js .
+    npm test
+}
+
+clean_up() {
+    docker images
+    make down
+}
+
+# Check if the function exists (bash specific)
+if declare -f "$1" > /dev/null
+then
+  # call arguments verbatim
+  "$@"
+else
+  # Show a helpful error
+  echo "'$1' is not a known function name" >&2
+  exit 1
+fi
