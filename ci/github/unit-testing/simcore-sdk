@@ -3,27 +3,18 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk .travis.yml)
 
 install() {
-    bash ci/helpers/ensure_python_pip
+    bash ci/travis/helpers/ensure_python_pip
     pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
     pip list -v
-    # pull the test images if registry is set up, else build the images
-    make pull-version || ((make pull-cache || true) && make build tag-version)
-    make info-images
-    # pip3 install services/storage/client-sdk/python
 }
 
 test() {
-    pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests/integration
-}
-
-clean_up() {
-    docker images
-    make down
+    pytest --cov=simcore_sdk --cov-append --color=yes --cov-report=term-missing --cov-report=xml -v packages/simcore-sdk/tests/unit
 }
 
 # Check if the function exists (bash specific)
