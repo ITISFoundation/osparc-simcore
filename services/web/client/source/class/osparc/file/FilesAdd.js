@@ -153,7 +153,8 @@ qx.Class.define("osparc.file.FilesAdd", {
     },
 
     __getStudyId: function() {
-      return this.getWorkbench().getStudy()
+      return this.getNode().getWorkbench()
+        .getStudy()
         .getUuid();
     }
   }
