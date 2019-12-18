@@ -157,9 +157,9 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __loadMainPage: function(studyId) {
+    __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new osparc.desktop.MainPage(studyId), {
+      this.__loadView(new osparc.desktop.MainPage(), {
         top: 0,
         bottom: 0,
         left: 0,
