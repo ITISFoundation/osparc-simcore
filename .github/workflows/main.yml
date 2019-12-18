@@ -357,7 +357,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.8]
+        python: [3.6]
         os: [ubuntu-16.04, ubuntu-18.04]
       fail-fast: false
     steps:
@@ -385,7 +385,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.8]
+        python: [3.6]
         node: [10]
         os: [ubuntu-16.04, ubuntu-18.04]
       fail-fast: false
