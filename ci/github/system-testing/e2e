@@ -28,7 +28,7 @@ install() {
 
 test() {
     # wait for the services to run
-    pytest -v tests/swarm-deploy
+    pytest  --color=yes --cov-report=term-missing -v tests/swarm-deploy
 
     make info-swarm
     cp tests/e2e/jest.config.js .

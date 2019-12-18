@@ -21,7 +21,7 @@ install() {
 }
 
 test() {
-    pytest -v tests/swarm-deploy
+    pytest  --color=yes --cov-report=term-missing -v tests/swarm-deploy
 }
 
 clean_up() {
