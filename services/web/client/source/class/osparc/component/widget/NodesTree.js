@@ -226,9 +226,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       let selectedItem = treeSelection.toArray()[0];
       const selectedNodeId = selectedItem.getNodeId();
-      if (selectedNodeId === "root") {
-        return null;
-      }
 
       return selectedItem;
     },
@@ -260,19 +257,24 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItemRenamer: function() {
       const selectedItem = this.__getSelection();
-      if (selectedItem === null) {
-        return;
-      }
-
       const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
       treeItemRenamer.addListener("labelChanged", e => {
-        const data = e.getData();
-        const newLabel = data.newLabel;
-        selectedItem.setLabel(newLabel);
+        const { newLabel } = e.getData();
         const nodeId = selectedItem.getNodeId();
-        const node = this.getWorkbench().getNode(nodeId);
-        if (node) {
-          node.renameNode(newLabel);
+        if (nodeId === "root") {
+          const params = {
+            name: newLabel
+          };
+          this.getWorkbench().getStudy().updateStudy(params)
+            .then(data => {
+              selectedItem.setLabel(data.name);
+            });
+        } else {
+          selectedItem.setLabel(newLabel);
+          const node = this.getWorkbench().getNode(nodeId);
+          if (node) {
+            node.renameNode(newLabel);
+          }
         }
       }, this);
       const bounds = this.getLayoutParent().getContentLocation();

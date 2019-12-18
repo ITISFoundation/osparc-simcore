@@ -286,7 +286,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     _applyStudy: function(study) {
-      this.__studyTitle.setValue(study.getName());
+      if (study) {
+        study.bind("name", this.__studyTitle, "value");
+      }
       this.__studyTitle.show();
     },
 
@@ -297,18 +299,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       studyTitle.addListener("editValue", evt => {
         this.__studyTitle.setFetching(true);
         const params = {
-          url: {
-            "project_id": this.getStudy().getUuid()
-          },
-          data: {
-            ...this.getStudy().serializeStudy(),
-            name: evt.getData()
-          }
+          name: evt.getData()
         };
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(data => {
+        this.getStudy().updateStudy(params)
+          .then(() => {
             this.__studyTitle.setFetching(false);
-            this.__studyTitle.setValue(data.name);
           })
           .catch(err => {
             this.__studyTitle.setFetching(false);
