@@ -78,8 +78,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
-    const title = new osparc.ui.form.EditLabel("Titulo del estudio");
-    this._add(title);
+    this.__studyTitle = new osparc.ui.form.EditLabel().set({
+      visibility: "excluded"
+    });
+    this._add(this.__studyTitle);
 
     let hBox = new qx.ui.layout.HBox(5).set({
       alignY: "middle"
@@ -279,6 +281,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       issueConfirmationWindow.addButton(loginBtn);
       issueConfirmationWindow.addCancelButton();
       issueConfirmationWindow.open();
+    },
+
+    getStudyTitle: function() {
+      return this.__studyTitle;
     }
   }
 });

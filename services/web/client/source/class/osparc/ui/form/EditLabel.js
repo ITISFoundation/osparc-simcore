@@ -36,7 +36,8 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     },
     value: {
       check: "String",
-      event: "changeValue"
+      event: "changeValue",
+      init: ""
     }
   },
   members: {
