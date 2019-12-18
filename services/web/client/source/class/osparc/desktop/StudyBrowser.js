@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
               "project_id": loadStudyId
             }
           };
-          osparc.data.Resources.getOne("studies", params, loadStudyId)
+          osparc.data.Resources.getOne("studies", params)
             .then(studyData => {
               this.__startStudy(studyData);
             })
@@ -254,6 +254,23 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __reloadStudies: function() {
+      const params = {
+        url: {
+          "tab_id": osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getActive", params)
+        .then(studyData => {
+          if (studyData) {
+            this.__startStudy(studyData);
+          } else {
+            osparc.store.Store.getInstance().setCurrentStudy(null);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
+
       this.reloadUserStudies();
       this.reloadTemplateStudies();
     },

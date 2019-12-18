@@ -153,6 +153,7 @@ qx.Class.define("osparc.auth.Manager", {
     __logoutUser: function() {
       osparc.auth.Data.getInstance().resetEmail();
       osparc.auth.Data.getInstance().resetToken();
+      osparc.store.Store.getInstance().setCurrentStudy(null);
     }
   }
 });
