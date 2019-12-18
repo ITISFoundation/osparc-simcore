@@ -78,9 +78,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
-    this.__studyTitle = new osparc.ui.form.EditLabel().set({
-      visibility: "excluded"
-    });
+    this.__studyTitle = this.__createStudyTitle();
     this._add(this.__studyTitle);
 
     let hBox = new qx.ui.layout.HBox(5).set({
@@ -290,6 +288,32 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       this.__studyTitle.setValue(study.getName());
       this.__studyTitle.show();
+    },
+
+    __createStudyTitle: function() {
+      const studyTitle = new osparc.ui.form.EditLabel().set({
+        visibility: "excluded"
+      });
+      studyTitle.addListener("editValue", evt => {
+        const params = {
+          url: {
+            "project_id": this.getStudy().getUuid()
+          },
+          data: {
+            ...this.getStudy().serializeStudy(),
+            name: evt.getData()
+          }
+        };
+        osparc.data.Resources.fetch("studies", "put", params)
+        .then(data => {
+          this.__studyTitle.setValue(data.name);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+        });
+      }, this);
+      return studyTitle;
     }
   }
 });

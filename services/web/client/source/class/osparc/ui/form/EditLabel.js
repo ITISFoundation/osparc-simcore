@@ -17,6 +17,9 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     }));
     this.__renderLayout();
   },
+  events: {
+    "editValue": "qx.event.type.Data"
+  },
   statics: {
     modes: {
       DISPLAY: "display",
@@ -77,12 +80,12 @@ qx.Class.define("osparc.ui.form.EditLabel", {
             this.__input = new qx.ui.form.TextField(this.getValue());
             this.__input.addListener("keydown", evt => {
               if (evt.getKeyIdentifier() === "Enter") {
-                this.setValue(this.__input.getValue());
                 this.setMode(this.self().modes.DISPLAY);
               }
             }, this);
             this.__input.addListener("focusout", () => this.setMode(this.self().modes.DISPLAY), this);
             this.__input.addListener("focus", () => this.__input.selectAllText(), this);
+            this.__input.addListener("changeValue", evt => this.fireDataEvent("editValue", evt.getData()), this);
           }
           control = this.__input;
           break;
