@@ -122,7 +122,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      nullable: true
+      nullable: true,
+      apply: "_applyStudy"
     }
   },
 
@@ -141,7 +142,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         this.__highlightDashboard(true);
       }
       if (nodeIds.length === 1) {
+        this.__studyTitle.show();
         return;
+      } else {
+        this.__studyTitle.exclude();
       }
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
@@ -283,8 +287,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       issueConfirmationWindow.open();
     },
 
-    getStudyTitle: function() {
-      return this.__studyTitle;
+    _applyStudy: function(study) {
+      this.__studyTitle.setValue(study.getName());
+      this.__studyTitle.show();
     }
   }
 });
