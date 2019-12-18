@@ -79,7 +79,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/director install
     - name: test
       run: ./ci/github/unit-testing/director test
@@ -93,7 +93,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6, 3.7, 3.8]
+        node: [10]
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
@@ -102,13 +102,12 @@ jobs:
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
       run: sudo ./ci/github/helpers/setup_docker_compose.sh
-    - name: setup python environment
-      uses: actions/setup-python@v1.1.1
+    - uses: actions/setup-node@v1
       with:
-        python-version: ${{ matrix.python }}
+        node-version: ${{ matrix.node }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/frontend install
     - name: test
       run: ./ci/github/unit-testing/frontend test
@@ -137,7 +136,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/python-linting install
     - name: test
       run: ./ci/github/unit-testing/python-linting test
@@ -163,7 +162,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/service-library install
     - name: test
       run: ./ci/github/unit-testing/service-library test
@@ -192,7 +191,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/sidecar install
     - name: test
       run: ./ci/github/unit-testing/sidecar test
@@ -221,7 +220,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install director
+    - name: install
       run: ./ci/github/unit-testing/storage install
     - name: test
       run: ./ci/github/unit-testing/storage test
