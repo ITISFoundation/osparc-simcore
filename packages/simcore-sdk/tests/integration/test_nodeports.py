@@ -1,8 +1,8 @@
-#pylint: disable=W0212
-#pylint: disable=C0111
-#pylint: disable=R0913
-#pylint: disable=W0104
-#pylint: disable=unused-argument
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
 import filecmp
 import tempfile

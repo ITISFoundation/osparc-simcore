@@ -1,4 +1,9 @@
-#pylint: disable=C0111
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 from pathlib import Path
 
 import mock

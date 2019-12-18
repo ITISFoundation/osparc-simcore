@@ -1,4 +1,9 @@
-#pylint: disable=too-many-arguments, unused-argument
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import filecmp
 from pathlib import Path
 

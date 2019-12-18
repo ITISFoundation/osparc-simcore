@@ -1,6 +1,9 @@
-# pylint:disable=redefined-outer-name
+# pylint:disable=wildcard-import
 # pylint:disable=unused-import
+# pylint:disable=unused-variable
 # pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import pytest
 
 from simcore_sdk.models.pipeline_models import (ComputationalPipeline,

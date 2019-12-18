@@ -1,3 +1,9 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import pytest
 from copy import deepcopy
 from simcore_sdk.node_ports import exceptions, config

@@ -1,4 +1,9 @@
- #pylint: disable=W0621, unused-argument, too-many-arguments, no-name-in-module
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import json
 import sys
 import uuid
