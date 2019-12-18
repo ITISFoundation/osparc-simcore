@@ -72,16 +72,20 @@ qx.Class.define("osparc.wrapper.JsZip", {
     },
 
     zipFiles: function(files) {
+      // Incomplete
       const zip = new JSZip();
-      for (let i=0; i<files.length; i++) {
-        const fileName = files[i].name;
-        const fileContent = files[i].content;
-        zip.file(fileName, fileContent);
-      }
-      const content = zip.generateAsync({
-        type: "nodebuffer",
-        mimeType: "application/epub+zip"
+      files.forEach(file => {
+        const fileName = file.name;
+        const reader = new FileReader();
+        reader.onabort = () => console.log(fileName + " file reading was aborted");
+        reader.onerror = () => console.log(fileName + " file reading has failed");
+        reader.onload = () => {
+          const binaryContent = reader.result;
+          zip.file(fileName, binaryContent);
+        };
+        reader.readAsArrayBuffer(file);
       });
+      const content = zip.generateAsync();
       return content;
     }
   }
