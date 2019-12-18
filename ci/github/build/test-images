@@ -5,16 +5,7 @@ IFS=$'\n\t'
 
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
-before_install() {
-    bash ci/helpers/show_system_versions;
-    env
-}
-
-install() {
-    echo "nothing to install..."
-}
-
-before_script() {
+pull_images() {
     {
         make pull-cache
     } || {
@@ -30,20 +21,10 @@ before_script() {
     make pull-version || true
 }
 
-script() {
+build_images() {
     make build-cache
     make build
-}
-
-after_success() {
-    echo "build succeeded"
     make info-images
-}
-
-after_failure() {
-    echo "build failed"
-    env
-    docker images
 }
 
 # Check if the function exists (bash specific)
