@@ -66,8 +66,7 @@ qx.Class.define("osparc.auth.Manager", {
       } else {
         osparc.data.Resources.getOne("profile", {}, null, false)
           .then(profile => {
-            this.__loginUser(profile.login);
-            osparc.data.Permissions.getInstance().setRole(profile.role);
+            this.__loginUser(profile);
             successCb.call(ctx, profile);
           })
           .catch(err => {
@@ -87,8 +86,7 @@ qx.Class.define("osparc.auth.Manager", {
         .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
-              this.__loginUser(profile.login);
-              osparc.data.Permissions.getInstance().setRole(profile.role);
+              this.__loginUser(profile);
               successCbk.call(context, data);
             })
             .catch(err => failCbk.call(context, err.message));
@@ -146,9 +144,10 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
-    __loginUser: function(email) {
-      osparc.auth.Data.getInstance().setEmail(email);
-      osparc.auth.Data.getInstance().setToken(email);
+    __loginUser: function(profile) {
+      osparc.auth.Data.getInstance().setEmail(profile.login);
+      osparc.auth.Data.getInstance().setToken(profile.login);
+      osparc.data.Permissions.getInstance().setRole(profile.role);
     },
 
     __logoutUser: function() {
