@@ -203,8 +203,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addServiceFromCatalog: function(data, pos) {
       const service = data.service;
-      let nodeAId = data.contextNodeId;
-      let portA = data.contextPort;
+      let nodeAId = "contextNodeId" in data ? data.contextNodeId : null;
+      let portA = "contextPort" in data ? data.contextPort : null;
 
       let parent = null;
       if (this.__currentModel.isContainer()) {
@@ -893,12 +893,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.__dragging(false);
 
-      const [x, y] = this.__getPointEventPosition(e);
       const pos = {
-        x,
-        y
+        x: e.offsetX,
+        y: e.offsetY
       };
-
       const fileList = e.dataTransfer.files;
       if (fileList.length) {
         console.log(fileList);
