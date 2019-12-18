@@ -916,9 +916,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     filePickerAdded: function(filePicker) {
       const nodeId = filePicker.getNode().getNodeId();
       if (nodeId in this.__filesToFilePicker) {
-        const files = this.__filesToFilePicker[nodeId];
         const fileAdder = filePicker.getFilesAdder();
-        fileAdder.retrieveUrlAndUpload(files[0]);
+        const files = this.__filesToFilePicker[nodeId];
+        if (files.length === 1) {
+          fileAdder.retrieveUrlAndUpload(files[0]);
+        } else if (files.length > 1) {
+          osparc.wrapper.JsZip.getInstance().zipFiles(files)
+            .then(file => {
+              fileAdder.retrieveUrlAndUpload(file);
+            });
+        }
         delete this.__filesToFilePicker[nodeId];
       }
     },

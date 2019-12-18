@@ -41,6 +41,7 @@ qx.Class.define("osparc.desktop.Dashboard", {
 
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
+    osparc.wrapper.JsZip.getInstance().init();
     osparc.wrapper.DOMPurify.getInstance().init();
     this.__createMainViewLayout();
   },
