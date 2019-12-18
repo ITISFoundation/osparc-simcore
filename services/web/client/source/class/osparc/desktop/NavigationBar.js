@@ -306,15 +306,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }
         };
         osparc.data.Resources.fetch("studies", "put", params)
-        .then(data => {
-          this.__studyTitle.setFetching(false);
-          this.__studyTitle.setValue(data.name);
-        })
-        .catch(err => {
-          this.__studyTitle.setFetching(false);
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
-        });
+          .then(data => {
+            this.__studyTitle.setFetching(false);
+            this.__studyTitle.setValue(data.name);
+          })
+          .catch(err => {
+            this.__studyTitle.setFetching(false);
+            console.error(err);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+          });
       }, this);
       return studyTitle;
     }

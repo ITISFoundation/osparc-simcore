@@ -55,6 +55,7 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     __label: null,
     __input: null,
     __labelWidth: null,
+    __loadingIcon: null,
     __renderLayout: function() {
       this._removeAll();
       switch (this.getMode()) {
