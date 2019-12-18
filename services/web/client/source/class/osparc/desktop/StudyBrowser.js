@@ -74,6 +74,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__editPane.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
+        this.__reloadStudies();
         this.__attachEventHandlers();
         const loadStudyId = osparc.store.Store.getInstance().getCurrentStudy();
         if (loadStudyId) {
@@ -252,6 +253,11 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       this.__editPane.add(this.__editStudyLayout);
     },
 
+    __reloadStudies: function() {
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
+    },
+
     __createDeleteButton: function() {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         visibility: "excluded"
@@ -392,14 +398,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createUserStudyList: function() {
       const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(usrLst, "userStudiesList");
-      this.reloadUserStudies();
       return usrLst;
     },
 
     __createTemplateStudyList: function() {
       const tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
-      this.reloadTemplateStudies();
       return tempList;
     },
 
