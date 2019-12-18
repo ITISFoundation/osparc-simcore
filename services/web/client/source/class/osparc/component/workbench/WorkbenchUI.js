@@ -196,13 +196,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         srvCat.moveTo(workbenchUICenter.x - 200, workbenchUICenter.y - 200);
       }
       srvCat.addListener("addService", ev => {
-        this.__addServiceFromCatalog(ev, pos);
+        this.__addServiceFromCatalog(ev.getData(), pos);
       }, this);
       return srvCat;
     },
 
-    __addServiceFromCatalog: function(e, pos) {
-      const data = e.getData();
+    __addServiceFromCatalog: function(data, pos) {
       const service = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
