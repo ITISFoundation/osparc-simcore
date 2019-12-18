@@ -199,7 +199,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
         // open file picker in window
-        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+        const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           appearance: "service-window",
           layout: new qx.ui.layout.Grow(),
           autoDestroy: true,
