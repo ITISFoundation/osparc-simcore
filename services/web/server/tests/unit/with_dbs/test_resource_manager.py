@@ -232,17 +232,25 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service):
+async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, client_session_id, socketio_client):
+    SERVICE_DELETION_DELAY = 5
+    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - mocked_dynamic_service fixture
     service = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
+    # create websocket
+    client_session_id1 = client_session_id()
+    sio = await socketio_client(client_session_id1)
+    # open project in client 1
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
     r = await client.get(logout_url)
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
-
+    # ensure sufficient time is wasted here
+    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
     # assert dynamic service is removed
     calls = [call(client.server.app, service["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)

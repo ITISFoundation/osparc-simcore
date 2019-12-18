@@ -301,21 +301,19 @@ async def get_active_project(request: web.Request) -> web.Response:
     # await check_permission(request, "project.read")
     user_id = request[RQT_USERID_KEY]
     client_session_id = request.query["client_session_id"]
-    
+    project = None
     with managed_resource(user_id, client_session_id, request.app) as rt:
         # get user's projects
         list_project_ids = await rt.find("project_id")
-        if not list_project_ids:
-            raise web.HTTPNotFound
-        assert len(list_project_ids) == 1
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
-        project = await get_project_for_user(request,
-            project_uuid=list_project_ids[0],
-            user_id=user_id,
-            include_templates=True
-        )
+        if list_project_ids:
+            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+            from .projects_api import get_project_for_user
+            project = await get_project_for_user(request,
+                project_uuid=list_project_ids[0],
+                user_id=user_id,
+                include_templates=True
+            )
 
-        return {
-            'data': project
-        }
+    return {
+        'data': project
+    }

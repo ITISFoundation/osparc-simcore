@@ -116,7 +116,7 @@ async def remove_project_interactive_services(user_id: Optional[str], project_uu
     list_of_services = await director_api.get_running_interactive_services(app,
                                                                             project_id=project_uuid,
                                                                             user_id=user_id)
-    stop_tasks = [director_api.stop_service(app, service) for service in list_of_services]
+    stop_tasks = [director_api.stop_service(app, service["service_uuid"]) for service in list_of_services]
     if stop_tasks:
         await gather(*stop_tasks)
 

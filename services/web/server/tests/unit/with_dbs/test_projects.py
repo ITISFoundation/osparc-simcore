@@ -556,9 +556,9 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
     # get active projects -> empty
     get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id)
     resp = await client.get(get_active_projects_url)
-    data, error = await assert_status(resp, web.HTTPNotFound)
+    data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
-        assert data == []
+        assert not data
         assert not error
 
     # open project
