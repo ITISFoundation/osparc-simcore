@@ -166,8 +166,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__nodesTree,
         this.__workbenchUI
       ].forEach(wb => {
-        wb.addListener("nodeDoubleClicked", e => {
-          let nodeId = e.getData();
+        wb.addListener("nodeSelected", e => {
+          const nodeId = e.getData();
           this.nodeSelected(nodeId, true);
         }, this);
       });
@@ -181,7 +181,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        nodesTree.nodeSelected(e.getData());
+        const nodeId = e.getData();
+        nodesTree.nodeSelected(nodeId);
       });
     },
 

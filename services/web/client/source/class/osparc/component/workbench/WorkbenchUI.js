@@ -132,7 +132,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
@@ -824,7 +824,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __nodeSelected: function(nodeId) {
-      this.fireDataEvent("nodeDoubleClicked", nodeId);
+      this.fireDataEvent("nodeSelected", nodeId);
     },
 
     __isSelectedItemAnEdge: function() {

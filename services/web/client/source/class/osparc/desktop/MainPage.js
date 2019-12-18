@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__showDashboard();
       }, this);
 
-      navBar.addListener("nodeDoubleClicked", e => {
+      navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
           this.__studyEditor.nodeSelected(nodeId, true);

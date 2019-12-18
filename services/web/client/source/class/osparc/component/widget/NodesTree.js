@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
@@ -247,13 +247,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItem: function(nodeId) {
       if (nodeId) {
-        this.fireDataEvent("nodeDoubleClicked", nodeId);
+        this.fireDataEvent("nodeSelected", nodeId);
       } else {
         const selectedItem = this.__getSelection();
         if (selectedItem === null) {
-          this.fireDataEvent("nodeDoubleClicked", "root");
+          this.fireDataEvent("nodeSelected", "root");
         } else {
-          this.fireDataEvent("nodeDoubleClicked", selectedItem.getNodeId());
+          this.fireDataEvent("nodeSelected", selectedItem.getNodeId());
         }
       }
     },

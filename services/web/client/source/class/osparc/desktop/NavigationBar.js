@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "dashboardPressed": "qx.event.type.Event"
   },
 
@@ -151,7 +151,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }
         }
         btn.addListener("execute", function() {
-          this.fireDataEvent("nodeDoubleClicked", nodeId);
+          this.fireDataEvent("nodeSelected", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 
