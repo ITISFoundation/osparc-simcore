@@ -302,6 +302,13 @@ qx.Class.define("osparc.utils.Utils", {
       if (qWidget.getContentElement) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
+    },
+
+    getClientSessionID: function() {
+      // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
+      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
+      sessionStorage.setItem("clientsessionid", clientSessionID);
+      return clientSessionID;
     }
   }
 });

@@ -15,7 +15,6 @@
 ../../../packages/postgres-database/
 ../../../packages/simcore-sdk/
 ../../../packages/service-library/
-../../../packages/director-sdk/python
 
 # installs current package
 .

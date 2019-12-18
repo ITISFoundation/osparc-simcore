@@ -55,6 +55,19 @@
         "x": 300,
         "y": 150
       }
+    },
+    "351fd505-1ee3-466d-ad6c-ea2915ffd364": {
+      "key": "simcore/services/dynamic/raw-graphs",
+      "version": "2.10.4",
+      "label": "2D plot",
+      "inputs": {},
+      "label": "2D plot",
+      "outputNode": false,
+      "outputs": {},
+      "position": {"x": 1073, "y": 307},
+      "progress": 100,
+      "thumbnail": "",
+      "version": "2.10.4"
     }
   }
 }

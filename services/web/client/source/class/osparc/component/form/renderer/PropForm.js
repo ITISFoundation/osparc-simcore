@@ -70,6 +70,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     getRetrievedAtom: function(success) {
       const icon = success ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/times/12";
       return new qx.ui.basic.Atom("", icon);
+    },
+
+    getRetrievedEmpty: function() {
+      const icon = "@FontAwesome5Solid/dot-circle/10";
+      return new qx.ui.basic.Atom("", icon);
     }
   },
 
@@ -81,7 +86,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       retrieveStatus: 2
     },
     _retrieveStatus: {
-      failed: 0,
+      failed: -1,
+      empty: 0,
       retrieving: 1,
       succeed: 2
     },
@@ -277,15 +283,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    retrievedPortData: function(portId, succeed) {
-      const status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+    retrievedPortData: function(portId, succeed, dataSize = -1) {
+      let status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+      if (parseInt(dataSize) === 0) {
+        status = this._retrieveStatus.empty;
+      }
       if (portId) {
         let data = this.__getEntryFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
           const layoutProps = child.getLayoutProperties();
-          // this._remove(child);
           this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
         }
       } else {
@@ -294,7 +302,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           let child = children[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this._gridPos.retrieveStatus) {
-            // this._remove(child);
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -306,6 +313,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       switch (status) {
         case this._retrieveStatus.failed:
           icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(false);
+          break;
+        case this._retrieveStatus.empty:
+          icon = osparc.component.form.renderer.PropForm.getRetrievedEmpty();
           break;
         case this._retrieveStatus.retrieving:
           icon = osparc.component.form.renderer.PropForm.getRetrievingAtom();

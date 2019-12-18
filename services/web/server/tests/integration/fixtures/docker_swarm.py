@@ -42,13 +42,39 @@ def docker_stack(docker_swarm, docker_client, core_services_config_file: Path, o
             cwd=stack_config_file.parent)
         stacks_up.append(stack_name)
 
+    # wait for the stack to come up
+    def _wait_for_services(retry_count, max_wait_time_s):
+        pre_states = [
+            "NEW",
+            "PENDING",
+            "ASSIGNED",
+            "PREPARING",
+            "STARTING"
+        ]
+        services = docker_client.services.list()
+        WAIT_TIME_BEFORE_RETRY = 5
+        start_time = time.time()
+        for service in services:
+            for n in range(retry_count):
+                assert (time.time() - start_time) < max_wait_time_s
+                task = service.tasks()[0]
+                if task["Status"]["State"].upper() in pre_states:
+                    print(f"Waiting for {service.name}...")
+                else:
+                    assert task["Status"]["State"].upper() == "RUNNING"
+                    break
+                time.sleep(WAIT_TIME_BEFORE_RETRY)
+
+
     def _print_services(msg):
         from pprint import pprint
         print("{:*^100}".format("docker services running " + msg))
         for service in docker_client.services.list():
             pprint(service.attrs)
         print("-"*100)
-
+    RETRY_COUNT = 12
+    WAIT_TIME_BEFORE_FAILING = 60
+    _wait_for_services(RETRY_COUNT, WAIT_TIME_BEFORE_FAILING)
     _print_services("[BEFORE TEST]")
 
     yield {

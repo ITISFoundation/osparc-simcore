@@ -183,6 +183,148 @@ paths:
       tags:
       - users
   /running_interactive_services:
+    get:
+      operationId: running_interactive_services_list_get
+      parameters:
+      - in: query
+        name: user_id
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: project_id
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        entry_point:
+                          description: The entry point where the service provides
+                            its interface if specified
+                          example: /the/entry/point/is/here
+                          type: string
+                        published_port:
+                          description: The ports where the service provides its interface
+                          example: 30000
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        service_basepath:
+                          default: ''
+                          description: different base path where current service is
+                            mounted otherwise defaults to root
+                          example: /x/E1O2E-LAH
+                          type: string
+                        service_host:
+                          description: service host name within the network
+                          example: jupyter_E1O2E-LAH
+                          type: string
+                        service_key:
+                          description: distinctive name for the node based on the
+                            docker registry path
+                          example:
+                          - simcore/services/comp/itis/sleeper
+                          - simcore/services/dynamic/3dviewer
+                          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
+                          type: string
+                        service_message:
+                          description: the service message
+                          example: no suitable node (insufficient resources on 1 node)
+                          type: string
+                        service_port:
+                          description: port to access the service within the network
+                          example: 8081
+                          minimum: 1
+                          type: integer
+                        service_state:
+                          description: 'the service state * ''pending'' - The service
+                            is waiting for resources to start * ''pulling'' - The
+                            service is being pulled from the registry * ''starting''
+                            - The service is starting * ''running'' - The service
+                            is running * ''complete'' - The service completed * ''failed''
+                            - The service failed to start
+
+                            '
+                          enum:
+                          - pending
+                          - pulling
+                          - starting
+                          - running
+                          - complete
+                          - failed
+                          type: string
+                        service_uuid:
+                          description: The UUID attached to this service
+                          example: 123e4567-e89b-12d3-a456-426655440000
+                          type: string
+                        service_version:
+                          description: semantic version number
+                          example:
+                          - 1.0.0
+                          - 0.0.1
+                          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+                          type: string
+                      required:
+                      - published_port
+                      - service_uuid
+                      - service_key
+                      - service_version
+                      - service_host
+                      - service_port
+                      - service_state
+                      type: object
+                    type: array
+                  error:
+                    default: null
+                    nullable: true
+                required:
+                - data
+                type: object
+          description: Returns the running services instances
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - error
+                type: object
+          description: Unexpected error
+      summary: Returns a list of interactive services
+      tags:
+      - users
     post:
       operationId: running_interactive_services_post
       parameters:
@@ -887,386 +1029,38 @@ paths:
                             type: object
                           minItems: 1
                           type: array
-                        contact:
-                          description: email to correspond to the authors about the
-                            node
-                          example:
-                          - lab@net.flix
-                          format: email
-                          type: string
-                        description:
-                          description: human readable description of the purpose of
-                            the node
-                          example:
-                          - Our best node type
-                          - The mother of all nodes, makes your numbers shine!
-                          type: string
-                        inputs:
-                          additionalProperties: true
-                          description: definition of the inputs of this node
-                          type: object
-                          x-patternProperties:
-                            ^[-_a-zA-Z0-9]+$:
-                              additionalProperties: false
-                              description: all the input configurable for this service
-                              properties:
-                                defaultValue:
-                                  description: initial value for this input
-                                  example:
-                                  - Dog
-                                  - true
-                                  type:
-                                  - string
-                                  - number
-                                  - integer
-                                  - boolean
-                                description:
-                                  description: description of the property
-                                  example:
-                                  - Age in seconds since 1970
-                                  type: string
-                                displayOrder:
-                                  description: use this to numerically sort the properties
-                                    for display
-                                  example:
-                                  - 1
-                                  - -0.2
-                                  type: number
-                                fileToKeyMap:
-                                  description: Place the data associated with the
-                                    named keys in files
-                                  example:
-                                  - dir/input1.txt: key_1
-                                    dir33/input2.txt: key2
-                                  patternProperties:
-                                    .+:
-                                      pattern: ^[-_a-zA-Z0-9]+$
-                                      type: string
-                                  type: object
-                                label:
-                                  description: short name for the property
-                                  example:
-                                  - Age
-                                  type: string
-                                type:
-                                  description: data type expected on this input glob
-                                    matching for data type is allowed
-                                  example:
-                                  - number
-                                  - boolean
-                                  - data:*/*
-                                  - data:text/*
-                                  - data:[image/jpeg,image/png]
-                                  - data:application/json
-                                  - data:application/json;schema=https://my-schema/not/really/schema.json
-                                  - data:application/vnd.ms-excel
-                                  - data:text/plain
-                                  - data:application/hdf5
-                                  - data:application/edu.ucdavis@ceclancy.xyz
-                                  pattern: ^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
-                                  type: string
-                                widget:
-                                  anyOf:
-                                  - additionalProperties: false
-                                    properties:
-                                      minHeight:
-                                        description: minimum Height of the textarea
-                                        minimum: 1
-                                        type: integer
-                                      type:
-                                        description: type of the property
-                                        enum:
-                                        - TextArea
-                                        type: string
-                                    required:
-                                    - type
-                                    type: object
-                                  - additionalProperties: false
-                                    properties:
-                                      structure:
-                                        items:
-                                          additionalProperties: false
-                                          example:
-                                          - - key: rat
-                                              label: The Rat
-                                            - key: dog
-                                              label: Bello the Dog
-                                          properties:
-                                            key:
-                                              type:
-                                              - string
-                                              - boolean
-                                              - number
-                                            label:
-                                              type: string
-                                          required:
-                                          - key
-                                          - label
-                                          type: object
-                                        minItems: 1
-                                        type: array
-                                      type:
-                                        description: type of the property
-                                        enum:
-                                        - SelectBox
-                                        type: string
-                                    required:
-                                    - type
-                                    - structure
-                                    type: object
-                                  description: custom widget to use instead of the
-                                    default one determined from the data-type
-                              required:
-                              - displayOrder
-                              - label
-                              - description
-                              - type
-                              type: object
-                        key:
-                          description: distinctive name for the node based on the
-                            docker registry path
-                          example:
-                          - simcore/services/comp/itis/sleeper
-                          - simcore/services/dynamic/3dviewer
-                          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
-                          type: string
-                        name:
-                          description: short, human readable name for the node
-                          example:
-                          - Fast Counter
-                          type: string
-                        outputs:
-                          additionalProperties: true
-                          description: definition of the outputs of this node
-                          type: object
-                          x-patternProperties:
-                            ^[-_a-zA-Z0-9]+$:
-                              additionalProperties: false
-                              description: all the output produced by this node
-                              properties:
-                                description:
-                                  description: description of the property
-                                  example:
-                                  - Age in seconds since 1970
-                                  type: string
-                                displayOrder:
-                                  description: use this to numerically sort the properties
-                                    for display
-                                  example:
-                                  - 1
-                                  - -0.2
-                                  type: number
-                                fileToKeyMap:
-                                  description: Place the data stored in the named
-                                    files and store it in the locations pointed to
-                                    by the respective output key.
-                                  example:
-                                  - dir/input1.txt: key_1
-                                    dir33/input2.txt: key2
-                                  patternProperties:
-                                    .+:
-                                      pattern: ^[-_a-zA-Z0-9]+$
-                                      type: string
-                                  type: object
-                                label:
-                                  description: short name for the property
-                                  example:
-                                  - Age
-                                  type: string
-                                type:
-                                  description: data type expected on this output
-                                  example:
-                                  - number
-                                  - integer
-                                  - boolean
-                                  - string
-                                  - data:application/json
-                                  - 'data:application/vnd.ms-excel '
-                                  - data:text/plain
-                                  - data:application/hdf5
-                                  pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
-                                  type: string
-                              required:
-                              - displayOrder
-                              - label
-                              - description
-                              - type
-                              type: object
-                        type:
-                          description: service type
-                          enum:
-                          - computational
-                          - dynamic
-                          example:
-                          - computational
-                          type: string
-                        version:
-                          description: semantic version number
-                          example:
-                          - 1.0.0
-                          - 0.0.1
-                          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-                          type: string
-                      required:
-                      - key
-                      - version
-                      - type
-                      - name
-                      - description
-                      - authors
-                      - contact
-                      - inputs
-                      - outputs
-                      title: simcore node
-                      type: object
-                    type: array
-                  error:
-                    default: null
-                    nullable: true
-                required:
-                - data
-                type: object
-          description: Success, returns the list of available services
-        '401':
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    default: null
-                    nullable: true
-                  error:
-                    properties:
-                      errors:
-                        items:
-                          properties:
-                            code:
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                              type: string
-                        type: array
-                      message:
-                        description: Error message
-                        example: Unexpected error
-                        type: string
-                      status:
-                        description: Error code
-                        example: 404
-                        type: integer
-                    required:
-                    - status
-                    - message
-                    type: object
-                required:
-                - error
-                type: object
-          description: Unauthorized access
-        default:
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    default: null
-                    nullable: true
-                  error:
-                    properties:
-                      errors:
-                        items:
-                          properties:
-                            code:
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                              type: string
-                        type: array
-                      message:
-                        description: Error message
-                        example: Unexpected error
-                        type: string
-                      status:
-                        description: Error code
-                        example: 404
-                        type: integer
-                    required:
-                    - status
-                    - message
-                    type: object
-                required:
-                - error
-                type: object
-          description: Unexpected error
-      summary: Lists available services in the oSparc platform
-      tags:
-      - users
-  /services/{service_key}/{service_version}:
-    get:
-      description: Returns details of the selected service if available in the oSparc
-        platform
-      operationId: services_by_key_version_get
-      parameters:
-      - description: The key (url) of the service
-        in: path
-        name: service_key
-        required: true
-        schema:
-          description: distinctive name for the node based on the docker registry
-            path
-          example:
-          - simcore/services/comp/itis/sleeper
-          - simcore/services/dynamic/3dviewer
-          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
-          type: string
-      - description: The tag/version of the service
-        in: path
-        name: service_version
-        required: true
-        schema:
-          description: semantic version number
-          example:
-          - 1.0.0
-          - 0.0.1
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    items:
-                      additionalProperties: false
-                      description: Description of a simcore node 'class' with input
-                        and output
-                      properties:
-                        authors:
+                        badges:
                           items:
                             additionalProperties: false
                             properties:
-                              affiliation:
-                                description: Affiliation of the author
+                              image:
+                                description: Url to the shield
                                 example:
-                                - Sense8
-                                - Babylon 5
-                                type: string
-                              email:
-                                description: Email address
-                                example:
-                                - sun@sense.eight
-                                - deleen@minbar.bab
-                                format: email
+                                - https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
+                                - https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
+                                - https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
                                 type: string
                               name:
-                                description: Name of the author
+                                description: Name of the subject
                                 example:
-                                - Sun Bak
-                                - Delenn
+                                - travis-ci
+                                - coverals.io
+                                - github.io
+                                type: string
+                              url:
+                                description: Link to status
+                                example:
+                                - 'https://travis-ci.org/ITISFoundation/osparc-simcore
+                                  ''State of CI: build, test and pushing images'''
+                                - https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master
+                                  'Test coverage'
+                                - https://itisfoundation.github.io/
                                 type: string
                             required:
                             - name
-                            - email
+                            - image
+                            - url
                             type: object
-                          minItems: 1
                           type: array
                         contact:
                           description: email to correspond to the authors about the
@@ -1473,6 +1267,430 @@ paths:
                               - description
                               - type
                               type: object
+                        thumbnail:
+                          description: url to the thumbanil
+                          example:
+                          - https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+                          type: string
+                        type:
+                          description: service type
+                          enum:
+                          - computational
+                          - dynamic
+                          example:
+                          - computational
+                          type: string
+                        version:
+                          description: semantic version number
+                          example:
+                          - 1.0.0
+                          - 0.0.1
+                          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+                          type: string
+                      required:
+                      - key
+                      - version
+                      - type
+                      - name
+                      - description
+                      - authors
+                      - contact
+                      - inputs
+                      - outputs
+                      title: simcore node
+                      type: object
+                    type: array
+                  error:
+                    default: null
+                    nullable: true
+                required:
+                - data
+                type: object
+          description: Success, returns the list of available services
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - error
+                type: object
+          description: Unauthorized access
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - error
+                type: object
+          description: Unexpected error
+      summary: Lists available services in the oSparc platform
+      tags:
+      - users
+  /services/{service_key}/{service_version}:
+    get:
+      description: Returns details of the selected service if available in the oSparc
+        platform
+      operationId: services_by_key_version_get
+      parameters:
+      - description: The key (url) of the service
+        in: path
+        name: service_key
+        required: true
+        schema:
+          description: distinctive name for the node based on the docker registry
+            path
+          example:
+          - simcore/services/comp/itis/sleeper
+          - simcore/services/dynamic/3dviewer
+          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
+          type: string
+      - description: The tag/version of the service
+        in: path
+        name: service_version
+        required: true
+        schema:
+          description: semantic version number
+          example:
+          - 1.0.0
+          - 0.0.1
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      additionalProperties: false
+                      description: Description of a simcore node 'class' with input
+                        and output
+                      properties:
+                        authors:
+                          items:
+                            additionalProperties: false
+                            properties:
+                              affiliation:
+                                description: Affiliation of the author
+                                example:
+                                - Sense8
+                                - Babylon 5
+                                type: string
+                              email:
+                                description: Email address
+                                example:
+                                - sun@sense.eight
+                                - deleen@minbar.bab
+                                format: email
+                                type: string
+                              name:
+                                description: Name of the author
+                                example:
+                                - Sun Bak
+                                - Delenn
+                                type: string
+                            required:
+                            - name
+                            - email
+                            type: object
+                          minItems: 1
+                          type: array
+                        badges:
+                          items:
+                            additionalProperties: false
+                            properties:
+                              image:
+                                description: Url to the shield
+                                example:
+                                - https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
+                                - https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
+                                - https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
+                                type: string
+                              name:
+                                description: Name of the subject
+                                example:
+                                - travis-ci
+                                - coverals.io
+                                - github.io
+                                type: string
+                              url:
+                                description: Link to status
+                                example:
+                                - 'https://travis-ci.org/ITISFoundation/osparc-simcore
+                                  ''State of CI: build, test and pushing images'''
+                                - https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master
+                                  'Test coverage'
+                                - https://itisfoundation.github.io/
+                                type: string
+                            required:
+                            - name
+                            - image
+                            - url
+                            type: object
+                          type: array
+                        contact:
+                          description: email to correspond to the authors about the
+                            node
+                          example:
+                          - lab@net.flix
+                          format: email
+                          type: string
+                        description:
+                          description: human readable description of the purpose of
+                            the node
+                          example:
+                          - Our best node type
+                          - The mother of all nodes, makes your numbers shine!
+                          type: string
+                        inputs:
+                          additionalProperties: true
+                          description: definition of the inputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the input configurable for this service
+                              properties:
+                                defaultValue:
+                                  description: initial value for this input
+                                  example:
+                                  - Dog
+                                  - true
+                                  type:
+                                  - string
+                                  - number
+                                  - integer
+                                  - boolean
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data associated with the
+                                    named keys in files
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[-_a-zA-Z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this input glob
+                                    matching for data type is allowed
+                                  example:
+                                  - number
+                                  - boolean
+                                  - data:*/*
+                                  - data:text/*
+                                  - data:[image/jpeg,image/png]
+                                  - data:application/json
+                                  - data:application/json;schema=https://my-schema/not/really/schema.json
+                                  - data:application/vnd.ms-excel
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  - data:application/edu.ucdavis@ceclancy.xyz
+                                  pattern: ^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+                                  type: string
+                                widget:
+                                  anyOf:
+                                  - additionalProperties: false
+                                    properties:
+                                      minHeight:
+                                        description: minimum Height of the textarea
+                                        minimum: 1
+                                        type: integer
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - TextArea
+                                        type: string
+                                    required:
+                                    - type
+                                    type: object
+                                  - additionalProperties: false
+                                    properties:
+                                      structure:
+                                        items:
+                                          additionalProperties: false
+                                          example:
+                                          - - key: rat
+                                              label: The Rat
+                                            - key: dog
+                                              label: Bello the Dog
+                                          properties:
+                                            key:
+                                              type:
+                                              - string
+                                              - boolean
+                                              - number
+                                            label:
+                                              type: string
+                                          required:
+                                          - key
+                                          - label
+                                          type: object
+                                        minItems: 1
+                                        type: array
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - SelectBox
+                                        type: string
+                                    required:
+                                    - type
+                                    - structure
+                                    type: object
+                                  description: custom widget to use instead of the
+                                    default one determined from the data-type
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        key:
+                          description: distinctive name for the node based on the
+                            docker registry path
+                          example:
+                          - simcore/services/comp/itis/sleeper
+                          - simcore/services/dynamic/3dviewer
+                          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
+                          type: string
+                        name:
+                          description: short, human readable name for the node
+                          example:
+                          - Fast Counter
+                          type: string
+                        outputs:
+                          additionalProperties: true
+                          description: definition of the outputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the output produced by this node
+                              properties:
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data stored in the named
+                                    files and store it in the locations pointed to
+                                    by the respective output key.
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[-_a-zA-Z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this output
+                                  example:
+                                  - number
+                                  - integer
+                                  - boolean
+                                  - string
+                                  - data:application/json
+                                  - 'data:application/vnd.ms-excel '
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
+                                  type: string
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        thumbnail:
+                          description: url to the thumbanil
+                          example:
+                          - https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+                          type: string
                         type:
                           description: service type
                           enum:
