@@ -143,7 +143,7 @@ async def test_port_file_accessors(special_configuration, filemanager_cfg, s3_si
     assert filecmp.cmp(item_value, await PORTS.outputs["out_34"].get())
 
 
-def test_adding_new_ports(special_configuration, session):
+def test_adding_new_ports(special_configuration, postgres_session):
     config_dict, project_id, node_uuid = special_configuration()
     PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
@@ -159,7 +159,7 @@ def test_adding_new_ports(special_configuration, session):
         "displayOrder":2,
         "type": "integer"}})
     config_dict["inputs"].update({"in_15":15})
-    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
     # # replace the configuration now, add an output
@@ -169,11 +169,11 @@ def test_adding_new_ports(special_configuration, session):
         "description": "a cool output",
         "displayOrder":2,
         "type": "boolean"}})
-    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 
-def test_removing_ports(special_configuration, session):
+def test_removing_ports(special_configuration, postgres_session):
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_14", "integer", 15),
                                                                         ("in_17", "boolean", False)],
                                                                 outputs=[("out_123", "string", "blahblah"),
@@ -183,12 +183,12 @@ def test_removing_ports(special_configuration, session):
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
-    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
-    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 
@@ -239,7 +239,7 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, project
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
-async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, session, item_type, item_value, item_alias, item_pytype):
+async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, postgres_session, item_type, item_value, item_alias, item_pytype):
     config_dict, _, this_node_uuid = special_2nodes_configuration(prev_node_outputs=[("in_15", item_type, store_link(item_value, project_id, node_uuid))],
                                                     inputs=[("in_15", item_type, node_link("in_15"))],
                                                     project_id=project_id, previous_node_id=node_uuid)
@@ -247,7 +247,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_15"]["fileToKeyMap"] = {item_alias:"in_15"}
-    np_helpers.update_configuration(session, project_id, this_node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, this_node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_15"].get()
     assert isinstance(file_path, item_pytype)
@@ -263,7 +263,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(special
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
-async def test_file_mapping(special_configuration, project_id, node_uuid, filemanager_cfg, s3_simcore_location, bucket, store_link, session, item_type, item_value, item_alias, item_pytype):
+async def test_file_mapping(special_configuration, project_id, node_uuid, filemanager_cfg, s3_simcore_location, bucket, store_link, postgres_session, item_type, item_value, item_alias, item_pytype):
     config_dict, project_id, node_uuid = special_configuration(
             inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))],
             outputs=[("out_1", item_type, None)],
@@ -274,7 +274,7 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
-    np_helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
+    np_helpers.update_configuration(postgres_session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)

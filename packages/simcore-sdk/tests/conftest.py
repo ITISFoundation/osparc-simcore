@@ -11,11 +11,7 @@ sys.path.append(str(current_dir / 'helpers'))
 
 # FIXTURES
 pytest_plugins = [
-    "fixtures.docker_compose",
-    "fixtures.docker_swarm",
-    "fixtures.postgres_service",
-    "fixtures.minio_fix",
-    # "fixtures.storage"
+    "shared_fixtures.minio_fix",
 ]
 
 @pytest.fixture(scope='session')
@@ -39,9 +35,3 @@ def env_devel_file(osparc_simcore_root_dir) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
-
-@pytest.fixture(scope='session')
-def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "webserver"
-    assert specs_dir.exists()
-    return specs_dir

@@ -26,17 +26,14 @@ install() {
 before_script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip list -v
-        # pull the test images if registry is set up, else build the images
-        make pull-version || ((make pull-cache || true) && make build tag-version)
-        make info-images
+        pip list -v        
     fi
 }
 
 script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests/integration
+        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests/unit
     else
         echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi
@@ -52,7 +49,6 @@ after_success() {
 
 after_failure() {
     docker images
-    make down
 }
 
 # Check if the function exists (bash specific)

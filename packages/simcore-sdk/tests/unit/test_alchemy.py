@@ -3,7 +3,6 @@
 # pylint:disable=unused-argument
 import pytest
 
-from pytest_docker import docker_ip, docker_services
 from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
                                                 ComputationalTask,
                                                 comp_pipeline, comp_tasks)
@@ -17,7 +16,7 @@ core_services = [
 ]
 
 ops_services = [
-#    'adminer'
+   'adminer'
 ]
 
 BASE = declarative_base()

@@ -15,6 +15,14 @@ from utils_docker import get_service_published_port
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+# FIXTURES
+pytest_plugins = [
+    "fixtures.docker_compose",
+    "fixtures.docker_swarm",
+    "fixtures.postgres_service",
+    # "fixtures.minio_fix",
+]
+
 @pytest.fixture
 def user_id()->int:
     # see fixtures/postgres.py
@@ -53,11 +61,11 @@ def file_uuid(project_id, node_uuid)->str:
 
 @pytest.fixture
 def default_configuration_file():
-    return current_dir / "config" / "default_config.json"
+    return current_dir / "mock" / "default_config.json"
 
 @pytest.fixture
 def empty_configuration_file():
-    return current_dir / "config" / "empty_config.json"
+    return current_dir / "mock" / "empty_config.json"
 
 @pytest.fixture(scope='module')
 def postgres(postgres_db, postgres_session):

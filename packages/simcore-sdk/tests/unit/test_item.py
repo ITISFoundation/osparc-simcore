@@ -24,7 +24,7 @@ def test_default_item():
         Item(None, None)
 
 
-async def test_item():
+async def test_item(loop):
     key = "my key"
     label = "my label"
     description = "my description"
