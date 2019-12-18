@@ -15,6 +15,8 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     this._setLayout(new qx.ui.layout.HBox().set({
       alignY: "middle"
     }));
+    this.__loadingIcon = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/12");
+    this.__loadingIcon.getContentElement().addClass("rotate");
     this.__renderLayout();
   },
   events: {
@@ -41,6 +43,12 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       check: "String",
       event: "changeValue",
       init: ""
+    },
+    fetching: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyFetching"
     }
   },
   members: {
@@ -97,6 +105,15 @@ qx.Class.define("osparc.ui.form.EditLabel", {
         this.__labelWidth = this.__label.getSizeHint().width;
       }
       this.__renderLayout();
+    },
+    _applyFetching: function(isFetching) {
+      if (isFetching) {
+        this.__label.setEnabled(false);
+        this._add(this.__loadingIcon);
+      } else {
+        this.__label.setEnabled(true);
+        this._remove(this.__loadingIcon);
+      }
     }
   }
 });

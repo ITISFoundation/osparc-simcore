@@ -295,6 +295,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         visibility: "excluded"
       });
       studyTitle.addListener("editValue", evt => {
+        this.__studyTitle.setFetching(true);
         const params = {
           url: {
             "project_id": this.getStudy().getUuid()
@@ -306,9 +307,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         };
         osparc.data.Resources.fetch("studies", "put", params)
         .then(data => {
+          this.__studyTitle.setFetching(false);
           this.__studyTitle.setValue(data.name);
         })
         .catch(err => {
+          this.__studyTitle.setFetching(false);
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
         });
