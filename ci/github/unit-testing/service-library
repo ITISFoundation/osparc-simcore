@@ -12,8 +12,7 @@ install() {
 }
 
 test() {
-    pytest --cov=servicelib --cov-append --cov-report=term-missing --cov-report=xml -v packages/service-library/tests
-    coveralls
+    pytest --cov=servicelib --cov-append --color=yes --cov-report=term-missing --cov-report=xml -v packages/service-library/tests
 }
 
 # Check if the function exists (bash specific)

@@ -12,8 +12,7 @@ install() {
 }
 
 test() {
-    pytest --cov=simcore_service_director --cov-append --cov-report=term-missing --cov-report=xml -v services/director/tests
-    coveralls
+    pytest --cov=simcore_service_director --cov-append --color=yes --cov-report=term-missing --cov-report=xml -v services/director/tests
 }
 
 # Check if the function exists (bash specific)
