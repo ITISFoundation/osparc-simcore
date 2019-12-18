@@ -21,8 +21,12 @@ jobs:
     - name: show system environs
       run: ./ci/helpers/show_system_versions
     - name: pull images
-      run: ./ci/github/build/test-images pull_images
+      run: ./ci/github/build/test-images pull_images    
     - name: build images
+      env:
+        #enable buildkit
+        DOCKER_BUILDKIT: 1
+        COMPOSE_DOCKER_CLI_BUILD: 1
       run: ./ci/github/build/test-images build_images
 
   unit-test-apihub:
