@@ -44,6 +44,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     this.__nodesUI = [];
     this.__edgesUI = [];
+    this.__filesToFilePicker = {};
 
     let hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
@@ -160,6 +161,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerPosY: null,
     __selectedItemId: null,
     __currentModel: null,
+    __filesToFilePicker: null,
 
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
@@ -212,7 +214,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
       if (!node) {
-        return;
+        return null;
       }
 
       const nodeUI = this.__createNodeUI(node.getNodeId());
@@ -231,6 +233,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           nodeUuid: nodeBId
         });
       }
+
+      return nodeUI;
     },
 
     __addNodeToWorkbench: function(nodeUI, position) {
@@ -899,7 +903,23 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
       const fileList = e.dataTransfer.files;
       if (fileList.length) {
-        console.log(fileList);
+        const data = {
+          service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
+        };
+        const nodeUI = this.__addServiceFromCatalog(data, pos);
+        const nodeId = nodeUI.getNodeId();
+        this.__filesToFilePicker[nodeId] = fileList;
+        this.__nodeSelected(nodeId);
+      }
+    },
+
+    filePickerAdded: function(filePicker) {
+      const nodeId = filePicker.getNode().getNodeId();
+      if (nodeId in this.__filesToFilePicker) {
+        const files = this.__filesToFilePicker[nodeId];
+        const fileAdder = filePicker.getFilesAdder();
+        fileAdder.retrieveUrlAndUpload(files[0]);
+        delete this.__filesToFilePicker[nodeId];
       }
     },
 
