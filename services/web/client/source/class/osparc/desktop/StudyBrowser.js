@@ -222,8 +222,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       studiesTitleContainer.add(myStudyLabel);
       studiesTitleContainer.add(studiesDeleteButton);
-      let userStudyList = this.__userStudyContainer = this.__createUserStudyList();
-      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const userStudyList = this.__userStudyContainer = this.__createUserStudyList();
+      const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       userStudyLayout.add(studiesTitleContainer);
@@ -237,8 +237,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       templateTitleContainer.add(tempStudyLabel);
       templateTitleContainer.add(templateDeleteButton);
-      let tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
-      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
+      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       tempStudyLayout.add(templateTitleContainer);
@@ -327,8 +327,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
@@ -338,8 +338,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "post", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
