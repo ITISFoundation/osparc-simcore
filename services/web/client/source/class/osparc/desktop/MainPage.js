@@ -36,7 +36,7 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyId) {
+  construct: function() {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     let navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    let prjStack = this.__prjStack = this.__createMainView(studyId);
+    let prjStack = this.__prjStack = this.__createMainView();
     this._add(prjStack, {
       flex: 1
     });
@@ -83,10 +83,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       return navBar;
     },
 
-    __createMainView: function(studyId) {
+    __createMainView: function() {
       let prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new osparc.desktop.Dashboard(studyId);
+      let dashboard = this.__dashboard = new osparc.desktop.Dashboard();
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
         this.__showStudyEditor(studyEditor);

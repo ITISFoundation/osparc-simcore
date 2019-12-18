@@ -91,7 +91,10 @@ qx.Class.define("osparc.Application", {
         if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
           // Route: /#/study/{id}
           osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken(() => this.__loadMainPage(urlFragment.nav[1]), this.__loadLoginPage, this);
+          osparc.auth.Manager.getInstance().validateToken(() => {
+            osparc.store.Store.getInstance().setCurrentStudy(urlFragment.nav[1]);
+            this.__loadMainPage();
+          }, this.__loadLoginPage, this);
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
           // Route: /#/registration/?invitation={token}
           osparc.utils.Utils.cookie.deleteCookie("user");
@@ -154,9 +157,9 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __loadMainPage: function(studyId) {
+    __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new osparc.desktop.MainPage(studyId), {
+      this.__loadView(new osparc.desktop.MainPage(), {
         top: 0,
         bottom: 0,
         left: 0,

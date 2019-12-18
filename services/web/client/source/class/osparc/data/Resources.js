@@ -78,8 +78,9 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{project_id}"
           },
           getActive: {
+            usesCache: false,
             method: "GET",
-            url: statics.API + "/projects/active"
+            url: statics.API + "/projects/active?client_session_id={tab_id}"
           },
           open: {
             usesCache: false,

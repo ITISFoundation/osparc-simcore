@@ -38,7 +38,7 @@
 qx.Class.define("osparc.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function(loadStudyId) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox());
@@ -51,14 +51,14 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       visibility: "excluded",
       padding: [0, 15]
     });
-    const scroll1 = new qx.ui.container.Scroll();
-    scroll1.add(this.__studiesPane);
-    this._add(scroll1, {
+    const scrollStudies = new qx.ui.container.Scroll();
+    scrollStudies.add(this.__studiesPane);
+    this._add(scrollStudies, {
       flex: 1
     });
-    const scroll2 = new qx.ui.container.Scroll();
-    scroll2.add(this.__editPane);
-    this._add(scroll2);
+    const scrollEditStudy = new qx.ui.container.Scroll();
+    scrollEditStudy.add(this.__editPane);
+    this._add(scrollEditStudy);
 
     let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesPane.add(iframe, {
@@ -74,14 +74,16 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__editPane.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
+        this.__reloadStudies();
         this.__attachEventHandlers();
+        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudy();
         if (loadStudyId) {
           const params = {
             url: {
               "project_id": loadStudyId
             }
           };
-          osparc.data.Resources.getOne("studies", params, loadStudyId)
+          osparc.data.Resources.getOne("studies", params)
             .then(studyData => {
               this.__startStudy(studyData);
             })
@@ -221,8 +223,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       studiesTitleContainer.add(myStudyLabel);
       studiesTitleContainer.add(studiesDeleteButton);
-      let userStudyList = this.__userStudyContainer = this.__createUserStudyList();
-      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const userStudyList = this.__userStudyContainer = this.__createUserStudyList();
+      const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       userStudyLayout.add(studiesTitleContainer);
@@ -236,8 +238,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       templateTitleContainer.add(tempStudyLabel);
       templateTitleContainer.add(templateDeleteButton);
-      let tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
-      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
+      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       tempStudyLayout.add(templateTitleContainer);
@@ -249,6 +251,28 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       this.__studiesPane.add(userStudyLayout);
       this.__studiesPane.add(tempStudyLayout);
       this.__editPane.add(this.__editStudyLayout);
+    },
+
+    __reloadStudies: function() {
+      const params = {
+        url: {
+          "tab_id": osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getActive", params)
+        .then(studyData => {
+          if (studyData) {
+            this.__startStudy(studyData);
+          } else {
+            osparc.store.Store.getInstance().setCurrentStudy(null);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
+
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
     },
 
     __createDeleteButton: function() {
@@ -326,8 +350,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
@@ -337,8 +361,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "post", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
@@ -391,14 +415,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createUserStudyList: function() {
       const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(usrLst, "userStudiesList");
-      this.reloadUserStudies();
       return usrLst;
     },
 
     __createTemplateStudyList: function() {
       const tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
-      this.reloadTemplateStudies();
       return tempList;
     },
 
