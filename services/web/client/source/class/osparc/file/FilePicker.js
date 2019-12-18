@@ -70,7 +70,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     this._add(toolbar);
 
-    const filesAdd = this._createChildControlImpl("filesAdd");
+    const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
     filesAdd.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
       if ("location" in fileMetadata && "path" in fileMetadata) {
@@ -111,8 +111,13 @@ qx.Class.define("osparc.file.FilePicker", {
 
   members: {
     __filesTree: null,
+    __filesAdder: null,
     __selectBtn: null,
     __mainButtons: null,
+
+    getFilesAdder: function() {
+      return this.__filesAdder;
+    },
 
     _createChildControlImpl: function(id) {
       let control;
