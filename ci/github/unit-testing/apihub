@@ -13,10 +13,8 @@ install() {
 }
 
 test() {
-    pytest --cov=api --cov-append -v api/tests
-    pytest --cov=services_apihub --cov-append -v services/apihub/tests
-    codecov
-    coveralls
+    pytest --cov=api --cov-append --cov-report=term-missing --cov-report=xml -v api/tests
+    pytest --cov=services_apihub --cov-append  --cov-report=term-missing --cov-report=xml -v services/apihub/tests
 }
 
 # Check if the function exists (bash specific)
