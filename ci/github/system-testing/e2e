@@ -9,7 +9,7 @@ export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
     # Enable user namespace cloning
-    sysctl kernel.unprivileged_userns_clone=1
+    sudo sysctl kernel.unprivileged_userns_clone=1
 
     # Launch XVFB
     export DISPLAY=:99.0
