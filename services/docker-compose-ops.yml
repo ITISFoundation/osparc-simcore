@@ -54,7 +54,17 @@ services:
       - simcore_default
       - interactive_services_subnet
       - computational_services_subnet
-
+  
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment: 
+      - REDIS_HOSTS=${REDIS_HOST}
+    ports:
+      - "18081:8081"
+    networks:
+      - simcore_default
+    
 volumes:
   minio_data: {}
   portainer_data: {}

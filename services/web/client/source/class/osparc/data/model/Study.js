@@ -37,9 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
-    * @param initWorkbench {Boolean} True to initialize workbench nodes. Default false
     */
-  construct: function(studyData, initWorkbench = false) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
@@ -54,9 +53,6 @@ qx.Class.define("osparc.data.model.Study", {
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
-    if (initWorkbench) {
-      this.getWorkbench().initWorkbench();
-    }
   },
 
   properties: {
@@ -149,10 +145,35 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
+    initWorkbench: function() {
+      this.getWorkbench().initWorkbench();
+    },
+
+    openStudy: function() {
+      const params = {
+        url: {
+          "project_id": this.getUuid()
+        },
+        data: sessionStorage.getItem("clientsessionid")
+      };
+      osparc.data.Resources.fetch("studies", "open", params)
+        .catch(err => console.error(err));
+    },
+
     closeStudy: function() {
+      const params = {
+        url: {
+          "project_id": this.getUuid()
+        },
+        data: sessionStorage.getItem("clientsessionid")
+      };
+      osparc.data.Resources.fetch("studies", "close", params)
+        .catch(err => console.error(err));
+
+      // remove iFrames
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
-        node.stopInteractiveService();
+        node.removeIFrame();
       }
     },
 

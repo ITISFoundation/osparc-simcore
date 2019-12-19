@@ -9,6 +9,15 @@ main:
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}
   monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
+tracing:
+  enabled: ${TRACING_ENABLED}
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
+socketio:  
+  message_queue:
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    user: ${RABBIT_USER}
+    password: ${RABBIT_PASSWORD}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -22,6 +31,13 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}

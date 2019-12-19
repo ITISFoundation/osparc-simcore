@@ -29,6 +29,7 @@ ROLES_PERMISSIONS = {
         "storage.locations.*", # "storage.datcore.read"
         "storage.files.*",
 
+        "project.open",
         "project.read",          # "studies.user.read",
                                  # "studies.templates.read"
         # NOTE: All services* are not necessary since it only requires login
@@ -44,6 +45,7 @@ ROLES_PERMISSIONS = {
   UserRole.USER: {
       "can": [
           "project.create",      # "studies.user.create",
+          "project.close",
           "project.delete",      # "study.node.create",
                                  # "study.node.delete",
                                  # "study.node.rename",
@@ -54,7 +56,7 @@ ROLES_PERMISSIONS = {
                                  # "preferences.role.update"
           "user.tokens.*",       # "preferences.token.create",
                                  # "preferences.token.delete"
-          
+
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
         # TODO: kept temporarily as a way to denote resources

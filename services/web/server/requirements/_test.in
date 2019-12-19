@@ -9,18 +9,21 @@
 # 'services/web/server/tests/unit' dependencies
 
 # testing
+mock
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
+websockets
 
 # fixtures
 Faker
 openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
 tenacity
 docker
+redis
 
 # tools
 pylint

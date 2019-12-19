@@ -20,7 +20,6 @@ install() {
     then
         bash ci/travis/helpers/ensure_python_pip
         pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
-        pip3 install services/storage/client-sdk/python
     fi
 }
 
@@ -37,7 +36,7 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
+        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests/integration
     else
         echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi
