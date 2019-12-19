@@ -35,7 +35,9 @@ pytest_plugins = [
     "fixtures.docker_registry",
     "fixtures.rabbit_service",
     "fixtures.celery_service",
-    "fixtures.postgres_service"
+    "fixtures.postgres_service",
+    "fixtures.redis_service",
+    "fixtures.websocket_client"
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -72,7 +74,6 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
     #   on the host.
     services_with_published_ports = [name for name in core_services
                 if 'ports' in simcore_docker_compose['services'][name] ]
-
     for name in services_with_published_ports:
 
         host_key = f'{name.upper()}_HOST'

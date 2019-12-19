@@ -53,6 +53,15 @@ async def services_by_key_version_get(request, service_key, service_version):  #
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
+async def running_interactive_services_list_get(request: web.Request, user_id: str, project_id: str):
+    log.debug("Client does running_interactive_services_list_get request %s, user_id %s, project_id %s", request, user_id, project_id)
+    try:        
+        service = await producer.get_services_details(request.app, user_id, project_id)
+        return web.json_response(data=dict(data=service), status=200)
+    except Exception as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
+    
+
 async def running_interactive_services_post(request, user_id, project_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument, too-many-arguments
     log.debug("Client does running_interactive_services_post request %s with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s",
                 request, user_id, project_id, service_key, service_tag, service_uuid, service_basepath)

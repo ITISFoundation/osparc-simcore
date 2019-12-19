@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import aiodocker
 import tenacity
@@ -49,7 +49,7 @@ async def _check_node_uuid_available(client: aiodocker.docker.Docker, node_uuid:
     log.debug("UUID %s is free", node_uuid)
 
 
-async def _check_setting_correctness(setting: Dict):
+def _check_setting_correctness(setting: Dict):
     if 'name' not in setting or 'type' not in setting or 'value' not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
@@ -133,12 +133,14 @@ async def _create_docker_service_params(app: web.Application,
         },
         "labels": {
             "uuid": node_uuid,
+            "study_id": project_id,
+            "user_id": user_id,
             "type": "main" if main_service else "dependency"
         },
         "networks": [internal_network_id] if internal_network_id else []
     }
     for param in service_parameters_labels:
-        await _check_setting_correctness(param)
+        _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
         if str(param['value']).find("%service_uuid%") != -1:
             dummy_string = json.dumps(param['value'])
@@ -199,10 +201,10 @@ async def _create_docker_service_params(app: web.Application,
     return docker_params
 
 
-async def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
+def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
     log.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
-        await _check_setting_correctness(param)
+        _check_setting_correctness(param)
         if param['name'] == 'entry_point':
             log.debug("Service entrypoint is %s", param['value'])
             return param['value']
@@ -253,7 +255,7 @@ async def _pass_port_to_service(service_name: str,
                                 service_boot_parameters_labels: Dict,
                                 session: ClientSession):
     for param in service_boot_parameters_labels:
-        await _check_setting_correctness(param)
+        _check_setting_correctness(param)
         if param['name'] == 'published_host':
             # time.sleep(5)
             route = param['value']
@@ -445,7 +447,7 @@ async def _start_docker_service(app: web.Application,
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
         service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
-        service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
+        service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
             session = app[APP_CLIENT_SESSION_KEY]
             await _pass_port_to_service(service_name, published_port, service_boot_parameters_labels, session)
@@ -559,6 +561,57 @@ async def start_service(app: web.Application, user_id: str, project_id: str, ser
         # we return only the info of the main service
         return node_details
 
+
+async def _get_node_details(app: web.Application, client: aiodocker.docker.Docker, service: Dict):
+    service_key, service_tag = await _get_service_key_version_from_docker_service(service)
+
+    # get boot parameters
+    results = await asyncio.gather(_get_service_boot_parameters_labels(app, service_key, service_tag),                    
+                    _get_service_basepath_from_docker_service(service),
+                    _get_service_state(client, service))
+
+    service_boot_parameters_labels = results[0]
+    service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
+    service_basepath = results[1]
+    service_state, service_msg = results[2]
+    service_name =  service["Spec"]["Name"]
+    service_uuid = service["Spec"]["Labels"]["uuid"]
+    
+
+    # get the published port
+    published_port, target_port = await _get_docker_image_port_mapping(service)
+    node_details = {
+        "published_port": published_port,
+        "entry_point": service_entrypoint,
+        "service_uuid": service_uuid,
+        "service_key": service_key,
+        "service_version": service_tag,
+        "service_host": service_name,
+        "service_port": target_port,
+        "service_basepath": service_basepath,
+        "service_state": service_state.value,
+        "service_message": service_msg
+    }
+    return node_details
+
+async def get_services_details(app: web.Application, user_id: Optional[str], study_id: Optional[str]) -> List[Dict]:
+    async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
+        try:
+            filters = ["type=main"]
+            if user_id:
+                filters.append('user_id=' + user_id)
+            if study_id:
+                filters.append('study_id=' + study_id)
+            list_running_services = await client.services.list(filters={'label': filters})
+            services_details = [await _get_node_details(app, client, service) for service in list_running_services]
+            return services_details
+        except aiodocker.exceptions.DockerError as err:
+            log.exception(
+                "Error while listing services with user_id, study_id %s, %s", user_id, study_id)
+            raise exceptions.GenericDockerError(
+                "Error while accessing container", err) from err
+            
+
 async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
@@ -571,31 +624,8 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             if len(list_running_services_with_uuid) > 1:
                 # someone did something fishy here
                 raise exceptions.DirectorException(msg="More than one docker service is labeled as main service")
-
-            service = list_running_services_with_uuid[0]
-            service_key, service_tag = await _get_service_key_version_from_docker_service(service)
-
-            # get boot parameters
-            service_boot_parameters_labels = await _get_service_boot_parameters_labels(app, service_key, service_tag)
-            service_entrypoint = await _get_service_entrypoint(service_boot_parameters_labels)
-            service_basepath = await _get_service_basepath_from_docker_service(service)
-            service_name =  service["Spec"]["Name"]
-            service_state, service_msg = await _get_service_state(client, service)
-
-            # get the published port
-            published_port, target_port = await _get_docker_image_port_mapping(service)
-            node_details = {
-                "published_port": published_port,
-                "entry_point": service_entrypoint,
-                "service_uuid": node_uuid,
-                "service_key": service_key,
-                "service_version": service_tag,
-                "service_host": service_name,
-                "service_port": target_port,
-                "service_basepath": service_basepath,
-                "service_state": service_state.value,
-                "service_message": service_msg
-            }
+            
+            node_details = await _get_node_details(app, client, list_running_services_with_uuid[0])            
             return node_details
         except aiodocker.exceptions.DockerError as err:
             log.exception(

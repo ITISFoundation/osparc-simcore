@@ -69,7 +69,7 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
         content = fh.read()
         config = content.replace("${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir))
 
-    return yaml.load(config)
+    return yaml.safe_load(config)
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_config):
@@ -109,7 +109,7 @@ async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
     limits = prometheus.get('limits')
     assert limits.get('cpus') == 4.0, 'Incorrect value: Cpu limit'
     assert limits.get('mem') == 2048.0, 'Incorrect value: Memory limit'
-    
+
     stats = prometheus.get('stats')
     assert stats.get('cpuUsage') == 3.9952102200000006, 'Incorrect value: Cpu usage'
     assert stats.get('memUsage') == 177.664, 'Incorrect value: Memory usage'

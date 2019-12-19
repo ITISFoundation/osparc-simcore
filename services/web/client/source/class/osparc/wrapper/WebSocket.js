@@ -59,7 +59,9 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     /** socket.io reconnect_failed event */
     "reconnect_failed": "qx.event.type.Event",
     /** socket.io error event */
-    "error": "qx.event.type.Data"
+    "error": "qx.event.type.Data",
+    /** socket.io logout event */
+    "logout": "qx.event.type.Data"
   },
 
   properties: {
@@ -169,7 +171,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "connect timeout": this.getConnectTimeout(),
           "reconnection delay": this.getReconnectionDelay(),
           "max reconnection attempts": this.getMaxReconnectionAttemps(),
-          "force new connection": true
+          "force new connection": true,
+          "query": "client_session_id="+osparc.utils.Utils.getClientSessionID()
         });
         this.setSocket(mySocket);
 
@@ -179,7 +182,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "close",
           "reconnect",
           "reconnecting",
-          "error"
+          "error",
+          "logout"
         ].forEach(event => {
           this.on(event, ev => {
             this.fireDataEvent(event, ev);
@@ -199,6 +203,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       }, this);
 
       dynLoader.start();
+    },
+
+    isConnected: function() {
+      if (this.getSocket()) {
+        return this.getSocket().connected;
+      }
+      return false;
     },
 
     disconnect: function() {

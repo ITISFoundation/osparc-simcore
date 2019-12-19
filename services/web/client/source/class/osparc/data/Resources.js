@@ -77,6 +77,21 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{project_id}"
           },
+          getActive: {
+            usesCache: false,
+            method: "GET",
+            url: statics.API + "/projects/active?client_session_id={tab_id}"
+          },
+          open: {
+            usesCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{project_id}:open"
+          },
+          close: {
+            usesCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{project_id}:close"
+          },
           post: {
             method: "POST",
             url: statics.API + "/projects"
@@ -202,6 +217,14 @@ qx.Class.define("osparc.data.Resources", {
       interactiveServices: {
         usesCache: false,
         endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/running_interactive_services/{nodeId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/running_interactive_services?project_id={projectId}&service_uuid={nodeId}&service_key={serviceKey}&service_tag={serviceVersion}"
+          },
           delete: {
             method: "DELETE",
             url: statics.API + "/running_interactive_services/{nodeId}"
@@ -367,7 +390,9 @@ qx.Class.define("osparc.data.Resources", {
 
         res.addListenerOnce(endpoint + "Success", e => {
           const data = e.getRequest().getResponse().data;
-          if (resourceDefinition.usesCache) {
+          const endpointDef = resourceDefinition.endpoints[endpoint];
+          const useCache = ("usesCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.usesCache;
+          if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);
             } else {
