@@ -297,19 +297,21 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         visibility: "excluded"
       });
       studyTitle.addListener("editValue", evt => {
-        this.__studyTitle.setFetching(true);
-        const params = {
-          name: evt.getData()
-        };
-        this.getStudy().updateStudy(params)
-          .then(() => {
-            this.__studyTitle.setFetching(false);
-          })
-          .catch(err => {
-            this.__studyTitle.setFetching(false);
-            console.error(err);
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
-          });
+        if (evt.getData() !== this.__studyTitle.getValue()) {
+          this.__studyTitle.setFetching(true);
+          const params = {
+            name: evt.getData()
+          };
+          this.getStudy().updateStudy(params)
+            .then(() => {
+              this.__studyTitle.setFetching(false);
+            })
+            .catch(err => {
+              this.__studyTitle.setFetching(false);
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+            });
+        }
       }, this);
       return studyTitle;
     }

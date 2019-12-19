@@ -224,10 +224,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (treeSelection.length < 1) {
         return null;
       }
-
       let selectedItem = treeSelection.toArray()[0];
-      const selectedNodeId = selectedItem.getNodeId();
-
       return selectedItem;
     },
 
@@ -258,29 +255,31 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItemRenamer: function() {
       const selectedItem = this.__getSelection();
-      const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
-      treeItemRenamer.addListener("labelChanged", e => {
-        const { newLabel } = e.getData();
-        const nodeId = selectedItem.getNodeId();
-        if (nodeId === "root") {
-          const params = {
-            name: newLabel
-          };
-          this.getWorkbench().getStudy().updateStudy(params)
-            .then(data => {
-              selectedItem.setLabel(data.name);
-            });
-        } else {
-          selectedItem.setLabel(newLabel);
-          const node = this.getWorkbench().getNode(nodeId);
-          if (node) {
-            node.renameNode(newLabel);
+      if (selectedItem) {
+        const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
+        treeItemRenamer.addListener("labelChanged", e => {
+          const { newLabel } = e.getData();
+          const nodeId = selectedItem.getNodeId();
+          if (nodeId === "root") {
+            const params = {
+              name: newLabel
+            };
+            this.getWorkbench().getStudy().updateStudy(params)
+              .then(data => {
+                selectedItem.setLabel(data.name);
+              });
+          } else {
+            selectedItem.setLabel(newLabel);
+            const node = this.getWorkbench().getNode(nodeId);
+            if (node) {
+              node.renameNode(newLabel);
+            }
           }
-        }
-      }, this);
-      const bounds = this.getLayoutParent().getContentLocation();
-      treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
-      treeItemRenamer.open();
+        }, this);
+        const bounds = this.getLayoutParent().getContentLocation();
+        treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
+        treeItemRenamer.open();
+      }
     },
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {

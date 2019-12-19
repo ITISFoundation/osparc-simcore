@@ -58,10 +58,10 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     __labelWidth: null,
     __loadingIcon: null,
     __renderLayout: function() {
-      this._removeAll();
       switch (this.getMode()) {
         case this.self().modes.EDIT:
-          this._add(this.getChildControl("input"));
+          this.getChildControl("input").show();
+          this.getChildControl("label").exclude();
           if (this.__labelWidth) {
             this.__input.setWidth(this.__labelWidth);
           }
@@ -69,7 +69,8 @@ qx.Class.define("osparc.ui.form.EditLabel", {
           this.__label.removeState("hovered");
           break;
         default:
-          this._add(this.getChildControl("label"));
+          this.getChildControl("label").show();
+          this.getChildControl("input").exclude();
       }
     },
     _createChildControlImpl: function(id) {
@@ -82,20 +83,20 @@ qx.Class.define("osparc.ui.form.EditLabel", {
             this.__label.addListener("pointerout", () => this.__label.removeState("hovered"), this);
             this.__label.addListener("tap", () => this.setMode(this.self().modes.EDIT), this);
             this.bind("value", this.__label, "value");
+            this._add(this.__label);
           }
           control = this.__label;
           break;
         case "input":
           if (this.__input === null) {
             this.__input = new qx.ui.form.TextField(this.getValue());
-            this.__input.addListener("keydown", evt => {
-              if (evt.getKeyIdentifier() === "Enter") {
-                this.setMode(this.self().modes.DISPLAY);
-              }
-            }, this);
             this.__input.addListener("focusout", () => this.setMode(this.self().modes.DISPLAY), this);
             this.__input.addListener("focus", () => this.__input.selectAllText(), this);
-            this.__input.addListener("changeValue", evt => this.fireDataEvent("editValue", evt.getData()), this);
+            this.__input.addListener("changeValue", evt => {
+              this.setMode(this.self().modes.DISPLAY);
+              this.fireDataEvent("editValue", evt.getData());
+            }, this);
+            this._add(this.__input);
           }
           control = this.__input;
           break;
@@ -117,8 +118,11 @@ qx.Class.define("osparc.ui.form.EditLabel", {
         this._remove(this.__loadingIcon);
       }
     },
-    _applyValue: function() {
+    _applyValue: function(value) {
       this.setMode(this.self().modes.DISPLAY);
+      if (this.__input) {
+        this.__input.setValue(value);
+      }
     }
   }
 });
