@@ -312,9 +312,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
     },
 
-    _applyStudyName: function(_, oldStudyName) {
-      if (oldStudyName !== null) {
-        // Not the first time
+    _applyStudyName: function() {
+      if (this.isPropertyInitialized("workbench")) {
         this.populateTree();
       }
     }
