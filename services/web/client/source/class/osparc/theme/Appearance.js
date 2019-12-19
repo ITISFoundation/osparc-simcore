@@ -491,6 +491,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       EditLabel
     ---------------------------------------------------------------------------
     */
+    "editlabel": {},
     "editlabel/label": {
       include: "atom/label",
       style: state => ({

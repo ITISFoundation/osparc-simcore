@@ -135,7 +135,6 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __userStudyContainer: null,
     __templateStudyContainer: null,
     __editStudyLayout: null,
-    __creatingNewStudy: null,
     __studiesPane: null,
     __editPane: null,
     __userStudies: null,
@@ -308,37 +307,19 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudyBtnClkd: function(templateData) {
-      if (this.__creatingNewStudy) {
-        return;
+      const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+      let title = templateData ? templateData.name : "New study";
+      const existingTitles = this.__userStudies.map(study => study.name);
+      if (existingTitles.includes(title)) {
+        let cont = 1;
+        while(existingTitles.includes(`${title} (${cont})`)) {
+          cont++;
+        }
+        title += ` (${cont})`;
       }
-      this.__creatingNewStudy = true;
-
-      const win = new qx.ui.window.Window(this.tr("Create New Study")).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 0,
-        showMinimize: false,
-        showMaximize: false,
-        minWidth: 500,
-        centerOnAppear: true,
-        autoDestroy: true,
-        modal: true,
-        appearance: "service-window"
-      });
-
-      const newStudyDlg = new osparc.component.widget.NewStudyDlg(templateData);
-      newStudyDlg.addListenerOnce("createStudy", e => {
-        const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
-        const data = e.getData();
-        minStudyData["name"] = data.prjTitle;
-        minStudyData["description"] = data.prjDescription;
-        this.__createStudy(minStudyData, data.prjTemplateId);
-        win.close();
-      }, this);
-      win.add(newStudyDlg);
-      win.open();
-      win.addListener("close", () => {
-        this.__creatingNewStudy = false;
-      }, this);
+      minStudyData["name"] = title;
+      minStudyData["description"] = templateData ? templateData.description : "";
+      this.__createStudy(minStudyData, templateData ? templateData.uuid : null);
     },
 
     __createStudy: function(minStudyData, templateId) {
