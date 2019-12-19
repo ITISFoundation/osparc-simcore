@@ -194,16 +194,17 @@ qx.Class.define("osparc.data.model.Study", {
       return this.self().updateStudy({
         ...this.serializeStudy(),
         ...params
-      }).then(data => {
-        this.set({
-          ...data,
-          creationDate: new Date(data.creationDate),
-          lastChangeDate: new Date(data.lastChangeDate),
-          workbench: this.getWorkbench()
+      })
+        .then(data => {
+          this.set({
+            ...data,
+            creationDate: new Date(data.creationDate),
+            lastChangeDate: new Date(data.lastChangeDate),
+            workbench: this.getWorkbench()
+          });
+          this.setWorkbench(new osparc.data.model.Workbench(this, data.workbench));
+          return data;
         });
-        this.setWorkbench(new osparc.data.model.Workbench(this, data.workbench));
-        return data;
-      });
     }
   }
 });

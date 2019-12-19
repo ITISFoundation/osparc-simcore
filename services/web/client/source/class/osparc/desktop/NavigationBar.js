@@ -138,13 +138,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
-      }
-      if (nodeIds.length === 1) {
+      } else if (nodeIds.length === 1) {
         this.__studyTitle.show();
         return;
-      } else {
-        this.__studyTitle.exclude();
       }
+      this.__studyTitle.exclude();
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
           rich: true,

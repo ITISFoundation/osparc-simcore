@@ -258,13 +258,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (selectedItem) {
         const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
         treeItemRenamer.addListener("labelChanged", e => {
-          const { newLabel } = e.getData();
+          const {
+            newLabel
+          } = e.getData();
           const nodeId = selectedItem.getNodeId();
           if (nodeId === "root") {
             const params = {
               name: newLabel
             };
-            this.getWorkbench().getStudy().updateStudy(params)
+            this.getWorkbench().getStudy()
+              .updateStudy(params)
               .then(data => {
                 selectedItem.setLabel(data.name);
               });
@@ -306,7 +309,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
       qx.event.message.Bus.getInstance().subscribe("updateStudy", msg => {
         // TODO: This is not sufficient
-        const { name } = msg.getData();
+        const {
+          name
+        } = msg.getData();
         this.setStudyName(name);
       }, this);
     },

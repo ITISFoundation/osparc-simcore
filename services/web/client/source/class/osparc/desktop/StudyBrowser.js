@@ -312,7 +312,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       const existingTitles = this.__userStudies.map(study => study.name);
       if (existingTitles.includes(title)) {
         let cont = 1;
-        while(existingTitles.includes(`${title} (${cont})`)) {
+        while (existingTitles.includes(`${title} (${cont})`)) {
           cont++;
         }
         title += ` (${cont})`;
