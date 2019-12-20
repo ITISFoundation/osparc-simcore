@@ -142,7 +142,11 @@ qx.Class.define("osparc.component.widget.NodeView", {
           if (node) {
             node.renameNode(evt.getData());
           }
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", this.getWorkbench().getStudy().serializeStudy());
+          qx.event.message.Bus.getInstance().dispatchByName(
+            "updateStudy",
+            this.getWorkbench().getStudy()
+              .serializeStudy()
+          );
         }
       }, this);
 
