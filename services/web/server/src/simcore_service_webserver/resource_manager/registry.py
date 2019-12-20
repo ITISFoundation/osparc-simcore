@@ -89,6 +89,11 @@ class RedisResourceRegistry:
                     1,
                     expire=0 if alive else timeout
                     )
+    async def is_key_alive(self, key: Dict[str, str]) -> bool:
+        client = get_redis_client(self.app)
+        hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
+        return await client.exists(hash_key) > 0
+
     async def remove_key(self, key: Dict[str, str]) -> None:
         client = get_redis_client(self.app)
         await client.delete(f"{self._hash_key(key)}:{RESOURCE_SUFFIX}",

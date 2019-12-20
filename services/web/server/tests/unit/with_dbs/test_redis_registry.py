@@ -95,6 +95,7 @@ async def test_redis_registry(loop, redis_registry):
 
     # create alive key
     await redis_registry.set_key_alive(key, True)
+    assert await redis_registry.is_key_alive(key) == True
     # create soon to be dead key
     TIMEOUT = 3
     await redis_registry.set_key_alive(second_key, False, TIMEOUT)
@@ -103,12 +104,14 @@ async def test_redis_registry(loop, redis_registry):
     assert all(x in alive_keys for x in [key, second_key])
     assert all(x in [key, second_key] for x in alive_keys)
     time.sleep(TIMEOUT)
+    assert await redis_registry.is_key_alive(second_key) == False
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert alive_keys == [key]
     assert dead_keys == [second_key]
 
     # clean up
     await redis_registry.remove_key(key)
+    assert await redis_registry.is_key_alive(key) == False
     for res in resources:
         assert await redis_registry.find_keys(res) == [second_key]
         await redis_registry.remove_resource(second_key, res[0])
