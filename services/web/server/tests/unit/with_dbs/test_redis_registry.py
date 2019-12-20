@@ -95,6 +95,7 @@ async def test_redis_registry(loop, redis_registry):
 
     # create alive key
     await redis_registry.set_key_alive(key, True)
+    assert await redis_registry.is_key_alive(key) == True
     # create soon to be dead key
     TIMEOUT = 3
     await redis_registry.set_key_alive(second_key, False, TIMEOUT)
@@ -103,12 +104,14 @@ async def test_redis_registry(loop, redis_registry):
     assert all(x in alive_keys for x in [key, second_key])
     assert all(x in [key, second_key] for x in alive_keys)
     time.sleep(TIMEOUT)
+    assert await redis_registry.is_key_alive(second_key) == False
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert alive_keys == [key]
     assert dead_keys == [second_key]
 
     # clean up
     await redis_registry.remove_key(key)
+    assert await redis_registry.is_key_alive(key) == False
     for res in resources:
         assert await redis_registry.find_keys(res) == [second_key]
         await redis_registry.remove_resource(second_key, res[0])
@@ -130,19 +133,27 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
         for socket in range(NUM_SOCKET_IDS):
             socket_id = f"{user}_{socket}"
             client_session_id = str(uuid4())
+            assert socket_id not in tabs
             tabs[socket_id] = client_session_id
             with managed_resource(user, client_session_id, redis_enabled_app) as rt:
                 #pylint: disable=protected-access
                 resource_key = {"user_id":user, "client_session_id": client_session_id}
                 assert rt._resource_key() == resource_key
 
+                # set the socket id and check it is rightfully there
                 await rt.set_socket_id(socket_id)
                 assert await redis_registry.get_resources(resource_key) == {"socket_id": socket_id}
                 list_of_sockets_of_user = await rt.find_socket_ids()
                 assert socket_id in list_of_sockets_of_user
-
+                # resource key shall be empty
+                assert await rt.find(res_key) == []
+                # add the resource now
                 await rt.add(res_key, res_value)
                 assert await redis_registry.get_resources(resource_key) == {"socket_id": socket_id, res_key: res_value}
+                # resource key shall be filled
+                assert await rt.find(res_key) == [res_value]
+                list_of_same_resource_users = await rt.find_users_of_resource(res_key, res_value)
+                assert list_user_ids[:(list_user_ids.index(user)+1)] == sorted(list_of_same_resource_users)
 
     # remove sockets
     for user in list_user_ids:
@@ -158,3 +169,5 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
                 list_of_sockets_of_user = await rt.find_socket_ids()
                 assert socket_id not in list_of_sockets_of_user
                 assert len(list_of_sockets_of_user) == num_sockets_for_user
+
+                assert await rt.find(res_key) == [res_value]
