@@ -146,46 +146,47 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getFilesByLocationAndDataset: function(locationId, datasetId) {
-      // Get list of file meta data
-      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-        return;
-      }
-
-      const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
-      if (cachedData) {
-        this.fireDataEvent("filesInDataset", cachedData);
-        return;
-      }
-
-      const params = {
-        url: {
-          locationId,
-          datasetId
-        }
+      const emptyData = {
+        location: locationId,
+        dataset: datasetId,
+        files: []
       };
-      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-        .then(files => {
-          const data = {
-            location: locationId,
-            dataset: datasetId,
-            files: files && files.length>0 ? files : []
+      return new Promise((resolve, reject) => {
+        // Get list of file meta data
+        if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+          reject(emptyData);
+        }
+
+        const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
+        if (cachedData) {
+          resolve(cachedData);
+        } else {
+          const params = {
+            url: {
+              locationId,
+              datasetId
+            }
           };
-          // Add it to cache
-          if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-            this.__filesByLocationAndDatasetCached[locationId] = {};
-          }
-          this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-          this.fireDataEvent("filesInDataset", data);
-        })
-        .catch(err => {
-          const data = {
-            location: locationId,
-            dataset: datasetId,
-            files: []
-          };
-          this.fireDataEvent("filesInDataset", data);
-          console.error(err);
-        });
+          osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+            .then(files => {
+              const data = {
+                location: locationId,
+                dataset: datasetId,
+                files: files && files.length>0 ? files : []
+              };
+              // Add it to cache
+              if (!(locationId in this.__filesByLocationAndDatasetCached)) {
+                this.__filesByLocationAndDatasetCached[locationId] = {};
+              }
+              this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
+              resolve(data);
+            })
+            .catch(err => {
+              console.error(err);
+              reject(emptyData);
+            });
+        }
+      });
     },
 
     getNodeFiles: function(nodeId) {
