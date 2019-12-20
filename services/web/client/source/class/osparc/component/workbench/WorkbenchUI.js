@@ -928,14 +928,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (files.length === 1) {
           fileAdder.retrieveUrlAndUpload(files[0]);
         } else if (files.length > 1) {
-          fileAdder.retrieveUrlAndUpload(files[0]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
-          /*
-          osparc.wrapper.JsZip.getInstance().zipFiles(files)
-            .then(file => {
-              fileAdder.retrieveUrlAndUpload(file);
-            });
-          */
+          fileAdder.retrieveUrlAndUpload(files[0]);
         }
         delete this.__filesToFilePicker[nodeId];
       }

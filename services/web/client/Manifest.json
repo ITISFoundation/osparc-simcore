@@ -27,7 +27,6 @@
       "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
-      "jszip/jszip.min.js",
       "plotly/plotly.min.js",
       "marked/marked.js",
       "DOMPurify/purify.min.js"
