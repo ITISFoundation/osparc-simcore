@@ -405,10 +405,10 @@ jobs:
       uses: ianwalter/puppeteer@v2.0.0
       with:
         args: yarn
-    - name: test puppeteer
-      uses: ianwalter/puppeteer@v2.0.0
-      with:
-        args: yarn test
+    # - name: test puppeteer
+    #   uses: ianwalter/puppeteer@v2.0.0
+    #   with:
+    #     args: yarn test
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - name: install
