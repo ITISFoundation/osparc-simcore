@@ -1,3 +1,19 @@
+""" wrapper around redis registry containing data about:
+    - user_id - socket_it - client_session_id relation
+    - which resources a specific user/socket/client has opened
+
+    there is one websocket per opened tab in a browser.
+    {
+        user_id: { # identifies the user
+            client_session_id: { # identifies the browser tab
+                socket_id: identifies the socket on the server,
+                project_id: identifies the project opened in the tab
+            }
+        }
+    }
+
+"""
+
 import logging
 from contextlib import contextmanager
 from typing import Dict, List
