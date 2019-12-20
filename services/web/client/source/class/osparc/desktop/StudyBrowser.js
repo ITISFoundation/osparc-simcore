@@ -453,7 +453,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       const item = new osparc.desktop.StudyBrowserListItem().set({
         uuid: study.uuid,
         studyTitle: study.name,
-        icon: study.thumbnail ? study.thumbnail : osparc.utils.Utils.getThumbnailFromUuid(study.uuid),
+        icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
       });
