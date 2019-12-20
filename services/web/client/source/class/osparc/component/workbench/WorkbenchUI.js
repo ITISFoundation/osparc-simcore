@@ -936,8 +936,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragging: function(pointerEvent, dragging) {
-      pointerEvent.preventDefault();
-      pointerEvent.stopPropagation();
+      if (pointerEvent.target instanceof SVGElement) {
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
+      } else {
+        dragging = false;
+      }
 
       if (!this.isPropertyInitialized("workbench")) {
         return;
