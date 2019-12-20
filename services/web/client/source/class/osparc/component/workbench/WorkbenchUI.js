@@ -95,12 +95,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       visibility: "excluded"
     });
     this.__desktopCanvas.add(this.__startHint);
-    this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
-      font: "workbench-start-hint",
-      textColor: "workbench-start-hint",
-      visibility: "excluded"
-    });
-    this.__desktopCanvas.add(this.__dropHint);
 
     this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
     // this gets fired once the widget has appeared and the library has been loaded
@@ -114,6 +108,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     });
 
     this.__desktop.add(this.__svgWidgetLinks, {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0
+    });
+
+    this.__svgWidgetDrop = new osparc.component.workbench.SvgWidget("SvgWidget_Drop");
+    this.__desktop.add(this.__svgWidgetDrop, {
       left: 0,
       top: 0,
       right: 0,
@@ -155,6 +157,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __outputNodesLayout: null,
     __desktop: null,
     __svgWidgetLinks: null,
+    __svgWidgetDrop: null,
     __tempEdgeNodeId: null,
     __tempEdgeRepr: null,
     __pointerPosX: null,
@@ -162,6 +165,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __currentModel: null,
     __startHint: null,
+    __dropHint: null,
     __filesToFilePicker: null,
 
     __getUnlinkButton: function() {
@@ -877,26 +881,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       e.preventDefault();
       e.stopPropagation();
 
-      this.__dragging(true);
+      this.__dragging(e, true);
     },
 
     __dragOver: function(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      this.__dragging(e, true);
     },
 
     __dragLeave: function(e) {
       e.preventDefault();
       e.stopPropagation();
 
-      this.__dragging(false);
+      this.__dragging(e, false);
     },
 
     __drop: function(e) {
       e.preventDefault();
       e.stopPropagation();
 
-      this.__dragging(false);
+      this.__dragging(e, false);
 
       const pos = {
         x: e.offsetX,
@@ -935,21 +941,36 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __dragging: function(dragging) {
+    __dragging: function(pointerEvent, dragging) {
       if (!this.isPropertyInitialized("workbench")) {
         return;
       }
-      this.__dropHint.setVisibility(dragging ? "visible" : "excluded");
-      if (dragging) {
-        const hintBounds = this.__dropHint.getBounds() || this.__dropHint.getSizeHint();
-        const {
-          height,
-          width
-        } = this.__desktopCanvas.getBounds();
-        this.__dropHint.setLayoutProperties({
-          top: Math.round((height - hintBounds.height) / 2) + 30,
-          left: Math.round((width - hintBounds.width) / 2)
+      const nodeWidth = osparc.component.workbench.NodeUI.NodeWidth;
+      const nodeHeight = osparc.component.workbench.NodeUI.NodeHeight;
+      const posX = pointerEvent.offsetX - 1;
+      const posY = pointerEvent.offsetY - 1;
+
+      if (this.__dropHint === null) {
+        this.__dropHint = new qx.ui.basic.Label(this.tr("daragaanddoropa")).set({
+          font: "workbench-start-hint",
+          textColor: "workbench-start-hint",
+          visibility: "excluded"
         });
+        this.__desktopCanvas.add(this.__dropHint);
+        this.__dropHint.rect = this.__svgWidgetDrop.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
+      }
+      if (dragging) {
+        this.__dropHint.setVisibility("visible");
+        const dropBounds = this.__dropHint.getBounds() || this.__dropHint.getSizeHint();
+        this.__dropHint.setLayoutProperties({
+          left: posX + parseInt(nodeWidth/2) - parseInt(dropBounds.width/2),
+          top: posY + parseInt(nodeHeight/2) - parseInt(dropBounds.height/2)
+        });
+        this.__svgWidgetDrop.updateRect(this.__dropHint.rect, posX, posY);
+      } else {
+        this.__dropHint.setVisibility("excluded");
+        this.__svgWidgetDrop.removeRect(this.__dropHint.rect);
+        this.__dropHint = null;
       }
     },
 

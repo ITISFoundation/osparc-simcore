@@ -129,6 +129,27 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    drawDashedRect: function(draw, width, height, x, y) {
+      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+      const rect = draw.rect(width, height)
+        .fill("none")
+        .stroke({
+          // width: 5,
+          color: edgeColor,
+          dasharray: "4, 4"
+        })
+        .move(x, y);
+      return rect;
+    },
+
+    updateRect: function(rect, x, y) {
+      rect.move(x, y);
+    },
+
+    removeRect: function(rect) {
+      rect.remove();
+    },
+
     updateColor: function(curve, color) {
       if (curve.type === "path") {
         curve.attr({

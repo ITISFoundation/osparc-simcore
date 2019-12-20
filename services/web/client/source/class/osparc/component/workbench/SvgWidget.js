@@ -27,7 +27,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
+ *   let svgWidget = new osparc.component.workbench.SvgWidget("SvgWidget_(Purporse)");
  *   this.getRoot().add(svgWidget);
  * </pre>
  */
@@ -88,6 +88,18 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     removeCurve: function(curve) {
       this.__svgWrapper.removeCurve(curve);
+    },
+
+    drawDashedRect: function(width, height, x, y) {
+      return this.__svgWrapper.drawDashedRect(this.__canvas, width, height, x, y);
+    },
+
+    updateRect: function(rect, x, y) {
+      this.__svgWrapper.updateRect(rect, x, y);
+    },
+
+    removeRect: function(rect) {
+      this.__svgWrapper.removeRect(rect);
     },
 
     updateColor: function(curve, color) {
