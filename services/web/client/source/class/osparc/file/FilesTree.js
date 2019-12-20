@@ -257,16 +257,16 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.addListener("datasetsInLocation", ev => {
-        const {
-          location,
-          datasets
-        } = ev.getData();
-        if (location === locationId && !this.__locations.has(locationId)) {
-          this.__datasetsToLocation(location, datasets);
-        }
-      }, this);
-      dataStore.getDatasetsByLocation(locationId);
+      dataStore.getDatasetsByLocation(locationId)
+        .then(data => {
+          const {
+            location,
+            datasets
+          } = data;
+          if (location === locationId && !this.__locations.has(locationId)) {
+            this.__datasetsToLocation(location, datasets);
+          }
+        });
     },
 
     __resetTree: function(treeName) {

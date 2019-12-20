@@ -31,7 +31,6 @@ qx.Class.define("osparc.store.Data", {
   },
 
   events: {
-    "datasetsInLocation": "qx.event.type.Data",
     "filesInDataset": "qx.event.type.Data",
     "filesInNode": "qx.event.type.Data",
     "fileCopied": "qx.event.type.Data",
@@ -94,43 +93,44 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getDatasetsByLocation: function(locationId) {
-      // Get list of datasets
-      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-        return;
-      }
-
-      const cachedData = this.getDatasetsByLocationCached(locationId);
-      if (cachedData) {
-        this.fireDataEvent("datasetsInLocation", cachedData);
-        return;
-      }
-
-      const params = {
-        url: {
-          locationId
-        }
+      const emptyData = {
+        location: locationId,
+        datasets: []
       };
-      osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
-        .then(datasets => {
-          const data = {
-            location: locationId,
-            datasets: []
+      return new Promise((resolve, reject) => {
+        // Get list of datasets
+        if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+          reject(emptyData);
+        }
+
+        const cachedData = this.getDatasetsByLocationCached(locationId);
+        if (cachedData) {
+          resolve(cachedData);
+        } else {
+          const params = {
+            url: {
+              locationId
+            }
           };
-          if (datasets && datasets.length>0) {
-            data.datasets = datasets;
-          }
-          // Add it to cache
-          this.__datasetsByLocationCached[locationId] = data.datasets;
-          this.fireDataEvent("datasetsInLocation", data);
-        })
-        .catch(err => {
-          const data = {
-            location: locationId,
-            datasets: []
-          };
-          this.fireDataEvent("datasetsInLocation", data);
-          console.error(err);
-        });
+          osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
+            .then(datasets => {
+              const data = {
+                location: locationId,
+                datasets: []
+              };
+              if (datasets && datasets.length>0) {
+                data.datasets = datasets;
+              }
+              // Add it to cache
+              this.__datasetsByLocationCached[locationId] = data.datasets;
+              resolve(data);
+            })
+            .catch(err => {
+              console.error(err);
+              reject(emptyData);
+            });
+        }
+      });
     },
 
     getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
