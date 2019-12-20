@@ -877,8 +877,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
     },
 
-    __allowDrag: function(dataTransfer) {
-      const files = dataTransfer.files;
+    __allowDrag: function(pointerEvent) {
+      return (pointerEvent.target instanceof SVGElement);
+    },
+
+    __allowDrop: function(pointerEvent) {
+      const files = pointerEvent.dataTransfer.files;
       if (files.length === 1) {
         return files[0].type !== "";
       }
@@ -900,7 +904,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __drop: function(e) {
       this.__dragging(e, false);
 
-      if (this.__allowDrag(e.dataTransfer)) {
+      if (this.__allowDrop(e)) {
         const pos = {
           x: e.offsetX,
           y: e.offsetY
@@ -920,23 +924,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    filePickerAdded: function(filePicker) {
-      const nodeId = filePicker.getNode().getNodeId();
-      if (nodeId in this.__filesToFilePicker) {
-        const fileAdder = filePicker.getFilesAdder();
-        const files = this.__filesToFilePicker[nodeId];
-        if (files.length === 1) {
-          fileAdder.retrieveUrlAndUpload(files[0]);
-        } else if (files.length > 1) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
-          fileAdder.retrieveUrlAndUpload(files[0]);
-        }
-        delete this.__filesToFilePicker[nodeId];
-      }
-    },
-
     __dragging: function(pointerEvent, dragging) {
-      if (pointerEvent.target instanceof SVGElement) {
+      if () {
         pointerEvent.preventDefault();
         pointerEvent.stopPropagation();
       } else {
@@ -972,6 +961,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__dropHint.setVisibility("excluded");
         this.__svgWidgetDrop.removeRect(this.__dropHint.rect);
         this.__dropHint = null;
+      }
+    },
+
+    filePickerAdded: function(filePicker) {
+      const nodeId = filePicker.getNode().getNodeId();
+      if (nodeId in this.__filesToFilePicker) {
+        const fileAdder = filePicker.getFilesAdder();
+        const files = this.__filesToFilePicker[nodeId];
+        if (files.length === 1) {
+          fileAdder.retrieveUrlAndUpload(files[0]);
+        } else if (files.length > 1) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          fileAdder.retrieveUrlAndUpload(files[0]);
+        }
+        delete this.__filesToFilePicker[nodeId];
       }
     },
 
