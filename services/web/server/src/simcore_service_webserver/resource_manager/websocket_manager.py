@@ -37,7 +37,7 @@ class WebsocketRegistry:
     def _resource_key(self) -> Dict[str,str]:
         return {
             "user_id": self.user_id,
-            "client_session_id": self.client_session_id
+            "client_session_id": self.client_session_id if self.client_session_id else "*"
             }
 
     async def set_socket_id(self, socket_id: str) -> None:
@@ -55,7 +55,7 @@ class WebsocketRegistry:
     async def find_socket_ids(self) -> List[str]:
         log.debug("user %s/tab %s finding %s from registry...", self.user_id, self.client_session_id, SOCKET_ID_KEY)
         registry = get_registry(self.app)
-        user_sockets = await registry.find_resources({"user_id": self.user_id}, SOCKET_ID_KEY)
+        user_sockets = await registry.find_resources({"user_id": self.user_id, "client_session_id": "*"}, SOCKET_ID_KEY)
         return user_sockets
 
     async def find(self, key: str) -> List[str]:

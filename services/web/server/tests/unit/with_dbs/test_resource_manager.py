@@ -192,7 +192,7 @@ async def test_websocket_multiple_connections(client, logged_user, socketio_clie
         resource_key = {"user_id": str(logged_user["id"]), "client_session_id": cur_client_session_id}
         assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
         assert [sio.sid] == await socket_registry.find_resources(resource_key, "socket_id")
-        assert len(await socket_registry.find_resources({"user_id": str(logged_user["id"])}, "socket_id")) == (socket+1)
+        assert len(await socket_registry.find_resources({"user_id": str(logged_user["id"]), "client_session_id": "*"}, "socket_id")) == (socket+1)
         clients.append(sio)
 
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
@@ -216,8 +216,11 @@ async def test_websocket_multiple_connections(client, logged_user, socketio_clie
 async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, client_session_id, expected):
     app = client.server.app
     socket_registry = get_registry(app)
-    cur_client_session_id = client_session_id()
-    sio = await socketio_client(cur_client_session_id)
+
+    cur_client_session_id1 = client_session_id()
+    sio = await socketio_client(cur_client_session_id1)
+    cur_client_session_id2 = client_session_id()
+    sio2 = await socketio_client(cur_client_session_id2)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
     r = await client.get(logout_url)
@@ -225,6 +228,8 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     await assert_status(r, expected)
 
     assert not sio.sid
+    # second socket also closed
+    assert not sio2.sid
 
 
 @pytest.mark.parametrize("user_role", [
