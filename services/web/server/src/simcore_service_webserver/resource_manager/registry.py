@@ -1,15 +1,15 @@
-""" registry containing data about how a user is connected.
+""" Wrapper around a Redis-backed registry for storing resources in a hash (https://redis.io/topics/data-types).
 
-    there is one websocket per opened tab in a browser.
-    {
-        user_id: { # identifies the user
-            client_session_id: { # identifies the browser tab
-                server_id: identifies which server serves the socket,
-                socket_id: identifies the socket on the server,
-                project_id: identifies the project opened in the tab
-            }
-        }
-    }
+    Redis stores key/values.
+
+    key hashes are generated from a dictionary (e.g. {"user_id":"a_user_id, "some_other_id":123} will
+    create a hash named "user_id=a_user_id:some_other_id=123:resources")
+    resources are tuples (resource_name, resource_value) that are stored with a key as Redis fields.
+    A same key can have a lot of fields provided they have a different name.
+
+    A key can be set as "alive". This creates a secondary key (e.g. "user_id=a_user_id:some_other_id=123:alive").
+    This key can have a timeout value. When the key times out then the key disappears from Redis automatically.
+
 
 """
 
@@ -89,6 +89,11 @@ class RedisResourceRegistry:
                     1,
                     expire=0 if alive else timeout
                     )
+    async def is_key_alive(self, key: Dict[str, str]) -> bool:
+        client = get_redis_client(self.app)
+        hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
+        return await client.exists(hash_key) > 0
+
     async def remove_key(self, key: Dict[str, str]) -> None:
         client = get_redis_client(self.app)
         await client.delete(f"{self._hash_key(key)}:{RESOURCE_SUFFIX}",
