@@ -102,18 +102,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     });
     this.__desktopCanvas.add(this.__dropHint);
 
-    this.__svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
+    this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
-    this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
+    this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
       this.setWorkbench(workbench);
       this.__nodeSelected("root");
     });
 
-    this.__desktop.add(this.__svgWidget, {
+    this.__desktop.add(this.__svgWidgetLinks, {
       left: 0,
       top: 0,
       right: 0,
@@ -154,13 +154,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __inputNodesLayout: null,
     __outputNodesLayout: null,
     __desktop: null,
-    __svgWidget: null,
+    __svgWidgetLinks: null,
     __tempEdgeNodeId: null,
     __tempEdgeRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
     __currentModel: null,
+    __startHint: null,
     __filesToFilePicker: null,
 
     __getUnlinkButton: function() {
@@ -315,7 +316,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
@@ -567,7 +568,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          this.__svgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
+          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
         }
       });
     },
@@ -622,15 +623,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       if (this.__tempEdgeRepr === null) {
-        this.__tempEdgeRepr = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+        this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
       } else {
-        this.__svgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
+        this.__svgWidgetLinks.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
     },
 
     __removeTempEdge: function() {
       if (this.__tempEdgeRepr !== null) {
-        this.__svgWidget.removeCurve(this.__tempEdgeRepr);
+        this.__svgWidgetLinks.removeCurve(this.__tempEdgeRepr);
       }
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
@@ -721,7 +722,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __clearEdge: function(edge) {
-      this.__svgWidget.removeCurve(edge.getRepresentation());
+      this.__svgWidgetLinks.removeCurve(edge.getRepresentation());
       let index = this.__edgesUI.indexOf(edge);
       if (index > -1) {
         this.__edgesUI.splice(index, 1);
@@ -811,7 +812,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           const unselectedEdge = this.__getEdgeUI(oldId);
           const unselectedColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
-          this.__svgWidget.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
+          this.__svgWidgetLinks.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
 
@@ -819,7 +820,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isSelectedItemAnEdge()) {
         const selectedEdge = this.__getEdgeUI(newID);
         const selectedColor = osparc.theme.Color.colors["workbench-edge-selected"];
-        this.__svgWidget.updateColor(selectedEdge.getRepresentation(), selectedColor);
+        this.__svgWidgetLinks.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
       }
