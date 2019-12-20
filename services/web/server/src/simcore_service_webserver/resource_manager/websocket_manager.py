@@ -74,12 +74,11 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    #TODO: test it
     async def find_users_of_resource(self, key: str, value: str) -> List[str]:
         log.debug("user %s/tab %s finding %s:%s in registry..." ,self.user_id, self.client_session_id, key, value)
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
-        users = [x["user_id"] for x in registry_keys]
+        users = list({x["user_id"] for x in registry_keys})
         return users
 
 @contextmanager
