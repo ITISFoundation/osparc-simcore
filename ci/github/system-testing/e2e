@@ -23,7 +23,7 @@ install() {
 
 test() {
     # wait for the services to run
-    python3 tests/wait_for_services.py
+    python3 tests/e2e/wait_for_services.py
 
     make info-swarm
     cp tests/e2e/jest.config.js .
