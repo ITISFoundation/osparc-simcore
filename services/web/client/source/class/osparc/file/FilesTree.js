@@ -208,10 +208,10 @@ qx.Class.define("osparc.file.FilesTree", {
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      if (dataStore.hasListener("nodeFiles")) {
-        dataStore.removeListener("nodeFiles");
+      if (dataStore.hasListener("filesInNode")) {
+        dataStore.removeListener("filesInNode");
       }
-      dataStore.addListenerOnce("nodeFiles", e => {
+      dataStore.addListenerOnce("filesInNode", e => {
         const files = e.getData();
         const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
         this.__filesToRoot(newChildren);
@@ -235,8 +235,8 @@ qx.Class.define("osparc.file.FilesTree", {
 
       const dataStore = osparc.store.Data.getInstance();
       // OM: ??? Somehow this check avoids duplicated code.
-      dataStore.hasListener("myLocations");
-      dataStore.addListenerOnce("myLocations", e => {
+      dataStore.hasListener("locations");
+      dataStore.addListenerOnce("locations", e => {
         const locations = e.getData();
         if (this.__locations.size === 0) {
           this.resetChecks();
@@ -262,7 +262,7 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.addListener("myDatasets", ev => {
+      dataStore.addListener("datasetsInLocation", ev => {
         const {
           location,
           datasets
@@ -326,7 +326,7 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.addListener("myDocuments", ev => {
+      dataStore.addListener("filesInDataset", ev => {
         const {
           location,
           dataset,

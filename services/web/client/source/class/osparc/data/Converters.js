@@ -25,7 +25,7 @@
  *
  * <pre class='javascript'>
  *   const dataStore = osparc.store.Data.getInstance();
- *   dataStore.addListenerOnce("nodeFiles", e => {
+ *   dataStore.addListenerOnce("filesInNode", e => {
  *     const files = e.getData();
  *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
  *     this.__addTreeData(newChildren);

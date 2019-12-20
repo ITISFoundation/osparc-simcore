@@ -31,10 +31,10 @@ qx.Class.define("osparc.store.Data", {
   },
 
   events: {
-    "myLocations": "qx.event.type.Data",
-    "myDatasets": "qx.event.type.Data",
-    "myDocuments": "qx.event.type.Data",
-    "nodeFiles": "qx.event.type.Data",
+    "locations": "qx.event.type.Data",
+    "datasetsInLocation": "qx.event.type.Data",
+    "filesInDataset": "qx.event.type.Data",
+    "filesInNode": "qx.event.type.Data",
     "fileCopied": "qx.event.type.Data",
     "deleteFile": "qx.event.type.Data",
     "presignedLink": "qx.event.type.Data"
@@ -64,7 +64,7 @@ qx.Class.define("osparc.store.Data", {
     getLocations: function() {
       const cachedData = this.getLocationsCached();
       if (cachedData) {
-        this.fireDataEvent("myLocations", cachedData);
+        this.fireDataEvent("locations", cachedData);
         return;
       }
       // Get available storage locations
@@ -72,10 +72,10 @@ qx.Class.define("osparc.store.Data", {
         .then(locations => {
           // Add it to cache
           this.__locationsCached = locations;
-          this.fireDataEvent("myLocations", locations);
+          this.fireDataEvent("locations", locations);
         })
         .catch(err => {
-          this.fireDataEvent("myLocations", []);
+          this.fireDataEvent("locations", []);
           console.error(err);
         });
     },
@@ -100,7 +100,7 @@ qx.Class.define("osparc.store.Data", {
 
       const cachedData = this.getDatasetsByLocationCached(locationId);
       if (cachedData) {
-        this.fireDataEvent("myDatasets", cachedData);
+        this.fireDataEvent("datasetsInLocation", cachedData);
         return;
       }
 
@@ -120,14 +120,14 @@ qx.Class.define("osparc.store.Data", {
           }
           // Add it to cache
           this.__datasetsByLocationCached[locationId] = data.datasets;
-          this.fireDataEvent("myDatasets", data);
+          this.fireDataEvent("datasetsInLocation", data);
         })
         .catch(err => {
           const data = {
             location: locationId,
             datasets: []
           };
-          this.fireDataEvent("myDatasets", data);
+          this.fireDataEvent("datasetsInLocation", data);
           console.error(err);
         });
     },
@@ -153,7 +153,7 @@ qx.Class.define("osparc.store.Data", {
 
       const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
       if (cachedData) {
-        this.fireDataEvent("myDocuments", cachedData);
+        this.fireDataEvent("filesInDataset", cachedData);
         return;
       }
 
@@ -175,7 +175,7 @@ qx.Class.define("osparc.store.Data", {
             this.__filesByLocationAndDatasetCached[locationId] = {};
           }
           this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-          this.fireDataEvent("myDocuments", data);
+          this.fireDataEvent("filesInDataset", data);
         })
         .catch(err => {
           const data = {
@@ -183,7 +183,7 @@ qx.Class.define("osparc.store.Data", {
             dataset: datasetId,
             files: []
           };
-          this.fireDataEvent("myDocuments", data);
+          this.fireDataEvent("filesInDataset", data);
           console.error(err);
         });
     },
@@ -198,12 +198,12 @@ qx.Class.define("osparc.store.Data", {
         .then(files => {
           console.log("Node Files", files);
           if (files && files.length>0) {
-            this.fireDataEvent("nodeFiles", files);
+            this.fireDataEvent("filesInNode", files);
           }
-          this.fireDataEvent("nodeFiles", []);
+          this.fireDataEvent("filesInNode", []);
         })
         .catch(err => {
-          this.fireDataEvent("nodeFiles", []);
+          this.fireDataEvent("filesInNode", []);
           console.error(err);
         });
     },
