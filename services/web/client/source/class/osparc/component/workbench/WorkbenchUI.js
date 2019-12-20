@@ -925,7 +925,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragging: function(pointerEvent, dragging) {
-      if () {
+      if (this.__allowDrag(pointerEvent)) {
         pointerEvent.preventDefault();
         pointerEvent.stopPropagation();
       } else {
