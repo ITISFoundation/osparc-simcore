@@ -31,7 +31,6 @@ qx.Class.define("osparc.store.Data", {
   },
 
   events: {
-    "filesInDataset": "qx.event.type.Data",
     "fileCopied": "qx.event.type.Data",
     "deleteFile": "qx.event.type.Data",
     "presignedLink": "qx.event.type.Data"
