@@ -8,6 +8,9 @@ env:
   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+  #enable buildkit
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
   build-test-images:
@@ -24,10 +27,6 @@ jobs:
     - name: pull images
       run: ./ci/github/build/test-images pull_images
     - name: build images
-      env:
-        #enable buildkit
-        DOCKER_BUILDKIT: 1
-        COMPOSE_DOCKER_CLI_BUILD: 1
       run: ./ci/github/build/test-images build_images
 
   unit-test-apihub:
