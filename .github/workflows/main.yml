@@ -136,19 +136,13 @@ jobs:
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
       run: sudo ./ci/github/helpers/setup_docker_compose.sh
-    - uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node }}
-    - name: Install Dependencies
-      uses: actions/npm@master
-      env:
-        PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
-      with:
-        args: install
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
         python-version: ${{ matrix.python }}
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
     - name: install puppeteer
       uses: ianwalter/puppeteer@v2.0.0
       with:
