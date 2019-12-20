@@ -550,11 +550,11 @@ async def test_close_project(client, logged_user, user_project, client_session_i
 ])
 async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client):
     # login with socket using client session id
-    client_id = client_session_id()
-    sio = await socketio_client(client_id)
+    client_id1 = client_session_id()
+    sio = await socketio_client(client_id1)
     assert sio.sid
     # get active projects -> empty
-    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id)
+    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id1)
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
@@ -563,16 +563,25 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
 
     # open project
     open_project_url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(open_project_url, json=client_id)
+    resp = await client.post(open_project_url, json=client_id1)
     data, error = await assert_status(resp, expected)
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:            
+    if resp.status == web.HTTPOk.status_code:
         assert not error
         assert data == user_project
-    # get active projects -> check project uuid and client session id
-    # open another project
-    # get active projects
+
+    # login with socket using client session id2
+    client_id2 = client_session_id()
+    sio = await socketio_client(client_id2)
+    assert sio.sid
+    # get active projects -> empty
+    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id2)
+    resp = await client.get(get_active_projects_url)
+    data, error = await assert_status(resp, expected)
+    if resp.status == web.HTTPOk.status_code:
+        assert not data
+        assert not error
 
 
 @pytest.mark.parametrize("user_role, expected", [
@@ -589,7 +598,7 @@ async def test_delete_shared_project_forbidden(loop, client, logged_user, user_p
     sio1 = await socketio_client(client_session_id1)
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, web.HTTPOk)    
+    await assert_status(resp, web.HTTPOk)
     # delete project in tab2
     client_session_id2 = client_session_id()
     sio2 = await socketio_client(client_session_id2)
