@@ -9,9 +9,7 @@ export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
     # install puppeteer
-    cp tests/e2e/package.json .
-    cp tests/e2e/package-lock.json .
-    npm install
+    pushd tests/e2e; npm install; popd
     # install wait for service script
     pip3 install -r tests/e2e/requirements/requirements.txt
     make pull-version || ((make pull-cache || true) && make build tag-version)
@@ -27,9 +25,7 @@ install() {
 }
 
 test() {
-    cp tests/e2e/jest.config.js .
-    cp tests/e2e/jest-puppeteer.config.js .
-    npm test
+    pushd tests/e2e; npm test; popd
 }
 
 clean_up() {
