@@ -66,7 +66,7 @@ class RedisResourceRegistry:
         client = get_redis_client(self.app)
         resources = []
         # the key might only be partialy complete
-        partial_hash_key = f"*{self._hash_key(key)}*:{RESOURCE_SUFFIX}"
+        partial_hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
         async for key in client.iscan(match=partial_hash_key):
             if await client.hexists(key, resource_name):
                 resources.append(await client.hget(key, resource_name))
