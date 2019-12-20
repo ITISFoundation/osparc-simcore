@@ -73,8 +73,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     studyName: {
-      check: "String",
-      apply: "_applyStudyName"
+      check: "String"
     }
   },
 
@@ -308,18 +307,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         }
       }, this);
       qx.event.message.Bus.getInstance().subscribe("updateStudy", msg => {
-        // TODO: This is not sufficient
         const {
           name
         } = msg.getData();
         this.setStudyName(name);
+        if (this.isPropertyInitialized("workbench")) {
+          this.populateTree();
+        }
       }, this);
-    },
-
-    _applyStudyName: function() {
-      if (this.isPropertyInitialized("workbench")) {
-        this.populateTree();
-      }
     }
   }
 });

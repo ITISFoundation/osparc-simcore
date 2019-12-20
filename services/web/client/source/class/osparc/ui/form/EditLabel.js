@@ -58,6 +58,11 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     inputFont: {
       check: "Font",
       apply: "_applySpecificFont"
+    },
+    editable: {
+      check: "Boolean",
+      init: true,
+      nullable: false
     }
   },
   members: {
