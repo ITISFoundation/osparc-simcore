@@ -8,12 +8,6 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
-    # Enable user namespace cloning
-    sudo sysctl kernel.unprivileged_userns_clone=1
-
-    # Launch XVFB
-    export DISPLAY=:99.0
-    sh -e /etc/init.d/xvfb start
     cp tests/e2e/package.json .
     cp tests/e2e/package-lock.json .
     npm install
