@@ -402,9 +402,9 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install puppeteer
-        uses: ianwalter/puppeteer@v2.0.0
-        with:
-          args: yarn
+      uses: ianwalter/puppeteer@v2.0.0
+      with:
+        args: yarn
     - name: test puppeteer
       uses: ianwalter/puppeteer@v2.0.0
       with:
