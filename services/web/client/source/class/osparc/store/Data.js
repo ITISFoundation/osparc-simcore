@@ -31,7 +31,6 @@ qx.Class.define("osparc.store.Data", {
   },
 
   events: {
-    "locations": "qx.event.type.Data",
     "datasetsInLocation": "qx.event.type.Data",
     "filesInDataset": "qx.event.type.Data",
     "filesInNode": "qx.event.type.Data",
@@ -62,22 +61,24 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getLocations: function() {
-      const cachedData = this.getLocationsCached();
-      if (cachedData) {
-        this.fireDataEvent("locations", cachedData);
-        return;
-      }
-      // Get available storage locations
-      osparc.data.Resources.get("storageLocations")
-        .then(locations => {
-          // Add it to cache
-          this.__locationsCached = locations;
-          this.fireDataEvent("locations", locations);
-        })
-        .catch(err => {
-          this.fireDataEvent("locations", []);
-          console.error(err);
-        });
+      return new Promise((resolve, reject) => {
+        const cachedData = this.getLocationsCached();
+        if (cachedData) {
+          resolve(cachedData);
+        } else {
+          // Get available storage locations
+          osparc.data.Resources.get("storageLocations")
+            .then(locations => {
+              // Add them to cache
+              this.__locationsCached = locations;
+              resolve(locations);
+            })
+            .catch(err => {
+              console.error(err);
+              reject([]);
+            });
+        }
+      });
     },
 
     getDatasetsByLocationCached: function(locationId) {

@@ -234,22 +234,17 @@ qx.Class.define("osparc.file.FilesTree", {
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      // OM: ??? Somehow this check avoids duplicated code.
-      dataStore.hasListener("locations");
-      dataStore.addListenerOnce("locations", e => {
-        const locations = e.getData();
-        if (this.__locations.size === 0) {
-          this.resetChecks();
-
-          this.__locationsToRoot(locations);
-
-          for (let i=0; i<locations.length; i++) {
-            const locationId = locations[i]["id"];
-            this.__populateLocation(locationId);
+      dataStore.getLocations()
+        .then(locations => {
+          if (this.__locations.size === 0) {
+            this.resetChecks();
+            this.__locationsToRoot(locations);
+            for (let i=0; i<locations.length; i++) {
+              const locationId = locations[i]["id"];
+              this.__populateLocation(locationId);
+            }
           }
-        }
-      }, this);
-      dataStore.getLocations();
+        });
     },
 
     __populateLocation: function(locationId = null) {
