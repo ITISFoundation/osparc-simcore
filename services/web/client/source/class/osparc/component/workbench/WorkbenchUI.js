@@ -948,7 +948,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const posY = pointerEvent.offsetY - 1;
 
       if (this.__dropHint === null) {
-        this.__dropHint = new qx.ui.basic.Label(this.tr("daragaanddoropa")).set({
+        this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint",
           visibility: "excluded"
