@@ -32,8 +32,7 @@ qx.Class.define("osparc.store.Data", {
 
   events: {
     "fileCopied": "qx.event.type.Data",
-    "deleteFile": "qx.event.type.Data",
-    "presignedLink": "qx.event.type.Data"
+    "deleteFile": "qx.event.type.Data"
   },
 
   members: {
@@ -212,34 +211,36 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
-      if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
-        return;
-      }
-      if (!download && !osparc.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
-        return;
-      }
-
-      // GET: Returns download link for requested file
-      // POST: Returns upload link or performs copy operation to datcore
-      const params = {
-        url: {
-          locationId,
-          fileUuid: encodeURIComponent(fileUuid)
+      return new Promise((resolve, reject) => {
+        if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {
+          reject();
         }
-      };
-      osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
-        .then(data => {
-          const presignedLinkData = {
-            presignedLink: data,
-            locationId: locationId,
-            fileUuid: fileUuid
-          };
-          console.log("presignedLink", presignedLinkData);
-          this.fireDataEvent("presignedLink", presignedLinkData);
-        })
-        .catch(err => {
-          console.error(err);
-        });
+        if (!download && !osparc.data.Permissions.getInstance().canDo("study.node.data.push", true)) {
+          reject();
+        }
+
+        // GET: Returns download link for requested file
+        // POST: Returns upload link or performs copy operation to datcore
+        const params = {
+          url: {
+            locationId,
+            fileUuid: encodeURIComponent(fileUuid)
+          }
+        };
+        osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
+          .then(data => {
+            const presignedLinkData = {
+              presignedLink: data,
+              locationId: locationId,
+              fileUuid: fileUuid
+            };
+            resolve(presignedLinkData);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     },
 
     copyFile: function(fromLoc, fileUuid, toLoc, pathId) {

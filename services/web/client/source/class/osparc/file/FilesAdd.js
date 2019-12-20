@@ -102,22 +102,21 @@ qx.Class.define("osparc.file.FilesAdd", {
 
     // Request to the server an upload URL.
     retrieveUrlAndUpload: function(file) {
-      const dataStore = osparc.store.Data.getInstance();
-      dataStore.addListenerOnce("presignedLink", e => {
-        const presignedLinkData = e.getData();
-        file["location"] = presignedLinkData.locationId;
-        file["path"] = presignedLinkData.fileUuid;
-        if (presignedLinkData.presignedLink) {
-          this.__uploadFile(file, presignedLinkData.presignedLink.link);
-        }
-      }, this);
       const download = false;
       const locationId = 0;
       const studyId = this.__getStudyId();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidv4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
-      dataStore.getPresignedLink(download, locationId, fileUuid);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(download, locationId, fileUuid)
+        .then(presignedLinkData => {
+          file["location"] = presignedLinkData.locationId;
+          file["path"] = presignedLinkData.fileUuid;
+          if (presignedLinkData.presignedLink) {
+            this.__uploadFile(file, presignedLinkData.presignedLink.link);
+          }
+        })
     },
 
     // Use XMLHttpRequest to upload the file to S3.
