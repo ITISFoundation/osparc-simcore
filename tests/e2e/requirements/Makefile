@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-ROOT_DIR  = $(realpath $(CURDIR)/../../)
+ROOT_DIR  = $(realpath $(CURDIR)/../../../)
 VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
 
 
@@ -13,12 +13,6 @@ VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
 install: $(VENV_DIR) requirements.txt ## installs dependencies
 	# installing requirements
 	@$</bin/pip3 install -r requirements.txt
-
-
-.PHONY: tests
-tests: ## runs all tests [DEV]
-	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)
 
 
 .PHONY: help
