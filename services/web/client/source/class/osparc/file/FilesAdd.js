@@ -116,7 +116,7 @@ qx.Class.define("osparc.file.FilesAdd", {
           if (presignedLinkData.presignedLink) {
             this.__uploadFile(file, presignedLinkData.presignedLink.link);
           }
-        })
+        });
     },
 
     // Use XMLHttpRequest to upload the file to S3.

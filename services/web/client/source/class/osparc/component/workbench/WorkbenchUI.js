@@ -258,7 +258,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       nodeUI.getNode().setPosition(position.x, position.y);
       nodeUI.moveTo(position.x, position.y);
-      this.addWindowToDesktop(nodeUI);
+      this.__addWindowToDesktop(nodeUI);
       this.__nodesUI.push(nodeUI);
 
       nodeUI.addListener("nodeMoving", function() {
@@ -805,7 +805,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    addWindowToDesktop: function(node) {
+    __addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
     },
