@@ -50,6 +50,14 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       init: false,
       nullable: false,
       apply: "_applyFetching"
+    },
+    labelFont: {
+      check: "Font",
+      apply: "_applySpecificFont"
+    },
+    inputFont: {
+      check: "Font",
+      apply: "_applySpecificFont"
     }
   },
   members: {
@@ -122,6 +130,13 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       this.setMode(this.self().modes.DISPLAY);
       if (this.__input) {
         this.__input.setValue(value);
+      }
+    },
+    _applySpecificFont: function(font, oldFont, name) {
+      if (name === "labelFont") {
+        this.__label.setFont(font);
+      } else if (name === "inputFont") {
+        this.__input.setFont(font);
       }
     }
   }

@@ -495,7 +495,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     "editlabel/label": {
       include: "atom/label",
       style: state => ({
-        font: "title-16",
         decorator: state.hovered ? "border-editable" : null,
         marginLeft: state.hovered ? 0 : 1,
         padding: 2,
@@ -505,7 +504,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     "editlabel/input": {
       include: "textfield",
       style: state => ({
-        font: "text-16",
         paddingTop: 4,
         paddingLeft: 3,
         minWidth: 80

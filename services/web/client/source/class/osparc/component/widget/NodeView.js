@@ -119,8 +119,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
       toolbar.add(infoPart);
       toolbar.addSpacer();
 
-      const title = this.__title = new qx.ui.basic.Atom().set({
-        font: "title-18"
+      const title = this.__title = new osparc.ui.form.EditLabel().set({
+        labelFont: "title-18",
+        inputFont: "text-18"
       });
       titlePart.add(title);
 
@@ -321,7 +322,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     _applyNode: function(node) {
-      this.__title.setLabel(node.getLabel());
+      this.__title.setValue(node.getLabel());
     }
   }
 });
