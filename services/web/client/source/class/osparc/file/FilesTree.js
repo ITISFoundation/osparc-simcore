@@ -208,20 +208,16 @@ qx.Class.define("osparc.file.FilesTree", {
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      if (dataStore.hasListener("filesInNode")) {
-        dataStore.removeListener("filesInNode");
-      }
-      dataStore.addListenerOnce("filesInNode", e => {
-        const files = e.getData();
-        const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
-        this.__filesToRoot(newChildren);
-        let filesInTree = [];
-        this.__getFilesInTree(rootModel, filesInTree);
-        for (let i=0; i<filesInTree.length; i++) {
-          this.openNodeAndParents(filesInTree[i]);
-        }
-      }, this);
-      dataStore.getNodeFiles(nodeId);
+      dataStore.getNodeFiles(nodeId)
+        .then(files => {
+          const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
+          this.__filesToRoot(newChildren);
+          let filesInTree = [];
+          this.__getFilesInTree(rootModel, filesInTree);
+          for (let i=0; i<filesInTree.length; i++) {
+            this.openNodeAndParents(filesInTree[i]);
+          }
+        });
     },
 
     __populateLocations: function() {

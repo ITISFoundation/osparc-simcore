@@ -17,21 +17,7 @@
 
 /**
  *   Collection of static methods for converting data coming from the webserver into suitable
- * data for the frontend.
- *
- * *Example*
- *
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   const dataStore = osparc.store.Data.getInstance();
- *   dataStore.addListenerOnce("filesInNode", e => {
- *     const files = e.getData();
- *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
- *     this.__addTreeData(newChildren);
- *   }, this);
- *   dataStore.getNodeFiles(nodeId);
- * </pre>
+ *  data for the frontend.
  */
 
 qx.Class.define("osparc.data.Converters", {

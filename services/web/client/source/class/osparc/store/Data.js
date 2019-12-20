@@ -32,7 +32,6 @@ qx.Class.define("osparc.store.Data", {
 
   events: {
     "filesInDataset": "qx.event.type.Data",
-    "filesInNode": "qx.event.type.Data",
     "fileCopied": "qx.event.type.Data",
     "deleteFile": "qx.event.type.Data",
     "presignedLink": "qx.event.type.Data"
@@ -190,23 +189,26 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getNodeFiles: function(nodeId) {
-      const params = {
-        url: {
-          nodeId: encodeURIComponent(nodeId)
-        }
-      };
-      osparc.data.Resources.fetch("storageFiles", "getByNode", params)
-        .then(files => {
-          console.log("Node Files", files);
-          if (files && files.length>0) {
-            this.fireDataEvent("filesInNode", files);
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            nodeId: encodeURIComponent(nodeId)
           }
-          this.fireDataEvent("filesInNode", []);
-        })
-        .catch(err => {
-          this.fireDataEvent("filesInNode", []);
-          console.error(err);
-        });
+        };
+        osparc.data.Resources.fetch("storageFiles", "getByNode", params)
+          .then(files => {
+            console.log("Node Files", files);
+            if (files && files.length>0) {
+              resolve(files);
+            } else {
+              resolve([]);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            reject([]);
+          });
+      });
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid) {
