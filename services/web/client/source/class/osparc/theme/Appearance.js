@@ -497,7 +497,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         decorator: state.hovered ? "border-editable" : null,
         marginLeft: state.hovered ? 0 : 1,
-        padding: 2,
+        padding: [2, state.hovered ? 2 : 3, 2, 2],
         cursor: "text"
       })
     },
