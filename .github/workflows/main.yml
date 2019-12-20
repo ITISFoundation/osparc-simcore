@@ -127,7 +127,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        node: [8.11.3]
+        node: [10]
         os: [ubuntu-16.04, ubuntu-18.04]
       fail-fast: false
     steps:
@@ -139,6 +139,12 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node }}
+    - name: Install Dependencies
+      uses: actions/npm@master
+      env:
+        PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+      with:
+        args: install
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
