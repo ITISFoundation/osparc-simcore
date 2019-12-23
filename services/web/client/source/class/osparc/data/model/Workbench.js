@@ -165,7 +165,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const edgeId = edge.getEdgeId();
       const node1Id = edge.getInputNodeId();
       const node2Id = edge.getOutputNodeId();
-      let exists = this.getEdge(edgeId, node1Id, node2Id);
+      const exists = this.getEdge(edgeId, node1Id, node2Id);
       if (!exists) {
         this.__edges[edgeId] = edge;
       }
