@@ -96,7 +96,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __progressBar: null,
     __thumbnail: null,
 
-
     getNodeId: function() {
       return this.getNode().getNodeId();
     },
@@ -105,29 +104,56 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.getNode().getMetaData();
     },
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "inputOutput":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          control.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          this.add(control, {
+            flex: 1
+          });
+          break;
+        case "chips": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
+            margin: [3, 4]
+          });
+          const category = this.getNode().isContainer() ? null : osparc.utils.Services.getCategory(this.getNode().getMetaData().category);
+          const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
+          const type = osparc.utils.Services.getType(nodeType);
+          if (type) {
+            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
+          }
+          if (category) {
+            control.add(new osparc.ui.basic.Chip(category.label, category.icon + "12"));
+          }
+          this.add(control);
+          break;
+        }
+        case "progress":
+          control = new qx.ui.indicator.ProgressBar().set({
+            height: 10,
+            margin: 4
+          });
+          this.add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     __createNodeLayout: function() {
       if (this.getNode().getThumbnail()) {
         this.setThumbnail(this.getNode().getThumbnail());
       }
-
-      const inputOutputLayout = this.__inputOutputLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      inputOutputLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-      this.add(inputOutputLayout, {
-        flex: 1
-      });
-
-      this.add(this.__createChipContainer());
-
+      this.__inputOutputLayout = this.getChildControl("inputOutput");
+      this.__chipContainer = this.getChildControl("chips");
       if (this.getNode().isComputational()) {
-        this.__progressBar = new qx.ui.indicator.ProgressBar().set({
-          height: 10,
-          margin: 4
-        });
-        this.add(this.__progressBar);
+        this.__progressBar = this.getChildControl("progress");
       } else if (this.getNode().isDynamic()) {
-        this.__addStatusIndicator();
+        const nodeStatus = new osparc.component.service.NodeStatus(this.getNode());
+        this.__chipContainer.add(nodeStatus);
       }
     },
 
@@ -238,27 +264,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       }
       return bounds;
-    },
-
-    __createChipContainer: function() {
-      const chipContainer = this.__chipContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
-        margin: [3, 4]
-      });
-      const category = this.getNode().isContainer() ? null : osparc.utils.Services.getCategory(this.getNode().getMetaData().category);
-      const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
-      const type = osparc.utils.Services.getType(nodeType);
-      if (type) {
-        chipContainer.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
-      }
-      if (category) {
-        chipContainer.add(new osparc.ui.basic.Chip(category.label, category.icon + "12"));
-      }
-      return chipContainer;
-    },
-
-    __addStatusIndicator: function() {
-      const status = new osparc.component.service.NodeStatus(this.getNode());
-      this.__chipContainer.add(status);
     },
 
     // override qx.ui.window.Window "move" event listener
