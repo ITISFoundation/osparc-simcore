@@ -45,6 +45,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   construct: function(node) {
     this.base();
 
+    this.setLayout(new qx.ui.layout.VBox());
     this.set({
       showMinimize: false,
       showMaximize: false,
@@ -57,7 +58,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       minWidth: nodeWidth,
       contentPadding: 0
     });
-
     this.setNode(node);
 
     this.__createNodeLayout();
@@ -90,10 +90,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   members: {
-    __inputPortLayout: null,
-    __outputPortLayout: null,
-    __inputPort: null,
-    __outputPort: null,
+    __inputOutputLayout: null,
+    __inputLayout: null,
+    __outputLayout: null,
     __progressBar: null,
     __thumbnail: null,
 
@@ -107,31 +106,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __createNodeLayout: function() {
-      this.setLayout(new qx.ui.layout.VBox());
-
       if (this.getNode().getThumbnail()) {
         this.setThumbnail(this.getNode().getThumbnail());
       }
 
-      let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      this.add(inputsOutputsLayout, {
+      const inputOutputLayout = this.__inputOutputLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      inputOutputLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-
-      let inputsBox = new qx.ui.layout.VBox(5);
-      this.__inputPortLayout = new qx.ui.container.Composite(inputsBox).set({
-        marginLeft: 4
-      });
-      inputsOutputsLayout.add(this.__inputPortLayout, {
-        width: "50%"
-      });
-
-      let outputsBox = new qx.ui.layout.VBox(5);
-      this.__outputPortLayout = new qx.ui.container.Composite(outputsBox).set({
-        marginRight: 4
-      });
-      inputsOutputsLayout.add(this.__outputPortLayout, {
-        width: "50%"
+      this.add(inputOutputLayout, {
+        flex: 1
       });
 
       this.add(this.__createChipContainer());
@@ -153,8 +137,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isContainer()) {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
-      this.__inputPort = null;
-      this.__outputPort = null;
       const metaData = node.getMetaData();
       if (metaData) {
         this.__createUIPorts(true, metaData.inputs);
@@ -166,11 +148,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     getInputPort: function() {
-      return this.__inputPort;
+      return this.__inputLayout;
     },
 
     getOutputPort: function() {
-      return this.__outputPort;
+      return this.__outputLayout;
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -178,31 +160,39 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
-      let portUI = this.__createUIPort(isInput);
-      this.__createUIPortConnections(portUI, isInput);
-      let label = {
+      const portLabel = this.__createUIPortLabel(isInput);
+      const label = {
         isInput: isInput,
-        ui: portUI
+        ui: portLabel
       };
       label.ui.isInput = isInput;
       if (isInput) {
-        this.__inputPort = label;
-        this.__inputPortLayout.add(label.ui);
+        this.__inputLayout = label;
+        this.__createUIPortConnections(this.__inputLayout.ui, isInput);
+        this.__inputOutputLayout.addAt(this.__inputLayout.ui, 0, {
+          width: "50%"
+        });
       } else {
-        this.__outputPort = label;
-        this.__outputPortLayout.add(label.ui);
+        this.__outputLayout = label;
+        this.__createUIPortConnections(this.__outputLayout.ui, isInput);
+        const nElements = this.__inputOutputLayout.getChildren().length;
+        this.__inputOutputLayout.addAt(this.__outputLayout.ui, nElements, {
+          width: "50%"
+        });
       }
     },
 
-    __createUIPort: function(isInput) {
-      const labelText = (isInput) ? "in" : "out";
-      const alignX = (isInput) ? "left" : "right";
-      let uiPort = new qx.ui.basic.Atom(labelText).set({
+    __createUIPortLabel: function(isInput) {
+      const labelText = isInput ? "in" : "out";
+      const alignX = isInput ? "left" : "right";
+      const uiPort = new qx.ui.basic.Label(labelText).set({
         height: portHeight,
         draggable: true,
         droppable: true,
-        alignX: alignX,
-        allowGrowX: false
+        textAlign: alignX,
+        allowGrowX: true,
+        paddingLeft: 5,
+        paddingRight: 5
       });
       return uiPort;
     },
