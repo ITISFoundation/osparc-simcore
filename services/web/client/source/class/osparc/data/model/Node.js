@@ -538,14 +538,14 @@ qx.Class.define("osparc.data.model.Node", {
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
           if (innerNode.addInputNode(inputNode.getNodeId())) {
-            this.createAutomaticPortConns(inputNode, innerNode);
+            this.__createAutomaticPortConns(inputNode, innerNode);
           }
         }
         this.__retrieveInputs();
       }
     },
 
-    createAutomaticPortConns: function(node1, node2) {
+    __createAutomaticPortConns: function(node1, node2) {
       // create automatic port connections
       console.log("createAutomaticPortConns", node1, node2);
       const outPorts = node1.getOutputs();
