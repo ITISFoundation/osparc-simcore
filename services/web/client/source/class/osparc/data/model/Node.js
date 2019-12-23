@@ -532,8 +532,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     // post edge creation routine
     edgeAdded: function(edge) {
+      const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
+      const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
       if (this.isInKey("multi-plot")) {
-        const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
