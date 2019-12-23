@@ -196,14 +196,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__inputLayout = label;
         this.__createUIPortConnections(this.__inputLayout.ui, isInput);
         this.__inputOutputLayout.addAt(this.__inputLayout.ui, 0, {
-          width: "50%"
+          width: "25%"
         });
       } else {
         this.__outputLayout = label;
         this.__createUIPortConnections(this.__outputLayout.ui, isInput);
         const nElements = this.__inputOutputLayout.getChildren().length;
         this.__inputOutputLayout.addAt(this.__outputLayout.ui, nElements, {
-          width: "50%"
+          width: "25%"
         });
       }
     },

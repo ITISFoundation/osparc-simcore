@@ -611,9 +611,9 @@ qx.Class.define("osparc.component.form.Auto", {
         fromPortLabel = fromPortId;
       }
       if (fromNodeLabel && fromPortLabel) {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
+        this.getControlLink(toPortId).setValue(fromNodeLabel + ": " + fromPortLabel);
       } else {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+        this.getControlLink(toPortId).setValue(fromNodeId + ": " + fromPortId);
       }
 
       this.fireDataEvent("linkAdded", toPortId);
