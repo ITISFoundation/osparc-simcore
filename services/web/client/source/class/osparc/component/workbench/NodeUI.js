@@ -270,6 +270,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     _onMovePointerMove: function(e) {
       this.base(arguments, e);
       if (e.getPropagationStopped() === true) {
+        const cBounds = this.getCurrentBounds();
+        this.getNode().setPosition(cBounds.left, cBounds.top);
         this.fireEvent("nodeMoving");
       }
     },
