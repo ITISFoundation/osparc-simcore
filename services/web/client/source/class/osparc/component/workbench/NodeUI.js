@@ -96,7 +96,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __outputPort: null,
     __progressBar: null,
     __thumbnail: null,
-    __status: null,
 
 
     getNodeId: function() {
@@ -268,8 +267,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __addStatusIndicator: function() {
-      this.__status = new osparc.component.service.NodeStatus(this.getNode());
-      this.__chipContainer.add(this.__status);
+      const status = new osparc.component.service.NodeStatus(this.getNode());
+      this.__chipContainer.add(status);
     },
 
     // override qx.ui.window.Window "move" event listener
