@@ -319,16 +319,50 @@ async def get_active_project(request: web.Request) -> web.Response:
 
 @login_required
 async def create_node(request: web.Request) -> web.Response:
-    return {
-        'data': None
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.node.create")
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    body = await request.json()
+    assert "service_key" in body
+    assert "service_version" in body
+    # ensure the project exists
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+    await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+    data = {
+        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"])
     }
+    return web.json_response({'data': data}, status=web.HTTPCreated.status_code)
 
 @login_required
 async def get_node(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.node.read")
     return {
         'data': None
     }
 
 @login_required
 async def delete_node(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.node.delete")
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    node_uuid = request.match_info.get("node_id")
+    # ensure the project exists
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+    await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+    
+    await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
+
     raise web.HTTPNoContent(content_type='application/json')

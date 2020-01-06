@@ -9,6 +9,7 @@
 import logging
 from asyncio import gather
 from typing import Dict, Optional
+from uuid import uuid4
 
 from aiohttp import web
 
@@ -134,3 +135,14 @@ async def delete_project_data(request: web.Request, project_uuid: str, user_id: 
 
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
+
+async def add_project_node(request: web.Request, project_uuid: str, user_id: str, service_key: str, service_version: str) -> str:
+    log.debug("starting node %s:%s in project %s for user %s", service_key, service_version, project_uuid, user_id)
+    node_uuid = str(uuid4())
+    await director_api.start_service(request.app, user_id, project_uuid, service_key, service_version, node_uuid)
+    return node_uuid
+
+async def delete_project_node(request: web.Request, project_uuid: str, user_id: str, node_uuid: str) -> None:
+    log.debug("deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id)
+    await director_api.stop_service(request.app, node_uuid)
+    # await delete_data_folders_of_node(app, project_uuid, user_id, node_uuid)
