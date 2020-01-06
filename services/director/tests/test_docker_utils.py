@@ -5,9 +5,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 # pylint: disable=not-async-context-manager
-import pytest
-from aiodocker.exceptions import DockerError
+from asyncio import sleep
 
+import pytest
+
+from aiodocker.exceptions import DockerError
 from simcore_service_director import docker_utils
 
 
@@ -22,8 +24,9 @@ async def test_docker_client(loop):
             name='testing',
         )
         await container.start()
+        await sleep(5)
         logs = await container.log(stdout=True)
-        assert (''.join(logs)) == "hello world\n"
+        assert (''.join(logs)) == "hello world\n", f"running containers {client.containers.list()}"
         await container.delete(force=True)
 
 @pytest.mark.parametrize("fct", [

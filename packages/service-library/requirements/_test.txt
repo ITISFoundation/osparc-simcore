@@ -29,7 +29,7 @@ openapi-core==0.8.0
 openapi-spec-validator==0.2.7
 pluggy==0.12.0            # via pytest
 prometheus-client==0.7.1
-psycopg2-binary==2.8.2
+psycopg2-binary==2.8.3
 py==1.8.0                 # via pytest
 pylint==2.3.1
 pyrsistent==0.15.2
