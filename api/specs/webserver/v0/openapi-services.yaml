@@ -89,12 +89,12 @@ paths:
       parameters:
         - $ref: "./openapi-services.yaml#/components/parameters/ServiceUuid"
       responses:
-        "204":
-          description: OK service exists and runs
+        "200":
+          description: OK service exists and runs. Returns service details.
           content:
             application/json:
               schema:
-                $ref: "../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
