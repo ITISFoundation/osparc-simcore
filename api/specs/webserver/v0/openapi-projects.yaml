@@ -205,6 +205,9 @@ paths:
             schema:
               type: object
               properties:
+                service_uuid:
+                  type: string
+                  description: the uuid to assign to the service
                 service_key:
                   type: string
                   pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'

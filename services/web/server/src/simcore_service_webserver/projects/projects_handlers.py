@@ -335,7 +335,9 @@ async def create_node(request: web.Request) -> web.Response:
             include_templates=True
         )
     data = {
-        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"])
+        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"], 
+                                        body["service_id"] if "service_id" in body else None
+                                        )
     }
     return web.json_response({'data': data}, status=web.HTTPCreated.status_code)
 

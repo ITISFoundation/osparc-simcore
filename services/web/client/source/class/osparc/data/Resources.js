@@ -107,6 +107,14 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/projects/{project_id}"
+          },
+          addNode: {
+            method: "POST",
+            url: statics.API + "/projects/{project_id}/nodes"
+          },
+          deleteNode: {
+            method: "DELETE",
+            url: statics.API + "/projects/{project_id}/nodes/{node_id}"
           }
         }
       },
