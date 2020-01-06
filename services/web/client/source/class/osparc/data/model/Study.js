@@ -67,7 +67,7 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: false,
       init: "New Study",
       event: "changeName",
-      apply : "__applyName"
+      apply : "_applyName"
     },
 
     description: {
@@ -124,11 +124,22 @@ qx.Class.define("osparc.data.model.Study", {
         lastChangeDate: new Date(),
         workbench: {}
       };
+    },
+    updateStudy: function(params) {
+      return osparc.data.Resources.fetch("studies", "put", {
+        url: {
+          "project_id": params.uuid
+        },
+        data: params
+      }).then(data => {
+        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+        return data;
+      });
     }
   },
 
   members: {
-    __applyName: function(newName) {
+    _applyName: function(newName) {
       if (this.isPropertyInitialized("workbench")) {
         this.getWorkbench().setStudyName(newName);
       }
@@ -177,6 +188,23 @@ qx.Class.define("osparc.data.model.Study", {
         }
       }
       return jsonObject;
+    },
+
+    updateStudy: function(params) {
+      return this.self().updateStudy({
+        ...this.serializeStudy(),
+        ...params
+      })
+        .then(data => {
+          this.set({
+            ...data,
+            creationDate: new Date(data.creationDate),
+            lastChangeDate: new Date(data.lastChangeDate),
+            workbench: this.getWorkbench()
+          });
+          this.setWorkbench(new osparc.data.model.Workbench(this, data.workbench));
+          return data;
+        });
     }
   }
 });
