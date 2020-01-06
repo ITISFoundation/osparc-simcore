@@ -90,8 +90,9 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     routes = _create_routes("/projects", projects_handlers, specs)
     app.router.add_routes(routes)
 
-    routes = _create_routes("/nodes", nodes_handlers, specs)
-    app.router.add_routes(routes)
+    # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
+    # routes = _create_routes("/nodes", nodes_handlers, specs)
+    # app.router.add_routes(routes)
 
     # json-schemas for projects datasets
     project_schema_location = cfg['location']
