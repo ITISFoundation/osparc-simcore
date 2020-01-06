@@ -1,6 +1,7 @@
 # pylint:disable=unused-import
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=no-name-in-module
 
 import logging
 import sys

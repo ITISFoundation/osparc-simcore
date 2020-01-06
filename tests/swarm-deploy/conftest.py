@@ -53,7 +53,7 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
                    docker_swarm_node) -> Dict:
 
     environ = dict(os.environ)
-    if "TRAVIS" not in environ:
+    if "TRAVIS" not in environ and "GITHUB_ACTIONS" not in environ:
         environ["DOCKER_REGISTRY"] = "local"
         environ["DOCKER_IMAGE_TAG"] = "production"
 

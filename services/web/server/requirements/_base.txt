@@ -43,7 +43,7 @@ passlib==1.7.1
 passwordmeter==0.1.8
 pika==0.10.0              # via aio-pika
 prometheus-client==0.7.1
-psycopg2-binary==2.8.2
+psycopg2-binary==2.8.3
 pycparser==2.19           # via cffi
 python-engineio==3.9.3    # via python-socketio
 python-socketio==4.3.1

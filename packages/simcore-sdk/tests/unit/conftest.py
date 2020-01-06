@@ -22,6 +22,10 @@ from sqlalchemy.orm import sessionmaker
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+# FIXTURES
+pytest_plugins = [
+    "shared_fixtures.minio_fix",
+]
 
 @pytest.fixture(scope='session')
 def docker_compose_file():
