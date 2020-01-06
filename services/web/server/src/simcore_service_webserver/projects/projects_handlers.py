@@ -317,3 +317,19 @@ async def get_active_project(request: web.Request) -> web.Response:
     return {
         'data': project
     }
+
+@login_required
+async def create_node(request: web.Request) -> web.Response:
+    return {
+        'data': None
+    }
+
+@login_required
+async def get_node(request: web.Request) -> web.Response:
+    return {
+        'data': None
+    }
+
+@login_required
+async def delete_node(request: web.Request) -> web.Response:
+    raise web.HTTPNoContent(content_type='application/json')

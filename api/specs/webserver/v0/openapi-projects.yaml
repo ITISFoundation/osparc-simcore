@@ -75,6 +75,19 @@ paths:
                 $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /projects/active:
+    get:
+      summary: Gets active project
+      operationId: get_active_project
+      responses:
+        '200':
+          description: returns active project
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /projects/{project_id}:
     parameters:
@@ -175,19 +188,78 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  /projects/active:
-    get:
-      summary: Gets active project
-      operationId: get_active_project
+  /projects/{project_id}/nodes:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a new node
+      operationId: create_node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_key:
+                  type: string
+                  pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                  description: The key (url) of the service
+                service_version:
+                  type: string
+                  pattern: >-
+                    ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+                  description: The tag/version of the service
+              required:
+                - service_key
+                - service_version
+            example:
+              service_key: simcore/services/dynamic/3d-viewer
+              service_version: "1.4.0"
+
       responses:
-        '200':
-          description: returns active project
+        '201':
+          description: created
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/NodeEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  
+  /projects/{project_id}/nodes/{node_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    
+    get:
+      description: Gets node status
+      operationId: get_node
+      responses:
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+    delete:
+      description: Stops and removes a node from the project
+      operationId: delete_node
+      responses:
+        "204":
+          description: node has been successfully deleted from project
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          
 
 components:
   schemas:
@@ -212,6 +284,26 @@ components:
           type: array
           items:
             $ref: './openapi-projects.yaml#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null
+    Node:
+      type: object
+      required:
+        - node_id
+      properties:
+        node_id:
+          type: string
+          description: The UUID attached to this node
+          example: 123e4567-e89b-12d3-a456-426655440000
+      
+    NodeEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: './openapi-projects.yaml#/components/schemas/Node'
         error:
           nullable: true
           default: null
