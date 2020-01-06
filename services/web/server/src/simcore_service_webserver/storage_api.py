@@ -62,3 +62,11 @@ async def delete_data_folders_of_project(app, project_id, user_id):
     #asyncio.ensure_future(_delete(session, url))
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(_delete(session, url))
+
+async def delete_data_folders_of_project_node(app, project_id, node_id, user_id):
+    # SEE api/specs/storage/v0/openapi.yaml
+    session, api_endpoint = _get_storage_client(app)
+    url = (api_endpoint / f"simcore-s3/folders/{project_id}/{node_id}").with_query(user_id=user_id)
+
+
+    await _delete(session, url)

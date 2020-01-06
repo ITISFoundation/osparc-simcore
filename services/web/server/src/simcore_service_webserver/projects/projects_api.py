@@ -22,7 +22,8 @@ from ..director import director_api
 from ..security_api import check_permission
 from ..storage_api import \
     copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import delete_data_folders_of_project
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
@@ -145,4 +146,4 @@ async def add_project_node(request: web.Request, project_uuid: str, user_id: str
 async def delete_project_node(request: web.Request, project_uuid: str, user_id: str, node_uuid: str) -> None:
     log.debug("deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id)
     await director_api.stop_service(request.app, node_uuid)
-    # await delete_data_folders_of_node(app, project_uuid, user_id, node_uuid)
+    await delete_data_folders_of_project_node(request.app, project_uuid, node_uuid, user_id)
