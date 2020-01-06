@@ -500,6 +500,9 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
 async def test_open_project(client, logged_user, user_project, client_session_id, expected, mocker):
     # POST /v0/projects/{project_id}:open
     # open project
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
 
@@ -511,8 +514,7 @@ async def test_open_project(client, logged_user, user_project, client_session_id
         calls = []
         for service_uuid, service in dynamic_services.items():
             calls.append(call(client.server.app, project_id=user_project["uuid"], service_key=service["key"], service_uuid=service_uuid, service_version=service["version"], user_id=logged_user["id"]))
-        # TODO: re-activate this when front-end stops auto-starting services
-        # mock_director_api_start_service.assert_has_calls(calls)
+        mock_director_api_start_service.assert_has_calls(calls)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -527,12 +529,20 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
     mock_director_api.return_value.set_result(fakes)
 
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
     mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
     mock_director_api_stop_services.return_value.set_result("")
     # open project
     client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
+    if resp.status == web.HTTPOk.status_code:
+        mock_director_api.assert_called_once()
+        mock_director_api.reset_mock()
+    else:
+        mock_director_api.assert_not_called()
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -541,6 +551,8 @@ async def test_close_project(client, logged_user, user_project, client_session_i
         mock_director_api.assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mock_director_api_stop_services.has_calls(calls)
+    else:
+        mock_director_api.assert_not_called()
 
 @pytest.mark.parametrize("user_role, expected", [
     # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -548,7 +560,15 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client):
+async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client, mocker):
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
     # login with socket using client session id
     client_id1 = client_session_id()
     sio = await socketio_client(client_id1)
@@ -590,7 +610,16 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
     (UserRole.USER, web.HTTPForbidden),
     (UserRole.TESTER, web.HTTPForbidden),
 ])
-async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected):
+async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected, mocker):
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
+
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
