@@ -153,7 +153,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     /**
-     *  Function that asks the backend for the list of studies belonging to the user
+     * Function that asks the backend for the list of studies belonging to the user
      * and sets it
      */
     reloadUserStudies: function(study) {
@@ -539,23 +539,23 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
-      studyData.forEach(study => {
+      Promise.all(studyData.map(study => {
         const params = {
           url: {
             "project_id": study.uuid
           }
         };
-        osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid)
-          .then(() => {
-            if (isTemplate) {
-              this.reloadTemplateStudies();
-            } else {
-              this.reloadUserStudies();
-            }
-            this.__itemSelected(null);
-          })
-          .catch(err => console.error(err));
-      });
+        return osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid);
+      }))
+        .then(() => {
+          if (isTemplate) {
+            this.reloadTemplateStudies();
+          } else {
+            this.reloadUserStudies();
+          }
+          this.__itemSelected(null);
+        })
+        .catch(err => console.error(err));
     },
 
     __createConfirmWindow: function(isMulti) {
