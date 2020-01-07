@@ -34,7 +34,8 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       showClose: true,
       showMaximize: false,
       showMinimize: false,
-      resizable: false
+      resizable: false,
+      appearance: "service-window"
     });
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "preferencesWindowCloseBtn");
