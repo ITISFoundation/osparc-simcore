@@ -107,11 +107,11 @@ async def start_project_interactive_services(request: web.Request, project: Dict
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: str) -> None:
+    await delete_project_from_db(request, project_uuid, user_id)
     async def remove_services_and_data():
         await remove_project_interactive_services(user_id, project_uuid, request.app)
         await delete_project_data(request, project_uuid, user_id)
     ensure_future(remove_services_and_data())
-    await delete_project_from_db(request, project_uuid, user_id)
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(user_id: Optional[str], project_uuid: Optional[str], app: web.Application) -> None:
