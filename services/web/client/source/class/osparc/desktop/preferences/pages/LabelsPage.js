@@ -16,7 +16,7 @@ qx.Class.define("osparc.desktop.preferences.pages.LabelsPage", {
   },
   members: {
     __renderLayout: function() {
-      this.add(new osparc.ui.basic.Tag("hello world", "logger-error-message"));
+      this.add(new osparc.ui.basic.Tag("hello world", "#000"));
     }
   }
 });

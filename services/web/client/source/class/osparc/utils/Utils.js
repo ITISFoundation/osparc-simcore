@@ -101,6 +101,11 @@ qx.Class.define("osparc.utils.Utils", {
       return luminance;
     },
 
+    getContrastedTextColor: function(hexColor) {
+      const L = this.getColorLuminance(hexColor);
+      return L > 0.179 ? "black" : "white"
+    },
+
     bytesToSize: function(bytes) {
       const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
       if (bytes == 0) {
