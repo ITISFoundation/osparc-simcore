@@ -13,3 +13,4 @@ cat /etc/docker/daemon.json
 echo ----------------------------- after modifications... ----------------------------
 sudo echo "{}" > /etc/docker/daemon.json
 cat /etc/docker/daemon.json
+sudo systemctl restart docker
