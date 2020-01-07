@@ -179,7 +179,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
-      
+
       const node = new osparc.data.model.Node(this, key, version, uuid);
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
@@ -209,19 +209,19 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addDynamicButtons();
 
       osparc.data.Resources.fetch("studies", "addNode", params)
-      .then(data => {
-        node.startDynamicService();
-      })
-      .catch(err => {
-        const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + err.getTarget().getResponse()["error"];
-        const errorMsgData = {
-          nodeId: node.getNodeId(),
-          msg: errorMsg
-        };
-        node.fireDataEvent("showInLogger", errorMsgData);
-        node.setInteractiveStatus("failed");
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
-      });
+        .then(data => {
+          node.startDynamicService();
+        })
+        .catch(err => {
+          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + err.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: node.getNodeId(),
+            msg: errorMsg
+          };
+          node.fireDataEvent("showInLogger", errorMsgData);
+          node.setInteractiveStatus("failed");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+        });
 
       return node;
     },

@@ -745,7 +745,7 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.setProgress(0);
         this.setInteractiveStatus("starting");
-        
+
         this.__nodeState();
       }
     },
