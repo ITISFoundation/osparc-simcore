@@ -8,6 +8,7 @@ FOLDER_CHECKS=(packages/ service-library .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        bash ci/travis/helpers/update_docker;
         bash ci/travis/helpers/install_docker_compose
         bash ci/helpers/show_system_versions
     fi

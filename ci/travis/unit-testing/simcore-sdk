@@ -10,6 +10,7 @@ FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        bash ci/travis/helpers/update_docker;
         bash ci/travis/helpers/install_docker_compose
         bash ci/helpers/show_system_versions
     fi
@@ -26,7 +27,7 @@ install() {
 before_script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pip list -v        
+        pip list -v
     fi
 }
 
