@@ -85,8 +85,8 @@ qx.Class.define("osparc.wrapper.Plotly", {
     createEmptyPlot: function(id) {
       this.__plotId = id;
       const margin = 25;
-      const bigFont = osparc.ui.basic.Label.getFont(14);
-      const smallFont = osparc.ui.basic.Label.getFont(12);
+      const bigFont = osparc.utils.Utils.getFont(14);
+      const smallFont = osparc.utils.Utils.getFont(12);
       this.__layout = {
         titlefont: {
           color: "#bfbfbf",

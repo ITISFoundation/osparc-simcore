@@ -52,9 +52,10 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
      *
      */
     _createHelpLabel: function(message=null) {
-      let label = new osparc.ui.basic.Label(12).set({
+      let label = new qx.ui.basic.Label().set({
         value: message,
-        rich: true
+        rich: true,
+        font: osparc.utils.Utils.getFont(12)
       });
       return label;
     }

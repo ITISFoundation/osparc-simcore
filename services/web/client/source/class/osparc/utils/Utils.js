@@ -309,6 +309,10 @@ qx.Class.define("osparc.utils.Utils", {
       const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
       sessionStorage.setItem("clientsessionid", clientSessionID);
       return clientSessionID;
+    },
+
+    getFont: function(size=14, bold=false) {
+      return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
     }
   }
 });
