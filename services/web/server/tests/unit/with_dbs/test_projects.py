@@ -635,15 +635,15 @@ async def test_delete_shared_project_forbidden(loop, client, logged_user, user_p
     resp = await client.delete(url)
     await assert_status(resp, expected)
 
-@pytest.mark.parametrize("user_role, expected, deletion_exp", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPCreated, web.HTTPNoContent),
+@pytest.mark.parametrize("user_role, create_exp, get_exp, deletion_exp", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden, web.HTTPOk, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
 ])
-async def test_project_node_lifetime(loop, client, logged_user, user_project, expected, deletion_exp, mocker, storage_subsystem_mock):
+async def test_project_node_lifetime(loop, client, logged_user, user_project, create_exp, get_exp, deletion_exp, mocker, storage_subsystem_mock):
     mock_director_api_get_running_services = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
-    mock_director_api_get_running_services.return_value.set_result("")
+
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
     mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
@@ -651,14 +651,14 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, ex
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node', return_value=Future())
     mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
 
-    # create a new node...
+    # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
-        "service_key": "some/service/key",
+        "service_key": "some/dynamic/key",
         "service_version": "1.3.4"
         }
     resp = await client.post(url, json=body)
-    data, errors = await assert_status(resp, expected)
+    data, errors = await assert_status(resp, create_exp)
     node_id = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
         mock_director_api_start_service.assert_called_once()
@@ -666,16 +666,49 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, ex
         node_id = data["node_id"]
     else:
         mock_director_api_start_service.assert_not_called()
+    # create a new NOT dynamic node...
+    mock_director_api_start_service.reset_mock()
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    body = {
+        "service_key": "some/notdynamic/key",
+        "service_version": "1.3.4"
+        }
+    resp = await client.post(url, json=body)
+    data, errors = await assert_status(resp, create_exp)
+    node_id_2 = "wrong_node_id"
+    if resp.status == web.HTTPCreated.status_code:
+        mock_director_api_start_service.assert_not_called()
+        assert "node_id" in data
+        node_id_2 = data["node_id"]
+    else:
+        mock_director_api_start_service.assert_not_called()
 
     # get the node state
-    # delete the node
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, get_exp)
 
+    # delete the node
     mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
         mock_director_api_stop_services.assert_called_once()
+        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+    else:
+        mock_director_api_stop_services.assert_not_called()
+        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+
+    # delete the NOT dynamic node
+    mock_director_api_stop_services.reset_mock()
+    mock_storage_api_delete_data_folders_of_project_node.reset_mock()
+    # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    resp = await client.delete(url)
+    data, errors = await assert_status(resp, deletion_exp)
+    if resp.status == web.HTTPNoContent.status_code:
+        mock_director_api_stop_services.assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mock_director_api_stop_services.assert_not_called()
