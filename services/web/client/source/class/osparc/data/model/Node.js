@@ -551,7 +551,6 @@ qx.Class.define("osparc.data.model.Node", {
     // Iterate over output ports and connect them to first compatible input port
     __createAutoPortConnection: function(node1, node2) {
       // create automatic port connections
-      console.log("createAutomaticPortConns", node1, node2);
       const outPorts = node1.getOutputs();
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
