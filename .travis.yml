@@ -2,8 +2,8 @@ dist: xenial
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.25.0
-    - DOCKER_BUILDKIT=1
-    - COMPOSE_DOCKER_CLI_BUILD=1
+    # - DOCKER_BUILDKIT=1
+    # - COMPOSE_DOCKER_CLI_BUILD=1
 services:
   - docker
 addons:
