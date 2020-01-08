@@ -233,7 +233,7 @@ paths:
                 $ref: './openapi-projects.yaml#/components/schemas/NodeEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
-  
+
   /projects/{project_id}/nodes/{node_id}:
     parameters:
       - name: project_id
@@ -246,11 +246,17 @@ paths:
         required: true
         schema:
           type: string
-    
+
     get:
       description: Gets node status
       operationId: get_node
       responses:
+        "200":
+          description: OK service exists and runs. Returns node details.
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -262,7 +268,7 @@ paths:
           description: node has been successfully deleted from project
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
-          
+
 
 components:
   schemas:
@@ -299,7 +305,7 @@ components:
           type: string
           description: The UUID attached to this node
           example: 123e4567-e89b-12d3-a456-426655440000
-      
+
     NodeEnveloped:
       type: object
       required:
