@@ -197,12 +197,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       const prjId = this.getStudy().getUuid();
       const params = {
         url: {
-          project_id: prjId
+          "project_id": prjId
         },
         data: {
-          service_id: node.getNodeId(),
-          service_key: key,
-          service_version: version
+          "service_id": node.getNodeId(),
+          "service_key": key,
+          "service_version": version
         }
       };
       this.addNode(node, parent);
