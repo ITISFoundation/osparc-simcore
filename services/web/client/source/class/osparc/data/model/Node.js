@@ -900,12 +900,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     __stopDynamicService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const params = {
-          url: {
-            nodeId: this.getNodeId()
-          }
-        };
-        osparc.data.Resources.fetch("interactiveServices", "delete", params);
         this.removeIFrame();
       }
     },

@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import aiobotocore
 import aiofiles
@@ -616,20 +616,26 @@ class DataStorageManager:
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
 
-    async def delete_project_simcore_s3(self, user_id: str, project_id):
+    async def delete_project_simcore_s3(self, user_id: str, project_id: str, node_id: Optional[str]) -> web.Response:
         """ Deletes all files from a given project in simcore.s3 and updated db accordingly
         """
 
         async with self.engine.acquire() as conn:
-            delete_me = file_meta_data.delete().where(and_(file_meta_data.c.user_id == user_id,
-                file_meta_data.c.project_id == project_id))
+            delete_me = file_meta_data.delete().where(
+                and_(file_meta_data.c.user_id == user_id,
+                    file_meta_data.c.project_id == project_id
+                    ))
+            if node_id:
+                delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
         _loop = asyncio.get_event_loop()
         session = aiobotocore.get_session(loop=_loop)
         async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
             aws_secret_access_key=self.s3_client.secret_key) as client:
-            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=project_id+"/")
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name,
+                                                    Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/"
+                                                    )
             if "Contents" in response:
                 objects_to_delete = []
                 for f in response['Contents']:

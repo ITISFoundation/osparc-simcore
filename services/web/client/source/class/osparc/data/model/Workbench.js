@@ -264,6 +264,15 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
+      // remove node in the backend
+      const params = {
+        url: {
+          "project_id": this.getStudy().getUuid(),
+          "node_id": nodeId
+        }
+      };
+      osparc.data.Resources.fetch("studies", "deleteNode", params)
+        .catch(err => console.error(err));
 
       // remove first the connected edges
       const connectedEdges = this.getConnectedEdges(nodeId);

@@ -381,6 +381,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: node_id
+        in: query
+        required: false
+        schema:
+          type: string
       - name: user_id
         in: query
         required: true
