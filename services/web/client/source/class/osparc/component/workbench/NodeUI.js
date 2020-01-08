@@ -45,8 +45,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   construct: function(node) {
     this.base();
 
+    const grid = new qx.ui.layout.Grid(3, 1);
+    grid.setColumnFlex(0, 1);
+
     this.set({
-      layout: new qx.ui.layout.VBox(),
+      layout: grid,
       showMinimize: false,
       showMaximize: false,
       showClose: false,
@@ -58,6 +61,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       minWidth: nodeWidth,
       contentPadding: 0
     });
+
     this.setNode(node);
 
     this.__createNodeLayout();
@@ -113,7 +117,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             flex: 1
           });
           this.add(control, {
-            flex: 1
+            row: 0,
+            column: 0
           });
           break;
         case "chips": {
@@ -129,7 +134,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           if (category) {
             control.add(new osparc.ui.basic.Chip(category.label, category.icon + "12"));
           }
-          this.add(control);
+          this.add(control, {
+            row: 1,
+            column: 0
+          });
           break;
         }
         case "progress":
@@ -137,7 +145,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             height: 10,
             margin: 4
           });
-          this.add(control);
+          this.add(control, {
+            row: 2,
+            column: 0
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -196,14 +207,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__inputLayout = label;
         this.__createUIPortConnections(this.__inputLayout.ui, isInput);
         this.__inputOutputLayout.addAt(this.__inputLayout.ui, 0, {
-          width: "25%"
+          width: "20%"
         });
       } else {
         this.__outputLayout = label;
         this.__createUIPortConnections(this.__outputLayout.ui, isInput);
         const nElements = this.__inputOutputLayout.getChildren().length;
         this.__inputOutputLayout.addAt(this.__outputLayout.ui, nElements, {
-          width: "25%"
+          width: "20%"
         });
       }
     },
