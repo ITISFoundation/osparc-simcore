@@ -45,8 +45,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   construct: function(node) {
     this.base();
 
-    this.setLayout(new qx.ui.layout.VBox());
     this.set({
+      layout: new qx.ui.layout.VBox(),
       showMinimize: false,
       showMaximize: false,
       showClose: false,
