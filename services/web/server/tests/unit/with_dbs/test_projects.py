@@ -641,11 +641,15 @@ async def test_delete_shared_project_forbidden(loop, client, logged_user, user_p
     (UserRole.USER, web.HTTPCreated, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPCreated, web.HTTPNoContent),
 ])
-async def test_project_node_lifetime(loop, client, logged_user, user_project, expected, deletion_exp, mocker):
-    # create a new node...
+async def test_project_node_lifetime(loop, client, logged_user, user_project, expected, deletion_exp, mocker, storage_subsystem_mock):
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
+    mock_storage_api_delete_data_folders_of_project_node = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node', return_value=Future())
+    mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
 
+    # create a new node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": "some/service/key",
@@ -663,13 +667,14 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, ex
 
     # get the node state
     # delete the node
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
-    mock_director_api_stop_services.return_value.set_result("")
+
 
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mock_director_api_stop_services.assert_called_once()        
+        mock_director_api_stop_services.assert_called_once()
+        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mock_director_api_stop_services.assert_not_called()
+        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()

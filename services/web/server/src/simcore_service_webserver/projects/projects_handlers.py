@@ -213,7 +213,6 @@ async def replace_project(request: web.Request):
 
 @login_required
 async def delete_project(request: web.Request):
-
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
@@ -335,7 +334,7 @@ async def create_node(request: web.Request) -> web.Response:
             include_templates=True
         )
     data = {
-        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"], 
+        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"],
                                         body["service_id"] if "service_id" in body else None
                                         )
     }
@@ -364,7 +363,7 @@ async def delete_node(request: web.Request) -> web.Response:
             user_id=user_id,
             include_templates=True
         )
-    
+
     await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
 
     raise web.HTTPNoContent(content_type='application/json')
