@@ -26,7 +26,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     osparc.store.Store.getInstance().setCurrentStudy(study.getUuid());
 
     study.openStudy();
-    study.initWorkbench();
 
     this.setStudy(study);
 

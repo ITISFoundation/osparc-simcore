@@ -145,10 +145,6 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    initWorkbench: function() {
-      this.getWorkbench().initWorkbench();
-    },
-
     openStudy: function() {
       const params = {
         url: {
@@ -157,6 +153,7 @@ qx.Class.define("osparc.data.model.Study", {
         data: sessionStorage.getItem("clientsessionid")
       };
       osparc.data.Resources.fetch("studies", "open", params)
+        .then(data => this.getWorkbench().initWorkbench())
         .catch(err => console.error(err));
     },
 
