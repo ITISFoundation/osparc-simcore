@@ -137,7 +137,7 @@ async def delete_project_data(request: web.Request, project_uuid: str, user_id: 
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
 
-async def add_project_node(request: web.Request, project_uuid: str, user_id: str, service_key: str, service_version: str, service_id: Optional[str]) -> str:
+async def add_project_node(request: web.Request, project_uuid: str, user_id: str, service_key: str, service_version: str, service_id: Optional[str]) -> str: # pylint: disable=too-many-arguments
     log.debug("starting node %s:%s in project %s for user %s", service_key, service_version, project_uuid, user_id)
     node_uuid = service_id if service_id else str(uuid4())
     await director_api.start_service(request.app, user_id, project_uuid, service_key, service_version, node_uuid)
