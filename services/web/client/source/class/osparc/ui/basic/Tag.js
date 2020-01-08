@@ -16,11 +16,11 @@ qx.Class.define("osparc.ui.basic.Tag", {
     if (color) {
       this.setColor(color);
     }
+    this.setFont(osparc.utils.Utils.getFont(11));
   },
   properties: {
     color: {
       check: "Color",
-      nullable: false,
       apply: "_applyColor"
     },
     appearance: {
@@ -31,9 +31,9 @@ qx.Class.define("osparc.ui.basic.Tag", {
   members: {
     _applyColor: function(color) {
       this.setBackgroundColor(color);
-      const textColor = osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(color));
       // Set the right color for the font
-      console.log("font", this.getFont(), textColor);
+      const textColor = osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(color));
+      this.setTextColor(textColor);
     }
   }
 })

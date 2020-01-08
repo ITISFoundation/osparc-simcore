@@ -34,6 +34,8 @@ qx.Theme.define("osparc.theme.Color", {
     "tabview-pane-background": "background-main",
     "workbench-start-hint": "#505050",
     "ready-green": "#33925A",
-    "failed-red": "#FF2D2D"
+    "failed-red": "#FF2D2D",
+    "contrasted-text-dark": "#222222",
+    "contrasted-text-light": "#EEEEEE"
   }
 });

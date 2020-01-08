@@ -59,8 +59,8 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
     tabView.add(expPage);
 
-    const labelsPage = new osparc.desktop.preferences.pages.LabelsPage();
-    tabView.add(labelsPage);
+    const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+    tabView.add(tagsPage);
 
     this.add(tabView, {
       flex: 1

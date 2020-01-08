@@ -508,6 +508,25 @@ qx.Theme.define("osparc.theme.Appearance", {
         paddingLeft: 3,
         minWidth: 80
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tag
+    ---------------------------------------------------------------------------
+    */
+    "tag": {
+      include: "atom/label",
+      style: state => ({
+        decorator: "tag",
+        padding: [1, 5]
+      })
+    },
+    "tagitem": {
+      style: () => ({
+        decorator: "tagitem",
+        padding: 5
+      })
     }
   }
 });
