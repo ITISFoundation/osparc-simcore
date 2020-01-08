@@ -128,9 +128,25 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "colorinput":
           if (this.__colorInput == null) {
-            this.__colorInput = new qx.ui.form.TextField();
+            this.__colorInput = new qx.ui.form.TextField().set({
+              value: this.getColor(),
+              width: 60
+            });
+            this.__colorInput.bind("value", this.getChildControl("colorbutton"), "backgroundColor");
+            this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
+              converter: value => osparc.utils.Utils.getContrastedTextColor(value)
+            });
           }
           control = this.__colorInput;
+          break;
+        case "colorbutton":
+          if (this.__colorButton == null) {
+            this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
+            this.__colorButton.addListener("execute", () => {
+              this.getChildControl("colorinput").setValue(osparc.utils.Utils.getRandomColor());
+            });
+          }
+          control = this.__colorButton;
           break;
       }
       return control || this.base(arguments, id);
@@ -175,14 +191,8 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       container.add(new qx.ui.basic.Label(this.tr("Color")));
       const innerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const refreshButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12").set({
-        backgroundColor: this.getColor(),
-        textColor: osparc.utils.Utils.getContrastedTextColor(this.getColor())
-      });
-      const colorInput = this.getChildControl("colorinput").set({
-        value: this.getColor(),
-        width: 60
-      });
+      const refreshButton = this.getChildControl("colorbutton");
+      const colorInput = this.getChildControl("colorinput");
       innerContainer.add(refreshButton);
       innerContainer.add(colorInput);
       container.add(innerContainer);
