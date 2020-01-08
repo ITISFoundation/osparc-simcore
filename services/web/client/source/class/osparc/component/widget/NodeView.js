@@ -119,8 +119,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
       toolbar.add(infoPart);
       toolbar.addSpacer();
 
-      const title = this.__title = new qx.ui.basic.Atom().set({
-        font: "title-18"
+      const title = this.__title = new osparc.ui.form.EditLabel().set({
+        labelFont: "title-18",
+        inputFont: "text-18"
       });
       titlePart.add(title);
 
@@ -134,6 +135,20 @@ qx.Class.define("osparc.component.widget.NodeView", {
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+
+      title.addListener("editValue", evt => {
+        if (evt.getData() !== this.__title.getValue()) {
+          const node = this.getNode();
+          if (node) {
+            node.renameNode(evt.getData());
+          }
+          qx.event.message.Bus.getInstance().dispatchByName(
+            "updateStudy",
+            this.getWorkbench().getStudy()
+              .serializeStudy()
+          );
+        }
+      }, this);
 
       return toolbar;
     },
@@ -321,7 +336,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     _applyNode: function(node) {
-      this.__title.setLabel(node.getLabel());
+      node.bind("label", this.__title, "value");
     }
   }
 });

@@ -58,7 +58,7 @@ passwordmeter==0.1.8
 pika==0.10.0
 pluggy==0.12.0            # via pytest
 prometheus-client==0.7.1
-psycopg2-binary==2.8.2
+psycopg2-binary==2.8.3
 ptvsd==4.2.10
 py==1.8.0                 # via pytest
 pycparser==2.19

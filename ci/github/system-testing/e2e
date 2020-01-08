@@ -1,0 +1,45 @@
+#!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+# https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
+set -euo pipefail
+IFS=$'\n\t'
+
+# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
+export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
+
+install() {
+    # install puppeteer
+    pushd tests/e2e; npm install; popd
+    # install wait for service script
+    pip3 install -r tests/e2e/requirements/requirements.txt
+    make pull-version || ((make pull-cache || true) && make build tag-version)
+    make info-images
+    # disable email registration
+    make .env
+    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
+    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+    make up-version
+    # wait for the services to run
+    python3 tests/e2e/wait_for_services.py
+    make info-swarm
+}
+
+test() {
+    pushd tests/e2e; npm test; popd
+}
+
+clean_up() {
+    docker images
+    make down
+}
+
+# Check if the function exists (bash specific)
+if declare -f "$1" > /dev/null
+then
+  # call arguments verbatim
+  "$@"
+else
+  # Show a helpful error
+  echo "'$1' is not a known function name" >&2
+  exit 1
+fi

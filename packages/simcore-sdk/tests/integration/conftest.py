@@ -26,7 +26,7 @@ pytest_plugins = [
     "fixtures.docker_compose",
     "fixtures.docker_swarm",
     "fixtures.postgres_service",
-    # "fixtures.minio_fix",
+    "shared_fixtures.minio_fix",
 ]
 
 @pytest.fixture

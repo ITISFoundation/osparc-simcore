@@ -14,11 +14,11 @@ export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
 
 before_install() {
     bash ci/travis/helpers/install_docker_compose
-    bash ci/travis/helpers/show_system_versions
+    bash ci/helpers/show_system_versions
 }
 
 install() {
-    bash ci/travis/helpers/ensure_python_pip
+    bash ci/helpers/ensure_python_pip
     pip3 install -r tests/swarm-deploy/requirements.txt
     make pull-version || ((make pull-cache || true) && make build tag-version)
 }
