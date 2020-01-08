@@ -687,6 +687,15 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
     url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.get(url)
     data, errors = await assert_status(resp, get_exp)
+    assert "service_state" in data
+    assert data["service_state"] == "running"
+
+    # get the NOT dynamic node state
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, get_exp)
+    assert "service_state" in data
+    assert data["service_state"] == "idle"
 
     # delete the node
     mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
