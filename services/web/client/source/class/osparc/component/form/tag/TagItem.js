@@ -175,7 +175,10 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       container.add(new qx.ui.basic.Label(this.tr("Color")));
       const innerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const refreshButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/14");
+      const refreshButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12").set({
+        backgroundColor: this.getColor(),
+        textColor: osparc.utils.Utils.getContrastedTextColor(this.getColor())
+      });
       const colorInput = this.getChildControl("colorinput").set({
         value: this.getColor(),
         width: 60
