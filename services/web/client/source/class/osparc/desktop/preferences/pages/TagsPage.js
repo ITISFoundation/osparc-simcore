@@ -13,21 +13,34 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   construct: function() {
     this.base(arguments, null, "@FontAwesome5Solid/tags/24");
     this.setLayout(new qx.ui.layout.VBox(10));
+    this.__createComponents();
     this.__renderLayout();
+    this.__attachEventHandlers();
   },
   members: {
+    __addTagButton: null,
+    __createComponents: function() {
+      this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
+        appearance: "md-button"
+      });
+    },
     __renderLayout: function() {
+      this.removeAll();
       // Print tag items
       tags.map(tag =>this.add(new osparc.component.form.tag.TagItem().set({...tag})));
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
-      const addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
-        appearance: "md-button"
-      });
-      buttonContainer.add(addTagButton);
+      buttonContainer.add(this.__addTagButton);
       this.add(buttonContainer);
+    },
+    __attachEventHandlers: function() {
+      this.__addTagButton.addListener("execute", () => {
+        this.add(new osparc.component.form.tag.TagItem().set({
+          mode: osparc.component.form.tag.TagItem.modes.EDIT
+        }));
+      });
     }
   }
 });

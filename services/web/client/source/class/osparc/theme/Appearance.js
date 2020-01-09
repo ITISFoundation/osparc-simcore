@@ -545,6 +545,13 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator: "tagitem",
         padding: 5
       })
+    },
+    "tagitem/colorbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagitem-colorbutton"
+      })
     }
   }
 });

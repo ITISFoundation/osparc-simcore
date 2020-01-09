@@ -178,6 +178,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 2
       }
+    },
+    "tagitem-colorbutton": {
+      include: "material-button",
+      style: {
+        radiusBottomRight: 0,
+        radiusTopRight: 0
+      }
     }
   }
 });

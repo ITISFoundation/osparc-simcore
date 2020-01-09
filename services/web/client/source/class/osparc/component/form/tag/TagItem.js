@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     color: {
       check: "Color",
       event: "changeColor",
-      init: "background-main-lighter"
+      init: qx.theme.manager.Color.getInstance().resolve("background-main-lighter")
     },
     mode: {
       check: "String",
@@ -57,6 +57,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __nameInput: null,
     __descriptionInput: null,
     __colorInput: null,
+    __colorButton: null,
     __renderLayout: function() {
       this._removeAll();
       switch (this.getMode()) {
@@ -64,13 +65,17 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           const nameContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
             width: 90
           });
-          nameContainer.add(new qx.ui.basic.Label(this.tr("Name")));
+          nameContainer.add(new qx.ui.basic.Label(this.tr("Name")).set({
+            buddy: this.getChildControl("nameinput")
+          }));
           nameContainer.add(this.getChildControl("nameinput").set({
             value: this.getName()
           }));
           this._add(nameContainer);
           const descInputContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          descInputContainer.add(new qx.ui.basic.Label(this.tr("Description")));
+          descInputContainer.add(new qx.ui.basic.Label(this.tr("Description")).set({
+            buddy: this.getChildControl("descriptioninput")
+          }));
           descInputContainer.add(this.getChildControl("descriptioninput").set({
             value: this.getDescription()
           }));
@@ -134,7 +139,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             });
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "backgroundColor");
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
-              converter: value => osparc.utils.Utils.getContrastedTextColor(value)
+              converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
             });
           }
           control = this.__colorInput;
@@ -189,7 +194,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     },
     __colorPicker: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      container.add(new qx.ui.basic.Label(this.tr("Color")));
+      container.add(new qx.ui.basic.Label(this.tr("Color")).set({
+        buddy: this.getChildControl("colorinput")
+      }));
       const innerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const refreshButton = this.getChildControl("colorbutton");
       const colorInput = this.getChildControl("colorinput");
