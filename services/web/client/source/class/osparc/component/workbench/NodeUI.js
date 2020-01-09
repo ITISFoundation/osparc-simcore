@@ -107,6 +107,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.getNode().getMetaData();
     },
 
+    getCaptionBar: function() {
+      return this.getChildControl("captionbar");
+    },
+
     __createNodeLayout: function() {
       this.setLayout(new qx.ui.layout.VBox());
 
