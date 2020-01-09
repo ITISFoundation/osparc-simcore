@@ -112,6 +112,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       toolbar.addSpacer();
 
+      const exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/file-export/"+iconSize);
+      exportButton.addListener("execute", () => {
+        this.__exportMacro();
+      }, this);
+      osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
+      toolbar.add(exportButton);
+
       const openButton = new qx.ui.toolbar.Button("Open", "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
         this.__openItem();
@@ -231,12 +238,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.fireEvent("addNode");
     },
 
-    __deleteNode: function() {
+    __exportMacro: function() {
       const selectedItem = this.__getSelection();
-      if (selectedItem === null) {
-        return;
+      if (selectedItem) {
+        if (selectedItem.getIsContainer()) {
+          console.log("hallo");
+        } else {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Macros can be exported."), "ERROR");
+        }
       }
-      this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
     __openItem: function(nodeId) {
@@ -282,6 +292,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
         treeItemRenamer.open();
       }
+    },
+
+    __deleteNode: function() {
+      const selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+      this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {
