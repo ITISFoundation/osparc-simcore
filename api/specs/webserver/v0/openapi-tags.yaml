@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Tags API
+  version: 0.0.0
+  description: CRUD operations and linking for the user tags
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+  /tags:
+    get:
+      summary: List all tags for the current user
+      operationId: list_tags
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml#/TagListEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    put:
+      summary: Adds or updates a tag, depending on wether the id property is present or not
+      operationId: update_tag
+      responses:
+        '200':
+          description: The newly added or updated tag
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml3/TagEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      summary: Deletes an existing tag
+      operationId: delete_tag
+      responses:
+        '204':
+          description: The tag has been successfully deleted
