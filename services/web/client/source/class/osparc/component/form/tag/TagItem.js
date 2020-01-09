@@ -117,7 +117,10 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "description":
           if (this.__description == null) {
-            this.__description = new qx.ui.basic.Label();
+            this.__description = new qx.ui.basic.Label().set({
+              rich: true,
+              maxWidth: 250
+            });
             this.bind("description", this.__description, "value");
           }
           control = this.__description;
@@ -130,7 +133,10 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "descriptioninput":
           if (this.__descriptionInput == null) {
-            this.__descriptionInput = new qx.ui.form.TextField();
+            this.__descriptionInput = new qx.ui.form.TextArea().set({
+              autoSize: true,
+              minimalLineHeight: 1
+            });
           }
           control = this.__descriptionInput;
           break;

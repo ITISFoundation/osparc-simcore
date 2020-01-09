@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
   construct: function() {
     this.base(arguments, this.tr("Preferences"));
     this.set({
-      layout: new qx.ui.layout.VBox(10),
+      layout: new qx.ui.layout.Grow(),
       modal: true,
       width: 500,
       height: 500 * 1.2,
@@ -62,9 +62,7 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
     tabView.add(tagsPage);
 
-    this.add(tabView, {
-      flex: 1
-    });
+    this.add(tabView);
   }
 
 });

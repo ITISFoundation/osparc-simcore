@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     __renderLayout: function() {
       this.removeAll();
       // Print tag items
-      this.__tagItems.map(tagItem => this.add(tagItem));
+      this.__tagItems.forEach(tagItem => this.add(tagItem));
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
         this.__attachTagItemEvents(newItem);
         this.addAt(newItem, Math.max(0, itemCount - 1));
       });
-      this.__tagItems.map(tagItem => this.__attachTagItemEvents(tagItem));
+      this.__tagItems.forEach(tagItem => this.__attachTagItemEvents(tagItem));
     },
     __attachTagItemEvents: function(tagItem) {
       tagItem.addListener("cancelNewTag", e => {
@@ -96,7 +96,7 @@ const tags = [
   {
     id: 7,
     name: "a new tag pt 2",
-    description: "This is a description for the tag, just a bit longer",
+    description: "This is a description for the tag, just a bit longer. Much longer now, I hope it renders propertly.",
     color: "#123456"
   },
   {

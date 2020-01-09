@@ -36,7 +36,6 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
   },
 
   members: {
-
     /** Common layout of secion's box
      *
      * @param {page section's name} sectionName
