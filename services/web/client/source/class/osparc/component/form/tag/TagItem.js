@@ -51,6 +51,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       refine: true
     }
   },
+  events: {
+    cancelNewTag: "qx.event.type.Event"
+  },
   members: {
     __tag: null,
     __description: null,
@@ -188,7 +191,11 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         console.log("save", this.getId());
       });
       cancelButton.addListener("execute", () => {
-        this.setMode(this.self().modes.DISPLAY);
+        if (this.isPropertyInitialized("id")) {
+          this.setMode(this.self().modes.DISPLAY);
+        } else {
+          this.fireEvent("cancelNewTag");
+        }
       });
       return buttonContainer;
     },

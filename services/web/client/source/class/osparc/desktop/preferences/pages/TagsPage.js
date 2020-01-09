@@ -19,15 +19,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   },
   members: {
     __addTagButton: null,
+    __tagItems: null,
     __createComponents: function() {
       this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
         appearance: "md-button"
       });
+      this.__tagItems = tags.map(tag => new osparc.component.form.tag.TagItem().set({...tag}));
     },
     __renderLayout: function() {
       this.removeAll();
       // Print tag items
-      tags.map(tag =>this.add(new osparc.component.form.tag.TagItem().set({...tag})));
+      this.__tagItems.map(tagItem => this.add(tagItem));
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
@@ -38,10 +40,18 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     __attachEventHandlers: function() {
       this.__addTagButton.addListener("execute", () => {
         const itemCount = this.getChildren().length;
-        this.addAt(new osparc.component.form.tag.TagItem().set({
+        const newItem = new osparc.component.form.tag.TagItem().set({
           mode: osparc.component.form.tag.TagItem.modes.EDIT
-        }), Math.max(0, itemCount - 1));
+        });
+        this.__attachTagItemEvents(newItem);
+        this.addAt(newItem, Math.max(0, itemCount - 1));
       });
+      this.__tagItems.map(tagItem => this.__attachTagItemEvents(tagItem));
+    },
+    __attachTagItemEvents: function(tagItem) {
+      tagItem.addListener("cancelNewTag", e => {
+        this.remove(e.getTarget());
+      }, this);
     }
   }
 });
