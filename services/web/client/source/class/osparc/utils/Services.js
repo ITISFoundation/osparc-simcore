@@ -252,6 +252,19 @@ qx.Class.define("osparc.utils.Services", {
             type: "data:*/*"
           }
         }
+      }, {
+        key: "simcore/services/frontend/nodes-group",
+        version: "1.0.0",
+        type: "group",
+        name: "Nodes Group",
+        description: "Nodes Group",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {},
+        outputs: {}
       }];
       return builtInServices;
     },

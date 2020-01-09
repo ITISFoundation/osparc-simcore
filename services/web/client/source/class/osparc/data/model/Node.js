@@ -244,9 +244,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isContainer: function() {
-      const hasKey = (this.getKey() === null);
-      const hasChildren = this.hasChildren();
-      return hasKey || hasChildren;
+      return this.getKey().includes("nodes-group");
     },
 
     isDynamic: function() {
