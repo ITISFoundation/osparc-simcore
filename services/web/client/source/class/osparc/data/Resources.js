@@ -363,6 +363,27 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/check/echo"
           }
         }
+      },
+
+      /*
+       * TAGS
+       */
+      tags: {
+        usesCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/tag"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/tag"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/tag/{tagId}"
+          }
+        }
       }
     };
   },

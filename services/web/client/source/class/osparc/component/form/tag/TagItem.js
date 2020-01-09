@@ -194,7 +194,13 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       buttonContainer.add(saveButton);
       buttonContainer.add(cancelButton);
       saveButton.addListener("execute", () => {
-        console.log("save", this.__serializeData());
+        const data = this.__serializeData();
+        const params = {
+          data
+        };
+        osparc.data.Resources.fetch("tags", "put", params)
+          .then(tag => console.log(tag))
+          .catch(console.error);
       });
       cancelButton.addListener("execute", () => {
         if (this.isPropertyInitialized("id")) {
