@@ -331,7 +331,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button": {
+    "xl-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -342,14 +342,14 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button/label": {
+    "xl-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "title-16"
       })
     },
 
-    "md-button": {
+    "lg-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -360,10 +360,28 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "md-button/label": {
+    "lg-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "text-16"
+      })
+    },
+
+    "md-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 25,
+        center: true
+      })
+    },
+
+    "md-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "text-14"
       })
     },
 

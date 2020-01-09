@@ -17,7 +17,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   },
   members: {
     __renderLayout: function() {
+      // Print tag items
       tags.map(tag =>this.add(new osparc.component.form.tag.TagItem().set({...tag})));
+      // New tag button
+      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "right"
+      }));
+      const addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
+        appearance: "md-button"
+      });
+      buttonContainer.add(addTagButton);
+      this.add(buttonContainer);
     }
   }
 });
@@ -62,7 +72,7 @@ const tags = [
   {
     id: 7,
     name: "a new tag pt 2",
-    description: "This is a description for the tag",
+    description: "This is a description for the tag, just a bit longer",
     color: "#123456"
   },
   {

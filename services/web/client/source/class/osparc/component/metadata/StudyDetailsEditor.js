@@ -91,14 +91,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       });
 
       const openButton = new qx.ui.form.Button("Open").set({
-        appearance: "md-button"
+        appearance: "lg-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
       openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
       buttonsLayout.add(openButton);
 
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
-        appearance: "md-button",
+        appearance: "lg-button",
         visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
-          appearance: "md-button"
+          appearance: "lg-button"
         });
         osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {
@@ -155,7 +155,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       };
 
       const modeButton = new qx.ui.form.Button("Save", "@FontAwesome5Solid/save/16").set({
-        appearance: "md-button"
+        appearance: "lg-button"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "studyDetailsEditorSaveBtn");
       modeButton.addListener("execute", e => {
@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         this.__saveStudy(btn);
       }, this);
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
-        appearance: "md-button",
+        appearance: "lg-button",
         enabled: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate)
       });
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");

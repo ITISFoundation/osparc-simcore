@@ -207,7 +207,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(studyFilters, "studyFiltersTextFld");
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
-        appearance: "big-button",
+        appearance: "xl-button",
         allowGrowX: false,
         width: 210
       });
