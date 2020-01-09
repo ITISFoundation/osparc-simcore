@@ -44,6 +44,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     this.__nodesUI = [];
     this.__edgesUI = [];
+    this.__selectedNodes = [];
 
     let hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
@@ -154,6 +155,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerPosY: null,
     __selectedItemId: null,
     __currentModel: null,
+    __selectedNodes: null,
 
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
@@ -257,7 +259,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("tap", e => {
-        this.__selectedItemChanged(nodeUI.getNodeId());
+        this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
         e.stopPropagation();
       }, this);
 
@@ -269,6 +271,26 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
+    },
+
+    __activeNodeChanged: function(activeNode, isControlPressed = false) {
+      if (isControlPressed) {
+        this.__selectedNodes.forEach(node => {
+          node.setTriSelected(1);
+        });
+      } else {
+        this.__selectedNodes.forEach(node => {
+          node.setTriSelected(0);
+        });
+        this.__selectedNodes = [];
+      }
+
+      activeNode.setTriSelected(2);
+      if (this.__selectedNodes.indexOf(activeNode) === -1) {
+        this.__selectedNodes.push(activeNode);
+      }
+
+      this.__selectedItemChanged(activeNode.getNodeId());
     },
 
     __createNodeUI: function(nodeId) {
