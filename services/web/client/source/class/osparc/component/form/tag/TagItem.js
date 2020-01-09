@@ -188,7 +188,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       buttonContainer.add(saveButton);
       buttonContainer.add(cancelButton);
       saveButton.addListener("execute", () => {
-        console.log("save", this.getId());
+        console.log("save", this.__serializeData());
       });
       cancelButton.addListener("execute", () => {
         if (this.isPropertyInitialized("id")) {
@@ -211,6 +211,14 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       innerContainer.add(colorInput);
       container.add(innerContainer);
       return container;
+    },
+    __serializeData: function() {
+      return {
+        id: this.isPropertyInitialized("id") ? this.getId() : null,
+        name: this.getChildControl("nameinput").getValue(),
+        description: this.getChildControl("descriptioninput").getValue(),
+        color: this.getChildControl("colorinput").getValue()
+      };
     },
     _applyMode: function() {
       this.__renderLayout();
