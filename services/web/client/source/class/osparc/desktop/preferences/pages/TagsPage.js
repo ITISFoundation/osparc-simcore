@@ -37,9 +37,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     },
     __attachEventHandlers: function() {
       this.__addTagButton.addListener("execute", () => {
-        this.add(new osparc.component.form.tag.TagItem().set({
+        const itemCount = this.getChildren().length;
+        this.addAt(new osparc.component.form.tag.TagItem().set({
           mode: osparc.component.form.tag.TagItem.modes.EDIT
-        }));
+        }), Math.max(0, itemCount - 1));
       });
     }
   }
