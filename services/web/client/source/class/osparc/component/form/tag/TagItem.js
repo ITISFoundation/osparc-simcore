@@ -179,7 +179,14 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         this.setMode(this.self().modes.EDIT);
       });
       deleteButton.addListener("execute", () => {
-        console.log("delete", this.getId());
+        const params = {
+          url: {
+            tagId: this.getId()
+          }
+        };
+        osparc.data.Resources.fetch("tags", "delete", params, this.getId())
+          .then(tag => console.log(tag))
+          .catch(console.error);
       });
       return buttonContainer;
     },
