@@ -749,23 +749,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__nodeState();
       }
     },
-    __onNodeState: function(e) {
-      let req = e.getTarget();
-      const {
-        data, error
-      } = req.getResponse();
-
-      if (error) {
-        const msg = "Error received: " + error;
-        const msgData = {
-          nodeId: this.getNodeId(),
-          msg: msg
-        };
-        this.setInteractiveStatus("failed");
-        this.fireDataEvent("showInLogger", msgData);
-        return;
-      }
-
+    __onNodeState: function(data) {
       const serviceState = data["service_state"];
       switch (serviceState) {
         case "starting":
@@ -816,24 +800,20 @@ qx.Class.define("osparc.data.model.Node", {
     __nodeState: function() {
       const params = {
         url: {
-          "project_id": this.getWorkbench().getStudy().getUuid()
-        },
-        data: {
-          "service_id": this.getNodeId(),
-          "service_key": key,
-          "service_version": version
+          "project_id": this.getWorkbench().getStudy().getUuid(),
+          "node_id": this.getNodeId()
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
         .catch(err => {
-          const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + ": " + err.getTarget().getResponse()["error"];
+          const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg: errorMsg
           };
-          node.fireDataEvent("showInLogger", errorMsgData);
-          node.setInteractiveStatus("failed");
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
         });
     },
