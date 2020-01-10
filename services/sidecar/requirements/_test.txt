@@ -14,7 +14,7 @@ billiard==3.6.0.0
 celery==4.3.0
 certifi==2019.3.9
 chardet==3.0.4
-coverage==5.0.2           # via coveralls, pytest-cov
+coverage==4.5.1
 coveralls==1.10.0
 decorator==4.4.0
 docker-pycreds==0.4.0

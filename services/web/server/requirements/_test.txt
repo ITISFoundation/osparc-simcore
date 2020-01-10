@@ -27,7 +27,7 @@ cffi==1.12.3
 change-case==0.5.2
 chardet==3.0.4
 codecov==2.0.15
-coverage==5.0.2           # via codecov, coveralls, pytest-cov
+coverage==4.5.1
 coveralls==1.10.0
 cryptography==2.6.1
 docker==4.1.0
