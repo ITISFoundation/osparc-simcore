@@ -96,7 +96,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           tagContainer.add(this.getChildControl("tag"));
           this._add(tagContainer);
           const descriptionContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          descriptionContainer.add(this.getChildControl("description"));
+          descriptionContainer.add(this.getChildControl("description"), {
+            width: "100%"
+          });
           this._add(descriptionContainer, {
             flex: 1
           });
@@ -118,8 +120,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         case "description":
           if (this.__description == null) {
             this.__description = new qx.ui.basic.Label().set({
-              rich: true,
-              maxWidth: 250
+              rich: true
             });
             this.bind("description", this.__description, "value");
           }

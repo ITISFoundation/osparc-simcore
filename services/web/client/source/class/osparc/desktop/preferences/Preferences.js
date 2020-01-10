@@ -29,8 +29,8 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
-      width: 500,
-      height: 500 * 1.2,
+      width: 550,
+      height: 550 * 1.2,
       showClose: true,
       showMaximize: false,
       showMinimize: false,
