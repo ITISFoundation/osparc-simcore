@@ -814,26 +814,28 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
-      const url = "/running_interactive_services/" + encodeURIComponent(this.getNodeId());
-      let request = new osparc.io.request.ApiRequest(url, "GET");
-      request.addListener("success", this.__onNodeState, this);
-      request.addListener("error", e => {
-        const errorMsg = "Error when starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg: errorMsg
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-      }, this);
-      request.addListener("fail", e => {
-        const failMsg = "Failed starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
-        const failMsgData = {
-          nodeId: this.getNodeId(),
-          msg: failMsg
-        };
-        this.fireDataEvent("showInLogger", failMsgData);
-      }, this);
-      request.send();
+      const params = {
+        url: {
+          "project_id": this.getWorkbench().getStudy().getUuid()
+        },
+        data: {
+          "service_id": this.getNodeId(),
+          "service_key": key,
+          "service_version": version
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getNode", params)
+        .then(data => this.__onNodeState(data))
+        .catch(err => {
+          const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + ": " + err.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          node.fireDataEvent("showInLogger", errorMsgData);
+          node.setInteractiveStatus("failed");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+        });
     },
     __onInteractiveNodeStarted: function(e) {
       let req = e.getTarget();
