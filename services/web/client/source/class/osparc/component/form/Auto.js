@@ -482,6 +482,20 @@ qx.Class.define("osparc.component.form.Auto", {
       );
     },
     __addField: function(s, key) {
+      const control = this.__getField(s, key);
+
+      this.__ctrlMap[key] = control;
+      let option = {}; // could use this to pass on info to the form renderer
+      this.add(control, s.label ? this["tr"](s.label) : null, null, key, null, option);
+
+      let controlLink = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlLink.key = key;
+      this.__ctrlLinkMap[key] = controlLink;
+    },
+
+    __getField: function(s, key) {
       if (s.defaultValue) {
         if (!s.set) {
           s.set = {};
@@ -554,9 +568,6 @@ qx.Class.define("osparc.component.form.Auto", {
         default:
           throw new Error("unknown widget type " + s.widget.type);
       }
-      this.__ctrlMap[key] = control;
-      let option = {}; // could use this to pass on info to the form renderer
-      this.add(control, s.label ? this["tr"](s.label):null, null, key, null, option);
 
       setup.call(this, s, key, control);
 
@@ -574,13 +585,8 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       control.key = key;
       control.description = s.description;
-      this.__ctrlMap[key] = control;
 
-      let controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = key;
-      this.__ctrlLinkMap[key] = controlLink;
+      return control;
     },
 
     isPortAvailable: function(portId) {
