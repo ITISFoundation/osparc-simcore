@@ -82,7 +82,8 @@ def create_schema() -> T.Dict:
         addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
         addon_section("application_proxy", optional=True): minimal_addon_schema(),
         addon_section("users", optional=True): minimal_addon_schema(),
-        addon_section("studies_access", optional=True): minimal_addon_schema()
+        addon_section("studies_access", optional=True): minimal_addon_schema(),
+        addon_section("tags", optional=True): minimal_addon_schema()
     })
 
     section_names = [k.name for k in schema.keys]

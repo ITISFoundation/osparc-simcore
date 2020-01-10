@@ -15,23 +15,26 @@ Tag:
 
 TagListEnveloped:
   type: object
-  required: data
+  required:
+    - data
   properties:
     data:
       type: object
       required:
         - tags
-      tags:
-        type: array
-        items:
-          $ref: '#/Tag'
+      properties:
+        tags:
+          type: array
+          items:
+            $ref: '#/Tag'
     error:
       nullable: true
       default: null
 
 TagEnveloped:
   type: object
-  required: data
+  required:
+    - data
   properties:
     data:
       $ref: '#/Tag'

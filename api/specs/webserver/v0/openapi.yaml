@@ -142,6 +142,10 @@ paths:
   /activity/status:
     $ref: './openapi-activity.yaml#/paths/~1activity~1status'
 
+  # TAGS -------------------------------------------------------------------------
+  /tags:
+    $ref: './openapi-tags.yaml#/paths/~1tags'
+
 components:
   responses:
     DefaultErrorResponse:
