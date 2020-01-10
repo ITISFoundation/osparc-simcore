@@ -61,7 +61,7 @@ qx.Class.define("osparc.file.FilePicker", {
     const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
     filesTree.addListener("selectionChanged", this.__selectionChanged, this);
     filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("filesAddedToTree", this.__filesAdded, this);
+    filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
 
     const toolbar = new qx.ui.toolbar.ToolBar();
     const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
@@ -70,11 +70,11 @@ qx.Class.define("osparc.file.FilePicker", {
 
     this._add(toolbar);
 
-    const addBtn = this._createChildControlImpl("addButton");
-    addBtn.addListener("fileAdded", e => {
+    const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
+    filesAdd.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
       if ("location" in fileMetadata && "path" in fileMetadata) {
-        this.__setOutputFile(fileMetadata["location"], fileMetadata["path"], fileMetadata["name"]);
+        this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
       this.__filesTree.resetCache();
       this.__initResources();
@@ -86,7 +86,12 @@ qx.Class.define("osparc.file.FilePicker", {
       this.__itemSelected();
     }, this);
 
-    this.__initResources();
+    if (this.__isOutputFileSelected()) {
+      const outFile = this.__getOutputFile();
+      this.__filesTree.loadFilePath(outFile.value);
+    } else {
+      this.__initResources();
+    }
   },
 
   properties: {
@@ -106,8 +111,13 @@ qx.Class.define("osparc.file.FilePicker", {
 
   members: {
     __filesTree: null,
+    __filesAdder: null,
     __selectBtn: null,
     __mainButtons: null,
+
+    getFilesAdder: function() {
+      return this.__filesAdder;
+    },
 
     _createChildControlImpl: function(id) {
       let control;
@@ -126,10 +136,9 @@ qx.Class.define("osparc.file.FilePicker", {
             flex: 1
           });
           break;
-        case "addButton":
+        case "filesAdd":
           control = new osparc.file.FilesAdd().set({
-            node: this.getNode(),
-            studyId: this.getStudyId()
+            node: this.getNode()
           });
           this.__mainButtons.add(control);
           break;
@@ -142,8 +151,8 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    __initResources: function(locationId = null) {
-      this.__filesTree.populateTree(null, locationId);
+    __initResources: function() {
+      this.__filesTree.populateTree();
     },
 
     __selectionChanged: function() {
@@ -155,7 +164,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        this.__setOutputFile(selectedItem.getLocation(), selectedItem.getFileId(), selectedItem.getLabel());
+        this.__setOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
@@ -167,24 +176,29 @@ qx.Class.define("osparc.file.FilePicker", {
       return outputs["outFile"];
     },
 
-    __setOutputFile: function(store, path, label) {
+    __setOutputFile: function(store, dataset, path, label) {
       if (store !== undefined && path) {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
           store,
+          dataset,
           path,
           label
         };
       }
     },
 
-    __filesAdded: function() {
-      this.__checkSelectedFileIsListed();
+    __isOutputFileSelected: function() {
+      const outFile = this.__getOutputFile();
+      if (outFile && "value" in outFile && "path" in outFile.value) {
+        return true;
+      }
+      return false;
     },
 
     __checkSelectedFileIsListed: function() {
-      const outFile = this.__getOutputFile();
-      if (outFile && "value" in outFile && "path" in outFile.value) {
+      if (this.__isOutputFileSelected()) {
+        const outFile = this.__getOutputFile();
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
       }

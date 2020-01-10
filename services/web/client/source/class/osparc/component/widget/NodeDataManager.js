@@ -91,7 +91,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     userFilesTree.addListener("fileCopied", e => {
       const fileMetadata = e.getData();
       if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata);
+        console.log("file copied", fileMetadata);
       }
     }, this);
     userTreeLayout.add(userFilesTree, {
@@ -149,11 +149,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     },
 
     __reloadNodeTree: function() {
-      this.__nodeFilesTree.populateTree(this.getNode().getNodeId());
+      this.__nodeFilesTree.populateNodeTree(this.getNode().getNodeId());
     },
 
     __reloadUserTree: function(locationId = null) {
-      this.__userFilesTree.populateTree(null, locationId);
+      this.__userFilesTree.populateTree(locationId);
     },
 
     __selectionChanged: function(selectedTree) {

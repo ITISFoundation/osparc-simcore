@@ -810,8 +810,7 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "running": {
-          // const publishedPort = data["published_port"];
-          const servicePath=data["service_basepath"];
+          const servicePath = data["service_basepath"];
           const entryPointD = data["entry_point"];
           const nodeId = data["service_uuid"];
           if (nodeId !== this.getNodeId()) {
@@ -819,12 +818,7 @@ qx.Class.define("osparc.data.model.Node", {
           }
           if (servicePath) {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-            let srvUrl = servicePath + entryPoint;
-            // FIXME: this is temporary until the reverse proxy works for these services
-            // if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
-            //   srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
-            // }
-
+            const srvUrl = servicePath + entryPoint;
             this.__serviceReadyIn(srvUrl);
           }
           break;
