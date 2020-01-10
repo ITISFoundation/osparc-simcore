@@ -2,7 +2,7 @@
 
 Issue 709
 
-## Migration bewteen schema updates
+## Migration between schema updates
 
 - Database model schemas change with time based on new requirements or fixes
 - Deployed databases have already some data that fulfills current schema but not new one
