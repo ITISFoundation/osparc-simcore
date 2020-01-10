@@ -9,6 +9,7 @@ psycopg2-binary     # enforces binary version - http://initd.org/psycopg/docs/in
 
 aiohttp
 aiopg[sa]
+aiozipkin
 ujson
 werkzeug
 jsonschema
@@ -16,3 +17,4 @@ openapi-core
 prometheus_client  # TODO: add as optional service-library[monitoring]
 tenacity
 attrs
+trafaret

@@ -1,5 +1,21 @@
 components:
   schemas:
+    RunningServicesEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/RunningServicesType'
+        error:
+          nullable: true
+          default: null
+    
+    RunningServicesType:
+      type: array
+      items:
+        $ref: '#/components/schemas/RunningServiceType'
+
     RunningServiceEnveloped:
       type: object
       required:

@@ -44,10 +44,14 @@
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
-
   type : "singleton",
 
   properties: {
+    currentStudy: {
+      check: "String",
+      init: null,
+      nullable: true
+    },
     studies: {
       check: "Array",
       init: []

@@ -38,7 +38,7 @@
 qx.Class.define("osparc.desktop.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
-  construct: function(loadStudyId) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox());
@@ -51,14 +51,14 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       visibility: "excluded",
       padding: [0, 15]
     });
-    const scroll1 = new qx.ui.container.Scroll();
-    scroll1.add(this.__studiesPane);
-    this._add(scroll1, {
+    const scrollStudies = new qx.ui.container.Scroll();
+    scrollStudies.add(this.__studiesPane);
+    this._add(scrollStudies, {
       flex: 1
     });
-    const scroll2 = new qx.ui.container.Scroll();
-    scroll2.add(this.__editPane);
-    this._add(scroll2);
+    const scrollEditStudy = new qx.ui.container.Scroll();
+    scrollEditStudy.add(this.__editPane);
+    this._add(scrollEditStudy);
 
     let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesPane.add(iframe, {
@@ -74,14 +74,16 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__editPane.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
+        this.__reloadStudies();
         this.__attachEventHandlers();
+        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudy();
         if (loadStudyId) {
           const params = {
             url: {
               "project_id": loadStudyId
             }
           };
-          osparc.data.Resources.getOne("studies", params, loadStudyId)
+          osparc.data.Resources.getOne("studies", params)
             .then(studyData => {
               this.__startStudy(studyData);
             })
@@ -133,7 +135,6 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __userStudyContainer: null,
     __templateStudyContainer: null,
     __editStudyLayout: null,
-    __creatingNewStudy: null,
     __studiesPane: null,
     __editPane: null,
     __userStudies: null,
@@ -221,8 +222,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       studiesTitleContainer.add(myStudyLabel);
       studiesTitleContainer.add(studiesDeleteButton);
-      let userStudyList = this.__userStudyContainer = this.__createUserStudyList();
-      let userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const userStudyList = this.__userStudyContainer = this.__createUserStudyList();
+      const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       userStudyLayout.add(studiesTitleContainer);
@@ -236,8 +237,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
       templateTitleContainer.add(tempStudyLabel);
       templateTitleContainer.add(templateDeleteButton);
-      let tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
-      let tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const tempStudyList = this.__templateStudyContainer = this.__createTemplateStudyList();
+      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
       tempStudyLayout.add(templateTitleContainer);
@@ -249,6 +250,28 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       this.__studiesPane.add(userStudyLayout);
       this.__studiesPane.add(tempStudyLayout);
       this.__editPane.add(this.__editStudyLayout);
+    },
+
+    __reloadStudies: function() {
+      const params = {
+        url: {
+          "tab_id": osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getActive", params)
+        .then(studyData => {
+          if (studyData) {
+            this.__startStudy(studyData);
+          } else {
+            osparc.store.Store.getInstance().setCurrentStudy(null);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
+
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
     },
 
     __createDeleteButton: function() {
@@ -284,37 +307,19 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudyBtnClkd: function(templateData) {
-      if (this.__creatingNewStudy) {
-        return;
+      const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+      let title = templateData ? templateData.name : "New study";
+      const existingTitles = this.__userStudies.map(study => study.name);
+      if (existingTitles.includes(title)) {
+        let cont = 1;
+        while (existingTitles.includes(`${title} (${cont})`)) {
+          cont++;
+        }
+        title += ` (${cont})`;
       }
-      this.__creatingNewStudy = true;
-
-      const win = new qx.ui.window.Window(this.tr("Create New Study")).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 0,
-        showMinimize: false,
-        showMaximize: false,
-        minWidth: 500,
-        centerOnAppear: true,
-        autoDestroy: true,
-        modal: true,
-        appearance: "service-window"
-      });
-
-      const newStudyDlg = new osparc.component.widget.NewStudyDlg(templateData);
-      newStudyDlg.addListenerOnce("createStudy", e => {
-        const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
-        const data = e.getData();
-        minStudyData["name"] = data.prjTitle;
-        minStudyData["description"] = data.prjDescription;
-        this.__createStudy(minStudyData, data.prjTemplateId);
-        win.close();
-      }, this);
-      win.add(newStudyDlg);
-      win.open();
-      win.addListener("close", () => {
-        this.__creatingNewStudy = false;
-      }, this);
+      minStudyData["name"] = title;
+      minStudyData["description"] = templateData ? templateData.description : "";
+      this.__createStudy(minStudyData, templateData ? templateData.uuid : null);
     },
 
     __createStudy: function(minStudyData, templateId) {
@@ -326,8 +331,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
@@ -337,8 +342,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           data: minStudyData
         };
         osparc.data.Resources.fetch("studies", "post", params)
-          .then(study => {
-            this.__startStudy(study);
+          .then(studyData => {
+            this.__startStudy(studyData);
           })
           .catch(err => {
             console.error(err);
@@ -372,7 +377,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __loadStudy: function(studyData) {
-      const study = new osparc.data.model.Study(studyData, true);
+      const study = new osparc.data.model.Study(studyData);
       const studyEditor = new osparc.desktop.StudyEditor(study);
       this.fireDataEvent("startStudy", studyEditor);
     },
@@ -391,14 +396,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createUserStudyList: function() {
       const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(usrLst, "userStudiesList");
-      this.reloadUserStudies();
       return usrLst;
     },
 
     __createTemplateStudyList: function() {
       const tempList = this.__templateStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
-      this.reloadTemplateStudies();
       return tempList;
     },
 
@@ -428,7 +431,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       const item = new osparc.desktop.StudyBrowserListItem().set({
         uuid: study.uuid,
         studyTitle: study.name,
-        icon: study.thumbnail ? study.thumbnail : osparc.utils.Utils.getThumbnailFromUuid(study.uuid),
+        icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
       });
@@ -536,7 +539,6 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
-      this.__stopInteractiveServicesInStudy(studyData);
       studyData.forEach(study => {
         const params = {
           url: {
@@ -556,51 +558,18 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       });
     },
 
-    __stopInteractiveServicesInStudy: function(studies) {
-      studies.forEach(studyData => {
-        for (const [nodeId, nodedata] of Object.entries(studyData["workbench"])) {
-          const metadata = osparc.utils.Services.getNodeMetaData(nodedata.key, nodedata.version);
-          if (osparc.data.model.Node.isDynamic(metadata) && osparc.data.model.Node.isRealService(metadata)) {
-            osparc.utils.Services.stopInteractiveService(nodeId);
-          }
-        }
-      });
-    },
-
     __createConfirmWindow: function(isMulti) {
-      const win = new qx.ui.window.Window("Confirmation").set({
-        layout: new qx.ui.layout.VBox(10),
-        width: 300,
-        height: 60,
-        modal: true,
-        showMaximize: false,
-        showMinimize: false,
-        showClose: false,
-        autoDestroy: false,
-        appearance: "service-window"
-      });
-
-      const message = `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`;
-      const text = new qx.ui.basic.Label(this.tr(message));
-      win.add(text);
-
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
-      const btnNo = new qx.ui.form.Button("No");
-      osparc.utils.Utils.setIdToWidget(btnNo, "cancelDeleteStudyBtn");
-      const btnYes = new qx.ui.form.Button("Yes");
+      const win = new osparc.ui.window.Dialog("Confirmation", null,
+        `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`
+      );
+      const btnYes = new qx.ui.toolbar.Button("Yes");
       osparc.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
-      btnNo.addListener("execute", e => {
-        win["value"] = 0;
-        win.close(0);
-      }, this);
       btnYes.addListener("execute", e => {
         win["value"] = 1;
         win.close(1);
       }, this);
-      buttons.add(btnNo);
-      buttons.add(btnYes);
-      win.add(buttons);
-
+      win.addCancelButton();
+      win.addButton(btnYes);
       return win;
     }
   }

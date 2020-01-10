@@ -36,68 +36,20 @@ qx.Class.define("osparc.io.WatchDog", {
 
   type : "singleton",
 
-  construct: function() {
-    const interval = 5000;
-    this.__timer = new qx.event.Timer(interval);
-
-    window.addEventListener("online", this.__updateOnlineStatus, this);
-    window.addEventListener("offline", this.__updateOnlineStatus, this);
-  },
-
   properties: {
     onLine: {
       check: "Boolean",
-      init: true,
-      nullable: false
-    },
-
-    healthCheck: {
-      check: "Boolean",
-      init: true,
-      nullable: false
+      init: false,
+      nullable: false,
+      apply: "_applyOnLine"
     }
   },
 
   members: {
-    __timer: null,
-
-    startCheck: function() {
-      let timer = this.__timer;
-      timer.addListener("interval", () => {
-        if (this.getOnLine()) {
-          this.__checkHealthCheckAsync();
-        }
-      }, this);
-      timer.start();
-      this.__checkHealthCheckAsync();
-    },
-
-    stopCheck: function() {
-      if (this.__timer && this.__timer.isEnabled()) {
-        this.__timer.stop();
-      }
-    },
-
-    __checkHealthCheckAsync: function() {
-      osparc.data.Resources.get("healthCheck", {}, false)
-        .then(() => this.__updateHealthCheckStatus(true))
-        .catch(() => this.__updateHealthCheckStatus(false));
-    },
-
-    __updateOnlineStatus: function(e) {
-      this.setOnLine(window.navigator.onLine);
-      if (this.getOnLine()) {
-        osparc.component.message.FlashMessenger.getInstance().info("Internet is back");
-      } else {
-        osparc.component.message.FlashMessenger.getInstance().error("Internet is down");
-      }
-    },
-
-    __updateHealthCheckStatus: function(status) {
-      this.setHealthCheck(status);
+    _applyOnLine: function(value) {
       let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
-        logo.online(status);
+        logo.setOnLine(value);
       }
     }
   } // members

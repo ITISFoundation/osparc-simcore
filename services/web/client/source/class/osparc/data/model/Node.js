@@ -33,7 +33,8 @@
  *   let node = new osparc.data.model.Node(this, key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
- *   node.startInteractiveNode();
+ *   node.addDynamicButtons();
+ *   node.startDynamicService();
  * </pre>
  */
 
@@ -687,7 +688,7 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, true);
+            this.getPropsWidget().retrievedPortData(portKey, true, data["size_bytes"]);
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
@@ -711,7 +712,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startInteractiveNode: function() {
+    addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
         const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         retrieveBtn.addListener("execute", e => {
@@ -728,59 +729,53 @@ qx.Class.define("osparc.data.model.Node", {
         this.setRestartIFrameButton(restartBtn);
 
         this.__showLoadingIFrame();
-
-        this.__startService();
       }
     },
 
-    __startService: function() {
-      const metaData = this.getMetaData();
+    startDynamicService: function() {
+      if (this.isDynamic() && this.isRealService()) {
+        const metaData = this.getMetaData();
 
-      const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
-      const msgData = {
-        nodeId: this.getNodeId(),
-        msg: msg
-      };
-      this.fireDataEvent("showInLogger", msgData);
+        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeId: this.getNodeId(),
+          msg: msg
+        };
+        this.fireDataEvent("showInLogger", msgData);
 
-      this.setProgress(0);
-      this.setInteractiveStatus("starting");
+        this.setProgress(0);
+        this.setInteractiveStatus("starting");
 
-      const prjId = this.getWorkbench().getStudy()
-        .getUuid();
-      // start the service
-      const url = "/running_interactive_services";
-      let query = "?project_id=" + encodeURIComponent(prjId);
-      query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
-      if (metaData.key.includes("/neuroman")) {
-        // HACK: Only Neuroman should enter here
-        query += "&service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver");
-        query += "&service_tag=" + encodeURIComponent("2.8.0");
-      } else {
+        const prjId = this.getWorkbench().getStudy()
+          .getUuid();
+        // start the service
+        const url = "/running_interactive_services";
+        let query = "?project_id=" + encodeURIComponent(prjId);
+        query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
         query += "&service_key=" + encodeURIComponent(metaData.key);
         query += "&service_tag=" + encodeURIComponent(metaData.version);
+        let request = new osparc.io.request.ApiRequest(url+query, "POST");
+        request.addListener("success", this.__onInteractiveNodeStarted, this);
+        request.addListener("error", e => {
+          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
+        }, this);
+        request.addListener("fail", e => {
+          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const failMsgData = {
+            nodeId: this.getNodeId(),
+            msg: failMsg
+          };
+          this.setInteractiveStatus("failed");
+          this.fireDataEvent("showInLogger", failMsgData);
+        }, this);
+        request.send();
       }
-      let request = new osparc.io.request.ApiRequest(url+query, "POST");
-      request.addListener("success", this.__onInteractiveNodeStarted, this);
-      request.addListener("error", e => {
-        const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg: errorMsg
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        this.setInteractiveStatus("failed");
-      }, this);
-      request.addListener("fail", e => {
-        const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-        const failMsgData = {
-          nodeId: this.getNodeId(),
-          msg: failMsg
-        };
-        this.setInteractiveStatus("failed");
-        this.fireDataEvent("showInLogger", failMsgData);
-      }, this);
-      request.send();
     },
     __onNodeState: function(e) {
       let req = e.getTarget();
@@ -848,6 +843,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
 
         default:
+          console.error(serviceState, "service state not supported");
           break;
       }
     },
@@ -916,7 +912,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.stopInteractiveService();
+      this.__stopDynamicService();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -936,9 +932,14 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    stopInteractiveService: function() {
+    __stopDynamicService: function() {
       if (this.isDynamic() && this.isRealService()) {
-        osparc.utils.Services.stopInteractiveService(this.getNodeId());
+        const params = {
+          url: {
+            nodeId: this.getNodeId()
+          }
+        };
+        osparc.data.Resources.fetch("interactiveServices", "delete", params);
         this.removeIFrame();
       }
     },

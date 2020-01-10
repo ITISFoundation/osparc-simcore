@@ -25,3 +25,6 @@ s3:
 
 rest:
   oas_repo: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs
+tracing:
+  enabled: True
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}

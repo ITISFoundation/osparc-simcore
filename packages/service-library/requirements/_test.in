@@ -11,6 +11,7 @@ pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytes
 pytest-cov
 pytest-runner
 pytest-docker
+pytest-mock
 
 # tools
 pylint

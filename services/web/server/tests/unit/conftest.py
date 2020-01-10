@@ -13,10 +13,13 @@ import logging
 import sys
 from pathlib import Path
 from typing import Dict
+from uuid import uuid4
 
 import pytest
 
+
 from simcore_service_webserver.resources import resources
+from simcore_service_webserver.utils import now_str
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -45,6 +48,23 @@ def fake_project(fake_data_dir: Path) -> Dict:
 @pytest.fixture
 def api_version_prefix() -> str:
     return "v0"
+
+@pytest.fixture
+def empty_project():
+    def create():
+        empty_project = {
+            "uuid": f"project-{uuid4()}",
+            "name": "Empty name",
+            "description": "some description of an empty project",
+            "prjOwner": "I'm the empty project owner, hi!",
+            "creationDate": now_str(),
+            "lastChangeDate": now_str(),
+            "thumbnail": "",
+            "workbench": {}
+        }
+        return empty_project
+    return create
+
 
 @pytest.fixture
 def project_schema_file(api_version_prefix) -> Path:

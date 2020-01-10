@@ -20,8 +20,9 @@ ABSOLUTE_OUTPUT_DIR=$(realpath "${OUTPUT_DIR}")
 ABSOLUTE_OUTPUT_DIR_GEN=$(realpath "${OUTPUT_DIR_GEN}")
 ../../scripts/openapi/openapi_python_server_codegen.sh -i ${ABSOLUTE_INPUT_PATH} -o ${ABSOLUTE_OUTPUT_DIR_GEN}
 # replace import entries in python code
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server.models././g' {} \;
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server/../g' {} \;
+find ${OUTPUT_DIR_GEN}/models -type f -exec sed -i 's/openapi_server.models././g' {} \;
+find ${OUTPUT_DIR_GEN}/models -type f -exec sed -i 's/openapi_server/../g' {} \;
+find ${OUTPUT_DIR_GEN} -maxdepth 1 -type f -exec sed -i 's/openapi_server/./g' {} \;
 # create __init__.py if always
 cat > "${INIT_FILE_PATH}" << EOF
 """GENERATED CODE from codegen.sh

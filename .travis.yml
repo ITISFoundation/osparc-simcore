@@ -169,6 +169,27 @@ jobs:
         - bash ci/travis/unit-testing/service-library after_success
       after_failure:
         - bash ci/travis/unit-testing/service-library after_failure
+    
+    # test python, service-library ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: simcore-sdk
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/simcore-sdk before_install
+      install:
+        - bash ci/travis/unit-testing/simcore-sdk install
+      before_script:
+        - bash ci/travis/unit-testing/simcore-sdk before_script
+      script:
+        - bash ci/travis/unit-testing/simcore-sdk script
+      after_success:
+        - bash ci/travis/unit-testing/simcore-sdk after_success
+      after_failure:
+        - bash ci/travis/unit-testing/simcore-sdk after_failure
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing

@@ -15,7 +15,8 @@ async def assert_status(response: web.Response, expected_cls:web.HTTPException, 
         assert not data, pformat(data)
         assert not error, pformat(error)
     else:
-        assert data is not None, pformat(data)
+        # with a 200, data may still be empty see https://medium.com/@santhoshkumarkrishna/http-get-rest-api-no-content-404-vs-204-vs-200-6dd869e3af1d
+        # assert data is not None, pformat(data)
         assert not error, pformat(error)
 
         if expected_msg:

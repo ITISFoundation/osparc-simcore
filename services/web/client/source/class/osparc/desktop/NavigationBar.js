@@ -78,6 +78,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
+    this.__studyTitle = this.__createStudyTitle();
+    this._add(this.__studyTitle);
+
     let hBox = new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     });
@@ -117,7 +120,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      nullable: true
+      nullable: true,
+      apply: "_applyStudy"
     }
   },
 
@@ -134,7 +138,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
+      } else if (nodeIds.length === 1) {
+        this.__studyTitle.show();
+        return;
       }
+      this.__studyTitle.exclude();
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
           rich: true,
@@ -207,7 +215,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()));
+      newIssueBtn.addListener("execute", this.__openIssueInfoDialog, this);
       osparc.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
       menu.add(newIssueBtn);
 
@@ -259,6 +267,53 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       activityWindow.add(new osparc.component.service.manager.ActivityManager());
       activityWindow.center();
       activityWindow.open();
+    },
+
+    __openIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()), this);
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
+    },
+
+    _applyStudy: function(study) {
+      if (study) {
+        study.bind("name", this.__studyTitle, "value");
+      }
+      this.__studyTitle.show();
+    },
+
+    __createStudyTitle: function() {
+      const studyTitle = new osparc.ui.form.EditLabel().set({
+        visibility: "excluded",
+        labelFont: "title-16",
+        inputFont: "text-16"
+      });
+      studyTitle.addListener("editValue", evt => {
+        if (evt.getData() !== this.__studyTitle.getValue()) {
+          this.__studyTitle.setFetching(true);
+          const params = {
+            name: evt.getData()
+          };
+          this.getStudy().updateStudy(params)
+            .then(() => {
+              this.__studyTitle.setFetching(false);
+            })
+            .catch(err => {
+              this.__studyTitle.setFetching(false);
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+            });
+        }
+      }, this);
+      return studyTitle;
     }
   }
 });

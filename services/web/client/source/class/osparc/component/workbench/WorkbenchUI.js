@@ -205,7 +205,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent, true);
+      const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent);
       if (!node) {
         return;
       }

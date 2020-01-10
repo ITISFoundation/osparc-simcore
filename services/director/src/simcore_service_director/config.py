@@ -48,6 +48,9 @@ SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 # useful when developing with an alternative registry namespace
 SIMCORE_SERVICES_PREFIX = os.environ.get("SIMCORE_SERVICES_PREFIX", "simcore/services")
 
+# tracing
+TRACING_ENABLED = os.environ.get("TRACING_ENABLED", True) in ["true", "True", True]
+TRACING_ZIPKIN_ENDPOINT = os.environ.get("TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411")
 
 __all__ = [
     'APP_CLIENT_SESSION_KEY'

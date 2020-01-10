@@ -12,6 +12,13 @@ paths:
             default: 'all'
             enum: [template, user, all]
           description: if true only templates otherwise only users
+        - name: state
+          in: query
+          schema:
+            type: string
+            default: 'active'
+            enum: [active]
+          description: if set only active projects are returned. if type=template this parameter is ignored.
         - name: start
           in: query
           schema:
@@ -111,6 +118,71 @@ paths:
         '204':
           description: project has been successfully deleted
 
+  /projects/{project_id}/open:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Open a given project
+      operationId: open_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
+      responses:
+        '200':
+          description: project successfuly opened
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /projects/{project_id}/close:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Closes a given project
+      operationId: close_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
+      responses:
+        '204':
+          description: project succesfuly closed
+
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /projects/active:
+    get:
+      summary: Gets active project
+      operationId: get_active_project
+      responses:
+        '200':
+          description: returns active project
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
 components:
 
   schemas:
@@ -120,6 +192,9 @@ components:
       $ref: '../common/schemas/project.yaml#/components/schemas/ProjectEnveloped'
     ProjectArrayEnveloped:
       $ref: '../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped'
+    ClientSessionId:
+      type: string
+      example: 5ac57685-c40f-448f-8711-70be1936fd63
 
   responses:
     DefaultErrorResponse:

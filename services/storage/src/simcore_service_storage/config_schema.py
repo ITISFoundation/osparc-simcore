@@ -1,5 +1,6 @@
 import trafaret as T
 
+from servicelib.tracing import schema as tracing_schema
 from simcore_sdk.config import db, s3
 
 from . import rest_config
@@ -23,7 +24,8 @@ schema = T.Dict({
     T.Key("main"): app_schema,
     T.Key("postgres"): db.CONFIG_SCHEMA,
     T.Key("s3"): s3.CONFIG_SCHEMA,
-    T.Key(rest_config.CONFIG_SECTION_NAME): rest_config.schema
+    T.Key(rest_config.CONFIG_SECTION_NAME): rest_config.schema,
+    T.Key("tracing"): tracing_schema
 })
 
 

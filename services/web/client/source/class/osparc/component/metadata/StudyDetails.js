@@ -23,17 +23,17 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {Object|osparc.data.model.Study} Study (metadata)
+    * @param studyData {Object|osparc.data.model.Study} studyData (metadata)
     * @param maxHeight {Integer} Max Height of the thumbnail
     */
-  construct: function(study, maxHeight) {
+  construct: function(studyData, maxHeight) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (study instanceof osparc.data.model.Study) {
-      this.__study = study;
+    if (studyData instanceof osparc.data.model.Study) {
+      this.__study = studyData;
     } else {
-      this.__study = new osparc.data.model.Study(study);
+      this.__study = new osparc.data.model.Study(studyData);
     }
 
     this.__populateLayout(maxHeight);

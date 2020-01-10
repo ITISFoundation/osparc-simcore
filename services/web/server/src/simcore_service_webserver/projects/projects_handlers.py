@@ -2,6 +2,7 @@
 """ Handlers for CRUD operations on /projects/
 
 """
+import asyncio
 import json
 import logging
 
@@ -10,9 +11,9 @@ from jsonschema import ValidationError
 
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
-from ..storage_api import delete_data_folders_of_project
-from .projects_api import validate_project
+from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import (ProjectInvalidRightsError,
                                   ProjectNotFoundError)
@@ -74,7 +75,7 @@ async def create_projects(request: web.Request):
                 project = predefined
 
         # validate data
-        validate_project(request.app, project)
+        projects_api.validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
         await db.add_project(project, user_id, force_as_template=as_template is not None)
@@ -121,7 +122,7 @@ async def list_projects(request: web.Request):
     validated_projects = []
     for project in projects_list:
         try:
-            validate_project(request.app, project)
+            projects_api.validate_project(request.app, project)
             validated_projects.append(project)
         except ValidationError:
             log.exception("Skipping invalid project from list")
@@ -185,7 +186,7 @@ async def replace_project(request: web.Request):
     })
 
     try:
-        validate_project(request.app, new_project)
+        projects_api.validate_project(request.app, new_project)
 
         await db.update_user_project(new_project, user_id, project_uuid)
         await update_pipeline_db(request.app,
@@ -211,36 +212,109 @@ async def replace_project(request: web.Request):
 #    # TODO: implement patch with diff as body!
 #    raise NotImplementedError()
 
-
 @login_required
 async def delete_project(request: web.Request):
 
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.delete")
 
+    # first check if the project exists
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    project = await projects_api.get_project_for_user(request,
+        project_uuid=project_uuid,
+        user_id=user_id,
+        include_templates=True
+    )
+    with managed_resource(user_id, None, request.app) as rt:
+        other_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if other_users:
+            message = "Project is opened by another user. It cannot be deleted."
+            if user_id in other_users:
+                message = "Project is still open. It cannot be deleted until it is closed."
+            # we cannot delete that project
+            raise web.HTTPForbidden(reason=message)
 
-    try:
-        # TODO: delete pipeline db tasks
-        await db.delete_user_project(user_id, project_uuid)
-
-    except ProjectNotFoundError:
-        # TODO: add flag in query to determine whether to respond if error?
-        raise web.HTTPNotFound
-
-    # requests storage to delete all project's stored data
-    # TODO: fire & forget
-    await delete_data_folders_of_project(request.app, project_uuid, user_id)
-
-
-    # TODO: delete all the dynamic services used by this project when this happens (fire & forget) #
-    # import asyncio
-    # from ..director.director_api import stop_service
-    # project = await db.pop_project(project_uuid)
-    # tasks = [ stop_service(request.app, service_uuid) for service_uuid in  project.get('workbench',[]) ]
-    # await asyncio.gather(**tasks)
-    # TODO: fire&forget???
+    # fire & forget
+    asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
 
     raise web.HTTPNoContent(content_type='application/json')
+
+@login_required
+async def open_project(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.open")
+
+
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    client_session_id = await request.json()
+
+    with managed_resource(user_id, client_session_id, request.app) as rt:
+        project = await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+        await rt.add("project_id", project_uuid)
+
+    #FIXME: momentarily de-activated cause it conflicts with the call from the frontend.
+    # user id opened project uuid
+    # await projects_api.start_project_interactive_services(request, project, user_id)
+
+    return {
+        'data': project
+    }
+
+@login_required
+async def close_project(request: web.Request) -> web.Response:
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.close")
+
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    client_session_id = await request.json()
+
+    # ensure the project exists
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+
+    with managed_resource(user_id, client_session_id, request.app) as rt:
+        project = await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+        await rt.remove("project_id")
+        other_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if not other_users:
+            # only remove the services if no one else is using them now
+            asyncio.ensure_future(projects_api.remove_project_interactive_services(user_id, project_uuid, request.app))
+
+
+    raise web.HTTPNoContent(content_type='application/json')
+
+@login_required
+async def get_active_project(request: web.Request) -> web.Response:
+    # await check_permission(request, "project.read")
+    user_id = request[RQT_USERID_KEY]
+    client_session_id = request.query["client_session_id"]
+    project = None
+    with managed_resource(user_id, client_session_id, request.app) as rt:
+        # get user's projects
+        list_project_ids = await rt.find("project_id")
+        if list_project_ids:
+            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+            from .projects_api import get_project_for_user
+            project = await get_project_for_user(request,
+                project_uuid=list_project_ids[0],
+                user_id=user_id,
+                include_templates=True
+            )
+
+    return {
+        'data': project
+    }

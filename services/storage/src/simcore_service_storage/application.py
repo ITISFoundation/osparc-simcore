@@ -10,6 +10,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
+from servicelib.tracing import setup_tracing
 
 from .db import setup_db
 from .dsm import setup_dsm
@@ -25,6 +26,10 @@ def create(config: Dict) -> web.Application:
 
     app = create_safe_application(config)
 
+    tracing = config["tracing"]["enabled"]
+    if tracing:
+        setup_tracing(app, "simcore_service_storage", 
+                        config["main"]["host"], config["main"]["port"], config["tracing"])
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
