@@ -168,18 +168,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getLogger().info(nodeId, msg);
       }, this);
 
+      const workbenchUI = this.__workbenchUI;
+      const nodesTree = this.__nodesTree;
       [
-        this.__nodesTree,
-        this.__workbenchUI
-      ].forEach(wb => {
-        wb.addListener("nodeDoubleClicked", e => {
+        nodesTree,
+        workbenchUI
+      ].forEach(widget => {
+        widget.addListener("nodeDoubleClicked", e => {
           let nodeId = e.getData();
           this.nodeSelected(nodeId, true);
         }, this);
       });
 
-      const workbenchUI = this.__workbenchUI;
-      const nodesTree = this.__nodesTree;
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
