@@ -295,7 +295,7 @@ qx.Class.define("osparc.component.form.Auto", {
       this.fireDataEvent("changeData", this.getData());
     },
 
-    __setupDateField: function(s) {
+    __bindDateField: function(s) {
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
@@ -321,33 +321,12 @@ qx.Class.define("osparc.component.form.Auto", {
           }
         }
       );
-      if (!s.set) {
-        s.set = {};
-      }
-      s.set.dateFormat = new qx.util.format.DateFormat(
-        this["tr"](
-          s.set.dateFormat ?
-            s.set.dateFormat :
-            "dd.MM.yyyy"
-        )
-      );
-      let dateValue = s.defaultValue;
-      if (dateValue !== null) {
-        if (typeof dateValue == "number") {
-          s.defaultValue = new Date(dateValue * 1000);
-        } else {
-          s.defaultValue = new Date(dateValue);
-        }
-      }
     },
-    __setupTextArea: function(s, key, control) {
-      if (s.widget.minHeight) {
-        control.setMinHeight(s.widget.minHeight);
-      }
-      this.__setupTextField(s, key, control);
+    __bindTextArea: function(s, control) {
+      this.__bindTextField(s, control);
     },
-    __setupTextField: function(s, key) {
-      this.__formCtrl.addBindingOptions(key,
+    __bindTextField: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
             return String(data);
@@ -360,16 +339,8 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       );
     },
-    __setupNumberField: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
-      if (s.defaultValue) {
-        s.set.value = qx.lang.Type.isNumber(s.defaultValue) ? String(s.defaultValue) : s.defaultValue;
-      } else {
-        s.set.value = String(0);
-      }
-      this.__formCtrl.addBindingOptions(key,
+    __bindNumberField: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
             if (qx.lang.Type.isNumber(data)) {
@@ -385,16 +356,8 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       );
     },
-    __setupSpinner: function(s, key) {
-      if (!s.set) {
-        s.set = {};
-      }
-      if (s.defaultValue) {
-        s.set.value = parseInt(String(s.defaultValue));
-      } else {
-        s.set.value = 0;
-      }
-      this.__formCtrl.addBindingOptions(key,
+    __bindSpinner: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
             let d = String(data);
@@ -412,8 +375,8 @@ qx.Class.define("osparc.component.form.Auto", {
       );
     },
 
-    __setupSelectBox: function(s, key, control) {
-      let controller = this.__boxCtrl[key] = new qx.data.controller.List(null, control, "label");
+    __bindSelectBox: function(s, control) {
+      let controller = this.__boxCtrl[s.key] = new qx.data.controller.List(null, control, "label");
       controller.setDelegate({
         bindItem: function(ctrl, item, index) {
           ctrl.bindProperty("key", "model", null, item, index);
@@ -437,8 +400,8 @@ qx.Class.define("osparc.component.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       controller.setModel(sbModel);
     },
-    __setupComboBox: function(s, key, control) {
-      let ctrl = this.__boxCtrl[key] = new qx.data.controller.List(null, control);
+    __bindComboBox: function(s, control) {
+      let ctrl = this.__boxCtrl[s.key] = new qx.data.controller.List(null, control);
       let cfg = s.cfg;
       if (cfg.structure) {
         cfg.structure.forEach(function(item) {
@@ -450,11 +413,8 @@ qx.Class.define("osparc.component.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
-    __setupBoolField: function(s, key, control) {
-      if (!s.set) {
-        s.set = {};
-      }
-      this.__formCtrl.addBindingOptions(key,
+    __bindBoolField: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
             return data;
@@ -467,8 +427,8 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       );
     },
-    __setupFileButton: function(s, key) {
-      this.__formCtrl.addBindingOptions(key,
+    __bindFileButton: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
         { // model2target
           converter: function(data) {
             return String(data);
@@ -482,94 +442,48 @@ qx.Class.define("osparc.component.form.Auto", {
       );
     },
     __addField: function(s, key) {
-      const control = this.__getField(s, key);
+      const control = osparc.component.form.Structure2CtrlField.getField(s);
 
-      this.__ctrlMap[key] = control;
-      let option = {}; // could use this to pass on info to the form renderer
-      this.add(control, s.label ? this["tr"](s.label) : null, null, key, null, option);
-
-      let controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = key;
-      this.__ctrlLinkMap[key] = controlLink;
-    },
-
-    __getField: function(s, key) {
-      if (s.defaultValue) {
-        if (!s.set) {
-          s.set = {};
-        }
-        s.set.value = s.defaultValue;
-      }
-
-      if (!s.widget) {
-        let type = s.type;
-        if (type.match(/^data:/)) {
-          type = "data";
-        }
-        s.widget = {
-          type: {
-            string: "Text",
-            integer: "Spinner",
-            number: "Number",
-            boolean: "CheckBox",
-            data: "FileButton"
-          }[type]
-        };
-      }
-      let control;
       let setup;
       switch (s.widget.type) {
         case "Date":
-          control = new qx.ui.form.DateField();
-          setup = this.__setupDateField;
+          setup = this.__bindDateField;
           break;
         case "Text":
-          control = new qx.ui.form.TextField();
-          setup = this.__setupTextField;
+          setup = this.__bindTextField;
           break;
         case "Number":
-          control = new qx.ui.form.TextField();
-          setup = this.__setupNumberField;
+          setup = this.__bindNumberField;
           break;
         case "Spinner":
-          control = new qx.ui.form.Spinner();
-          control.set({
-            maximum: 10000,
-            minimum: -10000
-          });
-          setup = this.__setupSpinner;
+          setup = this.__bindSpinner;
           break;
         case "Password":
-          control = new qx.ui.form.PasswordField();
-          setup = this.__setupTextField;
+          setup = this.__bindTextField;
           break;
         case "TextArea":
-          control = new qx.ui.form.TextArea();
-          setup = this.__setupTextArea;
+          setup = this.__bindTextArea;
           break;
         case "CheckBox":
-          control = new qx.ui.form.CheckBox();
-          setup = this.__setupBoolField;
+          setup = this.__bindBoolField;
           break;
         case "SelectBox":
-          control = new qx.ui.form.SelectBox();
-          setup = this.__setupSelectBox;
+          setup = this.__bindSelectBox;
           break;
         case "ComboBox":
-          control = new qx.ui.form.ComboBox();
-          setup = this.__setupComboBox;
+          setup = this.__bindComboBox;
           break;
         case "FileButton":
-          control = new qx.ui.form.TextField();
-          setup = this.__setupFileButton;
+          setup = this.__bindFileButton;
           break;
         default:
           throw new Error("unknown widget type " + s.widget.type);
       }
+      this.__ctrlMap[key] = control;
+      let option = {}; // could use this to pass on info to the form renderer
+      this.add(control, s.label ? this["tr"](s.label):null, null, key, null, option);
 
-      setup.call(this, s, key, control);
+      setup.call(this, s, control);
 
       if (s.set) {
         if (s.set.filter) {
@@ -585,8 +499,13 @@ qx.Class.define("osparc.component.form.Auto", {
       }
       control.key = key;
       control.description = s.description;
+      this.__ctrlMap[key] = control;
 
-      return control;
+      let controlLink = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlLink.key = key;
+      this.__ctrlLinkMap[key] = controlLink;
     },
 
     isPortAvailable: function(portId) {
