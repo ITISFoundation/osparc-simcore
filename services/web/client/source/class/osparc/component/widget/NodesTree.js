@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
+      const newButton = new qx.ui.toolbar.Button(this.tr("New"), "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
       newButton.addListener("execute", e => {
         this.__addNode();
       }, this);
@@ -119,21 +119,21 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
       toolbar.add(exportButton);
 
-      const openButton = new qx.ui.toolbar.Button("Open", "@FontAwesome5Solid/edit/"+iconSize);
+      const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
         this.__openItem();
       }, this);
       osparc.utils.Utils.setIdToWidget(openButton, "openServiceBtn");
       toolbar.add(openButton);
 
-      const renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
+      const renameButton = new qx.ui.toolbar.Button(this.tr("Rename"), "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
         this.__openItemRenamer();
       }, this);
       osparc.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
       toolbar.add(renameButton);
 
-      const deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      const deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize);
       deleteButton.addListener("execute", e => {
         this.__deleteNode();
       }, this);
