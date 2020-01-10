@@ -17,36 +17,29 @@ properties:
     type: string
     description: distinctive name for the node based on the docker registry path
     pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
-    example:
-      - simcore/services/comp/itis/sleeper
-      - simcore/services/dynamic/3dviewer
+    example: simcore/services/comp/itis/sleeper
   version:
     type: string
     description: semantic version number
     pattern: >-
       ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-    example:
-      - 1.0.0
-      - 0.0.1
+    example: 1.0.0
   type:
     type: string
     description: service type
     enum:
       - computational
       - dynamic
-    example:
-      - computational
+    example: computational
   name:
     type: string
     description: 'short, human readable name for the node'
-    example:
-      - Fast Counter
+    example: Fast Counter
   thumbnail:
     type: string
     description: url to the thumbanil
-    example:
-      - >-
-        https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+    example: >-
+      https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
   badges:
     type: array
     items:
@@ -60,37 +53,22 @@ properties:
         name:
           type: string
           description: Name of the subject
-          example:
-            - travis-ci
-            - coverals.io
-            - github.io
+          example: travis-ci
         image:
           type: string
           description: Url to the shield
-          example:
-            - >-
-              https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
-            - >-
-              https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
-            - >-
-              https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
+          example: >-
+            https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
         url:
           type: string
           description: Link to status
-          example:
-            - >-
-              https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI:
-              build, test and pushing images'
-            - >-
-              https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master
-              'Test coverage'
-            - 'https://itisfoundation.github.io/'
+          example: >-
+            https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI:
+            build, test and pushing images'
   description:
     type: string
     description: human readable description of the purpose of the node
-    example:
-      - Our best node type
-      - 'The mother of all nodes, makes your numbers shine!'
+    example: Our best node type
   authors:
     type: array
     minItems: 1
@@ -104,28 +82,21 @@ properties:
         name:
           type: string
           description: Name of the author
-          example:
-            - Sun Bak
-            - Delenn
+          example: Sun Bak
         email:
           description: Email address
           type: string
           format: email
-          example:
-            - sun@sense.eight
-            - deleen@minbar.bab
+          example: sun@sense.eight
         affiliation:
           description: Affiliation of the author
           type: string
-          example:
-            - Sense8
-            - Babylon 5
+          example: Sense8
   contact:
     type: string
     format: email
     description: email to correspond to the authors about the node
-    example:
-      - lab@net.flix
+    example: lab@net.flix
   inputs:
     type: object
     description: definition of the inputs of this node
