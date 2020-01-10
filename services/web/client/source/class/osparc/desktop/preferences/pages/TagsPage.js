@@ -13,9 +13,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   construct: function() {
     this.base(arguments, null, "@FontAwesome5Solid/tags/24");
     this.setLayout(new qx.ui.layout.VBox(10));
-
-    osparc.store.Store.getInstance().setTags(tags);
-
     this.__createComponents();
   },
   members: {
@@ -62,24 +59,3 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     }
   }
 });
-
-const tags = [
-  {
-    id: 6,
-    name: "kaboom",
-    description: "This is a description for the tag",
-    color: "#2388f1"
-  },
-  {
-    id: 7,
-    name: "a new tag pt 2",
-    description: "This is a description for the tag, just a bit longer. Much longer now, I hope it renders propertly.",
-    color: "#123456"
-  },
-  {
-    id: 8,
-    name: "have you ever",
-    description: "This is a description for the tag",
-    color: "#875421"
-  }
-]

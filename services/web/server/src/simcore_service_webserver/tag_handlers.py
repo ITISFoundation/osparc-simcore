@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from aiohttp import web
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
@@ -9,7 +10,7 @@ from .login.decorators import RQT_USERID_KEY, login_required
 async def list_tags(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        columns = [col for col in tags.__table__.columns if col.key != 'user_id']
+        columns = [col for col in tags.columns if col.key != 'user_id']
         query = sa.select(columns).where(tags.c.owner == uid)
         result = await conn.execute(query)
     return result.fetchall()
