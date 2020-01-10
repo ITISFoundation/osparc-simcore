@@ -206,9 +206,18 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         const params = {
           data
         };
-        osparc.data.Resources.fetch("tags", "put", params)
-          .then(tag => console.log(tag))
-          .catch(console.error);
+        if (this.isPropertyInitialized("id")) {
+          params.url = {
+            tagId: this.getId()
+          }
+          osparc.data.Resources.fetch("tags", "put", params)
+            .then(tag => console.log(tag))
+            .catch(console.error);
+        } else {
+          osparc.data.Resources.fetch("tags", "post", params)
+            .then(tag => console.log(tag))
+            .catch(console.error);
+        }
       });
       cancelButton.addListener("execute", () => {
         if (this.isPropertyInitialized("id")) {
