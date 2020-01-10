@@ -128,7 +128,7 @@ qx.Class.define("osparc.data.model.Study", {
     updateStudy: function(params) {
       return osparc.data.Resources.fetch("studies", "put", {
         url: {
-          "project_id": params.uuid
+          projectId: params.uuid
         },
         data: params
       }).then(data => {
@@ -148,7 +148,7 @@ qx.Class.define("osparc.data.model.Study", {
     openStudy: function() {
       const params = {
         url: {
-          "project_id": this.getUuid()
+          projectId: this.getUuid()
         },
         data: sessionStorage.getItem("clientsessionid")
       };
@@ -160,7 +160,7 @@ qx.Class.define("osparc.data.model.Study", {
     closeStudy: function() {
       const params = {
         url: {
-          "project_id": this.getUuid()
+          projectId: this.getUuid()
         },
         data: sessionStorage.getItem("clientsessionid")
       };

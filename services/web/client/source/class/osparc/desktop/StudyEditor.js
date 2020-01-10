@@ -439,7 +439,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       let req = new osparc.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
-      data["project_id"] = this.getStudy().getUuid();
+      data["projectId"] = this.getStudy().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -458,7 +458,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["project_id"];
+      const pipelineId = resp.data["projectId"];
       this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -511,7 +511,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const params = {
         url: {
-          "project_id": prjUuid,
+          projectId: prjUuid,
           run
         },
         data: newObj

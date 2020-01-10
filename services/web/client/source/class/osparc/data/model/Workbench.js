@@ -197,7 +197,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const prjId = this.getStudy().getUuid();
       const params = {
         url: {
-          "project_id": prjId
+          projectId: prjId
         },
         data: {
           "service_id": node.getNodeId(),
@@ -267,8 +267,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       // remove node in the backend
       const params = {
         url: {
-          "project_id": this.getStudy().getUuid(),
-          "node_id": nodeId
+          projectId: this.getStudy().getUuid(),
+          nodeId: nodeId
         }
       };
       osparc.data.Resources.fetch("studies", "deleteNode", params)

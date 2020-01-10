@@ -75,22 +75,22 @@ qx.Class.define("osparc.data.Resources", {
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           getActive: {
             usesCache: false,
             method: "GET",
-            url: statics.API + "/projects/active?client_session_id={tab_id}"
+            url: statics.API + "/projects/active?client_session_id={tabId}"
           },
           open: {
             usesCache: false,
             method: "POST",
-            url: statics.API + "/projects/{project_id}:open"
+            url: statics.API + "/projects/{projectId}:open"
           },
           close: {
             usesCache: false,
             method: "POST",
-            url: statics.API + "/projects/{project_id}:close"
+            url: statics.API + "/projects/{projectId}:close"
           },
           post: {
             method: "POST",
@@ -98,27 +98,30 @@ qx.Class.define("osparc.data.Resources", {
           },
           postFromTemplate: {
             method: "POST",
-            url: statics.API + "/projects?from_template={template_id}"
+            url: statics.API + "/projects?from_template={templateId}"
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           addNode: {
+            usesCache: false,
             method: "POST",
-            url: statics.API + "/projects/{project_id}/nodes"
+            url: statics.API + "/projects/{projectId}/nodes"
           },
           getNode: {
+            usesCache: false,
             method: "GET",
-            url: statics.API + "/projects/{project_id}/nodes/{node_id}"
+            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           },
           deleteNode: {
+            usesCache: false,
             method: "DELETE",
-            url: statics.API + "/projects/{project_id}/nodes/{node_id}"
+            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           }
         }
       },
@@ -138,11 +141,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           }
         }
       },
@@ -220,26 +223,6 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/"
-          }
-        }
-      },
-      /*
-       * INTERACTIVE SERVICES
-       */
-      interactiveServices: {
-        usesCache: false,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/running_interactive_services/{nodeId}"
-          },
-          post: {
-            method: "POST",
-            url: statics.API + "/running_interactive_services?project_id={projectId}&service_uuid={nodeId}&service_key={serviceKey}&service_tag={serviceVersion}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/running_interactive_services/{nodeId}"
           }
         }
       },

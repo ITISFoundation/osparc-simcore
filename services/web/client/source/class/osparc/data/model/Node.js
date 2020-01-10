@@ -800,9 +800,9 @@ qx.Class.define("osparc.data.model.Node", {
     __nodeState: function() {
       const params = {
         url: {
-          "project_id": this.getWorkbench().getStudy()
+          projectId: this.getWorkbench().getStudy()
             .getUuid(),
-          "node_id": this.getNodeId()
+          nodeId: this.getNodeId()
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
