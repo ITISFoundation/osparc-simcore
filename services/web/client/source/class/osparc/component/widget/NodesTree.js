@@ -121,7 +121,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
-        this.__openItem();
+        const selectedItem = this.__getSelection();
+        if (selectedItem) {
+          const nodeId = selectedItem ? selectedItem.getNodeId() : "root";
+          this.__openItem(nodeId);
+        }
       }, this);
       osparc.utils.Utils.setIdToWidget(openButton, "openServiceBtn");
       toolbar.add(openButton);
@@ -252,13 +256,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __openItem: function(nodeId) {
       if (nodeId) {
         this.fireDataEvent("nodeDoubleClicked", nodeId);
-      } else {
-        const selectedItem = this.__getSelection();
-        if (selectedItem === null) {
-          this.fireDataEvent("nodeDoubleClicked", "root");
-        } else {
-          this.fireDataEvent("nodeDoubleClicked", selectedItem.getNodeId());
-        }
       }
     },
 
