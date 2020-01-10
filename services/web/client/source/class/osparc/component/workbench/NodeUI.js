@@ -31,9 +31,6 @@
  * </pre>
  */
 
-const nodeWidth = 200;
-const portHeight = 16;
-
 qx.Class.define("osparc.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
   include: osparc.component.filter.MFilterable,
@@ -52,9 +49,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      width: nodeWidth,
-      maxWidth: nodeWidth,
-      minWidth: nodeWidth,
+      width: this.self(arguments).NodeWidth,
+      maxWidth: this.self(arguments).NodeWidth,
+      minWidth: this.self(arguments).NodeWidth,
       contentPadding: 0
     });
 
@@ -87,6 +84,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
     "nodeMoving": "qx.event.type.Event"
+  },
+
+  statics: {
+    NodeWidth: 200,
+    NodeHeight: 80,
+    PortHeight: 16
   },
 
   members: {
@@ -199,7 +202,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const labelText = (isInput) ? "in" : "out";
       const alignX = (isInput) ? "left" : "right";
       let uiPort = new qx.ui.basic.Atom(labelText).set({
-        height: portHeight,
+        height: this.self(arguments).PortHeight,
         draggable: true,
         droppable: true,
         alignX: alignX,
@@ -231,7 +234,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const captionHeight = osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
-      let y = bounds.top + captionHeight + portHeight/2 + 1;
+      let y = bounds.top + captionHeight + this.self(arguments).PortHeight/2 + 1;
       if (this.__thumbnail) {
         y += this.__thumbnail.getBounds().height;
       }
