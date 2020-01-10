@@ -123,6 +123,8 @@ properties:
                         type:
                           - string
                           - integer
+                      dataset:
+                        type: string
                       path:
                         type: string
                       label:
@@ -170,6 +172,8 @@ properties:
                         type:
                           - string
                           - integer
+                      dataset:
+                        type: string
                       path:
                         type: string
                       label:

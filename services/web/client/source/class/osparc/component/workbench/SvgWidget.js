@@ -27,7 +27,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let svgWidget = new osparc.component.workbench.SvgWidget("SvgWidgetLayer");
+ *   let svgWidget = new osparc.component.workbench.SvgWidget("SvgWidget_(Purporse)");
  *   this.getRoot().add(svgWidget);
  * </pre>
  */
@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
       this.__svgWrapper = new osparc.wrapper.Svg();
       this.__svgWrapper.addListener(("svgLibReady"), () => {
-        this.__edgesCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
+        this.__canvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);
       });
       this.__svgWrapper.init();
@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
   members: {
     __svgWrapper: null,
-    __edgesCanvas: null,
+    __canvas: null,
 
     __getControls: function(x1, y1, x2, y2, offset = 60) {
       return [{
@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     drawCurve: function(x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      return this.__svgWrapper.drawCurve(this.__edgesCanvas, controls);
+      return this.__svgWrapper.drawCurve(this.__canvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {
@@ -88,6 +88,18 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     removeCurve: function(curve) {
       this.__svgWrapper.removeCurve(curve);
+    },
+
+    drawDashedRect: function(width, height, x, y) {
+      return this.__svgWrapper.drawDashedRect(this.__canvas, width, height, x, y);
+    },
+
+    updateRect: function(rect, x, y) {
+      this.__svgWrapper.updateRect(rect, x, y);
+    },
+
+    removeRect: function(rect) {
+      this.__svgWrapper.removeRect(rect);
     },
 
     updateColor: function(curve, color) {
