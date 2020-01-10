@@ -684,20 +684,26 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
         mock_director_api_start_service.assert_not_called()
 
     # get the node state
+    mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id, "service_state": "running"}])
     url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.get(url)
     data, errors = await assert_status(resp, get_exp)
-    assert "service_state" in data
-    assert data["service_state"] == "running"
+    if resp.status == web.HTTPOk.status_code:
+        assert "service_state" in data
+        assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
+    mock_director_api_get_running_services.return_value = Future()
+    mock_director_api_get_running_services.return_value.set_result("")
     url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
     resp = await client.get(url)
     data, errors = await assert_status(resp, get_exp)
-    assert "service_state" in data
-    assert data["service_state"] == "idle"
+    if resp.status == web.HTTPOk.status_code:
+        assert "service_state" in data
+        assert data["service_state"] == "idle"
 
     # delete the node
+    mock_director_api_get_running_services.return_value = Future()
     mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.delete(url)
