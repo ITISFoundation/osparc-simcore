@@ -3,18 +3,16 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ apihub .travis.yml)
+FOLDER_CHECKS=(api/ .travis.yml)
 
 install() {
     bash ci/helpers/ensure_python_pip
-    pip3 install -r api/tests/requirements.txt
-    pip3 install -r services/apihub/tests/requirements.txt
-    pip list -v
+    pip3 install --requirement api/tests/requirements.txt
+    pip list --verbose
 }
 
 test() {
-    pytest --cov=api --cov-append --color=yes --cov-report=term-missing --cov-report=xml -v api/tests
-    pytest --cov=services_apihub --cov-append  --color=yes --cov-report=term-missing --cov-report=xml -v services/apihub/tests
+    pytest --cov=api --cov-append --color=yes --cov-report=term-missing --cov-report=xml --verbose api/tests
 }
 
 # Check if the function exists (bash specific)
