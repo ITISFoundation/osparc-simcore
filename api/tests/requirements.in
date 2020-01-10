@@ -3,6 +3,7 @@
 coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
 
 pytest
+pytest-cov
 pytest-aiohttp
 
 
