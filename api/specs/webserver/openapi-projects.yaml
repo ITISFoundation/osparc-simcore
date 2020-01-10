@@ -134,16 +134,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
+              $ref: '#/components/schemas/ClientSessionId'
       responses:
         '200':
           description: project successfuly opened
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: '#/components/schemas/ProjectEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
 
   /projects/{project_id}/close:
     parameters:
@@ -161,13 +161,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './openapi-projects.yaml#/components/schemas/ClientSessionId'
+              $ref: '#/components/schemas/ClientSessionId'
       responses:
         '204':
           description: project succesfuly closed
 
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
 
   /projects/active:
     get:
@@ -179,9 +179,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+                $ref: '#/components/schemas/ProjectEnveloped'
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: '#/components/responses/DefaultErrorResponse'
 
 components:
 
