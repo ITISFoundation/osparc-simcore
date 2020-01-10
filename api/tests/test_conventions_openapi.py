@@ -23,6 +23,7 @@ CONVERTED_SUFFIX = "-converted.yaml"
 non_converted_yamls = [ pathstr for pathstr in list_files_in_api_specs("*.yaml")
                                     if not pathstr.endswith(CONVERTED_SUFFIX) ]  # skip converted schemas
 
+assert non_converted_yamls
 
 @pytest.mark.parametrize("path", non_converted_yamls)
 def test_openapi_envelope_required_fields(path: str):
@@ -43,6 +44,8 @@ def test_openapi_envelope_required_fields(path: str):
 
 main_openapi_yamls = [ pathstr for pathstr in list_files_in_api_specs("openapi.y*ml")
                                     if not pathstr.endswith(CONVERTED_SUFFIX) ]  # skip converted schemas
+
+assert main_openapi_yamls
 
 @pytest.mark.parametrize("openapi_path", main_openapi_yamls)
 def test_versioning_and_basepath(openapi_path):

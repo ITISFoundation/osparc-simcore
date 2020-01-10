@@ -1,15 +1,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-variable
+
 import logging
 import sys
 from collections import namedtuple
 from itertools import chain
 from os.path import exists, relpath
 from pathlib import Path
-from utils import load_specs, is_json_schema
 
 import pytest
+
+from utils import is_json_schema, load_specs
 
 log = logging.getLogger(__name__)
 
