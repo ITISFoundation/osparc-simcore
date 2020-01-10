@@ -2,6 +2,7 @@
 # testing
 pytest
 pytest-aiohttp
+pytest-cov
 
 # fixtures
 aiohttp
