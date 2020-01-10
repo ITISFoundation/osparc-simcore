@@ -1,4 +1,3 @@
-
 paths:
   /projects:
     get:
@@ -9,14 +8,14 @@ paths:
           in: query
           schema:
             type: string
-            default: 'all'
+            default: "all"
             enum: [template, user, all]
           description: if true only templates otherwise only users
         - name: state
           in: query
           schema:
             type: string
-            default: 'active'
+            default: "active"
             enum: [active]
           description: if set only active projects are returned. if type=template this parameter is ignored.
         - name: start
@@ -32,14 +31,14 @@ paths:
             minItems: 1
           description: maximum number of items to return
       responses:
-        '200':
+        "200":
           description: list of projects
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectArrayEnveloped'
+                $ref: "#/components/schemas/ProjectArrayEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create new project
       operationId: create_projects
@@ -48,26 +47,26 @@ paths:
           in: query
           schema:
             type: string
-          description: 'Option to create a project from existing template: from_template={template_uuid}'
+          description: "Option to create a project from existing template: from_template={template_uuid}"
         - name: as_template
           in: query
           schema:
             type: string
-          description: 'Option to create a template from existing project: as_template={study_uuid}'
+          description: "Option to create a template from existing project: as_template={study_uuid}"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '201':
+        "201":
           description: project created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: "#/components/schemas/ProjectEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /projects/{project_id}:
     parameters:
@@ -80,14 +79,14 @@ paths:
       summary: Gets given project
       operationId: get_project
       responses:
-        '200':
+        "200":
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: "#/components/schemas/ProjectEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       summary: Enclosed entity replaces given project
       operationId: replace_project
@@ -101,21 +100,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '200':
+        "200":
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: "#/components/schemas/ProjectEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       summary: Delete given project
       operationId: delete_project
       responses:
-        '204':
+        "204":
           description: project has been successfully deleted
 
   /projects/{project_id}/open:
@@ -134,16 +133,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientSessionId'
+              $ref: "#/components/schemas/ClientSessionId"
       responses:
-        '200':
+        "200":
           description: project successfuly opened
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: "#/components/schemas/ProjectEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /projects/{project_id}/close:
     parameters:
@@ -161,41 +160,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientSessionId'
+              $ref: "#/components/schemas/ClientSessionId"
       responses:
-        '204':
+        "204":
           description: project succesfuly closed
 
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /projects/active:
     get:
       summary: Gets active project
       operationId: get_active_project
       responses:
-        '200':
+        "200":
           description: returns active project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: "#/components/schemas/ProjectEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
 components:
-
   schemas:
     Project:
-      $ref: '../common/schemas/project.yaml#/components/schemas/Project'
+      $ref: "../common/schemas/project.yaml#/components/schemas/Project"
     ProjectEnveloped:
-      $ref: '../common/schemas/project.yaml#/components/schemas/ProjectEnveloped'
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectEnveloped"
     ProjectArrayEnveloped:
-      $ref: '../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped'
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped"
     ClientSessionId:
       type: string
       example: 5ac57685-c40f-448f-8711-70be1936fd63
 
   responses:
     DefaultErrorResponse:
-      $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"

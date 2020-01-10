@@ -1,43 +1,42 @@
-
 paths:
   /me:
     get:
       operationId: get_my_profile
       responses:
-        '200':
+        "200":
           description: current user profile
           content:
             application/json:
               schema:
-                $ref: './components/schemas/me.yaml#/ProfileEnveloped'
+                $ref: "./components/schemas/me.yaml#/ProfileEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       operationId: update_my_profile
       requestBody:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/me.yaml#/ProfileInput'
+              $ref: "./components/schemas/me.yaml#/ProfileInput"
       responses:
-        '204':
+        "204":
           description: updated profile
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /me/tokens:
     get:
       summary: List tokens
       operationId: list_tokens
       responses:
-        '200':
+        "200":
           description: list of tokens
           content:
             application/json:
               schema:
-                $ref: './components/schemas/me.yaml#/TokensArrayEnveloped'
+                $ref: "./components/schemas/me.yaml#/TokensArrayEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create tokens
       operationId: create_tokens
@@ -46,17 +45,17 @@ paths:
           application/json:
             schema:
               # FIXME: this body should NOT be enveloped!
-              $ref: './components/schemas/me.yaml#/TokenEnveloped'
+              $ref: "./components/schemas/me.yaml#/TokenEnveloped"
       responses:
-        '201':
+        "201":
           description: token created
           content:
             application/json:
               schema:
-                $ref: './components/schemas/me.yaml#/TokenEnveloped'
+                $ref: "./components/schemas/me.yaml#/TokenEnveloped"
 
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /me/tokens/{service}:
     parameters:
@@ -69,21 +68,26 @@ paths:
       summary: Gets specific token
       operationId: get_token
       responses:
-        '200':
+        "200":
           description: got detailed token
           content:
             application/json:
               schema:
-                $ref: './components/schemas/me.yaml#/TokenEnveloped'
+                $ref: "./components/schemas/me.yaml#/TokenEnveloped"
     put:
       summary: Updates token
       operationId: update_token
       responses:
-        '204':
+        "204":
           description: token has been successfully updated
     delete:
       summary: Delete token
       operationId: delete_token
       responses:
-        '204':
+        "204":
           description: token has been successfully deleted
+
+components:
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"

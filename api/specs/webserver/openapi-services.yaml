@@ -1,4 +1,3 @@
-
 paths:
   /services:
     get:
@@ -160,7 +159,6 @@ paths:
 
   # PROJECT SERVICES -----------------------------------------------------------------
 components:
-
   parameters:
     ProjectId:
       in: path
@@ -246,4 +244,4 @@ components:
 
   responses:
     DefaultErrorResponse:
-      $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"

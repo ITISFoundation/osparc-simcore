@@ -3,11 +3,16 @@ paths:
     get:
       operationId: get_status
       responses:
-        '200':
+        "200":
           description: Object containing queuing, CPU and Memory usage/limits information of services
           content:
             application/json:
               schema:
-                $ref: './components/schemas/activity.yaml#/ActivityEnveloped'
+                $ref: "./components/schemas/activity.yaml#/ActivityEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+components:
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
