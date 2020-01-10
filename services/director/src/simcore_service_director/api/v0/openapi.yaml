@@ -160,34 +160,27 @@ paths:
                           type: string
                           description: distinctive name for the node based on the docker registry path
                           pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
-                          example:
-                            - simcore/services/comp/itis/sleeper
-                            - simcore/services/dynamic/3dviewer
+                          example: simcore/services/comp/itis/sleeper
                         version:
                           type: string
                           description: semantic version number
                           pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          example:
-                            - 1.0.0
-                            - 0.0.1
+                          example: 1.0.0
                         type:
                           type: string
                           description: service type
                           enum:
                             - computational
                             - dynamic
-                          example:
-                            - computational
+                          example: computational
                         name:
                           type: string
                           description: 'short, human readable name for the node'
-                          example:
-                            - Fast Counter
+                          example: Fast Counter
                         thumbnail:
                           type: string
                           description: url to the thumbanil
-                          example:
-                            - 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                         badges:
                           type: array
                           items:
@@ -201,30 +194,19 @@ paths:
                               name:
                                 type: string
                                 description: Name of the subject
-                                example:
-                                  - travis-ci
-                                  - coverals.io
-                                  - github.io
+                                example: travis-ci
                               image:
                                 type: string
                                 description: Url to the shield
-                                example:
-                                  - 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
-                                  - 'https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master'
-                                  - 'https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation'
+                                example: 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
                               url:
                                 type: string
                                 description: Link to status
-                                example:
-                                  - 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
-                                  - 'https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master ''Test coverage'''
-                                  - 'https://itisfoundation.github.io/'
+                                example: 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
                         description:
                           type: string
                           description: human readable description of the purpose of the node
-                          example:
-                            - Our best node type
-                            - 'The mother of all nodes, makes your numbers shine!'
+                          example: Our best node type
                         authors:
                           type: array
                           minItems: 1
@@ -238,28 +220,21 @@ paths:
                               name:
                                 type: string
                                 description: Name of the author
-                                example:
-                                  - Sun Bak
-                                  - Delenn
+                                example: Sun Bak
                               email:
                                 description: Email address
                                 type: string
                                 format: email
-                                example:
-                                  - sun@sense.eight
-                                  - deleen@minbar.bab
+                                example: sun@sense.eight
                               affiliation:
                                 description: Affiliation of the author
                                 type: string
-                                example:
-                                  - Sense8
-                                  - Babylon 5
+                                example: Sense8
                         contact:
                           type: string
                           format: email
                           description: email to correspond to the authors about the node
-                          example:
-                            - lab@net.flix
+                          example: lab@net.flix
                         inputs:
                           type: object
                           description: definition of the inputs of this node
@@ -564,34 +539,27 @@ paths:
                           type: string
                           description: distinctive name for the node based on the docker registry path
                           pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
-                          example:
-                            - simcore/services/comp/itis/sleeper
-                            - simcore/services/dynamic/3dviewer
+                          example: simcore/services/comp/itis/sleeper
                         version:
                           type: string
                           description: semantic version number
                           pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          example:
-                            - 1.0.0
-                            - 0.0.1
+                          example: 1.0.0
                         type:
                           type: string
                           description: service type
                           enum:
                             - computational
                             - dynamic
-                          example:
-                            - computational
+                          example: computational
                         name:
                           type: string
                           description: 'short, human readable name for the node'
-                          example:
-                            - Fast Counter
+                          example: Fast Counter
                         thumbnail:
                           type: string
                           description: url to the thumbanil
-                          example:
-                            - 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                         badges:
                           type: array
                           items:
@@ -605,30 +573,19 @@ paths:
                               name:
                                 type: string
                                 description: Name of the subject
-                                example:
-                                  - travis-ci
-                                  - coverals.io
-                                  - github.io
+                                example: travis-ci
                               image:
                                 type: string
                                 description: Url to the shield
-                                example:
-                                  - 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
-                                  - 'https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master'
-                                  - 'https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation'
+                                example: 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
                               url:
                                 type: string
                                 description: Link to status
-                                example:
-                                  - 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
-                                  - 'https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master ''Test coverage'''
-                                  - 'https://itisfoundation.github.io/'
+                                example: 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
                         description:
                           type: string
                           description: human readable description of the purpose of the node
-                          example:
-                            - Our best node type
-                            - 'The mother of all nodes, makes your numbers shine!'
+                          example: Our best node type
                         authors:
                           type: array
                           minItems: 1
@@ -642,28 +599,21 @@ paths:
                               name:
                                 type: string
                                 description: Name of the author
-                                example:
-                                  - Sun Bak
-                                  - Delenn
+                                example: Sun Bak
                               email:
                                 description: Email address
                                 type: string
                                 format: email
-                                example:
-                                  - sun@sense.eight
-                                  - deleen@minbar.bab
+                                example: sun@sense.eight
                               affiliation:
                                 description: Affiliation of the author
                                 type: string
-                                example:
-                                  - Sense8
-                                  - Babylon 5
+                                example: Sense8
                         contact:
                           type: string
                           format: email
                           description: email to correspond to the authors about the node
-                          example:
-                            - lab@net.flix
+                          example: lab@net.flix
                         inputs:
                           type: object
                           description: definition of the inputs of this node
@@ -941,6 +891,139 @@ paths:
                         type: integer
                         example: 404
   /running_interactive_services:
+    get:
+      tags:
+        - users
+      summary: Returns a list of interactive services
+      operationId: running_interactive_services_list_get
+      parameters:
+        - in: query
+          name: user_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns the running services instances
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - published_port
+                        - service_uuid
+                        - service_key
+                        - service_version
+                        - service_host
+                        - service_port
+                        - service_state
+                      properties:
+                        published_port:
+                          description: The ports where the service provides its interface
+                          type: integer
+                          format: int32
+                          minimum: 1
+                          example: 30000
+                        entry_point:
+                          description: The entry point where the service provides its interface if specified
+                          type: string
+                          example: /the/entry/point/is/here
+                        service_uuid:
+                          description: The UUID attached to this service
+                          type: string
+                          example: 123e4567-e89b-12d3-a456-426655440000
+                        service_key:
+                          type: string
+                          description: distinctive name for the node based on the docker registry path
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          example:
+                            - simcore/services/comp/itis/sleeper
+                            - simcore/services/dynamic/3dviewer
+                        service_version:
+                          type: string
+                          description: semantic version number
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          example:
+                            - 1.0.0
+                            - 0.0.1
+                        service_host:
+                          description: service host name within the network
+                          type: string
+                          example: jupyter_E1O2E-LAH
+                        service_port:
+                          description: port to access the service within the network
+                          type: integer
+                          minimum: 1
+                          example: 8081
+                        service_basepath:
+                          description: different base path where current service is mounted otherwise defaults to root
+                          type: string
+                          example: /x/E1O2E-LAH
+                          default: ''
+                        service_state:
+                          description: |
+                            the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
+                          type: string
+                          enum:
+                            - pending
+                            - pulling
+                            - starting
+                            - running
+                            - complete
+                            - failed
+                        service_message:
+                          description: the service message
+                          type: string
+                          example: no suitable node (insufficient resources on 1 node)
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    required:
+                      - status
+                      - message
+                    properties:
+                      message:
+                        description: Error message
+                        type: string
+                        example: Unexpected error
+                      errors:
+                        type: array
+                        items:
+                          properties:
+                            code:
+                              type: string
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                      status:
+                        description: Error code
+                        type: integer
+                        example: 404
     post:
       tags:
         - users
@@ -1778,6 +1861,84 @@ components:
         error:
           nullable: true
           default: null
+    RunningServicesEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - published_port
+              - service_uuid
+              - service_key
+              - service_version
+              - service_host
+              - service_port
+              - service_state
+            properties:
+              published_port:
+                description: The ports where the service provides its interface
+                type: integer
+                format: int32
+                minimum: 1
+                example: 30000
+              entry_point:
+                description: The entry point where the service provides its interface if specified
+                type: string
+                example: /the/entry/point/is/here
+              service_uuid:
+                description: The UUID attached to this service
+                type: string
+                example: 123e4567-e89b-12d3-a456-426655440000
+              service_key:
+                type: string
+                description: distinctive name for the node based on the docker registry path
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                example:
+                  - simcore/services/comp/itis/sleeper
+                  - simcore/services/dynamic/3dviewer
+              service_version:
+                type: string
+                description: semantic version number
+                pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                example:
+                  - 1.0.0
+                  - 0.0.1
+              service_host:
+                description: service host name within the network
+                type: string
+                example: jupyter_E1O2E-LAH
+              service_port:
+                description: port to access the service within the network
+                type: integer
+                minimum: 1
+                example: 8081
+              service_basepath:
+                description: different base path where current service is mounted otherwise defaults to root
+                type: string
+                example: /x/E1O2E-LAH
+                default: ''
+              service_state:
+                description: |
+                  the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
+                type: string
+                enum:
+                  - pending
+                  - pulling
+                  - starting
+                  - running
+                  - complete
+                  - failed
+              service_message:
+                description: the service message
+                type: string
+                example: no suitable node (insufficient resources on 1 node)
+        error:
+          nullable: true
+          default: null
     ServicesEnveloped:
       type: object
       required:
@@ -1805,34 +1966,27 @@ components:
                 type: string
                 description: distinctive name for the node based on the docker registry path
                 pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
-                example:
-                  - simcore/services/comp/itis/sleeper
-                  - simcore/services/dynamic/3dviewer
+                example: simcore/services/comp/itis/sleeper
               version:
                 type: string
                 description: semantic version number
                 pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                example:
-                  - 1.0.0
-                  - 0.0.1
+                example: 1.0.0
               type:
                 type: string
                 description: service type
                 enum:
                   - computational
                   - dynamic
-                example:
-                  - computational
+                example: computational
               name:
                 type: string
                 description: 'short, human readable name for the node'
-                example:
-                  - Fast Counter
+                example: Fast Counter
               thumbnail:
                 type: string
                 description: url to the thumbanil
-                example:
-                  - 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
               badges:
                 type: array
                 items:
@@ -1846,30 +2000,19 @@ components:
                     name:
                       type: string
                       description: Name of the subject
-                      example:
-                        - travis-ci
-                        - coverals.io
-                        - github.io
+                      example: travis-ci
                     image:
                       type: string
                       description: Url to the shield
-                      example:
-                        - 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
-                        - 'https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master'
-                        - 'https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation'
+                      example: 'https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master'
                     url:
                       type: string
                       description: Link to status
-                      example:
-                        - 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
-                        - 'https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master ''Test coverage'''
-                        - 'https://itisfoundation.github.io/'
+                      example: 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of CI: build, test and pushing images'''
               description:
                 type: string
                 description: human readable description of the purpose of the node
-                example:
-                  - Our best node type
-                  - 'The mother of all nodes, makes your numbers shine!'
+                example: Our best node type
               authors:
                 type: array
                 minItems: 1
@@ -1883,28 +2026,21 @@ components:
                     name:
                       type: string
                       description: Name of the author
-                      example:
-                        - Sun Bak
-                        - Delenn
+                      example: Sun Bak
                     email:
                       description: Email address
                       type: string
                       format: email
-                      example:
-                        - sun@sense.eight
-                        - deleen@minbar.bab
+                      example: sun@sense.eight
                     affiliation:
                       description: Affiliation of the author
                       type: string
-                      example:
-                        - Sense8
-                        - Babylon 5
+                      example: Sense8
               contact:
                 type: string
                 format: email
                 description: email to correspond to the authors about the node
-                example:
-                  - lab@net.flix
+                example: lab@net.flix
               inputs:
                 type: object
                 description: definition of the inputs of this node

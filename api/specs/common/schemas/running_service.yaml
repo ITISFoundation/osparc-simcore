@@ -6,12 +6,12 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/RunningServicesType'
+          $ref: '#/components/schemas/RunningServicesArray'
         error:
           nullable: true
           default: null
-    
-    RunningServicesType:
+
+    RunningServicesArray:
       type: array
       items:
         $ref: '#/components/schemas/RunningServiceType'
@@ -104,4 +104,3 @@ components:
             the service message
           type: string
           example: no suitable node (insufficient resources on 1 node)
-

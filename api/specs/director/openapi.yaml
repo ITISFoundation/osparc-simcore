@@ -145,20 +145,20 @@ paths:
           name: project_id
           required: false
           schema:
-            type: string        
+            type: string
       responses:
         "200":
           description: Returns the running services instances
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped'
+                $ref: '#/components/schemas/RunningServicesEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+                $ref: '#/components/schemas/ErrorEnveloped'
     post:
       tags:
         - users
@@ -396,6 +396,9 @@ components:
 
     RunningServiceEnveloped:
       $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+
+    RunningServicesEnveloped:
+      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped'
 
     ServicesEnveloped:
       $ref: '../common/schemas/services.yaml#/components/schemas/ServicesEnveloped'
