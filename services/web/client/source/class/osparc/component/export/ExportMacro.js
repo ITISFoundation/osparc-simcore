@@ -35,6 +35,8 @@ qx.Class.define("osparc.component.export.ExportMacro", {
     this.set({
       node
     });
+
+    this.__buildLayout();
   },
 
   properties: {
@@ -44,5 +46,34 @@ qx.Class.define("osparc.component.export.ExportMacro", {
     }
   },
 
-  members: {}
+  members: {
+    __buildLayout: function() {
+      this.__buildMetaDataForm();
+      this.__buildInputSettings();
+      this.__buildExposedSettings();
+    },
+
+    __buildMetaDataForm: function() {
+      const metaDataForm = new qx.ui.form.Form();
+
+      const serviceName = new qx.ui.form.TextField();
+      serviceName.setRequired(true);
+      metaDataForm.add(serviceName, this.tr("Name"));
+
+      const serviceDesc = new qx.ui.form.TextField();
+      metaDataForm.add(serviceDesc, this.tr("Description"));
+
+      const formRenderer = new qx.ui.form.renderer.Single(metaDataForm).set({
+        padding: 10
+      });
+      this._add(formRenderer);
+    },
+
+    __buildInputSettings: function() {
+      console.log(this.getNode());
+    },
+
+    __buildExposedSettings: function() {
+    }
+  }
 });
