@@ -1,16 +1,6 @@
 version: '3.7'
 services:
 
-  apihub:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    deploy:
-      placement:
-       constraints:
-          - node.platform.os == linux
-    networks:
-      - default
-
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -50,8 +40,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
@@ -61,7 +49,6 @@ services:
     env_file:
       - ../.env
     depends_on:
-      - apihub
       - postgres
       - rabbit
     deploy:
@@ -121,8 +108,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -142,7 +127,6 @@ services:
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     depends_on:
       - postgres
-      - apihub
     deploy:
       placement:
         constraints:

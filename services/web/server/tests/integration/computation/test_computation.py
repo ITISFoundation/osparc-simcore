@@ -39,7 +39,6 @@ API_PREFIX = "/" + API_VERSION
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
     'director',
-    'apihub',
     'rabbit',
     'postgres',
     'sidecar',

@@ -25,7 +25,6 @@ SHELL := /bin/bash
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead
 SERVICES_LIST := \
-	apihub \
 	director \
 	sidecar \
 	storage \
