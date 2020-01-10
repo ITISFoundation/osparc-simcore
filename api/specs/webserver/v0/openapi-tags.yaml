@@ -20,12 +20,31 @@ paths:
                 $ref: './components/schemas/tag.yaml#/TagListEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      summary: Creates a new tag
+      operationId: create_tag
+      responses:
+        '200':
+          description: The created tag
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml#/TagEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /tags/{tag_id}:
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: string
     put:
-      summary: Adds or updates a tag, depending on wether the id property is present or not
+      summary: Updates a tag
       operationId: update_tag
       responses:
         '200':
-          description: The newly added or updated tag
+          description: The updated tag
           content:
             application/json:
               schema:
