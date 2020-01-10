@@ -223,13 +223,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (treeSelection.length < 1) {
         return null;
       }
-
       let selectedItem = treeSelection.toArray()[0];
-      const selectedNodeId = selectedItem.getNodeId();
-      if (selectedNodeId === "root") {
-        return null;
-      }
-
       return selectedItem;
     },
 
@@ -260,24 +254,34 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItemRenamer: function() {
       const selectedItem = this.__getSelection();
-      if (selectedItem === null) {
-        return;
+      if (selectedItem) {
+        const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
+        treeItemRenamer.addListener("labelChanged", e => {
+          const {
+            newLabel
+          } = e.getData();
+          const nodeId = selectedItem.getNodeId();
+          if (nodeId === "root") {
+            const params = {
+              name: newLabel
+            };
+            this.getWorkbench().getStudy()
+              .updateStudy(params)
+              .then(data => {
+                selectedItem.setLabel(data.name);
+              });
+          } else {
+            selectedItem.setLabel(newLabel);
+            const node = this.getWorkbench().getNode(nodeId);
+            if (node) {
+              node.renameNode(newLabel);
+            }
+          }
+        }, this);
+        const bounds = this.getLayoutParent().getContentLocation();
+        treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
+        treeItemRenamer.open();
       }
-
-      const treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
-      treeItemRenamer.addListener("labelChanged", e => {
-        const data = e.getData();
-        const newLabel = data.newLabel;
-        selectedItem.setLabel(newLabel);
-        const nodeId = selectedItem.getNodeId();
-        const node = this.getWorkbench().getNode(nodeId);
-        if (node) {
-          node.renameNode(newLabel);
-        }
-      }, this);
-      const bounds = this.getLayoutParent().getContentLocation();
-      treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
-      treeItemRenamer.open();
     },
 
     nodeSelected: function(nodeId, openNodeAndParents = false) {
@@ -300,6 +304,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.addListener("keypress", function(keyEvent) {
         if (keyEvent.getKeyIdentifier() === "F2") {
           this.__openItemRenamer();
+        }
+      }, this);
+      qx.event.message.Bus.getInstance().subscribe("updateStudy", msg => {
+        const {
+          name
+        } = msg.getData();
+        this.setStudyName(name);
+        if (this.isPropertyInitialized("workbench")) {
+          this.populateTree();
         }
       }, this);
     }
