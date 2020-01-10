@@ -45,34 +45,30 @@ qx.Class.define("osparc.file.FilesAdd", {
 
   /**
     * @param label {String} Text to be displayed in the button
-  */
+    */
   construct: function(label = this.tr("Add file(s)")) {
     this.base(arguments);
 
-    let filesAddLayout = new qx.ui.layout.HBox(10);
-    this._setLayout(filesAddLayout);
+    this._setLayout(new qx.ui.layout.HBox(10));
 
-    // Create a button
-    let input = new qx.html.Input("file", {
+    const input = new qx.html.Input("file", {
       display: "none"
     }, {
       multiple: true
     });
-
     this.getContentElement().add(input);
 
-    let btn = this._createChildControlImpl("addButton").set({
+    const btn = this._createChildControlImpl("addButton").set({
       label: label
     });
-    // Add an event listener
     btn.addListener("execute", e => {
       input.getDomElement().click();
     });
 
     input.addListener("change", e => {
-      let files = input.getDomElement().files;
+      const files = input.getDomElement().files;
       for (let i=0; i<files.length; i++) {
-        this.__retrieveURLAndUpload(files[i]);
+        this.retrieveUrlAndUpload(files[i]);
       }
     }, this);
   },
@@ -80,12 +76,6 @@ qx.Class.define("osparc.file.FilesAdd", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: true
-    },
-
-    studyId: {
-      check: "String",
-      init: "",
       nullable: true
     }
   },
@@ -111,23 +101,22 @@ qx.Class.define("osparc.file.FilesAdd", {
     },
 
     // Request to the server an upload URL.
-    __retrieveURLAndUpload: function(file) {
-      let dataStore = osparc.store.Data.getInstance();
-      dataStore.addListenerOnce("presignedLink", e => {
-        const presignedLinkData = e.getData();
-        file["location"] = presignedLinkData.locationId;
-        file["path"] = presignedLinkData.fileUuid;
-        if (presignedLinkData.presignedLink) {
-          this.__uploadFile(file, presignedLinkData.presignedLink.link);
-        }
-      }, this);
+    retrieveUrlAndUpload: function(file) {
       const download = false;
       const locationId = 0;
-      const studyId = this.getStudyId() || osparc.utils.Utils.uuidv4();
+      const studyId = this.__getStudyId();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidv4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
-      dataStore.getPresignedLink(download, locationId, fileUuid);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(download, locationId, fileUuid)
+        .then(presignedLinkData => {
+          file["location"] = presignedLinkData.locationId;
+          file["path"] = presignedLinkData.fileUuid;
+          if (presignedLinkData.presignedLink) {
+            this.__uploadFile(file, presignedLinkData.presignedLink.link);
+          }
+        });
     },
 
     // Use XMLHttpRequest to upload the file to S3.
@@ -152,6 +141,7 @@ qx.Class.define("osparc.file.FilesAdd", {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
+          file.dataset = this.__getStudyId();
           this.fireDataEvent("fileAdded", file);
         } else {
           console.log(xhr.response);
@@ -159,6 +149,12 @@ qx.Class.define("osparc.file.FilesAdd", {
       };
       xhr.open("PUT", url, true);
       xhr.send(file);
+    },
+
+    __getStudyId: function() {
+      return this.getNode().getWorkbench()
+        .getStudy()
+        .getUuid();
     }
   }
 });
