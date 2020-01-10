@@ -18,13 +18,22 @@ async def list_tags(request: web.Request):
 @login_required
 async def update_tag(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    return {}
+    return await request.json()
 
 
 @login_required
 async def create_tag(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    return {}
+    tag_data = await request.json()
+    async with engine.acquire() as conn:
+        query = tags.insert().values(
+            user_id=uid,
+            name=tag_data['name'],
+            description=tag_data['description'],
+            color=tag_data['color']
+        )
+        result = await conn.execute(query)
+    return await request.json()
 
 
 @login_required

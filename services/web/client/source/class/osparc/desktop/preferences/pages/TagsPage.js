@@ -13,9 +13,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   construct: function() {
     this.base(arguments, null, "@FontAwesome5Solid/tags/24");
     this.setLayout(new qx.ui.layout.VBox(10));
+
+    osparc.store.Store.getInstance().setTags(tags);
+
     this.__createComponents();
-    this.__renderLayout();
-    this.__attachEventHandlers();
   },
   members: {
     __addTagButton: null,
@@ -24,7 +25,13 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
         appearance: "md-button"
       });
-      this.__tagItems = tags.map(tag => new osparc.component.form.tag.TagItem().set({...tag}));
+      osparc.data.Resources.get("tags")
+        .then(tags => {
+          this.__tagItems = tags.map(tag => new osparc.component.form.tag.TagItem().set({...tag}));
+          this.__renderLayout();
+          this.__attachEventHandlers();
+        })
+        .catch(err => console.error(err));
     },
     __renderLayout: function() {
       this.removeAll();
@@ -58,36 +65,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
 const tags = [
   {
-    id: 1,
-    name: "shared code",
-    description: "This is a description for the tag",
-    color: "#523390"
-  },
-  {
-    id: 2,
-    name: "shaaah",
-    description: "This is a description for the tag",
-    color: "#121200"
-  },
-  {
-    id: 3,
-    name: "zumzum",
-    description: "This is a description for the tag",
-    color: "#abcdef"
-  },
-  {
-    id: 4,
-    name: "zumzum",
-    description: "This is a description for the tag",
-    color: "#14558a"
-  },
-  {
-    id: 5,
-    name: "zumzumzum",
-    description: "This is a description for the tag",
-    color: "#af550a"
-  },
-  {
     id: 6,
     name: "kaboom",
     description: "This is a description for the tag",
@@ -104,11 +81,5 @@ const tags = [
     name: "have you ever",
     description: "This is a description for the tag",
     color: "#875421"
-  },
-  {
-    id: 9,
-    name: "postpro",
-    description: "This is a description for the tag",
-    color: "#fedcba"
   }
 ]

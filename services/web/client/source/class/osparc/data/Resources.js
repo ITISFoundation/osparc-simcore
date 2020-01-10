@@ -369,6 +369,7 @@ qx.Class.define("osparc.data.Resources", {
        * TAGS
        */
       tags: {
+        idField: "id",
         usesCache: true,
         endpoints: {
           get: {
