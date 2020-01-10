@@ -158,7 +158,7 @@ async def get_project_node(request: web.Request, project_uuid: str, user_id:str,
         if service["service_uuid"] == node_id:
             return service
     # the service is not running, it's a computational service maybe
-    # TODO: find out if computational service is running
+    # TODO: find out if computational service is running if not throw a 404 since it's not around
     return {
         "service_uuid": node_id,
         "service_state": "idle"

@@ -41,7 +41,7 @@ API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service, mocked_director_handler):
+def client(loop, aiohttp_client, app_cfg, postgres_service):
 #def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app

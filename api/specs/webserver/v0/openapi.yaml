@@ -100,12 +100,6 @@ paths:
   /services:
     $ref: './openapi-services.yaml#/paths/~1services'
 
-  /running_interactive_services:
-    $ref: './openapi-services.yaml#/paths/~1running_interactive_services'
-
-  /running_interactive_services/{service_uuid}:
-    $ref: './openapi-services.yaml#/paths/~1running_interactive_services~1{service_uuid}'
-
   /computation/pipeline/{project_id}:
     $ref: './openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}'
 
@@ -127,11 +121,11 @@ paths:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1open'
 
   /projects/{project_id}:close:
-    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1close'  
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1close'
 
   /projects/{project_id}/nodes:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes'
-  
+
   /projects/{project_id}/nodes/{node_id}:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}'
 
