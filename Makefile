@@ -279,12 +279,17 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
+.PHONY: devenv
+
 .venv:
 	python3 -m venv $@
-	$(PY_PIP) install --upgrade pip wheel setuptools
+	$@/bin/pip3 install --upgrade \
+		pip \
+		wheel \
+		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$(PY_PIP) install \
+	$</bin/pip3 install \
 		pylint \
 		autopep8 \
 		pip-tools \
@@ -296,7 +301,7 @@ devenv: .venv ## create a python virtual environment with dev tools (e.g. linter
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
-	$(PY_PIP) install cookiecutter
+	$</bin/pip3 install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 # TODO: NOT windows friendly
