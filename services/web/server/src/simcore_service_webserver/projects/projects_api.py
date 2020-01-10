@@ -147,6 +147,23 @@ async def add_project_node(request: web.Request, project_uuid: str, user_id: str
         await director_api.start_service(request.app, user_id, project_uuid, service_key, service_version, node_uuid)
     return node_uuid
 
+async def get_project_node(request: web.Request, project_uuid: str, user_id:str, node_id: str):
+    log.debug("getting node %s in project %s for user %s", node_id, project_uuid, user_id)
+
+    list_of_interactive_services = await director_api.get_running_interactive_services(request.app,
+                                                                            project_id=project_uuid,
+                                                                            user_id=user_id)
+    # get the project if it is running
+    for service in list_of_interactive_services:
+        if service["service_uuid"] == node_id:
+            return service
+    # the service is not running, it's a computational service maybe
+    # TODO: find out if computational service is running
+    return {
+        "service_uuid": node_id,
+        "service_state": "idle"
+    }
+
 async def delete_project_node(request: web.Request, project_uuid: str, user_id: str, node_uuid: str) -> None:
     log.debug("deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id)
 

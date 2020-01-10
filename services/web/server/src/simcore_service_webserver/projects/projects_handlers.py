@@ -344,8 +344,21 @@ async def create_node(request: web.Request) -> web.Response:
 async def get_node(request: web.Request) -> web.Response:
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.node.read")
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    node_uuid = request.match_info.get("node_id")
+    # ensure the project exists
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+    await get_project_for_user(request,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True
+        )
+    
+    node_details = await projects_api.get_project_node(request, project_uuid, user_id, node_uuid)
     return {
-        'data': None
+        'data': node_details
     }
 
 @login_required
