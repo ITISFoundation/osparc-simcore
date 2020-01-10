@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=protected-access
 
 import asyncio
 import time
