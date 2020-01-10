@@ -1844,6 +1844,8 @@ paths:
                                           type:
                                             - string
                                             - integer
+                                        dataset:
+                                          type: string
                                         path:
                                           type: string
                                         label:
@@ -1891,6 +1893,8 @@ paths:
                                           type:
                                             - string
                                             - integer
+                                        dataset:
+                                          type: string
                                         path:
                                           type: string
                                         label:
@@ -2029,6 +2033,8 @@ paths:
                                           type:
                                             - string
                                             - integer
+                                        dataset:
+                                          type: string
                                         path:
                                           type: string
                                         label:
@@ -2076,6 +2082,8 @@ paths:
                                           type:
                                             - string
                                             - integer
+                                        dataset:
+                                          type: string
                                         path:
                                           type: string
                                         label:
@@ -2224,6 +2232,8 @@ paths:
                                         type:
                                           - string
                                           - integer
+                                      dataset:
+                                        type: string
                                       path:
                                         type: string
                                       label:
@@ -2271,6 +2281,8 @@ paths:
                                         type:
                                           - string
                                           - integer
+                                      dataset:
+                                        type: string
                                       path:
                                         type: string
                                       label:
@@ -2514,6 +2526,8 @@ components:
                               type:
                                 - string
                                 - integer
+                            dataset:
+                              type: string
                             path:
                               type: string
                             label:
@@ -2561,6 +2575,8 @@ components:
                               type:
                                 - string
                                 - integer
+                            dataset:
+                              type: string
                             path:
                               type: string
                             label:
