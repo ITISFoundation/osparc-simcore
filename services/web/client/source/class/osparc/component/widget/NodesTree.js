@@ -63,6 +63,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
+    "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
 
@@ -246,7 +247,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const selectedItem = this.__getSelection();
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
-          console.log("hallo");
+          const nodeId = selectedItem.getNodeId();
+          this.__openItem(nodeId);
+          this.fireDataEvent("exportNode", nodeId);
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Macros can be exported."), "ERROR");
         }

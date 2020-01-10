@@ -186,6 +186,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           node.setActive(true);
         }
       });
+      nodesTree.addListener("exportNode", e => {
+        const nodeId = e.getData();
+        const node = this.getStudy().getWorkbench().getNode(nodeId);
+        if (node && node.isContainer()) {
+          const exportMacroView = new osparc.component.export.ExportMacro(node);
+
+          const window = new qx.ui.window.Window(this.tr("Export")).set({
+            appearance: "service-window",
+            layout: new qx.ui.layout.Grow(),
+            autoDestroy: true,
+            contentPadding: 0,
+            width: 600,
+            height: 500,
+            showMinimize: false,
+            modal: true
+          });
+          window.add(exportMacroView);
+          window.center();
+          window.open();
+        }
+      });
+
       workbenchUI.addListener("changeSelectedNode", e => {
         nodesTree.nodeSelected(e.getData());
       });
