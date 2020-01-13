@@ -4,11 +4,14 @@ Contains database **models** served by the ``postgres`` service and adds an exte
 
 
 To install migration tools add ``[migration]`` extra
-```console
+```bash
   pip install .[migration]
+
+  # Or if you are using zsh
+  pip install '.[migration]' # https://stackoverflow.com/a/30539963/6797695
 ```
 and to call the CLI use
-```console
+```bash
   simcore-postgres-database --help
 
   # or a short alias
@@ -22,17 +25,17 @@ A typical workflow:
 
 ### Discover
 
-```console
+```bash
   simcore-postgres-database discover -u simcore -p simcore
 ```
 
-```console
+```bash
   simcore-postgres-database info
 ```
 
 ### Review
 
-```console
+```bash
   simcore-postgres-database review -m "some message about changes"
 ```
 Auto-generates some scripts under [migration/versions](packages/postgres-database/migration/versions). The migration script **needs to be reviewed and edited**, as Alembic currently does not detect every change you
@@ -46,7 +49,7 @@ Once finalized, the migration script also needs to be added to version control.
 ### Upgrade
 
 Upgrades to given revision (get ``info`` to check history)
-```console
+```bash
   simcore-postgres-database upgrade head
 ```
 
