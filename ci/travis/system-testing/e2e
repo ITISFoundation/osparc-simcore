@@ -21,30 +21,45 @@ before_install() {
 }
 
 install() {
-    cp tests/e2e/package.json .
-    cp tests/e2e/package-lock.json .
-    npm install
+    pushd tests/e2e; make install ; popd
     make pull-version || ((make pull-cache || true) && make build tag-version)
 }
 
 before_script() {
     make info-images
     # disable email registration
+    # configure simcore for testing with a private registry
     make .env
+    # disable email verification
     echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+    # set up insecure internal registry
+    echo REGISTRY_AUTH=False >> .env
+    echo REGISTRY_SSL=False >> .env
+    echo REGISTRY_URL=registry:5000 >> .env
+    # disable registry caching to ensure services are fetched
+    echo REGISTRY_CACHING=False >> .env
+    # add host name to the insecure registry
+    echo "127.0.0.1 registry" >> /etc/hosts
+    # add insecure registry into docker daemon and restart daemon
+    echo "------------------------ before modifying docker daemon"
+    cat /etc/docker/daemon.json
+    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
+    echo "------------------------ after modifying docker daemon"
+    cat /etc/docker/daemon.json
+    service docker restart
+    # start simcore
     make up-version
+
+    # prepare registry
+    pushd tests/e2e
+    make wait-for-services
+    make transfer-images-to-registry
+    popd
 }
 
 script() {
-    # wait for a minute to let the swarm warm up...
-    docker service ls --format "table"
-    # FIXME: Get rid of this sleep and check the status of the services
-    sleep 80s
-    make info-swarm
-    cp tests/e2e/jest.config.js .
-    cp tests/e2e/jest-puppeteer.config.js .
-    npm test
+    pushd tests/e2e; make test; popd
 }
 
 after_success() {

@@ -8,22 +8,20 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
-    # install puppeteer
-    pushd tests/e2e; npm install; popd
-    # install wait for service script
-    bash ci/helpers/ensure_python_pip
-    pip3 install -r tests/e2e/requirements/requirements.txt
+    # pull simcore
     make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
-    # disable email registration
+    # configure simcore for testing with a private registry
     make .env
+    # disable email verification
     echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
-    # set up internal registry
+    # set up insecure internal registry
     echo REGISTRY_AUTH=False >> .env
     echo REGISTRY_SSL=False >> .env
     echo REGISTRY_URL=registry:5000 >> .env
-
+    # disable registry caching to ensure services are fetched
+    echo REGISTRY_CACHING=False >> .env
     # add host name to the insecure registry
     echo "127.0.0.1 registry" >> /etc/hosts
     # add insecure registry into docker daemon and restart daemon
@@ -33,26 +31,21 @@ install() {
     echo "------------------------ after modifying docker daemon"
     cat /etc/docker/daemon.json
     service docker restart
-
+    # start simcore
     make up-version
-    # wait for the services to run
-    python3 tests/e2e/wait_for_services.py
-    make info-swarm
+
+
+    # install testing framework
+    pushd tests/e2e
+    make install
+    make wait-for-services
 
     # prepare registry
-    docker pull itisfoundation/sleeper:1.0.0
-    docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
-    docker push registry:5000/simcore/services/comp/sleeper:1.0.0
-
-    docker pull itisfoundation/jupyter-base-notebook:2.13.0
-    docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-    docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-
-    curl registry:5000/v2/_catalog
+    make transfer-images-to-registry
 }
 
 test() {
-    pushd tests/e2e; npm test; popd
+    pushd tests/e2e; make test; popd
 }
 
 clean_up() {
