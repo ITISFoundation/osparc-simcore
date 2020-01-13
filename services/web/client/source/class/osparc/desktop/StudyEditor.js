@@ -172,8 +172,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__nodesTree,
         this.__workbenchUI
       ].forEach(wb => {
-        wb.addListener("nodeDoubleClicked", e => {
-          let nodeId = e.getData();
+        wb.addListener("nodeSelected", e => {
+          const nodeId = e.getData();
           this.nodeSelected(nodeId, true);
         }, this);
       });
@@ -187,7 +187,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        nodesTree.nodeSelected(e.getData());
+        const nodeId = e.getData();
+        nodesTree.nodeSelected(nodeId);
       });
     },
 
@@ -204,7 +205,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
         // open file picker in window
-        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+        const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           appearance: "service-window",
           layout: new qx.ui.layout.Grow(),
           autoDestroy: true,
@@ -218,13 +219,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const node = widget.getNode();
           this.nodeSelected(node.getParentNodeId() || "root");
         };
-        filePicker.add(widget);
-        qx.core.Init.getApplication().getRoot().add(filePicker);
-        filePicker.show();
-        filePicker.center();
+        filePickerWin.add(widget);
+        qx.core.Init.getApplication().getRoot().add(filePickerWin);
+        filePickerWin.show();
+        filePickerWin.center();
+        this.__workbenchUI.filePickerAdded(widget);
 
-        widget.addListener("finished", () => filePicker.close(), this);
-        filePicker.addListener("close", () => showParentWorkbench());
+        widget.addListener("finished", () => filePickerWin.close(), this);
+        filePickerWin.addListener("close", () => showParentWorkbench());
       } else {
         this.showInMainView(widget, nodeId);
       }
