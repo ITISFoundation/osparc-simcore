@@ -2,6 +2,7 @@ name: Github-CI Integration-System-testing
 
 on:
   push:
+  pull_request:
 
 env:
   # secrets can be set in settings/secrets on github
@@ -31,6 +32,7 @@ jobs:
 
   integration-test-webserver:
     name: Integration-testing webserver
+    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -63,6 +65,7 @@ jobs:
 
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
+    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -95,6 +98,7 @@ jobs:
 
   system-test-swarm-deploy:
     name: System-testing deploy simcore
+    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -123,6 +127,7 @@ jobs:
 
   system-test-e2e:
     name: System-testing e2e
+    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
