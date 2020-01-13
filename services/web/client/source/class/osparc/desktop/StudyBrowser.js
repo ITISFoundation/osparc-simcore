@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         this.__createStudiesLayout();
         this.__reloadStudies();
         this.__attachEventHandlers();
-        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudy();
+        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
         if (loadStudyId) {
           const params = {
             url: {
@@ -263,7 +263,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           if (studyData) {
             this.__startStudy(studyData);
           } else {
-            osparc.store.Store.getInstance().setCurrentStudy(null);
+            osparc.store.Store.getInstance().setCurrentStudyId(null);
           }
         })
         .catch(err => {

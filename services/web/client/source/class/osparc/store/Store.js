@@ -47,7 +47,7 @@ qx.Class.define("osparc.store.Store", {
   type : "singleton",
 
   properties: {
-    currentStudy: {
+    currentStudyId: {
       check: "String",
       init: null,
       nullable: true
