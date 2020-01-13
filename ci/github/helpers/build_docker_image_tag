@@ -19,13 +19,13 @@ else
     if [ "$branch_name" = "master" ]; then
         # this is master branch and here we use a specific name to prevent naming colision
         # with the master-latest build
-        image_tag="$branch_name-testbuild"
+        image_tag="$branch_name-github-testbuild"
     elif [ "$branch_name" = "staging" ]; then
         # this is staging branch and here we use a specific name to prevent naming colision
         # with the staging-latest build
-        image_tag="$branch_name-testbuild"
+        image_tag="$branch_name-github-testbuild"
     else
-        image_tag=$branch_name
+        image_tag="$branch_name-github"
     fi
 fi
 

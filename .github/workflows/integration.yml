@@ -29,6 +29,8 @@ jobs:
       run: ./ci/github/build/test-images pull_images
     - name: build images
       run: ./ci/github/build/test-images build_images
+    - name: push images
+      run: ./ci/github/build/test-images push_images
 
   integration-test-webserver:
     name: Integration-testing webserver
