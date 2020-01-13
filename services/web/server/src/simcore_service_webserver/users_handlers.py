@@ -24,7 +24,7 @@ async def get_my_profile(request: web.Request):
     # NOTE: ONLY login required to see its profile. E.g. anonymous can never see its profile
 
     @retry(**PostgresRetryPolicyUponOperation(logger).kwargs)
-    def _query_user_to_db(uid, engine):
+    async def _query_db(uid, engine):
         async with engine.acquire() as conn:
             query = sa.select([
                 users.c.email,
@@ -33,7 +33,7 @@ async def get_my_profile(request: web.Request):
             result = await conn.execute(query)
             return await result.first()
 
-    row = _query_user_to_db(uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY])
+    row = await _query_db(uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY])
     parts = row['name'].split(".") + [""]
 
     return {
