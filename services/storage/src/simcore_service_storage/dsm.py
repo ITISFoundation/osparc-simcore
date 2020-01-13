@@ -617,7 +617,8 @@ class DataStorageManager:
                 await conn.execute(ins)
 
     async def delete_project_simcore_s3(self, user_id: str, project_id: str, node_id: Optional[str]) -> web.Response:
-        """ Deletes all files from a given project in simcore.s3 and updated db accordingly
+        """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
+            If node_id is not given, then all the project files db entries are deleted.
         """
 
         async with self.engine.acquire() as conn:
