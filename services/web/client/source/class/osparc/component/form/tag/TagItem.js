@@ -52,7 +52,8 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     }
   },
   events: {
-    cancelNewTag: "qx.event.type.Event"
+    cancelNewTag: "qx.event.type.Event",
+    deleteTag: "qx.event.type.Event"
   },
   members: {
     __tag: null,
@@ -172,7 +173,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       const editButton = new qx.ui.form.Button(this.tr("Edit")).set({
         appearance: "link-button"
       });
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete")).set({
+      const deleteButton = new osparc.ui.form.FetchButton(this.tr("Delete")).set({
         appearance: "link-button"
       });
       buttonContainer.add(editButton);
@@ -181,14 +182,16 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         this.setMode(this.self().modes.EDIT);
       }, this);
       deleteButton.addListener("execute", () => {
+        deleteButton.setFetching(true);
         const params = {
           url: {
             tagId: this.getId()
           }
         };
         osparc.data.Resources.fetch("tags", "delete", params, this.getId())
-          .then(tag => console.log(tag))
-          .catch(console.error);
+          .then(() => this.fireEvent("deleteTag"))
+          .catch(console.error)
+          .finally(() => deleteButton.setFetching(false));
       }, this);
       return buttonContainer;
     },

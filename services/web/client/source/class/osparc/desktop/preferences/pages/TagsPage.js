@@ -56,6 +56,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       tagItem.addListener("cancelNewTag", e => {
         this.remove(e.getTarget());
       }, this);
+      tagItem.addListener("deleteTag", e => {
+        this.remove(e.getTarget());
+      })
     }
   }
 });

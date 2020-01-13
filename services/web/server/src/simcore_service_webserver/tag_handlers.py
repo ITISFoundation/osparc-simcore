@@ -22,7 +22,24 @@ async def list_tags(request: web.Request):
 @login_required
 async def update_tag(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    return await request.json()
+    tag_data = await request.json()
+    async with engine.acquire() as conn:
+        query = tags.update().values(
+            name=tag_data['name'],
+            description=tag_data['description'],
+            color=tag_data['color']
+        ).where(tags.c.id == tag_data["id"]).returning(
+            tags.c.id,
+            tags.c.name,
+            tags.c.description,
+            tags.c.color
+        )
+        async with conn.execute(query) as result:
+            if result.rowcount == 1:
+                row_proxy = await result.first()
+                return { key: value for key, value in row_proxy.items() }
+            else:
+                raise web.HTTPInternalServerError()
 
 
 @login_required
@@ -51,5 +68,12 @@ async def create_tag(request: web.Request):
 
 @login_required
 async def delete_tag(request: web.Request):
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    raise web.HTTPNoContent(content_type='application/json')
+    _, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    tag_id = request.match_info.get('tag_id')
+    async with engine.acquire() as conn:
+        query = tags.delete().where(tags.c.id == tag_id)
+        async with conn.execute(query) as result:
+            if result.rowcount == 1:
+                raise web.HTTPNoContent(content_type='application/json')
+            else:
+                raise web.HTTPInternalServerError()
