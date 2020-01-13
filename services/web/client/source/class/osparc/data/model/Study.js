@@ -37,8 +37,9 @@ qx.Class.define("osparc.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
+    * @param loadWorkbench {Boolean} Flag to create the study model with or without the workbench part
     */
-  construct: function(studyData) {
+  construct: function(studyData, loadWorkbench = true) {
     this.base(arguments);
 
     this.set({
@@ -51,8 +52,10 @@ qx.Class.define("osparc.data.model.Study", {
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
 
-    const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
+    if (loadWorkbench) {
+      const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
+      this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
+    }
   },
 
   properties: {

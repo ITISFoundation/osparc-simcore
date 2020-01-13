@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
-      study: (studyData instanceof osparc.data.model.Study) ? studyData : new osparc.data.model.Study(studyData)
+      study: (studyData instanceof osparc.data.model.Study) ? studyData : new osparc.data.model.Study(studyData, false)
     });
 
     this.__populateLayout(maxHeight);
