@@ -17,7 +17,7 @@ install() {
     echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
     echo "------------------------ after modifying docker daemon"
     cat /etc/docker/daemon.json
-    systemctl docker restart
+    service docker restart
 
     # install puppeteer
     pushd tests/e2e; npm install; popd
@@ -29,6 +29,11 @@ install() {
     make .env
     echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
     echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+    # set up internal registry
+    echo REGISTRY_AUTH=False >> .env
+    echo REGISTRY_SSL=False >> .env
+    echo REGISTRY_URL=registry:5000 >> .env
+
     make up-version
     # wait for the services to run
     python3 tests/e2e/wait_for_services.py
@@ -36,11 +41,11 @@ install() {
 
     # prepare registry
     docker pull itisfoundation/sleeper:1.0.0
-    docker tag itisfoundation/sleeper:1.0.0 127.0.0.1:5000/simcore/services/comp/sleeper:1.0.0
+    docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
     docker push registry:5000/simcore/services/comp/sleeper:1.0.0
 
     docker pull itisfoundation/jupyter-base-notebook:2.13.0
-    docker tag itisfoundation/jupyter-base-notebook:2.13.0 127.0.0.1:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+    docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
     docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 
     curl registry:5000/v2/_catalog
