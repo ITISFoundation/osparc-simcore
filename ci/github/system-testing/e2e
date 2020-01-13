@@ -8,6 +8,12 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
+    # add host name to the insecure registry
+    sudo echo "127.0.0.1 registry" >> /etc/hosts
+    # add insecure registry into docker daemon and restart daemon
+    sudo echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
+    sudo systemctl docker restart
+
     # install puppeteer
     pushd tests/e2e; npm install; popd
     # install wait for service script
@@ -22,6 +28,17 @@ install() {
     # wait for the services to run
     python3 tests/e2e/wait_for_services.py
     make info-swarm
+
+    # prepare registry
+    docker pull itisfoundation/sleeper:1.0.0
+    docker tag itisfoundation/sleeper:1.0.0 127.0.0.1:5000/simcore/services/comp/sleeper:1.0.0
+    docker push registry:5000/simcore/services/comp/sleeper:1.0.0
+
+    docker pull itisfoundation/jupyter-base-notebook:2.13.0
+    docker tag itisfoundation/jupyter-base-notebook:2.13.0 127.0.0.1:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+    docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+
+    curl registry:5000/v2/_catalog
 }
 
 test() {
