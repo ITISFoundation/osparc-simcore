@@ -35,9 +35,18 @@ async def create_tag(request: web.Request):
             name=tag_data['name'],
             description=tag_data['description'],
             color=tag_data['color']
+        ).returning(
+            tags.c.id,
+            tags.c.name,
+            tags.c.description,
+            tags.c.color
         )
-        result = await conn.execute(query)
-    return await request.json()
+        async with conn.execute(query) as result:
+            if result.rowcount == 1:
+                row_proxy = await result.first()
+                return { key: value for key, value in row_proxy.items() }
+            else:
+                raise web.HTTPInternalServerError()
 
 
 @login_required

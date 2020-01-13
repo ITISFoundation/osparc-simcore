@@ -61,6 +61,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __descriptionInput: null,
     __colorInput: null,
     __colorButton: null,
+    __loadingIcon: null,
     __renderLayout: function() {
       this._removeAll();
       switch (this.getMode()) {
@@ -159,7 +160,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
             this.__colorButton.addListener("execute", () => {
               this.getChildControl("colorinput").setValue(osparc.utils.Utils.getRandomColor());
-            });
+            }, this);
           }
           control = this.__colorButton;
           break;
@@ -178,7 +179,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       buttonContainer.add(deleteButton);
       editButton.addListener("execute", () => {
         this.setMode(this.self().modes.EDIT);
-      });
+      }, this);
       deleteButton.addListener("execute", () => {
         const params = {
           url: {
@@ -188,12 +189,12 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         osparc.data.Resources.fetch("tags", "delete", params, this.getId())
           .then(tag => console.log(tag))
           .catch(console.error);
-      });
+      }, this);
       return buttonContainer;
     },
     __tagItemEditButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const saveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/12").set({
+      const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/check/12").set({
         appearance: "link-button"
       });
       const cancelButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
@@ -206,26 +207,35 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         const params = {
           data
         };
+        saveButton.setFetching(true);
         if (this.isPropertyInitialized("id")) {
           params.url = {
             tagId: this.getId()
           }
           osparc.data.Resources.fetch("tags", "put", params)
-            .then(tag => console.log(tag))
-            .catch(console.error);
+            .then(tag => this.set(tag))
+            .catch(console.error)
+            .finally(() => {
+              this.setMode(this.self().modes.DISPLAY);
+              saveButton.setFetching(false);
+            });
         } else {
           osparc.data.Resources.fetch("tags", "post", params)
-            .then(tag => console.log(tag))
-            .catch(console.error);
+            .then(tag => this.set(tag))
+            .catch(console.error)
+            .finally(() => {
+              this.setMode(this.self().modes.DISPLAY);
+              saveButton.setFetching(false);
+            });
         }
-      });
+      }, this);
       cancelButton.addListener("execute", () => {
         if (this.isPropertyInitialized("id")) {
           this.setMode(this.self().modes.DISPLAY);
         } else {
           this.fireEvent("cancelNewTag");
         }
-      });
+      }, this);
       return buttonContainer;
     },
     __colorPicker: function() {
@@ -244,8 +254,8 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __serializeData: function() {
       return {
         id: this.isPropertyInitialized("id") ? this.getId() : null,
-        name: this.getChildControl("nameinput").getValue(),
-        description: this.getChildControl("descriptioninput").getValue(),
+        name: this.getChildControl("nameinput").getValue().trim(),
+        description: this.getChildControl("descriptioninput").getValue().trim(),
         color: this.getChildControl("colorinput").getValue()
       };
     },

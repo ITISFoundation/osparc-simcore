@@ -29,7 +29,7 @@
  */
 
 qx.Class.define("osparc.ui.form.LinkButton", {
-  extend: qx.ui.form.Button,
+  extend: osparc.ui.form.FetchButton,
 
   /**
     * @param label {String} Label to use
