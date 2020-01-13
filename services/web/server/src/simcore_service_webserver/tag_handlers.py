@@ -12,8 +12,11 @@ async def list_tags(request: web.Request):
     async with engine.acquire() as conn:
         columns = [col for col in tags.columns if col.key != 'user_id']
         query = sa.select(columns).where(tags.c.user_id == uid)
-        result = await conn.execute(query)
-    return result.fetchall()
+        result = []
+        async for row_proxy in conn.execute(query):
+            row_dict = { key: value for key, value in row_proxy.items() }
+            result.append(row_dict)
+    return result
 
 
 @login_required
