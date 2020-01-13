@@ -7,7 +7,7 @@ To install migration tools add ``[migration]`` extra
 ```bash
   pip install .[migration]
 
-  # Or if you are using zsh
+  # If you are using zsh
   pip install '.[migration]' # https://stackoverflow.com/a/30539963/6797695
 ```
 and to call the CLI use
@@ -26,6 +26,7 @@ A typical workflow:
 ### Discover
 
 ```bash
+  # Replace with appropriate user and password
   simcore-postgres-database discover -u simcore -p simcore
 ```
 
