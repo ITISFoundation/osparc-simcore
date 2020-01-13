@@ -8,17 +8,6 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
-    # add host name to the insecure registry
-    echo "127.0.0.1 registry" >> /etc/hosts
-    cat /etc/hosts
-    # add insecure registry into docker daemon and restart daemon
-    echo "------------------------ before modifying docker daemon"
-    cat /etc/docker/daemon.json
-    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
-    echo "------------------------ after modifying docker daemon"
-    cat /etc/docker/daemon.json
-    service docker restart
-
     # install puppeteer
     pushd tests/e2e; npm install; popd
     # install wait for service script
@@ -33,6 +22,16 @@ install() {
     echo REGISTRY_AUTH=False >> .env
     echo REGISTRY_SSL=False >> .env
     echo REGISTRY_URL=registry:5000 >> .env
+
+    # add host name to the insecure registry
+    echo "127.0.0.1 registry" >> /etc/hosts
+    # add insecure registry into docker daemon and restart daemon
+    echo "------------------------ before modifying docker daemon"
+    cat /etc/docker/daemon.json
+    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
+    echo "------------------------ after modifying docker daemon"
+    cat /etc/docker/daemon.json
+    service docker restart
 
     make up-version
     # wait for the services to run
