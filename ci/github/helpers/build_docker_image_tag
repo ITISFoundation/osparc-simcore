@@ -12,7 +12,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 if [ ! -v GITHUB_ACTIONS ] || [ $GITHUB_ACTIONS = "false" ]; then
-    # no travis here so let's use the git name directly
+    # no github action here so let's use the git name directly
     image_tag=$(git rev-parse --abbrev-ref HEAD)
 else
     branch_name=${GITHUB_REF##*/}
