@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodesTree = new osparc.component.widget.NodesTree(study.getName(), study.getWorkbench());
+ *   let nodesTree = new osparc.component.widget.NodesTree(study.getWorkbench());
  *   this.getRoot().add(nodesTree);
  * </pre>
  */
@@ -39,15 +39,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyName {String} Study Name for displaying as root of the tree
-    * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
-  */
-  construct: function(studyName, workbench) {
+    * @param study {osparc.data.model.Study} Study owning the widget
+    */
+  construct: function(study) {
     this.base(arguments);
 
     this.set({
-      studyName,
-      workbench
+      study
     });
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -68,13 +66,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
+    study: {
+      check: "osparc.data.model.Study",
       nullable: false
-    },
-
-    studyName: {
-      check: "String"
     }
   },
 
@@ -168,9 +162,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     populateTree: function() {
-      const topLevelNodes = this.getWorkbench().getNodes();
+      const study = this.getStudy();
+      const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
-        label: this.getStudyName(),
+        label: study.getName(),
         children: this.__convertModel(topLevelNodes),
         nodeId: "root",
         isContainer: true
@@ -178,6 +173,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        study.bind("name", newModel, "label");
         this.__tree.setModel(newModel);
         this.__tree.setDelegate({
           createItem: () => new osparc.component.widget.NodeTreeItem(),
@@ -271,18 +267,18 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             newLabel
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
+          const study = this.getStudy();
           if (nodeId === "root") {
             const params = {
               name: newLabel
             };
-            this.getWorkbench().getStudy()
-              .updateStudy(params)
+            study.updateStudy(params)
               .then(data => {
                 selectedItem.setLabel(data.name);
               });
           } else {
             selectedItem.setLabel(newLabel);
-            const node = this.getWorkbench().getNode(nodeId);
+            const node = study.getWorkbench().getNode(nodeId);
             if (node) {
               node.renameNode(newLabel);
             }
@@ -324,12 +320,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           this.__openItemRenamer();
         }
       }, this);
-      qx.event.message.Bus.getInstance().subscribe("updateStudy", msg => {
-        const {
-          name
-        } = msg.getData();
-        this.setStudyName(name);
-        if (this.isPropertyInitialized("workbench")) {
+      qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
+        if (this.isPropertyInitialized("study")) {
           this.populateTree();
         }
       }, this);

@@ -90,7 +90,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     initDefault: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
       nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
