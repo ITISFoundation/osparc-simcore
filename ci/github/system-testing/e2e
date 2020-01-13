@@ -11,6 +11,7 @@ install() {
     # install puppeteer
     pushd tests/e2e; npm install; popd
     # install wait for service script
+    bash ci/helpers/ensure_python_pip
     pip3 install -r tests/e2e/requirements/requirements.txt
     make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
