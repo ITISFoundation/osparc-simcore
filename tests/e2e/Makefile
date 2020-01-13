@@ -23,7 +23,7 @@ endif
 .PHONY: install
 install: ## install testing framework
 	# install puppeteer
-    @npm install
+	@npm install
     # install wait for service script
 	@pip3 install --upgrade \
 		pip3 \
@@ -38,14 +38,14 @@ wait-for-services: ## wait for simcore services to be up
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
 	@docker pull itisfoundation/sleeper:1.0.0
-    @docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
-    @docker push registry:5000/simcore/services/comp/sleeper:1.0.0
+	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
+	@docker push registry:5000/simcore/services/comp/sleeper:1.0.0
 
-    @docker pull itisfoundation/jupyter-base-notebook:2.13.0
-    @docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-    @docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+	@docker pull itisfoundation/jupyter-base-notebook:2.13.0
+	@docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+	@docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
-    curl registry:5000/v2/_catalog
+	curl registry:5000/v2/_catalog
 
 
 .PHONY: test
