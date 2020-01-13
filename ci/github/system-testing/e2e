@@ -9,10 +9,15 @@ export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
     # add host name to the insecure registry
-    sudo echo "127.0.0.1 registry" >> /etc/hosts
+    echo "127.0.0.1 registry" >> /etc/hosts
+    cat /etc/hosts
     # add insecure registry into docker daemon and restart daemon
-    sudo echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
-    sudo systemctl docker restart
+    echo "------------------------ before modifying docker daemon"
+    cat /etc/docker/daemon.json
+    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
+    echo "------------------------ after modifying docker daemon"
+    cat /etc/docker/daemon.json
+    systemctl docker restart
 
     # install puppeteer
     pushd tests/e2e; npm install; popd
