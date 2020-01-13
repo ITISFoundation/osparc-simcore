@@ -43,8 +43,10 @@ qx.Class.define("osparc.data.model.Workbench", {
   construct: function(study, workbenchData) {
     this.base(arguments);
 
-    this.setStudy(study);
-    this.setStudyName(study.getName());
+    this.set({
+      study: study,
+      studyName: study.getName()
+    });
 
     this.__deserializeWorkbench(workbenchData);
   },
@@ -179,7 +181,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
-      const node = new osparc.data.model.Node(this, key, version, uuid);
+      const node = new osparc.data.model.Node(key, version, this, uuid);
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
@@ -340,10 +342,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         let node = null;
         if (nodeData.key) {
           // not container
-          node = new osparc.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
+          node = new osparc.data.model.Node(nodeData.key, nodeData.version, this, nodeId);
         } else {
           // container
-          node = new osparc.data.model.Node(this, null, null, nodeId);
+          node = new osparc.data.model.Node(null, null, this, nodeId);
         }
         if (node) {
           this.__initNodeSignals(node);

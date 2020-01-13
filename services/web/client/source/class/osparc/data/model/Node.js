@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let node = new osparc.data.model.Node(this, key, version, uuid);
+ *   let node = new osparc.data.model.Node(key, version, workbench, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
  *   node.addDynamicButtons();
@@ -48,9 +48,7 @@ qx.Class.define("osparc.data.model.Node", {
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(workbench, key, version, uuid) {
-    this.setWorkbench(workbench);
-
+  construct: function(key, version, workbench, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
@@ -60,9 +58,10 @@ qx.Class.define("osparc.data.model.Node", {
     this.__outputs = {};
 
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidv4(),
       key,
-      version
+      version,
+      workbench: workbench ? workbench : {},
+      nodeId: uuid || osparc.utils.Utils.uuidv4()
     });
 
     let metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
