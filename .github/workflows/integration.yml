@@ -17,6 +17,9 @@ jobs:
   build-test-images:
     runs-on: ubuntu-18.04
     name: build docker test images
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
     - uses: actions/checkout@v1
     - name: setup-docker
