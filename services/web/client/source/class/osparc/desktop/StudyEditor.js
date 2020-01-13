@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.store.Store.getInstance().setCurrentStudy(study);
+    osparc.store.Store.getInstance().setCurrentStudyId(study.getUuid());
 
     study.openStudy();
     study.initWorkbench();
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
      * Destructor
      */
     destruct: function() {
-      osparc.store.Store.getInstance().setCurrentStudy(null);
+      osparc.store.Store.getInstance().setCurrentStudyId(null);
       this.__stopAutoSaveTimer();
     },
 
