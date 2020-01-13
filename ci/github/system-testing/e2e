@@ -19,6 +19,17 @@ install() {
     cat /etc/docker/daemon.json
     service docker restart
 
+    # prepare registry
+    docker pull itisfoundation/sleeper:1.0.0
+    docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
+    docker push registry:5000/simcore/services/comp/sleeper:1.0.0
+
+    docker pull itisfoundation/jupyter-base-notebook:2.13.0
+    docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+    docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+
+    curl registry:5000/v2/_catalog
+
     # install puppeteer
     pushd tests/e2e; npm install; popd
     # install wait for service script
@@ -38,17 +49,6 @@ install() {
     # wait for the services to run
     python3 tests/e2e/wait_for_services.py
     make info-swarm
-
-    # prepare registry
-    docker pull itisfoundation/sleeper:1.0.0
-    docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
-    docker push registry:5000/simcore/services/comp/sleeper:1.0.0
-
-    docker pull itisfoundation/jupyter-base-notebook:2.13.0
-    docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-    docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-
-    curl registry:5000/v2/_catalog
 }
 
 test() {
