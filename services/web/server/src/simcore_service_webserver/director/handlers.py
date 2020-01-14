@@ -155,7 +155,3 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     await director_api.stop_services(request.app, user_id=userid)
     return web.json_response({'data': ''}, status=204)
-
-@observe(event="SIGNAL_USER_LOGOUT")
-async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> None:
-    await director_api.stop_services(app, user_id=user_id)
