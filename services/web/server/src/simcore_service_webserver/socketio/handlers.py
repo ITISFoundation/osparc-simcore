@@ -79,13 +79,12 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
 @observe(event="SIGNAL_USER_LOGOUT")
 async def user_logged_out(user_id: str, client_session_id: Optional[str], app: web.Application) -> None:
     log.debug("user %s must be disconnected", user_id)    
-
     # find the sockets related to the user
     sio = get_socket_server(app)
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
-            socket_id = await rt.remove_socket_id()
+            socket_id = await rt.get_socket_id()
             await sio.disconnect(sid=socket_id)
 
         # now let's give a chance to all the clients to properly logout

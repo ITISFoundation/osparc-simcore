@@ -37,8 +37,8 @@ from utils_login import LoggedUser
 from utils_projects import NewProject
 
 API_VERSION = "v0"
-GARBAGE_COLLECTOR_INTERVAL = 5
-
+GARBAGE_COLLECTOR_INTERVAL = 2
+SERVICE_DELETION_DELAY = 2
 
 @pytest.fixture
 def client(mocked_director_handler, loop, aiohttp_client, app_cfg, postgres_service):
@@ -229,21 +229,35 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     socket_logout_mock_callable2 = mocker.Mock()
     sio2.on('logout', handler=socket_logout_mock_callable2)
 
-    # logout everyone
+    # connect third socket
+    cur_client_session_id3 = client_session_id()
+    sio3 = await socketio_client(cur_client_session_id3)
+    socket_logout_mock_callable3 = mocker.Mock()
+    sio3.on('logout', handler=socket_logout_mock_callable3)
+
+
+    # logout client with socket 2
     logout_url = client.app.router['auth_logout'].url_for()
-    r = await client.post(logout_url)
+    r = await client.post(logout_url, json={"client_session_id": cur_client_session_id2})
     assert r.url_obj.path == logout_url.path
     await assert_status(r, expected)
+
+    # the socket2 should be gone
+    await sleep(1)
+    assert not sio2.sid
+    socket_logout_mock_callable2.assert_not_called()
+
+    # the others should receive a logout message through their respective sockets
     await sleep(3)
-    # we should get logged out
     socket_logout_mock_callable.assert_called_once()
-    socket_logout_mock_callable2.assert_called_once()
+    socket_logout_mock_callable2.assert_not_called() # note 2 should be not called ever
+    socket_logout_mock_callable3.assert_called_once()
 
     await sleep(3)
     # first socket should be closed now
     assert not sio.sid
     # second socket also closed
-    assert not sio2.sid
+    assert not sio3.sid
 
 
 @pytest.mark.parametrize("user_role", [
@@ -251,8 +265,7 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, client_session_id, socketio_client):
-    SERVICE_DELETION_DELAY = 5
+async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, client_session_id, socketio_client):    
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -281,7 +294,7 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(loop, client, logged_user, expected, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
-    SERVICE_DELETION_DELAY = 5
+    
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
 
     # login - logged_user fixture
@@ -311,7 +324,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await sio2.disconnect()
     assert not sio2.sid
     # ensure we wait less than the deletion delay time
-    await sleep(SERVICE_DELETION_DELAY/3.0)
+    await sleep(SERVICE_DELETION_DELAY/2.0)
     # assert dynamic service is still around for now
     mocked_director_api["stop_service"].assert_not_called()
     # reconnect websocket
@@ -337,7 +350,6 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     (UserRole.TESTER),
 ])
 async def test_interactive_services_removed_per_project(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
-    SERVICE_DELETION_DELAY = 5
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
     # login - logged_user fixture
@@ -389,7 +401,6 @@ async def test_interactive_services_removed_per_project(loop, client, logged_use
     (UserRole.TESTER),
 ])
 async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, logged_user, empty_user_project, empty_user_project2, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
-    SERVICE_DELETION_DELAY = 1
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
     # login - logged_user fixture
