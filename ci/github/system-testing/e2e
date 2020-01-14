@@ -25,14 +25,14 @@ install() {
     # disable registry caching to ensure services are fetched
     echo REGISTRY_CACHING=False >> .env
     # add host name to the insecure registry
-    echo "127.0.0.1 registry" >> /etc/hosts
+    sudo echo "127.0.0.1 registry" >> /etc/hosts
     # add insecure registry into docker daemon and restart daemon
     echo "------------------------ before modifying docker daemon"
-    cat /etc/docker/daemon.json
+    sudo cat /etc/docker/daemon.json
     echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
     echo "------------------------ after modifying docker daemon"
-    cat /etc/docker/daemon.json
-    service docker restart
+    sudo cat /etc/docker/daemon.json
+    sudo service docker restart
     # start simcore
     make up-version
 
