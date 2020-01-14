@@ -28,19 +28,26 @@ qx.Class.define("osparc.component.export.ExportMacro", {
     * @param node {osparc.data.model.Node} Node owning the widget
     */
   construct: function(node) {
-    this.base(arguments);
+    this.base(arguments, new qx.ui.layout.VBox(5));
 
-    this._setLayout(new qx.ui.layout.VBox(8));
+    const key = "simcore/macros/" + osparc.utils.Utils.uuidv4();
+    const version = "1.0.0";
 
     this.set({
-      node
+      inputNode: node,
+      outputNode: new osparc.data.model.Node(key, version)
     });
 
     this.__buildLayout();
   },
 
   properties: {
-    node: {
+    inputNode: {
+      check: "osparc.data.model.Node",
+      nullable: false
+    },
+
+    outputNode: {
       check: "osparc.data.model.Node",
       nullable: false
     }
@@ -48,9 +55,13 @@ qx.Class.define("osparc.component.export.ExportMacro", {
 
   members: {
     __buildLayout: function() {
-      this.__buildMetaDataForm();
+      const formRenderer = this.__buildMetaDataForm();
       this.__buildInputSettings();
       this.__buildExposedSettings();
+
+      this._add(formRenderer);
+      const settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      this._add(settingsLayout);
     },
 
     __buildMetaDataForm: function() {
@@ -66,11 +77,11 @@ qx.Class.define("osparc.component.export.ExportMacro", {
       const formRenderer = new qx.ui.form.renderer.Single(metaDataForm).set({
         padding: 10
       });
-      this._add(formRenderer);
+      return formRenderer;
     },
 
     __buildInputSettings: function() {
-      console.log(this.getNode());
+      console.log(this.getInputNode());
     },
 
     __buildExposedSettings: function() {

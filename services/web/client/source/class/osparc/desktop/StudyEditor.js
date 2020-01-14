@@ -191,7 +191,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (node && node.isContainer()) {
           const exportMacroView = new osparc.component.export.ExportMacro(node);
 
-          const window = new qx.ui.window.Window(this.tr("Export")).set({
+          const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
