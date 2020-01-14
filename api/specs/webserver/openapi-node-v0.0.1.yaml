@@ -91,7 +91,7 @@ paths:
   /nodes/{nodeInstanceUUID}/iframe:
     get:
       tags:
-        - node api
+        - node
       summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
       operationId: get_node_output_iframe
       parameters:
