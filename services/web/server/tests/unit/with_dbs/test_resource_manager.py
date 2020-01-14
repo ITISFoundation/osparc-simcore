@@ -278,11 +278,11 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
-    r = await client.post(logout_url)
+    r = await client.post(logout_url, json={"client_session_id": client_session_id1})
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
     # ensure sufficient time is wasted here
-    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL)
+    await sleep(SERVICE_DELETION_DELAY+GARBAGE_COLLECTOR_INTERVAL+1)
     # assert dynamic service is removed
     calls = [call(client.server.app, service["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)
