@@ -22,10 +22,10 @@
 */
 
 qx.Class.define("osparc.desktop.preferences.Preferences", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, this.tr("Preferences"));
+    this.base(arguments, "preferences", this.tr("Preferences"));
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
