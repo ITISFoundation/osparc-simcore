@@ -13,6 +13,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
   construct: function() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
+    this.__validationManager = new qx.ui.form.validation.Manager();
     this.__renderLayout();
   },
   statics: {
@@ -63,6 +64,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __colorInput: null,
     __colorButton: null,
     __loadingIcon: null,
+    __validationManager: null,
     __renderLayout: function() {
       this._removeAll();
       switch (this.getMode()) {
@@ -130,9 +132,12 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "nameinput":
           if (this.__nameInput == null) {
-            this.__nameInput = new qx.ui.form.TextField();
+            this.__nameInput = new qx.ui.form.TextField().set({
+              required: true
+            });
           }
           control = this.__nameInput;
+          this.__validationManager.add(control);
           break;
         case "descriptioninput":
           if (this.__descriptionInput == null) {
@@ -147,7 +152,8 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           if (this.__colorInput == null) {
             this.__colorInput = new qx.ui.form.TextField().set({
               value: this.getColor(),
-              width: 60
+              width: 60,
+              required: true
             });
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "backgroundColor");
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
@@ -155,6 +161,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             });
           }
           control = this.__colorInput;
+          this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
         case "colorbutton":
           if (this.__colorButton == null) {
@@ -206,34 +213,37 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       buttonContainer.add(saveButton);
       buttonContainer.add(cancelButton);
       saveButton.addListener("execute", () => {
-        const data = this.__serializeData();
-        const params = {
-          data
-        };
-        saveButton.setFetching(true);
-        if (this.isPropertyInitialized("id")) {
-          params.url = {
-            tagId: this.getId()
+        if (this.__validationManager.validate()) {
+          const data = this.__serializeData();
+          const params = {
+            data
+          };
+          saveButton.setFetching(true);
+          if (this.isPropertyInitialized("id")) {
+            params.url = {
+              tagId: this.getId()
+            }
+            osparc.data.Resources.fetch("tags", "put", params)
+              .then(tag => this.set(tag))
+              .catch(console.error)
+              .finally(() => {
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
+          } else {
+            osparc.data.Resources.fetch("tags", "post", params)
+              .then(tag => this.set(tag))
+              .catch(console.error)
+              .finally(() => {
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
           }
-          osparc.data.Resources.fetch("tags", "put", params)
-            .then(tag => this.set(tag))
-            .catch(console.error)
-            .finally(() => {
-              this.setMode(this.self().modes.DISPLAY);
-              saveButton.setFetching(false);
-            });
-        } else {
-          osparc.data.Resources.fetch("tags", "post", params)
-            .then(tag => this.set(tag))
-            .catch(console.error)
-            .finally(() => {
-              this.setMode(this.self().modes.DISPLAY);
-              saveButton.setFetching(false);
-            });
         }
       }, this);
       cancelButton.addListener("execute", () => {
         if (this.isPropertyInitialized("id")) {
+          this.__validationManager.reset();
           this.setMode(this.self().modes.DISPLAY);
         } else {
           this.fireEvent("cancelNewTag");
