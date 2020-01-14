@@ -117,25 +117,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           // unselect
           this.resetBackgroundColor();
           this.getCaptionBar().resetBackgroundColor();
-          this.getContentElement().setStyles({
-            "border": "none"
-          });
           break;
         case 1:
           // semiselect
           this.setBackgroundColor("node-semiselected-backgroud");
           this.getCaptionBar().setBackgroundColor("node-semiselected-backgroud");
-          this.getContentElement().setStyles({
-            "border": "1px solid #999"
-          });
           break;
         case 2:
           // select
           this.setBackgroundColor("node-selected-backgroud");
           this.getCaptionBar().setBackgroundColor("node-selected-backgroud");
-          this.getContentElement().setStyles({
-            "border": "1px solid #BBB"
-          });
           break;
       }
     },
