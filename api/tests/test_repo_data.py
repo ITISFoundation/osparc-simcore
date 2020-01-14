@@ -1,8 +1,6 @@
 """ Keeps up-to-date all mock data in repo with schemas
 
 """
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -14,6 +12,8 @@ from typing import Dict, List
 import jsonschema
 import pytest
 import yaml
+
+from utils import current_repo_dir
 
 SYNCED_VERSIONS_SUFFIX = [
     ".json",                 # json-schema specs file
@@ -47,13 +47,16 @@ def _load_data(fpath: Path):
             data = yaml.load(fh)
     return data
 
+
 @pytest.fixture(
     scope="module",
-    params=SYNCED_VERSIONS_SUFFIX
+    params= [ str(schema_path)
+        for suffix in SYNCED_VERSIONS_SUFFIX
+        for schema_path in current_repo_dir.rglob(f"schemas/project*{suffix}")
+        ]
 )
 def project_schema(request, api_specs_dir):
-    suffix = request.param
-    schema_path = api_specs_dir / "webserver/v0/components/schemas/project-v0.0.1{}".format(suffix)
+    schema_path = Path(request.param)
     return _load_data(schema_path)
 
 # TESTS --------------------------------------------------

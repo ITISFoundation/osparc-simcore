@@ -1,5 +1,5 @@
 import trafaret as T
-
+from servicelib.config_schema_utils import addon_section
 from servicelib.tracing import schema as tracing_schema
 from simcore_sdk.config import db, s3
 
@@ -19,12 +19,13 @@ app_schema = T.Dict({
     T.Key("disable_services", default=[], optional=True): T.List(T.String())
 })
 
+
 schema = T.Dict({
     "version": T.String(),
     T.Key("main"): app_schema,
     T.Key("postgres"): db.CONFIG_SCHEMA,
     T.Key("s3"): s3.CONFIG_SCHEMA,
-    T.Key(rest_config.CONFIG_SECTION_NAME): rest_config.schema,
+    addon_section(rest_config.CONFIG_SECTION_NAME, optional=True): rest_config.schema,
     T.Key("tracing"): tracing_schema
 })
 

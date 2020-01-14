@@ -48,7 +48,6 @@ def load_projects(csv_path:Path ):
                 prj['workbench'] = json.loads(dump)
             except json.decoder.JSONDecodeError as err:
                 print(err)
-                # import pdb; pdb.set_trace()
 
             # TODO: validate against project schema!!
 
