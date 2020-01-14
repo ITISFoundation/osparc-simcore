@@ -8,6 +8,8 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
+    # show environ
+    env
     # pull simcore
     make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
