@@ -15,7 +15,6 @@ services:
       dockerfile: services/director/Dockerfile
       cache_from:
         - local/director:${BUILD_TARGET:?build_target_required}
-        - itisfoundation/director:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/director:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
@@ -33,7 +32,6 @@ services:
       dockerfile: services/web/Dockerfile
       cache_from:
         - local/webserver:${BUILD_TARGET:?build_target_required}
-        - itisfoundation/webserver:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
@@ -51,7 +49,6 @@ services:
       dockerfile: services/sidecar/Dockerfile
       cache_from:
         - local/sidecar:${BUILD_TARGET:?build_target_required}
-        - itisfoundation/sidecar:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
@@ -68,7 +65,6 @@ services:
       dockerfile: services/storage/Dockerfile
       cache_from:
         - local/storage:${BUILD_TARGET:?build_target_required}
-        - itisfoundation/storage:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/storage:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
