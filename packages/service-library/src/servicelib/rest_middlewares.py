@@ -28,8 +28,12 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 
 
 def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-    # TODO: send info + trace to client ONLY in debug mode!!!
-    resp = create_error_response( [err,], "Unexpected Server error", web.HTTPInternalServerError)
+    # FIXME: send info + trace to client ONLY in debug mode!!!
+    resp = create_error_response(
+            [err,],
+            "Unexpected Server error",
+            web.HTTPInternalServerError
+        )
 
     logger.exception('Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
         type(err),
@@ -78,7 +82,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
                         ex.text = json.dumps(payload)
-                except Exception as err:  # pylint: disable=W0703
+                except Exception as err:  # pylint: disable=broad-except
                     _process_and_raise_unexpected_error(request, err)
             raise ex
 
@@ -86,7 +90,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             logger.debug("Redirected to %s", ex)
             raise
 
-        except Exception as err:  # pylint: disable=W0703
+        except Exception as err: # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
     return _middleware

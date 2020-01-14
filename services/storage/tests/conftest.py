@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -7,13 +5,11 @@
 # pylint:disable=no-name-in-module
 # pylint:disable=no-member
 
-import asyncio
+
 import datetime
 import os
-import subprocess
 import sys
 import uuid
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
@@ -27,8 +23,7 @@ import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
-                                              SIMCORE_S3_ID, SIMCORE_S3_STR)
+from simcore_service_storage.settings import SIMCORE_S3_STR
 from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
                    USER_ID)
 

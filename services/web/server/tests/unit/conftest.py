@@ -17,6 +17,8 @@ from uuid import uuid4
 
 import pytest
 
+
+from simcore_service_webserver.resources import resources
 from simcore_service_webserver.utils import now_str
 
 ## current directory
@@ -44,6 +46,10 @@ def fake_project(fake_data_dir: Path) -> Dict:
         yield json.load(fp)
 
 @pytest.fixture
+def api_version_prefix() -> str:
+    return "v0"
+
+@pytest.fixture
 def empty_project():
     def create():
         empty_project = {
@@ -61,8 +67,11 @@ def empty_project():
 
 
 @pytest.fixture
-def project_schema_file(api_specs_dir: Path) -> Path:
-    return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
+def project_schema_file(api_version_prefix) -> Path:
+    prj_schema_path = resources.get_path(f"api/{api_version_prefix}/schemas/project-v0.0.1.json")
+    assert prj_schema_path.exists()
+    return prj_schema_path
+
 
 @pytest.fixture
 def activity_data(fake_data_dir: Path) -> Dict:

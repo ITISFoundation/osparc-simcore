@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 try:
     __version__ = pkg_resources.get_distribution('simcore_service_webserver').version
-    assert __version__=="0.1.0", "Did you install this package?"
+    assert __version__=="0.1.1", "Did you install this package?"
 except AssertionError:
     log.exception("Unexpected version %s", __version__)
     __version__ = ""

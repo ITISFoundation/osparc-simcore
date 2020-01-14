@@ -216,26 +216,26 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/storage after_failure
 
-    # test python, apihub ----------------------------------------------------------------------
+    # test python, api ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: apihub
+      name: api
       language: python
       python:
         - "3.6"
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/apihub before_install
+        - sudo bash ci/travis/unit-testing/api before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/apihub install
+        - unbuffer bash ci/travis/unit-testing/api install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/apihub before_script
+        - unbuffer bash ci/travis/unit-testing/api before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/apihub script
+        - unbuffer bash ci/travis/unit-testing/api script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/apihub after_success
+        - unbuffer bash ci/travis/unit-testing/api after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/apihub after_failure
+        - unbuffer bash ci/travis/unit-testing/api after_failure
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing

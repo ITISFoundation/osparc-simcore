@@ -6,8 +6,9 @@
 #   pip install -r requirements/dev.txt
 #
 
-# installs watchdog utility
-watchdog
+# tools
+bump2version
+watchdog[watchmedo]
 
 # installs base + tests requirements
 -r _test.txt

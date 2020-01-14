@@ -45,7 +45,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION
-    assert API_VERSION in cfg["rest"]["location"]
+    assert cfg["rest"]["enabled"]
     cfg["db"]["init_tables"] = True  # inits postgres_service
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
@@ -403,4 +403,3 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(loop, client, l
     mocked_director_api["stop_service"].assert_has_calls([
         call(client.server.app, service["service_uuid"])
     ])
-

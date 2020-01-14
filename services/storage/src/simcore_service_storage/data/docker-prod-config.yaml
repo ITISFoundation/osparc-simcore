@@ -22,7 +22,7 @@ s3:
   bucket_name: ${S3_BUCKET_NAME}
   secure: ${S3_SECURE}
 rest:
-  oas_repo: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs
+  enabled: True
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}

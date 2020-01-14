@@ -237,7 +237,7 @@ async def test_action_check(client):
         }
     }
 
-    resp = await client.post("/v0/check/{}?data={}".format(ACTION, QUERY), json=FAKE)
+    resp = await client.post(f"/v0/check/{ACTION}?data={QUERY}", json=FAKE)
     payload = await resp.json()
     data, error = tuple( payload.get(k) for k in ('data', 'error') )
 
