@@ -338,6 +338,8 @@ jobs:
             - libnss3 # This is required to run new chrome on old trusty
             - expect-dev # for unbuffer: brings color back into travis logs
             - docker-ce
+            - python3-venv
+            - python3-pip
       notifications:
         email: false
       cache:
