@@ -335,22 +335,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
+        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, this, nodeId);
+        this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
           parentNode = this.getNode(nodeData.parent);
         }
-        let node = null;
-        if (nodeData.key) {
-          // not container
-          node = new osparc.data.model.Node(nodeData.key, nodeData.version, this, nodeId);
-        } else {
-          // container
-          node = new osparc.data.model.Node(null, null, this, nodeId);
-        }
-        if (node) {
-          this.__initNodeSignals(node);
-          this.addNode(node, parentNode);
-        }
+        this.addNode(node, parentNode);
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
