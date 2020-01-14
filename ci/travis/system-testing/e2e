@@ -21,7 +21,6 @@ before_install() {
 }
 
 install() {
-    pushd tests/e2e; make install ; popd
     make pull-version || ((make pull-cache || true) && make build tag-version)
 }
 
@@ -55,10 +54,10 @@ before_script() {
     python3 -m venv .venv
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
-
-    # prepare registry
-    pushd tests/e2e
+    pushd tests/e2e;
+    make install
     make wait-for-services
+    # prepare registry
     make transfer-images-to-registry
     popd
 }

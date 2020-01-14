@@ -24,13 +24,7 @@ endif
 install: ## install testing framework
 	# install puppeteer
 	@npm install
-    # install wait for service script
-	@pip install --upgrade \
-		pip \
-  		wheel \
-  		setuptools
 	@pip install -r requirements/requirements.txt
-	@pip list
 
 .PHONY: wait-for-services
 wait-for-services: ## wait for simcore services to be up
