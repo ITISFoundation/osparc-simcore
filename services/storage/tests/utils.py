@@ -123,7 +123,6 @@ def create_full_tables(url):
     # cur = conn.cursor()
     # columns = [["file_uuid","location_id","location","bucket_name","object_name","project_id","project_name","node_id","node_name","file_name","user_id","user_name"],[],[],[]]
     # if False:
-    #     import pdb; pdb.set_trace()
     #     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
     #         filename = t + ".sql"
     #         sqlfile = str(data_dir() / Path(filename))
