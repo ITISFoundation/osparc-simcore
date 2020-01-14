@@ -64,5 +64,4 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
 
     this.add(tabView);
   }
-
 });

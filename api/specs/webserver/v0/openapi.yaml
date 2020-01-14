@@ -147,6 +147,8 @@ paths:
     $ref: './openapi-tags.yaml#/paths/~1tags'
   /tags/{tag_id}:
     $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}'
+  /tags/{tag_id}/projects/{project_id}:
+    $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}~1projects~1{project_id}'
 
 components:
   responses:

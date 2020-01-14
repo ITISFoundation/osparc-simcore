@@ -135,9 +135,10 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             this.__nameInput = new qx.ui.form.TextField().set({
               required: true
             });
+            this.__validationManager.add(this.__nameInput);
+            this.__nameInput.getContentElement().setAttribute("autocomplete", "off")
           }
           control = this.__nameInput;
-          this.__validationManager.add(control);
           break;
         case "descriptioninput":
           if (this.__descriptionInput == null) {
@@ -159,9 +160,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
               converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
             });
+            this.__validationManager.add(this.__colorInput, osparc.utils.Validators.hexColor);
           }
           control = this.__colorInput;
-          this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
         case "colorbutton":
           if (this.__colorButton == null) {

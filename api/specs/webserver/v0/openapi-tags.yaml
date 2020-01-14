@@ -38,7 +38,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
+          type: integer
     put:
       summary: Updates a tag
       operationId: update_tag
@@ -57,3 +57,27 @@ paths:
       responses:
         '204':
           description: The tag has been successfully deleted
+  /tags/{tag_id}/projects/{project_id}:
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      summary: Links an existing label with an existing study
+      operationId: add_label_to_study
+      responses:
+        '204':
+          description: The tag has been successfully linked to the study
+    delete:
+      summary: Removes an existing link between a label and a study
+      operationId: remove_label_from_study
+      responses:
+        '204':
+          description: The tag has been successfully removed from the study
