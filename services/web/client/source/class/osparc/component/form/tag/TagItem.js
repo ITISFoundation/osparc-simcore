@@ -39,7 +39,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     color: {
       check: "Color",
       event: "changeColor",
-      init: qx.theme.manager.Color.getInstance().resolve("background-main-lighter")
+      init: "#303030"
     },
     mode: {
       check: "String",
