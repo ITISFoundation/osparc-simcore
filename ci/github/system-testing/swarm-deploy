@@ -13,6 +13,7 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
+    env
     bash ci/helpers/ensure_python_pip
     pip3 install -r tests/swarm-deploy/requirements.txt
     make pull-version || ((make pull-cache || true) && make build tag-version)
