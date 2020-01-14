@@ -15,6 +15,7 @@ aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
+aiohttp-swagger[performance]
 aiopg[sa]
 aioredis
 aiosmtplib

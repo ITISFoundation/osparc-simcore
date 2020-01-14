@@ -11,8 +11,8 @@ import openapi_core
 import yaml
 from aiohttp import web
 
+from aiohttp_swagger import setup_swagger
 from servicelib import openapi
-
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_middlewares import append_rest_middlewares
 from simcore_service_webserver.resources import resources
@@ -51,14 +51,21 @@ def setup(app: web.Application):
         routes = rest_routes.create(specs)
         app.router.add_routes(routes)
 
-        # middelwares
+        # middlewares
         append_rest_middlewares(app, base_path)
+
+        # rest API doc at /api/doc
+        log.debug("OAS loaded from %s ", spec_path)
+        setup_swagger(app,
+            swagger_from_file=str(spec_path),
+            ui_version=3)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure
         # Define whether it is critical or this server can still
         # continue working offering partial services
         log.exception("Invalid rest API specs. Rest API is DISABLED")
+
 
 # alias
 setup_rest = setup
