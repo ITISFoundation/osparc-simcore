@@ -197,8 +197,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
-            width: 600,
-            height: 500,
+            width: 900,
+            height: 800,
             showMinimize: false,
             modal: true
           });
