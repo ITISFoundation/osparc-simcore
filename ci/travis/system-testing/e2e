@@ -51,6 +51,10 @@ before_script() {
     # start simcore
     make up-version
 
+    # create a python venv and activate
+    python3 -m venv .venv
+    source .venv/bin/activate
+
     # prepare registry
     pushd tests/e2e
     make wait-for-services
