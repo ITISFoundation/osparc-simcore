@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodesTree = new osparc.component.widget.NodesTree(study.getWorkbench());
+ *   let nodesTree = new osparc.component.widget.NodesTree();
  *   this.getRoot().add(nodesTree);
  * </pre>
  */
@@ -43,10 +43,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     */
   construct: function(study) {
     this.base(arguments);
-
-    this.set({
-      study
-    });
 
     this._setLayout(new qx.ui.layout.VBox());
 
@@ -63,13 +59,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      nullable: false
-    }
   },
 
   members: {
@@ -162,7 +151,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     populateTree: function() {
-      const study = this.getStudy();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
         label: study.getName(),
@@ -267,7 +256,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             newLabel
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
-          const study = this.getStudy();
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
           if (nodeId === "root") {
             const params = {
               name: newLabel
@@ -321,9 +310,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         }
       }, this);
       qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
-        if (this.isPropertyInitialized("study")) {
-          this.populateTree();
-        }
+        this.populateTree();
       }, this);
     }
   }
