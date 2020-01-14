@@ -29,7 +29,7 @@ install: ## install testing framework
 		pip3 \
   		wheel \
   		setuptools
-    @pip3 install -r requirements/requirements.txt
+	@pip3 install -r requirements/requirements.txt
 
 .PHONY: wait-for-services
 wait-for-services: ## wait for simcore services to be up
