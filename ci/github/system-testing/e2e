@@ -25,11 +25,11 @@ install() {
     # disable registry caching to ensure services are fetched
     echo REGISTRY_CACHING=False >> .env
     # add host name to the insecure registry
-    sudo echo "127.0.0.1 registry" >> /etc/hosts
+    sudo bash -c "echo '127.0.0.1 registry' >> /etc/hosts"
     # add insecure registry into docker daemon and restart daemon
     echo "------------------------ before modifying docker daemon"
     sudo cat /etc/docker/daemon.json
-    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
+    sudo bash -c "echo '{\"insecure-registries\": [\"registry:5000\"]}' >> /etc/docker/daemon.json"
     echo "------------------------ after modifying docker daemon"
     sudo cat /etc/docker/daemon.json
     sudo service docker restart
