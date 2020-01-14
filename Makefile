@@ -39,6 +39,11 @@ export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/we
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# api-versions
+export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
+export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
+export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
+
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
 
@@ -329,6 +334,9 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
+	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
+	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
+	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
 	# tools version
 	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
 	@echo ' jq     : $(shell jq --version)'
