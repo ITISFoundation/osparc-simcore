@@ -153,13 +153,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
         if (ctrl && ctrl.link) {
-          if (this.getNode().getKey()
-            .includes("/neuroman")) {
-            // HACK: Only Neuroman should enter here
-            data[portId] = ctrl.link["output"];
-          } else {
-            data[portId] = ctrl.link;
-          }
+          data[portId] = ctrl.link;
         }
         // FIXME: "null" should be a valid input
         if (data[portId] === "null") {

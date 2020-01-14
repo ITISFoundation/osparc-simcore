@@ -368,18 +368,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __getCurrentPipeline: function() {
       const saveContainers = false;
       const savePosition = false;
-      let currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers, savePosition);
-      for (const nodeId in currentPipeline) {
-        let currentNode = currentPipeline[nodeId];
-        if (currentNode.key.includes("/neuroman")) {
-          // HACK: Only Neuroman should enter here
-          currentNode.key = "simcore/services/dynamic/modeler/webserver";
-          currentNode.version = "2.8.0";
-          const modelSelected = currentNode.inputs["inModel"];
-          delete currentNode.inputs["inModel"];
-          currentNode.inputs["model_name"] = modelSelected;
-        }
-      }
+      const currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers, savePosition);
       return currentPipeline;
     },
 
