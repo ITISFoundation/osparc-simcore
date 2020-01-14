@@ -67,20 +67,22 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
         await rt.set_socket_id(sid)
 
 @observe(event="SIGNAL_USER_LOGOUT")
-async def user_logged_out(user_id: str, app: web.Application):
+async def user_logged_out(user_id: str, client_session_id: str, app: web.Application):
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
-    with managed_resource(user_id, None, app) as rt:
-        sockets = await rt.find_socket_ids()
+    sio = get_socket_server(app)
+    with managed_resource(user_id, client_session_id, app) as rt:
+        # start by disconnecting this client
+        socket_id = await rt.remove_socket_id()
+        await sio.disconnect(sid=socket_id)
 
-        # give any other client a chance to logout properly
-        sio = get_socket_server(app)
+        # now let's give a chance to the other to logout properly
+        sockets = await rt.find_socket_ids()
         logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
         await asyncio.gather(*logout_tasks, return_exceptions=True)
         # let the client react
-        await asyncio.sleep(5)
+        await asyncio.sleep(3)
         # ensure disconnection is effective
-        sockets = await rt.find_socket_ids()
         disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
         await asyncio.gather(*disconnect_tasks, return_exceptions=True)
 
