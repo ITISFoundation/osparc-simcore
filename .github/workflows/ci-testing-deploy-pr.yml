@@ -7,10 +7,8 @@ on:
 
 
 env:
-  # secrets can be set in settings/secrets on github
-  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  # secrets can be set in settings/secrets on github, but are not available in PRs!!
+  DOCKER_REGISTRY: itisfoundation
   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
   #enable buildkit
