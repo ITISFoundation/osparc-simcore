@@ -213,20 +213,34 @@ async def test_websocket_multiple_connections(client, logged_user, socketio_clie
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, client_session_id, expected):
+async def test_websocket_disconnected_after_logout(client, logged_user, socketio_client, client_session_id, expected, mocker):
     app = client.server.app
     socket_registry = get_registry(app)
 
+    # connect first socket
     cur_client_session_id1 = client_session_id()
     sio = await socketio_client(cur_client_session_id1)
+    socket_logout_mock_callable = mocker.Mock()
+    sio.on('logout', handler=socket_logout_mock_callable)
+
+    # connect second socket
     cur_client_session_id2 = client_session_id()
     sio2 = await socketio_client(cur_client_session_id2)
-    # logout
+    socket_logout_mock_callable2 = mocker.Mock()
+    sio2.on('logout', handler=socket_logout_mock_callable2)
+
+    # logout everyone
     logout_url = client.app.router['auth_logout'].url_for()
     r = await client.post(logout_url)
     assert r.url_obj.path == logout_url.path
     await assert_status(r, expected)
+    await sleep(3)
+    # we should get logged out
+    socket_logout_mock_callable.assert_called_once()
+    socket_logout_mock_callable2.assert_called_once()
 
+    await sleep(3)
+    # first socket should be closed now
     assert not sio.sid
     # second socket also closed
     assert not sio2.sid

@@ -8,13 +8,13 @@
 
 import asyncio
 import logging
-from typing import Dict
+from typing import Dict, List, Optional
 
 from aiohttp import web
-
-from servicelib.observer import observe
 from socketio.exceptions import \
     ConnectionRefusedError as socket_io_connection_error
+
+from servicelib.observer import observe
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -66,27 +66,37 @@ async def authenticate_user(sid: str, app: web.Application, request: web.Request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
 
+async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
+    log.debug("disconnecting sockets %s", sockets)
+    logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
+    await asyncio.gather(*logout_tasks, return_exceptions=True)
+    # let the client react
+    await asyncio.sleep(3)
+    # ensure disconnection is effective
+    disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
+    await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+
 @observe(event="SIGNAL_USER_LOGOUT")
-async def user_logged_out(user_id: str, client_session_id: str, app: web.Application):
-    log.debug("user %s must be disconnected", user_id)
+async def user_logged_out(user_id: str, client_session_id: Optional[str], app: web.Application) -> None:
+    log.debug("user %s must be disconnected", user_id)    
+
     # find the sockets related to the user
     sio = get_socket_server(app)
     with managed_resource(user_id, client_session_id, app) as rt:
-        # start by disconnecting this client
-        socket_id = await rt.remove_socket_id()
-        await sio.disconnect(sid=socket_id)
+        # start by disconnecting this client if possible
+        if client_session_id:
+            socket_id = await rt.remove_socket_id()
+            await sio.disconnect(sid=socket_id)
 
-        # now let's give a chance to the other to logout properly
+        # now let's give a chance to all the clients to properly logout
         sockets = await rt.find_socket_ids()
-        logout_tasks = [sio.emit("logout", to=sid, data={"reason": "user logged out"}) for sid in sockets]
-        await asyncio.gather(*logout_tasks, return_exceptions=True)
-        # let the client react
-        await asyncio.sleep(3)
-        # ensure disconnection is effective
-        disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-        await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+        if sockets:
+            # let's do it as a task so it does not block us here
+            asyncio.ensure_future(disconnect_other_sockets(sio, sockets))
 
-async def disconnect(sid: str, app: web.Application):
+            
+
+async def disconnect(sid: str, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected.
 
     Arguments:
