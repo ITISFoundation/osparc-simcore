@@ -431,7 +431,6 @@ jobs:
           ]
     runs-on: ubuntu-latest
     steps:
-      - continue-on-error: false
       - uses: actions/checkout@v1
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
