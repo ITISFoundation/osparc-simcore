@@ -47,8 +47,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
 
-    this.initDefault();
-    this.connectEvents();
+    this.__initDefault();
+    this.__connectEvents();
 
     this.__startAutoSaveTimer();
     this.__attachEventHandlers();
@@ -87,7 +87,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    initDefault: function() {
+    __initDefault: function() {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
@@ -146,7 +146,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
     },
 
-    connectEvents: function() {
+    __connectEvents: function() {
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
