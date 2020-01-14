@@ -85,11 +85,6 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
-    },
-
     key: {
       check: "String",
       nullable: true
@@ -112,20 +107,8 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeLabel"
     },
 
-    propsWidget: {
-      check: "osparc.component.form.renderer.PropForm",
-      init: null,
-      nullable: true
-    },
-
     inputAccess: {
       check: "Object",
-      nullable: true
-    },
-
-    inputsMapper: {
-      check: "qx.ui.core.Widget",
-      init: null,
       nullable: true
     },
 
@@ -152,22 +135,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeServiceUrl"
     },
 
-    iFrame: {
-      check: "osparc.component.widget.PersistentIframe",
-      init: null,
-      nullable: true
-    },
-
-    restartIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
-    },
-
-    retrieveIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
-    },
-
     progress: {
       check: "Number",
       init: 0,
@@ -184,6 +151,39 @@ qx.Class.define("osparc.data.model.Node", {
       check: "String",
       nullable: true,
       event: "changeInteractiveStatus"
+    },
+
+    propsWidget: {
+      check: "osparc.component.form.renderer.PropForm",
+      init: null,
+      nullable: true
+    },
+
+    inputsMapper: {
+      check: "osparc.component.widget.InputsMapper",
+      init: null,
+      nullable: true
+    },
+
+    iFrame: {
+      check: "osparc.component.widget.PersistentIframe",
+      init: null,
+      nullable: true
+    },
+
+    restartIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
+    },
+
+    retrieveIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
+    },
+
+    workbench: {
+      check: "osparc.data.model.Workbench",
+      nullable: false
     }
   },
 
