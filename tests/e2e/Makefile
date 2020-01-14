@@ -25,15 +25,16 @@ install: ## install testing framework
 	# install puppeteer
 	@npm install
     # install wait for service script
-	@pip3 install --upgrade \
-		pip3 \
+	@pip install --upgrade \
+		pip \
   		wheel \
   		setuptools
-	@pip3 install -r requirements/requirements.txt
+	@pip install -r requirements/requirements.txt
+	@pip list
 
 .PHONY: wait-for-services
 wait-for-services: ## wait for simcore services to be up
-	@python3 wait_for_services.py
+	@python wait_for_services.py
 
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
