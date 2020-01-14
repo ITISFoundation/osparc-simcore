@@ -29,7 +29,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   study.setWorkbench(new osparc.data.model.Workbench(study, study.workbench));
+ *   const workbench = new osparc.data.model.Workbench(study.workbench)
+ *   study.setWorkbench(workbench);
+ *   workbench.initWorkbench();
  * </pre>
  */
 
@@ -37,30 +39,14 @@ qx.Class.define("osparc.data.model.Workbench", {
   extend: qx.core.Object,
 
   /**
-    * @param study {osparc.data.model.Study} Study owning the Workbench
     * @param workbenchData {Object} Object containing the workbench raw data
     */
-  construct: function(study, workbenchData) {
+  construct: function(workbenchData) {
     this.base(arguments);
 
-    this.set({
-      study: study,
-      studyName: study.getName()
-    });
-
-    this.__deserializeWorkbench(workbenchData);
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      nullable: false
-    },
-
-    studyName: {
-      check: "String",
-      nullable: false
-    }
+    this.__workbenchInitData = workbenchData;
+    this.__nodesTopLevel = {};
+    this.__edges = {};
   },
 
   events: {
@@ -70,8 +56,21 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   members: {
+    __workbenchInitData: null,
     __nodesTopLevel: null,
     __edges: null,
+
+    initWorkbench: function() {
+      this.__deserializeWorkbench(this.__workbenchInitData);
+      this.__workbenchInitData = null;
+
+      const allModels = this.getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        node.addDynamicButtons();
+        node.startDynamicService();
+      }
+    },
 
     isContainer: function() {
       return false;
@@ -306,9 +305,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserializeWorkbench: function(workbenchData) {
-      this.__nodesTopLevel = {};
-      this.__edges = {};
-
       this.__deserializeNodes(workbenchData);
       this.__deserializeEdges(workbenchData);
     },
@@ -353,15 +349,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         this.getNode(nodeId).giveUniqueName();
-      }
-    },
-
-    initWorkbench: function() {
-      const allModels = this.getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        node.addDynamicButtons();
-        node.startDynamicService();
       }
     },
 

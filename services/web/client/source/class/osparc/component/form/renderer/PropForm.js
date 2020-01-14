@@ -20,13 +20,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form, workbench, node) {
-    // workbench and node are necessary for creating links
-    if (workbench) {
-      this.setWorkbench(workbench);
-    } else {
-      this.setWorkbench(null);
-    }
+  construct: function(form, node) {
     if (node) {
       this.setNode(node);
     } else {
@@ -51,11 +45,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: true
-    },
-
     node: {
       check: "osparc.data.model.Node",
       nullable: true
@@ -346,9 +335,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      if (this.getWorkbench() && node1Id && node2Id) {
-        const node1 = this.getWorkbench().getNode(node1Id);
-        const node2 = this.getWorkbench().getNode(node2Id);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
+      if (workbench && node1Id && node2Id) {
+        const node1 = workbench.getNode(node1Id);
+        const node2 = workbench.getNode(node2Id);
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);

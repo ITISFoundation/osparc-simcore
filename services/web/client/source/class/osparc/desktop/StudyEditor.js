@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.store.Store.getInstance().setCurrentStudyId(study.getUuid());
+    osparc.store.Store.getInstance().setCurrentStudy(study);
 
     study.openStudy();
     study.initWorkbench();
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
      * Destructor
      */
     destruct: function() {
-      osparc.store.Store.getInstance().setCurrentStudyId(null);
+      osparc.store.Store.getInstance().setCurrentStudy(null);
       this.__stopAutoSaveTimer();
     },
 
@@ -141,10 +141,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, "root");
 
-      const nodeView = this.__nodeView = new osparc.component.widget.NodeView().set({
+      this.__nodeView = new osparc.component.widget.NodeView().set({
         minHeight: 200
       });
-      nodeView.setWorkbench(study.getWorkbench());
     },
 
     connectEvents: function() {

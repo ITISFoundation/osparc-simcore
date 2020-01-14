@@ -28,7 +28,6 @@
  *
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.widget.NodeView();
- *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
  *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
@@ -85,11 +84,6 @@ qx.Class.define("osparc.component.widget.NodeView", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
-    },
-
     node: {
       check: "osparc.data.model.Node",
       apply: "_applyNode"
@@ -142,10 +136,10 @@ qx.Class.define("osparc.component.widget.NodeView", {
           if (node) {
             node.renameNode(evt.getData());
           }
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
           qx.event.message.Bus.getInstance().dispatchByName(
             "updateStudy",
-            this.getWorkbench().getStudy()
-              .serializeStudy()
+            study.serializeStudy()
           );
         }
       }, this);
@@ -171,8 +165,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
 
       // Add the representations for the inputs
       const inputNodes = this.getNode().getInputNodes();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
+        let inputNode = study.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
           for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
             const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];

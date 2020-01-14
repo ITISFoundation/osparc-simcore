@@ -47,6 +47,11 @@ qx.Class.define("osparc.store.Store", {
   type : "singleton",
 
   properties: {
+    currentStudy: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: true
+    },
     currentStudyId: {
       check: "String",
       init: null,

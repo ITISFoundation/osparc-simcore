@@ -60,7 +60,6 @@ qx.Class.define("osparc.data.model.Node", {
     this.set({
       key,
       version,
-      workbench: workbench ? workbench : {},
       nodeId: uuid || osparc.utils.Utils.uuidv4()
     });
 
@@ -179,11 +178,6 @@ qx.Class.define("osparc.data.model.Node", {
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
-    },
-
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
     }
   },
 
@@ -217,6 +211,11 @@ qx.Class.define("osparc.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
+
+    getWorkbench: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      return study.getWorkbench();
+    },
 
     isInKey: function(str) {
       if (this.getMetaData() === null) {
@@ -464,7 +463,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      const propsWidget = new osparc.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
         const changedField = e.getData();
@@ -685,7 +684,8 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, true, data["size_bytes"]);
+            const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
+            this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
@@ -743,8 +743,8 @@ qx.Class.define("osparc.data.model.Node", {
         this.setProgress(0);
         this.setInteractiveStatus("starting");
 
-        const prjId = this.getWorkbench().getStudy()
-          .getUuid();
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        const prjId = study.getUuid();
         // start the service
         const url = "/running_interactive_services";
         let query = "?project_id=" + encodeURIComponent(prjId);

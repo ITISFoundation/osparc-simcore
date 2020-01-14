@@ -57,12 +57,8 @@ Object.freeze(LOG_LEVEL);
 qx.Class.define("osparc.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(workbench) {
+  construct: function() {
     this.base();
-
-    this.set({
-      workbench
-    });
 
     this._setLayout(new qx.ui.layout.VBox());
 
@@ -95,11 +91,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       nullable: false,
       check : "Boolean",
       init: false
-    },
-
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
     },
 
     currentNodeId: {
@@ -236,7 +227,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __nodeSelected: function(nodeId) {
-      const workbench = this.getWorkbench();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
       const node = workbench.getNode(nodeId);
       if (node) {
         this.__textFilterField.setValue(node.getLabel());
@@ -266,11 +258,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study === null) {
+        return;
+      }
+
       let label = null;
       if (nodeId === "root") {
         label = "Workbench";
       } else {
-        const workbench = this.getWorkbench();
+        const workbench = study.getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
           label = node.getLabel();

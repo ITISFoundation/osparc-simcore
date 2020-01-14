@@ -38,13 +38,8 @@ qx.Class.define("osparc.test.data.Permissions", {
     },
 
     createEmptyWorkbench: function() {
-      const studyData = {
-        name: "Test Study",
-        description: ""
-      };
-      const study = new osparc.data.model.Study(studyData);
       const wbData = {};
-      this.__workbench = new osparc.data.model.Workbench(study, wbData);
+      this.__workbench = new osparc.data.model.Workbench(wbData);
     },
 
     createDummyNode: function() {

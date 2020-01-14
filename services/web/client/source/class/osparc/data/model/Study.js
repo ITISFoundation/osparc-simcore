@@ -37,9 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
-    * @param loadWorkbench {Boolean} Flag to create the study model with or without the workbench part
     */
-  construct: function(studyData, loadWorkbench = true) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
@@ -52,10 +51,8 @@ qx.Class.define("osparc.data.model.Study", {
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
     });
 
-    if (loadWorkbench) {
-      const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-      this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
-    }
+    const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
+    this.setWorkbench(new osparc.data.model.Workbench(wbData));
   },
 
   properties: {
@@ -68,9 +65,8 @@ qx.Class.define("osparc.data.model.Study", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Study",
       event: "changeName",
-      apply : "_applyName"
+      init: "New Study"
     },
 
     description: {
@@ -142,12 +138,6 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    _applyName: function(newName) {
-      if (this.isPropertyInitialized("workbench")) {
-        this.getWorkbench().setStudyName(newName);
-      }
-    },
-
     initWorkbench: function() {
       this.getWorkbench().initWorkbench();
     },
@@ -205,7 +195,7 @@ qx.Class.define("osparc.data.model.Study", {
             lastChangeDate: new Date(data.lastChangeDate),
             workbench: this.getWorkbench()
           });
-          this.setWorkbench(new osparc.data.model.Workbench(this, data.workbench));
+          // this.setWorkbench(new osparc.data.model.Workbench(data.workbench));
           return data;
         });
     }
