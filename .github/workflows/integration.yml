@@ -156,7 +156,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - name: install
-      run: sudo ./ci/github/system-testing/e2e install
+      run: ./ci/github/system-testing/e2e install
     - name: test
       run: ./ci/github/system-testing/e2e test
     - name: cleanup
