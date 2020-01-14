@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 from yarl import URL
 
-from servicelib.observer import observe
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
