@@ -38,7 +38,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   /**
     * @param study {osparc.data.model.Study} Study owning the Workbench
-    * @param workbenchData {qx.core.Object} Object containing the workbench raw data
+    * @param workbenchData {Object} Object containing the workbench raw data
     */
   construct: function(study, workbenchData) {
     this.base(arguments);
