@@ -1,5 +1,4 @@
 import logging
-from asyncio import ensure_future
 
 import passwordmeter
 from aiohttp import web
@@ -138,7 +137,7 @@ async def login(request: web.Request):
 async def logout(request: web.Request):
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     user_id = request.get(RQT_USERID_KEY, -1)
-    ensure_future(observer.emit("SIGNAL_USER_LOGOUT", user_id, request.app))
+    await observer.emit("SIGNAL_USER_LOGOUT", user_id, request.app)
     await forget(request, response)
     return response
 
