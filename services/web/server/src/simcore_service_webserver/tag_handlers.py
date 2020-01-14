@@ -22,13 +22,14 @@ async def list_tags(request: web.Request):
 @login_required
 async def update_tag(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    tag_id = request.match_info.get('tag_id')
     tag_data = await request.json()
     async with engine.acquire() as conn:
         query = tags.update().values(
             name=tag_data['name'],
             description=tag_data['description'],
             color=tag_data['color']
-        ).where(tags.c.id == tag_data["id"]).returning(
+        ).where(tags.c.id == tag_id).returning(
             tags.c.id,
             tags.c.name,
             tags.c.description,
@@ -68,7 +69,7 @@ async def create_tag(request: web.Request):
 
 @login_required
 async def delete_tag(request: web.Request):
-    _, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    engine = request.app[APP_DB_ENGINE_KEY]
     tag_id = request.match_info.get('tag_id')
     async with engine.acquire() as conn:
         query = tags.delete().where(tags.c.id == tag_id)

@@ -36,7 +36,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       this.__tagItems.forEach(tagItem => this.add(tagItem));
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignX: "right"
+        alignX: "center"
       }));
       buttonContainer.add(this.__addTagButton);
       this.add(buttonContainer);
