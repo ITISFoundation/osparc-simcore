@@ -223,7 +223,7 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     sio2 = await socketio_client(cur_client_session_id2)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
-    r = await client.get(logout_url)
+    r = await client.post(logout_url)
     assert r.url_obj.path == logout_url.path
     await assert_status(r, expected)
 
@@ -251,7 +251,7 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
     logout_url = client.app.router['auth_logout'].url_for()
-    r = await client.get(logout_url)
+    r = await client.post(logout_url)
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
     # ensure sufficient time is wasted here
