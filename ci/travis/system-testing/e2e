@@ -54,6 +54,7 @@ before_script() {
     # create a python venv and activate
     python3 -m venv .venv
     source .venv/bin/activate
+    bash ci/helpers/ensure_python_pip
 
     # prepare registry
     pushd tests/e2e

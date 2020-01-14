@@ -36,6 +36,10 @@ install() {
     # start simcore
     make up-version
 
+    # create a python venv and activate
+    python3 -m venv .venv
+    source .venv/bin/activate
+    bash ci/helpers/ensure_python_pip
 
     # install testing framework
     pushd tests/e2e
