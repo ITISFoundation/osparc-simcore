@@ -257,14 +257,7 @@ qx.Class.define("osparc.utils.Services", {
         version: "1.0.0",
         type: "group",
         name: "Nodes Group",
-        description: "Nodes Group",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.ethz.ch"
-        }],
-        contact: "maiz@itis.ethz.ch",
-        inputs: {},
-        outputs: {}
+        description: "Nodes Group"
       }];
       return builtInServices;
     },
