@@ -1,0 +1,199 @@
+paths:
+  /projects:
+    get:
+      summary: List all projects
+      operationId: list_projects
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            default: "all"
+            enum: [template, user, all]
+          description: if true only templates otherwise only users
+        - name: state
+          in: query
+          schema:
+            type: string
+            default: "active"
+            enum: [active]
+          description: if set only active projects are returned. if type=template this parameter is ignored.
+        - name: start
+          in: query
+          schema:
+            type: integer
+            minItems: 0
+          description: index to the first item to return
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minItems: 1
+          description: maximum number of items to return
+      responses:
+        "200":
+          description: list of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectArrayEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    post:
+      summary: Create new project
+      operationId: create_projects
+      parameters:
+        - name: from_template
+          in: query
+          schema:
+            type: string
+          description: "Option to create a project from existing template: from_template={template_uuid}"
+        - name: as_template
+          in: query
+          schema:
+            type: string
+          description: "Option to create a template from existing project: as_template={study_uuid}"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Project"
+      responses:
+        "201":
+          description: project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects/{project_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Gets given project
+      operationId: get_project
+      responses:
+        "200":
+          description: got detailed project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    put:
+      summary: Enclosed entity replaces given project
+      operationId: replace_project
+      parameters:
+        - name: run
+          in: query
+          required: false
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Project"
+      responses:
+        "200":
+          description: got detailed project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    delete:
+      summary: Delete given project
+      operationId: delete_project
+      responses:
+        "204":
+          description: project has been successfully deleted
+
+  /projects/{project_id}/open:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Open a given project
+      operationId: open_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientSessionId"
+      responses:
+        "200":
+          description: project successfuly opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects/{project_id}/close:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Closes a given project
+      operationId: close_project
+      requestBody:
+        description: browser tab identifier
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientSessionId"
+      responses:
+        "204":
+          description: project succesfuly closed
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects/active:
+    get:
+      summary: Gets active project
+      operationId: get_active_project
+      responses:
+        "200":
+          description: returns active project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+components:
+  schemas:
+    Project:
+      $ref: "../common/schemas/project.yaml#/components/schemas/Project"
+    ProjectEnveloped:
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectEnveloped"
+    ProjectArrayEnveloped:
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped"
+    ClientSessionId:
+      type: string
+      example: 5ac57685-c40f-448f-8711-70be1936fd63
+
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"

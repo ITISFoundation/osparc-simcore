@@ -4,15 +4,13 @@
     - settings
 """
 import trafaret as T
+from servicelib.config_schema_utils import minimal_addon_schema
 
 from .settings import APP_OPENAPI_SPECS_KEY
 
+CONFIG_SECTION_NAME: str = 'rest'
 
-CONFIG_SECTION_NAME = 'rest'
-
-schema = T.Dict({
-    T.Key("oas_repo"): T.Or(T.String, T.URL),   # either path or url should contain version in it
-})
+schema: T.Dict = minimal_addon_schema()
 
 __all__ = (
     'APP_OPENAPI_SPECS_KEY',

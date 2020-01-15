@@ -3,35 +3,59 @@
 #
 .DEFAULT_GOAL := help
 
-APP_NAME     := webserver
-APP_CLI_NAME  = simcore-service-${APP_NAME}
+REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
+VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
-ROOT_DIR     = $(abspath $(CURDIR)/../../../)
-VENV_DIR    ?= $(abspath $(ROOT_DIR)/.venv)
+APP_NAME     := webserver
+
+
+
+.PHONY: devenv
+devenv: ## build development environment (using main services/docker-compose-build.yml)
+	@$(MAKE) -C ${REPO_BASE_DIR} $@
+
+
+.PHONY: openapi-specs
+openapi-specs: ## updates and validates openapi specifications
+	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
 .PHONY: install
-install: ## install app in edit mode for development [DEV]
-	# installing in edit mode
-	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
+install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
+	# installing in $(subst install-,,$@) mode
+	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests-unit tests-integration
 tests-unit: ## runs unit tests
 	# running unit tests
-	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
+	@pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests/unit
 
 
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
+	pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) -C ${ROOT_DIR} target=${APP_NAME} build
+build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
+
+
+.PHONY: version-patch version-minor
+version-patch version-minor: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
+	# upgrades as $(subst version-,,$@) version, commits and tags
+	@bump2version --verbose --list $(subst version-,,$@)
+
+
+.PHONY: info
+info: ## displays
+	# installed
+	@pip list
+	# version
+	@cat setup.py | grep version=
 
 
 .PHONY: clean
@@ -48,5 +72,5 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 help: ## this colorful help
 	@echo "Recipes for '${APP_NAME}':"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_- ]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

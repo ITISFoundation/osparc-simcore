@@ -6,6 +6,9 @@
 #   pip install -r requirements/dev.txt
 #
 
+# tooling
+bump2version
+
 # installs base + tests requirements
 -r _test.txt
 

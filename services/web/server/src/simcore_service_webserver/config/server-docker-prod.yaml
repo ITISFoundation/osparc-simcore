@@ -68,9 +68,8 @@ storage:
   version: v0
 rest:
   version: v0
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+  enabled: True
 session:
   # python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}

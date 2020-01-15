@@ -19,8 +19,8 @@ TODO: add simcore_sdk.config.s3 section!!!
 import logging
 
 import trafaret as T
-
 from servicelib import application_keys  # pylint:disable=unused-import
+from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
 from . import (computation_config, db_config, email_config, rest_config,
                session_config, storage_config, tracing)
@@ -33,17 +33,6 @@ from .resources import resources
 from .socketio import config as socketio_config
 
 log = logging.getLogger(__name__)
-
-
-def addon_section(name: str, optional: bool=False) -> T.Key:
-    if optional:
-        return T.Key(name, default=dict(enabled=True), optional=optional)
-    return T.Key(name)
-
-def minimal_addon_schema() -> T.Dict:
-    return T.Dict({
-            T.Key("enabled", default=True, optional=True): T.Bool()
-        })
 
 
 def create_schema() -> T.Dict:

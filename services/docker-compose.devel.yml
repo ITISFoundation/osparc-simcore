@@ -7,10 +7,6 @@
 version: '3.7'
 services:
 
-  apihub:
-    volumes:
-      - '../api:/srv/http/api'
-
   director:
     environment:
       - REGISTRY_CACHING=False

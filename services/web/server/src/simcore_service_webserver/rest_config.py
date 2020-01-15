@@ -3,17 +3,24 @@
     - config-file schema
     - settings
 """
+from typing import Dict
+
 import trafaret as T
+from aiohttp import web
 
-from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-
-APP_OPENAPI_SPECS_KEY = APP_OPENAPI_SPECS_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = 'rest'
 
 schema = T.Dict({
+    T.Key("enabled", default=True, optional=True): T.Bool(),
     "version": T.Enum("v0"),
-    "location": T.Or(T.String, T.URL),   # either path or url should contain version in it
-    # TODO: DO NOT USE this option anymore. Deprecate
-    T.Key("extra_urls", optional=True): T.Or(T.String(), T.List(T.String)),  # full url seen by front-end
 })
+
+
+def get_rest_config(app: web.Application) -> Dict:
+    return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+__all__ =[
+    'APP_OPENAPI_SPECS_KEY'
+]

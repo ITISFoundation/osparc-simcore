@@ -37,9 +37,11 @@ setup_config = dict(
     tests_require=test_requirements,
     package_data={
         '': [
+            'api/v0/openapi.yaml',
+            'api/v0/schemas/*.json',
             'data/*.json',
             'data/*.yml',
-            'data/*.yaml'
+            'data/*.yaml',
             ],
     },
     entry_points={
