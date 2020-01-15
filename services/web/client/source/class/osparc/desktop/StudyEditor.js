@@ -189,7 +189,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          const exportMacroView = new osparc.component.export.ExportMacro(node);
+          const exportGroupView = new osparc.component.export.ExportGroup(node);
 
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             showMinimize: false,
             modal: true
           });
-          window.add(exportMacroView);
+          window.add(exportGroupView);
           window.center();
           window.open();
         }

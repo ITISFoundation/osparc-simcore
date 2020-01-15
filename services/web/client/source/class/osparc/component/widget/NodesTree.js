@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       const exportButton = new qx.ui.toolbar.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
-        this.__exportMacro();
+        this.__exportGroup();
       }, this);
       osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
       toolbar.add(exportButton);
@@ -228,7 +228,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.fireEvent("addNode");
     },
 
-    __exportMacro: function() {
+    __exportGroup: function() {
       const selectedItem = this.__getSelection();
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
@@ -236,7 +236,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           this.__openItem(nodeId);
           this.fireDataEvent("exportNode", nodeId);
         } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Macros can be exported."), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
         }
       }
     },

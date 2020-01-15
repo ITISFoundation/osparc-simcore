@@ -1,27 +1,15 @@
 /*
  * oSPARC - The SIMCORE frontend - https://osparc.io
- * Copyright: 2019 IT'IS Foundation - https://itis.swiss
+ * Copyright: 2020 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
- * Authors: Ignacio Pascual (ignapas)
- *          Odei Maiz (odeimaiz)
+ * Authors: Odei Maiz (odeimaiz)
  */
 
 /**
- * Widget that contains the StudyDetails of the given study metadata.
  *
- * It also provides a button that opens a window with the same information.
- *
- * *Example*
- *
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
- *    this.add(serviceInfo);
- * </pre>
  */
 
-qx.Class.define("osparc.component.export.ExportMacro", {
+qx.Class.define("osparc.component.export.ExportGroup", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -102,24 +90,24 @@ qx.Class.define("osparc.component.export.ExportMacro", {
     },
 
     __exportNode: function() {
-      const macroNode = this.getInputNode();
+      const groupNode = this.getInputNode();
       let workbench = {};
-      workbench = this.__serializeInputNode(macroNode, workbench);
-      workbench = this.__serializeInnerNodes(macroNode, workbench);
+      workbench = this.__serializeInputNode(groupNode, workbench);
+      workbench = this.__serializeInnerNodes(groupNode, workbench);
       workbench = JSON.parse(JSON.stringify(workbench));
-      workbench = this.__removeParentDependencies(macroNode, workbench);
+      workbench = this.__removeParentDependencies(groupNode, workbench);
       workbench = this.__removeOutReferences(workbench);
       workbench = this.__replaceUuids(workbench);
       console.log(workbench);
     },
 
-    __serializeInputNode: function(macroNode, workbench) {
-      workbench[macroNode.getNodeId()] = macroNode.serialize();
+    __serializeInputNode: function(groupNode, workbench) {
+      workbench[groupNode.getNodeId()] = groupNode.serialize();
       return workbench;
     },
 
-    __serializeInnerNodes: function(macroNode, workbench) {
-      const allInnerNodes = macroNode.getInnerNodes(true);
+    __serializeInnerNodes: function(groupNode, workbench) {
+      const allInnerNodes = groupNode.getInnerNodes(true);
       for (const innerNodeId in allInnerNodes) {
         const innerNode = allInnerNodes[innerNodeId];
         workbench[innerNode.getNodeId()] = innerNode.serialize();
@@ -127,13 +115,13 @@ qx.Class.define("osparc.component.export.ExportMacro", {
       return workbench;
     },
 
-    __removeParentDependencies: function(macroNode, workbench) {
-      const macroNodeId = macroNode.getNodeId();
-      if ("parent" in workbench[macroNodeId]) {
-        delete workbench[macroNodeId]["parent"];
+    __removeParentDependencies: function(groupNode, workbench) {
+      const groupNodeId = groupNode.getNodeId();
+      if ("parent" in workbench[groupNodeId]) {
+        delete workbench[groupNodeId]["parent"];
       }
-      if ("outputNode" in workbench[macroNodeId]) {
-        workbench[macroNodeId]["outputNode"] = false;
+      if ("outputNode" in workbench[groupNodeId]) {
+        workbench[groupNodeId]["outputNode"] = false;
       }
       return workbench;
     },
