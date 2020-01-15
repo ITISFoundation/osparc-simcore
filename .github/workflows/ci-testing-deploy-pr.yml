@@ -16,8 +16,8 @@ env:
   COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
-  unit-test-apihub:
-    name: Unit-testing apihub
+  unit-test-api:
+    name: Unit-testing api
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -36,10 +36,10 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
-    - name: install apihub
-      run: ./ci/github/unit-testing/apihub install
+    - name: install api
+      run: ./ci/github/unit-testing/api install
     - name: test
-      run: ./ci/github/unit-testing/apihub test
+      run: ./ci/github/unit-testing/api test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required

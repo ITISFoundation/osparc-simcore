@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# pull the current tested build
+# pull the tagged master build
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 make pull-version tag-local
 
@@ -15,13 +15,12 @@ make info-images
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # re-tag build
-export DOCKER_IMAGE_TAG=master-github-latest
+export DOCKER_IMAGE_TAG=staging-github-latest
 make push-version
 
-# re-tag build to master-github-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=master-github-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
+# re-tag master to staging-github-DATE.GIT_SHA
+export DOCKER_IMAGE_TAG=staging-github-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
 make push-version
 
-# show update of images on system
 echo "## After push"
 make info-images

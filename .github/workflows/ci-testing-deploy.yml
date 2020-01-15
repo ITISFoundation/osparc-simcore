@@ -422,7 +422,7 @@ jobs:
   deploy:
     name: deploy to dockerhub
     needs: [
-      unit-test-apihub, unit-test-director, unit-test-frontend, unit-test-python-linting,
+      unit-test-api, unit-test-director, unit-test-frontend, unit-test-python-linting,
       unit-test-service-library, unit-test-simcore-sdk, unit-test-storage, unit-test-webserver,
       integration-test-webserver, integration-test-simcore-sdk,
       system-test-swarm-deploy, system-test-e2e
@@ -433,7 +433,7 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.sh
-        # TODO: check if we are on upstream master
-      # - name: deploy
-      #   run: ./ci/github/deploy/master
+        run: sudo ./ci/github/helpers/setup_docker_compose.sh        
+      - name: deploy
+        if: github.ref == 'refs/heads/master'
+        run: ./ci/github/deploy/master
