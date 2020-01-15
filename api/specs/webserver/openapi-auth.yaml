@@ -39,8 +39,13 @@ paths:
           $ref: "#/components/responses/DefaultErrorResponse"
 
   /auth/logout:
-    get:
+    post:
       operationId: auth_logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
       responses:
         "200":
           description: Succesfully logged out
@@ -212,3 +217,11 @@ components:
   responses:
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+  schemas:
+    LogoutRequest:
+      type: object
+      properties:
+        client_session_id:
+          type: string
+          example: 5ac57685-c40f-448f-8711-70be1936fd63
+      

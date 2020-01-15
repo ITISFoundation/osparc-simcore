@@ -1,11 +1,10 @@
 import logging
 
-from aiohttp import web
-from yarl import URL
-
 import passwordmeter
+from aiohttp import web
 from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security_api import check_password, encrypt_password, forget, remember
@@ -135,10 +134,14 @@ async def login(request: web.Request):
 
 
 @login_required
-async def logout(request: web.Request):
+async def logout(request: web.Request) -> web.Response:
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     user_id = request.get(RQT_USERID_KEY, -1)
-    await observer.emit("SIGNAL_USER_LOGOUT", user_id, request.app)
+    client_session_id = None
+    if request.can_read_body:
+        body = await request.json()
+        client_session_id = body.get("client_session_id", None)
+    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app)
     await forget(request, response)
     return response
 

@@ -122,7 +122,7 @@ async def test_reset_and_confirm(client, capsys, cfg):
 
         # Try new password
         logout_url = client.app.router['auth_logout'].url_for()
-        rp = await client.get(logout_url)
+        rp = await client.post(logout_url)
         assert rp.url_obj.path == logout_url.path
         await assert_status(rp, web.HTTPUnauthorized, "Unauthorized")
 

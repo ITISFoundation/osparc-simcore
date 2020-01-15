@@ -59,7 +59,7 @@ async def test_change_and_confirm(client, capsys):
         link = parse_link(out)
 
         # try new email but logout first
-        rsp = await client.get(logout_url)
+        rsp = await client.post(logout_url)
         assert rsp.url_obj.path == logout_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
 
