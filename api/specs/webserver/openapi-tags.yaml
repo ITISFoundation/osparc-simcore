@@ -6,9 +6,17 @@ info:
 servers:
   - description: API server
     url: '/v0'
+tags:
+  - name: tag
+    description: |
+      Grouping the paths and operations that perform changes on the TAG entity.
+      Tags are customized visual elements that help the user group and quickly identify different items
+      on the interface. They can also be used for searching and filtering purposes.
 paths:
   /tags:
     get:
+      tags:
+        - tag
       summary: List all tags for the current user
       operationId: list_tags
       responses:
@@ -21,6 +29,8 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     post:
+      tags:
+        - tag
       summary: Creates a new tag
       operationId: create_tag
       responses:
@@ -40,6 +50,8 @@ paths:
         schema:
           type: integer
     put:
+      tags:
+        - tag
       summary: Updates a tag
       operationId: update_tag
       responses:
@@ -52,6 +64,8 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     delete:
+      tags:
+        - tag
       summary: Deletes an existing tag
       operationId: delete_tag
       responses:
@@ -70,12 +84,16 @@ paths:
         schema:
           type: integer
     put:
+      tags:
+        - tag
       summary: Links an existing label with an existing study
       operationId: add_label_to_study
       responses:
         '204':
           description: The tag has been successfully linked to the study
     delete:
+      tags:
+        - tag
       summary: Removes an existing link between a label and a study
       operationId: remove_label_from_study
       responses:
