@@ -190,9 +190,8 @@ qx.Class.define("osparc.component.widget.NodeView", {
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1
         });
+        nodePorts.setCollapsed(false);
       }
-      nodePorts.setCollapsed(false);
-      return nodePorts;
     },
 
     __addSettings: function() {
