@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 from yarl import URL
 
-from servicelib.observer import observe
 from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
@@ -52,7 +51,3 @@ async def services_get(request: web.Request) -> web.Response:
     async with session.get(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
-
-@observe(event="SIGNAL_USER_LOGOUT")
-async def delete_all_services_for_user_signal_handler(user_id: str, app: web.Application) -> None:
-    await director_api.stop_services(app, user_id=user_id)

@@ -248,8 +248,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/login"
           },
-          getLogout: {
-            method: "GET",
+          postLogout: {
+            method: "POST",
             url: statics.API + "/auth/logout"
           },
           postRegister: {
