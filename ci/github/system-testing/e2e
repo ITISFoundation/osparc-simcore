@@ -12,25 +12,8 @@ install() {
     make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
     # configure simcore for testing with a private registry
-    make .env
-    # disable email verification
-    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
-    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
-    # set up insecure internal registry
-    echo REGISTRY_AUTH=False >> .env
-    echo REGISTRY_SSL=False >> .env
-    echo REGISTRY_URL=registry:5000 >> .env
-    # disable registry caching to ensure services are fetched
-    echo REGISTRY_CACHING=False >> .env
-    # add host name to the insecure registry
-    sudo bash -c "echo '127.0.0.1 registry' >> /etc/hosts"
-    # add insecure registry into docker daemon and restart daemon
-    echo "------------------------ before modifying docker daemon"
-    sudo cat /etc/docker/daemon.json
-    sudo bash -c "echo '{\"insecure-registries\": [\"registry:5000\"]}' >> /etc/docker/daemon.json"
-    echo "------------------------ after modifying docker daemon"
-    sudo cat /etc/docker/daemon.json
-    sudo service docker restart
+    bash tests/e2e/setup_env_insecure_registry
+    
     # start simcore
     make up-version
 
@@ -42,6 +25,8 @@ install() {
     # install testing framework
     pushd tests/e2e
     make install
+    # deploy the registry
+    make registry-up
     make wait-for-services
 
     # prepare registry
@@ -55,7 +40,7 @@ test() {
 
 clean_up() {
     docker images
-    make down
+    make leave
 }
 
 # Check if the function exists (bash specific)

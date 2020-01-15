@@ -21,32 +21,15 @@ before_install() {
 }
 
 install() {
-    make pull-version || ((make pull-cache || true) && make build tag-version)
+    echo "nothing to do here..."
 }
 
 before_script() {
+    make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
-    # disable email registration
     # configure simcore for testing with a private registry
-    make .env
-    # disable email verification
-    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
-    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
-    # set up insecure internal registry
-    echo REGISTRY_AUTH=False >> .env
-    echo REGISTRY_SSL=False >> .env
-    echo REGISTRY_URL=registry:5000 >> .env
-    # disable registry caching to ensure services are fetched
-    echo REGISTRY_CACHING=False >> .env
-    # add host name to the insecure registry
-    echo "127.0.0.1 registry" >> /etc/hosts
-    # add insecure registry into docker daemon and restart daemon
-    echo "------------------------ before modifying docker daemon"
-    cat /etc/docker/daemon.json
-    echo "{\"insecure-registries\": [\"registry:5000\"]}" >> /etc/docker/daemon.json
-    echo "------------------------ after modifying docker daemon"
-    cat /etc/docker/daemon.json
-    service docker restart
+    bash tests/e2e/setup_env_insecure_registry
+    
     # start simcore
     make up-version
 

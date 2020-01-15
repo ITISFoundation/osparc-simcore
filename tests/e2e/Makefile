@@ -26,6 +26,13 @@ install: ## install testing framework
 	@npm install
 	@pip install -r requirements/requirements.txt
 
+registry-up: ## deploys the insecure docker registry in the simcore network
+	docker stack deploy -c docker-compose.yml registry
+
+registry-down: ## bring the docker registry down
+	docker stack rm registry
+
+
 .PHONY: wait-for-services
 wait-for-services: ## wait for simcore services to be up
 	@python wait_for_services.py
@@ -33,14 +40,14 @@ wait-for-services: ## wait for simcore services to be up
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
 	@docker pull itisfoundation/sleeper:1.0.0
-	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/sleeper:1.0.0
-	@docker push registry:5000/simcore/services/comp/sleeper:1.0.0
+	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
+	@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 
 	@docker pull itisfoundation/jupyter-base-notebook:2.13.0
 	@docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	@docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
-	@echo $(curl registry:5000/v2/_catalog)
+	curl registry:5000/v2/_catalog
 
 
 .PHONY: test
