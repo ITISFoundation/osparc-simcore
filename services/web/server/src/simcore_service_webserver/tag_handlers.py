@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from aiohttp import web
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from sqlalchemy import and_
 
 from .db_models import study_tags, tags
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -29,7 +30,7 @@ async def update_tag(request: web.Request):
             name=tag_data['name'],
             description=tag_data['description'],
             color=tag_data['color']
-        ).where(_and(tags.c.id == tag_id, tags.c.user_id == uid)).returning(
+        ).where(and_(tags.c.id == tag_id, tags.c.user_id == uid)).returning(
             tags.c.id,
             tags.c.name,
             tags.c.description,
@@ -73,7 +74,7 @@ async def delete_tag(request: web.Request):
     tag_id = request.match_info.get('tag_id')
     async with engine.acquire() as conn:
         query = tags.delete().where(
-            _and(tags.c.id == tag_id, tags.c.user_id == uid)
+            and_(tags.c.id == tag_id, tags.c.user_id == uid)
         )
         async with conn.execute(query) as result:
             if result.rowcount == 1:
@@ -104,7 +105,7 @@ async def remove_label_from_study(request: web.Request):
     tag_id, study_id = request.match_info.get('tag_id'), request.match_info.get('study_id')
     async with engine.acquire() as conn:
         query = study_tags.delete().where(
-            _and(study_tags.c.tag_id == tag_id, study_tags.c.study_id == study_id)
+            and_(study_tags.c.tag_id == tag_id, study_tags.c.study_id == study_id)
         )
         async with conn.execute(query) as result:
             if result.rowcount == 1:

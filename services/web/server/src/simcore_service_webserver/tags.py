@@ -24,7 +24,7 @@ def setup(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
             get_handlers_from_namespace(tag_handlers),
-            filter(lambda o: "tags" in o[1],  iter_path_operations(specs)),
+            filter(lambda o: "tag" in o[3],  iter_path_operations(specs)),
             strict=True
     )
     app.router.add_routes(routes)
