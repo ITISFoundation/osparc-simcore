@@ -1,17 +1,3 @@
-openapi: 3.0.0
-info:
-  title: Tags API
-  version: 0.0.0
-  description: CRUD operations and linking for the user tags
-servers:
-  - description: API server
-    url: '/v0'
-tags:
-  - name: tag
-    description: |
-      Grouping the paths and operations that perform changes on the TAG entity.
-      Tags are customized visual elements that help the user group and quickly identify different items
-      on the interface. They can also be used for searching and filtering purposes.
 paths:
   /tags:
     get:
