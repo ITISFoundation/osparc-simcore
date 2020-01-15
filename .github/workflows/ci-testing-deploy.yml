@@ -70,6 +70,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/director install
     - name: test
@@ -98,6 +104,12 @@ jobs:
         node-version: ${{ matrix.node }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/frontend install
     - name: test
@@ -127,6 +139,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/python-linting install
     - name: test
@@ -153,6 +171,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/service-library install
     - name: test
@@ -212,6 +236,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/simcore-sdk install
     - name: test
@@ -241,6 +271,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/unit-testing/storage install
     - name: test
@@ -270,6 +306,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install webserver
       run: ./ci/github/unit-testing/webserver install
     - name: test
@@ -318,6 +360,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/integration-testing/webserver install
     - name: test
@@ -351,6 +399,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/integration-testing/simcore-sdk install
     - name: test
@@ -384,6 +438,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/system-testing/swarm-deploy install
     - name: test
@@ -417,6 +477,12 @@ jobs:
         node-version: ${{ matrix.node }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install
       run: ./ci/github/system-testing/e2e install
     - name: test
