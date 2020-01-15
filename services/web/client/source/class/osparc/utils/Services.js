@@ -252,14 +252,18 @@ qx.Class.define("osparc.utils.Services", {
             type: "data:*/*"
           }
         }
-      }, {
+      }, this.getNodesGroupService()];
+      return builtInServices;
+    },
+
+    getNodesGroupService: function() {
+      return {
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
         name: "Group",
         description: "Group"
-      }];
-      return builtInServices;
+      };
     },
 
     servicesToCache: function(services, fromServer) {
