@@ -6,7 +6,8 @@ IFS=$'\n\t'
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt-get update
-sudo apt-get -V -y -o Dpkg::Options::="--force-confnew" install docker-ce=19.03
+sudo apt-cache madison docker-ce
+sudo apt-get -V -y -o Dpkg::Options::="--force-confnew" install docker-ce=19.03.05
 # fix for using buildkit
 # echo ----------------------------- before modifications... ----------------------------
 # cat /etc/docker/daemon.json
