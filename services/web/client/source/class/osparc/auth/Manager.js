@@ -99,12 +99,12 @@ qx.Class.define("osparc.auth.Manager", {
         data: {
           clientSessionId: sessionStorage.getItem("clientsessionid")
         }
-      }
+      };
       osparc.data.Resources.fetch("auth", "postLogout", params)
         .then(data => {
           this.__logoutUser();
           this.fireEvent("logout");
-        })
+        });
     },
 
     register: function(userData, successCbk, failCbk, context) {
