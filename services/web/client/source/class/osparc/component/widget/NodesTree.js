@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       toolbar.addSpacer();
 
-      const exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/file-export/"+iconSize);
+      const exportButton = new qx.ui.toolbar.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
         this.__exportMacro();
       }, this);

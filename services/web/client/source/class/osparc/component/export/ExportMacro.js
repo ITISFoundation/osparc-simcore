@@ -71,10 +71,10 @@ qx.Class.define("osparc.component.export.ExportMacro", {
 
       const exportBtn = new qx.ui.form.Button(this.tr("Export")).set({
         allowGrowX: false,
-        alignX: "right",
-        padding: 10
+        alignX: "right"
       });
       exportBtn.addListener("execute", () => {
+        this.__exportNode();
       }, this);
       this._add(exportBtn);
     },
@@ -96,10 +96,84 @@ qx.Class.define("osparc.component.export.ExportMacro", {
     },
 
     __buildInputSettings: function() {
-      console.log(this.getInputNode());
     },
 
     __buildExposedSettings: function() {
+    },
+
+    __exportNode: function() {
+      const macroNode = this.getInputNode();
+      let workbench = {};
+      workbench = this.__serializeInputNode(macroNode, workbench);
+      workbench = this.__serializeInnerNodes(macroNode, workbench);
+      workbench = JSON.parse(JSON.stringify(workbench));
+      workbench = this.__removeParentDependencies(macroNode, workbench);
+      workbench = this.__removeOutReferences(workbench);
+      workbench = this.__replaceUuids(workbench);
+      console.log(workbench);
+    },
+
+    __serializeInputNode: function(macroNode, workbench) {
+      workbench[macroNode.getNodeId()] = macroNode.serialize();
+      return workbench;
+    },
+
+    __serializeInnerNodes: function(macroNode, workbench) {
+      const allInnerNodes = macroNode.getInnerNodes(true);
+      for (const innerNodeId in allInnerNodes) {
+        const innerNode = allInnerNodes[innerNodeId];
+        workbench[innerNode.getNodeId()] = innerNode.serialize();
+      }
+      return workbench;
+    },
+
+    __removeParentDependencies: function(macroNode, workbench) {
+      const macroNodeId = macroNode.getNodeId();
+      if ("parent" in workbench[macroNodeId]) {
+        delete workbench[macroNodeId]["parent"];
+      }
+      if ("outputNode" in workbench[macroNodeId]) {
+        workbench[macroNodeId]["outputNode"] = false;
+      }
+      return workbench;
+    },
+
+    __removeOutReferences: function(workbench) {
+      const innerNodeIds = Object.keys(workbench);
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+        const inputNodes = node.inputNodes;
+        for (let i=0; i<inputNodes.length; i++) {
+          if (innerNodeIds.indexOf(inputNodes[i]) === -1) {
+            // remove node connection
+            inputNodes.splice(i, 1);
+
+            // remove port connections
+            const inputs = node.inputs;
+            for (const portId in inputs) {
+              const input = inputs[portId];
+              if (input instanceof Object && "nodeUuid" in input && innerNodeIds.indexOf(input["nodeUuid"]) === -1) {
+                delete inputs[portId];
+              }
+            }
+          }
+        }
+      }
+      return workbench;
+    },
+
+    __replaceUuids: function(workbench) {
+      let workbenchStr = JSON.stringify(workbench);
+      const innerNodeIds = Object.keys(workbench);
+      for (let i=0; i<innerNodeIds.length; i++) {
+        const innerNodeId = innerNodeIds[i];
+        const newNodeId = osparc.utils.Utils.uuidv4();
+        // workbenchStr = workbenchStr.replace(innerNodeId, newNodeId);
+        const re = new RegExp(innerNodeId, "g");
+        workbenchStr = workbenchStr.replace(re, newNodeId); // Using regex for replacing ALL matches
+      }
+      workbench = JSON.parse(workbenchStr);
+      return workbench;
     }
   }
 });
