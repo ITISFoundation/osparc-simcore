@@ -41,7 +41,7 @@ API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service, mocked_director_handler):
+def client(loop, aiohttp_client, app_cfg, postgres_service):
 #def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
@@ -500,6 +500,9 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
 async def test_open_project(client, logged_user, user_project, client_session_id, expected, mocker):
     # POST /v0/projects/{project_id}:open
     # open project
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
     mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
     mock_director_api_start_service.return_value.set_result("")
 
@@ -511,8 +514,7 @@ async def test_open_project(client, logged_user, user_project, client_session_id
         calls = []
         for service_uuid, service in dynamic_services.items():
             calls.append(call(client.server.app, project_id=user_project["uuid"], service_key=service["key"], service_uuid=service_uuid, service_version=service["version"], user_id=logged_user["id"]))
-        # TODO: re-activate this when front-end stops auto-starting services
-        # mock_director_api_start_service.assert_has_calls(calls)
+        mock_director_api_start_service.assert_has_calls(calls)
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -527,12 +529,20 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
     mock_director_api.return_value.set_result(fakes)
 
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
     mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
     mock_director_api_stop_services.return_value.set_result("")
     # open project
     client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
+    if resp.status == web.HTTPOk.status_code:
+        mock_director_api.assert_called_once()
+        mock_director_api.reset_mock()
+    else:
+        mock_director_api.assert_not_called()
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -541,6 +551,8 @@ async def test_close_project(client, logged_user, user_project, client_session_i
         mock_director_api.assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mock_director_api_stop_services.has_calls(calls)
+    else:
+        mock_director_api.assert_not_called()
 
 @pytest.mark.parametrize("user_role, expected", [
     # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
@@ -548,7 +560,15 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ])
-async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client):
+async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client, mocker):
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
     # login with socket using client session id
     client_id1 = client_session_id()
     sio = await socketio_client(client_id1)
@@ -590,7 +610,16 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
     (UserRole.USER, web.HTTPForbidden),
     (UserRole.TESTER, web.HTTPForbidden),
 ])
-async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected):
+async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected, mocker):
+    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api.return_value.set_result("")
+
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
+
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
@@ -605,3 +634,97 @@ async def test_delete_shared_project_forbidden(loop, client, logged_user, user_p
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
     resp = await client.delete(url)
     await assert_status(resp, expected)
+
+@pytest.mark.parametrize("user_role, create_exp, get_exp, deletion_exp", [
+    (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPForbidden, web.HTTPOk, web.HTTPForbidden),
+    (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+    (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+])
+async def test_project_node_lifetime(loop, client, logged_user, user_project, create_exp, get_exp, deletion_exp, mocker, storage_subsystem_mock):
+    mock_director_api_get_running_services = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+
+    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service.return_value.set_result("")
+    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services.return_value.set_result("")
+    mock_storage_api_delete_data_folders_of_project_node = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node', return_value=Future())
+    mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
+
+    # create a new dynamic node...
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    body = {
+        "service_key": "some/dynamic/key",
+        "service_version": "1.3.4"
+        }
+    resp = await client.post(url, json=body)
+    data, errors = await assert_status(resp, create_exp)
+    node_id = "wrong_node_id"
+    if resp.status == web.HTTPCreated.status_code:
+        mock_director_api_start_service.assert_called_once()
+        assert "node_id" in data
+        node_id = data["node_id"]
+    else:
+        mock_director_api_start_service.assert_not_called()
+    # create a new NOT dynamic node...
+    mock_director_api_start_service.reset_mock()
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    body = {
+        "service_key": "some/notdynamic/key",
+        "service_version": "1.3.4"
+        }
+    resp = await client.post(url, json=body)
+    data, errors = await assert_status(resp, create_exp)
+    node_id_2 = "wrong_node_id"
+    if resp.status == web.HTTPCreated.status_code:
+        mock_director_api_start_service.assert_not_called()
+        assert "node_id" in data
+        node_id_2 = data["node_id"]
+    else:
+        mock_director_api_start_service.assert_not_called()
+
+    # get the node state
+    mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id, "service_state": "running"}])
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, get_exp)
+    if resp.status == web.HTTPOk.status_code:
+        assert "service_state" in data
+        assert data["service_state"] == "running"
+
+    # get the NOT dynamic node state
+    mock_director_api_get_running_services.return_value = Future()
+    mock_director_api_get_running_services.return_value.set_result("")
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, get_exp)
+    if resp.status == web.HTTPOk.status_code:
+        assert "service_state" in data
+        assert data["service_state"] == "idle"
+
+    # delete the node
+    mock_director_api_get_running_services.return_value = Future()
+    mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    resp = await client.delete(url)
+    data, errors = await assert_status(resp, deletion_exp)
+    if resp.status == web.HTTPNoContent.status_code:
+        mock_director_api_stop_services.assert_called_once()
+        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+    else:
+        mock_director_api_stop_services.assert_not_called()
+        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+
+    # delete the NOT dynamic node
+    mock_director_api_stop_services.reset_mock()
+    mock_storage_api_delete_data_folders_of_project_node.reset_mock()
+    # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    resp = await client.delete(url)
+    data, errors = await assert_status(resp, deletion_exp)
+    if resp.status == web.HTTPNoContent.status_code:
+        mock_director_api_stop_services.assert_not_called()
+        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+    else:
+        mock_director_api_stop_services.assert_not_called()
+        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()

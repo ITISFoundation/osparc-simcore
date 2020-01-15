@@ -6,6 +6,7 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
 
 before_install() {
+    bash ci/travis/helpers/update_docker;
     bash ci/travis/helpers/install_docker_compose;
     bash ci/helpers/show_system_versions;
     env

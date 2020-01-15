@@ -41,7 +41,7 @@ GARBAGE_COLLECTOR_INTERVAL = 2
 SERVICE_DELETION_DELAY = 2
 
 @pytest.fixture
-def client(mocked_director_handler, loop, aiohttp_client, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_service):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION

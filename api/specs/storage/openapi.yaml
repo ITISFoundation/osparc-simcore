@@ -374,12 +374,17 @@ paths:
     delete:
       tags:
         - users
-      summary: Deletes all objects with folder_id prefix
+      summary: Deletes all objects within a node_id or within a project_id if node_id is omitted
       operationId: delete_folders_of_project
       parameters:
       - name: folder_id
         in: path
         required: true
+        schema:
+          type: string
+      - name: node_id
+        in: query
+        required: false
         schema:
           type: string
       - name: user_id
