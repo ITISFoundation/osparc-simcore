@@ -35,6 +35,12 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: show system version
       run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: install api
       run: ./ci/github/unit-testing/api install
     - name: test
