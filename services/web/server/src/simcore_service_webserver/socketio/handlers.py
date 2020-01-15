@@ -85,7 +85,8 @@ async def user_logged_out(user_id: str, client_session_id: Optional[str], app: w
         # start by disconnecting this client if possible
         if client_session_id:
             socket_id = await rt.get_socket_id()
-            await sio.disconnect(sid=socket_id)
+            if socket_id:
+                await sio.disconnect(sid=socket_id)
 
         # now let's give a chance to all the clients to properly logout
         sockets = await rt.find_socket_ids()
