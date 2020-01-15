@@ -273,6 +273,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
+    getCurrentModel: function() {
+      return this.__currentModel;
+    },
+
+    getSelectedNodes: function() {
+      return this.__selectedNodes;
+    },
+
     __activeNodeChanged: function(activeNode, isControlPressed = false) {
       if (isControlPressed) {
         this.__selectedNodes.forEach(node => {
