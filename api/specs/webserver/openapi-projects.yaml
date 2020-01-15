@@ -301,7 +301,7 @@ components:
       $ref: "../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped"
 
     RunningServiceEnveloped:
-      $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
 
   responses:
     DefaultErrorResponse:
