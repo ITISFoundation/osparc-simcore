@@ -1,59 +1,55 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-variable
+
 import logging
 import sys
 from collections import namedtuple
 from itertools import chain
 from os.path import exists, relpath
 from pathlib import Path
-from utils import load_specs, is_json_schema
 
 import pytest
+
+from utils import is_json_schema, load_specs
 
 log = logging.getLogger(__name__)
 
 # Conventions
-SHARED = 'shared'
+COMMON = 'common'
 OPENAPI_MAIN_FILENAME = 'openapi.yaml'
-
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
-def here():
-    return current_dir
-
-
-@pytest.fixture(scope='session')
-def this_repo_root_dir(here):
-    root_dir = here.parent.parent
+def this_repo_root_dir():
+    root_dir = current_dir.parent.parent
     assert root_dir
     assert any(root_dir.glob(".git"))
     return root_dir
 
 
 @pytest.fixture(scope='session')
-def api_specs_dir(here):
-    return _api_specs_dir_impl(here)
+def api_specs_dir():
+    return current_dir.parent / "specs"
 
-def _api_specs_dir_impl(here):
-    specs_dir = Path(here.parent / "specs")
-    return specs_dir
 
+@pytest.fixture(scope="session")
+def webserver_api_dir(api_specs_dir):
+    return api_specs_dir / "webserver"
 
 @pytest.fixture(scope='session')
 def api_specs_info(api_specs_dir):
     """
         Returns a namedtuple with info on every
     """
-    service_dirs = [d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+    service_dirs = [d for d in api_specs_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
 
     info_cls = namedtuple("ApiSpecsInfo", "service version openapi_path url_path".split())
     info = []
     for srv_dir in service_dirs:
-        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(SHARED)]
+        version_dirs = [d for d in srv_dir.iterdir() if d.is_dir() and not d.name.endswith(COMMON)]
         for ver_dir in version_dirs:
             openapi_path = ver_dir / OPENAPI_MAIN_FILENAME
             if openapi_path.exists():
@@ -83,14 +79,13 @@ def _all_api_specs_tails_impl(api_specs_dir):
     return tails
 
 
-
 def list_openapi_tails():
     """ Returns relative path to all non-jsonschema (i.e. potential openapi)
 
         SEE api_specs_tail to get one at a time
     """
     tails = []
-    specs_dir = _api_specs_dir_impl(current_dir)
+    specs_dir = current_dir.parent / "specs"
     for tail in _all_api_specs_tails_impl(specs_dir):
         specs = load_specs( specs_dir / tail)
         if not is_json_schema(specs):

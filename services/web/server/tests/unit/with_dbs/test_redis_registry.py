@@ -142,6 +142,7 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
 
                 # set the socket id and check it is rightfully there
                 await rt.set_socket_id(socket_id)
+                assert await rt.get_socket_id() == socket_id
                 assert await redis_registry.get_resources(resource_key) == {"socket_id": socket_id}
                 list_of_sockets_of_user = await rt.find_socket_ids()
                 assert socket_id in list_of_sockets_of_user

@@ -1,10 +1,8 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import collections
+
 import random
 from copy import deepcopy
 from itertools import repeat
@@ -15,14 +13,11 @@ import pytest
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from psycopg2 import OperationalError
-from yarl import URL
 
 from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, setup_rest
+from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
@@ -42,7 +37,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
-    assert API_VERSION in cfg["rest"]["location"]
 
     cfg["db"]["init_tables"] = True # inits postgres_service
 
@@ -93,7 +87,7 @@ async def tokens_db(logged_user, client):
 @pytest.fixture
 async def fake_tokens(logged_user, tokens_db):
     # pylint: disable=E1101
-    from faker.providers import lorem, misc
+    from faker.providers import lorem
 
     fake = faker.Factory.create()
     fake.seed(4567) # Always the same fakes

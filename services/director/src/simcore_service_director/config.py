@@ -14,7 +14,7 @@ logging.basicConfig(
     )
 
 API_VERSION = "v0"
-API_ROOT = "oas3"
+API_ROOT = "api"
 
 REGISTRY_CACHING = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
 REGISTRY_CACHING_TTL = os.environ.get("REGISTRY_CACHING_TTL", 15*60)
@@ -42,7 +42,7 @@ SERVICES_DEFAULT_ENVS = {
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION = os.environ.get("NODE_SCHEMA_LOCATION",
-    "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=API_ROOT, version=API_VERSION))
+    f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json")
 # used to find the right network name
 SIMCORE_SERVICES_NETWORK_NAME = os.environ.get("SIMCORE_SERVICES_NETWORK_NAME")
 # useful when developing with an alternative registry namespace

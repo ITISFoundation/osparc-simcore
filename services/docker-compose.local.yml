@@ -12,10 +12,6 @@
 version: "3.7"
 services:
 
-  apihub:
-    ports:
-      - "8043"
-
   director:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}

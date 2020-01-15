@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{project_id}" // FIXME: /projects/{project_id}?run={run} <<-- query is missing!!! (issue #1176)
           },
           delete: {
             method: "DELETE",
@@ -253,8 +253,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/login"
           },
-          getLogout: {
-            method: "GET",
+          postLogout: {
+            method: "POST",
             url: statics.API + "/auth/logout"
           },
           postRegister: {

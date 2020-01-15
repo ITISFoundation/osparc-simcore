@@ -23,7 +23,7 @@ test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 setup(
     name='simcore-service-webserver',
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',
@@ -31,6 +31,8 @@ setup(
     include_package_data=True,
     package_data={
         '': [
+            'api/v0/openapi.yaml',
+            'api/v0/schemas/*.json',
             'config/*.y*ml',
             'data/*.json',
             'templates/**/*.html',

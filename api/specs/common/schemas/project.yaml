@@ -1,0 +1,26 @@
+components:
+  schemas:
+    Project:
+      $ref: './project-v0.0.1-converted.yaml'
+    ProjectEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null
+    ProjectArrayEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null

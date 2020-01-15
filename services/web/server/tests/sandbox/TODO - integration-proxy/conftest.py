@@ -39,7 +39,7 @@ MAX_BOOT_TIME_SECS = 20
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
     'director',
-    'apihub'
+    ''
 ]
 
 ops_services = [
@@ -235,13 +235,6 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
 #     return docker_ip, docker_services.port_for('director', 8001)
 
 
-# @pytest.fixture(scope='session')
-# def apihub_service(docker_services, docker_ip):
-#     """ Returns (host, port) to the apihub accessible from host """
-
-#     # No need to wait... webserver/director should do that
-
-#     return docker_ip, docker_services.port_for('apihub', 8043)
 
 
 # HELPERS ---------------------------------------------
