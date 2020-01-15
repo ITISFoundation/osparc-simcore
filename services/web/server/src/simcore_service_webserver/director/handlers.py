@@ -7,7 +7,6 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from ..security_api import check_permission
-from . import director_api
 from .config import get_client_session, get_config
 
 ANONYMOUS_USER_ID = -1
