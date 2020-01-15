@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 module_name = __name__.replace(".__init__", "")
 
 
-def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
+def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
@@ -45,7 +45,7 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
 
     routes = map_handlers_with_operations(
             handlers,
-            filter(lambda o: prefix in o[1],  iter_path_operations(specs)),
+            filter(lambda o: tag in o[3],  iter_path_operations(specs)),
             strict=True
     )
 
@@ -79,10 +79,10 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     # database API
     setup_projects_db(app)
 
-    routes = _create_routes("/projects", projects_handlers, specs)
+    routes = _create_routes("project", projects_handlers, specs)
     app.router.add_routes(routes)
 
-    routes = _create_routes("/nodes", nodes_handlers, specs)
+    routes = _create_routes("node", nodes_handlers, specs)
     app.router.add_routes(routes)
 
     # json-schemas for projects datasets

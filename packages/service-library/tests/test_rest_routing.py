@@ -28,7 +28,7 @@ def test_filtered_routing(specs):
                         if "i" in name
     }
     opr_iter = ( (mth, url, opname)
-                    for mth, url, opname in iter_path_operations(specs)
+                    for mth, url, opname, _tags in iter_path_operations(specs)
                         if "i" in opname
     )
 
