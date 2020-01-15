@@ -948,7 +948,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
-    serialize: function(saveContainers, savePosition) {
+    serialize: function(saveContainers = true, savePosition = true) {
       if (!saveContainers && this.isContainer()) {
         return null;
       }
