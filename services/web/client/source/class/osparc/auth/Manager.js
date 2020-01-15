@@ -97,7 +97,7 @@ qx.Class.define("osparc.auth.Manager", {
     logout: function() {
       const params = {
         data: {
-          "client_session_id": sessionStorage.getItem("clientsessionid")
+          "client_session_id": osparc.utils.Utils.getClientSessionID()
         }
       };
       osparc.data.Resources.fetch("auth", "postLogout", params)
