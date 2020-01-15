@@ -31,8 +31,8 @@ async def pg_engine(app: web.Application):
     cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
     params = {key:cfg[key] for key in 'database user password host port minsize maxsize'.split()}
 
-    # TODO: set this as optional?
-    await __create_tables(**params)
+    if cfg.get("init_tables"):
+        await __create_tables(**params)
 
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
