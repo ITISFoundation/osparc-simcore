@@ -41,6 +41,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
+    "groupSelection": "qx.event.type.Event",
+    "ungroupSelection": "qx.event.type.Event",
     "startPipeline": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event"
   },
@@ -58,6 +60,15 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
       this.addSpacer();
 
+      const groupCtrls = new qx.ui.toolbar.Part();
+      const groupButton = this.__groupButton = this.__createGroupButton();
+      const ungroupButton = this.__ungroupButton = this.__createUngroupButton();
+      groupCtrls.add(groupButton);
+      groupCtrls.add(ungroupButton);
+      this.add(groupCtrls);
+
+      this.addSpacer();
+
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
       const stopButton = this.__stopButton = this.__createStopButton();
@@ -65,6 +76,26 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       simCtrls.add(stopButton);
       this.add(simCtrls);
     },
+
+    __createGroupButton: function() {
+      const groupButton = new qx.ui.toolbar.Button(this.tr("Group Nodes"), "@FontAwesome5Solid/object-group/14");
+      osparc.utils.Utils.setIdToWidget(groupButton, "groupNodesBtn");
+      groupButton.addListener("execute", () => {
+        this.fireEvent("groupSelection");
+      }, this);
+      return groupButton;
+    },
+
+    __createUngroupButton: function() {
+      const ungroupButton = new qx.ui.toolbar.Button(this.tr("Ungroup Nodes"), "@FontAwesome5Solid/object-ungroup/14");
+      osparc.utils.Utils.setIdToWidget(ungroupButton, "ungroupNodesBtn");
+      ungroupButton.addListener("execute", () => {
+        this.fireEvent("ungroupSelection");
+      }, this);
+      return ungroupButton;
+    },
+
+    
 
     __createStartButton: function() {
       const startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
