@@ -335,7 +335,7 @@ qx.Class.define("osparc.data.model.Node", {
       let exposedInnerNodes = {};
       for (const innerNodeId in innerNodes) {
         const innerNode = innerNodes[innerNodeId];
-        if (innerNode.getIsOutputNode()) {
+        if (innerNode.getIsOutputNode() && !innerNode.isContainer()) {
           exposedInnerNodes[innerNodeId] = innerNode;
         }
       }
