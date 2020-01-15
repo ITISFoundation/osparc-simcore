@@ -23,6 +23,20 @@ servers:
         enum:
           - v0
         default: v0
+tags:
+  - name: node
+    description: |
+      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
+      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
+      defines the protocol for the frontend to interact with the node.
+  - name: tag
+    description: |
+      Grouping the paths and operations that perform changes on the TAG entity.
+      Tags are customized visual elements that help the user group and quickly identify different items
+      on the interface. They can also be used for searching and filtering purposes.
+  - name: project
+    description: |
+      Grouping the paths and operations that perform changes on the PROJECT entity.
 paths:
   /:
     get:
@@ -4831,6 +4845,8 @@ paths:
                         status: 400
   /projects:
     get:
+      tags:
+        - project
       summary: List all projects
       operationId: list_projects
       parameters:
@@ -5152,6 +5168,8 @@ paths:
                             field: pasword
                         status: 400
     post:
+      tags:
+        - project
       summary: Create new project
       operationId: create_projects
       parameters:
@@ -5644,6 +5662,8 @@ paths:
                         status: 400
   /projects/active:
     get:
+      tags:
+        - project
       summary: Gets active project
       operationId: get_active_project
       responses:
@@ -5939,6 +5959,8 @@ paths:
         schema:
           type: string
     get:
+      tags:
+        - project
       summary: Gets given project
       operationId: get_project
       responses:
@@ -6227,6 +6249,8 @@ paths:
                             field: pasword
                         status: 400
     put:
+      tags:
+        - project
       summary: Enclosed entity replaces given project
       operationId: replace_project
       parameters:
@@ -6713,6 +6737,8 @@ paths:
                             field: pasword
                         status: 400
     delete:
+      tags:
+        - project
       summary: Delete given project
       operationId: delete_project
       responses:
@@ -6726,6 +6752,8 @@ paths:
         schema:
           type: string
     post:
+      tags:
+        - project
       summary: Open a given project
       operationId: open_project
       requestBody:
@@ -7029,6 +7057,8 @@ paths:
         schema:
           type: string
     post:
+      tags:
+        - project
       summary: Closes a given project
       operationId: close_project
       requestBody:
@@ -7417,6 +7447,402 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  /tags:
+    get:
+      tags:
+        - tag
+      summary: List all tags for the current user
+      operationId: list_tags
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - tags
+                    properties:
+                      tags:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - name
+                            - color
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            description:
+                              type: string
+                            color:
+                              type: string
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      tags:
+        - tag
+      summary: Creates a new tag
+      operationId: create_tag
+      responses:
+        '200':
+          description: The created tag
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - name
+                      - color
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      color:
+                        type: string
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/tags/{tag_id}':
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags:
+        - tag
+      summary: Updates a tag
+      operationId: update_tag
+      responses:
+        '200':
+          description: The updated tag
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - name
+                      - color
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      color:
+                        type: string
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - tag
+      summary: Deletes an existing tag
+      operationId: delete_tag
+      responses:
+        '204':
+          description: The tag has been successfully deleted
+  '/tags/{tag_id}/projects/{project_id}':
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags:
+        - tag
+      summary: Links an existing label with an existing study
+      operationId: add_label_to_study
+      responses:
+        '204':
+          description: The tag has been successfully linked to the study
+    delete:
+      tags:
+        - tag
+      summary: Removes an existing link between a label and a study
+      operationId: remove_label_from_study
+      responses:
+        '204':
+          description: The tag has been successfully removed from the study
 components:
   responses:
     DefaultErrorResponse:
