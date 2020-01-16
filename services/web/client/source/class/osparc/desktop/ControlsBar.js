@@ -95,8 +95,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return ungroupButton;
     },
 
-    
-
     __createStartButton: function() {
       const startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
