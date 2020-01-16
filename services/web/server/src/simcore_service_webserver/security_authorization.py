@@ -4,12 +4,11 @@ from typing import Dict, Optional, Tuple, Union
 import attr
 import sqlalchemy as sa
 from aiohttp import web
-from tenacity import retry
-
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from aiopg.sa import Engine
-from servicelib.aiopg_utils import postgres_service_retry_policy_kwargs
+from aiopg.sa import Engine, ResultProxy, RowProxy
+from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from tenacity import retry
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
@@ -32,13 +31,18 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         #return self.app.config_dict[APP_DB_ENGINE_KEY]
         return self.app[APP_DB_ENGINE_KEY]
 
-    @retry(**postgres_service_retry_policy_kwargs)
-    async def _exec_pg_query(self, query):
+    @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
+    async def _pg_query_user(self, identity) -> RowProxy:
+        # TODO: small cache?
+        query = users.select().where(
+            sa.and_(users.c.email == identity,
+                    users.c.status != UserStatus.BANNED)
+        )
         # NOTE: psycopg2.DatabaseError in #880 and #1160
         async with self.engine.acquire() as conn:
-            ret = await conn.execute(query)
-            res = await ret.fetchone()
-        return res
+            ret: ResultProxy = await conn.execute(query)
+            row: RowProxy = await ret.fetchone()
+        return row
 
     async def authorized_userid(self, identity: str) -> Optional[str]:
         """ Retrieve authorized user id.
@@ -47,10 +51,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         # TODO: why users.c.user_login_key!=users.c.email
-        user = await self._exec_pg_query( users.select().where(
-            sa.and_(users.c.email == identity,
-                    users.c.status != UserStatus.BANNED)
-        ))
+        user = await self._pg_query_user(identity)
         return user["id"] if user else None
 
     async def permits(self, identity: str, permission: Union[str,Tuple], context: Optional[Dict]=None) -> bool:
@@ -65,11 +66,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             log.debug("Invalid indentity [%s] of permission [%s]. Denying access.", identity, permission)
             return False
 
-        user = await self._exec_pg_query( users.select().where(
-            sa.and_(users.c.email == identity,
-                    users.c.status != UserStatus.BANNED)
-            )
-        )
+        user = await self._pg_query_user(identity)
         if user:
             role = user.get('role')
             return await check_access(self.access_model, role, permission, context)
