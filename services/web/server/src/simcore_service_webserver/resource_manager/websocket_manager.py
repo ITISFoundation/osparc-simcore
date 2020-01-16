@@ -46,6 +46,12 @@ class WebsocketRegistry:
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
         await registry.set_key_alive(self._resource_key(), True)
 
+    async def get_socket_id(self) -> str:
+        log.debug("user %s/tab %s removing socket from registry...", self.user_id, self.client_session_id)
+        registry = get_registry(self.app)
+        resources = await registry.get_resources(self._resource_key())
+        return resources.get(SOCKET_ID_KEY, None)
+
     async def remove_socket_id(self) -> None:
         log.debug("user %s/tab %s removing socket from registry...", self.user_id, self.client_session_id)
         registry = get_registry(self.app)

@@ -31,7 +31,6 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
-    'apihub',
     'postgres',
     'redis',
     'rabbit'
@@ -50,7 +49,6 @@ def client(loop, aiohttp_client,
         rabbit_service ## waits until rabbit is responsive
     ):
     assert app_config["rest"]["version"] == API_VERSION
-    assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
     app_config["db"]["init_tables"] = True # inits postgres_service

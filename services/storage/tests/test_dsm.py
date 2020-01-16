@@ -374,6 +374,19 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.raw_file_path
 
 
+async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
+    file_1, file_2 = dsm_mockup_complete_db
+    _id = "21"
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    response = await dsm_fixture.delete_project_simcore_s3(user_id=_id, project_id=file_1["project_id"], node_id=file_1["node_id"])
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    assert len(data) == 1
+    assert data[0].fmd.file_name == file_2["filename"]
+    response = await dsm_fixture.delete_project_simcore_s3(user_id=_id, project_id=file_1["project_id"], node_id=None)
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    assert not data
+
+
 async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_structured_testbucket):
     if not has_datcore_tokens():
         return

@@ -191,7 +191,7 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             async for row in conn.execute(query):
-                result_dict = {key:value for key,value in row.items()}
+                result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
@@ -210,7 +210,7 @@ class ProjectDBAPI:
 
             query = select([projects]).where(expression)
             async for row in conn.execute(query):
-                result_dict = {key:value for key,value in row.items()}
+                result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list

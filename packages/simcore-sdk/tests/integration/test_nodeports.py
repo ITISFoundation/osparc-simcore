@@ -18,7 +18,6 @@ import np_helpers  # pylint: disable=no-name-in-module
 
 core_services = [
     'postgres',
-    'apihub',
     'storage'
 ]
 

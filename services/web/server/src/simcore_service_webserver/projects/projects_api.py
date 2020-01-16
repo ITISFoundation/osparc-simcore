@@ -9,6 +9,7 @@
 import logging
 from asyncio import gather
 from typing import Dict, Optional
+from uuid import uuid4
 
 from aiohttp import web
 
@@ -21,13 +22,17 @@ from ..director import director_api
 from ..security_api import check_permission
 from ..storage_api import \
     copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import delete_data_folders_of_project
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectNotFoundError
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
+
+def _is_node_dynamic(node_key: str) -> bool:
+    return "/dynamic/" in node_key
 
 def validate_project(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
@@ -94,7 +99,7 @@ async def start_project_interactive_services(request: web.Request, project: Dict
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {service_uuid:service for service_uuid, service in project["workbench"].items() \
-                                    if "/dynamic/" in service["key"] and \
+                                    if _is_node_dynamic(service["key"]) and \
                                         service_uuid not in running_service_uuids}
 
     start_service_tasks = [director_api.start_service(request.app,
@@ -134,3 +139,41 @@ async def delete_project_data(request: web.Request, project_uuid: str, user_id: 
 
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
+
+async def add_project_node(request: web.Request, project_uuid: str, user_id: str, service_key: str, service_version: str, service_id: Optional[str]) -> str: # pylint: disable=too-many-arguments
+    log.debug("starting node %s:%s in project %s for user %s", service_key, service_version, project_uuid, user_id)
+    node_uuid = service_id if service_id else str(uuid4())
+    if _is_node_dynamic(service_key):
+        await director_api.start_service(request.app, user_id, project_uuid, service_key, service_version, node_uuid)
+    return node_uuid
+
+async def get_project_node(request: web.Request, project_uuid: str, user_id:str, node_id: str):
+    log.debug("getting node %s in project %s for user %s", node_id, project_uuid, user_id)
+
+    list_of_interactive_services = await director_api.get_running_interactive_services(request.app,
+                                                                            project_id=project_uuid,
+                                                                            user_id=user_id)
+    # get the project if it is running
+    for service in list_of_interactive_services:
+        if service["service_uuid"] == node_id:
+            return service
+    # the service is not running, it's a computational service maybe
+    # TODO: find out if computational service is running if not throw a 404 since it's not around
+    return {
+        "service_uuid": node_id,
+        "service_state": "idle"
+    }
+
+async def delete_project_node(request: web.Request, project_uuid: str, user_id: str, node_uuid: str) -> None:
+    log.debug("deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id)
+
+    list_of_services = await director_api.get_running_interactive_services(request.app,
+                                                                            project_id=project_uuid,
+                                                                            user_id=user_id)
+    # stop the service if it is running
+    for service in list_of_services:
+        if service["service_uuid"] == node_uuid:
+            await director_api.stop_service(request.app, node_uuid)
+            break
+    # remove its data if any
+    await delete_data_folders_of_project_node(request.app, project_uuid, node_uuid, user_id)

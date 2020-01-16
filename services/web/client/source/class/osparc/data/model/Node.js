@@ -749,54 +749,10 @@ qx.Class.define("osparc.data.model.Node", {
         this.setProgress(0);
         this.setInteractiveStatus("starting");
 
-        const prjId = this.getWorkbench().getStudy()
-          .getUuid();
-        // start the service
-        const url = "/running_interactive_services";
-        let query = "?project_id=" + encodeURIComponent(prjId);
-        query += "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        query += "&service_key=" + encodeURIComponent(metaData.key);
-        query += "&service_tag=" + encodeURIComponent(metaData.version);
-        let request = new osparc.io.request.ApiRequest(url+query, "POST");
-        request.addListener("success", this.__onInteractiveNodeStarted, this);
-        request.addListener("error", e => {
-          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: errorMsg
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-          this.setInteractiveStatus("failed");
-        }, this);
-        request.addListener("fail", e => {
-          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const failMsgData = {
-            nodeId: this.getNodeId(),
-            msg: failMsg
-          };
-          this.setInteractiveStatus("failed");
-          this.fireDataEvent("showInLogger", failMsgData);
-        }, this);
-        request.send();
+        this.__nodeState();
       }
     },
-    __onNodeState: function(e) {
-      let req = e.getTarget();
-      const {
-        data, error
-      } = req.getResponse();
-
-      if (error) {
-        const msg = "Error received: " + error;
-        const msgData = {
-          nodeId: this.getNodeId(),
-          msg: msg
-        };
-        this.setInteractiveStatus("failed");
-        this.fireDataEvent("showInLogger", msgData);
-        return;
-      }
-
+    __onNodeState: function(data) {
       const serviceState = data["service_state"];
       switch (serviceState) {
         case "starting":
@@ -845,26 +801,25 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
-      const url = "/running_interactive_services/" + encodeURIComponent(this.getNodeId());
-      let request = new osparc.io.request.ApiRequest(url, "GET");
-      request.addListener("success", this.__onNodeState, this);
-      request.addListener("error", e => {
-        const errorMsg = "Error when starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg: errorMsg
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-      }, this);
-      request.addListener("fail", e => {
-        const failMsg = "Failed starting " + this.getKey() + ":" + this.getVersion() + ": " + e.getTarget().getResponse()["error"];
-        const failMsgData = {
-          nodeId: this.getNodeId(),
-          msg: failMsg
-        };
-        this.fireDataEvent("showInLogger", failMsgData);
-      }, this);
-      request.send();
+      const params = {
+        url: {
+          projectId: this.getWorkbench().getStudy()
+            .getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getNode", params)
+        .then(data => this.__onNodeState(data))
+        .catch(err => {
+          const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+        });
     },
     __onInteractiveNodeStarted: function(e) {
       let req = e.getTarget();
@@ -909,7 +864,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__stopDynamicService();
+      this.removeIFrame();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
@@ -926,18 +881,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (iFrame) {
         iFrame.destroy();
         this.setIFrame(null);
-      }
-    },
-
-    __stopDynamicService: function() {
-      if (this.isDynamic() && this.isRealService()) {
-        const params = {
-          url: {
-            nodeId: this.getNodeId()
-          }
-        };
-        osparc.data.Resources.fetch("interactiveServices", "delete", params);
-        this.removeIFrame();
       }
     },
 

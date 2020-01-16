@@ -16,15 +16,14 @@ postgres:
   password: ${POSTGRES_PASSWORD}
   host: ${POSTGRES_HOST}
   port: ${POSTGRES_PORT}
+rest:
+  enabled: True
 s3:
   endpoint: ${S3_ENDPOINT}
   access_key: ${S3_ACCESS_KEY}
   secret_key: ${S3_SECRET_KEY}
   bucket_name: ${S3_BUCKET_NAME}
   secure: ${S3_SECURE}
-
-rest:
-  oas_repo: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs
 tracing:
   enabled: True
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}

@@ -75,7 +75,7 @@ async def test_success(client):
         assert cfg.MSG_PASSWORD_CHANGED in await rsp.text()
         await assert_status(rsp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
 
-        rsp = await client.get(logout_url)
+        rsp = await client.post(logout_url)
         assert rsp.status == 200
         assert rsp.url_obj.path == logout_url.path
 
