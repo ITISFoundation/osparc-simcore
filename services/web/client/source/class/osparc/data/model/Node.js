@@ -878,8 +878,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setPosition: function(x, y) {
-      this.__posX = x;
-      this.__posY = y;
+      this.__posX = parseInt(x);
+      this.__posY = parseInt(y);
     },
 
     getPosition: function() {
