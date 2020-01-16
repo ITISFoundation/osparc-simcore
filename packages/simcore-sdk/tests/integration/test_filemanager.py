@@ -13,7 +13,6 @@ from simcore_sdk.node_ports import exceptions, filemanager
 
 core_services = [
     'postgres',
-    'apihub',
     'storage'
 ]
 

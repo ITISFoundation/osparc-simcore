@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -7,16 +5,15 @@
 # pylint:disable=no-name-in-module
 # pylint:disable=no-member
 
-import asyncio
+
 import datetime
 import os
-import subprocess
 import sys
 import uuid
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
+from typing import Tuple
 
 import pytest
 from aiopg.sa import create_engine
@@ -26,8 +23,7 @@ import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
-                                              SIMCORE_S3_ID, SIMCORE_S3_STR)
+from simcore_service_storage.settings import SIMCORE_S3_STR
 from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
                    USER_ID)
 
@@ -185,19 +181,28 @@ def mock_files_factory(tmpdir_factory):
     return _create_files
 
 @pytest.fixture(scope="function")
-def dsm_mockup_complete_db(postgres_service_url, s3_client):
+def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[str, str]:
     utils.create_full_tables(url=postgres_service_url)
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
-
+    file_1 = {
+        "project_id": "161b8782-b13e-5840-9ae2-e2250c231001",
+        "node_id": "ad9bda7f-1dc5-5480-ab22-5fef4fc53eac",
+        "filename": "outputController.dat"
+        }
     f = utils.data_dir() /Path("outputController.dat")
-    object_name = "161b8782-b13e-5840-9ae2-e2250c231001/ad9bda7f-1dc5-5480-ab22-5fef4fc53eac/outputController.dat"
+    object_name = "{project_id}/{node_id}/{filename}".format(**file_1)
     s3_client.upload_file(bucket_name, object_name, f)
 
+    file_2 = {
+        "project_id": "161b8782-b13e-5840-9ae2-e2250c231001",
+        "node_id": "a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8",
+        "filename": "notebooks.zip"
+        }
     f = utils.data_dir() /Path("notebooks.zip")
-    object_name = "161b8782-b13e-5840-9ae2-e2250c231001/a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8/notebooks.zip"
+    object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
     s3_client.upload_file(bucket_name, object_name, f)
-    yield
+    yield (file_1,file_2)
     utils.drop_all_tables(url=postgres_service_url)
 
 

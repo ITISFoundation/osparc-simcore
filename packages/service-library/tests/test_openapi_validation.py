@@ -1,7 +1,14 @@
+""" Tests OpenAPI validation middlewares
+
+
+    SEE https://github.com/p1c2u/openapi-core
+"""
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+
 import pytest
 from aiohttp import web
+
 from servicelib import openapi
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.rest_middlewares import (envelope_middleware_factory,
@@ -50,7 +57,6 @@ def client(loop, aiohttp_client, specs):
     "/attobj",
     "/string",
     "/number",
-    "/mixed"
 ])
 async def test_validate_handlers(path, client, specs):
     base = openapi.get_base_path(specs)
@@ -64,73 +70,12 @@ async def test_validate_handlers(path, client, specs):
     assert data
 
 
-# @pytest.mark.parametrize("path", [
-#     "/health_wrong",
-# ])
-# async def test_invalid_response(path, client):
-#     response = await client.get(path)
-#     payload = await response.json()
 
-#     assert is_enveloped(payload)
-
-#     data, error = unwrap_envelope(payload)
-#     assert error
-#     assert not data
-
-#     assert error["errors"][0]["code"] == 'InvalidMediaTypeValue', str(error)
-
-# TODO: dev tests ...
-#from servicelib.openapi_validation import (AiohttpOpenAPIResponse,
-#                                           RequestValidator, ResponseValidator,
-#                                           validate_data, validate_response)
-#
-# from servicelib.rest_responses import create_data_response
-#def get_reqinfo(server, path):
-#    baseurl = URL.build(scheme=server.scheme, host=server.host, port=server.port)
-#    url = baseurl.with_path(path)
-#    req = {
-#        'full_url_pattern': str(url),
-#        'method': 'get'
-#    }
-#    req = collections.namedtuple('RequestInfo', req.keys())(**req)
-#    return req
-#
-# @pytest.mark.parametrize("path", [
-#     "/dict",
-#     "/envelope",
-#     "/list",
-#     "/attobj",
-#     "/string",
-#     "/number",
-#     "/mixed"
-# ])
-# async def test_response_validators(path, client):
-#     response = await client.get(path)
-#     payload = await response.json()
-
-#     assert is_enveloped(payload)
-
-#     data, error = unwrap_envelope(payload)
-#     assert not error
-#     assert data
-
-#     specs = client.app[APP_OPENAPI_SPECS_KEY]
-#     req = get_reqinfo(client.server, path)
-#     try:
-#         payload_obj = await validate_data(specs, req, response)
-#         assert hasattr(payload_obj, "data")
-#         assert hasattr(payload_obj, "error")
-#         #assert is_enveloped(payload)
-#     except (OpenAPIError, OpenAPIMappingError) as err:
-#         pytest.fail(" %s -> %s" %(path, str(err)))
-
-#     validator = client.app[APP_REST_RESPONSE_VALIDATOR_KEY]
-
-#     # TODO: validator should be callable
-#     res = await AiohttpOpenAPIResponse.create(response)
-#     results = validator.validate(req, res)
-
-#     assert not results.errors
-#     assert results.data
-
-#     #assert payload_obj.data == results.data
+#"/mixed" FIXME: openapi core bug reported in https://github.com/p1c2u/openapi-core/issues/153
+#  Raises AssertionError: assert not {'errors': [{'code': 'InvalidMediaTypeValue', 'field': None, 'message': 'Mimetype invalid: Value not valid for schema', 'resource': None}], 'logs': [], 'status': 503}
+@pytest.mark.xfail(
+    reason="openapi core bug reported in https://github.com/p1c2u/openapi-core/issues/153",
+    strict=True,
+    raises=AssertionError)
+async def test_validate_handlers_mixed(client, specs):
+    await test_validate_handlers('/mixed', client, specs)

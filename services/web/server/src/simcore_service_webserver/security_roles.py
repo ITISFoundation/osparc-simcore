@@ -32,6 +32,7 @@ ROLES_PERMISSIONS = {
         "project.open",
         "project.read",          # "studies.user.read",
                                  # "studies.templates.read"
+        "project.node.read",
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
         # TODO: kept temporarily as a way to denote resources
@@ -51,7 +52,8 @@ ROLES_PERMISSIONS = {
                                  # "study.node.rename",
                                  # "study.edge.create",
                                  # "study.edge.delete"
-
+          "project.node.create",
+          "project.node.delete",
           "user.profile.update", # "preferences.user.update",
                                  # "preferences.role.update"
           "user.tokens.*",       # "preferences.token.create",

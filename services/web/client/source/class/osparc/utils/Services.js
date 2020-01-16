@@ -231,8 +231,8 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getBuiltInServices: function() {
-      const builtInServices = [{
+    getFilePicker: function() {
+      return {
         key: "simcore/services/frontend/file-picker",
         version: "1.0.0",
         type: "dynamic",
@@ -252,7 +252,14 @@ qx.Class.define("osparc.utils.Services", {
             type: "data:*/*"
           }
         }
-      }, this.getNodesGroupService()];
+      };
+    },
+
+    getBuiltInServices: function() {
+      const builtInServices = [
+        this.getFilePicker(),
+        this.getNodesGroupService()
+      ];
       return builtInServices;
     },
 

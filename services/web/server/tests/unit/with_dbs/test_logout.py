@@ -19,7 +19,7 @@ async def test_logout(client):
         await assert_status(r, web.HTTPOk)
 
         # logout
-        r = await client.get(logout_url)
+        r = await client.post(logout_url)
         assert r.url_obj.path == logout_url.path
         await assert_status(r, web.HTTPOk)
 

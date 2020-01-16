@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",

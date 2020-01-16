@@ -28,7 +28,7 @@ test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 _CONFIG = dict(
     name='simcore-service-director',
-    version='0.1.0',
+    version="0.1.0",
     description='oSparc Director webserver service',
     author='Sylvain Anderegg (sanderegg)',
     python_requires='>=3.6',
@@ -42,9 +42,8 @@ _CONFIG = dict(
     setup_requires=['pytest-runner'],
     package_data={
         '': [
-            'oas3/**/*.yaml',
-            'oas3/**/schemas/*.json',
-            'oas3/**/schemas/*.yaml',
+            'api/v0/openapi.yaml',
+            'api/v0/schemas/*.json'
             ],
     },
     entry_points={

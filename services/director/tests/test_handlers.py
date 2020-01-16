@@ -16,7 +16,6 @@ from helpers import json_schema_validator
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_director import config, main, resources, rest
 
-API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, configure_schemas_location, configure_registry_access):
@@ -25,8 +24,8 @@ def client(loop, aiohttp_client, aiohttp_unused_port, configure_schemas_location
     client = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
     return client
 
-async def test_root_get(loop, client):
-    web_response = await client.get("/v0/")
+async def test_root_get(loop, client, api_version_prefix):
+    web_response = await client.get(f"/{api_version_prefix}/")
     assert web_response.content_type == "application/json"
     assert web_response.status == 200
     healthcheck_enveloped = await web_response.json()
@@ -56,9 +55,9 @@ def _check_services(created_services, services, schema_version="v1"):
         json_schema_validator.validate_instance_object(service, service_schema)
 
 
-async def test_services_get(docker_registry, client, push_services):
+async def test_services_get(docker_registry, client, push_services, api_version_prefix):
     # empty case
-    web_response = await client.get("/v0/services")
+    web_response = await client.get(f"/{api_version_prefix}/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
@@ -68,7 +67,7 @@ async def test_services_get(docker_registry, client, push_services):
 
     # some services
     created_services = push_services(3,2)
-    web_response = await client.get("/v0/services")
+    web_response = await client.get(f"/{api_version_prefix}/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
@@ -76,14 +75,14 @@ async def test_services_get(docker_registry, client, push_services):
     services = services_enveloped["data"]
     _check_services(created_services, services)
 
-    web_response = await client.get("/v0/services?service_type=blahblah")
+    web_response = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
     assert web_response.status == 400
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
     assert not "data" in services_enveloped
     assert "error" in services_enveloped
 
-    web_response = await client.get("/v0/services?service_type=computational")
+    web_response = await client.get(f"/{api_version_prefix}/services?service_type=computational")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
@@ -91,7 +90,7 @@ async def test_services_get(docker_registry, client, push_services):
     services = services_enveloped["data"]
     assert len(services) == 3
 
-    web_response = await client.get("/v0/services?service_type=interactive")
+    web_response = await client.get(f"/{api_version_prefix}/services?service_type=interactive")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
@@ -100,12 +99,12 @@ async def test_services_get(docker_registry, client, push_services):
     assert len(services) == 2
 
 
-async def test_services_by_key_version_get(client, push_services): #pylint: disable=W0613, W0621
-    web_response = await client.get("/v0/services/whatever/someversion")
+async def test_services_by_key_version_get(client, push_services, api_version_prefix): #pylint: disable=W0613, W0621
+    web_response = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
     assert web_response.status == 400
-    web_response = await client.get("/v0/services/simcore/services/dynamic/something/someversion")
+    web_response = await client.get(f"/{api_version_prefix}/services/simcore/services/dynamic/something/someversion")
     assert web_response.status == 404
-    web_response = await client.get("/v0/services/simcore/services/dynamic/something/1.5.2")
+    web_response = await client.get(f"/{api_version_prefix}/services/simcore/services/dynamic/something/1.5.2")
     assert web_response.status == 404
 
     created_services = push_services(3,2)
@@ -115,7 +114,8 @@ async def test_services_by_key_version_get(client, push_services): #pylint: disa
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        url = "/v0/services/{}/{}".format(quote(service_description["key"], safe=""), quote(service_description["version"], safe=""))
+        key, version = [ quote(service_description[key], safe="") for key in ('key', 'version') ]
+        url = f"/{api_version_prefix}/services/{key}/{version}"
         web_response = await client.get(url)
 
         assert web_response.status == 200, await web_response.text() #here the error is actually json.
@@ -128,9 +128,9 @@ async def test_services_by_key_version_get(client, push_services): #pylint: disa
         retrieved_services.append(services[0])
     _check_services(created_services, retrieved_services)
 
-async def _start_get_stop_services(client, push_services, user_id, project_id):
+async def _start_get_stop_services(client, push_services, user_id, project_id, api_version_prefix):
     params = {}
-    web_response = await client.post("/v0/running_interactive_services", params=params)
+    web_response = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     assert web_response.status == 400
 
     params = {
@@ -141,13 +141,13 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         "service_tag": "None", # optional
         "service_basepath": "None" #optional
     }
-    web_response = await client.post("/v0/running_interactive_services", params=params)
+    web_response = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = await web_response.json()
     assert web_response.status == 400, data
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
-    web_response = await client.post("/v0/running_interactive_services", params=params)
+    web_response = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = await web_response.json()
     assert web_response.status == 404, data
 
@@ -164,7 +164,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         params["service_basepath"] = "/i/am/a/basepath"
         params["service_uuid"] = str(uuid.uuid4())
         # start the service
-        web_response = await client.post("/v0/running_interactive_services", params=params)
+        web_response = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
         running_service_enveloped = await web_response.json()
@@ -178,13 +178,13 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert not service_published_port
         assert service_entry_point == running_service_enveloped["data"]["entry_point"]
         service_host = running_service_enveloped["data"]["service_host"]
-        assert service_host == "test_{}".format(params["service_uuid"])
+        assert service_host == f"test_{params['service_uuid']}"
         service_basepath = running_service_enveloped["data"]["service_basepath"]
         assert service_basepath == params["service_basepath"]
 
 
         # get the service
-        web_response = await client.request("GET", "/v0/running_interactive_services/{}".format(params["service_uuid"]))
+        web_response = await client.request("GET", f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}")
         assert web_response.status == 200
         text = await web_response.text()
         assert web_response.content_type == "application/json", text
@@ -201,7 +201,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
-        web_response = await client.delete("/v0/running_interactive_services/{}".format(params["service_uuid"]))
+        web_response = await client.delete(f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}")
         text = await web_response.text()
         assert web_response.status == 204, text
         assert web_response.content_type == "application/json"
@@ -209,19 +209,19 @@ async def _start_get_stop_services(client, push_services, user_id, project_id):
         assert data is None
 
 @pytest.mark.skip(reason="docker_swarm fixture is a session fixture making it bad running together with other tests that require a swarm")
-async def test_running_services_post_and_delete_no_swarm(client, push_services, user_id, project_id): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete_no_swarm(client, push_services, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
     params = {
         "user_id": "None",
         "project_id": "None",
         "service_uuid": "sdlfkj4",
         "service_key": "simcore/services/comp/some-key"
     }
-    web_response = await client.post("/v0/running_interactive_services", params=params)
+    web_response = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = await web_response.json()
     assert web_response.status == 500, data
 
-async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id): #pylint: disable=W0613, W0621
-    await _start_get_stop_services(client, push_services, user_id, project_id)
+async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
+    await _start_get_stop_services(client, push_services, user_id, project_id, api_version_prefix)
 
 
 async def test_running_interactive_services_list_get(client, push_services, docker_swarm):

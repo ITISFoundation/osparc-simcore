@@ -26,7 +26,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     osparc.store.Store.getInstance().setCurrentStudy(study);
 
     study.openStudy();
-    study.initWorkbench();
 
     this.setStudy(study);
 
@@ -210,7 +209,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
 
       workbenchUI.addListener("changeSelectedNode", e => {
-        nodesTree.nodeSelected(e.getData());
+        const nodeId = e.getData();
+        nodesTree.nodeSelected(nodeId);
       });
     },
 
@@ -227,7 +227,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
         // open file picker in window
-        const filePicker = new qx.ui.window.Window(widget.getNode().getLabel()).set({
+        const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           appearance: "service-window",
           layout: new qx.ui.layout.Grow(),
           autoDestroy: true,
@@ -241,13 +241,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const node = widget.getNode();
           this.nodeSelected(node.getParentNodeId() || "root");
         };
-        filePicker.add(widget);
-        qx.core.Init.getApplication().getRoot().add(filePicker);
-        filePicker.show();
-        filePicker.center();
+        filePickerWin.add(widget);
+        qx.core.Init.getApplication().getRoot().add(filePickerWin);
+        filePickerWin.show();
+        filePickerWin.center();
+        this.__workbenchUI.filePickerAdded(widget);
 
-        widget.addListener("finished", () => filePicker.close(), this);
-        filePicker.addListener("close", () => showParentWorkbench());
+        widget.addListener("finished", () => filePickerWin.close(), this);
+        filePickerWin.addListener("close", () => showParentWorkbench());
       } else {
         this.showInMainView(widget, nodeId);
       }
@@ -485,7 +486,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       let req = new osparc.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
-      data["project_id"] = this.getStudy().getUuid();
+      data["projectId"] = this.getStudy().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -504,7 +505,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["project_id"];
+      const pipelineId = resp.data["projectId"];
       this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -557,7 +558,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const params = {
         url: {
-          "project_id": prjUuid,
+          projectId: prjUuid,
           run
         },
         data: newObj

@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         if (loadStudyId) {
           const params = {
             url: {
-              "project_id": loadStudyId
+              projectId: loadStudyId
             }
           };
           osparc.data.Resources.getOne("studies", params)
@@ -205,6 +205,9 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createStudiesLayout: function() {
       const studyFilters = this.__studyFilters = new osparc.component.filter.TextFilter("text", "studyBrowser");
       osparc.utils.Utils.setIdToWidget(studyFilters, "studyFiltersTextFld");
+      studyFilters.getChildControl("textfield").set({
+        width: 210
+      });
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "big-button",
@@ -255,7 +258,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __reloadStudies: function() {
       const params = {
         url: {
-          "tab_id": osparc.utils.Utils.getClientSessionID()
+          tabId: osparc.utils.Utils.getClientSessionID()
         }
       };
       osparc.data.Resources.fetch("studies", "getActive", params)
@@ -326,7 +329,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       if (templateId) {
         const params = {
           url: {
-            "template_id": templateId
+            templateId: templateId
           },
           data: minStudyData
         };
@@ -542,7 +545,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       studyData.forEach(study => {
         const params = {
           url: {
-            "project_id": study.uuid
+            projectId: study.uuid
           }
         };
         osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid)

@@ -1,0 +1,83 @@
+paths:
+  /services:
+    get:
+      description: Lists available services in catalog
+      operationId: services_get
+      parameters:
+        - $ref: "#/components/parameters/ServiceType"
+      responses:
+        "200":
+          description: Returns list of services in catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesEnveloped"
+        "401":
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /computation/pipeline/{project_id}:
+    put:
+      description: "Update a pipeline using workbench section from given project"
+      operationId: update_pipeline
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "204":
+          description: Succesfully updated the pipeline
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /computation/pipeline/{project_id}/start:
+    post:
+      description: Starts a pipeline of a given project
+      operationId: start_pipeline
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Succesffully started the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  # PROJECT SERVICES -----------------------------------------------------------------
+components:
+  parameters:
+    ProjectId:
+      in: path
+      name: project_id
+      required: true
+      description: the uuid of the project
+      schema:
+        type: string
+        # format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: false
+      schema:
+        type: string
+        enum:
+          - computational
+          - interactive
+        example: computational
+
+  schemas:
+    ServicesEnveloped:
+      $ref: "../common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
