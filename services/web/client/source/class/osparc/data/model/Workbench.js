@@ -60,10 +60,12 @@ qx.Class.define("osparc.data.model.Workbench", {
     __nodesTopLevel: null,
     __edges: null,
 
-    initWorkbench: function() {
+    buildWorkbench: function() {
       this.__deserializeWorkbench(this.__workbenchInitData);
       this.__workbenchInitData = null;
+    },
 
+    initWorkbench: function() {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {

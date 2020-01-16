@@ -138,8 +138,8 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    initWorkbench: function() {
-      this.getWorkbench().initWorkbench();
+    buildWorkbench: function() {
+      this.getWorkbench().buildWorkbench();
     },
 
     openStudy: function() {

@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this.base(arguments, "horizontal");
 
     osparc.store.Store.getInstance().setCurrentStudy(study);
-
+    study.buildWorkbench();
     study.openStudy();
 
     this.setStudy(study);
