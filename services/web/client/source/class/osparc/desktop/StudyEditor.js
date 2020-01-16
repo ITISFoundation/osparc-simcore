@@ -425,11 +425,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       node.setPosition(avgX, avgY);
       for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i];
-        selectedNode.setParentNodeId(node.getNodeId());
+        const selectedNode = selectedNodes[i].getNode();
+        const oldParentNode = workbench.getNode(selectedNode.getParentNodeId());
+        workbench.moveNode(selectedNode, node, oldParentNode);
       }
 
-      currentModel.loadModel(currentModel);
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
+      this.__workbenchChanged();
       return true;
     },
 
