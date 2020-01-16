@@ -147,6 +147,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __connectEvents: function() {
+      this.__mainPanel.getControls().addListener("groupSelection", this.__groupSelection, this);
+      this.__mainPanel.getControls().addListener("ungroupSelection", this.__ungroupSelection, this);
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
@@ -384,6 +386,41 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (node) {
         node.retrieveInputs(portKey);
       }
+    },
+
+    __groupSelection: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return false;
+      }
+      const selectedNodes = this.__workbenchUI.getSelectedNodes();
+      if (selectedNodes === null || selectedNodes.length === 0) {
+        const msg = "Empty selection";
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        return false;
+      }
+
+      const workbench = this.getStudy().getWorkbench();
+
+      let currentModelParentId = null;
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      if (currentModel !== workbench) {
+        currentModelParentId = currentModel.getParentNodeId();
+      }
+
+      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      const node = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
+      if (!node) {
+        return false;
+      }
+      for (let i=0; i<selectedNodes.length; i++) {
+        selectedNodes.setParentNodeId(node.getNodeId());
+      }
+
+      currentModel.loadModel(currentModel);
+      return true;
+    },
+
+    __ungroupSelection: function() {
     },
 
     __startPipeline: function() {
