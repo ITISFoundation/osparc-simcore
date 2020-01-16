@@ -194,10 +194,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.giveUniqueName();
 
       // create the node in the backend here
-      const prjId = this.getStudy().getUuid();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: prjId
+          projectId: study.getUuid()
         },
         data: {
           "service_id": node.getNodeId(),
@@ -265,9 +265,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
       // remove node in the backend
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: this.getStudy().getUuid(),
+          projectId: study.getUuid(),
           nodeId: nodeId
         }
       };
