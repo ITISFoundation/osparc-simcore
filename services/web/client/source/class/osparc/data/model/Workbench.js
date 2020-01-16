@@ -180,7 +180,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
-      const node = new osparc.data.model.Node(key, version, this, uuid);
+      const node = new osparc.data.model.Node(key, version, uuid);
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
@@ -368,7 +368,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
-        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, this, nodeId);
+        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {

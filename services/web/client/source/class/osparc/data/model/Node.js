@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let node = new osparc.data.model.Node(key, version, workbench, uuid);
+ *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
  *   node.addDynamicButtons();
@@ -45,10 +45,9 @@ qx.Class.define("osparc.data.model.Node", {
   /**
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
-    * @param workbench {osparc.data.model.Workbench} workbench owning the widget the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(key, version, workbench, uuid) {
+  construct: function(key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
