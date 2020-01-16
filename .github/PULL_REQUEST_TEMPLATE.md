@@ -17,7 +17,7 @@
 
 ## Checklist
 
-- [ ] Did you change any service API? Then make sure to bundle document and upgrade version (``make openapi-specs``, ``git commit ...`` and then ``make version-*``)
+- [ ] Did you change any service's API? Then make sure to bundle document and upgrade version (``make openapi-specs``, ``git commit ...`` and then ``make version-*``)
 - [ ] Unit tests for the changes exist
 - [ ] Runs in the swarm
 - [ ] Documentation reflects the changes
