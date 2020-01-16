@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import re
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
@@ -402,7 +403,11 @@ async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag:
     if not service_key in list_of_images:
         raise exceptions.ServiceNotAvailableError(
             service_name=service_key, service_tag=service_tag)
-    available_tags_list = sorted(list_of_images[service_key], key=StrictVersion)
+    # filter incorrect chars
+    regex = re.compile(r'^\d+\.\d+\.\d+$')
+    filtered_tags_list = filter(regex.search, list_of_images[service_key])
+    # sort them now
+    available_tags_list = sorted(filtered_tags_list, key=StrictVersion)
     # not tags available... probably an undefined service there...
     if not available_tags_list:
         raise exceptions.ServiceNotAvailableError(service_key, service_tag)
