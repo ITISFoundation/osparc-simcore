@@ -7,7 +7,7 @@
         - upon failure raise errors that can be also HTTP reponses
 """
 import logging
-from asyncio import gather
+from asyncio import gather, ensure_future
 from typing import Dict, Optional
 from uuid import uuid4
 
@@ -112,8 +112,11 @@ async def start_project_interactive_services(request: web.Request, project: Dict
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: str) -> None:
-    await remove_project_interactive_services(user_id, project_uuid, request.app)
-    await delete_project_data(request, project_uuid, user_id)
+    await delete_project_from_db(request, project_uuid, user_id)
+    async def remove_services_and_data():
+        await remove_project_interactive_services(user_id, project_uuid, request.app)
+        await delete_project_data(request, project_uuid, user_id)
+    ensure_future(remove_services_and_data())
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(user_id: Optional[str], project_uuid: Optional[str], app: web.Application) -> None:
@@ -126,19 +129,20 @@ async def remove_project_interactive_services(user_id: Optional[str], project_uu
         await gather(*stop_tasks)
 
 async def delete_project_data(request: web.Request, project_uuid: str, user_id: str) -> None:
-    app = request.app
+    # requests storage to delete all project's stored data
+    await delete_data_folders_of_project(request.app, project_uuid, user_id)
 
+async def delete_project_from_db(request: web.Request, project_uuid: str, user_id: str) -> None:
     db = request.config_dict[APP_PROJECT_DBAPI]
     try:
         await delete_pipeline_db(request.app, project_uuid)
         await db.delete_user_project(user_id, project_uuid)
-
     except ProjectNotFoundError:
         # TODO: add flag in query to determine whether to respond if error?
         raise web.HTTPNotFound
 
     # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
+    await delete_data_folders_of_project(request.app, project_uuid, user_id)
 
 async def add_project_node(request: web.Request, project_uuid: str, user_id: str, service_key: str, service_version: str, service_id: Optional[str]) -> str: # pylint: disable=too-many-arguments
     log.debug("starting node %s:%s in project %s for user %s", service_key, service_version, project_uuid, user_id)
