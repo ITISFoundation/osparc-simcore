@@ -80,7 +80,7 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
 
 async def test_find_service_tag(loop):
     my_service_key = "myservice-key"
-    list_of_images = {my_service_key: ["2.4.0", "2.11.0", "2.8.0", "1.2.1", "1.2.0", "1.2.3"]}
+    list_of_images = {my_service_key: ["2.4.0", "2.11.0", "2.8.0", "1.2.1", "some wrong value", "latest", "1.2.0", "1.2.3"]}
     with pytest.raises(exceptions.ServiceNotAvailableError):
         await producer._find_service_tag(list_of_images, "some_wrong_key", None)
     with pytest.raises(exceptions.ServiceNotAvailableError):
