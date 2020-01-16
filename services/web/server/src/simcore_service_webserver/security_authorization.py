@@ -38,7 +38,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
     async def _pg_query_user(self, identity: str) -> RowProxy:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        import pdb; pdb.set_trace()
         row = self.timed_cache.get(identity)
         if not row:
             query = users.select().where(
