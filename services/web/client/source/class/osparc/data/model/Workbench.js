@@ -57,10 +57,12 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   members: {
     __workbenchInitData: null,
-    __nodesTopLevel: null,
+    __rootNodes: null,
     __edges: null,
 
     buildWorkbench: function() {
+      this.__rootNodes = {};
+      this.__edges = {};
       this.__deserializeWorkbench(this.__workbenchInitData);
       this.__workbenchInitData = null;
     },
@@ -88,9 +90,9 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getNodes: function(recursive = false) {
-      let nodes = Object.assign({}, this.__nodesTopLevel);
+      let nodes = Object.assign({}, this.__rootNodes);
       if (recursive) {
-        let topLevelNodes = Object.values(this.__nodesTopLevel);
+        let topLevelNodes = Object.values(this.__rootNodes);
         for (const topLevelNode of topLevelNodes) {
           let innerNodes = topLevelNode.getInnerNodes(true);
           nodes = Object.assign(nodes, innerNodes);
@@ -253,11 +255,12 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     addNode: function(node, parentNode) {
-      const uuid = node.getNodeId();
+      const nodeId = node.getNodeId();
       if (parentNode) {
-        parentNode.addInnerNode(uuid, node);
+        parentNode.addInnerNode(nodeId, node);
       } else {
-        this.__nodesTopLevel[uuid] = node;
+        this.__rootNodes[nodeId] = node;
+        node.setParentNodeId(null);
       }
       this.fireEvent("workbenchChanged");
     },
@@ -287,9 +290,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       let node = this.getNode(nodeId);
       if (node) {
         node.removeNode();
-        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
+        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
         if (isTopLevel) {
-          delete this.__nodesTopLevel[nodeId];
+          delete this.__rootNodes[nodeId];
         }
         this.fireEvent("workbenchChanged");
         return true;
