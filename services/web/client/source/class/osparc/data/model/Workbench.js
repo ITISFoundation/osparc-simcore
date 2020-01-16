@@ -263,6 +263,21 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.fireEvent("workbenchChanged");
     },
 
+    moveNode: function(node, newParent, oldParent) {
+      const nodeId = node.getNodeId();
+      if (oldParent === null) {
+        delete this.__rootNodes[nodeId];
+      } else {
+        oldParent.removeInnerNode(nodeId);
+      }
+      if (newParent === null) {
+        this.__rootNodes[nodeId] = node;
+        node.setParentNodeId(null);
+      } else {
+        newParent.addInnerNode(nodeId, node);
+      }
+    },
+
     removeNode: function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
