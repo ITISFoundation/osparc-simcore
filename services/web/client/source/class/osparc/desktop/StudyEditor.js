@@ -389,12 +389,32 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __getOutReferences: function() {
+
+    },
+
+    __getAveragePosition: function(nodes) {
+      let avgX = 0;
+      let avgY = 0;
+      for (let i=0; i<nodes.length; i++) {
+        const node = nodes[i].getNode();
+        avgX += node.getPosition().x;
+        avgY += node.getPosition().y;
+      }
+      avgX /= nodes.length;
+      avgY /= nodes.length;
+      return {
+        x: avgX,
+        y: avgY
+      };
+    },
+
     __groupSelection: function() {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return false;
       }
-      const selectedNodes = this.__workbenchUI.getSelectedNodes();
-      if (selectedNodes === null || selectedNodes.length === 0) {
+      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
         const msg = "Empty selection";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         return false;
@@ -408,24 +428,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         currentModelParentId = currentModel.getParentNodeId();
       }
 
-      let avgX = 0;
-      let avgY = 0;
-      for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i].getNode();
-        avgX += selectedNode.getPosition().x;
-        avgY += selectedNode.getPosition().y;
-      }
-      avgX /= selectedNodes.length;
-      avgY /= selectedNodes.length;
-
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
       const node = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
       if (!node) {
         return false;
       }
-      node.setPosition(avgX, avgY);
+
+      const selectedNodes = [];
+      for (let i=0; i<selectedNodeUIs.length; i++) {
+        selectedNodes.push(selectedNodeUIs[i].getNode());
+      }
+      const avgPos = this.__getAveragePosition(selectedNodes);
+      node.setPosition(avgPos.x, avgPos.y);
       for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i].getNode();
+        const selectedNode = selectedNodes[i];
         const oldParentNode = workbench.getNode(selectedNode.getParentNodeId());
         workbench.moveNode(selectedNode, node, oldParentNode);
       }
