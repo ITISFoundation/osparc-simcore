@@ -5,10 +5,13 @@ import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from aiopg.sa import Engine, ResultProxy, RowProxy
+from aiopg.sa import Engine
+from aiopg.sa.result import ResultProxy, RowProxy
+from expiringdict import ExpiringDict
+from tenacity import retry
+
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from tenacity import retry
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
@@ -20,6 +23,7 @@ log = logging.getLogger(__file__)
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
     app: web.Application
     access_model: RoleBasedAccessModel
+    timed_cache: ExpiringDict = attr.ib(init=False, default=ExpiringDict(max_len=100, max_age_seconds=10))
 
     @property
     def engine(self) -> Engine:
@@ -32,16 +36,20 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _pg_query_user(self, identity) -> RowProxy:
-        # TODO: small cache?
-        query = users.select().where(
-            sa.and_(users.c.email == identity,
-                    users.c.status != UserStatus.BANNED)
-        )
-        # NOTE: psycopg2.DatabaseError in #880 and #1160
-        async with self.engine.acquire() as conn:
-            ret: ResultProxy = await conn.execute(query)
-            row: RowProxy = await ret.fetchone()
+    async def _pg_query_user(self, identity: str) -> RowProxy:
+        # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
+        import pdb; pdb.set_trace()
+        row = self.timed_cache.get(identity)
+        if not row:
+            query = users.select().where(
+                sa.and_(users.c.email == identity,
+                        users.c.status != UserStatus.BANNED)
+            )
+            async with self.engine.acquire() as conn:
+                # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
+                ret: ResultProxy = await conn.execute(query)
+                row: RowProxy = await ret.fetchone()
+            self.timed_cache[identity] = row
         return row
 
     async def authorized_userid(self, identity: str) -> Optional[str]:
