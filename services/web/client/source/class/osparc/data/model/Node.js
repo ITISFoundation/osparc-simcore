@@ -794,10 +794,10 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: this.getWorkbench().getStudy()
-            .getUuid(),
+          projectId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
