@@ -758,8 +758,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __clearEdge: function(edge) {
       if (edge) {
-        this.__svgWidget.removeCurve(edge.getRepresentation());
-        let index = this.__edgesUI.indexOf(edge);
+        this.__svgWidgetLinks.removeCurve(edge.getRepresentation());
+        const index = this.__edgesUI.indexOf(edge);
         if (index > -1) {
           this.__edgesUI.splice(index, 1);
         }
