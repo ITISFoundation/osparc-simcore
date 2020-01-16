@@ -4813,6 +4813,8 @@ paths:
                         status: 400
   /projects/active:
     get:
+      tags:
+        - project
       summary: Gets active project
       operationId: get_active_project
       responses:
@@ -6312,6 +6314,8 @@ paths:
         schema:
           type: string
     post:
+      tags:
+        - project
       summary: Create a new node
       operationId: create_node
       requestBody:
@@ -6625,6 +6629,8 @@ paths:
                             field: pasword
                         status: 400
     delete:
+      tags:
+        - project
       description: Stops and removes a node from the project
       operationId: delete_node
       responses:
