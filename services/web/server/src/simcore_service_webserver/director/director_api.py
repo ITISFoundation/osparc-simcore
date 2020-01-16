@@ -52,7 +52,7 @@ async def start_service(app: web.Application, user_id: str, project_id: str, ser
         "user_id": user_id,
         "project_id": project_id,
         "service_key": service_key,
-        "service_version": service_version,
+        "service_tag": service_version,
         "service_uuid": service_uuid,
         "service_basepath": f"/x/{service_uuid}"
     }
@@ -67,7 +67,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
     session, api_endpoint = _get_director_client(app)
 
     url = (api_endpoint / "running_interactive_services" / service_uuid)
-    async with session.delete(url, ssl=False) as resp:        
+    async with session.delete(url, ssl=False) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
         if resp.status != 204:

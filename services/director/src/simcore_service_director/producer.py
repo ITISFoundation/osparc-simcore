@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
@@ -398,7 +399,10 @@ async def _get_dependant_repos(app: web.Application, service_key: str, service_t
 
 
 async def _find_service_tag(list_of_images: Dict, service_key: str, service_tag: str) -> str:
-    available_tags_list = sorted(list_of_images[service_key])
+    if not service_key in list_of_images:
+        raise exceptions.ServiceNotAvailableError(
+            service_name=service_key, service_tag=service_tag)
+    available_tags_list = sorted(list_of_images[service_key], key=StrictVersion)
     # not tags available... probably an undefined service there...
     if not available_tags_list:
         raise exceptions.ServiceNotAvailableError(service_key, service_tag)
@@ -566,7 +570,7 @@ async def _get_node_details(app: web.Application, client: aiodocker.docker.Docke
     service_key, service_tag = await _get_service_key_version_from_docker_service(service)
 
     # get boot parameters
-    results = await asyncio.gather(_get_service_boot_parameters_labels(app, service_key, service_tag),                    
+    results = await asyncio.gather(_get_service_boot_parameters_labels(app, service_key, service_tag),
                     _get_service_basepath_from_docker_service(service),
                     _get_service_state(client, service))
 
@@ -576,7 +580,7 @@ async def _get_node_details(app: web.Application, client: aiodocker.docker.Docke
     service_state, service_msg = results[2]
     service_name =  service["Spec"]["Name"]
     service_uuid = service["Spec"]["Labels"]["uuid"]
-    
+
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -610,7 +614,7 @@ async def get_services_details(app: web.Application, user_id: Optional[str], stu
                 "Error while listing services with user_id, study_id %s, %s", user_id, study_id)
             raise exceptions.GenericDockerError(
                 "Error while accessing container", err) from err
-            
+
 
 async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -624,8 +628,8 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             if len(list_running_services_with_uuid) > 1:
                 # someone did something fishy here
                 raise exceptions.DirectorException(msg="More than one docker service is labeled as main service")
-            
-            node_details = await _get_node_details(app, client, list_running_services_with_uuid[0])            
+
+            node_details = await _get_node_details(app, client, list_running_services_with_uuid[0])
             return node_details
         except aiodocker.exceptions.DockerError as err:
             log.exception(

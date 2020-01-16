@@ -3762,855 +3762,6 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  /running_interactive_services:
-    post:
-      description: Starts an interactive service in the oSparc platform and returns its entrypoint
-      operationId: running_interactive_services_post
-      parameters:
-        - in: query
-          name: project_id
-          required: true
-          description: the uuid of the project
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-        - in: query
-          name: service_key
-          description: The key (url) of the service
-          required: true
-          schema:
-            type: string
-            example: simcore/services/dynamic/3d-viewer
-        - in: query
-          name: service_tag
-          description: The tag/version of the service
-          required: false
-          schema:
-            type: string
-            example: '1.4'
-        - in: query
-          name: service_uuid
-          description: The uuid to assign the service with
-          required: true
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-      responses:
-        '201':
-          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - published_port
-                      - service_uuid
-                      - service_key
-                      - service_version
-                      - service_host
-                      - service_port
-                      - service_state
-                    properties:
-                      published_port:
-                        description: The ports where the service provides its interface
-                        type: integer
-                        format: int32
-                        minimum: 1
-                        example: 30000
-                      entry_point:
-                        description: The entry point where the service provides its interface if specified
-                        type: string
-                        example: /the/entry/point/is/here
-                      service_uuid:
-                        description: The UUID attached to this service
-                        type: string
-                        example: 123e4567-e89b-12d3-a456-426655440000
-                      service_key:
-                        type: string
-                        description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
-                        example:
-                          - simcore/services/comp/itis/sleeper
-                          - simcore/services/dynamic/3dviewer
-                      service_version:
-                        type: string
-                        description: semantic version number
-                        pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                        example:
-                          - 1.0.0
-                          - 0.0.1
-                      service_host:
-                        description: service host name within the network
-                        type: string
-                        example: jupyter_E1O2E-LAH
-                      service_port:
-                        description: port to access the service within the network
-                        type: integer
-                        minimum: 1
-                        example: 8081
-                      service_basepath:
-                        description: different base path where current service is mounted otherwise defaults to root
-                        type: string
-                        example: /x/E1O2E-LAH
-                        default: ''
-                      service_state:
-                        description: |
-                          the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
-                        type: string
-                        enum:
-                          - pending
-                          - pulling
-                          - starting
-                          - running
-                          - complete
-                          - failed
-                      service_message:
-                        description: the service message
-                        type: string
-                        example: no suitable node (insufficient resources on 1 node)
-                  error:
-                    nullable: true
-                    default: null
-        '400':
-          description: 'Malformed function call, missing field'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '401':
-          description: Unauthorized access
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '404':
-          description: Service not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '409':
-          description: A service with the same uuid already exists
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
-    delete:
-      description: Stops and removes all user interactive services from the platform
-      operationId: running_interactive_services_delete_all
-      responses:
-        '204':
-          description: Succesfully stopped and removed the service from the oSparc platform
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
-  '/running_interactive_services/{service_uuid}':
-    get:
-      description: Succesfully returns if a service with the defined uuid is up and running
-      operationId: running_interactive_services_get
-      parameters:
-        - in: path
-          name: service_uuid
-          description: The uuid of the service
-          required: true
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-      responses:
-        '204':
-          description: OK service exists and runs
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '400':
-          description: 'Malformed function call, missing field'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '404':
-          description: Service not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
-    delete:
-      description: Stops and removes an interactive service from the oSparc platform
-      operationId: running_interactive_services_delete
-      parameters:
-        - in: path
-          name: service_uuid
-          description: The uuid of the service
-          required: true
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-      responses:
-        '204':
-          description: Succesfully stopped and removed the service from the oSparc platform
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '400':
-          description: 'Malformed function call, missing field'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        '404':
-          description: Service not found
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
   '/computation/pipeline/{project_id}':
     put:
       description: Update a pipeline using workbench section from given project
@@ -7042,6 +6193,413 @@ paths:
       responses:
         '204':
           description: project succesfuly closed
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects/{project_id}/nodes':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a new node
+      operationId: create_node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_uuid:
+                  type: string
+                  description: the uuid to assign to the service
+                service_key:
+                  type: string
+                  pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                  description: The key (url) of the service
+                service_version:
+                  type: string
+                  pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                  description: The tag/version of the service
+              required:
+                - service_key
+                - service_version
+            example:
+              service_key: simcore/services/dynamic/3d-viewer
+              service_version: 1.4.0
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - node_id
+                    properties:
+                      node_id:
+                        type: string
+                        description: The UUID attached to this node
+                        example: 123e4567-e89b-12d3-a456-426655440000
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects/{project_id}/nodes/{node_id}':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      description: Gets node status
+      operationId: get_node
+      responses:
+        '200':
+          description: OK service exists and runs. Returns node details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - published_port
+                      - service_uuid
+                      - service_key
+                      - service_version
+                      - service_host
+                      - service_port
+                      - service_state
+                    properties:
+                      published_port:
+                        description: The ports where the service provides its interface
+                        type: integer
+                        format: int32
+                        minimum: 1
+                        example: 30000
+                      entry_point:
+                        description: The entry point where the service provides its interface if specified
+                        type: string
+                        example: /the/entry/point/is/here
+                      service_uuid:
+                        description: The UUID attached to this service
+                        type: string
+                        example: 123e4567-e89b-12d3-a456-426655440000
+                      service_key:
+                        type: string
+                        description: distinctive name for the node based on the docker registry path
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        example:
+                          - simcore/services/comp/itis/sleeper
+                          - simcore/services/dynamic/3dviewer
+                      service_version:
+                        type: string
+                        description: semantic version number
+                        pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                        example:
+                          - 1.0.0
+                          - 0.0.1
+                      service_host:
+                        description: service host name within the network
+                        type: string
+                        example: jupyter_E1O2E-LAH
+                      service_port:
+                        description: port to access the service within the network
+                        type: integer
+                        minimum: 1
+                        example: 8081
+                      service_basepath:
+                        description: different base path where current service is mounted otherwise defaults to root
+                        type: string
+                        example: /x/E1O2E-LAH
+                        default: ''
+                      service_state:
+                        description: |
+                          the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
+                        type: string
+                        enum:
+                          - pending
+                          - pulling
+                          - starting
+                          - running
+                          - complete
+                          - failed
+                      service_message:
+                        description: the service message
+                        type: string
+                        example: no suitable node (insufficient resources on 1 node)
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      description: Stops and removes a node from the project
+      operationId: delete_node
+      responses:
+        '204':
+          description: node has been successfully deleted from project
         default:
           description: Default http error response body
           content:

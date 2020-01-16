@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=protected-access
 
 import asyncio
 import time
@@ -77,6 +78,20 @@ async def run_services(aiohttp_mock_app, configure_registry_access, configure_sc
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
+async def test_find_service_tag(loop):
+    my_service_key = "myservice-key"
+    list_of_images = {my_service_key: ["2.4.0", "2.11.0", "2.8.0", "1.2.1", "1.2.0", "1.2.3"]}
+    with pytest.raises(exceptions.ServiceNotAvailableError):
+        await producer._find_service_tag(list_of_images, "some_wrong_key", None)
+    with pytest.raises(exceptions.ServiceNotAvailableError):
+        await producer._find_service_tag(list_of_images, my_service_key, "some wrong key")
+    # get the latest (e.g. 2.11.0)
+    latest_version = await producer._find_service_tag(list_of_images, my_service_key, None)
+    assert latest_version == "2.11.0"
+    latest_version = await producer._find_service_tag(list_of_images, my_service_key, "latest")
+    assert latest_version == "2.11.0"
+    # get a specific version
+    version = await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
 
 async def test_start_stop_service(run_services):
     # standard test
