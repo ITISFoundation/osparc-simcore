@@ -43,6 +43,7 @@ services:
     command:
       [
         "postgres",
+        "-c", "log_statement=all",
         "-c", "log_connections=true",
         "-c", "log_disconnections=true",
         "-c", "log_duration=true",
