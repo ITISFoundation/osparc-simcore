@@ -45,8 +45,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     this.base(arguments);
 
     this.__workbenchInitData = workbenchData;
-    this.__nodesTopLevel = {};
-    this.__edges = {};
   },
 
   events: {
