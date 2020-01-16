@@ -414,7 +414,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return false;
       }
       for (let i=0; i<selectedNodes.length; i++) {
-        selectedNodes.setParentNodeId(node.getNodeId());
+        const selectedNode = selectedNodes[i];
+        selectedNode.setParentNodeId(node.getNodeId());
       }
 
       currentModel.loadModel(currentModel);
