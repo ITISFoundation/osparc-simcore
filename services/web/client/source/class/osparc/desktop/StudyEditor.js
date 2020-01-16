@@ -397,7 +397,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       let avgX = 0;
       let avgY = 0;
       for (let i=0; i<nodes.length; i++) {
-        const node = nodes[i].getNode();
+        const node = nodes[i];
         avgX += node.getPosition().x;
         avgY += node.getPosition().y;
       }
@@ -421,6 +421,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const workbench = this.getStudy().getWorkbench();
+      const selectedNodes = [];
+      for (let i=0; i<selectedNodeUIs.length; i++) {
+        selectedNodes.push(selectedNodeUIs[i].getNode());
+      }
 
       let currentModelParentId = null;
       const currentModel = this.__workbenchUI.getCurrentModel();
@@ -434,12 +438,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return false;
       }
 
-      const selectedNodes = [];
-      for (let i=0; i<selectedNodeUIs.length; i++) {
-        selectedNodes.push(selectedNodeUIs[i].getNode());
-      }
       const avgPos = this.__getAveragePosition(selectedNodes);
       node.setPosition(avgPos.x, avgPos.y);
+
       for (let i=0; i<selectedNodes.length; i++) {
         const selectedNode = selectedNodes[i];
         const oldParentNode = workbench.getNode(selectedNode.getParentNodeId());
