@@ -175,7 +175,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         workbenchUI
       ].forEach(widget => {
         widget.addListener("nodeDoubleClicked", e => {
-          let nodeId = e.getData();
+          const nodeId = e.getData();
           this.nodeSelected(nodeId, true);
         }, this);
       });

@@ -255,22 +255,24 @@ qx.Class.define("osparc.utils.Services", {
       };
     },
 
-    getBuiltInServices: function() {
-      const builtInServices = [
-        this.getFilePicker(),
-        this.getNodesGroupService()
-      ];
-      return builtInServices;
-    },
-
     getNodesGroupService: function() {
       return {
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
         name: "Group",
-        description: "Group"
+        description: "Group of nodes",
+        inputs: {},
+        outputs: {}
       };
+    },
+
+    getBuiltInServices: function() {
+      const builtInServices = [
+        this.getFilePicker(),
+        this.getNodesGroupService()
+      ];
+      return builtInServices;
     },
 
     servicesToCache: function(services, fromServer) {
