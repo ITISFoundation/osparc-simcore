@@ -408,11 +408,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         currentModelParentId = currentModel.getParentNodeId();
       }
 
+      let avgX = 0;
+      let avgY = 0;
+      for (let i=0; i<selectedNodes.length; i++) {
+        const selectedNode = selectedNodes[i].getNode();
+        avgX += selectedNode.getPosition().x;
+        avgY += selectedNode.getPosition().y;
+      }
+      avgX /= selectedNodes.length;
+      avgY /= selectedNodes.length;
+
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
       const node = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
       if (!node) {
         return false;
       }
+      node.setPosition(avgX, avgY);
       for (let i=0; i<selectedNodes.length; i++) {
         const selectedNode = selectedNodes[i];
         selectedNode.setParentNodeId(node.getNodeId());
