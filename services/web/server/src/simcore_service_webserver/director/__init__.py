@@ -46,10 +46,6 @@ def setup(app: web.Application,* , disable_login=False):
         return any( tail in path  for tail in ['/running_interactive_services', '/services'] )
 
     handlers_dict = {
-        'running_interactive_services_post': handlers.running_interactive_services_post ,
-        'running_interactive_services_get': handlers.running_interactive_services_get,
-        'running_interactive_services_delete': handlers.running_interactive_services_delete,
-        'running_interactive_services_delete_all': handlers.running_interactive_services_delete_all,
         'services_get': handlers.services_get
     }
 

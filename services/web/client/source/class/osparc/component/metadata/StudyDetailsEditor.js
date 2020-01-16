@@ -204,7 +204,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __saveStudy: function(btn) {
       const params = {
         url: {
-          "project_id": this.__model.getUuid()
+          projectId: this.__model.getUuid()
         },
         data: this.__serializeForm()
       };
