@@ -453,6 +453,46 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __ungroupSelection: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return false;
+      }
+      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
+        const msg = "Empty selection";
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        return false;
+      }
+      if (selectedNodeUIs.length > 1) {
+        const msg = "Select only one group";
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        return false;
+      }
+      const selectedNode = selectedNodeUIs[0].getNode();
+      if (!selectedNode.isContainer()) {
+        const msg = "Select a group";
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        return false;
+      }
+
+      const workbench = this.getStudy().getWorkbench();
+
+
+      let newParentNode = null;
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      if (currentModel !== workbench) {
+        newParentNode = currentModel;
+      }
+      const innerNodes = selectedNode.getInnerNodes(false);
+      for (const innerNodeId in innerNodes) {
+        const innerNode = innerNodes[innerNodeId];
+        workbench.moveNode(innerNode, newParentNode, selectedNode);
+      }
+
+      workbench.removeNode(selectedNode.getNodeId());
+
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
+      this.__workbenchChanged();
+      return true;
     },
 
     __startPipeline: function() {
