@@ -166,7 +166,6 @@ qx.Class.define("osparc.file.FilePicker", {
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
         this.__setOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
-        this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
       }
@@ -186,6 +185,7 @@ qx.Class.define("osparc.file.FilePicker", {
           path,
           label
         };
+        this.getNode().setProgress(100);
       }
     },
 
