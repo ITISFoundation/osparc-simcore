@@ -323,10 +323,10 @@ jobs:
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: system-testing
+    - stage: build / unit-testing
       name: e2e testing
       dist: trusty
-      env: 
+      env:
         - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
       language: generic
       node_js:
