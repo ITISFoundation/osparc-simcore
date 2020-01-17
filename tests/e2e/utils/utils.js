@@ -87,7 +87,7 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function waitForValidSleeperOutputFile(page) {
+async function waitForValidOutputFile(page) {
   return new Promise((resolve, reject) => {
     page.on("response", function callback(resp) {
       const header = resp.headers();
@@ -117,6 +117,13 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function takeScreenshot(page, captureName) {
+  await page.screenshot({
+    fullPage: true,
+    path: 'screenshots/'+captureName+'.jpg',
+    type: 'jpeg',
+  })
+}
 
 module.exports = {
   getRandUserAndPass,
@@ -127,6 +134,7 @@ module.exports = {
   emptyField,
   dragAndDrop,
   waitForResponse,
-  waitForValidSleeperOutputFile,
+  waitForValidOutputFile,
   sleep,
+  takeScreenshot,
 }
