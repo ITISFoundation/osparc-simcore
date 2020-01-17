@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new osparc.file.FilePicker(node, studyId);
+ *   let filePicker = new osparc.file.FilePicker(node);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
@@ -39,14 +39,12 @@ qx.Class.define("osparc.file.FilePicker", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param studyId {String} StudyId of the study that node belongs to
   */
-  construct: function(node, studyId) {
+  construct: function(node) {
     this.base(arguments);
 
     this.set({
-      node,
-      studyId
+      node
     });
 
     const filePickerLayout = new qx.ui.layout.VBox();
@@ -98,11 +96,6 @@ qx.Class.define("osparc.file.FilePicker", {
   properties: {
     node: {
       check: "osparc.data.model.Node"
-    },
-
-    studyId: {
-      check: "String",
-      init: ""
     }
   },
 
