@@ -183,7 +183,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
-      if (node.isComputational()) {
+      if (node.isComputational() || node.isFilePicker()) {
         node.bind("progress", this.__progressBar, "value");
       }
     },
