@@ -185,6 +185,12 @@ qx.Theme.define("osparc.theme.Decoration", {
         radiusBottomRight: 0,
         radiusTopRight: 0
       }
-    }
+    },
+    "tagbutton": {
+      include: "material-button",
+      style: {
+        radius: 0
+      }
+    },
   }
 });

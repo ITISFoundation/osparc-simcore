@@ -318,6 +318,20 @@ qx.Class.define("osparc.utils.Utils", {
 
     getFont: function(size=14, bold=false) {
       return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
+    },
+
+    getFreeDistanceToWindowEdges: function(layoutItem) {
+      const domElement = layoutItem.getContentElement().getDomElement();
+      if (domElement === null) {
+        return null;
+      }
+      const location = qx.bom.element.Location.get(domElement);
+      return {
+        top: location.top,
+        right: window.innerWidth - location.right,
+        bottom: window.innerHeight - location.bottom,
+        left: location.left
+      };
     }
   }
 });

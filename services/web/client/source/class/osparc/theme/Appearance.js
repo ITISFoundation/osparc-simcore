@@ -552,6 +552,13 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: () => ({
         decorator: "tagitem-colorbutton"
       })
+    },
+    "tagbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagbutton"
+      })
     }
   }
 });

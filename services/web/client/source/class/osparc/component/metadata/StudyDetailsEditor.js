@@ -193,12 +193,34 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
       osparc.utils.Utils.setIdToWidget(thumbnail, "studyDetailsEditorThumbFld");
       editView.add(thumbnail);
-      editView.add(buttons);
+      
+      editView.add(this.__tagsSection());
 
       buttons.add(modeButton);
       buttons.add(cancelButton);
+      editView.add(buttons);
 
       return editView;
+    },
+
+    __tagsSection: function() {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set());
+      header.add(new qx.ui.basic.Label(this.tr("Tags")).set({
+        font: "text-14"
+      }));
+
+      const editButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
+        appearance: "link-button"
+      });
+      editButton.addListener("execute", () => {
+        const tagManager = new osparc.component.form.tag.TagManager(null, editButton);
+        tagManager.addListener("changeSelected", evt => console.log(evt.getData()));
+      });
+      header.add(editButton);
+
+      const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      tagSection.add(header);
+      return tagSection;
     },
 
     __saveStudy: function(btn) {
