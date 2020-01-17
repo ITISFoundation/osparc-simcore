@@ -111,16 +111,17 @@ qx.Class.define("osparc.file.FilesAdd", {
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getPresignedLink(download, locationId, fileUuid)
         .then(presignedLinkData => {
-          file["location"] = presignedLinkData.locationId;
-          file["path"] = presignedLinkData.fileUuid;
           if (presignedLinkData.presignedLink) {
-            this.__uploadFile(file, presignedLinkData.presignedLink.link);
+            this.__uploadFile(file, presignedLinkData);
           }
         });
     },
 
     // Use XMLHttpRequest to upload the file to S3.
-    __uploadFile: function(file, url) {
+    __uploadFile: function(file, presignedLinkData) {
+      const location = presignedLinkData.locationId;
+      const path = presignedLinkData.fileUuid;
+      const url = presignedLinkData.presignedLink.link;
       const hBox = this._createChildControlImpl("progressBox");
       const label = new qx.ui.basic.Atom(file.name);
       const progressBar = new osparc.ui.toolbar.ProgressBar();
@@ -142,8 +143,13 @@ qx.Class.define("osparc.file.FilesAdd", {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
-          file.dataset = this.__getStudyId();
-          this.fireDataEvent("fileAdded", file);
+          const metadata = {
+            location: location,
+            dataset: this.__getStudyId(),
+            path: path,
+            name: file.name
+          };
+          this.fireDataEvent("fileAdded", metadata);
         } else {
           console.log(xhr.response);
         }

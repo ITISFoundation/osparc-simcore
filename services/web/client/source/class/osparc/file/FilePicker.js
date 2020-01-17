@@ -70,10 +70,9 @@ qx.Class.define("osparc.file.FilePicker", {
 
     const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
     filesAdd.addListener("fileAdded", e => {
-      // File object in data
-      const file = e.getData();
-      if (file["location"] && file["dataset"] && file["path"] && file["name"]) {
-        this.__setOutputFile(file["location"], file["dataset"], file["path"], file["name"]);
+      const fileMetadata = e.getData();
+      if (fileMetadata["location"] && fileMetadata["dataset"] && fileMetadata["path"] && fileMetadata["name"]) {
+        this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
       this.__filesTree.resetCache();
       this.__initResources();
