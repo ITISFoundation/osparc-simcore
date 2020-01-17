@@ -603,18 +603,11 @@ qx.Class.define("osparc.component.form.Auto", {
 
       const workbench = this.getNode().getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);
-      const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
-      let fromPortLabel = port ? port.label : null;
-      if (fromNode.getKey().includes("/neuroman")) {
-        // HACK: Only Neuroman should enter here
-        fromPortLabel = fromPortId;
-      }
-      if (fromNodeLabel && fromPortLabel) {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
-      } else {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
-      }
+      const fromPortLabel = port ? port.label : null;
+      fromNode.bind("label", this.getControlLink(toPortId), "value", {
+        converter: label => label + ": " + fromPortLabel
+      });
 
       this.fireDataEvent("linkAdded", toPortId);
 
