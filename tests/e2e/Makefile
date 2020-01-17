@@ -53,3 +53,4 @@ transfer-images-to-registry: ## transfer images to registry
 .PHONY: test
 test: ## test the platform
 	npm test
+	npm tutorials
