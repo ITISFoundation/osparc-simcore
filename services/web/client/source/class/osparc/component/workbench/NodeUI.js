@@ -158,15 +158,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __createNodeLayout: function() {
-      if (this.getNode().getThumbnail()) {
-        this.setThumbnail(this.getNode().getThumbnail());
+      const node = this.getNode();
+      if (node.getThumbnail()) {
+        this.setThumbnail(node.getThumbnail());
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (this.getNode().isComputational()) {
+      if (node.isComputational()) {
         this.__progressBar = this.getChildControl("progress");
-      } else if (this.getNode().isDynamic()) {
-        const nodeStatus = new osparc.component.service.NodeStatus(this.getNode());
+      } else if (node.isDynamic()) {
+        const nodeStatus = new osparc.component.service.NodeStatus(node);
         this.__chipContainer.add(nodeStatus);
       }
     },
