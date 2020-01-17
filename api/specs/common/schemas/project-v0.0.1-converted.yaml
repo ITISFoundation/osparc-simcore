@@ -190,3 +190,7 @@ properties:
               'y':
                 type: integer
     additionalProperties: true
+  tags:
+    type: array
+    items:
+      type: integer

@@ -5,7 +5,7 @@ Tag:
     - color
   properties:
     id:
-      type: string
+      type: integer
     name:
       type: string
     description:
