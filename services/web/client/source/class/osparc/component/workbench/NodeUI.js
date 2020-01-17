@@ -208,17 +208,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         ui: portLabel
       };
       label.ui.isInput = isInput;
+      this.__addDragDropMechanism(label.ui, isInput);
       if (isInput) {
         this.__inputLayout = label;
-        this.__createUIPortConnections(this.__inputLayout.ui, isInput);
-        this.__inputOutputLayout.addAt(this.__inputLayout.ui, 0, {
+        this.__inputOutputLayout.addAt(label.ui, 0, {
           width: "20%"
         });
       } else {
         this.__outputLayout = label;
-        this.__createUIPortConnections(this.__outputLayout.ui, isInput);
         const nElements = this.__inputOutputLayout.getChildren().length;
-        this.__inputOutputLayout.addAt(this.__outputLayout.ui, nElements, {
+        this.__inputOutputLayout.addAt(label.ui, nElements, {
           width: "20%"
         });
       }
@@ -239,7 +238,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return uiPort;
     },
 
-    __createUIPortConnections: function(uiPort, isInput) {
+    __addDragDropMechanism: function(uiPort, isInput) {
       [
         ["dragstart", "edgeDragStart"],
         ["dragover", "edgeDragOver"],
