@@ -352,7 +352,7 @@ jobs:
       install:
         - unbuffer bash ci/travis/system-testing/e2e install
       before_script:
-        - sudo bash ci/travis/system-testing/e2e before_script
+        - unbuffer bash ci/travis/system-testing/e2e before_script
       script:
         - unbuffer bash ci/travis/system-testing/e2e script
       after_success:
