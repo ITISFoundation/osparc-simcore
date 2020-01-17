@@ -8,28 +8,26 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
 
 install() {
-    # pull simcore
+    echo "--------------- getting simcore docker images..."
     make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
     # configure simcore for testing with a private registry
     bash tests/e2e/setup_env_insecure_registry
-    
     # start simcore
     make up-version
 
+    echo "-------------- installing test framework..."
     # create a python venv and activate
     python3 -m venv .venv
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
-
-    # install testing framework
-    pushd tests/e2e
+    pushd tests/e2e;
     make install
-    # deploy the registry
+    echo "--------------- deploying the registry..."
     make registry-up
+    echo "--------------- waiting for all services to be up..."
     make wait-for-services
-
-    # prepare registry
+    echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
     popd
 }
