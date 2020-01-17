@@ -34,7 +34,10 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests/unit
+        pytest --cov=simcore_sdk --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml \
+          -v -m "not travis" packages/simcore-sdk/tests/unit
+
     else
         echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi
