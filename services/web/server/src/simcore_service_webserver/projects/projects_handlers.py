@@ -234,8 +234,7 @@ async def delete_project(request: web.Request):
             # we cannot delete that project
             raise web.HTTPForbidden(reason=message)
 
-    # fire & forget
-    asyncio.ensure_future(projects_api.delete_project(request, project_uuid, user_id))
+    await projects_api.delete_project(request, project_uuid, user_id)
 
     raise web.HTTPNoContent(content_type='application/json')
 
