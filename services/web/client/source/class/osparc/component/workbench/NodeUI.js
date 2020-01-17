@@ -164,7 +164,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (node.isComputational()) {
+      if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       } else if (node.isDynamic()) {
         const nodeStatus = new osparc.component.service.NodeStatus(node);
