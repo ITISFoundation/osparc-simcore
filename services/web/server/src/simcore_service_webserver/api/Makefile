@@ -18,12 +18,12 @@ WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
 
 .PHONY: .update-schemas
 .update-schemas:
-	# Updating common schemas
-	@$(MAKE) -C ${API_SPECS_DIR}/common/schemas
-	# Updating ${APP_API_DIR}/schemas with common json-schemas
+	# Convert common schemas to openapi-compatible schemas
+	@$(MAKE) --directory ${API_SPECS_DIR}/common/schemas
+	# Updating ${API_SPECS_DIR}/schemas with common json-schemas
 	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \
-		--update  \
+		--remove-destination \
 		${API_COMMON_JSON_SCHEMAS}
 
 
@@ -41,4 +41,4 @@ openapi-specs: ${OAS_TARGET} ## creates and validates OpenAPI specs
 	# Validating bundled '${OAS_TARGET}'
 	@swagger-cli validate $<
 	# Copies specs as client resources
-	@cp -vp $< -t ${WEB_CLIENT_DIR}/source/resource/api
+	@cp -v --preserve $< -t ${WEB_CLIENT_DIR}/source/resource/api
