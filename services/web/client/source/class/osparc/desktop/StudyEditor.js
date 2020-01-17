@@ -222,7 +222,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         qx.core.Init.getApplication().getRoot().add(filePickerWin);
         filePickerWin.show();
         filePickerWin.center();
-        this.__workbenchUI.filePickerAdded(widget);
+        this.__workbenchUI.uploadPendingFiles(widget);
 
         widget.addListener("finished", () => filePickerWin.close(), this);
         filePickerWin.addListener("close", () => showParentWorkbench());

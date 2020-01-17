@@ -957,7 +957,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    filePickerAdded: function(filePicker) {
+    uploadPendingFiles: function(filePicker) {
       const nodeId = filePicker.getNode().getNodeId();
       if (nodeId in this.__filesToFilePicker) {
         const fileAdder = filePicker.getFilesAdder();
