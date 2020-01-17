@@ -329,11 +329,9 @@ jobs:
       dist: trusty
       env:
         - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
-      language: python
-      python:
-        - "3.6"
-      # node_js:
-      #   - "8.11.3"
+      language: node_js
+      node_js:
+        - "8.11.3"
       sudo: required
       addons:
         apt:

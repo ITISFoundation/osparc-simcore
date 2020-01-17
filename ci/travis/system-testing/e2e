@@ -34,6 +34,8 @@ before_script() {
     make up-version
 
     # create a python venv and activate
+    ln python3 python
+    python -V
     # python3 -m venv .venv
     # source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
