@@ -15,7 +15,7 @@ qx.Class.define("osparc.component.service.NodeStatus", {
     this.__label = this.getChildControl("label");
     this.__icon = this.getChildControl("icon");
 
-    if (node.isInKey("file-picker")) {
+    if (node.isFilePicker()) {
       this.__setupFilepicker();
     } else {
       this.__setupInteractive();

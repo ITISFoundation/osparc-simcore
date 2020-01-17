@@ -202,7 +202,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__currentNodeId = nodeId;
       const widget = this.__getWidgetForNode(nodeId);
       const workbench = this.getStudy().getWorkbench();
-      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isInKey("file-picker")) {
+      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isFilePicker()) {
         // open file picker in window
         const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
           appearance: "service-window",
@@ -259,7 +259,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (widget === null) {
             widget = this.__workbenchUI;
           }
-        } else if (node.isInKey("file-picker")) {
+        } else if (node.isFilePicker()) {
           widget = new osparc.file.FilePicker(node, this.getStudy().getUuid());
         } else {
           this.__nodeView.setNode(node);
