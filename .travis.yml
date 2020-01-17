@@ -326,13 +326,15 @@ jobs:
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
     - stage: early_testing
       name: e2e testing
-      dist: trusty
-      env:
-        - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
+      # dist: trusty
+      # env:
+      #   - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
       language: node_js
       node_js:
-        - "8.11.3"
+        - "10"
       sudo: required
+      services:
+        - xvfb
       addons:
         apt:
           packages:
