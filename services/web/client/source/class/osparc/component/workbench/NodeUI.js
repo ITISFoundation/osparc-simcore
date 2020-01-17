@@ -220,6 +220,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__inputOutputLayout.addAt(label.ui, nElements, {
           width: "20%"
         });
+        label.ui.addListener("tap", e => {
+          this.__openNodeDataManager();
+          e.preventDefault();
+        }, this);
       }
     },
 
@@ -254,6 +258,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);
+    },
+
+    __openNodeDataManager: function() {
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
+      const win = nodeDataManager.getWindow();
+      win.open();
     },
 
     getEdgePoint: function(port) {
