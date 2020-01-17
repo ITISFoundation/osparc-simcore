@@ -36,6 +36,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -71,6 +72,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -105,6 +107,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -140,6 +143,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -172,6 +176,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -237,6 +242,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -272,6 +278,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -307,6 +314,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -361,6 +369,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -400,6 +409,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -439,6 +449,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -478,6 +489,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
+      name: getting cached data
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -505,7 +517,7 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.sh        
+        run: sudo ./ci/github/helpers/setup_docker_compose.sh
       - name: deploy
         if: github.ref == 'refs/heads/master'
         run: ./ci/github/deploy/master
