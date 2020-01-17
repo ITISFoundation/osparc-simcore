@@ -550,17 +550,28 @@ qx.Class.define("osparc.data.model.Node", {
 
     // Iterate over output ports and connect them to first compatible input port
     __createAutoPortConnection: function(node1, node2) {
+      const preferencesSettings = osparc.desktop.preferences.PreferencesSettings.getInstance();
+      if (!preferencesSettings.getAutoConnectPorts()) {
+        return;
+      }
+
       // create automatic port connections
+      let autoConnections = 0;
       const outPorts = node1.getOutputs();
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
           if (osparc.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              autoConnections++;
               break;
             }
           }
         }
+      }
+      if (autoConnections) {
+        const flashMessenger = osparc.component.message.FlashMessenger.getInstance();
+        flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
       }
     },
 
