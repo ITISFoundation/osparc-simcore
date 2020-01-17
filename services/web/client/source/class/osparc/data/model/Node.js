@@ -550,7 +550,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     // Iterate over output ports and connect them to first compatible input port
     __createAutoPortConnection: function(node1, node2) {
-      const preferencesSettings = osparc.desktop.preferences.PreferencesSettings.getInstance();
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
       }
