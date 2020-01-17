@@ -527,32 +527,46 @@ qx.Class.define("osparc.data.model.Node", {
 
     // post edge creation routine
     edgeAdded: function(edge) {
+      const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
+      const outputNode = this.getWorkbench().getNode(edge.getOutputNodeId());
+      this.__createAutoPortConnection(inputNode, outputNode);
+
       if (this.isInKey("multi-plot")) {
-        const inputNode = this.getWorkbench().getNode(edge.getInputNodeId());
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
           const innerNode = innerNodes[i];
           if (innerNode.addInputNode(inputNode.getNodeId())) {
-            this.createAutomaticPortConns(inputNode, innerNode);
+            this.__createAutoPortConnection(inputNode, innerNode);
           }
         }
         this.__retrieveInputs();
       }
     },
 
-    createAutomaticPortConns: function(node1, node2) {
+    // Iterate over output ports and connect them to first compatible input port
+    __createAutoPortConnection: function(node1, node2) {
+      const preferencesSettings = osparc.desktop.preferences.PreferencesSettings.getInstance();
+      if (!preferencesSettings.getAutoConnectPorts()) {
+        return;
+      }
+
       // create automatic port connections
-      console.log("createAutomaticPortConns", node1, node2);
+      let autoConnections = 0;
       const outPorts = node1.getOutputs();
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
           if (osparc.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              autoConnections++;
               break;
             }
           }
         }
+      }
+      if (autoConnections) {
+        const flashMessenger = osparc.component.message.FlashMessenger.getInstance();
+        flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
       }
     },
 

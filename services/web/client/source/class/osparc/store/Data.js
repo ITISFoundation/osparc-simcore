@@ -28,6 +28,8 @@ qx.Class.define("osparc.store.Data", {
 
   construct: function() {
     this.resetCache();
+
+    this.getLocations();
   },
 
   events: {
@@ -50,7 +52,7 @@ qx.Class.define("osparc.store.Data", {
 
     getLocationsCached: function() {
       const cache = this.__locationsCached;
-      if (cache.length) {
+      if (cache && cache.length) {
         return cache;
       }
       return null;
@@ -79,7 +81,7 @@ qx.Class.define("osparc.store.Data", {
 
     getDatasetsByLocationCached: function(locationId) {
       const cache = this.__datasetsByLocationCached;
-      if (locationId in cache && cache[locationId].length) {
+      if (locationId in cache && cache[locationId] && cache[locationId].length) {
         const data = {
           location: locationId,
           datasets: cache[locationId]
