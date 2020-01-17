@@ -328,9 +328,11 @@ jobs:
       dist: trusty
       env: 
         - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
-      language: node_js
+      language: generic
       node_js:
         - "8.11.3"
+      python:
+        - "3.6"
       sudo: required
       addons:
         apt:
@@ -338,7 +340,6 @@ jobs:
             - libnss3 # This is required to run new chrome on old trusty
             - expect-dev # for unbuffer: brings color back into travis logs
             - docker-ce
-            - python3-pip
       notifications:
         email: false
       cache:
