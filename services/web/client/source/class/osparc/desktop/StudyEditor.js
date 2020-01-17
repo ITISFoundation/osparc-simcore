@@ -433,18 +433,37 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
-      const node = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
-      if (!node) {
+      const nodeGroup = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
+      if (!nodeGroup) {
         return false;
       }
 
       const avgPos = this.__getAveragePosition(selectedNodes);
-      node.setPosition(avgPos.x, avgPos.y);
+      nodeGroup.setPosition(avgPos.x, avgPos.y);
 
+      // change parents
       for (let i=0; i<selectedNodes.length; i++) {
         const selectedNode = selectedNodes[i];
         const oldParentNode = workbench.getNode(selectedNode.getParentNodeId());
-        workbench.moveNode(selectedNode, node, oldParentNode);
+        workbench.moveNode(selectedNode, nodeGroup, oldParentNode);
+      }
+
+      // find inputNodes for nodeGroup
+      const innerNodes = [];
+      for (let i=0; i<selectedNodes.length; i++) {
+        const selectedNode = selectedNodes[i];
+        innerNodes.push(selectedNode.getNodeId());
+      }
+      for (let i=0; i<selectedNodes.length; i++) {
+        const selectedNode = selectedNodes[i];
+        const selInputNodes = selectedNode.getInputNodes();
+        for (let j=0; j<selInputNodes.length; j++) {
+          const inputNode = selInputNodes[j];
+          const index = innerNodes.indexOf(inputNode);
+          if (index === -1) {
+            nodeGroup.addInputNode(inputNode);
+          }
+        }
       }
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
