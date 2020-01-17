@@ -14,6 +14,7 @@ addons:
       - expect-dev # for unbuffer: brings color back into travis logs
 
 stages:
+  - name: early_testing
   - name: build / unit-testing
     if: tag IS blank
   - name: integration-testing
@@ -323,16 +324,16 @@ jobs:
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: build / unit-testing
+    - stage: early_testing
       name: e2e testing
       dist: trusty
       env:
         - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
-      language: generic
-      node_js:
-        - "8.11.3"
+      language: python
       python:
         - "3.6"
+      node_js:
+        - "8.11.3"
       sudo: required
       addons:
         apt:
