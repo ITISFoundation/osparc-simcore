@@ -321,6 +321,11 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	@diff -uN $@ $<
 	@false
 
+.PHONY: openapi-specs
+openapi-specs: # bundles and validates openapi specifications and schemas of ALL service's API
+	@$(MAKE) --directory services/web/server $@
+	@$(MAKE) --directory services/storage $@
+	@$(MAKE) --directory services/director $@
 
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
