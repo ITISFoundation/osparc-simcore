@@ -39,6 +39,8 @@ before_script() {
     bash ci/helpers/ensure_python_pip
     pushd tests/e2e;
     make install
+    # deploy the registry
+    make registry-up
     make wait-for-services
     # prepare registry
     make transfer-images-to-registry
