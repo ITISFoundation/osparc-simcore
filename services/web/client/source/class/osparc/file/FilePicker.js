@@ -109,10 +109,6 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectBtn: null,
     __mainButtons: null,
 
-    getFilesAdder: function() {
-      return this.__filesAdder;
-    },
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -143,6 +139,15 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    uploadPendingFiles: function(files) {
+      if (files.length > 0) {
+        if (files.length > 1) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        }
+        this.__filesAdder.retrieveUrlAndUpload(files[0]);
+      }
     },
 
     __initResources: function() {
