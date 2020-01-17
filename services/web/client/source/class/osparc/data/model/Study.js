@@ -147,7 +147,7 @@ qx.Class.define("osparc.data.model.Study", {
         url: {
           projectId: this.getUuid()
         },
-        data: sessionStorage.getItem("clientsessionid")
+        data: osparc.utils.Utils.getClientSessionID()
       };
       osparc.data.Resources.fetch("studies", "open", params)
         .then(data => this.getWorkbench().initWorkbench())
@@ -159,7 +159,7 @@ qx.Class.define("osparc.data.model.Study", {
         url: {
           projectId: this.getUuid()
         },
-        data: sessionStorage.getItem("clientsessionid")
+        data: osparc.utils.Utils.getClientSessionID()
       };
       osparc.data.Resources.fetch("studies", "close", params)
         .catch(err => console.error(err));

@@ -609,14 +609,11 @@ qx.Class.define("osparc.component.form.Auto", {
 
       const workbench = this.getNode().getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);
-      const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
       const fromPortLabel = port ? port.label : null;
-      if (fromNodeLabel && fromPortLabel) {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
-      } else {
-        this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
-      }
+      fromNode.bind("label", this.getControlLink(toPortId), "value", {
+        converter: label => label + ": " + fromPortLabel
+      });
 
       this.fireDataEvent("linkAdded", toPortId);
 
