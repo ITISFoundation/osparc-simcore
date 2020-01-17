@@ -28,6 +28,8 @@ qx.Class.define("osparc.store.Data", {
 
   construct: function() {
     this.resetCache();
+
+    this.getLocations();
   },
 
   events: {
