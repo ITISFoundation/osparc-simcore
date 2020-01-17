@@ -133,6 +133,7 @@ qx.Class.define("osparc.file.FilesAdd", {
         if (e.lengthComputable) {
           const percentComplete = e.loaded / e.total * 100;
           progressBar.setValue(percentComplete);
+          this.getNode().setProgress(percentComplete);
         } else {
           console.log("Unable to compute progress information since the total size is unknown");
         }

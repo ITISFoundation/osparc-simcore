@@ -284,23 +284,8 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
-
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        height: 600,
-        modal: true,
-        showMinimize: false,
-        width: 900
-      });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
-      win.add(nodeDataManager);
-
-      win.center();
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
+      const win = nodeDataManager.getWindow();
       win.open();
     },
 

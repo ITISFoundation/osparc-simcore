@@ -158,15 +158,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __createNodeLayout: function() {
-      if (this.getNode().getThumbnail()) {
-        this.setThumbnail(this.getNode().getThumbnail());
+      const node = this.getNode();
+      if (node.getThumbnail()) {
+        this.setThumbnail(node.getThumbnail());
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (this.getNode().isComputational()) {
+      if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
-      } else if (this.getNode().isDynamic()) {
-        const nodeStatus = new osparc.component.service.NodeStatus(this.getNode());
+      }
+      if (node.isDynamic()) {
+        const nodeStatus = new osparc.component.service.NodeStatus(node);
         this.__chipContainer.add(nodeStatus);
       }
     },
@@ -182,7 +184,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
-      if (node.isComputational()) {
+      if (node.isComputational() || node.isFilePicker()) {
         node.bind("progress", this.__progressBar, "value");
       }
     },
@@ -206,19 +208,22 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         ui: portLabel
       };
       label.ui.isInput = isInput;
+      this.__addDragDropMechanism(label.ui, isInput);
       if (isInput) {
         this.__inputLayout = label;
-        this.__createUIPortConnections(this.__inputLayout.ui, isInput);
-        this.__inputOutputLayout.addAt(this.__inputLayout.ui, 0, {
+        this.__inputOutputLayout.addAt(label.ui, 0, {
           width: "20%"
         });
       } else {
         this.__outputLayout = label;
-        this.__createUIPortConnections(this.__outputLayout.ui, isInput);
         const nElements = this.__inputOutputLayout.getChildren().length;
-        this.__inputOutputLayout.addAt(this.__outputLayout.ui, nElements, {
+        this.__inputOutputLayout.addAt(label.ui, nElements, {
           width: "20%"
         });
+        label.ui.addListener("tap", e => {
+          this.__openNodeDataManager();
+          e.preventDefault();
+        }, this);
       }
     },
 
@@ -237,7 +242,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return uiPort;
     },
 
-    __createUIPortConnections: function(uiPort, isInput) {
+    __addDragDropMechanism: function(uiPort, isInput) {
       [
         ["dragstart", "edgeDragStart"],
         ["dragover", "edgeDragOver"],
@@ -253,6 +258,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);
+    },
+
+    __openNodeDataManager: function() {
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
+      const win = nodeDataManager.getWindow();
+      win.open();
     },
 
     getEdgePoint: function(port) {
