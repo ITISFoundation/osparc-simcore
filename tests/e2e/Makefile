@@ -49,6 +49,10 @@ transfer-images-to-registry: ## transfer images to registry
 	# completed transfer of images
 	curl registry:5000/v2/_catalog
 
+.PHONY: inject-templates-in-db
+inject-templates-in-db: ## inject project templates
+	PUBLISHED_PORT=docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}"
+	PGPASSWORD=adminadmin psql --host localhost --port 30007 --user scu --dbname simcoredb --command "\copy projects from 'sleepers_sql.csv' csv header;"
 
 .PHONY: test
 test: ## test the platform
