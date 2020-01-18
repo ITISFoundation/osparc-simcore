@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest --runInBand",
     "demo": "node demo/puppeteerDemo.js",
-    "tutorials": "node tutorials/sleeper.js $URL $USER $PASSWORD"
+    "tutorials": "node tutorials/sleeper.js http://127.0.0.1:9081"
   },
   "author": "odeimaiz",
   "license": "MIT",
