@@ -40,6 +40,17 @@ test() {
     pushd tests/e2e; make test; popd
 }
 
+after_failure() {
+    echo "--------------- logs of webserver..."
+    docker service logs simcore_webserver
+    echo "--------------- logs of sidecar..."
+    docker service logs simcore_sidecar
+    echo "--------------- logs of director..."
+    docker service logs simcore_director
+    echo "--------------- logs of storage..."
+    docker service logs simcore_storage
+}
+
 clean_up() {
     docker images
     make leave

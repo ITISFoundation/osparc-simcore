@@ -504,6 +504,9 @@ jobs:
       run: ./ci/github/system-testing/e2e install
     - name: test
       run: ./ci/github/system-testing/e2e test
+    - name: show failure logs
+      if: failure()
+      run: ./ci/github/system-testing/e2e after_failure
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
