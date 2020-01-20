@@ -12,7 +12,6 @@ before_install() {
     bash ci/travis/helpers/install_docker_compose
     bash ci/helpers/show_system_versions
     sudo apt install -y postgresql-client
-
 }
 
 install() {
