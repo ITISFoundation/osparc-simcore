@@ -43,18 +43,18 @@ transfer-images-to-registry: ## transfer images to registry
 	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 	@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 
-	@docker pull itisfoundation/jupyter-base-notebook:2.13.0
-	@docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-	@docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+	# @docker pull itisfoundation/jupyter-base-notebook:2.13.0
+	# @docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
+	# @docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
 	curl registry:5000/v2/_catalog
 
+PUBLISHED_PORT = $(shell docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
-	PUBLISHED_PORT=docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}"
-	PGPASSWORD=adminadmin psql --host localhost --port 30007 --user scu --dbname simcoredb --command "\copy projects from 'sleepers_sql.csv' csv header;"
+	@PGPASSWORD=adminadmin psql --host localhost --port $(PUBLISHED_PORT) --user scu --dbname simcoredb --command "\copy projects from 'sleepers_sql.csv' csv header;";
 
 .PHONY: test
 test: ## test the platform
 	npm test
-	node tutorials/sleeper.js http://127.0.0.1:9081
+	node tutorials/sleepers.js http://127.0.0.1:9081
