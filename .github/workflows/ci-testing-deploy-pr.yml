@@ -504,6 +504,16 @@ jobs:
       run: ./ci/github/system-testing/e2e install
     - name: test
       run: ./ci/github/system-testing/e2e test
+    - name: recover docker logs
+      id: logs_recovery
+      if: failure()
+      run: ./ci/github/system-testing/e2e after_failure
+    - name: upload docker logs
+      if: steps.logs_recovery.outputs.status == 'failure'
+      uses: actions/upload-artifact@v1
+      with:
+        name: upload logs
+        path: simcore_logs
     - name: upload screenshots
       if: always()
       uses: actions/upload-artifact@v1
