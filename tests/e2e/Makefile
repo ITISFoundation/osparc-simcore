@@ -57,4 +57,4 @@ inject-templates-in-db: ## inject project templates
 .PHONY: test
 test: ## test the platform
 	npm test
-	npm tutorials
+	node tutorials/sleeper.js http://127.0.0.1:9081
