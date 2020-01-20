@@ -62,6 +62,11 @@ def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
             'OSPARC_SIMCORE_REPO_ROOTDIR': str(rootdir),
         })
 
+    # Defaults if not defined in environ
+    # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yamla
+    # as docker-compose does: i.e. x = ${VARIABLE:default}. Intead, the variable
+    # has to be defined here
+    environ.setdefault("WEBSERVER_DB_INITTABLES", 0)
     return environ
 
 

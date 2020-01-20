@@ -23,7 +23,8 @@ director:
   port: ${DIRECTOR_PORT}
   version: v0
 db:
-  init_tables: False
+  # Default for WEBSERVER_DB_INITTABLES set in cli.py
+  init_tables: ${WEBSERVER_DB_INITTABLES}
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
