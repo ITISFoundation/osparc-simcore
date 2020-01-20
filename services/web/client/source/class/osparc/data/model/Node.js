@@ -349,10 +349,6 @@ qx.Class.define("osparc.data.model.Node", {
       return exposedInnerNodes;
     },
 
-    getInputNodes: function() {
-      return this.__inputNodes;
-    },
-
     populateNodeData: function(nodeData) {
       if (nodeData) {
         if (nodeData.label) {
@@ -582,6 +578,11 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
+    // ----- Input Nodes -----
+    getInputNodes: function() {
+      return this.__inputNodes;
+    },
+
     setInputNodes: function(nodeData) {
       if (nodeData.inputNodes) {
         for (let i=0; i<nodeData.inputNodes.length; i++) {
@@ -622,6 +623,7 @@ qx.Class.define("osparc.data.model.Node", {
       const index = this.__inputNodes.indexOf(inputNodeId);
       return (index > -1);
     },
+    // !---- Input Nodes -----
 
     renameNode: function(newLabel) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
