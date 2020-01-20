@@ -38,6 +38,11 @@ install() {
 
 test() {
     pushd tests/e2e; make test; popd
+    mkdir simcore_logs
+    docker service logs simcore_webserver > simcore_logs/webserver.log
+    docker service logs simcore_director > simcore_logs/director.log
+    docker service logs simcore_storage > simcore_logs/storage.log
+    docker service logs simcore_sidecar > simcore_logs/sidecar.log
 }
 
 after_failure() {

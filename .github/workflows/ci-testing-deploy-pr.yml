@@ -506,7 +506,11 @@ jobs:
       run: ./ci/github/system-testing/e2e test
     - name: show failure logs
       if: failure()
-      run: ./ci/github/system-testing/e2e after_failure
+      uses: actions/upload-artifact@v1
+      with:
+        name: upload docker logs
+        path: simcore_logs
+      
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
