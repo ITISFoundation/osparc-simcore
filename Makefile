@@ -196,6 +196,8 @@ down: ## Stops and removes stack
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
+	# Removing generated docker compose configurations, i.e. .stack-*
+	-$(shell rm $(wildcard .stack-*))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -322,7 +324,7 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	@false
 
 .PHONY: openapi-specs
-openapi-specs: # bundles and validates openapi specifications and schemas of ALL service's API
+openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
 	@$(MAKE) --directory services/web/server $@
 	@$(MAKE) --directory services/storage $@
 	@$(MAKE) --directory services/director $@
