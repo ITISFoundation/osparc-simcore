@@ -29,7 +29,7 @@ before_script() {
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
-    python3 -m venv .venv
+    make .venv
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
     pushd tests/e2e;

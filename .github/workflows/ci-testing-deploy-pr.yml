@@ -504,12 +504,12 @@ jobs:
       run: ./ci/github/system-testing/e2e install
     - name: test
       run: ./ci/github/system-testing/e2e test
-    - name: show failure logs
-      if: failure()
+    - name: upload screenshots
+      if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: upload docker logs
-        path: simcore_logs
+        name: upload screenshots
+        path: tests/e2e/screenshots
       
     - name: cleanup
       if: always()

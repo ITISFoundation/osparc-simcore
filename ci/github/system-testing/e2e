@@ -20,7 +20,7 @@ install() {
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
-    python3 -m venv .venv
+    make .venv
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
     pushd tests/e2e;
@@ -38,14 +38,15 @@ install() {
 
 test() {
     pushd tests/e2e; make test; popd
+    # all screenshots are in tests/e2e/screenshots
+}
+
+after_failure() {
     mkdir simcore_logs
     docker service logs simcore_webserver > simcore_logs/webserver.log
     docker service logs simcore_director > simcore_logs/director.log
     docker service logs simcore_storage > simcore_logs/storage.log
     docker service logs simcore_sidecar > simcore_logs/sidecar.log
-}
-
-after_failure() {
     echo "--------------- logs of webserver..."
     docker service logs simcore_webserver
     echo "--------------- logs of sidecar..."
