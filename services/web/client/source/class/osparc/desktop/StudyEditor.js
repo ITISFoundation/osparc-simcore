@@ -421,8 +421,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const workbench = this.getStudy().getWorkbench();
       const selectedNodes = [];
+      const selectedNodeIds = [];
       for (let i=0; i<selectedNodeUIs.length; i++) {
         selectedNodes.push(selectedNodeUIs[i].getNode());
+        selectedNodeIds.push(selectedNodeUIs[i].getNodeId());
       }
 
       let currentModelParentId = null;
@@ -431,8 +433,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         currentModelParentId = currentModel.getParentNodeId();
       }
 
+      let brotherNodesObj = {};
+      if (currentModelParentId === null) {
+        brotherNodesObj = workbench.getNodes(false);
+      } else {
+        const parentNode = workbench.getNode(currentModelParentId);
+        brotherNodesObj = parentNode.getInnerNodes(false);
+      }
+      const brotherNodesIds = [];
+      for (const brotherNodeId in brotherNodesObj) {
+        const index = selectedNodeIds.indexOf(brotherNodeId);
+        if (index === -1) {
+          const brotherNode = workbench.getNode(brotherNodeId);
+          brotherNodesIds.push(brotherNode.getNodeId());
+        }
+      }
+
+
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
-      const nodeGroup = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModelParentId);
+      const nodeGroup = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, currentModel.getNodeId ? currentModel : null);
       if (!nodeGroup) {
         return false;
       }
@@ -448,19 +467,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       // find inputNodes for nodeGroup
-      const innerNodes = [];
-      for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i];
-        innerNodes.push(selectedNode.getNodeId());
-      }
       for (let i=0; i<selectedNodes.length; i++) {
         const selectedNode = selectedNodes[i];
         const selInputNodes = selectedNode.getInputNodes();
         for (let j=0; j<selInputNodes.length; j++) {
           const inputNode = selInputNodes[j];
-          const index = innerNodes.indexOf(inputNode);
+          const index = selectedNodeIds.indexOf(inputNode);
           if (index === -1) {
             nodeGroup.addInputNode(inputNode);
+          }
+        }
+      }
+
+      // change input nodes in those nodes connected to the selected ones
+      for (let i=0; i<brotherNodesIds.length; i++) {
+        const brotherNode = workbench.getNode(brotherNodesIds[i]);
+        for (let j=0; j<selectedNodes.length; j++) {
+          if (brotherNode.isInputNode(selectedNodes[j].getNodeId())) {
+            // remove that node from input ndoes
+            // add nodeGroup as new inputNode
+            brotherNode.addInputNode(nodeGroup.getNodeId());
+            selectedNodes[j].setIsOutputNode(true);
+            nodeGroup.setIsOutputNode(true);
           }
         }
       }
