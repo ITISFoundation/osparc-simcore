@@ -582,20 +582,20 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
-    addInputNode: function(inputNodeId) {
-      if (!this.__inputNodes.includes(inputNodeId)) {
-        this.__inputNodes.push(inputNodeId);
-        return true;
-      }
-      return false;
-    },
-
     setInputNodes: function(nodeData) {
       if (nodeData.inputNodes) {
         for (let i=0; i<nodeData.inputNodes.length; i++) {
           this.addInputNode(nodeData.inputNodes[i]);
         }
       }
+    },
+
+    addInputNode: function(inputNodeId) {
+      if (!this.__inputNodes.includes(inputNodeId)) {
+        this.__inputNodes.push(inputNodeId);
+        return true;
+      }
+      return false;
     },
 
     removeInputNode: function(inputNodeId) {
