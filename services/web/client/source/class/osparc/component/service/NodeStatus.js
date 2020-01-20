@@ -15,7 +15,7 @@ qx.Class.define("osparc.component.service.NodeStatus", {
     this.__label = this.getChildControl("label");
     this.__icon = this.getChildControl("icon");
 
-    if (node.isInKey("file-picker")) {
+    if (node.isFilePicker()) {
       this.__setupFilepicker();
     } else {
       this.__setupInteractive();
@@ -118,11 +118,13 @@ qx.Class.define("osparc.component.service.NodeStatus", {
         converter: progress => {
           if (progress === 100) {
             const outInfo = node.getOutputValues().outFile;
-            if ("label" in outInfo) {
-              return outInfo.label;
+            if (outInfo) {
+              if ("label" in outInfo) {
+                return outInfo.label;
+              }
+              const splitFilename = outInfo.path.split("/");
+              return splitFilename[splitFilename.length-1];
             }
-            const splitFilename = outInfo.path.split("/");
-            return splitFilename[splitFilename.length-1];
           }
           return this.tr("Select a file");
         }
