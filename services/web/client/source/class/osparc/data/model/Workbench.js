@@ -354,7 +354,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allNodes = this.getNodes(true);
       const nodes = Object.values(allNodes);
       for (const node of nodes) {
-        if (node.isComputational() && !node.isInKey("file-picker")) {
+        if (node.isComputational() && !node.isFilePicker()) {
           node.setProgress(0);
         }
       }

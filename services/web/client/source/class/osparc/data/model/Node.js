@@ -194,6 +194,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.type && metaData.type === "computational");
     },
 
+    isFilePicker: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+    },
+
     isRealService: function(metaData) {
       return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
     }
@@ -250,6 +254,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isComputational: function() {
       return osparc.data.model.Node.isComputational(this.getMetaData());
+    },
+
+    isFilePicker: function() {
+      return osparc.data.model.Node.isFilePicker(this.getMetaData());
     },
 
     isRealService: function() {
@@ -545,7 +553,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     // Iterate over output ports and connect them to first compatible input port
     __createAutoPortConnection: function(node1, node2) {
-      const preferencesSettings = osparc.desktop.preferences.PreferencesSettings.getInstance();
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
       }

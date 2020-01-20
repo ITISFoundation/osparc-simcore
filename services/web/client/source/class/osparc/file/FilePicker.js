@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new osparc.file.FilePicker(node, studyId);
+ *   let filePicker = new osparc.file.FilePicker(node);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
@@ -39,14 +39,12 @@ qx.Class.define("osparc.file.FilePicker", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param studyId {String} StudyId of the study that node belongs to
   */
-  construct: function(node, studyId) {
+  construct: function(node) {
     this.base(arguments);
 
     this.set({
-      node,
-      studyId
+      node
     });
 
     const filePickerLayout = new qx.ui.layout.VBox();
@@ -73,7 +71,7 @@ qx.Class.define("osparc.file.FilePicker", {
     const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
     filesAdd.addListener("fileAdded", e => {
       const fileMetadata = e.getData();
-      if ("location" in fileMetadata && "path" in fileMetadata) {
+      if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
         this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
       this.__filesTree.resetCache();
@@ -97,11 +95,6 @@ qx.Class.define("osparc.file.FilePicker", {
   properties: {
     node: {
       check: "osparc.data.model.Node"
-    },
-
-    studyId: {
-      check: "String",
-      init: ""
     }
   },
 
@@ -114,10 +107,6 @@ qx.Class.define("osparc.file.FilePicker", {
     __filesAdder: null,
     __selectBtn: null,
     __mainButtons: null,
-
-    getFilesAdder: function() {
-      return this.__filesAdder;
-    },
 
     _createChildControlImpl: function(id) {
       let control;
@@ -151,6 +140,15 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
+    uploadPendingFiles: function(files) {
+      if (files.length > 0) {
+        if (files.length > 1) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        }
+        this.__filesAdder.retrieveUrlAndUpload(files[0]);
+      }
+    },
+
     __initResources: function() {
       this.__filesTree.populateTree();
     },
@@ -165,7 +163,6 @@ qx.Class.define("osparc.file.FilePicker", {
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
         this.__setOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
-        this.getNode().setProgress(100);
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
       }
@@ -185,6 +182,7 @@ qx.Class.define("osparc.file.FilePicker", {
           path,
           label
         };
+        this.getNode().setProgress(100);
       }
     },
 
