@@ -29,6 +29,8 @@ install() {
     make wait-for-services
     echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
+    echo "--------------- injecting templates in postgres db..."
+    make inject-templates-in-db
     popd
 }
 
