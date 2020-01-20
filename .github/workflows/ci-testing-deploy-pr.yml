@@ -503,13 +503,14 @@ jobs:
     - name: install
       run: ./ci/github/system-testing/e2e install
     - name: test
+      id: test
       run: ./ci/github/system-testing/e2e test
     - name: recover docker logs
       id: logs_recovery
       if: failure()
       run: ./ci/github/system-testing/e2e after_failure
     - name: upload docker logs
-      if: steps.logs_recovery.outputs.status == 'failure'
+      if: steps.test.outputs.status == 'failure'
       uses: actions/upload-artifact@v1
       with:
         name: upload logs
