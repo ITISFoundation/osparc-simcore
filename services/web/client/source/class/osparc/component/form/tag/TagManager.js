@@ -41,7 +41,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
   properties: {
     liveUpdate: {
       check: "Boolean",
-      init: false
+      init: true
     }
   },
   members: {
@@ -92,17 +92,40 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         value: this.__selectedTags.includes(tag.id)
       });
       button.addListener("changeValue", evt => {
-        if (evt.getData()) {
+        const selected = evt.getData();
+        if (selected) {
           this.__selectedTags.push(tag.id);
         } else {
           this.__selectedTags.remove(tag.id);
         }
-        this.fireDataEvent("changeSelected", this.__selectedTags.toArray());
+        if (this.isLiveUpdate()) {
+          const params = {
+            url: {
+              tagId: tag.id,
+              studyUuid: this.__resourceId
+            }
+          };
+          if (selected) {
+            osparc.data.Resources.fetch("studies", "addTag", params)
+              .then(console.log)
+              .catch(console.error);
+          } else {
+            osparc.data.Resources.fetch("studies", "removeTag", params)
+              .then(console.log)
+              .catch(console.error);
+          }
+        }
       }, this);
       return button;
     },
     __attachEventHandlers: function() {
       this.addListener("appear", () => this.__updatePosition(), this);
+      this.__selectedTags.addListener("change", evt => {
+        this.fireDataEvent("changeSelected", {
+          ...evt.getData(),
+          selected: this.__selectedTags.toArray()
+        });
+      }, this);
     }
   }
 });

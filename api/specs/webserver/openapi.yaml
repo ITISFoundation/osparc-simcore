@@ -149,6 +149,9 @@ paths:
 
   /nodes/{nodeInstanceUUID}/iframe:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe"
+  
+  /projects/{study_uuid}/tags/{tag_id}:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}'
 
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:
@@ -159,8 +162,6 @@ paths:
     $ref: './openapi-tags.yaml#/paths/~1tags'
   /tags/{tag_id}:
     $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}'
-  /tags/{tag_id}/projects/{project_id}:
-    $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}~1projects~1{project_id}'
 
 components:
   responses:

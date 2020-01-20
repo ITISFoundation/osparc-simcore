@@ -4232,6 +4232,10 @@ paths:
                                     'y':
                                       type: integer
                           additionalProperties: true
+                        tags:
+                          type: array
+                          items:
+                            type: integer
                   error:
                     nullable: true
                     default: null
@@ -4526,6 +4530,10 @@ paths:
                             'y':
                               type: integer
                   additionalProperties: true
+                tags:
+                  type: array
+                  items:
+                    type: integer
       responses:
         '201':
           description: project created
@@ -4725,6 +4733,10 @@ paths:
                                   'y':
                                     type: integer
                         additionalProperties: true
+                      tags:
+                        type: array
+                        items:
+                          type: integer
                   error:
                     nullable: true
                     default: null
@@ -5016,6 +5028,10 @@ paths:
                                   'y':
                                     type: integer
                         additionalProperties: true
+                      tags:
+                        type: array
+                        items:
+                          type: integer
                   error:
                     nullable: true
                     default: null
@@ -5313,6 +5329,10 @@ paths:
                                   'y':
                                     type: integer
                         additionalProperties: true
+                      tags:
+                        type: array
+                        items:
+                          type: integer
                   error:
                     nullable: true
                     default: null
@@ -5602,6 +5622,10 @@ paths:
                             'y':
                               type: integer
                   additionalProperties: true
+                tags:
+                  type: array
+                  items:
+                    type: integer
       responses:
         '200':
           description: got detailed project
@@ -5801,6 +5825,10 @@ paths:
                                   'y':
                                     type: integer
                         additionalProperties: true
+                      tags:
+                        type: array
+                        items:
+                          type: integer
                   error:
                     nullable: true
                     default: null
@@ -6114,6 +6142,10 @@ paths:
                                   'y':
                                     type: integer
                         additionalProperties: true
+                      tags:
+                        type: array
+                        items:
+                          type: integer
                   error:
                     nullable: true
                     default: null
@@ -6891,6 +6923,34 @@ paths:
       responses:
         default:
           description: any response appropriate in the iframe context
+  '/projects/{study_uuid}/tags/{tag_id}':
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: study_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - project
+      summary: Links an existing label with an existing study
+      operationId: add_tag
+      responses:
+        '204':
+          description: The tag has been successfully linked to the study
+    delete:
+      tags:
+        - project
+      summary: Removes an existing link between a label and a study
+      operationId: remove_tag
+      responses:
+        '204':
+          description: The tag has been successfully removed from the study
   /activity/status:
     get:
       operationId: get_status
@@ -7041,7 +7101,7 @@ paths:
                             - color
                           properties:
                             id:
-                              type: string
+                              type: integer
                             name:
                               type: string
                             description:
@@ -7156,7 +7216,7 @@ paths:
                       - color
                     properties:
                       id:
-                        type: string
+                        type: integer
                       name:
                         type: string
                       description:
@@ -7278,7 +7338,7 @@ paths:
                       - color
                     properties:
                       id:
-                        type: string
+                        type: integer
                       name:
                         type: string
                       description:
@@ -7379,34 +7439,6 @@ paths:
       responses:
         '204':
           description: The tag has been successfully deleted
-  '/tags/{tag_id}/projects/{project_id}':
-    parameters:
-      - name: tag_id
-        in: path
-        required: true
-        schema:
-          type: integer
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: integer
-    put:
-      tags:
-        - tag
-      summary: Links an existing label with an existing study
-      operationId: add_label_to_study
-      responses:
-        '204':
-          description: The tag has been successfully linked to the study
-    delete:
-      tags:
-        - tag
-      summary: Removes an existing link between a label and a study
-      operationId: remove_label_from_study
-      responses:
-        '204':
-          description: The tag has been successfully removed from the study
 components:
   responses:
     DefaultErrorResponse:

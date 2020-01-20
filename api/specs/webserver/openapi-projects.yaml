@@ -285,6 +285,34 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
+  /projects/{study_uuid}/tags/{tag_id}:
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: study_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - project
+      summary: Links an existing label with an existing study
+      operationId: add_tag
+      responses:
+        '204':
+          description: The tag has been successfully linked to the study
+    delete:
+      tags:
+        - project
+      summary: Removes an existing link between a label and a study
+      operationId: remove_tag
+      responses:
+        '204':
+          description: The tag has been successfully removed from the study
 
 components:
   schemas:

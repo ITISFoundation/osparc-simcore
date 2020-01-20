@@ -69,6 +69,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __model: null,
     __isTemplate: null,
     __fields: null,
+    __selectedTags: null,
 
     __createDisplayView: function(study) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -213,8 +214,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "link-button"
       });
       editButton.addListener("execute", () => {
-        const tagManager = new osparc.component.form.tag.TagManager(null, editButton);
-        tagManager.addListener("changeSelected", evt => console.log(evt.getData()));
+        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__model.getUuid());
+        tagManager.addListener("changeSelected", evt => {
+          this.__selectedTags = evt.getData().selected;
+        });
       });
       header.add(editButton);
 

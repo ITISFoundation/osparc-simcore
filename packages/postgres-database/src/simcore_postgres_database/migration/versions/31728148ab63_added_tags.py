@@ -1,8 +1,8 @@
-"""Added tags
+"""added tags
 
-Revision ID: cad27ae7359c
+Revision ID: 31728148ab63
 Revises: add5f60f0f67
-Create Date: 2020-01-15 16:44:39.644142+00:00
+Create Date: 2020-01-20 15:11:56.273986+00:00
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cad27ae7359c'
+revision = '31728148ab63'
 down_revision = 'add5f60f0f67'
 branch_labels = None
 depends_on = None
@@ -31,7 +31,8 @@ def upgrade():
     sa.Column('study_id', sa.BigInteger(), nullable=False),
     sa.Column('tag_id', sa.BigInteger(), nullable=False),
     sa.ForeignKeyConstraint(['study_id'], ['projects.id'], onupdate='CASCADE', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tag_id'], ['tags.id'], onupdate='CASCADE', ondelete='CASCADE')
+    sa.ForeignKeyConstraint(['tag_id'], ['tags.id'], onupdate='CASCADE', ondelete='CASCADE'),
+    sa.UniqueConstraint('study_id', 'tag_id')
     )
     # ### end Alembic commands ###
 
