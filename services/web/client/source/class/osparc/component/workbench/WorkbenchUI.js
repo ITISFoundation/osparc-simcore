@@ -44,7 +44,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     this.__nodesUI = [];
     this.__edgesUI = [];
-    this.__filesToFilePicker = {};
 
     let hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
@@ -166,7 +165,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __currentModel: null,
     __startHint: null,
     __dropHint: null,
-    __filesToFilePicker: null,
 
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
@@ -263,7 +261,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       nodeUI.addListener("nodeMoving", function() {
         this.__updateEdges(nodeUI);
-        this.__updatePosition(nodeUI);
       }, this);
 
       nodeUI.addListener("appear", function() {
@@ -549,12 +546,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__createEdgeUI(node1Id, node2Id, edgeId);
         }
       }
-    },
-
-    __updatePosition: function(nodeUI) {
-      const cBounds = nodeUI.getCurrentBounds();
-      const node = this.getWorkbench().getNode(nodeUI.getNodeId());
-      node.setPosition(cBounds.left, cBounds.top);
     },
 
     __updateEdges: function(nodeUI) {
@@ -915,9 +906,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
           };
           const nodeUI = this.__addServiceFromCatalog(data, pos);
-          const nodeId = nodeUI.getNodeId();
-          this.__filesToFilePicker[nodeId] = fileList;
-          this.__nodeSelected(nodeId);
+          const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
+          filePicker.uploadPendingFiles(fileList);
         }
       } else {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -961,21 +951,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__dropHint.setVisibility("excluded");
         this.__svgWidgetDrop.removeRect(this.__dropHint.rect);
         this.__dropHint = null;
-      }
-    },
-
-    filePickerAdded: function(filePicker) {
-      const nodeId = filePicker.getNode().getNodeId();
-      if (nodeId in this.__filesToFilePicker) {
-        const fileAdder = filePicker.getFilesAdder();
-        const files = this.__filesToFilePicker[nodeId];
-        if (files.length === 1) {
-          fileAdder.retrieveUrlAndUpload(files[0]);
-        } else if (files.length > 1) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
-          fileAdder.retrieveUrlAndUpload(files[0]);
-        }
-        delete this.__filesToFilePicker[nodeId];
       }
     },
 
