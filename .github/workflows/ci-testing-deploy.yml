@@ -50,6 +50,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   unit-test-director:
     name: Unit-testing director
@@ -86,6 +90,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   unit-test-frontend:
     name: Unit-testing frontend
@@ -121,6 +129,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   unit-test-python-linting:
     name: Unit-testing python-linting
@@ -190,6 +202,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   # DISABLED for now
   # unit-test-sidecar:
@@ -220,6 +236,10 @@ jobs:
   #     with:
   #       token: ${{ secrets.CODECOV_TOKEN }} #required
   #       flags: unittests #optional
+    # - name: Code Climate Coverage Action
+    #   uses: paambaati/codeclimate-action@v2.3.0
+    #   with:
+    #     coverageCommand: coverage xml
 
   unit-test-simcore-sdk:
     name: Unit-testing simcore-sdk
@@ -256,6 +276,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   unit-test-storage:
     name: Unit-testing storage
@@ -292,6 +316,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   unit-test-webserver:
     name: Unit-testing webserver
@@ -328,6 +356,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   build-test-images:
     runs-on: ubuntu-18.04
@@ -386,6 +418,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: integrationtests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
@@ -426,6 +462,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: integrationtests
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
 
   system-test-swarm-deploy:
     name: System-testing deploy simcore
