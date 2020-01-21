@@ -13,8 +13,6 @@
   "author": "odeimaiz",
   "license": "MIT",
   "dependencies": {
-    "cloudinary": "^1.15.0",
-    "dotenv": "^8.1.0",
     "jest": "^24.9.0",
     "jest-puppeteer": "^4.3.0",
     "puppeteer": "^1.19.0"
