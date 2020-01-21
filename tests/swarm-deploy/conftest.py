@@ -103,5 +103,6 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
             else:
                 break
 
-    (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink()
-    (osparc_simcore_root_dir / ".stack-ops.yml").unlink()
+    # make down might delete these files
+    (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink(missing_ok=True)
+    (osparc_simcore_root_dir / ".stack-ops.yml").unlink(missing_ok=True)
