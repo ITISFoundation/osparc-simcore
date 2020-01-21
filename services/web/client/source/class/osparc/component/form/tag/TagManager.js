@@ -59,9 +59,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       this.add(buttonContainer, {
         flex: 1
       });
-      osparc.data.Resources.get("tags")
-        .then(tags => tags.forEach(tag => buttonContainer.add(this.__tagButton(tag))))
-        .catch(console.err);
+      osparc.store.Store.getInstance().getTags().forEach(tag => buttonContainer.add(this.__tagButton(tag)));
     },
     /**
      * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
