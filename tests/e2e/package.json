@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "jest --runInBand --colors --coverage",
-    "demo": "node demo/puppeteerDemo.js"
+    "demo": "node demo/puppeteerDemo.js",
+    "tutorials": "node tutorials/sleepers.js"
   },
   "author": "odeimaiz",
   "license": "MIT",
