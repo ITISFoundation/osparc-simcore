@@ -592,11 +592,12 @@ jobs:
       - name: deploy
         if: github.ref == 'refs/heads/staging'
         run: ./ci/github/deploy/staging
-      - name: mattermost notification
-        uses: tferreira/matterfy@releases/v1
-        if: always()
-        with:
-          type: ${{ job.status }}
-          job_name: '*Lint Check*'
-          channel: 'pgz1nkw3f3yy9xjtj3hiiaheia'
-          url: ${{ secrets.MATTERMOST_URL }}
+      # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
+      # - name: mattermost notification
+      #   uses: tferreira/matterfy@releases/v1
+      #   if: always()
+      #   with:
+      #     type: ${{ job.status }}
+      #     job_name: '*Simcore build state*'
+      #     channel: '${{ secrets.MATTERMOST_CHANNEL }}'
+      #     url: ${{ secrets.MATTERMOST_URL }}
