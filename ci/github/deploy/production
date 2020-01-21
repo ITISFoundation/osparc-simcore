@@ -10,8 +10,7 @@ env
 # export TAG="${TRAVIS_TAG}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
-# export DOCKER_IMAGE_TAG=$(./ci/travis/helpers/find_staging_version | awk 'END{print}') || exit $?
-# make pull-version tag-local
+export DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
 
 # show current images on system
 echo "## Before push"
