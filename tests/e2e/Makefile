@@ -56,7 +56,7 @@ inject-templates-in-db: ## inject project templates
 								--port $(PUBLISHED_PORT) \
 								--user scu \
 								--dbname simcoredb \
-								--command "\copy projects from 'sleepers_project_template_sql.csv' csv header;";
+								--command "\copy projects from 'tutorials/sleepers_project_template_sql.csv' csv header;";
 
 .PHONY: test
 test: ## test the platform
