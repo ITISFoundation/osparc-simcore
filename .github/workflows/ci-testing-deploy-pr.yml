@@ -570,7 +570,7 @@ jobs:
       uses: paambaati/codeclimate-action@v2.3.0
       with:
         coverageCommand: coverage lcov
-        coverageLocations: ["./tests/e2e/coverage/lcov.info:lcov"]
+        coverageLocations: [./tests/e2e/coverage/lcov.info:lcov]
         debug: true
 
     - name: cleanup
