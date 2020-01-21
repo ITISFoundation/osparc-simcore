@@ -22,10 +22,12 @@ echo "in repo ${REPO}"
 IMAGE_TAGS=$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${ORG}/${REPO}/tags/?page_size=100 | jq -r '.results|.[]|.name')
 for j in ${IMAGE_TAGS}
 do
-if [[ ${j} =~ ${GIT_COMMIT_SHA} ]]; then
-echo "${j}"
-exit 0
-fi
+    if [[ ${j} =~ ${TAG_PATTERN} ]]; then
+        if [[ ${j} =~ ${GIT_COMMIT_SHA} ]]; then
+            echo "${j}"
+            exit 0
+        fi
+    fi
 done
 # not found
 exit 1
