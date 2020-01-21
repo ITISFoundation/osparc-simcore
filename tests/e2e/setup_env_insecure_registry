@@ -9,6 +9,8 @@ make .env
 # disable email verification
 echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
 echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+# set max number of CPUs sidecar
+echo SERVICES_MAX_NANO_CPUS=2000000000 >> .env
 # set up insecure internal registry
 echo REGISTRY_AUTH=False >> .env
 echo REGISTRY_SSL=False >> .env
