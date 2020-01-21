@@ -35,7 +35,7 @@ registry-down: ## bring the docker registry down
 
 .PHONY: wait-for-services
 wait-for-services: ## wait for simcore services to be up
-	@python wait_for_services.py
+	@python utils/wait_for_services.py
 
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
@@ -52,7 +52,11 @@ transfer-images-to-registry: ## transfer images to registry
 PUBLISHED_PORT = $(shell docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
-	@PGPASSWORD=adminadmin psql --host localhost --port $(PUBLISHED_PORT) --user scu --dbname simcoredb --command "\copy projects from 'sleepers_project_template_sql.csv' csv header;";
+	@PGPASSWORD=adminadmin psql --host localhost \
+								--port $(PUBLISHED_PORT) \
+								--user scu \
+								--dbname simcoredb \
+								--command "\copy projects from 'sleepers_project_template_sql.csv' csv header;";
 
 .PHONY: test
 test: ## test the platform
