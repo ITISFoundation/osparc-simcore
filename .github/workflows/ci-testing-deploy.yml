@@ -563,6 +563,14 @@ jobs:
       with:
         name: upload screenshots
         path: tests/e2e/screenshots
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} #required
+        flags: e2etests #optional
+    - name: Code Climate Coverage Action
+      uses: paambaati/codeclimate-action@v2.3.0
+      with:
+        coverageCommand: coverage xml
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
