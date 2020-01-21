@@ -104,5 +104,12 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
                 break
 
     # make down might delete these files
-    (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink(missing_ok=True)
-    (osparc_simcore_root_dir / ".stack-ops.yml").unlink(missing_ok=True)
+    def _safe_unlink(file_path: Path):
+        # TODO: in py 3.8 it will simply be file_path.unlink(missing_ok=True)
+        try:
+            file_path.unlink()
+        except FileNotFoundError:
+            pass
+
+    _safe_unlink(osparc_simcore_root_dir / ".stack-simcore-version.yml")
+    _safe_unlink(osparc_simcore_root_dir / ".stack-ops.yml")
