@@ -1,4 +1,4 @@
-name: Github-CI
+name: Github-CI-PR
 
 # this is an exact copy of the push workflow but it does not deploy as PR do not have access to secrets
 
@@ -569,7 +569,7 @@ jobs:
     - name: Code Climate Coverage Action
       uses: paambaati/codeclimate-action@v2.3.0
       with:
-        coverageCommand: coverage tests/e2e/coverage/lcov.info
+        coverageCommand: coverage lcov
 
     - name: cleanup
       if: always()
