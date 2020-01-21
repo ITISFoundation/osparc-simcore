@@ -567,12 +567,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: e2etests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage
-        coverageLocations: ./tests/e2e/coverage/lcov.info
-        debug: true
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
