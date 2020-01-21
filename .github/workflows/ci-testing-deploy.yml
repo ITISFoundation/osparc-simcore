@@ -126,14 +126,14 @@ jobs:
       run: ./ci/github/unit-testing/frontend install
     - name: test
       run: ./ci/github/unit-testing/frontend test
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }} #required
-        flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
+    # - uses: codecov/codecov-action@v1
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }} #required
+    #     flags: unittests #optional
+    # - name: Code Climate Coverage Action
+    #   uses: paambaati/codeclimate-action@v2.3.0
+    #   with:
+    #     coverageCommand: coverage xml
 
   unit-test-python-linting:
     name: Unit-testing python-linting
