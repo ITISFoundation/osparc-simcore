@@ -37,7 +37,8 @@ DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
     for key, value in project_document_data.items():
-        converted_args[ChangeCase.camel_to_snake(key)] = value
+        if key != 'tags': # No column for tags
+            converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
 def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
