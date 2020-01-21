@@ -570,7 +570,7 @@ jobs:
     - name: Code Climate Coverage Action
       uses: paambaati/codeclimate-action@v2.3.0
       with:
-        coverageCommand: coverage xml
+        coverageCommand: coverage tests/e2e/coverage/lcov.info
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up

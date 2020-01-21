@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --runInBand --colors --coverage",
+    "test": "jest --runInBand --colors",
     "demo": "node demo/puppeteerDemo.js",
     "tutorials": "node tutorials/sleepers.js"
   },
