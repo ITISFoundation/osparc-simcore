@@ -326,7 +326,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
-      innerNode.setParentNodeId(this.getNodeId());
     },
 
     removeInnerNode: function(innerNodeId) {

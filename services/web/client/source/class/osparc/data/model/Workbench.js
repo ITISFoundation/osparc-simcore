@@ -258,8 +258,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         parentNode.addInnerNode(nodeId, node);
       } else {
         this.__rootNodes[nodeId] = node;
-        node.setParentNodeId(null);
       }
+      node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("workbenchChanged");
     },
 
@@ -272,10 +272,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       if (newParent === null) {
         this.__rootNodes[nodeId] = node;
-        node.setParentNodeId(null);
       } else {
         newParent.addInnerNode(nodeId, node);
       }
+      node.setParentNodeId(newParent ? newParent.getNodeId() : null);
     },
 
     removeNode: function(nodeId) {
