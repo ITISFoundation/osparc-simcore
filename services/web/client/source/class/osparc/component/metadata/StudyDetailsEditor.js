@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this._setLayout(new qx.ui.layout.Grow());
 
     this.__isTemplate = isTemplate;
+    this.__selectedTags = study.tags;
     this.__model = qx.data.marshal.Json.createModel(study);
 
     this.__stack = new qx.ui.container.Stack();
@@ -223,6 +224,15 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
       const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       tagSection.add(header);
+      const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow());
+      tagSection.add(tagContainer);
+      osparc.data.Resources.get("tags")
+        .then(tags => {
+          tags.filter(tag => this.__selectedTags.includes(tag.id)).forEach(selectedTag => {
+            tagContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+          });
+        })
+        .catch(console.error);
       return tagSection;
     },
 
