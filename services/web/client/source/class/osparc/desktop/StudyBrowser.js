@@ -519,6 +519,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           this.__startStudy(studyData);
         }
       }, this);
+      studyDetails.addListener("updateTags", () => {
+        if (isTemplate) {
+          this.__setTemplateList(osparc.store.Store.getInstance().getTemplates());
+        } else {
+          this.__setStudyList(osparc.store.Store.getInstance().getStudies());
+        }
+      })
 
       this.__editStudyLayout.add(studyDetails);
 

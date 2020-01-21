@@ -24,6 +24,15 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
     this.setLabel(tag.name);
     this.getChildControl("check");
   },
+  properties: {
+    fetching: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeFetching",
+      apply: "_applyFetching"
+    }
+  },
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -42,15 +51,32 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
           }
           break;
         case "check":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/14");
+          control = new qx.ui.basic.Image();
           control.setAnonymous(true);
           this._add(control);
           this.bind("value", control, "visibility", {
             converter: value => value ? "visible" : "hidden"
           });
+          this.bind("fetching", control, "source", {
+            converter: isFetching =>
+              isFetching ?
+              "@FontAwesome5Solid/circle-notch/14"
+              :
+              "@FontAwesome5Solid/check/14"
+          });
           break;
       }
       return control || this.base(arguments, id);
+    },
+    _applyFetching: function(isFetching) {
+      const check = this.getChildControl("check");
+      if (isFetching) {
+        check.show();
+        check.getContentElement().addClass("rotate");
+      } else {
+        check.setVisibility(this.getValue() ? "visible" : "hidden");
+        check.getContentElement().removeClass("rotate");
+      }
     }
   }
 });

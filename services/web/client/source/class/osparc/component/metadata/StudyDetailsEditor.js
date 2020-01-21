@@ -51,6 +51,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   events: {
     updatedStudy: "qx.event.type.Data",
     updatedTemplate: "qx.event.type.Data",
+    updateTags: "qx.event.type.Data",
     closed: "qx.event.type.Event",
     openedStudy: "qx.event.type.Event"
   },
@@ -206,7 +207,9 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __tagsSection: function() {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set());
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      }));
       header.add(new qx.ui.basic.Label(this.tr("Tags")).set({
         font: "text-14"
       }));
@@ -218,22 +221,32 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__model.getUuid());
         tagManager.addListener("changeSelected", evt => {
           this.__selectedTags = evt.getData().selected;
-        });
+        }, this);
+        tagManager.addListener("close", () => {
+          this.__renderTags();
+          this.fireDataEvent("updateTags", this.__model.getUuid());
+        }, this);
       });
       header.add(editButton);
 
       const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       tagSection.add(header);
-      const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow());
-      tagSection.add(tagContainer);
+      tagSection.add(this.__renderTags());
+      return tagSection;
+    },
+
+    __renderTags: function() {
+      this.__tagsContainer = this.__tagsContainer || new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this.__tagsContainer.removeAll();
+      this.__tagsContainer.setMarginTop(5);
       osparc.data.Resources.get("tags")
         .then(tags => {
           tags.filter(tag => this.__selectedTags.includes(tag.id)).forEach(selectedTag => {
-            tagContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+            this.__tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
           });
         })
         .catch(console.error);
-      return tagSection;
+      return this.__tagsContainer;
     },
 
     __saveStudy: function(btn) {

@@ -60,7 +60,8 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         flex: 1
       });
       osparc.data.Resources.get("tags")
-        .then(tags => tags.forEach(tag => buttonContainer.add(this.__tagButton(tag))));
+        .then(tags => tags.forEach(tag => buttonContainer.add(this.__tagButton(tag))))
+        .catch(console.err);
     },
     /**
      * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
@@ -93,12 +94,8 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       });
       button.addListener("changeValue", evt => {
         const selected = evt.getData();
-        if (selected) {
-          this.__selectedTags.push(tag.id);
-        } else {
-          this.__selectedTags.remove(tag.id);
-        }
         if (this.isLiveUpdate()) {
+          button.setFetching(true);
           const params = {
             url: {
               tagId: tag.id,
@@ -107,12 +104,26 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
           };
           if (selected) {
             osparc.data.Resources.fetch("studies", "addTag", params)
-              .then(console.log)
-              .catch(console.error);
+              .then(() => this.__selectedTags.push(tag.id))
+              .catch(err => {
+                console.error(err);
+                button.setValue(false);
+              })
+              .finally(() => button.setFetching(false));
           } else {
             osparc.data.Resources.fetch("studies", "removeTag", params)
-              .then(console.log)
-              .catch(console.error);
+              .then(() => this.__selectedTags.remove(tag.id))
+              .catch(err => {
+                console.error(err);
+                button.setValue(true);
+              })
+              .finally(() => button.setFetching(false));
+          }
+        } else {
+          if (selected) {
+            this.__selectedTags.push(tag.id)
+          } else {
+            this.__selectedTags.remove(tag.id)
           }
         }
       }, this);
