@@ -489,7 +489,7 @@ jobs:
     - name: show system version
       run: ./ci/helpers/show_system_versions
     - uses: actions/cache@v1
-      name: getting cached data
+      name: getting cached data python
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -506,6 +506,22 @@ jobs:
       run: ./ci/github/system-testing/e2e install
     - name: test
       run: ./ci/github/system-testing/e2e test
+    - name: recover docker logs
+      id: logs_recovery
+      if: always()
+      run: ./ci/github/system-testing/e2e recover_artifacts
+    - name: upload docker logs
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: upload logs
+        path: simcore_logs
+    - name: upload screenshots
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: upload screenshots
+        path: tests/e2e/screenshots
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up

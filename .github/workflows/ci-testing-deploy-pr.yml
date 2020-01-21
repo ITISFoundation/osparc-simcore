@@ -503,14 +503,13 @@ jobs:
     - name: install
       run: ./ci/github/system-testing/e2e install
     - name: test
-      id: test
       run: ./ci/github/system-testing/e2e test
     - name: recover docker logs
       id: logs_recovery
-      if: failure()
-      run: ./ci/github/system-testing/e2e after_failure
+      if: always()
+      run: ./ci/github/system-testing/e2e recover_artifacts
     - name: upload docker logs
-      if: steps.test.outputs.status == 'failure'
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: upload logs
@@ -521,7 +520,7 @@ jobs:
       with:
         name: upload screenshots
         path: tests/e2e/screenshots
-      
+
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up

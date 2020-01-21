@@ -38,27 +38,26 @@ install() {
 
 test() {
     pushd tests/e2e; make test; popd
-    # all screenshots are in tests/e2e/screenshots
+
 }
 
-after_failure() {
+recover_artifacts() {
+    # all screenshots are in tests/e2e/screenshots if any
+
+    # get docker logs
     mkdir simcore_logs
-    docker service logs simcore_webserver > simcore_logs/webserver.log
-    docker service logs simcore_director > simcore_logs/director.log
-    docker service logs simcore_storage > simcore_logs/storage.log
-    docker service logs simcore_sidecar > simcore_logs/sidecar.log
-    echo "--------------- logs of webserver..."
-    docker service logs simcore_webserver
-    echo "--------------- logs of sidecar..."
-    docker service logs simcore_sidecar
-    echo "--------------- logs of director..."
-    docker service logs simcore_director
-    echo "--------------- logs of storage..."
-    docker service logs simcore_storage
+    (docker service logs simcore_webserver > simcore_logs/webserver.log) || true
+    (docker service logs simcore_director > simcore_logs/director.log ) || true
+    (docker service logs simcore_storage > simcore_logs/storage.log) || true
+    (docker service logs simcore_sidecar > simcore_logs/sidecar.log) || true
 }
 
 clean_up() {
+    echo "--------------- listing services running..."
+    docker service ls
+    echo "--------------- listing images available..."
     docker images
+    echo "--------------- switching off..."
     make leave
 }
 
