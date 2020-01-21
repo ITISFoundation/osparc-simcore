@@ -3,7 +3,7 @@ import multiprocessing
 import os
 
 
-SERVICES_MAX_NANO_CPUS = os.environ.get("SIDECAR_SERVICES_MAX_NANO_CPUS", max(multiprocessing.cpu_count(), 4) * pow(10, 9))
+SERVICES_MAX_NANO_CPUS = max(multiprocessing.cpu_count(), os.environ.get("SIDECAR_SERVICES_MAX_NANO_CPUS", 4 * pow(10, 9)))
 SERVICES_MAX_MEMORY_BYTES = os.environ.get("SIDECAR_SERVICES_MAX_MEMORY_BYTES", 2 * pow(1024, 3))
 SERVICES_TIMEOUT_SECONDS = os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 20*60)
 SWARM_STACK_NAME = os.environ["SWARM_STACK_NAME"]
