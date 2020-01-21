@@ -52,7 +52,7 @@ transfer-images-to-registry: ## transfer images to registry
 PUBLISHED_PORT = $(shell docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
-	@PGPASSWORD=adminadmin psql --host localhost --port $(PUBLISHED_PORT) --user scu --dbname simcoredb --command "\copy projects from 'sleepers_sql.csv' csv header;";
+	@PGPASSWORD=adminadmin psql --host localhost --port $(PUBLISHED_PORT) --user scu --dbname simcoredb --command "\copy projects from 'sleepers_project_template_sql.csv' csv header;";
 
 .PHONY: test
 test: ## test the platform
