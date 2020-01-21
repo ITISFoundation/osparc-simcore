@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --colors --coverage",
     "demo": "node demo/puppeteerDemo.js"
   },
   "author": "odeimaiz",
