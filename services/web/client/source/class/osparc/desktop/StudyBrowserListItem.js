@@ -82,6 +82,11 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       check : "Date",
       apply : "_applylastChangeDate",
       nullable : true
+    },
+
+    tags: {
+      check: "Array",
+      apply: "_applyTags"
     }
   },
 
@@ -135,6 +140,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
           this._addAt(control, 3);
           break;
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._addAt(control, 4);
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -171,6 +180,21 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       } else {
         label.resetValue();
       }
+    },
+
+    _applyTags: function(tags) {
+      const tagsContainer = this.getChildControl("tags");
+      if (tags.length) {
+        tagsContainer.show();
+        this.getChildControl("creator").exclude();
+        this.getChildControl("lastChangeDate").exclude();
+      } else {
+        tagsContainer.exclude();
+        this.getChildControl("creator").show();
+        this.getChildControl("lastChangeDate").show();
+      }
+      tagsContainer.removeAll();
+      tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color)));
     },
 
     /**

@@ -273,8 +273,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           console.error(err);
         });
 
-      this.reloadUserStudies();
-      this.reloadTemplateStudies();
+      osparc.data.Resources.get("tags")
+        .then(() => {
+          this.reloadUserStudies();
+          this.reloadTemplateStudies();
+        })
+        .catch(console.error);
     },
 
     __createDeleteButton: function() {
@@ -436,7 +440,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
-        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
+        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
+        tags: osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id))
       });
 
       item.subscribeToFilterGroup("studyBrowser");

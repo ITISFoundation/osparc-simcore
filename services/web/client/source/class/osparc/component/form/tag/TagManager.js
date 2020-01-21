@@ -130,7 +130,21 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       return button;
     },
     __attachEventHandlers: function() {
-      this.addListener("appear", () => this.__updatePosition(), this);
+      this.addListener("appear", () => {
+        this.__updatePosition();
+        if (this.isModal()) {
+          // Enable closing when clicking outside the modal
+          const thisDom = this.getContentElement().getDomElement();
+          const thisZIndex = parseInt(thisDom.style.zIndex);
+          const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
+            // Hack: Qx inserts the modalFrame as a sibling of the window with a -1 zIndex
+            parseInt(el.style.zIndex) === thisZIndex - 1
+          );
+          if (modalFrame) {
+            modalFrame.addEventListener("click", () => this.close());
+          }
+        }
+      }, this);
       this.__selectedTags.addListener("change", evt => {
         this.fireDataEvent("changeSelected", {
           ...evt.getData(),
