@@ -1,12 +1,13 @@
 from functools import wraps
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from aiohttp import web
 from yarl import URL
 
 from simcore_service_director import config
 
-def cache_requests(http_request):
+
+def cache_requests(http_request: Any):
     @wraps(http_request)
     async def wrapped(app: web.Application, url: URL, method: str ="GET") -> Tuple[Dict, Dict]:
         if config.REGISTRY_CACHING:
@@ -24,7 +25,6 @@ def cache_requests(http_request):
             
     return wrapped
 
-
-__all__ = {
+__all__ = [
     "cache_requests"
-}
+]

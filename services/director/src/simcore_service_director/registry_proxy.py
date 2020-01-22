@@ -12,28 +12,28 @@ from yarl import URL
 
 from .config import APP_CLIENT_SESSION_KEY
 
-DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
+DEPENDENCIES_LABEL_KEY: str = 'simcore.service.dependencies'
 
-NUMBER_OF_RETRIEVED_REPOS = 50
-NUMBER_OF_RETRIEVED_TAGS = 50
+NUMBER_OF_RETRIEVED_REPOS: int = 50
+NUMBER_OF_RETRIEVED_TAGS: int = 50
 
 _logger = logging.getLogger(__name__)
 
 class ServiceType(enum.Enum):
-    ALL = ""
-    COMPUTATIONAL = "comp"
-    DYNAMIC = "dynamic"
+    ALL: str = ""
+    COMPUTATIONAL: str = "comp"
+    DYNAMIC: str = "dynamic"
 
 async def _auth_registry_request(url: URL, method: str, auth_headers: Dict, session: ClientSession) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
         raise exceptions.RegistryConnectionError("Wrong configuration: Authentication to registry is needed!")
     # auth issue let's try some authentication get the auth type
     auth_type = None
-    auth_details = None
+    auth_details: Dict[str, str] = {}
     for key in auth_headers:
         if str(key).lower() == "www-authenticate":
-            auth_type, auth_details = str(auth_headers[key]).split(" ", 1)
-            auth_details = {x.split("=")[0]:x.split("=")[1].strip('"') for x in auth_details.split(",")}
+            auth_type, auth_value = str(auth_headers[key]).split(" ", 1)
+            auth_details = {x.split("=")[0]:x.split("=")[1].strip('"') for x in auth_value.split(",")}
             break
     if not auth_type:
         raise exceptions.RegistryConnectionError("Unknown registry type: cannot deduce authentication method!")
@@ -51,7 +51,7 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict, sess
             async with getattr(session, method.lower())(url, headers=headers) as resp_wtoken:
                 if resp_wtoken.status == 404:
                     _logger.exception("path to registry not found: %s", url)
-                    raise exceptions.ServiceNotAvailableError(url)
+                    raise exceptions.ServiceNotAvailableError(str(url))
                 if resp_wtoken.status > 399:
                     _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wtoken))
                     raise exceptions.RegistryConnectionError(str(resp_wtoken))
@@ -63,7 +63,7 @@ async def _auth_registry_request(url: URL, method: str, auth_headers: Dict, sess
         async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
             if resp_wbasic.status == 404:
                 _logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(url)
+                raise exceptions.ServiceNotAvailableError(str(url))
             if resp_wbasic.status > 399:
                 _logger.exception("Unknown error while accessing with token authorized registry: %s", str(resp_wbasic))
                 raise exceptions.RegistryConnectionError(str(resp_wbasic))
@@ -82,8 +82,8 @@ async def _registry_request(app: web.Application, path: URL, method: str ="GET")
                                 url=config.REGISTRY_URL))
     url = url.join(path)
     # try the registry with basic authentication first, spare 1 call
-    resp_data = {}
-    resp_headers = {}
+    resp_data: Dict = {}
+    resp_headers: Dict = {}
     auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW) \
         if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW \
             else None
@@ -92,7 +92,7 @@ async def _registry_request(app: web.Application, path: URL, method: str ="GET")
     async with getattr(session, method.lower())(url, auth=auth) as response:
         if response.status == 404:
             _logger.exception("path to registry not found: %s", url)
-            raise exceptions.ServiceNotAvailableError(path)
+            raise exceptions.ServiceNotAvailableError(str(path))
         if response.status == 401:
             resp_data, resp_headers = await _auth_registry_request(url, method, response.headers, session)
         elif response.status > 399:
@@ -109,7 +109,7 @@ async def _list_repositories(app: web.Application) -> List[str]:
     _logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
     path = URL("v2/_catalog?n={}".format(NUMBER_OF_RETRIEVED_REPOS))
-    repos_list = []
+    repos_list: List = []
     while True:
         result, headers = await _registry_request(app, path)
         if result["repositories"]:
@@ -120,9 +120,9 @@ async def _list_repositories(app: web.Application) -> List[str]:
     _logger.debug("listed %s repositories", len(repos_list))
     return repos_list
 
-async def list_image_tags(app: web.Application, image_key: str) -> List[Dict]:
+async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     _logger.debug("listing image tags in %s", image_key)
-    image_tags = []
+    image_tags: List = []
     # get list of image tags
     path = URL("v2/{}/tags/list?n={}".format(image_key, NUMBER_OF_RETRIEVED_TAGS))
     while True:
@@ -144,7 +144,7 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
     return labels
 
 async def get_image_details(app: web.Application, image_key: str, image_tag: str) -> Dict:
-    image_tags = {}
+    image_tags: Dict = {}
     labels = await get_image_labels(app, image_key, image_tag)
     if not labels:
         return image_tags
