@@ -53,6 +53,7 @@ qx.Class.define("osparc.data.model.Node", {
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__outputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
 
@@ -119,12 +120,6 @@ qx.Class.define("osparc.data.model.Node", {
       check: "Boolean",
       init: null,
       nullable: true
-    },
-
-    isOutputNode: {
-      check: "Boolean",
-      init: false,
-      nullable: false
     },
 
     serviceUrl: {
@@ -207,6 +202,7 @@ qx.Class.define("osparc.data.model.Node", {
     __metaData: null,
     __innerNodes: null,
     __inputNodes: null,
+    __outputNodes: null,
     __settingsForm: null,
     __inputsDefault: null,
     __inputsDefaultWidget: null,
@@ -336,16 +332,22 @@ qx.Class.define("osparc.data.model.Node", {
       return (inputNodeId in this.__innerNodes);
     },
 
-    getExposedInnerNodes: function(recursive = false) {
-      const innerNodes = this.getInnerNodes(recursive);
-      let exposedInnerNodes = {};
-      for (const innerNodeId in innerNodes) {
-        const innerNode = innerNodes[innerNodeId];
-        if (innerNode.getIsOutputNode() && !innerNode.isContainer()) {
-          exposedInnerNodes[innerNodeId] = innerNode;
+    getExposedInnerNodes: function() {
+      const workbench = osparc.store.Store.getInstance().getCurrentStudy()
+        .getWorkbench();
+
+      let outputNodes = [];
+      for (let i=0; i<this.__outputNodes.length; i++) {
+        const outputNode = workbench.getNode(this.__outputNodes[i]);
+        if (outputNode.isContainer()) {
+          let myOutputNodes = outputNode.getExposedInnerNodes();
+          outputNodes = outputNodes.concat(myOutputNodes);
+        } else {
+          outputNodes.push(outputNode);
         }
       }
-      return exposedInnerNodes;
+      const uniqueNodes = [...new Set(outputNodes)];
+      return uniqueNodes;
     },
 
     populateNodeData: function(nodeData) {
@@ -361,8 +363,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.setInputNodes(nodeData);
         }
 
-        if (nodeData.outputNode) {
-          this.setIsOutputNode(nodeData.outputNode);
+        if (nodeData.outputNodes) {
+          this.setOutputNodes(nodeData.outputNodes);
         }
 
         if (nodeData.position) {
@@ -623,6 +625,42 @@ qx.Class.define("osparc.data.model.Node", {
       return (index > -1);
     },
     // !---- Input Nodes -----
+
+    // ----- Output Nodes -----
+    getOutputNodes: function() {
+      return this.__outputNodes;
+    },
+
+    setOutputNodes: function(nodeData) {
+      if (nodeData.outputNodes) {
+        for (let i=0; i<nodeData.outputNodes.length; i++) {
+          this.addOutputNode(nodeData.outputNodes[i]);
+        }
+      }
+    },
+
+    addOutputNode: function(outputNodeId) {
+      if (!this.__outputNodes.includes(outputNodeId)) {
+        this.__outputNodes.push(outputNodeId);
+        return true;
+      }
+      return false;
+    },
+
+    removeOutputNode: function(outputNodeId) {
+      const index = this.__outputNodes.indexOf(outputNodeId);
+      if (index > -1) {
+        // remove node connection
+        this.__outputNodes.splice(index, 1);
+      }
+      return false;
+    },
+
+    isOutputNode: function(outputNodeId) {
+      const index = this.__outputNodes.indexOf(outputNodeId);
+      return (index > -1);
+    },
+    // !---- Output Nodes -----
 
     renameNode: function(newLabel) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
@@ -925,12 +963,15 @@ qx.Class.define("osparc.data.model.Node", {
         inputs: this.getInputValues(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
-        outputNode: this.getIsOutputNode(),
         outputs: this.getOutputValues(),
         parent: this.getParentNodeId(),
         progress: this.getProgress(),
         thumbnail: this.getThumbnail()
       };
+
+      if (this.isContainer()) {
+        nodeEntry.outputNodes = this.getOutputNodes();
+      }
 
       if (savePosition) {
         nodeEntry.position = {

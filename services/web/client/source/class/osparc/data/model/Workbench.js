@@ -248,7 +248,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
       node.setInputNodes(nodeData);
-      node.setIsOutputNode(nodeToClone.getIsOutputNode());
+      node.setOutputNodes(nodeData);
       return node;
     },
 
@@ -323,7 +323,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const currentNode = this.getNode(currentNodeId);
         if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
           const inputNode = this.getNode(edge.getInputNodeId());
-          inputNode.setIsOutputNode(false);
+          currentNode.removeOutputNode(inputNode.getNodeId());
 
           // Remove also dependencies from outter nodes
           const cNodeId = inputNode.getNodeId();
@@ -423,9 +423,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             node.addInputNode(outputNodeId);
           }
         }
-        if (nodeData.outputNode) {
-          const edge = new osparc.data.model.Edge(null, nodeId, nodeData.parent);
-          this.addEdge(edge);
+        if (nodeData.outputNodes) {
+          for (let i=0; i < nodeData.outputNodes.length; i++) {
+            const inputNodeId = nodeData.outputNodes[i];
+            const edge = new osparc.data.model.Edge(null, inputNodeId, nodeId);
+            this.addEdge(edge);
+            node.addOutputNode(inputNodeId);
+          }
         }
       }
     },

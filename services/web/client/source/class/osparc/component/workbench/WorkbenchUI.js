@@ -339,7 +339,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const port2 = nodeUI2.getInputPort();
       if (port1 && port2) {
         if (this.__currentModel.isContainer() && nodeUI2.getNodeId() === this.__currentModel.getNodeId()) {
-          nodeUI1.getNode().setIsOutputNode(true);
+          this.__currentModel.addOutputNode(nodeUI1.getNodeId());
         } else {
           nodeUI2.getNode().addInputNode(node1Id);
         }
@@ -815,12 +815,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           }
         }
 
-        const innerNodes = isContainer ? model.getInnerNodes() : {};
-        for (const innerNodeId in innerNodes) {
-          const innerNode = innerNodes[innerNodeId];
-          if (innerNode.getIsOutputNode()) {
+        if (isContainer) {
+          const outputNodes = model.getOutputNodes();
+          for (let i=0; i<outputNodes.length; i++) {
             this.__createEdgeBetweenNodes({
-              nodeUuid: innerNode.getNodeId()
+              nodeUuid: outputNodes[i]
             }, {
               nodeUuid: model.getNodeId()
             });

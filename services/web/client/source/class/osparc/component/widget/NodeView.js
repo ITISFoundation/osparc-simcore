@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
       for (let i=0; i<inputNodes.length; i++) {
         let inputNode = study.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
-          const exposedInnerNodes = inputNode.getExposedInnerNodes(true);
+          const exposedInnerNodes = inputNode.getExposedInnerNodes();
           for (const exposedInnerNodeId in exposedInnerNodes) {
             const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
             this.__createInputPortsUI(exposedInnerNode);
