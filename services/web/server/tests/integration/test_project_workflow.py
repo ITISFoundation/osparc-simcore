@@ -11,6 +11,7 @@ import json
 from asyncio import Future, Task, wait_for
 from copy import deepcopy
 from pathlib import Path
+from pprint import pprint
 from typing import Dict, List
 
 import pytest
@@ -50,8 +51,13 @@ def client(loop, aiohttp_client,
     ):
     assert app_config["rest"]["version"] == API_VERSION
 
+    app_config['main']['testing'] = True
+    app_config['db']['init_tables'] = True
+
     app_config['storage']['enabled'] = False
     app_config['rabbit']['enabled'] = False
+
+    pprint(app_config)
 
     app = create_safe_application(app_config)
 

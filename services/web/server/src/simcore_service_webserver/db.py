@@ -43,11 +43,8 @@ async def pg_engine(app: web.Application):
 
 
     if cfg.get("init_tables"):
-        try:
-            # TODO: get keys from __name__ (see notes in servicelib.application_keys)
-            await __create_tables(**params)
-        except DBAPIError:
-            log.exception("Could init db. Stopping :\n %s", cfg)
+        # TODO: get keys from __name__ (see notes in servicelib.application_keys)
+        await __create_tables(**params)
 
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine

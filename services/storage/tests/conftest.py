@@ -30,6 +30,8 @@ from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / 'helpers'))
 
+
+
 @pytest.fixture(scope='session')
 def here():
     return current_dir

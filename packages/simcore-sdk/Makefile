@@ -8,16 +8,13 @@
 # by sanderegg, pcrespov
 .DEFAULT_GOAL := help
 
-ROOT_DIR     = $(abspath $(CURDIR)/../../)
-VENV_DIR    ?= $(abspath $(ROOT_DIR)/.venv)
 
+.PHONY: install-dev install-prod install-ci
+install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
+	# installing in $(subst install-,,$@) mode
+	@pip3 install -r requirements/$(subst install-,,$@).txt
 
-.PHONY: install
-install: ## install app in edit mode for development [DEV]
-	# installing in edit mode
-	@$(VENV_DIR)/bin/pip3 install -r requirements/dev.txt
-
-.PHONY: tests-unit tests-integration
+.PHONY: tests-unit tests-integration tests
 tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest -vv -x --ff --pdb $(CURDIR)/tests/unit
@@ -28,6 +25,9 @@ tests-integration: ## runs integration tests against local+production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
 	pytest -vv -x --ff --pdb $(CURDIR)/tests/integration
+
+tests: tests-unit tests-integration ## runs all tests
+	# running tests
 
 .PHONY: clean
 clean: ## cleans all unversioned files in project and temp files create by this makefile
@@ -40,7 +40,7 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## this colorful help
-	@echo "Recipes for '${APP_NAME}':"
+	@echo "Recipes for '$(notdir $(CURDIR))':"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

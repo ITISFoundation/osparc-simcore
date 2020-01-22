@@ -39,7 +39,9 @@ def s3_simcore_location() ->str:
     yield np_helpers.SIMCORE_STORE
 
 @pytest.fixture
-def filemanager_cfg(docker_stack: Dict, devel_environ: Dict, user_id, bucket):
+def filemanager_cfg(docker_stack: Dict, devel_environ: Dict, user_id: str, bucket: str,
+    postgres_db # waits for db and initializes it
+    ):
     assert "simcore_storage" in docker_stack["services"]
     storage_port = devel_environ['STORAGE_ENDPOINT'].split(':')[1]
     node_config.STORAGE_ENDPOINT = f"127.0.0.1:{get_service_published_port('storage', storage_port)}"
