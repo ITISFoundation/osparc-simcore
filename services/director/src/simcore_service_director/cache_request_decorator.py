@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Any, Dict, Tuple
+from typing import Dict, Tuple
 
 from aiohttp import web
 from yarl import URL
