@@ -10,6 +10,9 @@ coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/co
 pytest
 pytest-docker
 pytest-cov
+pytest-instafail
+pytest-mock
+pytest-sugar
 
 # fixtures
 aiopg

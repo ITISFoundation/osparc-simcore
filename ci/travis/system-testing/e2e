@@ -8,43 +8,45 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
 
 before_install() {
-    # bash ci/travis/helpers/update_docker
+    bash ci/travis/helpers/update_docker
     bash ci/travis/helpers/install_docker_compose
     bash ci/helpers/show_system_versions
-
-    # Enable user namespace cloning
-    sysctl kernel.unprivileged_userns_clone=1
-
-    # Launch XVFB
-    export DISPLAY=:99.0
-    sh -e /etc/init.d/xvfb start
+    sudo apt install -y postgresql-client
 }
 
 install() {
-    cp tests/e2e/package.json .
-    cp tests/e2e/package-lock.json .
-    npm install
-    make pull-version || ((make pull-cache || true) && make build tag-version)
+    echo "nothing to do here..."
 }
 
 before_script() {
+    echo "--------------- getting simcore docker images..."
+    make pull-version || ((make pull-cache || true) && make build tag-version)
     make info-images
-    # disable email registration
-    make .env
-    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >>.env
-    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >>.env
+    # configure simcore for testing with a private registry
+    bash tests/e2e/setup_env_insecure_registry
+    # start simcore
     make up-version
+
+    echo "-------------- installing test framework..."
+    # create a python venv and activate
+    make .venv
+    source .venv/bin/activate
+    bash ci/helpers/ensure_python_pip
+    pushd tests/e2e;
+    make install
+    echo "--------------- deploying the registry..."
+    make registry-up
+    echo "--------------- waiting for all services to be up..."
+    make wait-for-services
+    echo "--------------- transfering the images to the local registry..."
+    make transfer-images-to-registry
+    echo "--------------- injecting templates in postgres db..."
+    make inject-templates-in-db
+    popd
 }
 
 script() {
-    # wait for a minute to let the swarm warm up...
-    docker service ls --format "table"
-    # FIXME: Get rid of this sleep and check the status of the services
-    sleep 80s
-    make info-swarm
-    cp tests/e2e/jest.config.js .
-    cp tests/e2e/jest-puppeteer.config.js .
-    npm test
+    pushd tests/e2e; make test; popd
 }
 
 after_success() {
@@ -53,6 +55,14 @@ after_success() {
 }
 
 after_failure() {
+    echo "--------------- logs of webserver..."
+    docker service logs simcore_webserver
+    echo "--------------- logs of sidecar..."
+    docker service logs simcore_sidecar
+    echo "--------------- logs of director..."
+    docker service logs simcore_director
+    echo "--------------- logs of storage..."
+    docker service logs simcore_storage
     docker images
     make down
 }

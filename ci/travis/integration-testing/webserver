@@ -24,7 +24,9 @@ before_script() {
 }
 
 script() {
-    pytest --cov=simcore_service_webserver --cov-append -v services/web/server/tests/integration
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+        --color=yes --cov-report=term-missing --cov-report=xml \
+        -v -m "not travis" services/web/server/tests/integration
     # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
     #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }

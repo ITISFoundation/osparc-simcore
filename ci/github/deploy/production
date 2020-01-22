@@ -1,15 +1,16 @@
 #!/bin/bash
-# as of http://redsymbol.net/articles/unofficial-bash-strict-mode/
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -euo pipefail
 IFS=$'\n\t'
 
+
 # pull the tagged staging build
 # find the docker image tag
-export TAG="${TRAVIS_TAG}"
+export TAG="${GITHUB_REF##*/}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
-# staging-DATE.TRAVIS_NUMBER.GIT_SHA
-export TAG_PATTERN="^staging-.+\..+\..+"
+# staging-github-DATE.GIT_SHA
+export TAG_PATTERN="^staging-github-.+\..+"
 export DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
 make pull-version tag-local
 
@@ -17,12 +18,11 @@ make pull-version tag-local
 echo "## Before push"
 make info-images
 
-# these variable must be available securely from travis
+# these variable must be available securely from github
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-# re-tag staging to {TRAVIS_TAG}-DATE.BUILD_NUMBER.GIT_SHA
-TRAVIS_PLATFORM_PROD_VERSION=${TRAVIS_TAG}-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
-export DOCKER_IMAGE_TAG=$TRAVIS_PLATFORM_PROD_VERSION
+# re-tag staging to {TAG}-DATE.GIT_SHA
+export DOCKER_IMAGE_TAG=${TAG}-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
 make push-version push-latest
 
 echo "## After push"

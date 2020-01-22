@@ -37,8 +37,8 @@ from utils_login import LoggedUser
 from utils_projects import NewProject
 
 API_VERSION = "v0"
-GARBAGE_COLLECTOR_INTERVAL = 2
-SERVICE_DELETION_DELAY = 2
+GARBAGE_COLLECTOR_INTERVAL = 1
+SERVICE_DELETION_DELAY = 1
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_cfg, postgres_service):
@@ -265,7 +265,7 @@ async def test_websocket_disconnected_after_logout(client, logged_user, socketio
     (UserRole.USER),
     (UserRole.TESTER),
 ])
-async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, client_session_id, socketio_client):    
+async def test_interactive_services_removed_after_logout(loop, client, logged_user, empty_user_project, mocked_director_api, mocked_dynamic_service, client_session_id, socketio_client):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -294,7 +294,7 @@ async def test_interactive_services_removed_after_logout(loop, client, logged_us
     (UserRole.TESTER, web.HTTPOk),
 ])
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(loop, client, logged_user, expected, empty_user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id):
-    
+
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
 
     # login - logged_user fixture
@@ -323,8 +323,6 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
-    # ensure we wait less than the deletion delay time
-    await sleep(SERVICE_DELETION_DELAY/2.0)
     # assert dynamic service is still around for now
     mocked_director_api["stop_service"].assert_not_called()
     # reconnect websocket

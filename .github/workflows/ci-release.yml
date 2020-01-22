@@ -1,0 +1,27 @@
+name: Github-CI-Release
+
+on:
+  push:
+    branches:
+      - staging
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+
+env:
+  # secrets can be set in settings/secrets on github
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+jobs:
+  deploy:
+    name: deploy release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@0.0.1
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      - name: deploy
+        run: ./ci/github/deploy/production

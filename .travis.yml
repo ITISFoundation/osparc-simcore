@@ -325,19 +325,19 @@ jobs:
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
     - stage: system-testing
       name: e2e testing
-      dist: trusty
-      env: 
-        - DOCKER_VERSION=18.06.3~ce~3-0~ubuntu
       language: node_js
       node_js:
-        - "8.11.3"
+        - "10"
       sudo: required
+      services:
+        - xvfb
       addons:
         apt:
           packages:
             - libnss3 # This is required to run new chrome on old trusty
             - expect-dev # for unbuffer: brings color back into travis logs
             - docker-ce
+            - python3-venv
       notifications:
         email: false
       cache:

@@ -11,9 +11,11 @@ coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/co
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
+pytest-instafail
 pytest-runner
 pytest-docker
 pytest-mock
+pytest-sugar
 
 # tools
 pylint
