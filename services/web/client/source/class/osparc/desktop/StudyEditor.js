@@ -544,7 +544,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       const brotherNodes = [];
       for (const brotherNodeId in brotherNodesObj) {
-        if (nodesGroup.getNodeId() === brotherNodeId) {
+        if (nodesGroup.getNodeId() !== brotherNodeId) {
           const brotherNode = workbench.getNode(brotherNodeId);
           brotherNodes.push(brotherNode);
         }

@@ -247,8 +247,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
-      node.addInputNodes(nodeData);
-      node.addOutputNodes(nodeData);
+      node.addInputNodes(nodeData.inputNodes);
+      node.addOutputNodes(nodeData.outputNodes);
       return node;
     },
 
@@ -343,6 +343,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
+          node.removeNodePortConnections(inputNodeId);
           delete this.__edges[edgeId];
           return true;
         }

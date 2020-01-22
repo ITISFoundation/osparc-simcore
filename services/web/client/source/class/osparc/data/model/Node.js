@@ -360,7 +360,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.addInputNodes(nodeData);
+          this.addInputNodes(nodeData.inputNodes);
         }
 
         if (nodeData.outputNodes) {
@@ -479,6 +479,17 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
     },
 
+    removeNodePortConnections: function(inputNodeId) {
+      let inputs = this.getInputValues();
+      for (const portId in inputs) {
+        if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
+          if (inputs[portId]["nodeUuid"] === inputNodeId) {
+            this.__settingsForm.removeLink(portId);
+          }
+        }
+      }
+    },
+
     getOutputWidget: function() {
       return this.__outputWidget;
     },
@@ -584,10 +595,10 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputNodes;
     },
 
-    addInputNodes: function(nodeData) {
-      if (nodeData.inputNodes) {
-        for (let i=0; i<nodeData.inputNodes.length; i++) {
-          this.addInputNode(nodeData.inputNodes[i]);
+    addInputNodes: function(inputNodes) {
+      if (inputNodes) {
+        for (let i=0; i<inputNodes.length; i++) {
+          this.addInputNode(inputNodes[i]);
         }
       }
     },
@@ -605,16 +616,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (index > -1) {
         // remove node connection
         this.__inputNodes.splice(index, 1);
-
-        // remove port connections
-        let inputs = this.getInputValues();
-        for (const portId in inputs) {
-          if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
-            if (inputs[portId]["nodeUuid"] === inputNodeId) {
-              this.__settingsForm.removeLink(portId);
-            }
-          }
-        }
         return true;
       }
       return false;
@@ -631,10 +632,10 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__outputNodes;
     },
 
-    addOutputNodes: function(nodeData) {
-      if (nodeData.outputNodes) {
-        for (let i=0; i<nodeData.outputNodes.length; i++) {
-          this.addOutputNode(nodeData.outputNodes[i]);
+    addOutputNodes: function(outputNodes) {
+      if (outputNodes) {
+        for (let i=0; i<outputNodes.length; i++) {
+          this.addOutputNode(outputNodes[i]);
         }
       }
     },
