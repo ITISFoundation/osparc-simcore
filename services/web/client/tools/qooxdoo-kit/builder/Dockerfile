@@ -36,9 +36,9 @@ ARG VCS_REF_CLIENT=undefined
 ARG VCS_STATUS_CLIENT=undefined
 
 RUN qx compile --target=build \
-  --set-env osparc.vcsOriginUrl="'${VCS_URL}'" \
-  --set-env osparc.vcsRef="'${VCS_REF}'" \
-  --set-env osparc.vcsRefClient="'${VCS_REF_CLIENT}'" \
-  --set-env osparc.vcsStatusClient="'${VCS_STATUS_CLIENT}'" &&\
+  --set-env osparc.vcsOriginUrl="${VCS_URL}" \
+  --set-env osparc.vcsRef="${VCS_REF}" \
+  --set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
+  --set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" &&\
   ls -la build-output
 # -> /project/build-output

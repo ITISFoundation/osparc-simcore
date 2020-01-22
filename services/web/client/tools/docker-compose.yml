@@ -12,7 +12,7 @@ services:
     working_dir: /project
     command: >
       qx serve --set qx.allowUrlSettings=true
-        --set-env osparc.vcsOriginUrl='"${VCS_URL}"'
-        --set-env osparc.vcsRef='"${VCS_REF}"'
-        --set-env osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
-        --set-env osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
+        --set-env osparc.vcsOriginUrl="${VCS_URL}"
+        --set-env osparc.vcsRef="${VCS_REF}"
+        --set-env osparc.vcsRefClient="${VCS_REF_CLIENT}"
+        --set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}"

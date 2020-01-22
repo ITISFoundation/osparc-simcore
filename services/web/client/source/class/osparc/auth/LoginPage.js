@@ -122,7 +122,7 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       if (platformVersion) {
-        const text = platformVersion.name + " v" + platformVersion.version;
+        const text = platformVersion.name + " " + platformVersion.version;
         const versionLink = new osparc.ui.basic.LinkLabel(text, platformVersion.url).set({
           font: "text-12",
           textColor: "text-darker"
