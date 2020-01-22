@@ -247,8 +247,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
-      node.setInputNodes(nodeData);
-      node.setOutputNodes(nodeData);
+      node.addInputNodes(nodeData);
+      node.addOutputNodes(nodeData);
       return node;
     },
 

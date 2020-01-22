@@ -360,11 +360,11 @@ qx.Class.define("osparc.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.setInputNodes(nodeData);
+          this.addInputNodes(nodeData);
         }
 
         if (nodeData.outputNodes) {
-          this.setOutputNodes(nodeData.outputNodes);
+          this.addOutputNodes(nodeData.outputNodes);
         }
 
         if (nodeData.position) {
@@ -584,7 +584,7 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputNodes;
     },
 
-    setInputNodes: function(nodeData) {
+    addInputNodes: function(nodeData) {
       if (nodeData.inputNodes) {
         for (let i=0; i<nodeData.inputNodes.length; i++) {
           this.addInputNode(nodeData.inputNodes[i]);
@@ -631,7 +631,7 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__outputNodes;
     },
 
-    setOutputNodes: function(nodeData) {
+    addOutputNodes: function(nodeData) {
       if (nodeData.outputNodes) {
         for (let i=0; i<nodeData.outputNodes.length; i++) {
           this.addOutputNode(nodeData.outputNodes[i]);
