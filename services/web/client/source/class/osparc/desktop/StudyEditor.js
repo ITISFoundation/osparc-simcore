@@ -504,6 +504,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __ungroupSelection: function() {
+      // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return false;
       }
@@ -518,28 +519,63 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         return false;
       }
-      const selectedNode = selectedNodeUIs[0].getNode();
-      if (!selectedNode.isContainer()) {
+      const nodesGroup = selectedNodeUIs[0].getNode();
+      if (!nodesGroup.isContainer()) {
         const msg = "Select a group";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         return false;
       }
 
-      const workbench = this.getStudy().getWorkbench();
 
+      // Collect info
+      const workbench = this.getStudy().getWorkbench();
+      const currentModel = this.__workbenchUI.getCurrentModel();
 
       let newParentNode = null;
-      const currentModel = this.__workbenchUI.getCurrentModel();
       if (currentModel !== workbench) {
         newParentNode = currentModel;
       }
-      const innerNodes = selectedNode.getInnerNodes(false);
-      for (const innerNodeId in innerNodes) {
-        const innerNode = innerNodes[innerNodeId];
-        workbench.moveNode(innerNode, newParentNode, selectedNode);
+
+      let brotherNodesObj = {};
+      if (currentModel.getNodeId) {
+        brotherNodesObj = currentModel.getInnerNodes(false);
+      } else {
+        brotherNodesObj = workbench.getNodes(false);
+      }
+      const brotherNodes = [];
+      for (const brotherNodeId in brotherNodesObj) {
+        if (nodesGroup.getNodeId() === brotherNodeId) {
+          const brotherNode = workbench.getNode(brotherNodeId);
+          brotherNodes.push(brotherNode);
+        }
       }
 
-      workbench.removeNode(selectedNode.getNodeId());
+      // change parents on old inner nodes
+      const innerNodes = nodesGroup.getInnerNodes(false);
+      for (const innerNodeId in innerNodes) {
+        const innerNode = innerNodes[innerNodeId];
+        workbench.moveNode(innerNode, newParentNode, nodesGroup);
+      }
+
+      // change input nodes in those nodes connected to the nodesGroup
+      for (let i=0; i<brotherNodes.length; i++) {
+        const brotherNode = brotherNodes[i];
+        if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
+          brotherNode.removeInputNode(nodesGroup.getNodeId());
+          brotherNode.addInputNodes(nodesGroup.getOutputNodes());
+        }
+      }
+
+      // update output nodes list
+      if (currentModel.isContainer()) {
+        if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
+          currentModel.removeOutputNode(nodesGroup.getNodeId());
+          currentModel.addOutputNodes(nodesGroup.getOutputNodes());
+        }
+      }
+
+      // Remove nodesGroup
+      workbench.removeNode(nodesGroup.getNodeId());
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
       this.__workbenchChanged();
