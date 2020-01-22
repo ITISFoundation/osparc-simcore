@@ -15,7 +15,8 @@ then
   echo $INFO "Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
-
+  LOG_LEVEL=debug
+  DEBUG=true
   APP_CONFIG=config-host-dev.yaml
 
   cd services/director
