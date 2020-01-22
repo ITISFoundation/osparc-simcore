@@ -185,7 +185,7 @@ properties:
               - string
               - 'null'
             pattern: ^\S+$
-            description: Used in group-nodes. Parent's node ID
+            description: Parent's (group-nodes') node ID s.
             example:
               - nodeUuid1
               - nodeUuid2

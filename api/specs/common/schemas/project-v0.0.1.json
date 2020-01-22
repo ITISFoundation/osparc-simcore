@@ -251,7 +251,7 @@
             "parent": {
               "type": ["string", "null"],
               "pattern": "^\\S+$",
-              "description": "Used in group-nodes. Parent's node ID",
+              "description": "Parent's (group-nodes') node ID s.",
               "examples": [
                 "nodeUuid1",
                 "nodeUuid2"
