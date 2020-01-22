@@ -10,9 +10,9 @@ from simcore_service_director import (config, main, registry_cache_task,
 
 @pytest.fixture
 def client(loop, aiohttp_client, aiohttp_unused_port, configure_schemas_location, configure_registry_access):
-    config.REGISTRY_CACHING = True
-    config.REGISTRY_CACHING_TTL = 5
-    # config.REGISTRY_CACHING_TTL = 5
+    config.DIRECTOR_REGISTRY_CACHING = True
+    config.DIRECTOR_REGISTRY_CACHING_TTL = 5
+    # config.DIRECTOR_REGISTRY_CACHING_TTL = 5
     app = main.setup_app()
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
 
@@ -38,11 +38,11 @@ async def test_registry_caching_task(loop, client, push_services):
     pushed_services = push_services(1,1)
     import pdb; pdb.set_trace()
     # the services shall be updated
-    await sleep(config.REGISTRY_CACHING_TTL)
+    await sleep(config.DIRECTOR_REGISTRY_CACHING_TTL)
     list_of_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(list_of_services) == 2
     # add more
     pushed_services = push_services(2,2, version="2.0.")
-    await sleep(config.REGISTRY_CACHING_TTL)
+    await sleep(config.DIRECTOR_REGISTRY_CACHING_TTL)
     list_of_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(list_of_services) == len(pushed_services)

@@ -17,8 +17,8 @@ logging.basicConfig(
 API_VERSION: str = "v0"
 API_ROOT: str = "api"
 
-REGISTRY_CACHING: bool = os.environ.get("REGISTRY_CACHING", True) in ["true", "True", True]
-REGISTRY_CACHING_TTL: int = int(os.environ.get("REGISTRY_CACHING_TTL", 15*60))
+DIRECTOR_REGISTRY_CACHING: bool = os.environ.get("DIRECTOR_REGISTRY_CACHING", True) in ["true", "True", True]
+DIRECTOR_REGISTRY_CACHING_TTL: int = int(os.environ.get("DIRECTOR_REGISTRY_CACHING_TTL", 15*60))
 APP_REGISTRY_CACHE_DATA_KEY: str = __name__ + "_registry_cache_data"
 
 REGISTRY_AUTH: bool = os.environ.get("REGISTRY_AUTH", False) in ["true", "True", True]
