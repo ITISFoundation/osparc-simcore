@@ -47,6 +47,10 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
         return that.__getLabelWOutputs(); // eslint-disable-line no-underscore-dangle
       }
     });
+    this.getNode().addListener("outputListChanged", () => {
+      const newLabel = this.__getLabelWOutputs();
+      this.getAtom().setLabel(newLabel);
+    });
   },
 
   members: {

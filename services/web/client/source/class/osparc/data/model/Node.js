@@ -177,7 +177,8 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
-    "showInLogger": "qx.event.type.Data"
+    "showInLogger": "qx.event.type.Data",
+    "outputListChanged": "qx.event.type.Event"
   },
 
   statics: {
@@ -643,6 +644,7 @@ qx.Class.define("osparc.data.model.Node", {
     addOutputNode: function(outputNodeId) {
       if (!this.__outputNodes.includes(outputNodeId)) {
         this.__outputNodes.push(outputNodeId);
+        this.fireEvent("outputListChanged");
         return true;
       }
       return false;
@@ -653,6 +655,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (index > -1) {
         // remove node connection
         this.__outputNodes.splice(index, 1);
+        this.fireEvent("outputListChanged");
       }
       return false;
     },
