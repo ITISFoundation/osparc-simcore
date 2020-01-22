@@ -41,9 +41,15 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     this.base(arguments, node);
 
     const atom = this.getAtom();
+    let that = this;
     this.getNode().bind("label", atom, "label", {
-      converter: function(data) {
-        return data + "'s<br>outputs";
+      converter: function(nodeLabel) {
+        let text = nodeLabel + "'s<br>outputs:";
+        const outputLabels = that.__getOutputLabels(); // eslint-disable-line no-underscore-dangle
+        for (let i=0; i<outputLabels; i++) {
+          text += "<br> - " + outputLabels[i];
+        }
+        return text;
       }
     });
   },
@@ -54,6 +60,17 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
 
       const metaData = this.getNode().getMetaData();
       this._createUIPorts(true, metaData.inputs);
+    },
+
+    __getOutputLabels: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
+      const outputLabels = [];
+      const outputNodes = this.getNode().getOutputNodes();
+      for (let i=0; i<outputNodes.length; i++) {
+        outputLabels.push(workbench.getNode(outputNodes[i]).getLabel());
+      }
+      return outputLabels;
     }
   }
 });
