@@ -23,12 +23,13 @@ asyncpg
 celery
 cryptography
 change_case
+expiringdict
 jinja_app_loader
+jsondiff
 passlib
 passwordmeter
+python-socketio
 semantic_version
 tenacity
 trafaret
 trafaret_config
-python-socketio
-jsondiff

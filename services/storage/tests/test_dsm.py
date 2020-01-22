@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -14,18 +12,14 @@ import io
 import json
 import os
 import urllib
-import uuid
-from asyncio import Future
 from pathlib import Path
-from pprint import pprint
 from shutil import copyfile
 
 import attr
 import pytest
 
 import utils
-from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData, FileMetaDataEx
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
 from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -358,7 +352,6 @@ def test_fmd_build():
     assert fmd.location_id == SIMCORE_S3_ID
     assert fmd.bucket_name == "test-bucket"
 
-
 async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
     dsm = dsm_fixture
     _id = "21"
@@ -373,7 +366,6 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.project_name
         assert d.raw_file_path
 
-
 async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
     file_1, file_2 = dsm_mockup_complete_db
     _id = "21"
@@ -385,7 +377,6 @@ async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
     response = await dsm_fixture.delete_project_simcore_s3(user_id=_id, project_id=file_1["project_id"], node_id=None)
     data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
     assert not data
-
 
 async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_structured_testbucket):
     if not has_datcore_tokens():
