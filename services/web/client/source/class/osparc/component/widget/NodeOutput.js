@@ -46,7 +46,7 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
       converter: function(nodeLabel) {
         let text = nodeLabel + "'s<br>outputs:";
         const outputLabels = that.__getOutputLabels(); // eslint-disable-line no-underscore-dangle
-        for (let i=0; i<outputLabels; i++) {
+        for (let i=0; i<outputLabels.length; i++) {
           text += "<br> - " + outputLabels[i];
         }
         return text;
