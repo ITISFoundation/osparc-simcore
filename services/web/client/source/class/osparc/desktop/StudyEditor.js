@@ -388,10 +388,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __getOutReferences: function() {
-
-    },
-
     __getAveragePosition: function(nodes) {
       let avgX = 0;
       let avgY = 0;

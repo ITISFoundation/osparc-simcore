@@ -196,7 +196,6 @@ qx.Class.define("osparc.data.model.Study", {
             lastChangeDate: new Date(data.lastChangeDate),
             workbench: this.getWorkbench()
           });
-          // this.setWorkbench(new osparc.data.model.Workbench(data.workbench));
           return data;
         });
     }
