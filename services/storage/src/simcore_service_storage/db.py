@@ -35,13 +35,17 @@ async def pg_engine(app: web.Application):
         log.info("Init tables for testing")
         await __create_tables(**params)
 
-    async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
-        app[APP_DB_ENGINE_KEY] = engine
+    app[APP_DB_ENGINE_KEY] = engine = await create_engine(application_name=f'{__name__}_{id(app)}', **params)
 
-        yield # ----------
+    yield # ----------
 
-        if engine is not app.get(APP_DB_ENGINE_KEY):
-            log.error("app does not hold right db engine")
+    if engine is not app.get(APP_DB_ENGINE_KEY):
+        log.critical("app does not hold right db engine. Somebody has changed it??")
+
+    if engine:
+        engine.close()
+        await engine.wait_closed()
+        log.debug("engine '%s' after shutdown: closed=%s, size=%d", engine.dsn, engine.closed, engine.size)
 
 async def is_service_responsive(app:web.Application):
     """ Returns true if the app can connect to db service
