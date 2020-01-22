@@ -7,10 +7,10 @@ from yarl import URL
 from simcore_service_director import config
 
 
-def cache_requests(http_request: Any):
+def cache_requests(http_request: callable):
     @wraps(http_request)
     async def wrapped(app: web.Application, url: URL, method: str ="GET") -> Tuple[Dict, Dict]:
-        if config.REGISTRY_CACHING:
+        if config.REGISTRY_CACHING and method == "GET":
             cache_data = app[config.APP_REGISTRY_CACHE_DATA_KEY]
             cache_key = "{}_{}".format(url, method)
             if cache_key in cache_data:
