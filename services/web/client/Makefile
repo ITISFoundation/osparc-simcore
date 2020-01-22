@@ -23,10 +23,10 @@ compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --rm qooxdoo-kit \
 		qx compile $(flags)\
-			--set osparc.vcsRef='"${VCS_REF}"' \
-			--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
-			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
-			--set osparc.vcsOriginUrl='"${VCS_URL}"'
+			--set-env osparc.vcsRef='"${VCS_REF}"' \
+			--set-env osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
+			--set-env osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
+			--set-env osparc.vcsOriginUrl='"${VCS_URL}"'
 
 .PHONY: compile touch
 compile: ## qx compiles host' 'source' -> image's 'build-output'
@@ -47,10 +47,10 @@ down: ## tear down docker-compose
 define qx_serve =
 			qx serve $(flags) \
 				--set qx.allowUrlSettings=true \
-				--set osparc.vcsOriginUrl='"${VCS_URL}"' \
-				--set osparc.vcsRef='"${VCS_REF}"' \
-				--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
-				--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
+				--set-env osparc.vcsOriginUrl='"${VCS_URL}"' \
+				--set-env osparc.vcsRef='"${VCS_REF}"' \
+				--set-env osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
+				--set-env osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
 endef
 
 .PHONY: serve-dev
