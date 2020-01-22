@@ -35,6 +35,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       const name = "osparc-simcore";
       const commitId = qx.core.Environment.get("osparc.vcsRef");
       const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
+      
 
       let url = remoteUrl;
       if (commitId) {
@@ -119,6 +120,19 @@ qx.Class.define("osparc.utils.LibVersions", {
       }, this);
 
       return libs;
+    },
+    
+    getPlatformName: function() {
+      const stackName = qx.core.Environment.get("osparc.stackName");
+      let platformName = "dev";
+      if (stackName.includes("master")) {
+        platformName = "master";
+      } else if (stackName.includes("staging")) {
+        platformName = "staging";
+      } else if (stackName.includes("production")) {
+        platformName = "";
+      }
+      return platformName;
     }
   }
 });

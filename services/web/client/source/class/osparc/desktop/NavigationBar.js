@@ -62,7 +62,22 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     };
 
     let logo = osparc.component.widget.LogoOnOff.getInstance();
-    this._add(logo);
+    const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      alignY: "middle"
+    }));
+    logoContainer.add(logo);
+    const wrapperContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    wrapperContainer.add(logoContainer, {
+      height: "100%"
+    });
+    const platformLabel = new qx.ui.basic.Label(osparc.utils.LibVersions.getPlatformName().toUpperCase()).set({
+      font: "text-9"
+    });
+    wrapperContainer.add(platformLabel, {
+      bottom: 3,
+      right: 0
+    });
+    this._add(wrapperContainer);
     this._add(new qx.ui.toolbar.Separator());
 
     let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({

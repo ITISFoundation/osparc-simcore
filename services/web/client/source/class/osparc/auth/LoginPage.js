@@ -121,8 +121,9 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
 
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+      const platformName = osparc.utils.LibVersions.getPlatformName();
       if (platformVersion) {
-        const text = platformVersion.name + " " + platformVersion.version;
+        const text = platformVersion.name + " " + platformVersion.version + (platformName.length ? ` (${platformName})` : " (production)");
         const versionLink = new osparc.ui.basic.LinkLabel(text, platformVersion.url).set({
           font: "text-12",
           textColor: "text-darker"
@@ -133,7 +134,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         versionLinkLayout.add(separator);
       }
 
-      const organizationLink = new osparc.ui.basic.LinkLabel("© 2019 IT'IS Foundation", "https://itis.swiss").set({
+      const organizationLink = new osparc.ui.basic.LinkLabel("© 2020 IT'IS Foundation", "https://itis.swiss").set({
         font: "text-12",
         textColor: "text-darker"
       });
