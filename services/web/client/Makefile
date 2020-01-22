@@ -22,7 +22,8 @@ qx_packages:
 compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --rm qooxdoo-kit \
-		qx compile $(flags)\
+		qx compile $(flags) \
+			--set-env osparc.stackName="${SWARM_STACK_NAME}" \
 			--set-env osparc.vcsRef="${VCS_REF}" \
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
@@ -47,6 +48,7 @@ down: ## tear down docker-compose
 define qx_serve =
 			qx serve $(flags) \
 				--set qx.allowUrlSettings=true \
+				--set-env osparc.stackName="${SWARM_STACK_NAME}" \
 				--set-env osparc.vcsOriginUrl="${VCS_URL}" \
 				--set-env osparc.vcsRef="${VCS_REF}" \
 				--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
