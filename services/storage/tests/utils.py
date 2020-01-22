@@ -107,7 +107,7 @@ def create_full_tables(url):
     meta = sa.MetaData()
     engine = sa.create_engine(url)
 
-    meta.drop_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])
+    meta.drop_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users], checkfirst=True)
     meta.create_all(bind=engine, tables=[file_meta_data, projects, user_to_projects, users])
 
     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
@@ -117,7 +117,7 @@ def create_full_tables(url):
             data_df = pd.read_csv(file)
             data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
 
-    # Leave here as a reference
+    # NOTE: Leave here as a reference
     # import psycopg2
     # conn = psycopg2.connect(url)
     # cur = conn.cursor()

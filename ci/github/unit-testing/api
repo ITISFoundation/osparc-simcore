@@ -12,7 +12,9 @@ install() {
 }
 
 test() {
-    pytest --cov=api --cov-append --color=yes --cov-report=term-missing --cov-report=xml --verbose api/tests
+  pytest --cov=api --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml \
+          -v -m "not travis" api/tests
 }
 
 # Check if the function exists (bash specific)

@@ -462,7 +462,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__pipelineId = null;
-        this.getLogger().error("root", "Submition failed");
+        this.getLogger().error("root", "Submission failed");
       } else {
         this.__pipelineId = pipelineId;
         this.getLogger().info("root", "Pipeline started");

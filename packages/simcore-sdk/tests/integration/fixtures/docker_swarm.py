@@ -1,10 +1,7 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import os
 import socket
 import subprocess
 import time
@@ -12,7 +9,6 @@ from pathlib import Path
 
 import docker
 import pytest
-import yaml
 
 
 def _get_ip()->str:
@@ -70,12 +66,12 @@ def docker_stack(docker_swarm, docker_client, core_services_config_file: Path, o
         for service in services:
             for n in range(retry_count):
                 assert (time.time() - start_time) < max_wait_time_s
-                task = service.tasks()[0]
-                if task["Status"]["State"].upper() in pre_states:
-                    print(f"Waiting for {service.name}...")
-                else:
-                    assert task["Status"]["State"].upper() == "RUNNING"
-                    break
+                if service.tasks():
+                    task = service.tasks()[0]
+                    if task["Status"]["State"].upper() not in pre_states:
+                        assert task["Status"]["State"].upper() == "RUNNING"
+                        break
+                print(f"Waiting for {service.name}...")
                 time.sleep(WAIT_TIME_BEFORE_RETRY)
 
 
