@@ -149,7 +149,7 @@ services:
       - computational_services_subnet
 
   postgres:
-    image: postgres:10.10
+    image: postgres:10.11
     init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
