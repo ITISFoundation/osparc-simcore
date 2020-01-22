@@ -43,13 +43,8 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     const atom = this.getAtom();
     let that = this;
     this.getNode().bind("label", atom, "label", {
-      converter: function(nodeLabel) {
-        let text = nodeLabel + "'s<br>outputs:";
-        const outputLabels = that.__getOutputLabels(); // eslint-disable-line no-underscore-dangle
-        for (let i=0; i<outputLabels.length; i++) {
-          text += "<br> - " + outputLabels[i];
-        }
-        return text;
+      converter: function() {
+        return that.__getLabelWOutputs(); // eslint-disable-line no-underscore-dangle
       }
     });
   },
@@ -60,6 +55,15 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
 
       const metaData = this.getNode().getMetaData();
       this._createUIPorts(true, metaData.inputs);
+    },
+
+    __getLabelWOutputs: function() {
+      let text = this.getNode().getLabel() + "'s<br>outputs:";
+      const outputLabels = this.__getOutputLabels();
+      for (let i=0; i<outputLabels.length; i++) {
+        text += "<br> - " + outputLabels[i];
+      }
+      return text;
     },
 
     __getOutputLabels: function() {
