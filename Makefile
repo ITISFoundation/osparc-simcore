@@ -278,7 +278,7 @@ PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
-	/bin/bash -c "pylint --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*contrib*" \
 											-not -path "*-sdk/python*" \
