@@ -15,7 +15,9 @@ install() {
 }
 
 test() {
-    pytest --cov=simcore_service_webserver --cov-append -v services/web/server/tests/integration
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+        --color=yes --cov-report=term-missing --cov-report=xml \
+        -v -m "not travis" services/web/server/tests/integration
 }
 
 clean_up() {

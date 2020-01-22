@@ -23,6 +23,7 @@ version: '3.7'
 services:
 
   adminer:
+    init: true
     image: adminer
     ports:
       - 18080:8080
@@ -30,6 +31,7 @@ services:
       - simcore_default
 
   portainer:
+    init: true
     image: portainer/portainer
     ports:
       - "9000:9000"
@@ -56,6 +58,7 @@ services:
       - computational_services_subnet
   
   redis-commander:
+    init: true
     image: rediscommander/redis-commander:latest
     restart: always
     environment: 
@@ -64,7 +67,7 @@ services:
       - "18081:8081"
     networks:
       - simcore_default
-    
+
 volumes:
   minio_data: {}
   portainer_data: {}

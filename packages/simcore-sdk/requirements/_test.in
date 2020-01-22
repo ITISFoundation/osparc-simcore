@@ -12,8 +12,10 @@ pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-docker
+pytest-instafail
 pytest-mock
 pytest-runner
+pytest-sugar
 
 # mockups/fixtures
 mock

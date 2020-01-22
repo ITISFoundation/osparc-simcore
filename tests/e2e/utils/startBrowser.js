@@ -17,6 +17,7 @@ async function launch(demo) {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--start-maximized'
       ]
     };
     Object.assign(options, woSandbox);
