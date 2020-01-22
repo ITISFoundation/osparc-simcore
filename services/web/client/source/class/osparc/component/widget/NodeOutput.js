@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     },
 
     __getLabelWOutputs: function() {
-      let text = this.getNode().getLabel() + "'s<br>outputs:";
+      let text = "<b>" + this.getNode().getLabel() + "'s<br>outputs:</b>";
       const outputLabels = this.__getOutputLabels();
       for (let i=0; i<outputLabels.length; i++) {
         text += "<br> - " + outputLabels[i];
