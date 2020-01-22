@@ -19,7 +19,7 @@ install-dev install-prod install-ci: ## install app in development/production or
 .PHONY: test
 test: ## runs unit tests
 	# running unit tests
-	@pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests
+	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
 .PHONY: version-patch version-minor

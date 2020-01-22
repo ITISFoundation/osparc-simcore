@@ -26,7 +26,7 @@ install-dev install-prod install-ci: openapi-specs ## install app in development
 .PHONY: tests
 tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests
+	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
 .PHONY: build
