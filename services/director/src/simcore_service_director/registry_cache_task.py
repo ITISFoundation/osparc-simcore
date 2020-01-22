@@ -3,7 +3,7 @@ import logging
 
 from aiohttp import web
 
-from simcore_service_director import config, exceptions, registry_proxy
+from simcore_service_director import config, registry_proxy
 from simcore_service_director.config import APP_REGISTRY_CACHE_DATA_KEY
 
 _logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ async def registry_caching_task(app: web.Application) -> None:
             await asyncio.sleep(config.REGISTRY_CACHING_TTL)
     except asyncio.CancelledError:
         _logger.info("%s: cancelling task...", TASK_NAME)
-    except exceptions.DirectorException:
+    except Exception: #pylint: disable=broad-except
         _logger.exception("%s: exception while retrieving list of services in cache", TASK_NAME)
     finally:
         _logger.info("%s: finished task...clearing cache...", TASK_NAME)
