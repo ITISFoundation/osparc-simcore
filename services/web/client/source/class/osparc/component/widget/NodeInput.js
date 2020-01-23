@@ -39,9 +39,6 @@ qx.Class.define("osparc.component.widget.NodeInput", {
   */
   construct: function(node) {
     this.base(arguments, node);
-
-    const atom = this.getAtom();
-    this.getNode().bind("label", atom, "label");
   },
 
   members: {

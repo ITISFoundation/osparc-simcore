@@ -36,21 +36,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
     this.set({
       decorator: "main"
     });
-
-    let atom = this.__atom = new qx.ui.basic.Atom().set({
-      rich: true,
-      center: true,
-      draggable: true,
-      droppable: true
-    });
-    atom.getChildControl("label").set({
-      font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-16"]),
-      textAlign: "center"
-    });
-
-    this._add(atom, {
-      flex: 1
-    });
   },
 
   properties: {
@@ -78,12 +63,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
   },
 
   members: {
-    __atom: null,
-
-    getAtom: function() {
-      return this.__atom;
-    },
-
     getNodeId: function() {
       return this.getNode().getNodeId();
     },
