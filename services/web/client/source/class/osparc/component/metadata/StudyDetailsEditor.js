@@ -239,7 +239,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       this.__tagsContainer = this.__tagsContainer || new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this.__tagsContainer.removeAll();
       this.__tagsContainer.setMarginTop(5);
-      osparc.store.Store.getInstance().getTags().filter(tag =>this.__selectedTags.includes(tag.id))
+      osparc.store.Store.getInstance().getTags().filter(tag => this.__selectedTags.includes(tag.id))
         .forEach(selectedTag => {
           this.__tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
         });

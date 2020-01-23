@@ -48,7 +48,8 @@ qx.Class.define("osparc.data.model.Study", {
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
       prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
-      lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate)
+      lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
+      tags: studyData.tags || []
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
@@ -108,6 +109,11 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false
+    },
+
+    tags: {
+      check: "Array",
+      init: []
     }
   },
 
@@ -122,7 +128,8 @@ qx.Class.define("osparc.data.model.Study", {
         prjOwner: "",
         creationDate: new Date(),
         lastChangeDate: new Date(),
-        workbench: {}
+        workbench: {},
+        tags: []
       };
     },
     updateStudy: function(params) {

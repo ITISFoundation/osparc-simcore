@@ -344,19 +344,10 @@ class ProjectDBAPI:
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects.c.id, projects.c.uuid]).\
-                select_from(joint_table).\
-                    where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
-            result = await conn.execute(query)
-
-            # ensure we have found one
-            row = await result.first()
-            if not row:
-                raise ProjectNotFoundError(project_uuid)
+            row = await self._get_study(user_id, project_uuid)
 
             # uuid can ONLY be set upon creation
-            if row[projects.c.uuid] != project_data["uuid"]:
+            if row[projects.c.uuid.key] != project_data["uuid"]:
                 # TODO: add message
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
             # TODO: should also take ownership???
@@ -369,7 +360,7 @@ class ProjectDBAPI:
             # pylint: disable=E1120
             query = projects.update().\
                 values(**_convert_to_db_names(project_data)).\
-                    where(projects.c.id == row[projects.c.id])
+                    where(projects.c.id == row[projects.c.id.key])
             await conn.execute(query)
 
 
