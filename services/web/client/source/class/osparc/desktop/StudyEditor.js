@@ -560,6 +560,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
           brotherNode.addInputNodes(nodesGroup.getOutputNodes());
+
+          if (brotherNode.isContainer()) {
+            const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
+            broInnerNodes.forEach(broInnerNode => {
+              if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
+                broInnerNode.removeInputNode(nodesGroup.getNodeId());
+                broInnerNode.addInputNodes(nodesGroup.getOutputNodes());
+              }
+            });
+          }
         }
       });
 
