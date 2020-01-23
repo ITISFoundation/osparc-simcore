@@ -81,9 +81,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return SVG(id);
     },
 
-    drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
-      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
-
+    __curateControls: function(controls) {
       [
         controls[0],
         controls[1],
@@ -97,8 +95,14 @@ qx.Class.define("osparc.wrapper.Svg", {
           control.y = 0;
         }
       });
+    },
 
-      let path = draw.path()
+    drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
+      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+
+      this.__curateControls(controls);
+
+      const path = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
@@ -107,13 +111,12 @@ qx.Class.define("osparc.wrapper.Svg", {
           color: edgeColor
         });
 
-      let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
-        add.circle(portSphereDiameter)
-          .fill(edgeColor);
+      const marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
+        add.circle(portSphereDiameter).fill(edgeColor);
       });
       path.marker("start", marker1);
 
-      let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
+      const marker2 = draw.marker(arrowSize, arrowSize, function(add) {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
           .size(arrowSize, arrowSize);
