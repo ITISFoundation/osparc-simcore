@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
       droppable: true
     });
 
-    this._.add(new qx.ui.core.Spacer(), {
+    this._add(new qx.ui.core.Spacer(), {
       flex: 1
     });
 
@@ -97,7 +97,7 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     __populateOutputs: function() {
       const outputs = this.__outputs;
       outputs.removeAll();
-      const outputNodes = this.__getOutputNodes();
+      const outputNodes = this._getOutputNodes();
       outputNodes.forEach(outputNode => {
         const label = new qx.ui.basic.Label().set({
           textAlign: "center"
@@ -113,17 +113,6 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
 
       const metaData = this.getNode().getMetaData();
       this._createUIPorts(true, metaData.inputs);
-    },
-
-    __getOutputNodes: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const workbench = study.getWorkbench();
-      const outputNodes = [];
-      const outputNodeIds = this.getNode().getOutputNodes();
-      outputNodeIds.forEach(outputNodeId => {
-        outputNodes.push(workbench.getNode(outputNodeId));
-      });
-      return outputNodes;
     }
   }
 });
