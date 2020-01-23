@@ -228,13 +228,9 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
           this.getStudyTitle(),
           this.getCreator()
         ];
-        for (let i=0; i<checks.length; i++) {
-          const label = checks[i].trim().toLowerCase();
-          if (label.indexOf(data.text) !== -1) {
-            return false;
-          }
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+          return true;
         }
-        return true;
       }
       if (data.tags && data.tags.length) {
         const tagNames = this.getTags().map(tag => tag.name);
