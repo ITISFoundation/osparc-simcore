@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
 
     getEdgePoint: function(port) {
       const nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null || Number.isNaN(nodeBounds.left)) {
+      if (nodeBounds === null) {
         // not rendered yet
         return null;
       }

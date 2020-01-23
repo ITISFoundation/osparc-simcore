@@ -84,6 +84,20 @@ qx.Class.define("osparc.wrapper.Svg", {
     drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
       const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
 
+      [
+        controls[0],
+        controls[1],
+        controls[2],
+        controls[3]
+      ].forEach(control => {
+        if (Number.isNaN(control.x)) {
+          control.x = 0;
+        }
+        if (Number.isNaN(control.y)) {
+          control.y = 0;
+        }
+      });
+
       let path = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
