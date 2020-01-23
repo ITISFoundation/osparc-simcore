@@ -236,11 +236,20 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
         }
         return true;
       }
+      if (data.tags && data.tags.length) {
+        const tagNames = this.getTags().map(tag => tag.name);
+        if (data.tags.filter(tag => tagNames.includes(tag)).length == 0) {
+          return true;
+        }
+      }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
       if (data.text && data.text.length > 1) {
+        return true;
+      }
+      if (data.tags && data.tags.length) {
         return true;
       }
       return false;
