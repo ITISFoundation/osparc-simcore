@@ -68,6 +68,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
       const node = this.getNode();
 
       const nodeUILayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        height: 80,
         backgroundColor: "node-notselected-backgroud",
         draggable: true,
         droppable: true
@@ -77,7 +78,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         font: "text-13",
         textColor: "#DCDCDC",
         textAlign: "left",
-        height: 20,
+        height: 16,
         padding: 3
       });
       node.bind("label", header, "value");
@@ -85,8 +86,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         font: "text-13",
         textColor: "#BABABA",
         allowGrowX: true,
-        alignX: "right",
-        height: 40,
+        textAlign: "right",
         padding: 5
       });
       const progressBar = new qx.ui.indicator.ProgressBar().set({
@@ -94,6 +94,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         margin: 4
       });
       node.bind("label", progressBar, "value");
+
       nodeUILayout.add(header);
       nodeUILayout.add(new qx.ui.core.Spacer(), {
         flex: 1
