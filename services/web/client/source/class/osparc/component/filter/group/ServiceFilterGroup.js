@@ -18,7 +18,7 @@
 /**
  * Widget that contains the service filters.
  */
-qx.Class.define("osparc.desktop.ServiceFilters", {
+qx.Class.define("osparc.component.filter.group.ServiceFilterGroup", {
   extend: qx.ui.core.Widget,
 
   /**

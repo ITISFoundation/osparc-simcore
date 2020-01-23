@@ -65,6 +65,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       flex: 1
     });
 
+    this.__userReady = false;
     const interval = 500;
     let userTimer = new qx.event.Timer(interval);
     userTimer.addListener("interval", () => {
@@ -190,7 +191,10 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __initResources: function() {
-      this.__userReady = osparc.data.Permissions.getInstance().arePermissionsReady();
+      osparc.data.Resources.get("tags")
+        .then(() => {
+          this.__userReady = true;
+        });
       this.__getServicesPreload();
     },
 
@@ -203,11 +207,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
-      const studyFilters = this.__studyFilters = new osparc.component.filter.TextFilter("text", "studyBrowser");
-      osparc.utils.Utils.setIdToWidget(studyFilters, "studyFiltersTextFld");
-      studyFilters.getChildControl("textfield").set({
-        width: 210
-      });
+      const studyFilters = this.__studyFilters = new osparc.component.filter.group.StudyFilterGroup("studyBrowser");
 
       const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
         appearance: "xl-button",
@@ -273,12 +273,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           console.error(err);
         });
 
-      osparc.data.Resources.get("tags")
-        .then(() => {
-          this.reloadUserStudies();
-          this.reloadTemplateStudies();
-        })
-        .catch(console.error);
+        this.reloadUserStudies();
+        this.reloadTemplateStudies();
     },
 
     __createDeleteButton: function() {
@@ -303,7 +299,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __attachEventHandlers: function() {
-      const textfield = this.__studyFilters.getChildControl("textfield", true);
+      const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield");
       textfield.addListener("appear", () => {
         textfield.focus();
       }, this);
@@ -435,13 +431,18 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudyItem: function(study, isTemplate) {
+      const tags =
+        study.tags ?
+          osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id))
+          :
+          [];
       const item = new osparc.desktop.StudyBrowserListItem().set({
         uuid: study.uuid,
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        tags: osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id))
+        tags
       });
 
       item.subscribeToFilterGroup("studyBrowser");
