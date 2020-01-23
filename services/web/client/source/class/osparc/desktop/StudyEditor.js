@@ -422,10 +422,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const selectedNodes = [];
       const selectedNodeIds = [];
-      for (let i=0; i<selectedNodeUIs.length; i++) {
-        selectedNodes.push(selectedNodeUIs[i].getNode());
-        selectedNodeIds.push(selectedNodeUIs[i].getNodeId());
-      }
+      selectedNodeUIs.forEach(selectedNodeUI => {
+        selectedNodes.push(selectedNodeUI.getNode());
+        selectedNodeIds.push(selectedNodeUI.getNodeId());
+      });
 
       let brotherNodesObj = {};
       if (currentModel.getNodeId) {
@@ -461,41 +461,37 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       // find inputNodes for nodesGroup
-      for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i];
+      selectedNodes.forEach(selectedNode => {
         const selInputNodes = selectedNode.getInputNodes();
-        for (let j=0; j<selInputNodes.length; j++) {
-          const inputNode = selInputNodes[j];
+        selInputNodes.forEach(inputNode => {
           const index = selectedNodeIds.indexOf(inputNode);
           if (index === -1) {
             nodesGroup.addInputNode(inputNode);
           }
-        }
-      }
+        });
+      });
 
       // change input nodes in those nodes connected to the selected ones
-      for (let i=0; i<brotherNodes.length; i++) {
-        const brotherNode = brotherNodes[i];
-        for (let j=0; j<selectedNodes.length; j++) {
-          const selectedNodeId = selectedNodes[j].getNodeId();
+      brotherNodes.forEach(brotherNode => {
+        selectedNodes.forEach(selectedNode => {
+          const selectedNodeId = selectedNode.getNodeId();
           if (brotherNode.isInputNode(selectedNodeId)) {
             brotherNode.addInputNode(nodesGroup.getNodeId());
             brotherNode.removeInputNode(selectedNodeId);
             nodesGroup.addOutputNode(selectedNodeId);
           }
-        }
-      }
+        });
+      });
 
       // update output nodes list
       if (currentModel.isContainer()) {
-        for (let i=0; i<selectedNodes.length; i++) {
-          const selectedNodeId = selectedNodes[i].getNodeId();
+        selectedNodes.forEach(selectedNodeId => {
           if (currentModel.isOutputNode(selectedNodeId)) {
             currentModel.removeOutputNode(selectedNodeId);
             nodesGroup.addOutputNode(selectedNodeId);
             currentModel.addOutputNode(nodesGroup.getNodeId());
           }
-        }
+        });
       }
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
@@ -558,13 +554,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       // change input nodes in those nodes connected to the nodesGroup
-      for (let i=0; i<brotherNodes.length; i++) {
-        const brotherNode = brotherNodes[i];
+      brotherNodes.forEach(brotherNode => {
         if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
           brotherNode.removeInputNode(nodesGroup.getNodeId());
           brotherNode.addInputNodes(nodesGroup.getOutputNodes());
         }
-      }
+      });
 
       // update output nodes list
       if (currentModel.isContainer()) {
