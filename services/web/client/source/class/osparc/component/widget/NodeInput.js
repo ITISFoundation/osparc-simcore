@@ -43,10 +43,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
 
   members: {
     populateNodeLayout: function() {
-      this.emptyPorts();
-
-      const metaData = this.getNode().getMetaData();
-      this._createUIPorts(false, metaData.outputs);
+      this._populateNodeLayout(false);
     }
   }
 });

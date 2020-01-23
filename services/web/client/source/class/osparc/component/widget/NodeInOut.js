@@ -122,7 +122,14 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
       return outputNodes;
     },
 
-    _createUIPorts: function(isInput, ports) {
+    _populateNodeLayout: function(isInput) {
+      this.emptyPorts();
+
+      const metaData = this.getNode().getMetaData();
+      this.__createUIPorts(isInput, metaData.outputs);
+    },
+
+    __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;

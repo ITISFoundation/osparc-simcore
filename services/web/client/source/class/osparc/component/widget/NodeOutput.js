@@ -100,21 +100,25 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
       const outputs = this.__outputs;
       outputs.removeAll();
       const outputNodes = this._getOutputNodes();
-      outputNodes.forEach(outputNode => {
-        const label = new qx.ui.basic.Label().set({
+      if (outputNodes.length === 0) {
+        const label = new qx.ui.basic.Label(this.tr("No outputs")).set({
           textAlign: "center"
         });
-        outputNode.bind("label", label, "value");
         outputs.add(label);
-      });
+      } else {
+        outputNodes.forEach(outputNode => {
+          const label = new qx.ui.basic.Label().set({
+            textAlign: "center"
+          });
+          outputNode.bind("label", label, "value");
+          outputs.add(label);
+        });
+      }
       return outputs;
     },
 
     populateNodeLayout: function() {
-      this.emptyPorts();
-
-      const metaData = this.getNode().getMetaData();
-      this._createUIPorts(true, metaData.inputs);
+      this._populateNodeLayout(true);
     }
   }
 });
