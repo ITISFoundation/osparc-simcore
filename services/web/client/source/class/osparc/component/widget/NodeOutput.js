@@ -62,7 +62,9 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     });
     this._add(header);
 
-    const outputs = this.__outputs = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const outputs = this.__outputs = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+      alignX: "center"
+    }));
     this.getNode().addListener("outputListChanged", () => {
       this.__populateOutputs();
     });
