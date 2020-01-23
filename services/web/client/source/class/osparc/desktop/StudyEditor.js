@@ -494,6 +494,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
       this.__workbenchChanged();
+
+      this.__workbenchUI.resetSelectedNodes();
+
       return true;
     },
 
@@ -572,6 +575,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
       this.__workbenchChanged();
+
+      this.__workbenchUI.resetSelectedNodes();
+
       return true;
     },
 

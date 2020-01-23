@@ -293,6 +293,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return this.__selectedNodes;
     },
 
+    resetSelectedNodes: function() {
+      this.__selectedNodes = [];
+    },
+
     __activeNodeChanged: function(activeNode, isControlPressed = false) {
       if (isControlPressed) {
         this.__selectedNodes.forEach(node => {
@@ -302,7 +306,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectedNodes.forEach(node => {
           node.setTriSelected(0);
         });
-        this.__selectedNodes = [];
+        this.resetSelectedNodes();
       }
 
       activeNode.setTriSelected(2);
