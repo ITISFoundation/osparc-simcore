@@ -391,11 +391,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __getAveragePosition: function(nodes) {
       let avgX = 0;
       let avgY = 0;
-      for (let i=0; i<nodes.length; i++) {
-        const node = nodes[i];
+      nodes.forEach(node => {
         avgX += node.getPosition().x;
         avgY += node.getPosition().y;
-      }
+      });
       avgX /= nodes.length;
       avgY /= nodes.length;
       return {
@@ -455,10 +454,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       nodesGroup.setPosition(avgPos.x, avgPos.y);
 
       // change parents on future inner nodes
-      for (let i=0; i<selectedNodes.length; i++) {
-        const selectedNode = selectedNodes[i];
+      selectedNodes.forEach(selectedNode => {
         workbench.moveNode(selectedNode, nodesGroup, parentNode);
-      }
+      });
 
       // find inputNodes for nodesGroup
       selectedNodes.forEach(selectedNode => {
