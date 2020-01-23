@@ -483,7 +483,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // update output nodes list
       if (currentModel.isContainer()) {
-        selectedNodes.forEach(selectedNodeId => {
+        selectedNodes.forEach(selectedNode => {
+          const selectedNodeId = selectedNode.getNodeId();
           if (currentModel.isOutputNode(selectedNodeId)) {
             currentModel.removeOutputNode(selectedNodeId);
             nodesGroup.addOutputNode(selectedNodeId);
