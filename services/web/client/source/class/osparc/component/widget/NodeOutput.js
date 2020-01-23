@@ -99,7 +99,7 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
     __populateOutputs: function() {
       const outputs = this.__outputs;
       outputs.removeAll();
-      const outputNodes = this._getOutputNodes();
+      const outputNodes = this.__getOutputNodes();
       if (outputNodes.length === 0) {
         const label = new qx.ui.basic.Label(this.tr("No outputs")).set({
           textAlign: "center"
@@ -114,7 +114,17 @@ qx.Class.define("osparc.component.widget.NodeOutput", {
           outputs.add(label);
         });
       }
-      return outputs;
+    },
+
+    __getOutputNodes: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
+      const outputNodes = [];
+      const outputNodeIds = this.getNode().getOutputNodes();
+      outputNodeIds.forEach(outputNodeId => {
+        outputNodes.push(workbench.getNode(outputNodeId));
+      });
+      return outputNodes;
     },
 
     populateNodeLayout: function() {

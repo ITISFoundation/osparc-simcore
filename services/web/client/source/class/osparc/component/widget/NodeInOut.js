@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
 
     getEdgePoint: function(port) {
       const nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
+      if (nodeBounds === null || Number.isNaN(nodeBounds.left)) {
         // not rendered yet
         return null;
       }
@@ -98,28 +98,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
         }
       }
       return bounds;
-    },
-
-    _getInputNodes: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const workbench = study.getWorkbench();
-      const inputNodes = [];
-      const inputNodeIds = this.getNode().getInputNodes();
-      inputNodeIds.forEach(inputNodeId => {
-        inputNodes.push(workbench.getNode(inputNodeId));
-      });
-      return inputNodes;
-    },
-
-    _getOutputNodes: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const workbench = study.getWorkbench();
-      const outputNodes = [];
-      const outputNodeIds = this.getNode().getOutputNodes();
-      outputNodeIds.forEach(outputNodeId => {
-        outputNodes.push(workbench.getNode(outputNodeId));
-      });
-      return outputNodes;
     },
 
     _populateNodeLayout: function(isInput) {
