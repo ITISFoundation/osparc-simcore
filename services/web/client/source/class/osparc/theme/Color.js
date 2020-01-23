@@ -26,6 +26,7 @@ qx.Theme.define("osparc.theme.Color", {
 
     "node-selected-backgroud": "#666",
     "node-semiselected-backgroud": "#555",
+    "node-notselected-backgroud": "#444",
 
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",
