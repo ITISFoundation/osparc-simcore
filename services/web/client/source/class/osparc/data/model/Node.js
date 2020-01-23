@@ -573,7 +573,7 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (osparc.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               autoConnections++;
               break;

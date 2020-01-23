@@ -552,7 +552,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return osparc.utils.Services.areNodesCompatible(topLevelPort1, topLevelPort2);
+      return osparc.utils.Ports.areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {
