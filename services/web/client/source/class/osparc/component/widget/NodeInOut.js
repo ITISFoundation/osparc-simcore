@@ -93,8 +93,10 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
       if (cel) {
         let domeEle = cel.getDomElement();
         if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
+          const left = parseInt(domeEle.style.left);
+          const top = parseInt(domeEle.style.top);
+          bounds.left = Number.isNaN(left) ? 0 : left;
+          bounds.top = Number.isNaN(top) ? 0 : top;
         }
       }
       return bounds;
