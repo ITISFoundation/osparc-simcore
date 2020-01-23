@@ -54,6 +54,18 @@ qx.Class.define("osparc.component.widget.NodeInput", {
       nodeUILayoutBig.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
+      const nodeUILayout = this.__createFakeNodeUI();
+      nodeUILayoutBig.add(nodeUILayout);
+      nodeUILayoutBig.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      this._add(nodeUILayoutBig, {
+        flex: 1
+      });
+    },
+
+    __createFakeNodeUI: function() {
+      const node = this.getNode();
 
       const nodeUILayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
         backgroundColor: "node-notselected-backgroud",
@@ -61,39 +73,38 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         droppable: true
       });
 
-      const captionBar = new qx.ui.basic.Label().set({
-        font: "title-13",
+      const header = new qx.ui.basic.Label().set({
+        font: "text-13",
         textColor: "#DCDCDC",
         textAlign: "left",
         height: 20,
         padding: 3
       });
-      node.bind("label", captionBar, "value");
-      nodeUILayout.add(captionBar);
-
-
+      node.bind("label", header, "value");
       const outPort = new qx.ui.basic.Label(this.tr("out")).set({
         font: "text-13",
         textColor: "#BABABA",
-        textAlign: "right",
         allowGrowX: true,
-        alignY: "middle",
+        alignX: "right",
         height: 40,
         padding: 5
       });
+      const progressBar = new qx.ui.indicator.ProgressBar().set({
+        height: 10,
+        margin: 4
+      });
+      node.bind("label", progressBar, "value");
+      nodeUILayout.add(header);
+      nodeUILayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
       nodeUILayout.add(outPort);
-
-      nodeUILayout.add(new qx.ui.core.Spacer(null, 20));
-
-      nodeUILayoutBig.add(nodeUILayout);
-
-      nodeUILayoutBig.add(new qx.ui.core.Spacer(), {
+      nodeUILayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
+      nodeUILayout.add(progressBar);
 
-      this._add(nodeUILayoutBig, {
-        flex: 1
-      });
+      return nodeUILayout;
     },
 
     populateNodeLayout: function() {
