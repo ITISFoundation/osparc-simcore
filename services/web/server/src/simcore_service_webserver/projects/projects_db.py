@@ -346,7 +346,7 @@ class ProjectDBAPI:
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            row = await self._get_study(user_id, project_uuid, exclude_foreign=["tags"])
+            row = await self._get_study(user_id, project_uuid, exclude_foreign=['tags'])
 
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
