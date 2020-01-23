@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         font: "text-13",
         textColor: "#DCDCDC",
         textAlign: "left",
-        height: 16,
+        height: 18,
         padding: 3
       });
       node.bind("label", header, "value");
@@ -91,7 +91,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
       });
       const progressBar = new qx.ui.indicator.ProgressBar().set({
         height: 10,
-        margin: 4
+        margin: 3
       });
       node.bind("label", progressBar, "value");
 
