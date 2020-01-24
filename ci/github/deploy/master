@@ -3,6 +3,17 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# these variable must be available securely from github
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+# only upstream is allowed to push to itisfoundation repo
+current_fork=$(echo "${GITHUB_REPOSITORY%/*}" | tr '[:upper:]' '[:lower:]')
+if [ $current_fork != "itisfoundation" ] &&\
+    ([ ! -v DOCKER_REGISTRY ] || [ -z $DOCKER_REGISTRY ] || [ "$DOCKER_REGISTRY" = "itisfoundation" ]); then
+    echo "## ERROR: it is not allowed to push to the main dockerhub repository from a fork!"
+    echo "## Please adapt your CI-defined environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY)"
+    exit 1
+fi
+
 # pull the current tested build
 export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 make pull-version tag-local
@@ -10,9 +21,6 @@ make pull-version tag-local
 # show current images on system
 echo "## Before push"
 make info-images
-
-# these variable must be available securely from github
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # re-tag build
 export DOCKER_IMAGE_TAG=master-github-latest
