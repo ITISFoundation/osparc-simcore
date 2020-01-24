@@ -29,13 +29,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.setStudy(study);
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({
-      minWidth: 1000
-    });
+    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      maxWidth: 800,
-      width: 500
+      maxWidth: 700,
+      width: 400
     });
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -66,7 +64,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   members: {
-    __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
     __scrollContainer: null,
@@ -624,7 +621,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       // post pipeline
-      this.__pipelineId = null;
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -670,10 +666,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.__pipelineId = null;
         this.getLogger().error("root", "Submission failed");
       } else {
-        this.__pipelineId = pipelineId;
         this.getLogger().info("root", "Pipeline started");
       }
     },
