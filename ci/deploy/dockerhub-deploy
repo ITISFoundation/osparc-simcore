@@ -1,0 +1,50 @@
+#!/bin/bash
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# check needed variables are defined
+if [ ! -v DOCKER_USERNAME ] ||\
+    [ ! -v DOCKER_PASSWORD ] ||\
+    [ ! -v DOCKER_REGISTRY ]; then
+    echo "## ERROR: Please define the environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY) in your CI settings!"
+    exit 1
+fi
+
+# check script needed variables
+if [ ! -v OWNER ] || [ ! -v TAG_PREFIX ]; then
+    echo "## ERROR: incorrect use of script. OWNER (e.g. itisfoundation or user) and/or TAG_PREFIX (e.g. master, staging) not defined!"
+    exit 1
+fi
+
+# login to dockerhub
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+# check only upstream is allowed to push to itisfoundation repo
+current_fork=$(echo "${GITHUB_REPOSITORY%/*}" | tr '[:upper:]' '[:lower:]')
+if [ "$OWNER" != "itisfoundation" ] &&\
+    ([ ! -v DOCKER_REGISTRY ] || [ -z $DOCKER_REGISTRY ] || [ "$DOCKER_REGISTRY" = "itisfoundation" ]); then
+    echo "## ERROR: it is not allowed to push to the main dockerhub repository from a fork!"
+    echo "## Please adapt your CI-defined environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY)"
+    exit 1
+fi
+
+# pull the current tested build
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+make pull-version tag-local
+
+# show current images on system
+echo "## Before push"
+make info-images
+
+# re-tag build
+export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
+make push-version
+
+# re-tag build to master-github-DATE.GIT_SHA
+export DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
+make push-version
+
+# show update of images on system
+echo "## After push"
+make info-images
