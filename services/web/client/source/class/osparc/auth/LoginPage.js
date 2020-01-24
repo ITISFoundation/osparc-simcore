@@ -134,7 +134,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         versionLinkLayout.add(separator);
       }
 
-      const organizationLink = new osparc.ui.basic.LinkLabel("© 2020 IT'IS Foundation", "https://itis.swiss").set({
+      const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
         font: "text-12",
         textColor: "text-darker"
       });
