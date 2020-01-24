@@ -30,6 +30,8 @@ jobs:
       if: NOT type = pull_request AND tag IS blank
       name: build simcore images
       sudo: required
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
       before_install:
         - sudo bash ci/travis/build/test-images before_install
       install:
@@ -45,7 +47,7 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: unbuffer bash ci/travis/deploy/test-images
+          script: unbuffer bash ci/deploy/dockerhub-test-images
           on:
             all_branches: true
 

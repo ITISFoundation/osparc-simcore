@@ -374,11 +374,13 @@ jobs:
     - name: show system environs
       run: ./ci/helpers/show_system_versions
     - name: pull images
-      run: ./ci/github/build/test-images pull_images
+      run: ./ci/build/test-images pull_images
     - name: build images
-      run: ./ci/github/build/test-images build_images
+      run: ./ci/build/test-images build_images
     - name: push images
-      run: ./ci/github/build/test-images push_images
+      env:
+        OWNER: ${GITHUB_REPOSITORY%/*}
+      run: ./ci/deploy/dockerhub-test-images
 
   integration-test-webserver:
     name: Integration-testing webserver
