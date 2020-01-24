@@ -14,7 +14,6 @@
         "label": "File Picker 1",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -34,7 +33,6 @@
         "label": "File Picker 2",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -66,7 +64,6 @@
           "template-uuid-5753-af37-e6aec8120bf2",
           "template-uuid-522c-a377-dd8d7cd1265b"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 85,
         "thumbnail": "",
@@ -95,7 +92,6 @@
           "stimulation_level": "{{stimulation_level}}"
         },
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
@@ -117,7 +113,6 @@
         "inputNodes": [
           "f631a142-d3b6-435d-abfb-8ad4acb91a70"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 100,
         "thumbnail": "",
@@ -143,7 +138,6 @@
         "label": "File Picker",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -170,7 +164,6 @@
         "inputNodes": [
           "template-uuid-58e5-884e-2690b3d54f11"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 90,
         "thumbnail": "",
@@ -196,7 +189,6 @@
         "label": "File Picker 0D",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -237,7 +229,6 @@
         "inputNodes": [
           "template-uuid-59d6-b1a5-6e7b2773636b"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
@@ -263,7 +254,6 @@
         "inputNodes": [
           "template-uuid-562f-afd1-cca5105c8844"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 20,
         "thumbnail": "",
@@ -289,7 +279,6 @@
         "label": "MattWard",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "progress": 55,
         "thumbnail": "",

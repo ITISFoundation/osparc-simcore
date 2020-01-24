@@ -13,7 +13,6 @@
       "label": "File Picker 0D",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
@@ -48,7 +47,6 @@
       "inputNodes": [
         "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
       ],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
@@ -62,7 +60,6 @@
       "label": "2D plot",
       "inputs": {},
       "label": "2D plot",
-      "outputNode": false,
       "outputs": {},
       "position": {"x": 1073, "y": 307},
       "progress": 100,

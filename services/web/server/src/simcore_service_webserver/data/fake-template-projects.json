@@ -20,7 +20,6 @@
           "in_2": 2
         },
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -42,7 +41,6 @@
         "inputNodes": [
           "template-uuid-4434-9504-d4a9bebeda37"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -67,7 +65,6 @@
         "inputNodes": [
           "template-uuid-45ac-b2cd-2052ffc64608"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -88,7 +85,6 @@
         "inputNodes": [
           "template-uuid-4434-9504-d4a9bebeda37"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -114,7 +110,6 @@
           "template-uuid-4dae-9f64-94ab71317e99",
           "template-uuid-499e-86d6-9980c33dc8bb"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -138,7 +133,6 @@
         "label": "File Picker 0D",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -155,7 +149,9 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
+        "outputNodes": [
+          "template-uuid-47f5-a089-cc4e2eec30b1"
+        ],
         "position": {
           "x": 300,
           "y": 100
@@ -170,7 +166,9 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
+        "outputNodes": [
+          "template-uuid-4dc5-a210-06651a80f0a7"
+        ],
         "position": {
           "x": 300,
           "y": 250
@@ -185,7 +183,9 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
+        "outputNodes": [
+          "template-uuid-4df3-9702-63563d6509f4"
+        ],
         "position": {
           "x": 300,
           "y": 400
@@ -200,7 +200,9 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
+        "outputNodes": [
+          "template-uuid-41dc-8cc5-0ed56b025ecf"
+        ],
         "position": {
           "x": 300,
           "y": 550
@@ -225,7 +227,6 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": "template-uuid-4501-9a59-88c4a82abf92",
         "position": {
@@ -250,7 +251,6 @@
         "inputNodes": [
           "template-uuid-43f3-ab01-a58e7c49a946"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-4501-9a59-88c4a82abf92",
         "position": {
@@ -277,7 +277,6 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": "template-uuid-44d5-8aca-e7932de01e9d",
         "position": {
@@ -302,7 +301,6 @@
         "inputNodes": [
           "template-uuid-42cf-aaff-8e2a4f9ddd90"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-44d5-8aca-e7932de01e9d",
         "position": {
@@ -329,7 +327,6 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": "template-uuid-4abd-b3df-c4760a40213a",
         "position": {
@@ -354,7 +351,6 @@
         "inputNodes": [
           "template-uuid-48b1-bf46-00cb9b6e0db5"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-4abd-b3df-c4760a40213a",
         "position": {
@@ -381,7 +377,6 @@
         "inputNodes": [
           "template-uuid-4997-a192-10b0f519cf12"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": "template-uuid-49fa-bb61-cfdac0d394c6",
         "position": {
@@ -406,7 +401,6 @@
         "inputNodes": [
           "template-uuid-4053-8ff9-740af583dbdb"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-49fa-bb61-cfdac0d394c6",
         "position": {
@@ -425,7 +419,6 @@
           "template-uuid-4abd-b3df-c4760a40213a",
           "template-uuid-49fa-bb61-cfdac0d394c6"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -461,7 +454,6 @@
           "template-uuid-4df3-9702-63563d6509f4",
           "template-uuid-41dc-8cc5-0ed56b025ecf"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-43ae-9dfc-5b439ffaeed5",
         "position": {
@@ -497,7 +489,6 @@
           "template-uuid-4df3-9702-63563d6509f4",
           "template-uuid-41dc-8cc5-0ed56b025ecf"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-43ae-9dfc-5b439ffaeed5",
         "position": {
@@ -533,7 +524,6 @@
           "template-uuid-4df3-9702-63563d6509f4",
           "template-uuid-41dc-8cc5-0ed56b025ecf"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-43ae-9dfc-5b439ffaeed5",
         "position": {
@@ -569,7 +559,6 @@
           "template-uuid-4df3-9702-63563d6509f4",
           "template-uuid-41dc-8cc5-0ed56b025ecf"
         ],
-        "outputNode": true,
         "outputs": {},
         "parent": "template-uuid-43ae-9dfc-5b439ffaeed5",
         "position": {

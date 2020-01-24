@@ -14,7 +14,6 @@
         "label": "File Picker",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -66,7 +65,6 @@
         "label": "File Picker 1",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -86,7 +84,6 @@
         "label": "File Picker 2",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -118,7 +115,6 @@
           "template-uuid-403e-865a-8c5ca30671c6",
           "template-uuid-421f-be24-d44d112cc5c1"
         ],
-        "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
@@ -143,7 +139,6 @@
         "label": "MattWard",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "progress": 0,
         "thumbnail": "",
@@ -168,7 +163,6 @@
         "label": "File Picker 0D",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {
           "outFile": {
             "store": 1,
@@ -209,7 +203,6 @@
         "inputNodes": [
           "template-uuid-4674-b758-946151cae351"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -234,7 +227,6 @@
         "inputNodes": [
           "template-uuid-409d-998c-c1f04de67f8b"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
