@@ -104,10 +104,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
