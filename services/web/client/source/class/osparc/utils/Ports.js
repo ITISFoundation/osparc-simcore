@@ -35,7 +35,6 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
       return topLevelPort1.isInput !== topLevelPort2.isInput;
     },
 
