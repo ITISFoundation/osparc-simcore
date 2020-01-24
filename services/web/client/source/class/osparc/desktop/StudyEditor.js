@@ -388,43 +388,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __getBrotherNodes: function(excludeNodeIds) {
-      const currentModel = this.__workbenchUI.getCurrentModel();
-      const workbench = this.getStudy().getWorkbench();
-
-      let brotherNodesObj = {};
-      if (currentModel.getNodeId) {
-        brotherNodesObj = currentModel.getInnerNodes(false);
-      } else {
-        brotherNodesObj = workbench.getNodes(false);
-      }
-
-      const brotherNodes = [];
-      for (const brotherNodeId in brotherNodesObj) {
-        const index = excludeNodeIds.indexOf(brotherNodeId);
-        if (index === -1) {
-          const brotherNode = workbench.getNode(brotherNodeId);
-          brotherNodes.push(brotherNode);
-        }
-      }
-      return brotherNodes;
-    },
-
-    __getAveragePosition: function(nodes) {
-      let avgX = 0;
-      let avgY = 0;
-      nodes.forEach(node => {
-        avgX += node.getPosition().x;
-        avgY += node.getPosition().y;
-      });
-      avgX /= nodes.length;
-      avgY /= nodes.length;
-      return {
-        x: avgX,
-        y: avgY
-      };
-    },
-
     __groupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
@@ -437,70 +400,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      // Collect info
-      const workbench = this.getStudy().getWorkbench();
-      const currentModel = this.__workbenchUI.getCurrentModel();
-
       const selectedNodes = [];
-      const selectedNodeIds = [];
       selectedNodeUIs.forEach(selectedNodeUI => {
         selectedNodes.push(selectedNodeUI.getNode());
-        selectedNodeIds.push(selectedNodeUI.getNodeId());
       });
 
-      const brotherNodes = this.__getBrotherNodes(selectedNodeIds);
-
-
-      // Create nodesGroup
-      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
-      const parentNode = currentModel.getNodeId ? currentModel : null;
-      const nodesGroup = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
-      if (!nodesGroup) {
-        return;
-      }
-
-      const avgPos = this.__getAveragePosition(selectedNodes);
-      nodesGroup.setPosition(avgPos.x, avgPos.y);
-
-      // change parents on future inner nodes
-      selectedNodes.forEach(selectedNode => {
-        workbench.moveNode(selectedNode, nodesGroup, parentNode);
-      });
-
-      // find inputNodes for nodesGroup
-      selectedNodes.forEach(selectedNode => {
-        const selInputNodes = selectedNode.getInputNodes();
-        selInputNodes.forEach(inputNode => {
-          const index = selectedNodeIds.indexOf(inputNode);
-          if (index === -1) {
-            nodesGroup.addInputNode(inputNode);
-          }
-        });
-      });
-
-      // change input nodes in those nodes connected to the selected ones
-      brotherNodes.forEach(brotherNode => {
-        selectedNodes.forEach(selectedNode => {
-          const selectedNodeId = selectedNode.getNodeId();
-          if (brotherNode.isInputNode(selectedNodeId)) {
-            brotherNode.addInputNode(nodesGroup.getNodeId());
-            brotherNode.removeInputNode(selectedNodeId);
-            nodesGroup.addOutputNode(selectedNodeId);
-          }
-        });
-      });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        selectedNodes.forEach(selectedNode => {
-          const selectedNodeId = selectedNode.getNodeId();
-          if (currentModel.isOutputNode(selectedNodeId)) {
-            currentModel.removeOutputNode(selectedNodeId);
-            nodesGroup.addOutputNode(selectedNodeId);
-            currentModel.addOutputNode(nodesGroup.getNodeId());
-          }
-        });
-      }
+      const workbench = this.getStudy().getWorkbench();
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      workbench.groupNodes(currentModel, selectedNodes);
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
       this.__workbenchChanged();
@@ -534,50 +441,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // Collect info
       const workbench = this.getStudy().getWorkbench();
       const currentModel = this.__workbenchUI.getCurrentModel();
-
-      let newParentNode = null;
-      if (currentModel !== workbench) {
-        newParentNode = currentModel;
-      }
-
-      const brotherNodes = this.__getBrotherNodes([nodesGroup.getNodeId()]);
-
-
-      // change parents on old inner nodes
-      const innerNodes = nodesGroup.getInnerNodes(false);
-      for (const innerNodeId in innerNodes) {
-        const innerNode = innerNodes[innerNodeId];
-        workbench.moveNode(innerNode, newParentNode, nodesGroup);
-      }
-
-      // change input nodes in those nodes connected to the nodesGroup
-      brotherNodes.forEach(brotherNode => {
-        if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
-          brotherNode.removeInputNode(nodesGroup.getNodeId());
-          brotherNode.addInputNodes(nodesGroup.getOutputNodes());
-
-          if (brotherNode.isContainer()) {
-            const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
-            broInnerNodes.forEach(broInnerNode => {
-              if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
-                broInnerNode.removeInputNode(nodesGroup.getNodeId());
-                broInnerNode.addInputNodes(nodesGroup.getOutputNodes());
-              }
-            });
-          }
-        }
-      });
-
-      // update output nodes list
-      if (currentModel.isContainer()) {
-        if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
-          currentModel.removeOutputNode(nodesGroup.getNodeId());
-          currentModel.addOutputNodes(nodesGroup.getOutputNodes());
-        }
-      }
-
-      // Remove nodesGroup
-      workbench.removeNode(nodesGroup.getNodeId());
+      workbench.ungroupNode(currentModel, nodesGroup);
 
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
       this.__workbenchChanged();
