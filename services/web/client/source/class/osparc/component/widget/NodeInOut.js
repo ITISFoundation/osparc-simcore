@@ -32,10 +32,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
 
     let nodeInOutLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInOutLayout);
-
-    this.set({
-      decorator: "main"
-    });
   },
 
   properties: {

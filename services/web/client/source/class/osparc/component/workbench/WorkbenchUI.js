@@ -46,19 +46,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__edgesUI = [];
     this.__selectedNodes = [];
 
-    let hBox = new qx.ui.layout.HBox();
+    const hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
-    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    const inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
       width: NODE_INPUTS_WIDTH,
       maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
-    const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
-    let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
-      font: navBarLabelFont,
-      alignX: "center"
+    inputNodesLayout.getContentElement().setStyles({
+      "border-right-style": "dashed",
+      "border-right-color": osparc.theme.Color.colors["workbench-edge-comp-active"],
+      "border-right-width": "2px"
+    });
+    const inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
+      font: "title-16",
+      alignX: "center",
+      padding: 5
     });
     inputNodesLayout.add(inputLabel);
     this._add(inputNodesLayout);
@@ -68,15 +73,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       flex: 1
     });
 
-    let nodesExposedLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    const nodesExposedLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     nodesExposedLayout.set({
       width: NODE_INPUTS_WIDTH,
       maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
-    let outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
-      font: navBarLabelFont,
-      alignX: "center"
+    nodesExposedLayout.getContentElement().setStyles({
+      "border-left-style": "dashed",
+      "border-left-color": osparc.theme.Color.colors["workbench-edge-comp-active"],
+      "border-left-width": "2px"
+    });
+    const outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
+      font: "title-16",
+      alignX: "center",
+      padding: 5
     });
     nodesExposedLayout.add(outputLabel);
     this._add(nodesExposedLayout);
