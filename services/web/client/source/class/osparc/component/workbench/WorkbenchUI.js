@@ -187,7 +187,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
       inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(isInput));
       const title = new qx.ui.basic.Label(label).set({
-        font: "title-16",
         alignX: "center",
         margin: [15, 0],
         font: "workbench-io-label",
