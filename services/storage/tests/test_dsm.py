@@ -403,7 +403,6 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
             "label": "File Picker",
             "inputs": {},
             "inputNodes": [],
-            "outputNode": False,
             "outputs": {
               "outFile": {
                 "store": 1,
@@ -430,7 +429,6 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
             "inputNodes": [
               "template-uuid-48eb-a9d2-aaad6b72400a"
             ],
-            "outputNode": False,
             "outputs": {},
             "progress": 0,
             "thumbnail": "",
