@@ -49,6 +49,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     let hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
+    this.setWorkbench(workbench);
+
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
       width: NODE_INPUTS_WIDTH,
@@ -102,7 +104,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     // sure to catch this event
     this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
-      this.setWorkbench(workbench);
+      this.loadModel(workbench);
       this.__nodeSelected("root");
     });
 
@@ -142,8 +144,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   properties: {
     workbench: {
       check: "osparc.data.model.Workbench",
-      nullable: false,
-      apply: "loadModel"
+      nullable: false
     }
   },
 
