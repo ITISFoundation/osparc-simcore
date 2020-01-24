@@ -406,13 +406,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __groupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        return false;
+        return;
       }
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
         const msg = "Empty selection";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        return false;
+        return;
       }
 
       // Collect info
@@ -447,7 +447,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const parentNode = currentModel.getNodeId ? currentModel : null;
       const nodesGroup = workbench.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
       if (!nodesGroup) {
-        return false;
+        return;
       }
 
       const avgPos = this.__getAveragePosition(selectedNodes);
@@ -497,31 +497,29 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
-
-      return true;
     },
 
     __ungroupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        return false;
+        return;
       }
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
         const msg = "Empty selection";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        return false;
+        return;
       }
       if (selectedNodeUIs.length > 1) {
         const msg = "Select only one group";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        return false;
+        return;
       }
       const nodesGroup = selectedNodeUIs[0].getNode();
       if (!nodesGroup.isContainer()) {
         const msg = "Select a group";
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        return false;
+        return;
       }
 
 
@@ -588,8 +586,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
-
-      return true;
     },
 
     __startPipeline: function() {

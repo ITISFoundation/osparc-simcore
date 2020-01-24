@@ -416,22 +416,22 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node === null) {
           continue;
         }
-        if (nodeData.inputNodes) {
-          for (let i=0; i < nodeData.inputNodes.length; i++) {
-            const outputNodeId = nodeData.inputNodes[i];
-            const edge = new osparc.data.model.Edge(null, outputNodeId, nodeId);
-            this.addEdge(edge);
-            node.addInputNode(outputNodeId);
+        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes, true);
+        this.__addInputOutputNodesAndEdges(node, nodeData.outputNodes, false);
+      }
+    },
+
+    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds, isInput) {
+      if (inputOutputNodeIds) {
+        inputOutputNodeIds.forEach(inputOutputNodeId => {
+          const edge = new osparc.data.model.Edge(null, inputOutputNodeId, node.getNodeId());
+          this.addEdge(edge);
+          if (isInput) {
+            node.addInputNode(inputOutputNodeId);
+          } else {
+            node.addOutputNode(inputOutputNodeId);
           }
-        }
-        if (nodeData.outputNodes) {
-          for (let i=0; i < nodeData.outputNodes.length; i++) {
-            const inputNodeId = nodeData.outputNodes[i];
-            const edge = new osparc.data.model.Edge(null, inputNodeId, nodeId);
-            this.addEdge(edge);
-            node.addOutputNode(inputNodeId);
-          }
-        }
+        });
       }
     },
 
