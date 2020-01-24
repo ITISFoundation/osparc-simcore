@@ -10,11 +10,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
 
-from servicelib.aiopg_utils import (PostgresRetryPolicyUponOperation, DatabaseError,
-                                    DataSourceName, retry_pg_api)
+from servicelib.aiopg_utils import (DatabaseError, DataSourceName,
+                                    PostgresRetryPolicyUponOperation,
+                                    retry_pg_api)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 metadata = sa.MetaData()
 tbl = sa.Table('tbl', metadata,
@@ -41,7 +41,29 @@ async def postgres_service_with_fake_data(request, loop, postgres_service: DataS
     return dsn
 
 
-# TESTS ------------
+def test_dsn_uri_with_query(postgres_service_with_fake_data):
+    uri = postgres_service_with_fake_data.to_uri(with_query=True)
+    try:
+        sa_engine = sa.create_engine(uri, echo=True, echo_pool=True)
+        assert sa_engine.name == 'postgresql'
+        assert sa_engine.driver == 'psycopg2'
+
+        # if url is wrong, these will fail
+        metadata.create_all(sa_engine)
+        metadata.drop_all(sa_engine)
+
+    except sa.exc.SQLAlchemyError as ee:
+        pytest.fail(f"Cannot connect with {uri}: {ee}")
+    finally:
+        sa_engine.dispose()
+
+
+async def test_dsn_asdict_kargs(postgres_service_with_fake_data):
+    dsn = postgres_service_with_fake_data
+    # https://aiopg.readthedocs.io/en/stable/sa.html#aiopg.sa.create_engine
+    # using dsn.asdict to fill create_engine arguments!
+    await create_engine(minsize=1, maxsize=5, **dsn.asdict())
+
 
 async def test_retry_pg_api_policy(postgres_service_with_fake_data):
     # pylint: disable=no-value-for-parameter

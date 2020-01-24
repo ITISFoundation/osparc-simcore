@@ -43,7 +43,7 @@ class DataSourceName:
     def to_uri(self, with_query=False) -> str:
         uri = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
         if with_query and self.application_name:
-            uri += f"?ApplicationName={self.application_name}"
+            uri += f"?application_name={self.application_name}"
         return uri
 
 
