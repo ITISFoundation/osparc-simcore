@@ -588,15 +588,15 @@ jobs:
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.sh
-      - name: deploy
+      - name: deploy master
         if: github.ref == 'refs/heads/master'
         env:
           TAG_PREFIX: master-github
         run: ./ci/deploy/dockerhub-deploy
-      - name: deploy
+      - name: deploy staging
         if: github.ref == 'refs/heads/staging'
         env:
-          TAG_PREFIX: master-github
+          TAG_PREFIX: staging-github
         run: ./ci/deploy/dockerhub-deploy
       # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
       # - name: mattermost notification

@@ -386,12 +386,16 @@ jobs:
             branch: staging
     - stage: deployment
       name: production/release
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
+        - GIT_TAG=${TRAVIS_TAG}
       git:
         depth: false
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/production
+          script: unbuffer bash ci/deploy/dockerhub-release
           on:
             all_branches: true
             tags: true

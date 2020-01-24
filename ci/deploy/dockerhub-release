@@ -3,11 +3,25 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# these variable must be available securely from github
+# check needed variables are defined
+if [ ! -v DOCKER_USERNAME ] ||\
+    [ ! -v DOCKER_PASSWORD ] ||\
+    [ ! -v DOCKER_REGISTRY ]; then
+    echo "## ERROR: Please define the environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY) in your CI settings!"
+    exit 1
+fi
+
+# check script needed variables
+if [ ! -v OWNER ] || [ ! -v TAG_PREFIX ] || [ ! -v GIT_TAG ]; then
+    echo "## ERROR: incorrect use of script. OWNER (e.g. itisfoundation or user) and/or TAG_PREFIX (e.g. master, staging), and/or GIT_TAG not defined!"
+    exit 1
+fi
+
+# login to dockerhub
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-# only upstream is allowed to push to itisfoundation repo
-current_fork=$(echo "${GITHUB_REPOSITORY%/*}" | tr '[:upper:]' '[:lower:]')
-if [ $current_fork != "itisfoundation" ] &&\
+
+# check only upstream is allowed to push to itisfoundation repo
+if [ $OWNER != "itisfoundation" ] &&\
     ([ ! -v DOCKER_REGISTRY ] || [ -z $DOCKER_REGISTRY ] || [ "$DOCKER_REGISTRY" = "itisfoundation" ]); then
     echo "## ERROR: it is not allowed to push to the main dockerhub repository from a fork!"
     echo "## Please adapt your CI-defined environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY)"
@@ -16,11 +30,10 @@ fi
 
 # pull the tagged staging build
 # find the docker image tag
-export TAG="${GITHUB_REF##*/}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
 # staging-github-DATE.GIT_SHA
-export TAG_PATTERN="^staging-github-.+\..+"
+export TAG_PATTERN="^${TAG_PREFIX}-.+\..+"
 export DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
 make pull-version tag-local
 
@@ -28,8 +41,8 @@ make pull-version tag-local
 echo "## Before push"
 make info-images
 
-# re-tag staging to {TAG}-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=${TAG}-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
+# re-tag staging to {GIT_TAG}-DATE.GIT_SHA
+export DOCKER_IMAGE_TAG=${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
 make push-version push-latest
 
 echo "## After push"

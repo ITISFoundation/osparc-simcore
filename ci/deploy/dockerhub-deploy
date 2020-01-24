@@ -41,7 +41,7 @@ export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
 make push-version
 
 # re-tag build to master-github-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
+export DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
 make push-version
 
 # show update of images on system
