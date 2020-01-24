@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   /**
     * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
-  */
+    */
   construct: function(workbench) {
     this.base(arguments);
 

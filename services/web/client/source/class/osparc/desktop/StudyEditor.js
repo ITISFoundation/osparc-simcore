@@ -68,10 +68,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __sidePanel: null,
     __scrollContainer: null,
     __workbenchUI: null,
+    __nodeView: null,
     __nodesTree: null,
     __extraView: null,
     __loggerView: null,
-    __nodeView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
 
