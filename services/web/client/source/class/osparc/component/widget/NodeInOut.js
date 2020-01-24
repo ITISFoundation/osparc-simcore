@@ -95,8 +95,8 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
         if (domeEle) {
           const left = parseInt(domeEle.style.left);
           const top = parseInt(domeEle.style.top);
-          bounds.left = Number.isNaN(left) ? 0 : left;
-          bounds.top = Number.isNaN(top) ? 0 : top;
+          bounds.left = left || 0;
+          bounds.top = top || 0;
         }
       }
       return bounds;
