@@ -1,4 +1,8 @@
-""" Helpers for aiopg
+""" Holderplace for random helpers using aiopg
+
+    - Drop here functions/constants that at that time does
+    not fit in any of the setups. Then, they can be moved and
+    refactor when new abstractions are used in place.
 
     - aiopg is used as a client sdk to interact asynchronously with postgres service
 
@@ -15,7 +19,7 @@ from typing import Dict, Optional
 import attr
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import create_engine
+from aiopg.sa import Engine, create_engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import (RetryCallState, after_log, before_sleep_log, retry,
@@ -36,7 +40,6 @@ class DataSourceName:
     # Attributes about the caller
     application_name: Optional[str]=None
 
-
     def asdict(self) -> Dict:
         return attr.asdict(self)
 
@@ -48,9 +51,53 @@ class DataSourceName:
 
 
 
-def is_postgres_responsive(dsn: DataSourceName) -> bool:
-    """ Returns True if can connect and operate postgres service
+def create_pg_engine(dsn: DataSourceName, minsize:int=1, maxsize:int=4):
+    """ Adapts the arguments of aiopg.sa.create_engine
+
+        Returns a coroutine that is awaitable, i.e.
+
+        async with create_pg_engine as engine:
+            assert not engine.closed
+
+        assert engine.closed
     """
+    awaitable_engine_coro = create_engine(dsn.to_uri(),
+        application_name=dsn.application_name,
+        minsize=minsize,
+        maxsize=maxsize
+    )
+    return awaitable_engine_coro
+
+
+async def raise_if_not_responsive(engine: Engine):
+    async with engine.acquire() as conn:
+        await conn.execute("SELECT 1 as is_alive")
+
+
+async def is_pg_responsive(engine: Engine, *, raise_if_fails=False) -> bool:
+    try:
+        await raise_if_not_responsive(engine)
+    except DBAPIError as err:
+        log.debug("%s is not responsive: %s", engine.dsn, err)
+        if raise_if_fails:
+            raise
+        return False
+    else:
+        return True
+
+
+def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):
+    try:
+        # CONS: creates and disposes an engine just to create tables
+        # TODO: find a way to create all tables with aiopg engine
+        sa_engine = sa.create_engine(dsn.to_uri(with_query=True))
+        schema.create_all(sa_engine)
+    finally:
+        sa_engine.dispose()
+
+
+def is_postgres_responsive(dsn: DataSourceName) -> bool:
+    # NOTE: keep for tests
     engine = conn = None
     try:
         engine = sa.create_engine(dsn.to_uri())
@@ -65,17 +112,6 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
         if engine is not None:
             engine.dispose()
     return ok
-
-
-async def is_postgres_responsive_async(dsn: DataSourceName) -> bool:
-    try:
-        async with create_engine(dsn.to_uri(), application_name=dsn.application_name) as engine:
-            async with engine.acquire() as conn:
-                await conn.execute("SELECT 1 as is_alive")
-                return True
-    except DBAPIError as err:
-        log.debug("%s not responsive: %s", dsn, err)
-        return False
 
 
 
