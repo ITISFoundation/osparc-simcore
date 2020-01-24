@@ -395,8 +395,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        const msg = "Empty selection";
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
         return;
       }
 
@@ -422,19 +421,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        const msg = "Empty selection";
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
         return;
       }
       if (selectedNodeUIs.length > 1) {
-        const msg = "Select only one group";
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs("Select only one group", "ERROR");
         return;
       }
       const nodesGroup = selectedNodeUIs[0].getNode();
       if (!nodesGroup.isContainer()) {
-        const msg = "Select a group";
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs("Select a group", "ERROR");
         return;
       }
 
