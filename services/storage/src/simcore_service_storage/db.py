@@ -35,7 +35,6 @@ async def pg_engine(app: web.Application):
         log.info("Init tables for testing")
         await __create_tables(**params)
 
-    @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
     async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
         app[APP_DB_ENGINE_KEY] = engine
 
