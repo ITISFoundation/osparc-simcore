@@ -111,6 +111,12 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       return button;
     },
 
+    _removeAllOptions: function() {
+      if (this.__menu) {
+        this.__menu.removeAll();
+      }
+    },
+
     _addSeparator: function() {
       if (this.__menu === null) {
         this.__menu = new qx.ui.menu.Menu();

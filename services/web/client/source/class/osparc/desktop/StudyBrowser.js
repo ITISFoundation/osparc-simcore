@@ -307,6 +307,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       commandEsc.addListener("execute", e => {
         this.__itemSelected(null);
       });
+      osparc.store.Store.getInstance().addListener("changeTags", () => this.__setStudyList(osparc.store.Store.getInstance().getStudies()), this);
     },
 
     __createStudyBtnClkd: function(templateData) {

@@ -232,6 +232,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       tagSection.add(header);
       tagSection.add(this.__renderTags());
+      osparc.store.Store.getInstance().addListener("changeTags", () => this.__renderTags(), this);
       return tagSection;
     },
 
