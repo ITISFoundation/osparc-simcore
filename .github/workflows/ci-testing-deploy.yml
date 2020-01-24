@@ -48,7 +48,7 @@ jobs:
       run: ./ci/github/unit-testing/api test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-director:
@@ -84,7 +84,7 @@ jobs:
       run: ./ci/github/unit-testing/director test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-frontend:
@@ -119,7 +119,7 @@ jobs:
       run: ./ci/github/unit-testing/frontend test
     # - uses: codecov/codecov-action@v1
     #   with:
-    #     token: ${CODECOV_TOKEN} #required
+    #     token: ${{ env.CODECOV_TOKEN }} #required
     #     flags: unittests #optional
     # - name: Code Climate Coverage Action
 
@@ -189,7 +189,7 @@ jobs:
       run: ./ci/github/unit-testing/service-library test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   # DISABLED for now
@@ -219,7 +219,7 @@ jobs:
   #     run: ./ci/github/unit-testing/sidecar test
   #   - uses: codecov/codecov-action@v1
   #     with:
-  #       token: ${CODECOV_TOKEN} #required
+  #       token: ${{ env.CODECOV_TOKEN }} #required
   #       flags: unittests #optional
 
   unit-test-simcore-sdk:
@@ -255,7 +255,7 @@ jobs:
       run: ./ci/github/unit-testing/simcore-sdk test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-storage:
@@ -291,7 +291,7 @@ jobs:
       run: ./ci/github/unit-testing/storage test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-webserver:
@@ -327,7 +327,7 @@ jobs:
       run: ./ci/github/unit-testing/webserver test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   build-test-images:
@@ -387,7 +387,7 @@ jobs:
       run: ./ci/github/integration-testing/webserver clean_up
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests #optional
 
   integration-test-simcore-sdk:
@@ -427,7 +427,7 @@ jobs:
       run: ./ci/github/integration-testing/simcore-sdk clean_up
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests
 
   system-test-swarm-deploy:
@@ -527,7 +527,7 @@ jobs:
         path: tests/e2e/screenshots
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: e2etests #optional
     - name: cleanup
       if: always()

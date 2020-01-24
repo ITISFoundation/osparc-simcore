@@ -8,7 +8,7 @@ on:
 
 env:
   # secrets can be set in settings/secrets on github, but are not available in PRs!!
-  DOCKER_REGISTRY: itisfoundation
+  DOCKER_REGISTRY: itisfoundation  
   CODECOV_TOKEN: 0e81ae5f-1909-4035-921c-571693fdafd1
   CC_TEST_REPORTER_ID: 21a72eb30476c870140b1576258873a41be6692f71bd9aebe812174b7d8f4b4e
   #enable buildkit
@@ -49,7 +49,7 @@ jobs:
       run: ./ci/github/unit-testing/api test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-director:
@@ -85,7 +85,7 @@ jobs:
       run: ./ci/github/unit-testing/director test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-frontend:
@@ -121,7 +121,7 @@ jobs:
     # no coverage here??
     # - uses: codecov/codecov-action@v1
     #   with:
-    #     token: ${CODECOV_TOKEN} #required
+    #     token: ${{ env.CODECOV_TOKEN }} #required
     #     flags: unittests #optional
 
   unit-test-python-linting:
@@ -190,7 +190,7 @@ jobs:
       run: ./ci/github/unit-testing/service-library test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   # DISABLED for now
@@ -220,7 +220,7 @@ jobs:
   #     run: ./ci/github/unit-testing/sidecar test
   #   - uses: codecov/codecov-action@v1
   #     with:
-  #       token: ${CODECOV_TOKEN} #required
+  #       token: ${{ env.CODECOV_TOKEN }} #required
   #       flags: unittests #optional
 
   unit-test-simcore-sdk:
@@ -256,7 +256,7 @@ jobs:
       run: ./ci/github/unit-testing/simcore-sdk test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-storage:
@@ -292,7 +292,7 @@ jobs:
       run: ./ci/github/unit-testing/storage test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   unit-test-webserver:
@@ -328,7 +328,7 @@ jobs:
       run: ./ci/github/unit-testing/webserver test
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
 
   integration-test-webserver:
@@ -367,7 +367,7 @@ jobs:
       run: ./ci/github/integration-testing/webserver clean_up
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests #optional
 
   integration-test-simcore-sdk:
@@ -406,7 +406,7 @@ jobs:
       run: ./ci/github/integration-testing/simcore-sdk clean_up
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests
 
   system-test-swarm-deploy:
@@ -504,7 +504,7 @@ jobs:
         path: tests/e2e/screenshots
     - uses: codecov/codecov-action@v1
       with:
-        token: ${CODECOV_TOKEN} #required
+        token: ${{ env.CODECOV_TOKEN }} #required
         flags: e2etests #optional
 
     - name: cleanup
