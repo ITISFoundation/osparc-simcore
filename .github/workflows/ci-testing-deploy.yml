@@ -580,6 +580,8 @@ jobs:
       system-test-swarm-deploy, system-test-e2e
           ]
     runs-on: ubuntu-latest
+    env:
+      OWNER: ${GITHUB_REPOSITORY%/*}
     steps:
       - uses: actions/checkout@v1
       - name: setup-docker
@@ -588,10 +590,14 @@ jobs:
         run: sudo ./ci/github/helpers/setup_docker_compose.sh
       - name: deploy
         if: github.ref == 'refs/heads/master'
-        run: ./ci/github/deploy/master
+        env:
+          TAG_PREFIX: master-github
+        run: ./ci/deploy/dockerhub-deploy
       - name: deploy
         if: github.ref == 'refs/heads/staging'
-        run: ./ci/github/deploy/staging
+        env:
+          TAG_PREFIX: master-github
+        run: ./ci/deploy/dockerhub-deploy
       # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
       # - name: mattermost notification
       #   uses: tferreira/matterfy@releases/v1

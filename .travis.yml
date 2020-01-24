@@ -359,23 +359,29 @@ jobs:
     - stage: deployment
       name: master
       if: branch = master
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=master
       git:
         depth: false
       script: echo "Deploy master"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/master
+          script: unbuffer bash ci/deploy/dockerhub-deploy
           on:
             branch: master
     - stage: deployment
       name: staging
       if: branch = staging
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
       git:
         depth: false
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/staging
+          script: unbuffer bash ci/deploy/dockerhub-deploy
           on:
             branch: staging
     - stage: deployment
