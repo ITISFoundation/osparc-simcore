@@ -514,8 +514,7 @@ jobs:
   coverage:
     needs: [
       unit-test-api, unit-test-director, unit-test-service-library, unit-test-simcore-sdk,
-      unit-test-storage, unit-test-webserver, integration-test-webserver, integration-test-simcore-sdk,
-      system-test-swarm-deploy, system-test-e2e
+      unit-test-storage, unit-test-webserver, integration-test-webserver, integration-test-simcore-sdk
       ]
     name: coverage
     runs-on: ubuntu-latest
