@@ -4,7 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # pull the tagged master build
-export DOCKER_IMAGE_TAG=$(exec ci/github/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 make pull-version tag-local
 
 # show current images on system

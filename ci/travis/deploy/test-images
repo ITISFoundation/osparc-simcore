@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 
 # tags cache and version befor pushing
 make tag-cache
