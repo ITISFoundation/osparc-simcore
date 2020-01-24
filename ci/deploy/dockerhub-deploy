@@ -21,7 +21,6 @@ fi
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # check only upstream is allowed to push to itisfoundation repo
-current_fork=$(echo "${GITHUB_REPOSITORY%/*}" | tr '[:upper:]' '[:lower:]')
 if [ "$OWNER" != "itisfoundation" ] &&\
     ([ ! -v DOCKER_REGISTRY ] || [ -z $DOCKER_REGISTRY ] || [ "$DOCKER_REGISTRY" = "itisfoundation" ]); then
     echo "## ERROR: it is not allowed to push to the main dockerhub repository from a fork!"
