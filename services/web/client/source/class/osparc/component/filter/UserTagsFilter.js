@@ -14,17 +14,21 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
     this.base(arguments, this.tr("Tags"), filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
     this.__buildMenu();
+    this.__attachEventListeners();
   },
   members: {
     __buildMenu: function() {
-      osparc.data.Resources.get("tags")
-        .then(tags => {
-          tags.forEach(tag => {
-            const menuButton = this._addOption(tag.name);
-            menuButton.setIcon("@FontAwesome5Solid/square/12")
-            menuButton.getChildControl("icon").setTextColor(tag.color);
-          });
-        });
+      osparc.store.Store.getInstance().getTags().forEach(tag => {
+        const menuButton = this._addOption(tag.name);
+        menuButton.setIcon("@FontAwesome5Solid/square/12")
+        menuButton.getChildControl("icon").setTextColor(tag.color);
+      });
+    },
+    __attachEventListeners: function() {
+      osparc.store.Store.getInstance().addListener("changeTags", () => {
+        this._removeAllOptions();
+        this.__buildMenu();
+      }, this);
     }
   }
 })
