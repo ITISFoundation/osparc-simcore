@@ -110,30 +110,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
-        const workbench = this.getStudy().getWorkbench();
-        const currentNode = workbench.getNode(this.__currentNodeId);
-        const edge = workbench.getEdge(edgeId);
-        let removed = false;
-        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(edge.getInputNodeId());
-          currentNode.removeOutputNode(inputNode.getNodeId());
-
-          // Remove also dependencies from outter nodes
-          const cNodeId = inputNode.getNodeId();
-          const allNodes = workbench.getNodes(true);
-          for (const nodeId in allNodes) {
-            let node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbench.removeEdge(edgeId);
-            }
-          }
-          removed = true;
-        } else {
-          removed = workbench.removeEdge(edgeId);
-        }
-        if (removed) {
-          this.__workbenchUI.clearEdge(edgeId);
-        }
+        this.__removeEdge(edgeId);
       }, this);
       this.showInMainView(workbenchUI, "root");
 
@@ -317,7 +294,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __removeEdge: function(edgeId) {
       const workbench = this.getStudy().getWorkbench();
-      if (workbench.removeEdge(edgeId, this.__currentNodeId)) {
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      const edge = workbench.getEdge(edgeId);
+      let removed = false;
+      if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+        let inputNode = workbench.getNode(edge.getInputNodeId());
+        currentNode.removeOutputNode(inputNode.getNodeId());
+
+        // Remove also dependencies from outter nodes
+        const cNodeId = inputNode.getNodeId();
+        const allNodes = workbench.getNodes(true);
+        for (const nodeId in allNodes) {
+          let node = allNodes[nodeId];
+          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+            workbench.removeEdge(edgeId);
+          }
+        }
+        removed = true;
+      } else {
+        removed = workbench.removeEdge(edgeId);
+      }
+      if (removed) {
         this.__workbenchUI.clearEdge(edgeId);
       }
     },
