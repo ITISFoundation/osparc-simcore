@@ -78,40 +78,32 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createGroupButton: function() {
-      const groupButton = new qx.ui.toolbar.Button(this.tr("Group Nodes"), "@FontAwesome5Solid/object-group/14");
-      osparc.utils.Utils.setIdToWidget(groupButton, "groupNodesBtn");
-      groupButton.addListener("execute", () => {
-        this.fireEvent("groupSelection");
-      }, this);
+      const groupButton = this.__createButton(this.tr("Group Nodes"), "object-group", "groupNodesBtn", "groupSelection");
       return groupButton;
     },
 
     __createUngroupButton: function() {
-      const ungroupButton = new qx.ui.toolbar.Button(this.tr("Ungroup Nodes"), "@FontAwesome5Solid/object-ungroup/14");
-      osparc.utils.Utils.setIdToWidget(ungroupButton, "ungroupNodesBtn");
-      ungroupButton.addListener("execute", () => {
-        this.fireEvent("ungroupSelection");
-      }, this);
+      const ungroupButton = this.__createButton(this.tr("Ungroup Nodes"), "object-ungroup", "ungroupNodesBtn", "ungroupSelection");
       return ungroupButton;
     },
 
     __createStartButton: function() {
-      const startButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
-      osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
-      startButton.addListener("execute", () => {
-        this.fireEvent("startPipeline");
-      }, this);
-
+      const startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
       return startButton;
     },
 
     __createStopButton: function() {
-      const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
-
-      stopButton.addListener("execute", () => {
-        this.fireEvent("stopPipeline");
-      }, this);
+      const stopButton = this.__createButton(this.tr("Stop"), "stop-circle", "stopStudyBtn", "stopPipeline");
       return stopButton;
+    },
+
+    __createButton: function(label, icon, widgetId, singalName) {
+      const button = new qx.ui.toolbar.Button(label, "@FontAwesome5Solid/"+icon+"/14");
+      osparc.utils.Utils.setIdToWidget(button, widgetId);
+      button.addListener("execute", () => {
+        this.fireEvent(singalName);
+      }, this);
+      return button;
     }
   }
 });
