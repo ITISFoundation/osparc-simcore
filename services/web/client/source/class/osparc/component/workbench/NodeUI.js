@@ -107,10 +107,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.getNode().getNodeId();
     },
 
-    getMetaData: function() {
-      return this.getNode().getMetaData();
-    },
-
     getCaptionBar: function() {
       return this.getChildControl("captionbar");
     },
@@ -361,8 +357,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       }
       if (data.tags && data.tags.length) {
-        const category = this.getMetaData().category || "";
-        const type = this.getMetaData().type || "";
+        const category = this.getNode().getMetaData().category || "";
+        const type = this.getNode().getMetaData().type || "";
         if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
