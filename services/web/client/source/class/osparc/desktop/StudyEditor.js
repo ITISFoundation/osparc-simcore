@@ -388,14 +388,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __isSelectionEmpty: function(selectedNodeUIs) {
+      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
+        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
+        return true;
+      }
+      return false;
+    },
+
     __groupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
       }
+
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
-      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
+      if (this.__isSelectionEmpty(selectedNodeUIs)) {
         return;
       }
 
@@ -420,8 +428,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
       const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
-      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
+      if (this.__isSelectionEmpty(selectedNodeUIs)) {
         return;
       }
       if (selectedNodeUIs.length > 1) {
