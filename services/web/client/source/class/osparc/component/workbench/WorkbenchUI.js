@@ -55,11 +55,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
-    inputNodesLayout.getContentElement().setStyles({
-      "border-right-style": "dashed",
-      "border-right-color": osparc.theme.Color.colors["workbench-edge-comp-active"],
-      "border-right-width": "2px"
-    });
+    inputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(false));
     const inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
       font: "title-16",
       alignX: "center",
@@ -79,11 +75,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
-    nodesExposedLayout.getContentElement().setStyles({
-      "border-left-style": "dashed",
-      "border-left-color": osparc.theme.Color.colors["workbench-edge-comp-active"],
-      "border-left-width": "2px"
-    });
+    nodesExposedLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(true));
     const outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
       font: "title-16",
       alignX: "center",
@@ -143,6 +135,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     buttonContainer.add(unlinkButton);
 
     this.__addEventListeners();
+  },
+
+  statics: {
+    getDashedBorderSytle(isLeft) {
+      const side = isLeft ? "left" : "right";
+      const borderStyle = {};
+      borderStyle["border-"+side+"-style"] = "dashed";
+      borderStyle["border-"+side+"-color"] = osparc.theme.Color.colors["workbench-edge-comp-active"];
+      borderStyle["border-"+side+"-width"] = "2px";
+      return borderStyle;
+    }
   },
 
   events: {
