@@ -49,19 +49,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
-    const inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    inputNodesLayout.set({
-      width: NODE_INPUTS_WIDTH,
-      maxWidth: NODE_INPUTS_WIDTH,
-      allowGrowX: false
-    });
-    inputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(false));
-    const inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
-      font: "title-16",
-      alignX: "center",
-      padding: 5
-    });
-    inputNodesLayout.add(inputLabel);
+    const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
@@ -69,19 +57,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       flex: 1
     });
 
-    const nodesExposedLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    nodesExposedLayout.set({
-      width: NODE_INPUTS_WIDTH,
-      maxWidth: NODE_INPUTS_WIDTH,
-      allowGrowX: false
-    });
-    nodesExposedLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(true));
-    const outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
-      font: "title-16",
-      alignX: "center",
-      padding: 5
-    });
-    nodesExposedLayout.add(outputLabel);
+    const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
     this._add(nodesExposedLayout);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
@@ -138,8 +114,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   },
 
   statics: {
-    getDashedBorderSytle(isLeft) {
-      const side = isLeft ? "left" : "right";
+    getDashedBorderSytle(isRight) {
+      const side = isRight ? "right" : "left";
       const borderStyle = {};
       borderStyle["border-"+side+"-style"] = "dashed";
       borderStyle["border-"+side+"-color"] = osparc.theme.Color.colors["workbench-edge-comp-active"];
@@ -197,6 +173,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
       }, this);
       return unlinkBtn;
+    },
+
+    __createInputOutputNodesLayout: function(isInput) {
+      const label = isInput ? this.tr("Inputs") : this.tr("Outputs");
+      const inputOutputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      inputOutputNodesLayout.set({
+        width: NODE_INPUTS_WIDTH,
+        maxWidth: NODE_INPUTS_WIDTH,
+        allowGrowX: false
+      });
+      inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(isInput));
+      const title = new qx.ui.basic.Label(label).set({
+        font: "title-16",
+        alignX: "center",
+        padding: 5
+      });
+      inputOutputNodesLayout.add(title);
+
+      return inputOutputNodesLayout;
     },
 
     openServiceCatalog: function() {
