@@ -8,10 +8,10 @@ import logging
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import create_engine
+from aiopg.sa import Engine, create_engine
 from tenacity import retry
 
-from servicelib.aiopg_utils import (DBAPIError,
+from servicelib.aiopg_utils import (DataSourceName, DBAPIError,
                                     PostgresRetryPolicyUponInitialization)
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -21,31 +21,44 @@ from .db_models import metadata
 
 THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name. TODO: sync with config
 
 log = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
-async def __create_tables(**params):
-    # TODO: move _init_db.metadata here!?
+async def _create_pg_engine(dsn: DataSourceName, minsize:int, maxsize:int) -> Engine:
+    log.info("Creating pg engine for %s", dsn)
+    engine = await create_engine(minsize=minsize, maxsize=maxsize, **dsn.asdict())
+    return engine
+
+def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):
+    log.info("Initializing tables for %s", dsn)
     try:
-        url = DSN.format(**params) + f"?application_name={__name__}_init"
-        sa_engine = sa.create_engine(url)
-        metadata.create_all(sa_engine)
+        sa_engine = sa.create_engine(dsn.to_uri(with_query=True))
+        schema.create_all(sa_engine)
     finally:
         sa_engine.dispose()
 
 
 async def pg_engine(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
+    pg_cfg = cfg['postgres']
 
-    if cfg.get("init_tables"):
-        # TODO: get keys from __name__ (see notes in servicelib.application_keys)
-        await __create_tables(**params)
+    app[f"{__name__}.dsn"]= dsn = \
+        DataSourceName(
+            application_name=f'{__name__}_{id(app)}',
+            database=pg_cfg['database'],
+            user=pg_cfg['user'],
+            password=pg_cfg['password'],
+            host=pg_cfg['host'],
+            port=pg_cfg['port']
+        )
 
-    app[APP_DB_ENGINE_KEY] = engine = await create_engine(application_name=f'{__name__}_{id(app)}', **params)
+    app[APP_DB_ENGINE_KEY] = engine = \
+        await _create_pg_engine(dsn, minsize=pg_cfg['minsize'], maxsize=pg_cfg['maxsize'])
+
+    if cfg['init_tables']:
+        init_pg_tables(dsn, schema=metadata)
 
     yield #-------------------
 

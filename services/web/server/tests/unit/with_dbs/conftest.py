@@ -23,7 +23,6 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
-from aiohttp import web
 from yarl import URL
 
 import simcore_service_webserver.utils
@@ -31,9 +30,9 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import \
     app_schema as app_schema
-from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
-from utils_assert import assert_status
+
+DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
