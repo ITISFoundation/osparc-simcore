@@ -3,7 +3,18 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# pull the tagged master build
+# these variable must be available securely from travis
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+# only upstream is allowed to push to itisfoundation repo
+current_fork=$(echo "${TRAVIS_REPO_SLUG%/*}" | tr '[:upper:]' '[:lower:]')
+if [ $current_fork != "itisfoundation" ] &&\
+    ([ ! -v DOCKER_REGISTRY ] || [ -z $DOCKER_REGISTRY ] || [ "$DOCKER_REGISTRY" = "itisfoundation" ]); then
+    echo "## ERROR: it is not allowed to push to the main dockerhub repository from a fork!"
+    echo "## Please adapt your CI-defined environs (DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_REGISTRY)"
+    exit 1
+fi
+
+# pull the current tested build
 export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 make pull-version tag-local
 
@@ -11,17 +22,15 @@ make pull-version tag-local
 echo "## Before push"
 make info-images
 
-# these variable must be available securely from travis
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-# re-tag master build to staging-latest
+# re-tag build to staging-latest
 export DOCKER_IMAGE_TAG=staging-latest
 make push-version
 
-# re-tag master to staging-DATE.BUILD_NUMBER.GIT_SHA
+# re-tag build to staging-DATE.BUILD_NUMBER.GIT_SHA
 TRAVIS_PLATFORM_VERSION=staging-$(date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(git rev-parse HEAD)
 export DOCKER_IMAGE_TAG=$TRAVIS_PLATFORM_VERSION
 make push-version
 
+# show update of images on system
 echo "## After push"
 make info-images
