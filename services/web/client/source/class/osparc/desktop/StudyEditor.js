@@ -388,6 +388,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __getBrotherNodes: function(excludeNodeIds) {
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      const workbench = this.getStudy().getWorkbench();
+
+      let brotherNodesObj = {};
+      if (currentModel.getNodeId) {
+        brotherNodesObj = currentModel.getInnerNodes(false);
+      } else {
+        brotherNodesObj = workbench.getNodes(false);
+      }
+
+      const brotherNodes = [];
+      for (const brotherNodeId in brotherNodesObj) {
+        const index = excludeNodeIds.indexOf(brotherNodeId);
+        if (index === -1) {
+          const brotherNode = workbench.getNode(brotherNodeId);
+          brotherNodes.push(brotherNode);
+        }
+      }
+      return brotherNodes;
+    },
+
     __getAveragePosition: function(nodes) {
       let avgX = 0;
       let avgY = 0;
@@ -426,20 +448,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         selectedNodeIds.push(selectedNodeUI.getNodeId());
       });
 
-      let brotherNodesObj = {};
-      if (currentModel.getNodeId) {
-        brotherNodesObj = currentModel.getInnerNodes(false);
-      } else {
-        brotherNodesObj = workbench.getNodes(false);
-      }
-      const brotherNodes = [];
-      for (const brotherNodeId in brotherNodesObj) {
-        const index = selectedNodeIds.indexOf(brotherNodeId);
-        if (index === -1) {
-          const brotherNode = workbench.getNode(brotherNodeId);
-          brotherNodes.push(brotherNode);
-        }
-      }
+      const brotherNodes = this.__getBrotherNodes(selectedNodeIds);
 
 
       // Create nodesGroup
@@ -522,7 +531,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-
       // Collect info
       const workbench = this.getStudy().getWorkbench();
       const currentModel = this.__workbenchUI.getCurrentModel();
@@ -532,19 +540,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         newParentNode = currentModel;
       }
 
-      let brotherNodesObj = {};
-      if (currentModel.getNodeId) {
-        brotherNodesObj = currentModel.getInnerNodes(false);
-      } else {
-        brotherNodesObj = workbench.getNodes(false);
-      }
-      const brotherNodes = [];
-      for (const brotherNodeId in brotherNodesObj) {
-        if (nodesGroup.getNodeId() !== brotherNodeId) {
-          const brotherNode = workbench.getNode(brotherNodeId);
-          brotherNodes.push(brotherNode);
-        }
-      }
+      const brotherNodes = this.__getBrotherNodes([nodesGroup.getNodeId()]);
+
 
       // change parents on old inner nodes
       const innerNodes = nodesGroup.getInnerNodes(false);
