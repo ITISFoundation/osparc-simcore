@@ -33,6 +33,7 @@ qx.Theme.define("osparc.theme.Color", {
     "text-darker": "text-disabled",
     "tabview-pane-background": "background-main",
     "workbench-start-hint": "#505050",
+    "service-window-hint": "#808080",
     "ready-green": "#33925A",
     "failed-red": "#FF2D2D",
     "contrasted-text-dark": "#222222",

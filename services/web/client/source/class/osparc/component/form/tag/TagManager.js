@@ -23,7 +23,6 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       resizable: false,
       modal: true,
       appearance: "service-window",
-      height: 350,
       width: 262,
       contentPadding: 0
     });
@@ -60,6 +59,17 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         flex: 1
       });
       osparc.store.Store.getInstance().getTags().forEach(tag => buttonContainer.add(this.__tagButton(tag)));
+      if (buttonContainer.getChildren().length === 0) {
+        buttonContainer.add(new qx.ui.basic.Label().set({
+          value: this.tr("Add your first tag in Preferences/Tags"),
+          font: "title-16",
+          textColor: "service-window-hint",
+          rich: true,
+          backgroundColor: "material-button-background",
+          padding: 10,
+          textAlign: "center"
+        }));
+      }
     },
     /**
      * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
@@ -76,7 +86,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         if (this.getWidth() > freeDistances.right) {
           position.left = location.left - this.getWidth();
           if (this.getHeight() > freeDistances.bottom) {
-            position.top = location.top - this.getHeight();
+            position.top = location.top - (this.getHeight() || this.getSizeHint().height);
           }
         } else if (this.getHeight() > freeDistances.bottom) {
           position.top = location.top - this.getHeight();
