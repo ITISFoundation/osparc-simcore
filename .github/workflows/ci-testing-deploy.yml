@@ -50,10 +50,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   unit-test-director:
     name: Unit-testing director
@@ -90,10 +86,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   unit-test-frontend:
     name: Unit-testing frontend
@@ -130,9 +122,6 @@ jobs:
     #     token: ${{ secrets.CODECOV_TOKEN }} #required
     #     flags: unittests #optional
     # - name: Code Climate Coverage Action
-    #   uses: paambaati/codeclimate-action@v2.3.0
-    #   with:
-    #     coverageCommand: coverage xml
 
   unit-test-python-linting:
     name: Unit-testing python-linting
@@ -202,10 +191,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   # DISABLED for now
   # unit-test-sidecar:
@@ -236,10 +221,6 @@ jobs:
   #     with:
   #       token: ${{ secrets.CODECOV_TOKEN }} #required
   #       flags: unittests #optional
-    # - name: Code Climate Coverage Action
-    #   uses: paambaati/codeclimate-action@v2.3.0
-    #   with:
-    #     coverageCommand: coverage xml
 
   unit-test-simcore-sdk:
     name: Unit-testing simcore-sdk
@@ -276,10 +257,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   unit-test-storage:
     name: Unit-testing storage
@@ -316,10 +293,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   unit-test-webserver:
     name: Unit-testing webserver
@@ -356,10 +329,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   build-test-images:
     runs-on: ubuntu-18.04
@@ -420,10 +389,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: integrationtests #optional
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
@@ -464,10 +429,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
         flags: integrationtests
-    - name: Code Climate Coverage Action
-      uses: paambaati/codeclimate-action@v2.3.0
-      with:
-        coverageCommand: coverage xml
 
   system-test-swarm-deploy:
     name: System-testing deploy simcore
@@ -571,6 +532,28 @@ jobs:
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
+
+  coverage:
+    needs: [
+      unit-test-api, unit-test-director, unit-test-service-library, unit-test-simcore-sdk,
+      unit-test-storage, unit-test-webserver, integration-test-webserver, integration-test-simcore-sdk,
+      system-test-swarm-deploy, system-test-e2e
+      ]
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-node@master
+      with:
+        node-version: '12'
+    - run: npm install -g yarn
+    - run: yarn install
+    - run: yarn build
+    - uses: paambaati/codeclimate-action@v2
+      env:
+        CC_TEST_REPORTER_ID: 945dfb58a832d233a3caeb84e3e6d3be212e8c7abcb48117fce63b9adcb43647
+      with:
+        coverageCommand: yarn coverage
 
   deploy:
     name: deploy to dockerhub
