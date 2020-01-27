@@ -51,11 +51,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_coverage.json coverage.xml
+    - name: upload codeclimate coverage
       uses: actions/upload-artifact@v1
       with:
         name: unit_api_coverage
-        path: coverage.xml
+        path: codeclimate.unit_api_coverage.json
 
   unit-test-director:
     name: Unit-testing director
@@ -92,11 +97,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: unit_director_coverage
-        path: coverage.xml
+        path: codeclimate.unit_director_coverage.json
 
   unit-test-frontend:
     name: Unit-testing frontend
@@ -202,11 +212,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: unit_servicelib_coverage
-        path: coverage.xml
+        path: codeclimate.unit_servicelib_coverage.json
 
   # DISABLED for now
   # unit-test-sidecar:
@@ -273,11 +288,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: unit_simcoresdk_coverage
-        path: coverage.xml
+        path: codeclimate.unit_simcoresdk_coverage.json
 
   unit-test-storage:
     name: Unit-testing storage
@@ -314,11 +334,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: unit_storage_coverage
-        path: coverage.xml
+        path: codeclimate.unit_storage_coverage.json
 
   unit-test-webserver:
     name: Unit-testing webserver
@@ -355,11 +380,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: unittests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: unit_webserver_coverage
-        path: coverage.xml
+        path: codeclimate.unit_webserver_coverage.json
 
   integration-test-webserver:
     name: Integration-testing webserver
@@ -399,11 +429,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests #optional
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: integration_webserver_coverage
-        path: coverage.xml
+        path: codeclimate.integration_webserver_coverage.json
 
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
@@ -443,11 +478,16 @@ jobs:
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
         flags: integrationtests
-    - name: upload test coverage      
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
+    - name: upload codeclimate coverage      
       uses: actions/upload-artifact@v1
       with:
         name: integration_simcoresdk_coverage
-        path: coverage.xml
+        path: codeclimate.integration_simcoresdk_coverage.json
 
   system-test-swarm-deploy:
     name: System-testing deploy simcore
@@ -584,39 +624,17 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: integration_simcoresdk_coverage
-    - run: ls -al unit_api_coverage
-      name: show files in coverages
-    - uses: actions/cache@v1
-      name: getting cached data python
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    # - name: setup python environment
-    #   uses: actions/setup-python@v1.1.1
-    #   with:
-    #     python-version: 3.6
-    # - run: pip install coverage
-    # - run: coverage xml
+    - name: put all artefacts together
+      run: |
+        mkdir all_coverages
+        cp unit_api_coverage/*.json unit_director_coverage/*.json unit_servicelib_coverage/*.json unit_simcoresdk_coverage/*.json unit_storage_coverage/*.json unit_webserver_coverage/*.json \
+          integration_webserver_coverage/*.json integration_simcoresdk_coverage/*.json all_coverages/
+        ls -al all_coverages
     - name: install codeclimate test reporter
       run: |
         curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        chmod +x ./cc-test-reporter    
-    - name: format test coverages
-      run: |
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_api_coverage.json unit_api_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_director_coverage.json unit_director_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_servicelib_coverage.json unit_servicelib_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_simcoresdk_coverage.json unit_simcoresdk_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_storage_coverage.json unit_storage_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_webserver_coverage.json unit_webserver_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_webserver_coverage.json integration_webserver_coverage/coverage.xml
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_simcoresdk_coverage.json integration_simcoresdk_coverage/coverage.xml
-    - name: sum coverages
-      run: |
-        # Sum coverage parts into coverage/codeclimate.json (ensure -p has the correct number)
-        ./cc-test-reporter sum-coverage coverage/codeclimate.*.json -p 8 
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 8
     - name: upload coverages
       run: |
         ./cc-test-reporter upload-coverage
