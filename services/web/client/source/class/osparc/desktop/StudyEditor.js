@@ -303,32 +303,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      const node = this.getStudy().getWorkbench().getNode(nodeId);
-      if (node && node.hasDedicatedWidget()) {
-        let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-        const dedicatedWidget = node.getDedicatedWidget();
-        const btnLabel = dedicatedWidget ? this.tr("Setup view") : this.tr("Grid view");
-        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
-        let expertModeBtn = new qx.ui.form.Button().set({
-          label: btnLabel,
-          icon: btnIcon,
-          gap: 10,
-          alignX: "right",
-          height: 25,
-          maxWidth: 150
-        });
-        expertModeBtn.addListener("execute", () => {
-          node.setDedicatedWidget(!dedicatedWidget);
-          this.nodeSelected(nodeId);
-        }, this);
-        dedicatedWrapper.add(expertModeBtn);
-        dedicatedWrapper.add(widget, {
-          flex: 1
-        });
-        this.__mainPanel.setMainView(dedicatedWrapper);
-      } else {
-        this.__mainPanel.setMainView(widget);
-      }
+      this.__mainPanel.setMainView(widget);
 
       let nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
