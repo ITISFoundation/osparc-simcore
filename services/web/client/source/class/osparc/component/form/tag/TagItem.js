@@ -65,55 +65,63 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __colorButton: null,
     __loadingIcon: null,
     __validationManager: null,
+    /**
+     * Renders this tag item from scratch.
+     */
     __renderLayout: function() {
       this._removeAll();
-      switch (this.getMode()) {
-        case this.self().modes.EDIT:
-          const nameContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            width: 90
-          });
-          nameContainer.add(new qx.ui.basic.Label(this.tr("Name")).set({
-            buddy: this.getChildControl("nameinput")
-          }));
-          nameContainer.add(this.getChildControl("nameinput").set({
-            value: this.getName()
-          }));
-          this._add(nameContainer);
-          const descInputContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          descInputContainer.add(new qx.ui.basic.Label(this.tr("Description")).set({
-            buddy: this.getChildControl("descriptioninput")
-          }));
-          descInputContainer.add(this.getChildControl("descriptioninput").set({
-            value: this.getDescription()
-          }));
-          this._add(descInputContainer, {
-            flex: 1
-          });
-          this._add(this.__colorPicker());
-          this._add(this.__tagItemEditButtons());
-          this.setBackgroundColor("background-main-lighter");
-          break;
-        default:
-          const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
-            width: 100
-          });
-          tagContainer.add(this.getChildControl("tag"));
-          this._add(tagContainer);
-          const descriptionContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          descriptionContainer.add(this.getChildControl("description"), {
-            width: "100%"
-          });
-          this._add(descriptionContainer, {
-            flex: 1
-          });
-          this._add(this.__tagItemButtons());
-          this.resetBackgroundColor();
+      if (this.getMode() === this.self().modes.EDIT) {
+        this.__renderEditMode();
+      } else if (this.getMode() === this.self().modes.DISPLAY) {
+        this.__renderDisplayMode();
       }
+    },
+    __renderEditMode: function() {
+      const nameContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        width: 90
+      });
+      nameContainer.add(new qx.ui.basic.Label(this.tr("Name")).set({
+        buddy: this.getChildControl("nameinput")
+      }));
+      nameContainer.add(this.getChildControl("nameinput").set({
+        value: this.getName()
+      }));
+      this._add(nameContainer);
+      const descInputContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      descInputContainer.add(new qx.ui.basic.Label(this.tr("Description")).set({
+        buddy: this.getChildControl("descriptioninput")
+      }));
+      descInputContainer.add(this.getChildControl("descriptioninput").set({
+        value: this.getDescription()
+      }));
+      this._add(descInputContainer, {
+        flex: 1
+      });
+      this._add(this.__colorPicker());
+      this._add(this.__tagItemEditButtons());
+      this.setBackgroundColor("background-main-lighter");
+    },
+    __renderDisplayMode: function() {
+      const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+        width: 100
+      });
+      tagContainer.add(this.getChildControl("tag"));
+      this._add(tagContainer);
+      const descriptionContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      descriptionContainer.add(this.getChildControl("description"), {
+        width: "100%"
+      });
+      this._add(descriptionContainer, {
+        flex: 1
+      });
+      this._add(this.__tagItemButtons());
+      this.resetBackgroundColor();
     },
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "tag":
+          // Tag sample on display mode
           if (this.__tag == null) {
             this.__tag = new osparc.ui.basic.Tag();
             this.bind("name", this.__tag, "value");
@@ -122,6 +130,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           control = this.__tag;
           break;
         case "description":
+          // Description label on display mode
           if (this.__description == null) {
             this.__description = new qx.ui.basic.Label().set({
               rich: true
@@ -131,6 +140,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           control = this.__description;
           break;
         case "nameinput":
+          // Tag name input in edit mode
           if (this.__nameInput == null) {
             this.__nameInput = new qx.ui.form.TextField().set({
               required: true
@@ -141,6 +151,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           control = this.__nameInput;
           break;
         case "descriptioninput":
+          // Tag description input in edit mode
           if (this.__descriptionInput == null) {
             this.__descriptionInput = new qx.ui.form.TextArea().set({
               autoSize: true,
@@ -150,6 +161,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           control = this.__descriptionInput;
           break;
         case "colorinput":
+          // Color input in edit mode
           if (this.__colorInput == null) {
             this.__colorInput = new qx.ui.form.TextField().set({
               value: this.getColor(),
@@ -165,6 +177,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           control = this.__colorInput;
           break;
         case "colorbutton":
+          // Random color generator button in edit mode
           if (this.__colorButton == null) {
             this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
             this.__colorButton.addListener("execute", () => {
@@ -176,6 +189,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       }
       return control || this.base(arguments, id);
     },
+    /**
+     * Generates and returns the buttons for deleting and editing an existing label (display mode)
+     */
     __tagItemButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button(this.tr("Edit")).set({
@@ -203,6 +219,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       }, this);
       return buttonContainer;
     },
+    /**
+     * Generates and returns the buttons for cancelling edition and saving tag of a new or existing label (edit mode)
+     */
     __tagItemEditButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/check/12").set({
@@ -252,6 +271,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       }, this);
       return buttonContainer;
     },
+    /**
+     * Generates and returns the color input (edit mode)
+     */
     __colorPicker: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       container.add(new qx.ui.basic.Label(this.tr("Color")).set({
@@ -265,6 +287,9 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       container.add(innerContainer);
       return container;
     },
+    /**
+     * Creates an object containing the udpated tag info
+     */
     __serializeData: function() {
       return {
         id: this.isPropertyInitialized("id") ? this.getId() : null,
