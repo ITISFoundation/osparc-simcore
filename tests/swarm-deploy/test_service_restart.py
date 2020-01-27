@@ -34,7 +34,7 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
     # the fixture will fail
 
     @retry( wait=wait_fixed(MAX_TIME_TO_DEPLOY_SECS),
-            stop=stop_after_attempt(3),
+            stop=stop_after_attempt(5),
             before=before_log(logger, logging.WARNING) )
     def ensure_deployed():
         for service in docker_client.services.list():
