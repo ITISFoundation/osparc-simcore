@@ -543,8 +543,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __createNodeOutputUIs: function(model) {
       this.__clearNodeOutputUIs();
-      let outputLabel = this.__createNodeOutputUI(model);
-      this.__nodesUI.push(outputLabel);
+      let outputNodeUI = this.__createNodeOutputUI(model);
+      this.__nodesUI.push(outputNodeUI);
     },
 
     __clearNodeOutputUIs: function() {
@@ -593,6 +593,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__createEdgeUI(node1Id, node2Id, edgeId);
         }
       }
+    },
+
+    __updateAllEdges: function() {
+      this.__nodesUI.forEach(nodeUI => {
+        this.__updateEdges(nodeUI);
+      });
     },
 
     __updateEdges: function(nodeUI) {
@@ -892,6 +898,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
         domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
         domEl.addEventListener("drop", this.__drop.bind(this), false);
+
+        this.addListener("resize", () => this.__updateAllEdges(), this);
       });
       this.addListener("disappear", () => {
         // Reset filters
