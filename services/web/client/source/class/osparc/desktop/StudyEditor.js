@@ -231,6 +231,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__mainPanel.getControls().setIsWorkbenchVisible(widget === this.__workbenchUI);
+      if (widget === this.__workbenchUI) {
+        controlsBar.enableSettingsViewButton(true);
+        controlsBar.enableWorkbenchViewButton(true);
+      } else {
+        controlsBar.enableWorkbenchViewButton(false);
+      }
+      if (nodeId === "root") {
+        controlsBar.enableSettingsViewButton(false);
+      } else {
+        controlsBar.enableSettingsViewButton(true);
+        controlsBar.enableWorkbenchViewButton(true);
+      }
+
       this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
