@@ -123,6 +123,13 @@ qx.Theme.define("osparc.theme.Font", {
       family: ["Roboto"],
       color: "workbench-start-hint",
       bold: true
+    },
+
+    "workbench-io-label": {
+      size: 20,
+      family: ["monospace"],
+      color: "workbench-start-hint",
+      bold: true
     }
   }
 });

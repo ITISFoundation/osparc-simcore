@@ -931,6 +931,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (parentNodeId) {
         let parentNode = this.getWorkbench().getNode(parentNodeId);
         parentNode.removeInnerNode(this.getNodeId());
+        parentNode.removeOutputNode(this.getNodeId());
       }
     },
 

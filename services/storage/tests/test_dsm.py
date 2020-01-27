@@ -480,7 +480,7 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
     datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
 
-    assert len(datasets) == 2
+    assert len(datasets) == 1
     assert any("Kember" in d.display_name for d in datasets)
 
 async def test_dsm_list_datasets_datcore(dsm_fixture, datcore_structured_testbucket):
@@ -496,7 +496,7 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
     dsm_fixture.has_project_db = True
 
     datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
-    assert len(datasets) == 2
+    assert len(datasets) == 1
     assert any("Kember" in d.display_name for d in datasets)
     for d in datasets:
         files = await dsm_fixture.list_files_dataset(user_id="21", location=SIMCORE_S3_STR, dataset_id=d.dataset_id)
