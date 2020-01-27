@@ -122,7 +122,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       switch (id) {
         case "tag":
           // Tag sample on display mode
-          if (this.__tag == null) {
+          if (this.__tag === null) {
             this.__tag = new osparc.ui.basic.Tag();
             this.bind("name", this.__tag, "value");
             this.bind("color", this.__tag, "color");
@@ -131,7 +131,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "description":
           // Description label on display mode
-          if (this.__description == null) {
+          if (this.__description === null) {
             this.__description = new qx.ui.basic.Label().set({
               rich: true
             });
@@ -141,18 +141,18 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "nameinput":
           // Tag name input in edit mode
-          if (this.__nameInput == null) {
+          if (this.__nameInput === null) {
             this.__nameInput = new qx.ui.form.TextField().set({
               required: true
             });
             this.__validationManager.add(this.__nameInput);
-            this.__nameInput.getContentElement().setAttribute("autocomplete", "off")
+            this.__nameInput.getContentElement().setAttribute("autocomplete", "off");
           }
           control = this.__nameInput;
           break;
         case "descriptioninput":
           // Tag description input in edit mode
-          if (this.__descriptionInput == null) {
+          if (this.__descriptionInput === null) {
             this.__descriptionInput = new qx.ui.form.TextArea().set({
               autoSize: true,
               minimalLineHeight: 1
@@ -162,7 +162,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "colorinput":
           // Color input in edit mode
-          if (this.__colorInput == null) {
+          if (this.__colorInput === null) {
             this.__colorInput = new qx.ui.form.TextField().set({
               value: this.getColor(),
               width: 60,
@@ -178,7 +178,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           break;
         case "colorbutton":
           // Random color generator button in edit mode
-          if (this.__colorButton == null) {
+          if (this.__colorButton === null) {
             this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
             this.__colorButton.addListener("execute", () => {
               this.getChildControl("colorinput").setValue(osparc.utils.Utils.getRandomColor());
@@ -243,7 +243,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
           if (this.isPropertyInitialized("id")) {
             params.url = {
               tagId: this.getId()
-            }
+            };
             fetch = osparc.data.Resources.fetch("tags", "put", params);
           } else {
             fetch = osparc.data.Resources.fetch("tags", "post", params);

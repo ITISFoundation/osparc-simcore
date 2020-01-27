@@ -103,7 +103,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     getContrastedTextColor: function(hexColor) {
       const L = this.getColorLuminance(hexColor);
-      return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light"
+      return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
     },
 
     bytesToSize: function(bytes) {

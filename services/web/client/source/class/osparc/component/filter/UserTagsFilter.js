@@ -18,11 +18,12 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
   },
   members: {
     __buildMenu: function() {
-      osparc.store.Store.getInstance().getTags().forEach(tag => {
-        const menuButton = this._addOption(tag.name);
-        menuButton.setIcon("@FontAwesome5Solid/square/12")
-        menuButton.getChildControl("icon").setTextColor(tag.color);
-      });
+      osparc.store.Store.getInstance().getTags()
+        .forEach(tag => {
+          const menuButton = this._addOption(tag.name);
+          menuButton.setIcon("@FontAwesome5Solid/square/12");
+          menuButton.getChildControl("icon").setTextColor(tag.color);
+        });
     },
     __attachEventListeners: function() {
       osparc.store.Store.getInstance().addListener("changeTags", () => {
@@ -31,4 +32,4 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
       }, this);
     }
   }
-})
+});

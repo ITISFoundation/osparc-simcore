@@ -196,7 +196,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
       osparc.utils.Utils.setIdToWidget(thumbnail, "studyDetailsEditorThumbFld");
       editView.add(thumbnail);
-      
+
       editView.add(this.__tagsSection());
 
       buttons.add(modeButton);

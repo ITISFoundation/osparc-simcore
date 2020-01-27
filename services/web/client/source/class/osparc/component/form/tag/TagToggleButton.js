@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
     this.setLabel(tag.name);
     this.getChildControl("check");
 
-    this.setValue(value ? true : false);
+    this.setValue(value ? true : false); // eslint-disable-line no-unneeded-ternary
 
     this.subscribeToFilterGroup("tags");
   },
@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
           this._add(control, {
             flex: 1
           });
-          if (this.getLabel() == null || this.getShow() === "icon") {
+          if (this.getLabel() == null || this.getShow() === "icon") { // eslint-disable-line no-eq-null
             control.exclude();
           }
           break;
@@ -66,9 +66,8 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
           this.bind("fetching", control, "source", {
             converter: isFetching =>
               isFetching ?
-              "@FontAwesome5Solid/circle-notch/14"
-              :
-              "@FontAwesome5Solid/check/14"
+                "@FontAwesome5Solid/circle-notch/14" :
+                "@FontAwesome5Solid/check/14"
           });
           break;
       }

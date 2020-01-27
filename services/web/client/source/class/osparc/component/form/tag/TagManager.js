@@ -125,12 +125,10 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
               })
               .finally(() => button.setFetching(false));
           }
+        } else if (selected) {
+          this.__selectedTags.push(tag.id);
         } else {
-          if (selected) {
-            this.__selectedTags.push(tag.id)
-          } else {
-            this.__selectedTags.remove(tag.id)
-          }
+          this.__selectedTags.remove(tag.id);
         }
       }, this);
       return button;

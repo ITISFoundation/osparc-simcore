@@ -191,6 +191,6 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 0
       }
-    },
+    }
   }
 });

@@ -273,8 +273,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
           console.error(err);
         });
 
-        this.reloadUserStudies();
-        this.reloadTemplateStudies();
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
     },
 
     __createDeleteButton: function() {
@@ -434,8 +434,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __createStudyItem: function(study, isTemplate) {
       const tags =
         study.tags ?
-          osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id))
-          :
+          osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
       const item = new osparc.desktop.StudyBrowserListItem().set({
         uuid: study.uuid,
@@ -532,7 +531,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         } else {
           this.__setStudyList(osparc.store.Store.getInstance().getStudies());
         }
-      })
+      });
 
       this.__editStudyLayout.add(studyDetails);
 

@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       }, this);
       tagItem.addListener("deleteTag", e => {
         this.__container.remove(e.getTarget());
-      })
+      });
     }
   }
 });

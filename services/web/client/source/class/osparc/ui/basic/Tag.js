@@ -36,4 +36,4 @@ qx.Class.define("osparc.ui.basic.Tag", {
       this.setTextColor(textColor);
     }
   }
-})
+});
