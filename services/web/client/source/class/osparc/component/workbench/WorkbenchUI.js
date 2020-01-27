@@ -31,7 +31,7 @@
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
-const NODE_INPUTS_WIDTH = 200;
+const NODE_INPUTS_WIDTH = 210;
 
 qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   extend: qx.ui.core.Widget,
@@ -117,9 +117,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     getDashedBorderSytle(isRight) {
       const side = isRight ? "right" : "left";
       const borderStyle = {};
-      borderStyle["border-"+side+"-style"] = "dashed";
-      borderStyle["border-"+side+"-color"] = osparc.theme.Color.colors["workbench-edge-comp-active"];
-      borderStyle["border-"+side+"-width"] = "2px";
+      borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
+      borderStyle["background-position"] = side;
+      borderStyle["background-size"] = "5px 50px";
+      borderStyle["background-repeat"] = "repeat-y";
       return borderStyle;
     }
   },
@@ -176,18 +177,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createInputOutputNodesLayout: function(isInput) {
-      const label = isInput ? this.tr("Inputs") : this.tr("Outputs");
+      const label = isInput ? this.tr("INPUTS") : this.tr("OUTPUTS");
       const inputOutputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       inputOutputNodesLayout.set({
         width: NODE_INPUTS_WIDTH,
         maxWidth: NODE_INPUTS_WIDTH,
-        allowGrowX: false
+        allowGrowX: false,
+        padding: [0, 15]
       });
       inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(isInput));
       const title = new qx.ui.basic.Label(label).set({
-        font: "title-16",
         alignX: "center",
-        padding: 5
+        margin: [15, 0],
+        font: "workbench-io-label",
+        textColor: "workbench-start-hint"
       });
       inputOutputNodesLayout.add(title);
 
