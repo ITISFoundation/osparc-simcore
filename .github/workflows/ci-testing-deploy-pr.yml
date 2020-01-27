@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_api_coverage
-        path: .coverage
+        path: coverage.xml
 
   unit-test-director:
     name: Unit-testing director
@@ -96,7 +96,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_director_coverage
-        path: .coverage
+        path: coverage.xml
 
   unit-test-frontend:
     name: Unit-testing frontend
@@ -206,7 +206,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_servicelib_coverage
-        path: .coverage
+        path: coverage.xml
 
   # DISABLED for now
   # unit-test-sidecar:
@@ -277,7 +277,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_simcoresdk_coverage
-        path: .coverage
+        path: coverage.xml
 
   unit-test-storage:
     name: Unit-testing storage
@@ -318,7 +318,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_storage_coverage
-        path: .coverage
+        path: coverage.xml
 
   unit-test-webserver:
     name: Unit-testing webserver
@@ -359,7 +359,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: unit_webserver_coverage
-        path: .coverage
+        path: coverage.xml
 
   integration-test-webserver:
     name: Integration-testing webserver
@@ -403,7 +403,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: integration_webserver_coverage
-        path: .coverage
+        path: coverage.xml
 
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
@@ -447,7 +447,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: integration_simcoresdk_coverage
-        path: .coverage
+        path: coverage.xml
 
   system-test-swarm-deploy:
     name: System-testing deploy simcore
@@ -559,6 +559,7 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v1
     - uses: actions/download-artifact@v1
       with:
         name: unit_api_coverage
@@ -592,25 +593,26 @@ jobs:
         key: ${{ runner.os }}-pip
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: setup python environment
-      uses: actions/setup-python@v1.1.1
-      with:
-        python-version: 3.6
-    - run: pip install coverage    
+    # - name: setup python environment
+    #   uses: actions/setup-python@v1.1.1
+    #   with:
+    #     python-version: 3.6
+    # - run: pip install coverage
+    # - run: coverage xml
     - name: install codeclimate test reporter
       run: |
         curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        chmod +x ./cc-test-reporter
+        chmod +x ./cc-test-reporter    
     - name: format test coverages
       run: |
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_api_coverage.json unit_api_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_director_coverage.json unit_director_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_servicelib_coverage.json unit_servicelib_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_simcoresdk_coverage.json unit_simcoresdk_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_storage_coverage.json unit_storage_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_webserver_coverage.json unit_webserver_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_webserver_coverage.json integration_webserver_coverage/.coverage
-        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_simcoresdk_coverage.json integration_simcoresdk_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_api_coverage.json unit_api_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_director_coverage.json unit_director_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_servicelib_coverage.json unit_servicelib_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_simcoresdk_coverage.json unit_simcoresdk_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_storage_coverage.json unit_storage_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_webserver_coverage.json unit_webserver_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_webserver_coverage.json integration_webserver_coverage/coverage.xml
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_simcoresdk_coverage.json integration_simcoresdk_coverage/coverage.xml
     - name: sum coverages
       run: |
         # Sum coverage parts into coverage/codeclimate.json (ensure -p has the correct number)
