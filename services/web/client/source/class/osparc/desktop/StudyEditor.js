@@ -230,7 +230,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
-      this.__mainPanel.getControls().setIsWorkbenchVisible(widget === this.__workbenchUI);
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.setIsWorkbenchVisible(widget === this.__workbenchUI);
       if (widget === this.__workbenchUI) {
         controlsBar.enableSettingsViewButton(true);
         controlsBar.enableWorkbenchViewButton(true);
