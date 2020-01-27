@@ -149,7 +149,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       ].forEach(widget => {
         widget.addListener("nodeDoubleClicked", e => {
           const nodeId = e.getData();
-          this.nodeSelected(nodeId, true);
+          this.nodeSelected(nodeId);
         }, this);
       });
 
@@ -187,7 +187,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
     },
 
-    nodeSelected: function(nodeId, openNodeAndParents = false) {
+    nodeSelected: function(nodeId) {
       if (!nodeId) {
         this.__loggerView.setCurrentNodeId();
         return;
@@ -236,7 +236,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const controlsBar = this.__mainPanel.getControls();
       controlsBar.setIsWorkbenchVisible(widget === this.__workbenchUI);
 
-      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
+      this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
@@ -420,7 +420,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const currentModel = this.__workbenchUI.getCurrentModel();
       workbench.groupNodes(currentModel, selectedNodes);
 
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root");
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
@@ -450,7 +450,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const currentModel = this.__workbenchUI.getCurrentModel();
       workbench.ungroupNode(currentModel, nodesGroup);
 
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root", true);
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root");
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();

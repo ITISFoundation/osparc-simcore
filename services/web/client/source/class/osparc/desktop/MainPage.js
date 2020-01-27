@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
-          this.__studyEditor.nodeSelected(nodeId, true);
+          this.__studyEditor.nodeSelected(nodeId);
         }
       }, this);
       return navBar;

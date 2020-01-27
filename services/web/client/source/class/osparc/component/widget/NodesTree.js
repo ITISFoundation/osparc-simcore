@@ -287,13 +287,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
-    nodeSelected: function(nodeId, openNodeAndParents = false) {
+    nodeSelected: function(nodeId) {
       const dataModel = this.__tree.getModel();
       const nodeInTree = this.__getNodeInTree(dataModel, nodeId);
       if (nodeInTree) {
-        if (openNodeAndParents) {
-          this.__tree.openNodeAndParents(nodeInTree);
-        }
+        this.__tree.openNodeAndParents(nodeInTree);
         this.__tree.setSelection(new qx.data.Array([nodeInTree]));
       }
     },
