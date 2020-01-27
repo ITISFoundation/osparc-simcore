@@ -214,9 +214,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__nodeView.buildLayout();
         }
       }
-
-      this.__nodesTree.nodeSelected(nodeId);
-      this.__loggerView.setCurrentNodeId(nodeId);
     },
 
     __openFilePicker: function(node) {
@@ -305,7 +302,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
 
-      let nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
+      this.__nodesTree.nodeSelected(nodeId);
+      this.__loggerView.setCurrentNodeId(nodeId);
+
+      const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
