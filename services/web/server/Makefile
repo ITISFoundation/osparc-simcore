@@ -29,14 +29,14 @@ install-dev install-prod install-ci: openapi-specs ## install app in development
 .PHONY: tests-unit tests-integration
 tests-unit: ## runs unit tests
 	# running unit tests
-	@pytest -vv --exitfirst --failed-first --durations=0 --pdb $(CURDIR)/tests/unit
+	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/unit
 
 
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	pytest -vv --exitfirst --failed-first --pdb $(CURDIR)/tests/integration
+	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
 .PHONY: build

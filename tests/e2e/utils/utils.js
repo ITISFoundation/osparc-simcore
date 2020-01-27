@@ -57,10 +57,13 @@ async function getVisibleChildrenIDs(page, parentSelector) {
 }
 
 async function fetch(endpoint) {
-  const responseEnv = await page.evaluate(async (url, apiVersion, endpoint) => {
-    const response = await fetch(url+apiVersion+endpoint);
-    return await response.json();
-  }, url, apiVersion, endpoint);
+  const responseEnv = await page.evaluate(
+    // NOTE: without the following comment it fails here with some weird message
+    /* istanbul ignore next */
+    async (url, apiVersion, endpoint) => {
+      const response = await fetch(url+apiVersion+endpoint);
+      return await response.json();
+    }, url, apiVersion, endpoint);
   return responseEnv;
 }
 
@@ -71,7 +74,7 @@ async function emptyField(page, selector) {
 async function dragAndDrop(page, start, end) {
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  
+
   await page.mouse.move(end.x, end.y);
   await page.mouse.up();
 }
@@ -87,7 +90,7 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function waitForValidSleeperOutputFile(page) {
+async function waitForValidOutputFile(page) {
   return new Promise((resolve, reject) => {
     page.on("response", function callback(resp) {
       const header = resp.headers();
@@ -117,6 +120,13 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function takeScreenshot(page, captureName) {
+  await page.screenshot({
+    fullPage: true,
+    path: 'screenshots/'+captureName+'.jpg',
+    type: 'jpeg',
+  })
+}
 
 module.exports = {
   getRandUserAndPass,
@@ -127,6 +137,7 @@ module.exports = {
   emptyField,
   dragAndDrop,
   waitForResponse,
-  waitForValidSleeperOutputFile,
+  waitForValidOutputFile,
   sleep,
+  takeScreenshot,
 }

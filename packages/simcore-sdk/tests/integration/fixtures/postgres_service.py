@@ -1,11 +1,8 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import os
-from copy import deepcopy
 from typing import Dict
 
 import pytest
@@ -17,22 +14,11 @@ from servicelib.aiopg_utils import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.base import metadata
 from utils_docker import get_service_published_port
 
-#
-# FIXME: this should be in sync with the original
-# which is owned by the webserver???
-_metadata = sa.MetaData()
-_tokens = sa.Table("tokens", _metadata,
-    sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
-    sa.Column("user_id", sa.BigInteger, nullable=False),
-    sa.Column("token_service", sa.String, nullable=False),
-    sa.Column("token_data", sa.JSON, nullable=False),
-)
-
 
 @pytest.fixture(scope='module')
 def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict:
     assert "simcore_postgres" in docker_stack["services"]
-    
+
     DSN = {
         "user": devel_environ["POSTGRES_USER"],
         "password": devel_environ["POSTGRES_PASSWORD"],
@@ -56,11 +42,11 @@ def postgres_db(postgres_dsn: Dict, docker_stack):
     # Configures db and initializes tables
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    _metadata.create_all(bind=engine, checkfirst=True)
+    metadata.create_all(bind=engine, checkfirst=True)
 
     yield engine
 
-    _metadata.drop_all(engine)
+    metadata.drop_all(engine)
     engine.dispose()
 
 @pytest.fixture(scope='module')

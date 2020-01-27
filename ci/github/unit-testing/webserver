@@ -12,7 +12,9 @@ install() {
 }
 
 test() {
-    pytest --cov=simcore_service_webserver --cov-append --color=yes --cov-report=term-missing --cov-report=xml -v -m "not travis" services/web/server/tests/unit
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml \
+          -v -m "not travis" services/web/server/tests/unit
 }
 
 # Check if the function exists (bash specific)

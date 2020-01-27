@@ -32,6 +32,8 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+    minsize: 4
+    maxsize: 4
 resource_manager:
   enabled: True
   resource_deletion_timeout_seconds:  ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}

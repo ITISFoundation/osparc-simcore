@@ -12,7 +12,7 @@ main:
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
-socketio:  
+socketio:
   message_queue:
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}
@@ -23,7 +23,8 @@ director:
   port: ${DIRECTOR_PORT}
   version: v0
 db:
-  init_tables: False
+  # Default for WEBSERVER_DB_INITTABLES set in cli.py
+  init_tables: ${WEBSERVER_DB_INITTABLES}
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -31,6 +32,8 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+    minsize: 4
+    maxsize: 4
 resource_manager:
   enabled: True
   resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}

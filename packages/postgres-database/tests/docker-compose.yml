@@ -12,6 +12,15 @@ services:
       - test_postgres_database_volume:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
+    command:
+      [
+        "postgres",
+        "-c", "log_connections=true",
+        "-c", "log_disconnections=true",
+        "-c", "log_duration=true",
+        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] "
+      ]
   adminer:
     image: adminer
     ports:
