@@ -336,11 +336,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showWorkbenchUI: function() {
-      console.log("showWorkbench");
+      if (this.__workbenchUI.getCurrentModel().getNodeId && this.__currentNodeId === this.__workbenchUI.getCurrentModel().getNodeId()) {
+        this.showInMainView(this.__workbenchUI, this.__currentNodeId);
+      } else {
+        osparc.component.message.FlashMessenger.getInstance().logAs("No Workbench view for this node", "ERROR");
+      }
     },
 
     __showSettings: function() {
-      console.log("showSettings");
+      if (this.__nodeView.isPropertyInitialized("node") && this.__currentNodeId === this.__nodeView.getNode().getNodeId()) {
+        this.showInMainView(this.__nodeView, this.__currentNodeId);
+      } else {
+        osparc.component.message.FlashMessenger.getInstance().logAs("No Settings view for this node", "ERROR");
+      }
     },
 
     __isSelectionEmpty: function(selectedNodeUIs) {
