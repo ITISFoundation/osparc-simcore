@@ -230,7 +230,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
-      this.__mainPanel.getControls().setIsWorkbenchVisible(widget === this.__workbenchUI);
+      this.__mainPanel.getControls().setWorkbenchVisibility(widget === this.__workbenchUI);
       this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
