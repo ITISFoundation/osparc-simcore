@@ -239,26 +239,22 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             data
           };
           saveButton.setFetching(true);
+          let fetch;
           if (this.isPropertyInitialized("id")) {
             params.url = {
               tagId: this.getId()
             }
-            osparc.data.Resources.fetch("tags", "put", params)
-              .then(tag => this.set(tag))
-              .catch(console.error)
-              .finally(() => {
-                this.setMode(this.self().modes.DISPLAY);
-                saveButton.setFetching(false);
-              });
+            fetch = osparc.data.Resources.fetch("tags", "put", params);
           } else {
-            osparc.data.Resources.fetch("tags", "post", params)
-              .then(tag => this.set(tag))
-              .catch(console.error)
-              .finally(() => {
-                this.setMode(this.self().modes.DISPLAY);
-                saveButton.setFetching(false);
-              });
+            fetch = osparc.data.Resources.fetch("tags", "post", params);
           }
+          fetch
+            .then(tag => this.set(tag))
+            .catch(console.error)
+            .finally(() => {
+              this.setMode(this.self().modes.DISPLAY);
+              saveButton.setFetching(false);
+            });
         }
       }, this);
       cancelButton.addListener("execute", () => {
