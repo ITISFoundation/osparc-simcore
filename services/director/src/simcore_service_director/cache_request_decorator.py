@@ -18,7 +18,7 @@ def cache_requests(http_request: callable):
 
         resp_data, resp_headers = await http_request(app, url, method)
 
-        if config.DIRECTOR_REGISTRY_CACHING:
+        if config.DIRECTOR_REGISTRY_CACHING and method == "GET":
             cache_data[cache_key] = (resp_data, resp_headers)
         
         return (resp_data, resp_headers)
