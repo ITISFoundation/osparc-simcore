@@ -534,13 +534,13 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: upload logs
+        name: e2e_docker_container_logs
         path: simcore_logs
     - name: upload screenshots
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: upload screenshots
+        name: e2e_screenshots
         path: tests/e2e/screenshots
     - uses: codecov/codecov-action@v1
       with:
