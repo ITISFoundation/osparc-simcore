@@ -29,13 +29,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.setStudy(study);
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({
-      minWidth: 1000
-    });
+    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      maxWidth: 800,
-      width: 500
+      maxWidth: 700,
+      width: 400
     });
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -66,7 +64,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   members: {
-    __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
     __scrollContainer: null,
@@ -107,36 +104,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
-        const workbench = this.getStudy().getWorkbench();
-        const currentNode = workbench.getNode(this.__currentNodeId);
-        const edge = workbench.getEdge(edgeId);
-        let removed = false;
-        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(edge.getInputNodeId());
-          currentNode.removeOutputNode(inputNode.getNodeId());
-
-          // Remove also dependencies from outter nodes
-          const cNodeId = inputNode.getNodeId();
-          const allNodes = workbench.getNodes(true);
-          for (const nodeId in allNodes) {
-            let node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbench.removeEdge(edgeId);
-            }
-          }
-          removed = true;
-        } else {
-          removed = workbench.removeEdge(edgeId);
-        }
-        if (removed) {
-          this.__workbenchUI.clearEdge(edgeId);
-        }
+        this.__removeEdge(edgeId);
       }, this);
       this.showInMainView(workbenchUI, "root");
 
@@ -260,6 +230,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
+      this.__mainPanel.getControls().setIsWorkbenchVisible(widget === this.__workbenchUI);
       this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
@@ -320,7 +291,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __removeEdge: function(edgeId) {
       const workbench = this.getStudy().getWorkbench();
-      if (workbench.removeEdge(edgeId, this.__currentNodeId)) {
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      const edge = workbench.getEdge(edgeId);
+      let removed = false;
+      if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+        let inputNode = workbench.getNode(edge.getInputNodeId());
+        currentNode.removeOutputNode(inputNode.getNodeId());
+
+        // Remove also dependencies from outter nodes
+        const cNodeId = inputNode.getNodeId();
+        const allNodes = workbench.getNodes(true);
+        for (const nodeId in allNodes) {
+          let node = allNodes[nodeId];
+          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+            workbench.removeEdge(edgeId);
+          }
+        }
+        removed = true;
+      } else {
+        removed = workbench.removeEdge(edgeId);
+      }
+      if (removed) {
         this.__workbenchUI.clearEdge(edgeId);
       }
     },
@@ -491,7 +482,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       // post pipeline
-      this.__pipelineId = null;
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -537,10 +527,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.getLogger().debug("root", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.__pipelineId = null;
         this.getLogger().error("root", "Submission failed");
       } else {
-        this.__pipelineId = pipelineId;
         this.getLogger().info("root", "Pipeline started");
       }
     },

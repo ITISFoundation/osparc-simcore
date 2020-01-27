@@ -81,8 +81,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     // sure to catch this event
     this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
-      this.removeAll();
-      this.setWorkbench(workbench);
+      this.loadModel(workbench);
       this.__nodeSelected("root");
     });
 
@@ -127,7 +126,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
-    "removeNode": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
@@ -135,8 +133,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   properties: {
     workbench: {
       check: "osparc.data.model.Workbench",
-      nullable: false,
-      apply: "loadModel"
+      nullable: false
     }
   },
 
@@ -554,15 +551,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __removeSelectedNode: function() {
-      for (let i = 0; i < this.__nodesUI.length; i++) {
-        if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
-          this.__removeNode(this.__nodesUI[i]);
-          return;
-        }
-      }
-    },
-
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
       return osparc.utils.Ports.areNodesCompatible(topLevelPort1, topLevelPort2);
     },
@@ -718,18 +706,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return null;
     },
 
-    __removeNode: function(node) {
-      this.fireDataEvent("removeNode", node.getNodeId());
-    },
-
     clearNode(nodeId) {
       this.__clearNode(nodeId);
-    },
-
-    __removeAllNodes: function() {
-      while (this.__nodesUI.length > 0) {
-        this.__removeNode(this.__nodesUI[this.__nodesUI.length - 1]);
-      }
     },
 
     clearEdge: function(edgeId) {
@@ -738,17 +716,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __removeEdge: function(edge) {
       this.fireDataEvent("removeEdge", edge.getEdgeId());
-    },
-
-    __removeAllEdges: function() {
-      while (this.__edgesUI.length > 0) {
-        this.__removeEdge(this.__edgesUI[this.__edgesUI.length - 1]);
-      }
-    },
-
-    removeAll: function() {
-      this.__removeAllNodes();
-      this.__removeAllEdges();
     },
 
     __clearNode: function(nodeId) {

@@ -50,6 +50,13 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   members: {
     __startButton: null,
     __stopButton: null,
+    __groupButton: null,
+    __ungroupButton: null,
+
+    setIsWorkbenchVisible: function(isWorkbenchContext) {
+      this.__groupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
+      this.__ungroupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
+    },
 
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
