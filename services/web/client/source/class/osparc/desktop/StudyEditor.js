@@ -196,76 +196,52 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__nodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
-      const widget = this.__getWidgetForNode(nodeId);
-      const workbench = this.getStudy().getWorkbench();
-      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isFilePicker()) {
-        // open file picker in window
-        const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
-          appearance: "service-window",
-          layout: new qx.ui.layout.Grow(),
-          autoDestroy: true,
-          contentPadding: 0,
-          width: 570,
-          height: 450,
-          showMinimize: false,
-          modal: true
-        });
-        const showParentWorkbench = () => {
-          const node = widget.getNode();
-          this.nodeSelected(node.getParentNodeId() || "root");
-        };
-        filePickerWin.add(widget);
-        qx.core.Init.getApplication().getRoot().add(filePickerWin);
-        filePickerWin.show();
-        filePickerWin.center();
 
-        widget.addListener("finished", () => filePickerWin.close(), this);
-        filePickerWin.addListener("close", () => showParentWorkbench());
+      const workbench = this.getStudy().getWorkbench();
+      if (nodeId === "root") {
+        this.showInMainView(this.__workbenchUI, nodeId);
+        this.__workbenchUI.loadModel(workbench);
       } else {
-        this.showInMainView(widget, nodeId);
-      }
-      if (widget === this.__workbenchUI) {
-        if (nodeId === "root") {
-          this.__workbenchUI.loadModel(workbench);
-        } else {
-          let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
+        if (node.isFilePicker()) {
+          this.__openFilePicker(node);
+        } else if (node.isContainer()) {
+          this.showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
+        } else {
+          this.showInMainView(this.__nodeView, nodeId);
+          this.__nodeView.setNode(node);
+          this.__nodeView.buildLayout();
         }
       }
-
-      const controlsBar = this.__mainPanel.getControls();
-      controlsBar.setIsWorkbenchVisible(widget === this.__workbenchUI);
 
       this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
     },
 
-    __getWidgetForNode: function(nodeId) {
-      // Find widget for the given nodeId
-      const workbench = this.getStudy().getWorkbench();
-      let widget = null;
-      if (nodeId === "root") {
-        widget = this.__workbenchUI;
-      } else {
-        let node = workbench.getNode(nodeId);
-        if (node.isContainer()) {
-          if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
-            if (node.isInKey("multi-plot")) {
-              widget = new osparc.component.widget.DashGrid(node);
-            }
-          }
-          if (widget === null) {
-            widget = this.__workbenchUI;
-          }
-        } else if (node.isFilePicker()) {
-          widget = new osparc.file.FilePicker(node, this.getStudy().getUuid());
-        } else {
-          this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
-          widget = this.__nodeView;
-        }
-      }
-      return widget;
+    __openFilePicker: function(node) {
+      const filePicker = new osparc.file.FilePicker(node, this.getStudy().getUuid());
+      // open file picker in window
+      const filePickerWin = new qx.ui.window.Window(node.getLabel()).set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 0,
+        width: 570,
+        height: 450,
+        showMinimize: false,
+        modal: true
+      });
+      const showParentWorkbench = () => {
+        this.nodeSelected(node.getParentNodeId() || "root");
+      };
+      filePickerWin.add(filePicker);
+      qx.core.Init.getApplication().getRoot().add(filePickerWin);
+      filePickerWin.show();
+      filePickerWin.center();
+
+      filePicker.addListener("finished", () => filePickerWin.close(), this);
+      filePickerWin.addListener("close", () => showParentWorkbench());
     },
 
     __addNode: function() {
