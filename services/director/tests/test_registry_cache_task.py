@@ -28,7 +28,6 @@ async def test_registry_caching_task(loop, client, push_services):
     assert registry_cache_task.TASK_NAME in app
     # check the registry cache is empty (no calls yet)
     assert registry_cache_task.APP_REGISTRY_CACHE_DATA_KEY in app
-    assert app[registry_cache_task.APP_REGISTRY_CACHE_DATA_KEY] == {}
 
     # check we do not get any repository
     list_of_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
