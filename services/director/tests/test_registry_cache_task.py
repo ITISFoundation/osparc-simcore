@@ -36,7 +36,6 @@ async def test_registry_caching_task(loop, client, push_services):
     assert app[registry_cache_task.APP_REGISTRY_CACHE_DATA_KEY] != {}
     # create services in the registry
     pushed_services = push_services(1,1)
-    import pdb; pdb.set_trace()
     # the services shall be updated
     await sleep(config.DIRECTOR_REGISTRY_CACHING_TTL)
     list_of_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
