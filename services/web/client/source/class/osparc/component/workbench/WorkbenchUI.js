@@ -183,7 +183,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         width: NODE_INPUTS_WIDTH,
         maxWidth: NODE_INPUTS_WIDTH,
         allowGrowX: false,
-        padding: [0, 15]
+        padding: [0, 6]
       });
       inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(isInput));
       const title = new qx.ui.basic.Label(label).set({
