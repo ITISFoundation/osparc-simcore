@@ -120,6 +120,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__mainPanel.getControls().addListener("ungroupSelection", this.__ungroupSelection, this);
       this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
       this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("groupSelection", this.__groupSelection, this);
+      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
+      controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
