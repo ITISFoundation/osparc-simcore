@@ -559,50 +559,50 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
     - uses: actions/download-artifact@v1
       with:
         name: unit_api_coverage
-        path: ~/coverages/unit_api_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_director_coverage
-        path: ~/coverages/unit_director_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_servicelib_coverage
-        path: ~/coverages/unit_servicelib_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_simcoresdk_coverage
-        path: ~/coverages/unit_simcoresdk_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_storage_coverage
-        path: ~/coverages/unit_storage_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_webserver_coverage
-        path: ~/coverages/unit_webserver_coverage
     - uses: actions/download-artifact@v1
       with:
-        name: integration_webserver_coverage
-        path: ~/coverages/integration_webserver_coverage
+        name: integration_webserver_coverage        
     - uses: actions/download-artifact@v1
       with:
         name: integration_simcoresdk_coverage
-        path: ~/coverages/integration_simcoresdk_coverage
+    - run: ls -al unit_api_coverage
+      name: show files in coverages
+    - uses: actions/cache@v1
+      name: getting cached data python
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
         python-version: 3.6
-    - run: pip install coverage
-    - run: ls -al ~/coverages
-      name: show files in coverages
+    - run: pip install coverage    
     - uses: paambaati/codeclimate-action@v2.4.0
       env:
         CC_TEST_REPORTER_ID: 945dfb58a832d233a3caeb84e3e6d3be212e8c7abcb48117fce63b9adcb43647
       with:
         coverageCommand: coverage xml
-        coverageLocations: ~/coverages:xml
+        coverageLocations:
+          unit_api_coverage
+          unit_director_coverage
         debug: true
