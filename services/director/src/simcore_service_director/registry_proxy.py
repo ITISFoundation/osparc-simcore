@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Dict, List, Tuple
 
-from aiohttp import BasicAuth, ClientSession, web
+from aiohttp import BasicAuth, ClientSession, client_exceptions, web
 from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
 from yarl import URL
@@ -89,21 +89,25 @@ async def _registry_request(app: web.Application, path: URL, method: str ="GET")
             else None
 
     session = app[APP_CLIENT_SESSION_KEY]
-    async with getattr(session, method.lower())(url, auth=auth) as response:
-        if response.status == 404:
-            _logger.exception("path to registry not found: %s", url)
-            raise exceptions.ServiceNotAvailableError(str(path))
-        if response.status == 401:
-            resp_data, resp_headers = await _auth_registry_request(url, method, response.headers, session)
-        elif response.status > 399:
-            _logger.exception("Unknown error while accessing registry: %s", str(response))
-            raise exceptions.RegistryConnectionError(str(response))
-        else:
-            # registry that does not need an auth
-            resp_data = await response.json(content_type=None)
-            resp_headers = response.headers
+    try:
+        async with getattr(session, method.lower())(url, auth=auth) as response:
+            if response.status == 404:
+                _logger.exception("path to registry not found: %s", url)
+                raise exceptions.ServiceNotAvailableError(str(path))
+            if response.status == 401:
+                resp_data, resp_headers = await _auth_registry_request(url, method, response.headers, session)
+            elif response.status > 399:
+                _logger.exception("Unknown error while accessing registry: %s", str(response))
+                raise exceptions.RegistryConnectionError(str(response))
+            else:
+                # registry that does not need an auth
+                resp_data = await response.json(content_type=None)
+                resp_headers = response.headers
 
-        return (resp_data, resp_headers)
+            return (resp_data, resp_headers)
+    except client_exceptions.ClientError as exc:
+        _logger.exception("Unknown error while accessing registry: %s", str(exc))
+        raise exceptions.RegistryConnectionError(f"Unknown error while accessing registry: {str(exc)}")
 
 async def _list_repositories(app: web.Application) -> List[str]:
     _logger.debug("listing repositories")
