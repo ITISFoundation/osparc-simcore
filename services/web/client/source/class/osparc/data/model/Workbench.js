@@ -100,8 +100,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getPathIds: function(nodeId) {
-      if (nodeId === "root" || nodeId === undefined) {
-        return ["root"];
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const studyId = study.getUuid();
+      if (nodeId === studyId || nodeId === undefined) {
+        return [studyId];
       }
       const nodePath = [];
       nodePath.unshift(nodeId);
@@ -114,7 +116,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           parentNodeId = checkThisNode.getParentNodeId();
         }
       }
-      nodePath.unshift("root");
+      nodePath.unshift(studyId);
       return nodePath;
     },
 

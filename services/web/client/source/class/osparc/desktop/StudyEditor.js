@@ -108,7 +108,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
       }, this);
-      this.showInMainView(workbenchUI, "root");
+      this.showInMainView(workbenchUI, study.getUuid());
 
       this.__nodeView = new osparc.component.widget.NodeView().set({
         minHeight: 200
@@ -197,8 +197,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       this.__currentNodeId = nodeId;
 
-      const workbench = this.getStudy().getWorkbench();
-      if (nodeId === "root") {
+      const study = this.getStudy();
+      const workbench = study.getWorkbench();
+      if (nodeId === study.getUuid()) {
         this.showInMainView(this.__workbenchUI, nodeId);
         this.__workbenchUI.loadModel(workbench);
       } else {
@@ -230,7 +231,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         modal: true
       });
       const showParentWorkbench = () => {
-        this.nodeSelected(node.getParentNodeId() || "root");
+        this.nodeSelected(node.getParentNodeId() || this.getStudy().getUuid());
       };
       filePickerWin.add(filePicker);
       qx.core.Init.getApplication().getRoot().add(filePickerWin);
@@ -325,11 +326,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         false,
         this.__retrieveInputs.bind(this, node, portKey)
       );
-      this.getLogger().debug("root", "Updating pipeline");
+      this.getLogger().debug(null, "Updating pipeline");
     },
 
     __retrieveInputs: function(node, portKey = null) {
-      this.getLogger().debug("root", "Retrieveing inputs");
+      this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
         node.retrieveInputs(portKey);
       }
@@ -379,7 +380,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const currentModel = this.__workbenchUI.getCurrentModel();
       workbench.groupNodes(currentModel, selectedNodes);
 
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root");
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
@@ -409,7 +410,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const currentModel = this.__workbenchUI.getCurrentModel();
       workbench.ungroupNode(currentModel, nodesGroup);
 
-      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : "root");
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
@@ -458,14 +459,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error("root", "Error submitting pipeline");
+        this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("root", "Failed submitting pipeline");
+        this.getLogger().error(null, "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info("root", "Starting pipeline");
+      this.getLogger().info(null, "Starting pipeline");
       return true;
     },
 
@@ -482,26 +483,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.getLogger().error("root", "Error stopping pipeline");
+        this.getLogger().error(null, "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("root", "Failed stopping pipeline");
+        this.getLogger().error(null, "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      this.getLogger().info("root", "Stopping pipeline. Not yet implemented");
+      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
       return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["projectId"];
-      this.getLogger().debug("root", "Pipeline ID " + pipelineId);
+      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.getLogger().error("root", "Submission failed");
+        this.getLogger().error(null, "Submission failed");
       } else {
-        this.getLogger().info("root", "Pipeline started");
+        this.getLogger().info(null, "Pipeline started");
       }
     },
 
@@ -558,7 +559,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           cbSuccess.call(this);
         }
       }).catch(error => {
-        this.getLogger().error("root", "Error updating pipeline");
+        this.getLogger().error(null, "Error updating pipeline");
       });
     },
 

@@ -84,7 +84,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.loadModel(workbench);
-      this.__nodeSelected("root");
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      this.__nodeSelected(study.getUuid());
     });
 
     this.__desktop.add(this.__svgWidgetLinks, {

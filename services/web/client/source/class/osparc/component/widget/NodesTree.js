@@ -105,9 +105,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
         if (selectedItem) {
-          const nodeId = selectedItem ? selectedItem.getNodeId() : "root";
+          const nodeId = selectedItem ? selectedItem.getNodeId() : study.getUuid();
           this.__openItem(nodeId);
         }
       }, this);
@@ -156,7 +157,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       let data = {
         label: study.getName(),
         children: this.__convertModel(topLevelNodes),
-        nodeId: "root",
+        nodeId: study.getUuid(),
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
@@ -257,7 +258,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
           const study = osparc.store.Store.getInstance().getCurrentStudy();
-          if (nodeId === "root") {
+          if (nodeId === study.getUuid()) {
             const params = {
               name: newLabel
             };
