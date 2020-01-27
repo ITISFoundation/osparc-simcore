@@ -93,7 +93,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   statics: {
     NodeWidth: 200,
     NodeHeight: 80,
-    PortHeight: 16
+    PortHeight: 16,
+    captionHeight: function() {
+      return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+    }
   },
 
   members: {
@@ -288,8 +292,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
-        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+      const captionHeight = this.self(arguments).captionHeight();
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self(arguments).PortHeight/2 + 1;
       if (this.__thumbnail) {
