@@ -97,9 +97,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       }
     },
     __tagButton: function(tag) {
-      const button = new osparc.component.form.tag.TagToggleButton(tag).set({
-        value: this.__selectedTags.includes(tag.id)
-      });
+      const button = new osparc.component.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tag.id));
       button.addListener("changeValue", evt => {
         const selected = evt.getData();
         if (this.isLiveUpdate()) {

@@ -10,6 +10,8 @@
  */
 qx.Class.define("osparc.component.form.tag.TagToggleButton", {
   extend: qx.ui.form.ToggleButton,
+  include: osparc.component.filter.MFilterable,
+  implement: osparc.component.filter.IFilterable,
   construct: function(tag, value) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(8).set({
@@ -23,6 +25,10 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
     this.getChildControl("icon").setTextColor(tag.color);
     this.setLabel(tag.name);
     this.getChildControl("check");
+
+    this.setValue(value ? true : false);
+
+    this.subscribeToFilterGroup("tags");
   },
   properties: {
     fetching: {
@@ -77,6 +83,30 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
         check.setVisibility(this.getValue() ? "visible" : "hidden");
         check.getContentElement().removeClass("rotate");
       }
+    },
+
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.name) {
+        if (!this.getLabel().includes(data.name)) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.name && data.name.length > 1) {
+        return true;
+      }
+      return false;
     }
   }
 });
