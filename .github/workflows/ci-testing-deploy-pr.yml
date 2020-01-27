@@ -638,13 +638,3 @@ jobs:
     - name: upload coverages
       run: |
         ./cc-test-reporter upload-coverage
-
-    - uses: paambaati/codeclimate-action@v2.4.0
-      env:
-        CC_TEST_REPORTER_ID: 945dfb58a832d233a3caeb84e3e6d3be212e8c7abcb48117fce63b9adcb43647
-      with:
-        coverageCommand: coverage xml
-        coverageLocations:
-          unit_api_coverage
-          unit_director_coverage
-        debug: true
