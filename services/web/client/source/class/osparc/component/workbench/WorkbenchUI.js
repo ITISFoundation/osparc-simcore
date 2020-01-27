@@ -49,6 +49,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
+    this.setWorkbench(workbench);
+
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
