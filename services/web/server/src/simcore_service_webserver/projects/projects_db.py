@@ -219,7 +219,7 @@ class ProjectDBAPI:
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: List = []) -> Dict:
+    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: List = list()) -> Dict:
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).select_from(joint_table).where(
@@ -232,7 +232,7 @@ class ProjectDBAPI:
             if not study_row:
                 raise ProjectNotFoundError(project_uuid)
 
-            study = { key: value for key, value in study_row.items() }
+            study = dict(study_row.items())
 
             if 'tags' not in exclude_foreign:
                 tags = await self._get_tags_by_study(study_id=study_row.id)
@@ -244,6 +244,7 @@ class ProjectDBAPI:
     async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
         study = await self._get_study(user_id, project_uuid)
         async with self.engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(
                 study_id=study['id'],
                 tag_id=tag_id
@@ -252,13 +253,13 @@ class ProjectDBAPI:
                 if result.rowcount == 1:
                     study['tags'].append(tag_id)
                     return _convert_to_schema_names(study)
-                else:
-                    raise web.HTTPInternalServerError()
+                raise web.HTTPInternalServerError()
 
 
     async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
         study = await self._get_study(user_id, project_uuid)
         async with self.engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
                 and_(study_tags.c.study_id == study['id'], study_tags.c.tag_id == tag_id)
             )
@@ -266,8 +267,7 @@ class ProjectDBAPI:
                 if result.rowcount == 1:
                     study['tags'].remove(tag_id)
                     return _convert_to_schema_names(study)
-                else:
-                    raise web.HTTPInternalServerError()
+                raise web.HTTPInternalServerError()
 
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
