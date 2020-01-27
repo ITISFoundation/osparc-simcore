@@ -579,7 +579,7 @@ jobs:
         name: unit_webserver_coverage
     - uses: actions/download-artifact@v1
       with:
-        name: integration_webserver_coverage        
+        name: integration_webserver_coverage
     - uses: actions/download-artifact@v1
       with:
         name: integration_simcoresdk_coverage
@@ -597,6 +597,28 @@ jobs:
       with:
         python-version: 3.6
     - run: pip install coverage    
+    - name: install codeclimate test reporter
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+    - name: format test coverages
+      run: |
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_api_coverage.json unit_api_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_director_coverage.json unit_director_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_servicelib_coverage.json unit_servicelib_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_simcoresdk_coverage.json unit_simcoresdk_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_storage_coverage.json unit_storage_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.unit_webserver_coverage.json unit_webserver_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_webserver_coverage.json integration_webserver_coverage/.coverage
+        ./cc-test-reporter format-coverage -t coverage.py -o coverage/codeclimate.integration_simcoresdk_coverage.json integration_simcoresdk_coverage/.coverage
+    - name: sum coverages
+      run: |
+        # Sum coverage parts into coverage/codeclimate.json (ensure -p has the correct number)
+        ./cc-test-reporter sum-coverage coverage/codeclimate.*.json -p 8 
+    - name: upload coverages
+      run: |
+        ./cc-test-reporter upload-coverage
+
     - uses: paambaati/codeclimate-action@v2.4.0
       env:
         CC_TEST_REPORTER_ID: 945dfb58a832d233a3caeb84e3e6d3be212e8c7abcb48117fce63b9adcb43647
