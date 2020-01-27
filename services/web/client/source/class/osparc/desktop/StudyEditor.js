@@ -116,11 +116,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __connectEvents: function() {
-      this.__mainPanel.getControls().addListener("groupSelection", this.__groupSelection, this);
-      this.__mainPanel.getControls().addListener("ungroupSelection", this.__ungroupSelection, this);
-      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
       const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
+      controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
@@ -237,18 +235,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const controlsBar = this.__mainPanel.getControls();
       controlsBar.setIsWorkbenchVisible(widget === this.__workbenchUI);
-      if (widget === this.__workbenchUI) {
-        controlsBar.enableSettingsViewButton(true);
-        controlsBar.enableWorkbenchViewButton(true);
-      } else {
-        controlsBar.enableWorkbenchViewButton(false);
-      }
-      if (nodeId === "root") {
-        controlsBar.enableSettingsViewButton(false);
-      } else {
-        controlsBar.enableSettingsViewButton(true);
-        controlsBar.enableWorkbenchViewButton(true);
-      }
 
       this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
       this.__loggerView.setCurrentNodeId(nodeId);
@@ -396,6 +382,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (node) {
         node.retrieveInputs(portKey);
       }
+    },
+
+    __showWorkbenchUI: function() {
+      console.log("showWorkbench");
+    },
+
+    __showSettings: function() {
+      console.log("showSettings");
     },
 
     __isSelectionEmpty: function(selectedNodeUIs) {
