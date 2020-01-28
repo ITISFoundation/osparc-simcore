@@ -29,6 +29,7 @@
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.widget.NodeView();
  *   nodeView.setNode(workbench.getNode1());
+ *   nodeView.populateLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
@@ -163,7 +164,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
       return toolbar;
     },
 
-    __populateLayout: function() {
+    populateLayout: function() {
       this.getNode().bind("label", this.__title, "value");
       this.__addInputPortsUIs();
       this.__addSettings();
@@ -218,7 +219,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
       const propsWidget = node.getPropsWidget();
       if (propsWidget && Object.keys(node.getInputs()).length) {
         this.__settingsLayout.add(propsWidget);
-        this.__mainView.add(this.__settingsLayout);
+        this.__mainView.add(this.__settingsLayout, {
+          flex: 1
+        });
       } else if (qx.ui.core.Widget.contains(this.__mainView, this.__settingsLayout)) {
         this.__mainView.remove(this.__settingsLayout);
       }
@@ -337,7 +340,6 @@ qx.Class.define("osparc.component.widget.NodeView", {
       if (node.isContainer()) {
         console.error("Only non-group nodes are supported");
       }
-      this.__populateLayout();
     }
   }
 });
