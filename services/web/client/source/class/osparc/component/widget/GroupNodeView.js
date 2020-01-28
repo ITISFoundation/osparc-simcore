@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
     __addSettings: function() {
       this.__settingsLayout.removeAll();
 
-      const innerNodes = this.getNode().getInnerNodes(false);
+      const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const innerSettings = osparc.component.widget.NodeView.createSettingsGroupBox();
         innerNode.bind("label", innerSettings, "legend");
@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
     __addMapper: function() {
       this.__mapperLayout.removeAll();
 
-      const innerNodes = this.getNode().getInnerNodes(false);
+      const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const mapper = innerNode.getInputsMapper();
         if (mapper) {
@@ -163,7 +163,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
       this.__iFrameLayout.removeAll();
 
       const tabView = new qx.ui.tabview.TabView();
-      const innerNodes = this.getNode().getInnerNodes(false);
+      const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const iFrame = innerNode.getIFrame();
         if (iFrame) {
