@@ -213,11 +213,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
       }
     },
 
-    __addToMainView: function(view) {
+    __addToMainView: function(view, options = {}) {
       if (view.hasChildren()) {
-        this.__mainView.add(view, {
-          flex: 1
-        });
+        this.__mainView.add(view, options);
       } else if (qx.ui.core.Widget.contains(this.__mainView, view)) {
         this.__mainView.remove(view);
       }
@@ -245,7 +243,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
         });
       }
 
-      this.__addToMainView(this.__mapperLayout);
+      this.__addToMainView(this.__mapperLayout, {
+        flex: 1
+      });
     },
 
     __addIFrame: function() {
@@ -265,7 +265,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
         });
       }
 
-      this.__addToMainView(this.__iFrameLayout);
+      this.__addToMainView(this.__iFrameLayout, {
+        flex: 1
+      });
     },
 
     __maximizeIFrame: function(maximize) {
