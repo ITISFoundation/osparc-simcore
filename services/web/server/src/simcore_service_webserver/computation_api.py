@@ -253,3 +253,12 @@ async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
             where(comp_pipeline.c.project_id == project_id)
         await conn.execute(query)
 
+async def get_task_output(app: web.Application, project_id: str, node_id: str) -> Dict:
+    async with db_engine.acquire() as conn:
+        query = sa.select([comp_tasks]).\
+                where(and_(comp_tasks.c.project_id == project_id,
+                            comp_tasks.c.node_id == node_id))
+        result = await conn.execute(query)
+        comp_task = await result.fetchone()
+        if comp_task:
+            
