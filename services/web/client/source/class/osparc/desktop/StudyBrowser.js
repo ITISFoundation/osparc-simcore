@@ -416,6 +416,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       for (let i=0; i<userStudyList.length; i++) {
         this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
       }
+      osparc.component.filter.UIFilterController.dispatch("studyBrowser");
     },
 
     __setTemplateList: function(tempStudyList) {

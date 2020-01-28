@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     __renderLayout: function() {
       const filterBar = new qx.ui.toolbar.ToolBar();
       const part = new qx.ui.toolbar.Part();
-      part.add(new osparc.component.filter.TextFilter("name", "tags"));
+      part.add(new osparc.component.filter.TextFilter("name", "studyBrowserTagManager"));
       filterBar.add(part);
       this.add(filterBar);
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -131,6 +131,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
           this.__selectedTags.remove(tag.id);
         }
       }, this);
+      button.subscribeToFilterGroup("studyBrowserTagManager");
       return button;
     },
     __attachEventHandlers: function() {

@@ -27,8 +27,6 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
     this.getChildControl("check");
 
     this.setValue(value ? true : false); // eslint-disable-line no-unneeded-ternary
-
-    this.subscribeToFilterGroup("tags");
   },
   properties: {
     fetching: {

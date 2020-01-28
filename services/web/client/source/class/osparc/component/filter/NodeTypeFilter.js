@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.filter.NodeTypeFilter", {
   /**
    * Constructor for NodeTypeFilter creates the filter and builds its menu.
    *
-   * @extends osparc.component.filter.UIFilter
+   * @extends osparc.component.filter.TagsFilter
    */
   construct: function(filterId, groupId) {
     this.base(arguments, this.tr("Node types"), filterId, groupId);
