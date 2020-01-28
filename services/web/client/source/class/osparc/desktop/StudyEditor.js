@@ -212,7 +212,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
         }
       }
     },

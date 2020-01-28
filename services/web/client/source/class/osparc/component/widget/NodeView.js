@@ -29,7 +29,6 @@
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.widget.NodeView();
  *   nodeView.setNode(workbench.getNode1());
- *   nodeView.populateLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
@@ -53,18 +52,17 @@ qx.Class.define("osparc.component.widget.NodeView", {
   },
 
   members: {
+    __title: null,
+    __toolbar: null,
     __mainView: null,
-    __scrollContainer: null,
     __inputsView: null,
     __inputNodesLayout: null,
+    __collapseBtn: null,
     __settingsLayout: null,
     __mapperLayout: null,
     __iFrameLayout: null,
-    __toolbar: null,
-    __title: null,
     __buttonContainer: null,
     __filesButton: null,
-    __collapseBtn: null,
 
     __buildInputsView: function() {
       const inputsView = this.__inputsView = new osparc.desktop.SidePanel().set({
@@ -84,7 +82,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
       buttonPart.add(collapseBtn);
       inputsView.add(titleBar);
 
-      const scroll = this.__scrollContainer = new qx.ui.container.Scroll();
+      const scroll = new qx.ui.container.Scroll();
       const inputContainer = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       scroll.add(inputContainer);
       inputsView.add(scroll, {
@@ -158,7 +156,8 @@ qx.Class.define("osparc.component.widget.NodeView", {
       return toolbar;
     },
 
-    populateLayout: function() {
+    __populateLayout: function() {
+      this.getNode().bind("label", this.__title, "value");
       this.__addInputPortsUIs();
       this.__addSettings();
       this.__addMapper();
@@ -327,7 +326,10 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     _applyNode: function(node) {
-      node.bind("label", this.__title, "value");
+      if (node.isContainer()) {
+        console.error("Only non-group nodes are supported");
+      }
+      this.__populateLayout();
     }
   }
 });
