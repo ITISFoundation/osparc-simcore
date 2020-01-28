@@ -50,7 +50,7 @@ def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     )
 
     if disable_login:
-        logger.debug("%s-%s:\n%s", CONFIG_SECTION_NAME, prefix, pformat(routes))
+        logger.debug("%s:\n%s", CONFIG_SECTION_NAME, pformat(routes))
 
     return routes
 

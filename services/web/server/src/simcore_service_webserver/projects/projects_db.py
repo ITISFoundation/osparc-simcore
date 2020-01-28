@@ -219,7 +219,7 @@ class ProjectDBAPI:
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: List = list()) -> Dict:
+    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: List = []) -> Dict: # pylint: disable=dangerous-default-value
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).select_from(joint_table).where(

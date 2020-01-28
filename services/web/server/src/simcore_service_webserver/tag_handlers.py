@@ -11,8 +11,7 @@ from .login.decorators import RQT_USERID_KEY, login_required
 async def list_tags(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        # pylint disable=not-an-iterable
-        columns = [col for col in tags.columns if col.key != 'user_id']
+        columns = [col for col in tags.columns if col.key != 'user_id'] # pylint: disable=not-an-iterable
         query = sa.select(columns).where(tags.c.user_id == uid)
         result = []
         async for row_proxy in conn.execute(query):
