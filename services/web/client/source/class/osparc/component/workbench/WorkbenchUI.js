@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   /**
     * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
-  */
+    */
   construct: function(workbench) {
     this.base(arguments);
 
@@ -84,7 +84,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.loadModel(workbench);
-      this.__nodeSelected("root");
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      this.__nodeSelected(study.getUuid());
     });
 
     this.__desktop.add(this.__svgWidgetLinks, {
@@ -95,6 +96,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     });
 
     this.__svgWidgetDrop = new osparc.component.workbench.SvgWidget("SvgWidget_Drop");
+    this.__svgWidgetDrop.set({
+      zIndex: this.__svgWidgetLinks.getZIndex() - 1
+    });
     this.__desktop.add(this.__svgWidgetDrop, {
       left: 0,
       top: 0,
@@ -368,14 +372,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
+        const that = this;
         edgeUI.getRepresentation().node.addEventListener("click", e => {
           // this is needed to get out of the context of svg
-          edgeUI.fireDataEvent("edgeSelected", edgeUI.getEdgeId());
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
           e.stopPropagation();
-        }, this);
-
-        edgeUI.addListener("edgeSelected", e => {
-          this.__selectedItemChanged(edgeUI.getEdgeId());
         }, this);
 
         return edgeUI;
@@ -876,10 +877,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
       });
 
-      this.__desktop.addListener("tap", e => {
-        this.__selectedItemChanged(null);
-      }, this);
-
       this.addListener("dbltap", e => {
         const [x, y] = this.__getPointEventPosition(e);
         const pos = {
@@ -891,6 +888,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
+
+      this.__desktopCanvas.addListener("tap", e => {
+        this.__selectedItemChanged(null);
+      }, this);
     },
 
     __allowDrag: function(pointerEvent) {

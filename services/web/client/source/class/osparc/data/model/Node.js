@@ -77,9 +77,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (metaData.outputs) {
         this.__addOutputs(metaData.outputs);
       }
-      if (metaData.dedicatedWidget) {
-        this.setDedicatedWidget(metaData.dedicatedWidget);
-      }
     }
   },
 
@@ -113,12 +110,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     parentNodeId: {
       check: "String",
-      nullable: true
-    },
-
-    dedicatedWidget: {
-      check: "Boolean",
-      init: null,
       nullable: true
     },
 
@@ -225,20 +216,6 @@ qx.Class.define("osparc.data.model.Node", {
         return false;
       }
       return this.getKey().includes(str);
-    },
-
-    hasDedicatedWidget: function() {
-      if (this.getDedicatedWidget() === null) {
-        return false;
-      }
-      return true;
-    },
-
-    showDedicatedWidget: function() {
-      if (this.hasDedicatedWidget()) {
-        return this.getDedicatedWidget();
-      }
-      return false;
     },
 
     isContainer: function() {

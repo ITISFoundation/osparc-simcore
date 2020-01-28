@@ -41,6 +41,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
+    "showWorkbench": "qx.event.type.Event",
+    "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
     "ungroupSelection": "qx.event.type.Event",
     "startPipeline": "qx.event.type.Event",
@@ -52,6 +54,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __stopButton: null,
     __groupButton: null,
     __ungroupButton: null,
+    __settingsViewButton: null,
+    __workbenchViewButton: null,
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__groupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
@@ -64,6 +68,17 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       osparc.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
       filterCtrls.add(serviceFilters);
       this.add(filterCtrls);
+
+      this.addSpacer();
+
+      const viewCtrls = new qx.ui.toolbar.Part();
+      const workbenchViewButton = this.__workbenchViewButton = this.__createWorkbenchButton();
+      const settingsViewButton = this.__settingsViewButton = this.__createSettingsButton();
+      viewCtrls.add(workbenchViewButton);
+      viewCtrls.add(settingsViewButton);
+      this.add(viewCtrls);
+      const viewRadioGroup = new qx.ui.form.RadioGroup();
+      viewRadioGroup.add(workbenchViewButton, settingsViewButton);
 
       this.addSpacer();
 
@@ -84,6 +99,16 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       this.add(simCtrls);
     },
 
+    __createWorkbenchButton: function() {
+      const workbenchButton = this.__createRadioButton(this.tr("Workbench view"), "vector-square", "workbenchViewBtn", "showWorkbench");
+      return workbenchButton;
+    },
+
+    __createSettingsButton: function() {
+      const settingsButton = this.__createRadioButton(this.tr("The other view"), "list", "settingsViewBtn", "showSettings");
+      return settingsButton;
+    },
+
     __createGroupButton: function() {
       const groupButton = this.__createButton(this.tr("Group Nodes"), "object-group", "groupNodesBtn", "groupSelection");
       return groupButton;
@@ -102,6 +127,16 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __createStopButton: function() {
       const stopButton = this.__createButton(this.tr("Stop"), "stop-circle", "stopStudyBtn", "stopPipeline");
       return stopButton;
+    },
+
+    __createRadioButton: function(label, icon, widgetId, singalName) {
+      const button = new qx.ui.toolbar.RadioButton(label);
+      // button.setIcon("@FontAwesome5Solid/"+icon+"/14");
+      osparc.utils.Utils.setIdToWidget(button, widgetId);
+      button.addListener("execute", () => {
+        this.fireEvent(singalName);
+      }, this);
+      return button;
     },
 
     __createButton: function(label, icon, widgetId, singalName) {

@@ -205,24 +205,22 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         defaultCellStyle: "user-select: text"
       }));
       let resizeBehavior = colModel.getBehavior();
-      resizeBehavior.setWidth(0, "15%");
-      resizeBehavior.setWidth(1, "85%");
+      resizeBehavior.setWidth(0, "20%");
+      resizeBehavior.setWidth(1, "80%");
 
       this.__applyFilters();
 
       return table;
     },
 
-    __currentNodeIdChanged: function(newValue) {
+    __currentNodeIdChanged: function() {
       this.__currentNodeButton.setValue(false);
     },
 
     currectNodeClicked: function(checked) {
       const currentNodeId = this.getCurrentNodeId();
-      if (checked && currentNodeId !== "root") {
+      if (checked) {
         this.__nodeSelected(currentNodeId);
-      } else {
-        this.__nodeSelected();
       }
     },
 
@@ -233,6 +231,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       if (node) {
         this.__textFilterField.setValue(node.getLabel());
       } else {
+        // Root selected
         this.__textFilterField.setValue("");
       }
     },
@@ -263,22 +262,18 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         return;
       }
 
+      const workbench = study.getWorkbench();
+      const node = workbench.getNode(nodeId);
       let label = null;
-      if (nodeId === "root") {
-        label = "Workbench";
+      if (node) {
+        label = node.getLabel();
+        node.addListener("changeLabel", e => {
+          const newLabel = e.getData();
+          this.__logModel.nodeLabelChanged(nodeId, newLabel);
+          this.__updateTable();
+        }, this);
       } else {
-        const workbench = study.getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          label = node.getLabel();
-          node.addListener("changeLabel", e => {
-            const newLabel = e.getData();
-            this.__logModel.nodeLabelChanged(nodeId, newLabel);
-            this.__updateTable();
-          }, this);
-        } else {
-          return;
-        }
+        label = "Workbench";
       }
 
       const nodeColor = this.__getNodesColor(nodeId);
