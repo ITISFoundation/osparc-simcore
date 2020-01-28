@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     __buildMainView: function() {
-      const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       this.add(mainView, 1);
 
       this.__settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
@@ -213,6 +213,16 @@ qx.Class.define("osparc.component.widget.NodeView", {
       }
     },
 
+    __addToMainView: function(view) {
+      if (view.hasChildren()) {
+        this.__mainView.add(view, {
+          flex: 1
+        });
+      } else if (qx.ui.core.Widget.contains(this.__mainView, view)) {
+        this.__mainView.remove(view);
+      }
+    },
+
     __addSettings: function() {
       this.__settingsLayout.removeAll();
 
@@ -222,33 +232,26 @@ qx.Class.define("osparc.component.widget.NodeView", {
         this.__settingsLayout.add(propsWidget);
       }
 
-      if (this.__settingsLayout.hasChildren()) {
-        this.__mainView.add(this.__settingsLayout, {
-          flex: 1
-        });
-      } else if (qx.ui.core.Widget.contains(this.__mainView, this.__settingsLayout)) {
-        this.__mainView.remove(this.__settingsLayout);
-      }
+      this.__addToMainView(this.__settingsLayout);
     },
 
     __addMapper: function() {
-      const mapper = this.getNode().getInputsMapper();
       this.__mapperLayout.removeAll();
+
+      const mapper = this.getNode().getInputsMapper();
       if (mapper) {
         this.__mapperLayout.add(mapper, {
           flex: 1
         });
-        this.__mainView.add(this.__mapperLayout, {
-          flex: 1
-        });
-      } else if (qx.ui.core.Widget.contains(this.__mainView, this.__mapperLayout)) {
-        this.__mainView.remove(this.__mapperLayout);
       }
+
+      this.__addToMainView(this.__mapperLayout);
     },
 
     __addIFrame: function() {
-      const iFrame = this.getNode().getIFrame();
       this.__iFrameLayout.removeAll();
+
+      const iFrame = this.getNode().getIFrame();
       if (iFrame) {
         iFrame.addListener("maximize", e => {
           this.__maximizeIFrame(true);
@@ -260,12 +263,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
         this.__iFrameLayout.add(iFrame, {
           flex: 1
         });
-        this.__mainView.add(this.__iFrameLayout, {
-          flex: 1
-        });
-      } else if (qx.ui.core.Widget.contains(this.__mainView, this.__iFrameLayout)) {
-        this.__mainView.remove(this.__iFrameLayout);
       }
+
+      this.__addToMainView(this.__iFrameLayout);
     },
 
     __maximizeIFrame: function(maximize) {
@@ -276,12 +276,12 @@ qx.Class.define("osparc.component.widget.NodeView", {
       this.__toolbar.setVisibility(othersStatus);
     },
 
-    hasIFrame: function() {
+    __hasIFrame: function() {
       return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
     },
 
     restoreIFrame: function() {
-      if (this.hasIFrame()) {
+      if (this.__hasIFrame()) {
         const iFrame = this.getNode().getIFrame();
         if (iFrame) {
           iFrame.maximizeIFrame(false);
