@@ -7,8 +7,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-echo "Retrieving SHA for tag ${TAG}"
-GIT_COMMIT_SHA=$(git show-ref -s ${TAG})
+echo "Retrieving SHA for tag ${GIT_TAG}"
+GIT_COMMIT_SHA=$(git show-ref -s ${GIT_TAG})
 echo "Found SHA for tag ${GIT_COMMIT_SHA}"
 
 # get token

@@ -57,7 +57,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __settingsViewButton: null,
     __workbenchViewButton: null,
 
-    setIsWorkbenchVisible: function(isWorkbenchContext) {
+    setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__groupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
       this.__ungroupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
     },
