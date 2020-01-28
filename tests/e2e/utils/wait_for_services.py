@@ -110,6 +110,8 @@ def wait_for_services() -> bool:
             if task['Status']['State'].upper() in pre_states:
                 print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(service.tasks())))
                 time.sleep(WAIT_TIME_SECS)
+            elif task['Status']['State'].upper() in failed_states:
+                print(f"Waiting [{n}/{RETRY_COUNT}] Service failed once...\n{get_tasks_summary(service.tasks())}")
             else:
                 break
         assert task['Status']['State'].upper() == "RUNNING",\
