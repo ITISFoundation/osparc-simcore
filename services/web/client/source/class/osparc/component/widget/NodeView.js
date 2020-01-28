@@ -215,10 +215,14 @@ qx.Class.define("osparc.component.widget.NodeView", {
 
     __addSettings: function() {
       this.__settingsLayout.removeAll();
+
       const node = this.getNode();
       const propsWidget = node.getPropsWidget();
       if (propsWidget && Object.keys(node.getInputs()).length) {
         this.__settingsLayout.add(propsWidget);
+      }
+
+      if (this.__settingsLayout.hasChildren()) {
         this.__mainView.add(this.__settingsLayout, {
           flex: 1
         });
