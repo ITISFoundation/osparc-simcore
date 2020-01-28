@@ -44,6 +44,18 @@ qx.Class.define("osparc.component.widget.NodeView", {
     this.__attachEventHandlers();
   },
 
+  statics: {
+    createSettingsGroupBox: function(label) {
+      const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
+        appearance: "settings-groupbox",
+        maxWidth: 500,
+        alignX: "center",
+        layout: new qx.ui.layout.VBox()
+      });
+      return settingsGroupBox;
+    }
+  },
+
   properties: {
     node: {
       check: "osparc.data.model.Node",
@@ -96,12 +108,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
       const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.add(mainView, 1);
 
-      this.__settingsLayout = new qx.ui.groupbox.GroupBox(this.tr("Settings")).set({
-        appearance: "settings-groupbox",
-        maxWidth: 500,
-        alignX: "center",
-        layout: new qx.ui.layout.VBox()
-      });
+      this.__settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
