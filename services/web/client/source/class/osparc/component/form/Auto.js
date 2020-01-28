@@ -607,7 +607,8 @@ qx.Class.define("osparc.component.form.Auto", {
         output: fromPortId
       };
 
-      const workbench = this.getNode().getWorkbench();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);
       const port = fromNode.getOutput(fromPortId);
       const fromPortLabel = port ? port.label : null;
