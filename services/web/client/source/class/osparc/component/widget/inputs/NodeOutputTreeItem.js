@@ -111,6 +111,10 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       this.__valueLabel.setValue(value);
     },
 
+    __isNumber: function(n) {
+      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
+    },
+
     _transformValue: function(value) {
       if (value.getLabel) {
         return value.getLabel();
@@ -120,6 +124,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         if (fileName.length) {
           return fileName[fileName.length-1];
         }
+      }
+      if (this.__isNumber(value)) {
+        return value.toString();
       }
       return value;
     }
