@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: simcore-service-webserver API
-  version: 0.1.1
+  version: 0.2.0
   description: API definition for simcore-service-webserver service
   contact:
     name: IT'IS Foundation
