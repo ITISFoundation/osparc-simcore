@@ -15,6 +15,7 @@ def docker_registry():
     docker_client = docker.from_env()
     container = docker_client.containers.run("registry:2",
         ports={"5000":"5000"},
+        environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
         restart_policy={"Name":"always"},
         detach=True
     )

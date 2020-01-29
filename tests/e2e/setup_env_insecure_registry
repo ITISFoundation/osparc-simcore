@@ -18,7 +18,7 @@ echo REGISTRY_AUTH=False >> .env
 echo REGISTRY_SSL=False >> .env
 echo REGISTRY_URL=registry:5000 >> .env
 # disable registry caching to ensure services are fetched
-echo REGISTRY_CACHING=False >> .env
+echo DIRECTOR_REGISTRY_CACHING=False >> .env
 
 # prepare insecure registry access for docker engine
 # add host name to the insecure registry

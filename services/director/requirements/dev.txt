@@ -8,6 +8,7 @@
 
 # tooling
 bump2version
+watchdog[watchmedo]
 
 # installs base + tests requirements
 -r _test.txt

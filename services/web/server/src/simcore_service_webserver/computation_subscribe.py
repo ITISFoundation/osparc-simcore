@@ -2,38 +2,58 @@ import asyncio
 import json
 import logging
 from functools import wraps
+from typing import Dict, Callable, Coroutine
 
 import aio_pika
 from aiohttp import web
+
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
+from .computation_api import get_task_output
+from .projects import projects_api
 from .resource_manager.websocket_manager import managed_resource
 from .socketio.config import get_socket_server
-
+from pprint import pprint
 log = logging.getLogger(__file__)
 
 
-def rabbit_handler(app: web.Application):
+def rabbit_handler(app: web.Application) -> Callable:
     """this decorator allows passing additional paramters to python-socketio compatible handlers.
     I.e. aiopika handler expect functions of type `async def function(message)`
     This allows to create a function of type `async def function(message, app: web.Application)
     """
-    def decorator(func):
+    def decorator(func) -> Coroutine:
         @wraps(func)
-        async def wrapped(*args, **kwargs):
+        async def wrapped(*args, **kwargs) -> Coroutine:
             return await func(*args, **kwargs, app=app)
         return wrapped
     return decorator
 
+async def parse_message_data(data: Dict) -> None:
+    log.debug(f"parsing message data:\n{pprint(data)}")
+    if data["Channel"] == "Progress":
+        # update corresponding project, node, progress value
+        await projects_api.update_node_progress(user_id=data["user_id"], project_id=data["project_id"], 
+                                        node_id=data["Node"], progress=data["Progress"])
+        if data["Progress"] == "1.0":
+            # pass comp_task payload to project
+            task_output = get_task_output(user_id=data["user_id"], project_id=data["project_id"], 
+                                        node_id=data["Node"])
+            await projects_api.update_node_output(user_id=data["user_id"], project_id=data["project_id"], 
+                                        node_id=data["Node"], payload=task_output)
+        
+            # end of task
 
-async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
+
+async def on_message(message: aio_pika.IncomingMessage, app: web.Application) -> None:
     sio = get_socket_server(app)
     with message.process():
         data = json.loads(message.body)
-        log.debug(data)
+        await parse_message_data(data)
+        
         user_id = data["user_id"]
         with managed_resource(user_id, None, app) as rt:
             socket_ids = await rt.find_socket_ids()
@@ -46,12 +66,12 @@ async def on_message(message: aio_pika.IncomingMessage, app: web.Application):
                 )
         asyncio.sleep(1)
 
-async def subscribe(app: web.Application):
+async def subscribe(app: web.Application) -> None:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    rb_config = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
 
     # FIXME: This tmp resolves ``aio pika 169: IncompatibleProtocolError`` upon apio_pika.connect
