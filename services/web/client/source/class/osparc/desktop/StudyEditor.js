@@ -111,11 +111,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, study.getUuid());
 
-      this.__nodeView = new osparc.component.widget.NodeView().set({
+      this.__nodeView = new osparc.component.node.NodeView().set({
         minHeight: 200
       });
 
-      this.__groupNodeView = new osparc.component.widget.GroupNodeView().set({
+      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
         minHeight: 200
       });
     },

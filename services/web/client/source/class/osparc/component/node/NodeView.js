@@ -27,14 +27,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeView = new osparc.component.widget.NodeView();
+ *   let nodeView = new osparc.component.node.NodeView();
  *   nodeView.setNode(workbench.getNode1());
  *   nodeView.populateLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.NodeView", {
+qx.Class.define("osparc.component.node.NodeView", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function() {
@@ -168,7 +168,6 @@ qx.Class.define("osparc.component.widget.NodeView", {
       this.getNode().bind("label", this.__title, "value");
       this.__addInputPortsUIs();
       this.__addSettings();
-      this.__addMapper();
       this.__addIFrame();
       this.__addButtons();
     },
@@ -223,26 +222,21 @@ qx.Class.define("osparc.component.widget.NodeView", {
 
     __addSettings: function() {
       this.__settingsLayout.removeAll();
+      this.__mapperLayout.removeAll();
 
       const node = this.getNode();
       const propsWidget = node.getPropsWidget();
       if (propsWidget && Object.keys(node.getInputs()).length) {
         this.__settingsLayout.add(propsWidget);
       }
-
-      this.__addToMainView(this.__settingsLayout);
-    },
-
-    __addMapper: function() {
-      this.__mapperLayout.removeAll();
-
-      const mapper = this.getNode().getInputsMapper();
+      const mapper = node.getInputsMapper();
       if (mapper) {
         this.__mapperLayout.add(mapper, {
           flex: 1
         });
       }
 
+      this.__addToMainView(this.__settingsLayout);
       this.__addToMainView(this.__mapperLayout, {
         flex: 1
       });

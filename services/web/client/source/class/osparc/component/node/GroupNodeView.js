@@ -22,14 +22,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let groupNodeView = new osparc.component.widget.GroupNodeView();
+ *   let groupNodeView = new osparc.component.node.GroupNodeView();
  *   groupNodeView.setNode(workbench.getNode1());
  *   groupNodeView.populateLayout();
  *   this.getRoot().add(groupNodeView);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.GroupNodeView", {
+qx.Class.define("osparc.component.node.GroupNodeView", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function() {
@@ -51,16 +51,48 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
     __title: null,
     __toolbar: null,
     __mainView: null,
+    __inputsView: null,
+    __inputNodesLayout: null,
+    __collapseBtn: null,
     __settingsLayout: null,
     __mapperLayout: null,
     __iFrameLayout: null,
     __buttonContainer: null,
+    __filesButton: null,
+
+    __buildInputsView: function() {
+      const inputsView = this.__inputsView = new osparc.desktop.SidePanel().set({
+        minWidth: 300
+      });
+      const titleBar = new qx.ui.toolbar.ToolBar();
+      const titlePart = new qx.ui.toolbar.Part();
+      const buttonPart = new qx.ui.toolbar.Part();
+      titleBar.add(titlePart);
+      titleBar.addSpacer();
+      titleBar.add(buttonPart);
+      this.add(titleBar, 0);
+      titlePart.add(new qx.ui.basic.Atom(this.tr("Inputs")).set({
+        font: "title-18"
+      }));
+      const collapseBtn = this.__collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
+      buttonPart.add(collapseBtn);
+      inputsView.add(titleBar);
+
+      const scroll = new qx.ui.container.Scroll();
+      const inputContainer = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      scroll.add(inputContainer);
+      inputsView.add(scroll, {
+        flex: 1
+      });
+
+      this.add(inputsView, 0);
+    },
 
     __buildMainView: function() {
       const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       this.add(mainView, 1);
 
-      this.__settingsLayout = osparc.component.widget.NodeView.createSettingsGroupBox(this.tr("Settings"));
+      this.__settingsLayout = osparc.component.node.NodeView.createSettingsGroupBox(this.tr("Settings"));
       this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -68,6 +100,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
     },
 
     __buildLayout: function() {
+      this.__buildInputsView();
       this.__buildMainView();
     },
 
@@ -111,9 +144,48 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
     populateLayout: function() {
       this.getNode().bind("label", this.__title, "value");
       this.__addSettings();
-      this.__addMapper();
       this.__addIFrame();
       this.__addButtons();
+    },
+
+    __addInputPortsUIs: function() {
+      this.__inputNodesLayout.removeAll();
+
+      // Add the default inputs if any
+      if (Object.keys(this.getNode().getInputsDefault()).length > 0) {
+        this.__createInputPortsUI(this.getNode(), false);
+      }
+
+      // Add the representations for the inputs
+      const inputNodes = this.getNode().getInputNodes();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      for (let i=0; i<inputNodes.length; i++) {
+        let inputNode = study.getWorkbench().getNode(inputNodes[i]);
+        if (inputNode.isContainer()) {
+          const exposedInnerNodes = inputNode.getExposedInnerNodes();
+          for (const exposedInnerNodeId in exposedInnerNodes) {
+            const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
+            this.__createInputPortsUI(exposedInnerNode);
+          }
+        } else {
+          this.__createInputPortsUI(inputNode);
+        }
+      }
+    },
+
+    __createInputPortsUI: function(inputNode, isInputModel = true) {
+      let nodePorts = null;
+      if (isInputModel) {
+        nodePorts = inputNode.getOutputWidget();
+      } else {
+        nodePorts = inputNode.getInputsDefaultWidget();
+      }
+      if (nodePorts) {
+        this.__inputNodesLayout.add(nodePorts, {
+          flex: 1
+        });
+        nodePorts.setCollapsed(false);
+      }
     },
 
     __addToMainView: function(view, options = {}) {
@@ -126,26 +198,17 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
 
     __addSettings: function() {
       this.__settingsLayout.removeAll();
+      this.__mapperLayout.removeAll();
 
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        const innerSettings = osparc.component.widget.NodeView.createSettingsGroupBox();
+        const innerSettings = osparc.component.node.NodeView.createSettingsGroupBox();
         innerNode.bind("label", innerSettings, "legend");
         const propsWidget = innerNode.getPropsWidget();
         if (propsWidget && Object.keys(innerNode.getInputs()).length) {
           innerSettings.add(propsWidget);
           this.__settingsLayout.add(innerSettings);
         }
-      });
-
-      this.__addToMainView(this.__settingsLayout);
-    },
-
-    __addMapper: function() {
-      this.__mapperLayout.removeAll();
-
-      const innerNodes = this.getNode().getInnerNodes(true);
-      Object.values(innerNodes).forEach(innerNode => {
         const mapper = innerNode.getInputsMapper();
         if (mapper) {
           this.__mapperLayout.add(mapper, {
@@ -154,6 +217,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
         }
       });
 
+      this.__addToMainView(this.__settingsLayout);
       this.__addToMainView(this.__mapperLayout, {
         flex: 1
       });
@@ -200,6 +264,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
 
     __maximizeIFrame: function(maximize) {
       const othersStatus = maximize ? "excluded" : "visible";
+      this.__inputNodesLayout.setVisibility(othersStatus);
       this.__settingsLayout.setVisibility(othersStatus);
       this.__mapperLayout.setVisibility(othersStatus);
       this.__toolbar.setVisibility(othersStatus);
@@ -248,6 +313,7 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
         this.__blocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
+        this.__inputsView.setVisibility(msg.getData() ? "excluded" : "visible");
       };
 
       this.addListener("appear", () => {
@@ -256,6 +322,12 @@ qx.Class.define("osparc.component.widget.GroupNodeView", {
 
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      this.__collapseBtn.addListener("execute", () => {
+        this.__inputNodesLayout.getChildren().forEach(node => {
+          node.setCollapsed(true);
+        });
       }, this);
     },
 
