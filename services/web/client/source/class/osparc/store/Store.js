@@ -147,7 +147,7 @@ qx.Class.define("osparc.store.Store", {
     getServices: function(reload) {
       if (!osparc.utils.Services.reloadingServices && (reload || Object.keys(osparc.utils.Services.servicesCached).length === 0)) {
         osparc.utils.Services.reloadingServices = true;
-        osparc.data.Resources.get("servicesTodo")
+        osparc.data.Resources.get("servicesTodo", null, !reload)
           .then(data => {
             const allServices = data.concat(osparc.utils.Services.getBuiltInServices());
             const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);

@@ -145,7 +145,7 @@ async def test_get_image_details(aiohttp_mock_app, push_services, configure_regi
 async def test_registry_caching(aiohttp_mock_app, push_services, configure_registry_access, configure_schemas_location):
     images = push_services(number_of_computational_services=1,
                            number_of_interactive_services=1)
-    config.REGISTRY_CACHING = True
+    config.DIRECTOR_REGISTRY_CACHING = True
     start_time = time.perf_counter()
     services = await registry_proxy.list_services(aiohttp_mock_app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_without_cache = time.perf_counter() - start_time

@@ -3,14 +3,20 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+bash ci/helpers/dockerhub_login
+
+# check script needed variables
+if [ ! -v TAG_PREFIX ] || [ ! -v GIT_TAG ]; then
+    echo "## ERROR: incorrect use of script. OWNER (e.g. itisfoundation or user) and/or TAG_PREFIX (e.g. master, staging), and/or GIT_TAG not defined!"
+    exit 1
+fi
 
 # pull the tagged staging build
 # find the docker image tag
-export TAG="${GITHUB_REF##*/}"
 export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
 # staging-github-DATE.GIT_SHA
-export TAG_PATTERN="^staging-github-.+\..+"
+export TAG_PATTERN="^${TAG_PREFIX}-.+\..+"
 export DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
 make pull-version tag-local
 
@@ -18,11 +24,8 @@ make pull-version tag-local
 echo "## Before push"
 make info-images
 
-# these variable must be available securely from github
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-# re-tag staging to {TAG}-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=${TAG}-$(date +"%Y-%m-%d").$(git rev-parse HEAD)
+# re-tag staging to {GIT_TAG}-DATE.GIT_SHA
+export DOCKER_IMAGE_TAG=${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
 make push-version push-latest
 
 echo "## After push"
