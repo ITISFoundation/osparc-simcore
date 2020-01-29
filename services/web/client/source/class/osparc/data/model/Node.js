@@ -533,7 +533,7 @@ qx.Class.define("osparc.data.model.Node", {
     setOutputData: function(nodeData) {
       if (nodeData.outputs) {
         for (const outputKey in nodeData.outputs) {
-          this.__outputs[outputKey].value = nodeData.outputs[outputKey];
+          this.__outputs[outputKey]["value"] = nodeData.outputs[outputKey];
         }
       }
     },
