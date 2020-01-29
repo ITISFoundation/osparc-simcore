@@ -35,11 +35,12 @@ async def pg_engine(app: web.Application):
             )
             await raise_if_not_responsive(engine)
 
-
     if app[APP_CONFIG_KEY]["main"]["testing"]:
         log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
+    assert engine
+    app[APP_DB_ENGINE_KEY] = engine
 
     yield # ----------
 
