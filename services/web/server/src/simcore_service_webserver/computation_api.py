@@ -201,7 +201,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 image = task["image"],
                                 schema = task["schema"],
                                 inputs = task["inputs"],
-                                outputs = task["outputs"],
+                                outputs = task["outputs"] if task["outputs"] else {},
                                 submit = datetime.datetime.utcnow())
                 internal_id = internal_id+1
             else:
@@ -215,7 +215,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                     image = task["image"],
                                     schema = task["schema"],
                                     inputs = task["inputs"],
-                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs,
+                                    outputs = task["outputs"] if task["outputs"] else {},
                                     submit = datetime.datetime.utcnow())
                 else:
                     #pylint: disable=no-value-for-parameter
@@ -223,7 +223,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                             where(and_(comp_tasks.c.project_id==project_id,
                                     comp_tasks.c.node_id==node_id)).\
                             values(inputs = task["inputs"],
-                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs)
+                                    outputs = task["outputs"] if task["outputs"] else {})
             await conn.execute(query)
 
 # API ------------------------------------------
