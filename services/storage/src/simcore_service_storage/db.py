@@ -5,7 +5,7 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from tenacity import retry
 
-from servicelib.aiopg_utils import (DBAPIError,
+from servicelib.aiopg_utils import (DSN, DBAPIError,
                                     PostgresRetryPolicyUponInitialization)
 
 from .models import metadata
@@ -14,7 +14,6 @@ from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = 'postgres'
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
 

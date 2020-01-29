@@ -6,9 +6,10 @@
 import asyncio
 import logging
 
-import asyncpg
 from aiohttp import web
 
+import asyncpg
+from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
@@ -26,7 +27,7 @@ log = logging.getLogger(__name__)
 module_name = __name__.replace(".__init__", "")
 
 TIMEOUT_SECS = 5
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
+
 
 async def _setup_config_and_pgpool(app: web.Application):
     """

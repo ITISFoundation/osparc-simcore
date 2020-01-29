@@ -27,6 +27,7 @@ from tenacity import (RetryCallState, after_log, before_sleep_log, retry,
 
 log = logging.getLogger(__name__)
 
+DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 @attr.s(auto_attribs=True)
 class DataSourceName:
@@ -44,7 +45,7 @@ class DataSourceName:
         return attr.asdict(self)
 
     def to_uri(self, with_query=False) -> str:
-        uri = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        uri = DSN.format(**attr.asdict(self))
         if with_query and self.application_name:
             uri += f"?application_name={self.application_name}"
         return uri
