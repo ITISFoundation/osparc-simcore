@@ -9,7 +9,6 @@ services:
 
   director:
     environment:
-      - REGISTRY_CACHING=False
       - SC_BOOT_MODE=debug-ptvsd
     volumes:
       - ./director:/devel/services/director
