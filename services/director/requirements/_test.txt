@@ -37,7 +37,6 @@ pylint==2.4.4
 pyparsing==2.4.6          # via packaging
 pytest-aiohttp==0.3.0
 pytest-cov==2.8.1
-pytest-docker==0.6.1
 pytest-instafail==0.4.1.post0
 pytest-mock==2.0.0
 pytest-runner==5.2

@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import pkg_resources
 import yaml
@@ -11,7 +12,7 @@ from . import node_validator
 
 log = logging.getLogger(__name__)
 
-async def root_get(request):  # pylint:disable=unused-argument
+async def root_get(request: web.Request) -> web.Response:  # pylint:disable=unused-argument
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution('simcore-service-director')
     with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
@@ -24,7 +25,7 @@ async def root_get(request):  # pylint:disable=unused-argument
         version=distb.version)
     return web.json_response(data=dict(data=service_health))
 
-async def services_get(request, service_type=None):  # pylint:disable=unused-argument
+async def services_get(request: web.Request, service_type: Optional[str] =None) -> web.Response:  # pylint:disable=unused-argument
     log.debug("Client does services_get request %s with service_type %s", request, service_type)
     try:
         services = []
@@ -41,7 +42,7 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-async def services_by_key_version_get(request, service_key, service_version):  # pylint:disable=unused-argument
+async def services_by_key_version_get(request: web.Request, service_key: str, service_version: str) -> web.Response:  # pylint:disable=unused-argument
     log.debug("Client does services_get request %s with service_key %s, service_version %s", request, service_key, service_version)
     try:        
         services = [await registry_proxy.get_image_details(request.app, service_key, service_version)]
@@ -53,7 +54,7 @@ async def services_by_key_version_get(request, service_key, service_version):  #
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-async def running_interactive_services_list_get(request: web.Request, user_id: str, project_id: str):
+async def running_interactive_services_list_get(request: web.Request, user_id: str, project_id: str) -> web.Response:
     log.debug("Client does running_interactive_services_list_get request %s, user_id %s, project_id %s", request, user_id, project_id)
     try:        
         service = await producer.get_services_details(request.app, user_id, project_id)
@@ -62,7 +63,7 @@ async def running_interactive_services_list_get(request: web.Request, user_id: s
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
     
 
-async def running_interactive_services_post(request, user_id, project_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument, too-many-arguments
+async def running_interactive_services_post(request: web.Request, user_id: str, project_id: str, service_key: str, service_uuid: str, service_tag: str, service_basepath: str) -> web.Response:  # pylint:disable=unused-argument, too-many-arguments
     log.debug("Client does running_interactive_services_post request %s with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s",
                 request, user_id, project_id, service_key, service_tag, service_uuid, service_basepath)
     try:
@@ -79,7 +80,7 @@ async def running_interactive_services_post(request, user_id, project_id, servic
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
+async def running_interactive_services_get(request: web.Request, service_uuid: str) -> web.Response:  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_get request %s with service_uuid %s", request, service_uuid)
     try:
         service = await producer.get_service_details(request.app, service_uuid)
@@ -89,7 +90,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
+async def running_interactive_services_delete(request: web.Request, service_uuid: str) -> web.Response:  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)
     try:
         await producer.stop_service(request.app, service_uuid)
