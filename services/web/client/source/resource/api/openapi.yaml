@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: simcore-service-webserver API
-  version: 0.1.1
+  version: 0.2.1
   description: API definition for simcore-service-webserver service
   contact:
     name: IT'IS Foundation
@@ -4199,11 +4199,25 @@ paths:
                                               type: string
                                 outputNode:
                                   type: boolean
+                                  deprecated: true
+                                outputNodes:
+                                  type: array
+                                  items:
+                                    type: string
+                                    pattern: ^\S+$
+                                  description: Used in group-nodes. Node IDs of those connected to the output
+                                  example:
+                                    - nodeUuid1
+                                    - nodeUuid2
                                 parent:
                                   type:
                                     - string
                                     - 'null'
                                   pattern: ^\S+$
+                                  description: Parent's (group-nodes') node ID s.
+                                  example:
+                                    - nodeUuid1
+                                    - nodeUuid2
                                 position:
                                   type: object
                                   additionalProperties: false
@@ -4491,11 +4505,25 @@ paths:
                                       type: string
                         outputNode:
                           type: boolean
+                          deprecated: true
+                        outputNodes:
+                          type: array
+                          items:
+                            type: string
+                            pattern: ^\S+$
+                          description: Used in group-nodes. Node IDs of those connected to the output
+                          example:
+                            - nodeUuid1
+                            - nodeUuid2
                         parent:
                           type:
                             - string
                             - 'null'
                           pattern: ^\S+$
+                          description: Parent's (group-nodes') node ID s.
+                          example:
+                            - nodeUuid1
+                            - nodeUuid2
                         position:
                           type: object
                           additionalProperties: false
@@ -4690,11 +4718,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -4979,11 +5021,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -5274,11 +5330,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -5561,11 +5631,25 @@ paths:
                                       type: string
                         outputNode:
                           type: boolean
+                          deprecated: true
+                        outputNodes:
+                          type: array
+                          items:
+                            type: string
+                            pattern: ^\S+$
+                          description: Used in group-nodes. Node IDs of those connected to the output
+                          example:
+                            - nodeUuid1
+                            - nodeUuid2
                         parent:
                           type:
                             - string
                             - 'null'
                           pattern: ^\S+$
+                          description: Parent's (group-nodes') node ID s.
+                          example:
+                            - nodeUuid1
+                            - nodeUuid2
                         position:
                           type: object
                           additionalProperties: false
@@ -5760,11 +5844,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -6069,11 +6167,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false

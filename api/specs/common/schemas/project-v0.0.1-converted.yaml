@@ -171,6 +171,9 @@ properties:
                         type: string
                       label:
                         type: string
+          outputNode:
+            type: boolean
+            deprecated: true
           outputNodes:
             type: array
             items:
