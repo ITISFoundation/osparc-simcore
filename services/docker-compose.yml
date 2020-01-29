@@ -53,6 +53,7 @@ services:
     depends_on:
       - postgres
       - rabbit
+      - redis
     deploy:
       placement:
         constraints:
