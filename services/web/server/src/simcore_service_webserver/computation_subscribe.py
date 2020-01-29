@@ -32,28 +32,24 @@ def rabbit_handler(app: web.Application) -> Callable:
         return wrapped
     return decorator
 
-async def parse_message_data(data: Dict) -> None:
+async def parse_message_data(app: web.Application, data: Dict) -> None:
     log.debug(f"parsing message data:\n{pprint(data)}")
     if data["Channel"] == "Progress":
         # update corresponding project, node, progress value
-        await projects_api.update_node_progress(user_id=data["user_id"], project_id=data["project_id"], 
+        await projects_api.update_project_node_progress(app, user_id=data["user_id"], project_id=data["project_id"],
                                         node_id=data["Node"], progress=data["Progress"])
         if data["Progress"] == "1.0":
             # pass comp_task payload to project
-            task_output = get_task_output(user_id=data["user_id"], project_id=data["project_id"], 
-                                        node_id=data["Node"])
-            await projects_api.update_node_output(user_id=data["user_id"], project_id=data["project_id"], 
-                                        node_id=data["Node"], payload=task_output)
-        
-            # end of task
+            task_output = await get_task_output(app, project_id=data["project_id"], node_id=data["Node"])
+            await projects_api.update_project_node_outputs(app, user_id=data["user_id"], project_id=data["project_id"], node_id=data["Node"], data=task_output)
 
 
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application) -> None:
     sio = get_socket_server(app)
     with message.process():
         data = json.loads(message.body)
-        await parse_message_data(data)
-        
+        await parse_message_data(app, data)
+
         user_id = data["user_id"]
         with managed_resource(user_id, None, app) as rt:
             socket_ids = await rt.find_socket_ids()
