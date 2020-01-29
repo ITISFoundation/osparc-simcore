@@ -1,18 +1,15 @@
 import json
 import logging
+from typing import Dict, List
 
-from jsonschema import (
-    SchemaError,
-    ValidationError,
-    validate)
-from simcore_service_director import (
-    exceptions,
-    resources)
+from jsonschema import SchemaError, ValidationError, validate
+
+from simcore_service_director import exceptions, resources
 
 log = logging.getLogger(__name__)
 
 
-def is_service_valid(service):
+def is_service_valid(service: Dict):
     with resources.stream(resources.RESOURCE_NODE_SCHEMA) as fp:
         schema = json.load(fp)
         try:
@@ -26,7 +23,7 @@ def is_service_valid(service):
             log.exception("Schema error:")
             raise exceptions.DirectorException("Incorrect json schema used from %s" % (resources.get_path(resources.RESOURCE_NODE_SCHEMA)))
 
-def validate_nodes(services):
+def validate_nodes(services: List[Dict]):
     validated_services = []
     for service in services:
         if is_service_valid(service):

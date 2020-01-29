@@ -16,8 +16,8 @@ from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
 
-SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
-SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
+SERVICE_RUNTIME_SETTINGS: str = 'simcore.service.settings'
+SERVICE_RUNTIME_BOOTSETTINGS: str = 'simcore.service.bootsettings'
 
 log = logging.getLogger(__name__)
 
@@ -30,13 +30,13 @@ class ServiceState(Enum):
     FAILED = "failed"
 
 
-async def _create_auth() -> Dict:
+async def _create_auth() -> Dict[str, str]:
     return {
         "username": config.REGISTRY_USER,
         "password": config.REGISTRY_PW
     }
 
-async def _check_node_uuid_available(client: aiodocker.docker.Docker, node_uuid: str):
+async def _check_node_uuid_available(client: aiodocker.docker.Docker, node_uuid: str) -> None:
     log.debug("Checked if UUID %s is already in use", node_uuid)
     # check if service with same uuid already exists
     try:
@@ -51,7 +51,7 @@ async def _check_node_uuid_available(client: aiodocker.docker.Docker, node_uuid:
     log.debug("UUID %s is free", node_uuid)
 
 
-def _check_setting_correctness(setting: Dict):
+def _check_setting_correctness(setting: Dict) -> None:
     if 'name' not in setting or 'type' not in setting or 'value' not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
@@ -82,7 +82,7 @@ async def _create_docker_service_params(app: web.Application,
                                         node_uuid: str,
                                         project_id: str,
                                         node_base_path: str,
-                                        internal_network_id: str) -> Dict:
+                                        internal_network_id: Optional[str]) -> Dict:
 
     service_parameters_labels = await _read_service_settings(app, service_key, service_tag)
 
@@ -223,7 +223,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
             msg="Swarm network name is not configured, found following networks: {}".format(networks))
     return networks[0]
 
-async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
+async def _get_docker_image_port_mapping(service: Dict) -> Tuple[Optional[str], Optional[int]]:
     log.debug("getting port published by service: %s", service)
 
     published_ports = list()
@@ -255,7 +255,7 @@ async def _get_docker_image_port_mapping(service: Dict) -> Tuple[str, int]:
 async def _pass_port_to_service(service_name: str,
                                 port: str,
                                 service_boot_parameters_labels: Dict,
-                                session: ClientSession):
+                                session: ClientSession) -> None:
     for param in service_boot_parameters_labels:
         _check_setting_correctness(param)
         if param['name'] == 'published_host':
@@ -301,7 +301,7 @@ async def _create_overlay_network_in_swarm(client: aiodocker.docker.Docker,
             "Error while creating network", err) from err
 
 
-async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node_uuid: str):
+async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node_uuid: str) -> None:
     log.debug("Removing overlay network for service with uuid %s", node_uuid)
     try:
         networks = await client.networks.list()
@@ -353,7 +353,7 @@ async def _get_service_state(client: aiodocker.docker.Docker, service: Dict) -> 
         await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_name)
 
-async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker, service: Dict, node_uuid: str):
+async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker, service: Dict, node_uuid: str) -> None:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
     log.debug("Waiting for service %s to start", service_name)
@@ -376,7 +376,7 @@ async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker,
     log.debug("Waited for service %s to start", service_name)
 
 
-async def _get_repos_from_key(app: web.Application, service_key: str) -> List[Dict]:
+async def _get_repos_from_key(app: web.Application, service_key: str) -> Dict[str, List[Dict]]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
         service_key: await registry_proxy.list_image_tags(app, service_key)
@@ -391,7 +391,7 @@ async def _get_repos_from_key(app: web.Application, service_key: str) -> List[Di
     return list_of_images
 
 
-async def _get_dependant_repos(app: web.Application, service_key: str, service_tag: str) -> Dict:
+async def _get_dependant_repos(app: web.Application, service_key: str, service_tag: str) -> List[Dict]:
     list_of_images = await _get_repos_from_key(app, service_key)
     tag = await _find_service_tag(list_of_images, service_key, service_tag)
     # look for dependencies
@@ -431,7 +431,7 @@ async def _start_docker_service(app: web.Application,
                                 main_service: bool,
                                 node_uuid: str,
                                 node_base_path: str,
-                                internal_network_id: str
+                                internal_network_id: Optional[str]
                                 ) -> Dict:  # pylint: disable=R0913
     service_parameters = await _create_docker_service_params(app, client, service_key, service_tag, main_service,
                                                                 user_id, node_uuid, project_id, node_base_path, internal_network_id)
@@ -486,7 +486,7 @@ async def _start_docker_service(app: web.Application,
             service_key, service_tag) from err
 
 
-async def _silent_service_cleanup(app: web.Application, node_uuid):
+async def _silent_service_cleanup(app: web.Application, node_uuid: str) -> None:
     try:
         await stop_service(app, node_uuid)
     except exceptions.DirectorException:
@@ -571,7 +571,7 @@ async def start_service(app: web.Application, user_id: str, project_id: str, ser
         return node_details
 
 
-async def _get_node_details(app: web.Application, client: aiodocker.docker.Docker, service: Dict):
+async def _get_node_details(app: web.Application, client: aiodocker.docker.Docker, service: Dict) -> Dict:
     service_key, service_tag = await _get_service_key_version_from_docker_service(service)
 
     # get boot parameters
@@ -643,7 +643,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
                 "Error while accessing container", err) from err
 
 
-async def stop_service(app: web.Application, node_uuid: str):
+async def stop_service(app: web.Application, node_uuid: str) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
     async with docker_utils.docker_client() as client: # pylint: disable=not-async-context-manager
