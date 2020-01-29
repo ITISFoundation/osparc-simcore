@@ -184,7 +184,7 @@ async def delete_project_node(request: web.Request, project_uuid: str, user_id: 
     await delete_data_folders_of_project_node(request.app, project_uuid, node_uuid, user_id)
 
 
-async def update_project_node_progress(app: web.Application, user_id: str, project_id: str, node_id: str, progress: float) -> None:
+async def update_project_node_progress(app: web.Application, user_id: str, project_id: str, node_id: str, progress: float) -> Optional[Dict]:
     log.debug("updating node %s progress in project %s for user %s with %s", node_id, project_id, user_id, progress)
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
@@ -193,8 +193,9 @@ async def update_project_node_progress(app: web.Application, user_id: str, proje
     project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + .5)
     db = app[APP_PROJECT_DBAPI]
     await db.update_user_project(project, user_id, project_id)
+    return project["workbench"][node_id]
 
-async def update_project_node_outputs(app: web.Application, user_id: str, project_id: str, node_id: str, data: Dict) -> None:
+async def update_project_node_outputs(app: web.Application, user_id: str, project_id: str, node_id: str, data: Dict) -> Optional[Dict]:
     log.debug("updating node %s outputs in project %s for user %s with %s", node_id, project_id, user_id, pprint(data))
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
@@ -215,4 +216,5 @@ async def update_project_node_outputs(app: web.Application, user_id: str, projec
 
     db = app[APP_PROJECT_DBAPI]
     await db.update_user_project(project, user_id, project_id)
+    return node_description
 

@@ -33,15 +33,38 @@ def rabbit_handler(app: web.Application) -> Callable:
     return decorator
 
 async def parse_message_data(app: web.Application, data: Dict) -> None:
-    log.debug(f"parsing message data:\n{pprint(data)}")
+    log.debug("parsing message data:\n%s", pprint(data))
+    # get common data
+    user_id = data["user_id"]
+    project_id = data["project_id"]
+    node_id = data["Node"]
+
+    node_data = None
     if data["Channel"] == "Progress":
         # update corresponding project, node, progress value
-        await projects_api.update_project_node_progress(app, user_id=data["user_id"], project_id=data["project_id"],
-                                        node_id=data["Node"], progress=data["Progress"])
-        if data["Progress"] == "1.0":
-            # pass comp_task payload to project
-            task_output = await get_task_output(app, project_id=data["project_id"], node_id=data["Node"])
-            await projects_api.update_project_node_outputs(app, user_id=data["user_id"], project_id=data["project_id"], node_id=data["Node"], data=task_output)
+        node_data = await projects_api.update_project_node_progress(app, user_id, project_id, node_id, progress=data["Progress"])
+    if data["Channel"] == "Log" and "...postprocessing end" in data["Messages"]:
+        # the computational service completed
+        # pass comp_task payload to project
+        task_output = await get_task_output(app, project_id, node_id)
+        node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
+    
+    if node_data: 
+        socket_data = {
+            "Node": node_id,
+            "Data": node_data
+        }
+        sio = get_socket_server(app)
+        
+        with managed_resource(user_id, None, app) as rt:
+            socket_ids = await rt.find_socket_ids()
+            for sid in socket_ids:
+                # we only send the data to the right sockets
+                await sio.emit(
+                    "nodeUpdated",
+                    data = json.dumps(socket_data),
+                    room = sid
+                )
 
 
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application) -> None:
