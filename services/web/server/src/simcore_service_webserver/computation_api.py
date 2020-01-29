@@ -89,7 +89,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dic
                     dag_adjacency_list[input_node_uuid].append(node_uuid)
     return dag_adjacency_list
 
-async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: disable=R0912
+async def _parse_project_data(pipeline_data:Dict, app: web.Application): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -228,18 +228,17 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
 
 # API ------------------------------------------
 
-async def update_pipeline_db(app: web.Application, project_id: str, pipeline_data: Dict, replace_pipeline: bool = True):
+async def update_pipeline_db(app: web.Application, project_id: str, project_data: Dict, replace_pipeline: bool = True) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
 
-    log.info("Pipeline has been updated for project %s", project_id)
-    log.debug("Updating pipeline: %s", pformat(pipeline_data))
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
+    log.debug("Updating pipeline with project data: %s", pformat(project_data))
+    dag_adjacency_list, tasks = await _parse_project_data(project_data, app)
 
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
+    log.debug("Project parsed:\ndag_list: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
     await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
-    log.debug("END OF ROUTINE.")
+    log.info("Pipeline has been updated for project %s", project_id)
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
