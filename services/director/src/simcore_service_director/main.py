@@ -13,7 +13,7 @@ from simcore_service_director.rest import routing
 log = logging.getLogger(__name__)
 
 
-def setup_app_tracing(app: web.Application, app_name: str):
+def setup_app_tracing(app: web.Application, app_name: str) -> bool:
     host="0.0.0.0"
     port=8080
     cfg = {
@@ -39,7 +39,7 @@ def setup_app() -> web.Application:
 
     return app
 
-def main():
+def main() -> None:
     app = setup_app()
     web.run_app(app, port=8080)
 
