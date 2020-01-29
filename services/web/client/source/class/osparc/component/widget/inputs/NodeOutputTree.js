@@ -26,7 +26,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputTree = new osparc.component.widget.inputs.NodeOutputTree(node, port, portKey);
+ *   let nodeOutputTree = new osparc.component.widget.inputs.NodeOutputTree(node, port);
  *   widget = nodeOutputTree.getOutputWidget();
  *   this.getRoot().add(widget);
  * </pre>
@@ -38,7 +38,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
     * @param port {Object} Port owning the widget
-    * @param portKey {String} Port Key
   */
   construct: function(node, ports) {
     const model = this.__generateModel(node, ports);

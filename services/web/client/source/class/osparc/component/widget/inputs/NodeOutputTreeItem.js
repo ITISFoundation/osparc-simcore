@@ -85,6 +85,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
   members : {
     __valueLabel: null,
+
     _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -109,6 +110,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     _applyValue: function(value) {
       this.__valueLabel.setValue(value);
     },
+
     _transformValue: function(value) {
       if (value.getLabel) {
         return value.getLabel();
