@@ -26,7 +26,7 @@ test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 setup_config = dict(
     name='simcore-service-storage',
-    version='0.2.0',
+    version='0.2.1',
     description='Service to manage data storage in simcore',
     author='Manuel Guidon (mguidon)',
     python_requires='>3.6, <3.7',
