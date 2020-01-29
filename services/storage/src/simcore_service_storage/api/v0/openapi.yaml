@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   description: API definition for simcore-service-storage service
-  version: 0.1.0
+  version: 0.2.0
   title: simcore-service-storage API
   contact:
     name: IT'IS Foundation
@@ -63,8 +63,8 @@ paths:
                     example:
                       name: simcore-director-service
                       status: SERVICE_RUNNING
-                      api_version: 0.1.0-dev+NJuzzD9S
-                      version: 0.1.0-dev+N127Mfv9H
+                      api_version: 0.2.0-dev+NJuzzD9S
+                      version: 0.2.0-dev+N127Mfv9H
                   error:
                     nullable: true
                     default: null
