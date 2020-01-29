@@ -121,21 +121,25 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
 
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      const platformName = osparc.utils.LibVersions.getPlatformName();
       if (platformVersion) {
-        const text = platformVersion.name + " " + platformVersion.version + (platformName.length ? ` (${platformName})` : " (production)");
-        const versionLink = new osparc.ui.basic.LinkLabel(text, platformVersion.url).set({
-          font: "text-12",
+        let text = platformVersion.name + " " + platformVersion.version;
+        const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
           textColor: "text-darker"
         });
         versionLinkLayout.add(versionLink);
 
         const separator = new qx.ui.basic.Label("::");
         versionLinkLayout.add(separator);
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            text += platformName.length ? ` (${platformName})` : " (production)";
+          })
+          .finally(() => {
+            versionLink.setValue(text);
+          });
       }
 
       const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
-        font: "text-12",
         textColor: "text-darker"
       });
       versionLinkLayout.add(organizationLink);

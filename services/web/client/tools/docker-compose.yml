@@ -12,7 +12,6 @@ services:
     working_dir: /project
     command: >
       qx serve --set qx.allowUrlSettings=true
-        --set-env osparc.stackName="${SWARM_STACK_NAME}"
         --set-env osparc.vcsOriginUrl="${VCS_URL}"
         --set-env osparc.vcsRef="${VCS_REF}"
         --set-env osparc.vcsRefClient="${VCS_REF_CLIENT}"

@@ -70,9 +70,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     wrapperContainer.add(logoContainer, {
       height: "100%"
     });
-    const platformLabel = new qx.ui.basic.Label(osparc.utils.LibVersions.getPlatformName().toUpperCase()).set({
+    const platformLabel = new qx.ui.basic.Label().set({
       font: "text-9"
     });
+    osparc.utils.LibVersions.getPlatformName()
+      .then(platformName => platformLabel.setValue(platformName.toUpperCase()));
     wrapperContainer.add(platformLabel, {
       bottom: 3,
       right: 0

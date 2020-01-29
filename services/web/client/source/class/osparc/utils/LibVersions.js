@@ -122,16 +122,19 @@ qx.Class.define("osparc.utils.LibVersions", {
     },
 
     getPlatformName: function() {
-      const stackName = qx.core.Environment.get("osparc.stackName");
-      let platformName = "dev";
-      if (stackName.includes("master")) {
-        platformName = "master";
-      } else if (stackName.includes("staging")) {
-        platformName = "staging";
-      } else if (stackName.includes("production")) {
-        platformName = "";
-      }
-      return platformName;
+      return osparc.data.Resources.get("statics")
+        .then(statics => statics.stackName)
+        .then(stackName => {
+          let platformName = "dev";
+          if (stackName.includes("master")) {
+            platformName = "master";
+          } else if (stackName.includes("staging")) {
+            platformName = "staging";
+          } else if (stackName.includes("production")) {
+            platformName = "";
+          }
+          return platformName;
+        });
     }
   }
 });
