@@ -117,8 +117,9 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
 
 
 def raise_http_unavailable_error(retry_state: RetryCallState):
-    # aiopg reuses DBAPI exceptions
-    #
+    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop. TIP: obj, query = retry_state.args; obj.app.register_incidents
+
+    exc :DatabaseError  = retry_state.outcome.exception()
     # StandardError
     # |__ Warning
     # |__ Error
@@ -131,15 +132,19 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     #         |__ ProgrammingError
     #         |__ NotSupportedError
     #
+    # aiopg reuses DBAPI exceptions
     # SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
     # SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
-    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop.
-    # TODO: add header with Retry-After
-    #obj, query = retry_state.args
-    #obj.app.register_incidents
-    # https://tools.ietf.org/html/rfc7231#section-7.1.3
-    raise web.HTTPServiceUnavailable()
 
+
+    # TODO: add header with Retry-After https://tools.ietf.org/html/rfc7231#section-7.1.3
+    resp = web.HTTPServiceUnavailable()
+
+    # logs
+    msg = f"Postgres service non-responsive, responding {resp.status_code}: {str(exc) or repr(exc)}"
+    log.error(msg)
+
+    raise resp
 
 
 class PostgresRetryPolicyUponInitialization:
@@ -171,7 +176,7 @@ class PostgresRetryPolicyUponOperation:
             retry=retry_if_exception_type(DatabaseError),
             wait=wait_fixed(self.WAIT_SECS),
             stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            after=after_log(logger, logging.ERROR),
+            after=after_log(logger, logging.WARNING),
             retry_error_callback=raise_http_unavailable_error
         )
 

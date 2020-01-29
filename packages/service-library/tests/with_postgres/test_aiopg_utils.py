@@ -3,7 +3,7 @@
 # pylint:disable=too-many-arguments
 # pylint:disable=broad-except
 
-
+import logging
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -25,6 +25,8 @@ metadata = sa.MetaData()
 tbl = sa.Table('tbl', metadata,
                sa.Column('id', sa.Integer, primary_key=True),
                sa.Column('val', sa.String(255)))
+
+
 
 
 @pytest.fixture
@@ -124,7 +126,9 @@ def test_init_tables(postgres_service_with_fake_data):
     init_pg_tables(dsn, metadata)
 
 
-async def test_retry_pg_api_policy(postgres_service_with_fake_data):
+async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
+    caplog.set_level(logging.ERROR)
+
     # pylint: disable=no-value-for-parameter
     dsn = postgres_service_with_fake_data.to_uri()
     app_name = postgres_service_with_fake_data.application_name
@@ -132,19 +136,21 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data):
     async with aiopg.sa.create_engine(dsn, application_name=app_name, echo=True) as engine:
 
         # goes
-        await go(engine, gid=0)
-        print(go.retry.statistics)
-        assert go.total_retry_count() == 1
+        await dec_go(engine, gid=0)
+        print(dec_go.retry.statistics)
+        assert dec_go.total_retry_count() == 1
 
         # goes, fails and max retries
         with pytest.raises(web.HTTPServiceUnavailable):
-            await go(engine, gid=1, raise_cls=DatabaseError)
-        print(go.retry.statistics)
-        assert go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1
+            await dec_go(engine, gid=1, raise_cls=DatabaseError)
+        assert "Postgres service non-responsive, responding 503" in caplog.text
+
+        print(dec_go.retry.statistics)
+        assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1
 
         # goes and keeps count of all retrials
-        await go(engine, gid=2)
-        assert go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+2
+        await dec_go(engine, gid=2)
+        assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+2
 
 
 #@pytest.mark.skip(reason="UNDER DEVELOPMENT")
@@ -181,11 +187,13 @@ async def test_connections(postgres_service_with_fake_data):
     assert engine.size == 0
 
 
-
-
 # HELPERS ------------
 
 @retry_pg_api
+async def dec_go(*args, **kargs):
+    return await go(*args, **kargs)
+
+
 async def go(engine: aiopg.sa.Engine, gid="", raise_cls=None):
     # pylint: disable=no-value-for-parameter
     async with engine.acquire() as conn:
