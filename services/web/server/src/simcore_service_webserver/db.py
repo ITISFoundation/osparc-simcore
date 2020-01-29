@@ -54,7 +54,7 @@ async def pg_engine(app: web.Application):
         )
 
     if cfg['init_tables']:
-        log.debug("Initializing tables for %s", dsn)
+        log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
     yield #-------------------
