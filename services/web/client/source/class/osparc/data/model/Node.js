@@ -929,11 +929,14 @@ qx.Class.define("osparc.data.model.Node", {
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         outputNode: this.getIsOutputNode(),
-        outputs: this.getOutputValues(),
         parent: this.getParentNodeId(),
-        progress: this.getProgress(),
         thumbnail: this.getThumbnail()
       };
+
+      if (this.isFilePicker()) {
+        nodeEntry.outputs = this.getOutputValues();
+        nodeEntry.progress = this.getProgress();
+      }
 
       if (savePosition) {
         nodeEntry.position = {
