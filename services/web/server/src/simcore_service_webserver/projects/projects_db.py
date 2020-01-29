@@ -216,6 +216,8 @@ class ProjectDBAPI:
             async for row in conn.execute(query):
                 result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
+                tags = await self._get_tags_by_study(study_id=result_dict['id'])
+                result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
@@ -298,7 +300,11 @@ class ProjectDBAPI:
             # FIXME: prefer None to raise an exception. Read https://stackoverflow.com/questions/1313812/raise-exception-vs-return-none-in-functions?answertab=votes#tab-top
             if not row:
                 raise ProjectNotFoundError(project_uuid)
-            return _convert_to_schema_names(row)
+
+            study = _convert_to_schema_names(row)
+            tags = await self._get_tags_by_study(study_id=row.id)
+            study['tags'] = tags
+            return study
 
     async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
@@ -324,6 +330,8 @@ class ProjectDBAPI:
             row = await result.first()
             if row:
                 template_prj = _convert_to_schema_names(row)
+                tags = await self._get_tags_by_study(study_id=row.id)
+                template_prj['tags'] = tags
 
         return template_prj
 
