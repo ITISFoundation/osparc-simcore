@@ -47,7 +47,8 @@ async def index(request: web.Request):
 
 def write_statics_file(directory):
     statics = {}
-    statics['stackName'] = os.environ.get('SWARM_STACK_NAME', 'simcore')
+    statics['stackName'] = os.environ.get('SWARM_STACK_NAME')
+    statics['buildDate'] = os.environ.get('BUILD_DATE')
     with open(directory / 'statics.json', 'w') as statics_file:
         json.dump(statics, statics_file)
 
