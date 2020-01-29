@@ -4,14 +4,14 @@
 
 import logging
 
-from aiopg.sa import Engine
 from aiohttp import web
-from tenacity import retry
-
-from servicelib.aiopg_utils import (DataSourceName, PostgresRetryPolicyUponInitialization,
-                                    create_pg_engine, init_pg_tables, is_pg_responsive, raise_if_not_responsive)
+from servicelib.aiopg_utils import (DataSourceName,
+                                    PostgresRetryPolicyUponInitialization,
+                                    create_pg_engine, init_pg_tables,
+                                    is_pg_responsive, raise_if_not_responsive)
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from tenacity import Retrying
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
@@ -20,16 +20,6 @@ THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
 
 log = logging.getLogger(__name__)
-
-
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
-async def _safe_create_pg_engine(dsn:DataSourceName, **kwargs_engine) -> Engine:
-    """
-        Creates engine and ensures pg services is responsive
-    """
-    engine = await create_pg_engine(dsn, **kwargs_engine)
-    await raise_if_not_responsive(engine)
-    return engine
 
 
 async def pg_engine(app: web.Application):
@@ -47,11 +37,16 @@ async def pg_engine(app: web.Application):
         )
 
     log.info("Creating pg engine for %s", dsn)
-    app[APP_DB_ENGINE_KEY] = engine = \
-        await _safe_create_pg_engine(dsn,
-            minsize=pg_cfg['minsize'],
-            maxsize=pg_cfg['maxsize']
-        )
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+        with attempt:
+            engine = await create_pg_engine(dsn,
+                minsize=pg_cfg['minsize'],
+                maxsize=pg_cfg['maxsize']
+            )
+            await raise_if_not_responsive(engine)
+
+    assert engine
+    app[APP_DB_ENGINE_KEY] = engine
 
     if cfg['init_tables']:
         log.info("Initializing tables for %s", dsn)
@@ -62,10 +57,9 @@ async def pg_engine(app: web.Application):
     if engine is not app.get(APP_DB_ENGINE_KEY):
         log.critical("app does not hold right db engine. Somebody has changed it??")
 
-    if engine:
-        engine.close()
-        await engine.wait_closed()
-        log.debug("engine '%s' after shutdown: closed=%s, size=%d", engine.dsn, engine.closed, engine.size)
+    engine.close()
+    await engine.wait_closed()
+    log.debug("engine '%s' after shutdown: closed=%s, size=%d", engine.dsn, engine.closed, engine.size)
 
 
 def is_service_enabled(app: web.Application):

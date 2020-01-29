@@ -22,10 +22,11 @@ async def redis_client(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     url = DSN.format(**cfg["redis"])
 
-    for attempt in Retrying(**retry_policy):
+    for attempt in Retrying(**retry_policy): # pylint: disable=not-an-iterable
         with attempt:
             client = await aioredis.create_redis_pool(url, encoding="utf-8")
 
+    assert client
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client
 
     yield
