@@ -33,10 +33,10 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	@docker build --file $(docker_file) --tag $(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
-		--build-arg tag=${VCS_REF} \
-		--build-arg tag=${VCS_REF_CLIENT} \
-		--build-arg tag=${VCS_STATUS_CLIENT} \
-		--build-arg tag=${VCS_URL} \
+		--build-arg VCS_REF=${VCS_REF} \
+		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
+		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
+		--build-arg VCS_URL=${VCS_URL} \
 		--target=build-client .
 
 touch: ## minimal image build with /project/output-build inside
