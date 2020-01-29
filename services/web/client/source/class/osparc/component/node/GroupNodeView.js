@@ -143,6 +143,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
 
     populateLayout: function() {
       this.getNode().bind("label", this.__title, "value");
+      this.__addInputPortsUIs();
       this.__addSettings();
       this.__addIFrame();
       this.__addButtons();
