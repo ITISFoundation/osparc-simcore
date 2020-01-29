@@ -1,12 +1,11 @@
 import logging
 
 from aiohttp import web
-from aiopg.sa import Engine
 from servicelib.aiopg_utils import (DataSourceName,
                                     PostgresRetryPolicyUponInitialization,
                                     create_pg_engine, init_pg_tables,
                                     is_pg_responsive, raise_if_not_responsive)
-from tenacity import retry
+from tenacity import Retrying
 
 from .models import metadata
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
@@ -14,17 +13,6 @@ from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = 'postgres'
-
-
-
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
-async def _safe_create_pg_engine(dsn:DataSourceName, **kwargs_engine) -> Engine:
-    """
-        Creates engine and ensures pg services is responsive
-    """
-    engine = await create_pg_engine(dsn, **kwargs_engine)
-    await raise_if_not_responsive(engine)
-    return engine
 
 
 async def pg_engine(app: web.Application):
@@ -39,11 +27,13 @@ async def pg_engine(app: web.Application):
         )
 
     log.info("Creating pg engine for %s", dsn)
-    app[APP_DB_ENGINE_KEY] = engine = \
-        await _safe_create_pg_engine(dsn,
-            minsize=pg_cfg['minsize'],
-            maxsize=pg_cfg['maxsize']
-        )
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):  # pylint: disable=not-an-iterable
+        with attempt:
+            engine = await create_pg_engine(dsn,
+                minsize=pg_cfg['minsize'],
+                maxsize=pg_cfg['maxsize']
+            )
+            await raise_if_not_responsive(engine)
 
 
     if app[APP_CONFIG_KEY]["main"]["testing"]:
