@@ -3,56 +3,58 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+import time
 
 import docker
 import pytest
-from pytest_docker import docker_ip, docker_services
+import tenacity
 
 log = logging.getLogger(__name__)
 
-def is_responsive(url):
-    try:
-        docker_client = docker.from_env()
-        docker_client.login(registry=url, username="test")
-    except docker.errors.APIError:
-        log.exception("Error while loggin into the registry")
-        return False
-    return True
-
 
 @pytest.fixture(scope="session")
-def docker_registry(docker_ip, docker_services):
-    host = docker_ip
-    port = docker_services.port_for('registry', 5000)
+def docker_registry():
+    # run the registry outside of the stack
+    docker_client = docker.from_env()
+    container = docker_client.containers.run("registry:2",
+        ports={"5000":"5000"},
+        environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
+        restart_policy={"Name":"always"},
+        detach=True
+    )
+    host = "127.0.0.1"
+    port = 5000
     url = "{host}:{port}".format(host=host, port=port)
     # Wait until we can connect
-    docker_services.wait_until_responsive(
-        check=lambda: is_responsive(url),
-        timeout=30.0,
-        pause=1.0,
-    )
+    assert _wait_till_registry_is_responsive(url)
 
     # test the registry
-    try:
-        docker_client = docker.from_env()
-        # get the hello world example from docker hub
-        hello_world_image = docker_client.images.pull("hello-world","latest")
-        # login to private registry
-        docker_client.login(registry=url, username="test")
-        # tag the image
-        repo = url + "/hello-world:dev"
-        assert hello_world_image.tag(repo) == True
-        # push the image to the private registry
-        docker_client.images.push(repo)
-        # wipe the images
-        docker_client.images.remove(image="hello-world:latest")
-        docker_client.images.remove(image=hello_world_image.id)
-        # pull the image from the private registry
-        private_image = docker_client.images.pull(repo)
-        docker_client.images.remove(image=private_image.id)
-    except docker.errors.APIError:
-        log.exception("Unexpected docker API error")
-        raise
+    docker_client = docker.from_env()
+    # get the hello world example from docker hub
+    hello_world_image = docker_client.images.pull("hello-world","latest")
+    # login to private registry
+    docker_client.login(registry=url, username="simcore")
+    # tag the image
+    repo = url + "/hello-world:dev"
+    assert hello_world_image.tag(repo) == True
+    # push the image to the private registry
+    docker_client.images.push(repo)
+    # wipe the images
+    docker_client.images.remove(image="hello-world:latest")
+    docker_client.images.remove(image=hello_world_image.id)
+    # pull the image from the private registry
+    private_image = docker_client.images.pull(repo)
+    docker_client.images.remove(image=private_image.id)
 
     yield url
-    log.info("teared down docker registry")
+
+    container.stop()
+
+    while docker_client.containers.list(filters={"name": container.name}):
+        time.sleep(1)
+
+@tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
+def _wait_till_registry_is_responsive(url):
+    docker_client = docker.from_env()
+    docker_client.login(registry=url, username="simcore")
+    return True
