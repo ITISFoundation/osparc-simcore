@@ -17,7 +17,7 @@ openapi-specs: ## updates and validates openapi specifications
 	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
-.PHONY: install
+.PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
@@ -62,5 +62,5 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 help: ## this colorful help
 	@echo "Recipes for '${APP_NAME}':"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
