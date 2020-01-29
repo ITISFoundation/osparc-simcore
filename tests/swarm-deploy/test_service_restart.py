@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-import os
 import subprocess
 import sys
 import time
@@ -16,6 +15,9 @@ from tenacity import before_log, retry, stop_after_attempt, wait_fixed
 
 from docker import DockerClient
 from docker.models.services import Service
+from tenacity import Retrying, before_log, stop_after_attempt, wait_fixed
+
+from docker_utils import assert_all_services_ready
 
 logger = logging.getLogger(__name__)
 
@@ -27,26 +29,19 @@ MAX_TIME_TO_DEPLOY_SECS = 60
 MAX_TIME_TO_RESTART_SERVICE = 5
 
 
+
 @pytest.fixture("module")
 def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> List[Service]:
     # NOTE: the goal here is NOT to test time-to-deplopy but
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
-    STACK_NAME = 'simcore'
-    assert STACK_NAME in osparc_deploy
-
-    @retry( wait=wait_fixed(MAX_TIME_TO_DEPLOY_SECS),
-            stop=stop_after_attempt(5),
-            before=before_log(logger, logging.WARNING) )
-    def ensure_deployed():
-        for service in docker_client.services.list():
-            for task in service.tasks():
-                assert task['Status']['State'] == task['DesiredState'], \
-                    f'{service.name} still not ready: {pformat(task)}'
-
     try:
-        ensure_deployed()
+        for attempt in Retrying(wait=wait_fixed(MAX_TIME_TO_DEPLOY_SECS),
+                                stop=stop_after_attempt(5),
+                                before=before_log(logger, logging.WARNING)):
+            with attempt:
+                assert_all_services_ready()
     finally:
         # logs table like
         #  ID                  NAME                  IMAGE                                      NODE                DESIRED STATE       CURRENT STATE                ERROR
@@ -57,11 +52,9 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
         # ...
         subprocess.run(f"docker stack ps {STACK_NAME}", shell=True, check=False)
 
-    return [service for service in docker_client.services.list()
-        if service.name.startswith(f"{STACK_NAME}_")]
+    return docker_client.services.list(filters={'name':'simcore'})
 
-#FIXME: @crespov, you need to fix this.
-@pytest.mark.skipif(os.environ.get('GITHUB_ACTIONS', '') == "true", reason="test fails consistently on Github Actions")
+
 @pytest.mark.parametrize("service_name", [
     'simcore_webserver',
     'simcore_storage'
