@@ -20,12 +20,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    const key = "simcore/macros/" + osparc.utils.Utils.uuidv4();
-    const version = "1.0.0";
-
     this.set({
-      inputNode: node,
-      outputNode: new osparc.data.model.Node(key, version)
+      inputNode: node
     });
 
     this.__buildLayout();
@@ -35,15 +31,13 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     inputNode: {
       check: "osparc.data.model.Node",
       nullable: false
-    },
-
-    outputNode: {
-      check: "osparc.data.model.Node",
-      nullable: false
     }
   },
 
   members: {
+    __groupName: null,
+    __groupDesc: null,
+
     __buildLayout: function() {
       const formRenderer = this.__buildMetaDataForm();
       this._add(formRenderer);
@@ -62,7 +56,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         alignX: "right"
       });
       exportBtn.addListener("execute", () => {
-        this.__exportNode();
+        this.__exportAsMacroService();
       }, this);
       this._add(exportBtn);
     },
@@ -70,12 +64,12 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     __buildMetaDataForm: function() {
       const metaDataForm = new qx.ui.form.Form();
 
-      const serviceName = new qx.ui.form.TextField(this.getInputNode().getLabel());
-      serviceName.setRequired(true);
-      metaDataForm.add(serviceName, this.tr("Name"));
+      const groupName = this.__groupName = new qx.ui.form.TextField(this.getInputNode().getLabel());
+      groupName.setRequired(true);
+      metaDataForm.add(groupName, this.tr("Name"));
 
-      const serviceDesc = new qx.ui.form.TextField();
-      metaDataForm.add(serviceDesc, this.tr("Description"));
+      const groupDesc = this.__groupDesc = new qx.ui.form.TextField();
+      metaDataForm.add(groupDesc, this.tr("Description"));
 
       const formRenderer = new qx.ui.form.renderer.Single(metaDataForm).set({
         padding: 10
@@ -89,40 +83,51 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     __buildExposedSettings: function() {
     },
 
-    __exportNode: function() {
-      const groupNode = this.getInputNode();
+    __exportAsMacroService: function() {
+      const nodesGroup = this.getInputNode();
+      const nodeKey = "simcore/services/frontend/nodes-group/macros/" + nodesGroup.getNodeId();
+      const version = "1.0.0";
+      const workbench = this.__groupToWorkbenchData(nodesGroup);
+
+      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      nodesGroupService["key"] = nodeKey;
+      nodesGroupService["version"] = version;
+      nodesGroupService["name"] = this.__groupName.getValue();
+      nodesGroupService["description"] = this.__groupDesc.getValue();
+      nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
+      nodesGroupService["workbench"] = workbench;
+      console.log(nodesGroupService);
+
+      const service = {};
+      service[nodeKey] = {};
+      service[nodeKey][version] = nodesGroupService;
+      osparc.utils.Services.addServiceToCache(service);
+    },
+
+    __groupToWorkbenchData: function(nodesGroup) {
       let workbench = {};
-      workbench = this.__serializeInputNode(groupNode, workbench);
-      workbench = this.__serializeInnerNodes(groupNode, workbench);
-      workbench = JSON.parse(JSON.stringify(workbench));
-      workbench = this.__removeParentDependencies(groupNode, workbench);
-      workbench = this.__removeOutReferences(workbench);
-      workbench = this.__replaceUuids(workbench);
-      console.log(workbench);
-    },
 
-    __serializeInputNode: function(groupNode, workbench) {
-      workbench[groupNode.getNodeId()] = groupNode.serialize();
-      return workbench;
-    },
-
-    __serializeInnerNodes: function(groupNode, workbench) {
-      const allInnerNodes = groupNode.getInnerNodes(true);
-      for (const innerNodeId in allInnerNodes) {
-        const innerNode = allInnerNodes[innerNodeId];
+      // serialize innerNodes
+      const innerNodes = nodesGroup.getInnerNodes(true);
+      Object.values(innerNodes).forEach(innerNode => {
         workbench[innerNode.getNodeId()] = innerNode.serialize();
-      }
-      return workbench;
-    },
+      });
 
-    __removeParentDependencies: function(groupNode, workbench) {
-      const groupNodeId = groupNode.getNodeId();
-      if ("parent" in workbench[groupNodeId]) {
-        delete workbench[groupNodeId]["parent"];
-      }
-      if ("outputNode" in workbench[groupNodeId]) {
-        workbench[groupNodeId]["outputNode"] = false;
-      }
+      // remove parent from first level
+      const firstLevelNodes = nodesGroup.getInnerNodes(false);
+      Object.values(firstLevelNodes).forEach(firstLevelNode => {
+        workbench[firstLevelNode.getNodeId()]["parent"] = null;
+      });
+
+      // deep copy workbench
+      workbench = osparc.utils.Utils.deepCloneObject(workbench);
+
+      // removeOutReferences
+      workbench = this.__removeOutReferences(workbench);
+
+      // replace Uuids
+      workbench = osparc.data.Converters.replaceUuids(workbench);
+
       return workbench;
     },
 

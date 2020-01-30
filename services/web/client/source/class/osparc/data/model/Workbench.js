@@ -195,6 +195,9 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node);
         }
       }
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "workbench")) {
+        this.__createInnerWorkbench(node, metaData);
+      }
       this.__initNodeSignals(node);
 
       node.populateNodeData();
@@ -230,6 +233,16 @@ qx.Class.define("osparc.data.model.Workbench", {
         });
 
       return node;
+    },
+
+    __createInnerWorkbench: function(parentNode, metaData) {
+      // this is must be a nodes group
+      const workbench = osparc.data.Converters.replaceUuids(metaData["workbench"]);
+      for (let innerNodeId in workbench) {
+        workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
+      }
+      this.__deserializeNodes(workbench);
+      this.__deserializeEdges(workbench);
     },
 
     __initNodeSignals: function(node) {
