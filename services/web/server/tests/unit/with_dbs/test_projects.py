@@ -17,7 +17,6 @@ from aiohttp import web
 from mock import call
 from yarl import URL
 
-import utils_tags
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -736,9 +735,9 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.USER, web.HTTPOk)
 ])
-async def test_tags_to_studies(client, logged_user, user_project, expected):
+async def test_tags_to_studies(client, logged_user, user_project, expected, test_tags_data):
     # Add test tags
-    tags = utils_tags.get_test_tags()
+    tags = test_tags_data
     added_tags = []
     for tag in tags:
         url = client.app.router["create_tag"].url_for()
