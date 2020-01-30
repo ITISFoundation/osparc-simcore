@@ -202,35 +202,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       node.populateNodeData();
       node.giveUniqueName();
-
-      // create the node in the backend here
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const params = {
-        url: {
-          projectId: study.getUuid()
-        },
-        data: {
-          "service_id": node.getNodeId(),
-          "service_key": key,
-          "service_version": version
-        }
-      };
-      node.addDynamicButtons();
-
-      osparc.data.Resources.fetch("studies", "addNode", params)
-        .then(data => {
-          node.startDynamicService();
-        })
-        .catch(err => {
-          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + err.getTarget().getResponse()["error"];
-          const errorMsgData = {
-            nodeId: node.getNodeId(),
-            msg: errorMsg
-          };
-          node.fireDataEvent("showInLogger", errorMsgData);
-          node.setInteractiveStatus("failed");
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
-        });
+      node.startInBackend();
 
       return node;
     },
@@ -299,16 +271,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
-      // remove node in the backend
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const params = {
-        url: {
-          projectId: study.getUuid(),
-          nodeId: nodeId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "deleteNode", params)
-        .catch(err => console.error(err));
 
       // remove first the connected edges
       const connectedEdges = this.getConnectedEdges(nodeId);
@@ -423,6 +385,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         this.getNode(nodeId).giveUniqueName();
+      }
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        this.getNode(nodeId).startInBackend();
       }
     },
 

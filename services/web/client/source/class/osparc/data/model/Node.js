@@ -311,8 +311,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getExposedInnerNodes: function() {
-      const workbench = osparc.store.Store.getInstance().getCurrentStudy()
-        .getWorkbench();
+      const workbench = this.getWorkbench();
 
       let outputNodes = [];
       for (let i=0; i<this.__outputNodes.length; i++) {
@@ -382,6 +381,52 @@ qx.Class.define("osparc.data.model.Node", {
           this.__giveUniqueName(label, suffix+1);
         }
       }
+    },
+
+    startInBackend: function() {
+      // create the node in the backend here
+      const key = this.getKey();
+      const version = this.getVersion();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const params = {
+        url: {
+          projectId: study.getUuid()
+        },
+        data: {
+          "service_id": this.getNodeId(),
+          "service_key": key,
+          "service_version": version
+        }
+      };
+      this.addDynamicButtons();
+
+      osparc.data.Resources.fetch("studies", "addNode", params)
+        .then(data => {
+          this.startDynamicService();
+        })
+        .catch(err => {
+          const errorMsg = "Error when starting " + key + ":" + version + ": " + err.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+        });
+    },
+
+    stopInBackend: function() {
+      // remove node in the backend
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const params = {
+        url: {
+          projectId: study.getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "deleteNode", params)
+        .catch(err => console.error(err));
     },
 
     repopulateOutputPortData: function() {
@@ -899,6 +944,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
+      this.stopInBackend();
       this.removeIFrame();
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
