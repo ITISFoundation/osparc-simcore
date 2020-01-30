@@ -256,7 +256,7 @@ qx.Class.define("osparc.utils.Services", {
       return builtInServices;
     },
 
-    servicesToCache: function(services, fromServer) {
+    servicesToCache: function(services) {
       this.servicesCached = {};
       this.__addCategoryToServices(services);
       this.servicesCached = Object.assign(this.servicesCached, services);
