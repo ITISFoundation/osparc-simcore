@@ -168,8 +168,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          const exportGroupView = new osparc.component.export.ExportGroup(node);
+          const lastCurrentId = this.__currentNodeId;
+          this.nodeSelected(nodeId);
 
+          const exportGroupView = new osparc.component.export.ExportGroup(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
@@ -183,6 +185,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           window.add(exportGroupView);
           window.center();
           window.open();
+
+          exportGroupView.addListener("finished", () => {
+            const text = this.tr("Group added to the Service catalog");
+            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+            window.close();
+          }, this);
+          window.addListener("close", () => this.nodeSelected(lastCurrentId));
         }
       });
 

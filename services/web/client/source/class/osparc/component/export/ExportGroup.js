@@ -27,6 +27,10 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     this.__buildLayout();
   },
 
+  events: {
+    "finished": "qx.event.type.Data"
+  },
+
   properties: {
     inputNode: {
       check: "osparc.data.model.Node",
@@ -96,12 +100,13 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["description"] = this.__groupDesc.getValue();
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
       nodesGroupService["workbench"] = workbench;
-      console.log(nodesGroupService);
 
       const service = {};
       service[nodeKey] = {};
       service[nodeKey][version] = nodesGroupService;
       osparc.utils.Services.addServiceToCache(service);
+
+      this.fireDataEvent("finished");
     },
 
     __groupToWorkbenchData: function(nodesGroup) {

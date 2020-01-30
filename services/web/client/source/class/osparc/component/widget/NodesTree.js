@@ -234,7 +234,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
           const nodeId = selectedItem.getNodeId();
-          this.__openItem(nodeId);
           this.fireDataEvent("exportNode", nodeId);
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
