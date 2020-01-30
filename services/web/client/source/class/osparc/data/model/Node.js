@@ -63,7 +63,7 @@ qx.Class.define("osparc.data.model.Node", {
       nodeId: uuid || osparc.utils.Utils.uuidv4()
     });
 
-    let metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
+    const metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
