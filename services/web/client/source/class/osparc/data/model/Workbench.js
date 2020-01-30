@@ -213,8 +213,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       for (let innerNodeId in workbench) {
         workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
       }
+
       this.__deserializeNodes(workbench);
       this.__deserializeEdges(workbench);
+
+      for (let innerNodeId in workbench) {
+        this.getNode(innerNodeId).startInBackend();
+      }
     },
 
     __initNodeSignals: function(node) {
@@ -385,10 +390,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         this.getNode(nodeId).giveUniqueName();
-      }
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        this.getNode(nodeId).startInBackend();
       }
     },
 
