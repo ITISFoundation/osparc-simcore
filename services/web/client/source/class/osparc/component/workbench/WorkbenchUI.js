@@ -313,6 +313,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __activeNodeChanged: function(activeNode, isControlPressed = false) {
+      const index = this.__selectedNodes.indexOf(activeNode);
+      if (index > -1) {
+        this.__selectedNodes.splice(index, 1);
+        activeNode.setTriSelected(0);
+        return;
+      }
+
       if (isControlPressed) {
         this.__selectedNodes.forEach(node => {
           node.setTriSelected(1);
@@ -325,9 +332,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       activeNode.setTriSelected(2);
-      if (this.__selectedNodes.indexOf(activeNode) === -1) {
-        this.__selectedNodes.push(activeNode);
-      }
+      this.__selectedNodes.push(activeNode);
 
       this.__selectedItemChanged(activeNode.getNodeId());
     },
