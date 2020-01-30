@@ -136,7 +136,9 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
      * @param {String} groupId Id of the filtering group whose data needs to be dispatched.
      */
     dispatch: function(groupId) {
-      qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(groupId), this.__state[groupId]);
+      if (this.__state && this.__state[groupId]) {
+        qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(groupId), this.__state[groupId]);
+      }
     }
   }
 });
