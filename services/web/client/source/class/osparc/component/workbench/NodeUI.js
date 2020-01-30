@@ -204,10 +204,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
       const metaData = node.getMetaData();
-      if (metaData) {
-        this.__createUIPorts(true, metaData.inputs);
-        this.__createUIPorts(false, metaData.outputs);
-      }
+      this.__createUIPorts(true, metaData && metaData.inputs);
+      this.__createUIPorts(false, metaData && metaData.outputs);
       if (node.isComputational() || node.isFilePicker()) {
         node.bind("progress", this.__progressBar, "value");
       }
