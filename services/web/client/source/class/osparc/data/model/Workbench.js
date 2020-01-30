@@ -184,7 +184,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
+
       const node = new osparc.data.model.Node(key, version, uuid);
+      this.addNode(node, parent);
+
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
@@ -209,7 +212,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           "service_version": version
         }
       };
-      this.addNode(node, parent);
       node.addDynamicButtons();
 
       osparc.data.Resources.fetch("studies", "addNode", params)
