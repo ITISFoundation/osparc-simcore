@@ -243,8 +243,6 @@ qx.Class.define("osparc.utils.Services", {
         type: "group",
         name: "Group",
         description: "Group of nodes",
-        authors: [],
-        contact: "",
         inputs: {},
         outputs: {}
       };
