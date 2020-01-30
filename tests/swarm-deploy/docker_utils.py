@@ -8,6 +8,8 @@
     https://medium.com/@nagarwal/lifecycle-of-docker-container-d2da9f85959
     http://docker-saigon.github.io/post/Docker-Internals/#docker-api:cb6baf67dddd3a71c07abfd705dc7d4b
 """
+import re
+from collections import OrderedDict
 from enum import Enum
 from pprint import pformat
 from textwrap import dedent
@@ -17,7 +19,7 @@ from typing import Callable
 import docker
 from tenacity import Retrying, stop_after_delay
 
-TASK_STATE_NAMES = tuple([ entry.split()[0] for entry in dedent("""
+TASK_STATE_DESCRIPTION = OrderedDict([ re.split(r'\s+', entry, 1) for entry in dedent("""
 NEW       The task was initialized.
 PENDING   Resources for the task were allocated.
 ASSIGNED  Docker assigned the task to nodes.
@@ -33,7 +35,20 @@ ORPHANED  The node was down for too long.
 REMOVE    The task is not terminal but the associated service was removed or scaled down.
 """).strip().split('\n') ])
 
-TaskState = Enum("TaskState", TASK_STATE_NAMES)
+TaskState = Enum("TaskState", list(TASK_STATE_DESCRIPTION.keys()))
+
+
+failed_states = [
+    TaskState.COMPLETE,
+    TaskState.FAILED,
+    TaskState.SHUTDOWN,
+    TaskState.REJECTED,
+    TaskState.ORPHANED,
+    TaskState.REMOVE,
+    TaskState.CREATED
+]
+
+
 
 
 def assert_all_services_ready(filters=None):
