@@ -148,20 +148,6 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         }
       }
       return workbench;
-    },
-
-    __replaceUuids: function(workbench) {
-      let workbenchStr = JSON.stringify(workbench);
-      const innerNodeIds = Object.keys(workbench);
-      for (let i=0; i<innerNodeIds.length; i++) {
-        const innerNodeId = innerNodeIds[i];
-        const newNodeId = osparc.utils.Utils.uuidv4();
-        // workbenchStr = workbenchStr.replace(innerNodeId, newNodeId);
-        const re = new RegExp(innerNodeId, "g");
-        workbenchStr = workbenchStr.replace(re, newNodeId); // Using regex for replacing ALL matches
-      }
-      workbench = JSON.parse(workbenchStr);
-      return workbench;
     }
   }
 });
