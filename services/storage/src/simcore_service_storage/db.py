@@ -27,7 +27,7 @@ async def pg_engine(app: web.Application):
         )
 
     log.info("Creating pg engine for %s", dsn)
-    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):  # pylint: disable=not-an-iterable
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
         with attempt:
             engine = await create_pg_engine(dsn,
                 minsize=pg_cfg['minsize'],

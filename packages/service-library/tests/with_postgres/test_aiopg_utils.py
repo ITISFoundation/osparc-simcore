@@ -94,26 +94,6 @@ async def test_create_pg_engine(postgres_service_with_fake_data):
         assert engine4.closed
 
 
-# async def test_engine_when_pg_refuses(postgres_service_with_fake_data):
-#     dsn = postgres_service_with_fake_data
-#     dsn.password = "Wrong pass"
-
-#     #async with create_pg_engine(dsn) as engine:
-
-#     engine = await create_pg_engine(dsn)
-#     assert not engine.closed # does not mean anything!!!
-
-#     # acquiring connection must fail
-#     with pytest.raises(RuntimeError) as execinfo:
-#         async with engine.acquire() as conn:
-#             await conn.execute("SELECT 1 as is_alive")
-#     assert "Cannot acquire connection" in str(execinfo.value)
-
-#     # pg not responsive
-#     assert not await is_pg_responsive(engine)
-
-
-
 async def test_engine_when_pg_not_reachable():
     dsn = DataSourceName(database='db', user='foo', password='foo', host='localhost', port=123)
 
@@ -153,7 +133,29 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
         assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+2
 
 
-#@pytest.mark.skip(reason="UNDER DEVELOPMENT")
+
+# TODO: review tests below
+@pytest.mark.skip(reason="UNDER DEVELOPMENT")
+async def test_engine_when_pg_refuses(postgres_service_with_fake_data):
+    dsn = postgres_service_with_fake_data
+    dsn.password = "Wrong pass"
+
+    #async with create_pg_engine(dsn) as engine:
+
+    engine = await create_pg_engine(dsn)
+    assert not engine.closed # does not mean anything!!!
+
+    # acquiring connection must fail
+    with pytest.raises(RuntimeError) as execinfo:
+        async with engine.acquire() as conn:
+            await conn.execute("SELECT 1 as is_alive")
+    assert "Cannot acquire connection" in str(execinfo.value)
+
+    # pg not responsive
+    assert not await is_pg_responsive(engine)
+
+
+@pytest.mark.skip(reason="UNDER DEVELOPMENT")
 async def test_connections(postgres_service_with_fake_data):
     dsn = postgres_service_with_fake_data.to_uri()
     app_name = postgres_service_with_fake_data.application_name
