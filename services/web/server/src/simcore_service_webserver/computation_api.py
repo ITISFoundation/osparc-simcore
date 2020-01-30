@@ -212,12 +212,18 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                     outputs = task["outputs"] if task["outputs"] else {},
                                     submit = datetime.datetime.utcnow())
                 else:
+                    update_keys = {}
+                    if comp_task["inputs"] != task["inputs"]:
+                        update_keys["inputs"] = task["inputs"]
+                    if task["outputs"]:
+                        update_keys["outputs"] = task["outputs"]
+                    if not update_keys:
+                        continue
                     #pylint: disable=no-value-for-parameter
                     query = comp_tasks.update().\
                             where(and_(comp_tasks.c.project_id==project_id,
                                     comp_tasks.c.node_id==node_id)).\
-                            values(inputs = task["inputs"],
-                                    outputs = task["outputs"] if task["outputs"] else {})
+                            values(**update_keys)
             await conn.execute(query)
 
 # API ------------------------------------------
