@@ -74,9 +74,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dic
         # check for links
         if isinstance(input_data, dict) and all(k in input_data for k in ("nodeUuid", "output")):
             log.debug("decoding link %s", input_data)
-            input_node_uuid = input_data["nodeUuid"]
-            if "demodec" in pipeline_data[input_node_uuid]["key"]:
-                continue
+            input_node_uuid = input_data["nodeUuid"]            
             input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"], app)
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:
@@ -110,10 +108,6 @@ async def _parse_project_data(pipeline_data:Dict, app: web.Application): # pylin
             node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
 
-        # HACK: skip fake services
-        if "demodec" in node_key:
-            log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
-            continue
         node_details = await _get_node_details(node_key, node_version, app)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, pformat(node_details))
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
