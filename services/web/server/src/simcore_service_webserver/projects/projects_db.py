@@ -23,7 +23,8 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from ..db_models import users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
-                                  ProjectNotFoundError)
+                                  ProjectNotFoundError,
+                                  ProjectsException)
 from .projects_fakes import Fake
 from .projects_models import ProjectType, projects, user_to_projects
 from ..db_models import study_tags
@@ -255,7 +256,7 @@ class ProjectDBAPI:
                 if result.rowcount == 1:
                     study['tags'].append(tag_id)
                     return _convert_to_schema_names(study)
-                raise web.HTTPInternalServerError()
+                raise ProjectsException()
 
 
     async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
@@ -269,7 +270,7 @@ class ProjectDBAPI:
                 if result.rowcount == 1:
                     study['tags'].remove(tag_id)
                     return _convert_to_schema_names(study)
-                raise web.HTTPInternalServerError()
+                raise ProjectsException()
 
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
