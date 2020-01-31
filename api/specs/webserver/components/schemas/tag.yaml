@@ -12,6 +12,7 @@ Tag:
       type: string
     color:
       type: string
+      pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
 
 TagListEnveloped:
   type: object
