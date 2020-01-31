@@ -60,8 +60,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
       const scroll = new qx.ui.container.Scroll();
       const settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const nodeView = this.__buildInputSettings();
-      settingsLayout.add(nodeView, {
+      const settingsView = this.__buildInputSettings();
+      settingsLayout.add(settingsView, {
         flex: 1
       });
       scroll.add(settingsLayout);
@@ -110,10 +110,20 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __buildInputSettings: function() {
-      const nodeView = new osparc.component.node.GroupNodeView();
-      nodeView.setNode(this.getOutputNode());
-      nodeView.populateLayout(true);
-      return nodeView;
+      const settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+
+      const innerNodes = this.getOuputNode().getInnerNodes(true);
+      Object.values(innerNodes).forEach(innerNode => {
+        const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
+        innerNode.bind("label", innerSettings, "legend");
+        const propsWidget = innerNode.getPropsWidget();
+        if (propsWidget && Object.keys(innerNode.getInputs()).length) {
+          innerSettings.add(propsWidget);
+          settingsLayout.add(innerSettings);
+        }
+      });
+
+      return settingsLayout;
     },
 
     __exportAsMacroService: function() {
