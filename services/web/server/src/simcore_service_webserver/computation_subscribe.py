@@ -17,7 +17,6 @@ from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
 from .projects import projects_api
 from .resource_manager.websocket_manager import managed_resource
 from .socketio.config import get_socket_server
-from pprint import pprint
 log = logging.getLogger(__file__)
 
 
@@ -32,17 +31,6 @@ def rabbit_handler(app: web.Application) -> Callable:
             return await func(*args, **kwargs, app=app)
         return wrapped
     return decorator
-
-async def parse_message_data(app: web.Application, data: Dict) -> None:
-    log.debug(f"parsing message data:\n{pprint(data)}")
-    if data["Channel"] == "Progress":
-        # update corresponding project, node, progress value
-        await projects_api.update_project_node_progress(app, user_id=data["user_id"], project_id=data["project_id"],
-                                        node_id=data["Node"], progress=data["Progress"])
-        if data["Progress"] == "1.0":
-            # pass comp_task payload to project
-            task_output = await get_task_output(app, project_id=data["project_id"], node_id=data["Node"])
-            await projects_api.update_project_node_outputs(app, user_id=data["user_id"], project_id=data["project_id"], node_id=data["Node"], data=task_output)
 
 async def post_messages(app: web.Application, user_id: str, messages: Dict[str, Any]) -> None:
     sio = get_socket_server(app)
