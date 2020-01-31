@@ -20,7 +20,6 @@ from servicelib.observer import observe
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..security_api import check_permission
 from ..storage_api import \
     copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (delete_data_folders_of_project,
