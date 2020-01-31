@@ -186,25 +186,6 @@ qx.Class.define("osparc.utils.Services", {
       return filteredServices;
     },
 
-    __matchPortType: function(typeA, typeB) {
-      if (typeA === typeB) {
-        return true;
-      }
-      let mtA = osparc.data.MimeType.getMimeType(typeA);
-      let mtB = osparc.data.MimeType.getMimeType(typeB);
-      return mtA && mtB &&
-        new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
-    },
-
-    areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
-      return topLevelPort1.isInput !== topLevelPort2.isInput;
-    },
-
-    arePortsCompatible: function(port1, port2) {
-      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
@@ -255,9 +236,22 @@ qx.Class.define("osparc.utils.Services", {
       };
     },
 
+    getNodesGroupService: function() {
+      return {
+        key: "simcore/services/frontend/nodes-group",
+        version: "1.0.0",
+        type: "group",
+        name: "Group",
+        description: "Group of nodes",
+        inputs: {},
+        outputs: {}
+      };
+    },
+
     getBuiltInServices: function() {
       const builtInServices = [
-        this.getFilePicker()
+        this.getFilePicker(),
+        this.getNodesGroupService()
       ];
       return builtInServices;
     },

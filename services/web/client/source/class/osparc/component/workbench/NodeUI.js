@@ -93,7 +93,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   statics: {
     NodeWidth: 200,
     NodeHeight: 80,
-    PortHeight: 16
+    PortHeight: 16,
+    captionHeight: function() {
+      return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+    }
   },
 
   members: {
@@ -107,8 +111,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.getNode().getNodeId();
     },
 
-    getMetaData: function() {
-      return this.getNode().getMetaData();
+    getCaptionBar: function() {
+      return this.getChildControl("captionbar");
+    },
+
+    setTriSelected: function(triState) {
+      switch (triState) {
+        case 0:
+          // unselect
+          this.resetBackgroundColor();
+          this.getCaptionBar().resetBackgroundColor();
+          break;
+        case 1:
+          // semiselect
+          this.setBackgroundColor("node-semiselected-backgroud");
+          this.getCaptionBar().setBackgroundColor("node-semiselected-backgroud");
+          break;
+        case 2:
+          // select
+          this.setBackgroundColor("node-selected-backgroud");
+          this.getCaptionBar().setBackgroundColor("node-selected-backgroud");
+          break;
+      }
     },
 
     _createChildControlImpl: function(id) {
@@ -268,8 +292,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
-        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+      const captionHeight = this.self(arguments).captionHeight();
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
       let y = bounds.top + captionHeight + this.self(arguments).PortHeight/2 + 1;
       if (this.__thumbnail) {
@@ -337,8 +360,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       }
       if (data.tags && data.tags.length) {
-        const category = this.getMetaData().category || "";
-        const type = this.getMetaData().type || "";
+        const category = this.getNode().getMetaData().category || "";
+        const type = this.getNode().getMetaData().type || "";
         if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }

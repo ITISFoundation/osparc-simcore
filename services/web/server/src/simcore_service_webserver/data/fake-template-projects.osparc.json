@@ -14,7 +14,6 @@
         "label": "File Picker",
         "inputs": {},
         "inputNodes": [],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -35,7 +34,6 @@
         "inputNodes": [
           "template-uuid-4261-b92f-7343aecaab44"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {
@@ -56,7 +54,6 @@
         "inputNodes": [
           "template-uuid-49b0-968d-a6545f9dc878"
         ],
-        "outputNode": false,
         "outputs": {},
         "parent": null,
         "position": {

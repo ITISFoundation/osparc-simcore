@@ -30,18 +30,21 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (studyData instanceof osparc.data.model.Study) {
-      this.__study = studyData;
-    } else {
-      this.__study = new osparc.data.model.Study(studyData);
-    }
+    this.set({
+      study: (studyData instanceof osparc.data.model.Study) ? studyData : new osparc.data.model.Study(studyData, false)
+    });
 
     this.__populateLayout(maxHeight);
   },
 
-  members: {
-    __study: null,
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      nullable: false
+    }
+  },
 
+  members: {
     __populateLayout: function(maxHeight) {
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
@@ -63,8 +66,8 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
         maxHeight: maxHeight ? parseInt(maxHeight) : 200
       });
 
-      this.__study.bind("thumbnail", image, "source");
-      this.__study.bind("thumbnail", image, "visibility", {
+      this.getStudy().bind("thumbnail", image, "source");
+      this.getStudy().bind("thumbnail", image, "visibility", {
         converter: thumbnail => {
           if (thumbnail) {
             return "visible";
@@ -99,9 +102,9 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
       const dateOptions = {
         converter: date => dateFormat.format(date)
       };
-      this.__study.bind("creationDate", creationDate, "value", dateOptions);
-      this.__study.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      this.__study.bind("prjOwner", owner, "value");
+      this.getStudy().bind("creationDate", creationDate, "value", dateOptions);
+      this.getStudy().bind("lastChangeDate", lastChangeDate, "value", dateOptions);
+      this.getStudy().bind("prjOwner", owner, "value");
 
       moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
         font: "title-12"
@@ -144,14 +147,14 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
         rich: true
       });
 
-      this.__study.bind("name", title, "value");
+      this.getStudy().bind("name", title, "value");
 
       return title;
     },
 
     __createDescription: function() {
       const description = new osparc.ui.markdown.Markdown();
-      this.__study.bind("description", description, "markdown");
+      this.getStudy().bind("description", description, "markdown");
       return description;
     }
   }
