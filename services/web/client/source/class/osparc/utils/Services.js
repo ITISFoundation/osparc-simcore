@@ -236,7 +236,7 @@ qx.Class.define("osparc.utils.Services", {
       };
     },
 
-    getNodesGroupService: function() {
+    getNodesGroup: function() {
       return {
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
@@ -251,7 +251,7 @@ qx.Class.define("osparc.utils.Services", {
     getBuiltInServices: function() {
       const builtInServices = [
         this.getFilePicker(),
-        this.getNodesGroupService()
+        this.getNodesGroup()
       ];
       return builtInServices;
     },

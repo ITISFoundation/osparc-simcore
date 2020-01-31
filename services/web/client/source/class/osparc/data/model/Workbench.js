@@ -462,7 +462,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const brotherNodes = this.__getBrotherNodes(currentModel, selectedNodeIds);
 
       // Create nodesGroup
-      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      const nodesGroupService = osparc.utils.Services.getNodesGroup();
       const parentNode = currentModel.getNodeId ? currentModel : null;
       const nodesGroup = this.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
       if (!nodesGroup) {
