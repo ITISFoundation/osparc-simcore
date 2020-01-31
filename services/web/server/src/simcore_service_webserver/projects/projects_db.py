@@ -288,23 +288,8 @@ class ProjectDBAPI:
         if prj and not prj.template:
             return Fake.projects[project_uuid].data
 
-        async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table).where(
-                and_(projects.c.uuid == project_uuid,
-                     user_to_projects.c.user_id == user_id)
-            )
-            result = await conn.execute(query)
-            row = await result.first()
-
-            # FIXME: prefer None to raise an exception. Read https://stackoverflow.com/questions/1313812/raise-exception-vs-return-none-in-functions?answertab=votes#tab-top
-            if not row:
-                raise ProjectNotFoundError(project_uuid)
-
-            study = _convert_to_schema_names(row)
-            tags = await self._get_tags_by_study(study_id=row.id)
-            study['tags'] = tags
-            return study
+        study = await self._get_study(user_id, project_uuid)
+        return _convert_to_schema_names(study)
 
     async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
