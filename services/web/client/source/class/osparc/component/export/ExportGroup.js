@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       inputNode: node
     });
 
-    this.__cloneInput();
+    this.__prepareOutputNode();
 
     this.__buildLayout();
   },
@@ -36,6 +36,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
   properties: {
     inputNode: {
       check: "osparc.data.model.Node",
+      nullable: false
+    },
+
+    outputWorkbench: {
+      check: "osparc.data.model.Workbench",
       nullable: false
     },
 
@@ -55,8 +60,10 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
       const scroll = new qx.ui.container.Scroll();
       const settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      this.__buildInputSettings();
-      this.__buildExposedSettings();
+      const nodeView = this.__buildInputSettings();
+      settingsLayout.add(nodeView, {
+        flex: 1
+      });
       scroll.add(settingsLayout);
       this._add(scroll, {
         flex: 1
@@ -88,7 +95,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return formRenderer;
     },
 
-    __cloneInput: function() {
+    __prepareOutputNode: function() {
       const inputNode = this.getInputNode();
       const key = inputNode.getKey();
       const version = inputNode.getVersion();
@@ -103,17 +110,17 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __buildInputSettings: function() {
-    },
-
-    __buildExposedSettings: function() {
+      const nodeView = new osparc.component.node.GroupNodeView();
+      nodeView.setNode(this.getOutputNode());
+      nodeView.populateLayout(true);
+      return nodeView;
     },
 
     __exportAsMacroService: function() {
-      const nodesGroup = this.getInputNode();
       const outputNode = this.getOutputNode();
-      const workbench = this.__groupToWorkbenchData(nodesGroup);
+      const workbench = this.__groupToWorkbenchData(outputNode);
 
-      const nodeKey = "simcore/services/frontend/nodes-group/macros/" + nodesGroup.getNodeId();
+      const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
       const version = "1.0.0";
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
       nodesGroupService["key"] = nodeKey;
