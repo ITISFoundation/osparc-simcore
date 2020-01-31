@@ -141,7 +141,7 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     resp = web.HTTPServiceUnavailable()
 
     # logs
-    msg = f"Postgres service non-responsive, responding {resp.status_code}: {str(exc) or repr(exc)}"
+    msg = f"Postgres service is non-responsive: [{type(exc)}] {str(exc) or repr(exc)}"
     log.error(msg)
 
     raise resp
