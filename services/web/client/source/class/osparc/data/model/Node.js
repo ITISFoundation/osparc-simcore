@@ -52,10 +52,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     this.__metaData = {};
     this.__innerNodes = {};
-    this.__inputNodes = [];
-    this.__outputNodes = [];
+    this.__inputs = {};
     this.__inputsDefault = {};
     this.__outputs = {};
+
+    this.__inputNodes = [];
+    this.__outputNodes = [];
 
     this.set({
       key,
@@ -196,6 +198,7 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __outputNodes: null,
     __settingsForm: null,
+    __inputs: null,
     __inputsDefault: null,
     __inputsDefaultWidget: null,
     __outputs: null,
