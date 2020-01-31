@@ -11,8 +11,6 @@ from pprint import pformat
 from typing import Dict, List
 
 import pytest
-from tenacity import before_log, retry, stop_after_attempt, wait_fixed
-
 from docker import DockerClient
 from docker.models.services import Service
 from tenacity import Retrying, before_log, stop_after_attempt, wait_fixed
@@ -50,7 +48,7 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
         # f2gxmhwq7hhk        simcore_postgres.1    postgres:10.10                             crespo-wkstn        Running             Running about a minute ago
         # 1lh2hulxmc4q        simcore_director.1    itisfoundation/director:latest             crespo-wkstn        Running             Running 34 seconds ago
         # ...
-        subprocess.run(f"docker stack ps {STACK_NAME}", shell=True, check=False)
+        subprocess.run(f"docker stack ps simcore", shell=True, check=False)
 
     return docker_client.services.list(filters={'name':'simcore'})
 
