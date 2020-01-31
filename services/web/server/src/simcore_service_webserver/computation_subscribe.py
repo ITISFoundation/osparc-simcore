@@ -17,6 +17,7 @@ from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
 from .projects import projects_api
 from .resource_manager.websocket_manager import managed_resource
 from .socketio.config import get_socket_server
+
 log = logging.getLogger(__file__)
 
 
@@ -31,6 +32,7 @@ def rabbit_handler(app: web.Application) -> Callable:
             return await func(*args, **kwargs, app=app)
         return wrapped
     return decorator
+
 
 async def post_messages(app: web.Application, user_id: str, messages: Dict[str, Any]) -> None:
     sio = get_socket_server(app)
