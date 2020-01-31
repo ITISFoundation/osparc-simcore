@@ -7234,11 +7234,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -7528,11 +7542,25 @@ paths:
                                             type: string
                               outputNode:
                                 type: boolean
+                                deprecated: true
+                              outputNodes:
+                                type: array
+                                items:
+                                  type: string
+                                  pattern: ^\S+$
+                                description: Used in group-nodes. Node IDs of those connected to the output
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               parent:
                                 type:
                                   - string
                                   - 'null'
                                 pattern: ^\S+$
+                                description: Parent's (group-nodes') node ID s.
+                                example:
+                                  - nodeUuid1
+                                  - nodeUuid2
                               position:
                                 type: object
                                 additionalProperties: false
@@ -7792,6 +7820,7 @@ paths:
                               type: string
                             color:
                               type: string
+                              pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
                   error:
                     nullable: true
                     default: null
@@ -7907,6 +7936,7 @@ paths:
                         type: string
                       color:
                         type: string
+                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
                   error:
                     nullable: true
                     default: null
@@ -8029,6 +8059,7 @@ paths:
                         type: string
                       color:
                         type: string
+                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
                   error:
                     nullable: true
                     default: null
