@@ -8,7 +8,7 @@
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, Optional
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -221,7 +221,7 @@ class ProjectDBAPI:
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: List = []) -> Dict: # pylint: disable=dangerous-default-value
+    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).select_from(joint_table).where(
@@ -236,7 +236,7 @@ class ProjectDBAPI:
 
             study = dict(study_row.items())
 
-            if 'tags' not in exclude_foreign:
+            if 'tags' not in (exclude_foreign or []):
                 tags = await self._get_tags_by_study(study_id=study_row.id)
                 study['tags'] = tags
 
