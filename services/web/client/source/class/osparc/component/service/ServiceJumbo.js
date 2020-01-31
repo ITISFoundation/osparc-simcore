@@ -28,14 +28,20 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
    * Constructor
    */
   construct: function(serviceModel, icon) {
-    this.base(arguments, serviceModel.getName(), serviceModel.getDescription(), icon, serviceModel.getContact());
+    const label = serviceModel.getName ? serviceModel.getName() : "";
+    const text = serviceModel.getDescription ? serviceModel.getDescription() : "";
+    const footer = serviceModel.getContact ? serviceModel.getContact() : "";
+    this.base(arguments, label, text, icon, footer);
     if (serviceModel != null) { // eslint-disable-line no-eq-null
       this.setServiceModel(serviceModel);
     }
   },
 
   properties: {
-    serviceModel: {}
+    serviceModel: {
+      check: "qx.core.Object",
+      nullable: false
+    }
   },
 
   members: {

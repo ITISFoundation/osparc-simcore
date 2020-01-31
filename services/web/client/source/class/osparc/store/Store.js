@@ -48,6 +48,11 @@ qx.Class.define("osparc.store.Store", {
 
   properties: {
     currentStudy: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: true
+    },
+    currentStudyId: {
       check: "String",
       init: null,
       nullable: true
@@ -194,6 +199,14 @@ qx.Class.define("osparc.store.Store", {
           propertyArray = resources;
         }
         propertyArray.map(propName => this.reset(propName));
+      }
+    },
+
+    _applyStudy: function(newStudy) {
+      if (newStudy) {
+        this.setCurrentStudyId(newStudy.getStudyId());
+      } else {
+        this.setCurrentStudyId(null);
       }
     }
   }

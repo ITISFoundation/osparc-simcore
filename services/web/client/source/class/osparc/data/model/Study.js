@@ -53,7 +53,7 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
+    this.setWorkbench(new osparc.data.model.Workbench(wbData));
   },
 
   properties: {
@@ -66,9 +66,8 @@ qx.Class.define("osparc.data.model.Study", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Study",
       event: "changeName",
-      apply : "_applyName"
+      init: "New Study"
     },
 
     description: {
@@ -146,10 +145,8 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    _applyName: function(newName) {
-      if (this.isPropertyInitialized("workbench")) {
-        this.getWorkbench().setStudyName(newName);
-      }
+    buildWorkbench: function() {
+      this.getWorkbench().buildWorkbench();
     },
 
     openStudy: function() {
@@ -206,7 +203,6 @@ qx.Class.define("osparc.data.model.Study", {
             lastChangeDate: new Date(data.lastChangeDate),
             workbench: this.getWorkbench()
           });
-          this.setWorkbench(new osparc.data.model.Workbench(this, data.workbench));
           return data;
         });
     }

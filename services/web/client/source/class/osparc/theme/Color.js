@@ -23,17 +23,27 @@ qx.Theme.define("osparc.theme.Color", {
     "workbench-edge-comp-active": "#777",
     "workbench-edge-api-active": "#BBB",
     "workbench-edge-selected": "#00F",
+
+    "node-selected-backgroud": "#666",
+    "node-semiselected-backgroud": "#555",
+    "node-notselected-backgroud": "#444",
+
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",
     "logger-warning-message": "#FF0",
     "logger-error-message": "#F00",
+
     "background-main-lighter": "#303030",
     "background-main-lighter+": "#373737",
+
     "text-placeholder": "text-disabled",
     "text-darker": "text-disabled",
+
     "tabview-pane-background": "background-main",
+
     "workbench-start-hint": "#505050",
     "service-window-hint": "#808080",
+
     "ready-green": "#33925A",
     "failed-red": "#FF2D2D",
     "contrasted-text-dark": "#222222",

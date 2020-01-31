@@ -23,19 +23,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.store.Store.getInstance().setCurrentStudy(study.getUuid());
-
+    osparc.store.Store.getInstance().setCurrentStudy(study);
+    study.buildWorkbench();
     study.openStudy();
 
     this.setStudy(study);
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel().set({
-      minWidth: 1000
-    });
+    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      maxWidth: 800,
-      width: 500
+      maxWidth: 700,
+      width: 400
     });
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -46,8 +44,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
 
-    this.initDefault();
-    this.connectEvents();
+    this.__initDefault();
+    this.__connectEvents();
 
     this.__startAutoSaveTimer();
     this.__attachEventHandlers();
@@ -66,15 +64,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   members: {
-    __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
     __scrollContainer: null,
     __workbenchUI: null,
+    __nodeView: null,
     __nodesTree: null,
     __extraView: null,
     __loggerView: null,
-    __nodeView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
 
@@ -86,10 +83,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    initDefault: function() {
+    __initDefault: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study.getName(), study.getWorkbench());
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
       nodesTree.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -107,48 +104,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Logger"), loggerView), 2);
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
-        const workbench = this.getStudy().getWorkbench();
-        const currentNode = workbench.getNode(this.__currentNodeId);
-        const edge = workbench.getEdge(edgeId);
-        let removed = false;
-        if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(edge.getInputNodeId());
-          inputNode.setIsOutputNode(false);
-
-          // Remove also dependencies from outter nodes
-          const cNodeId = inputNode.getNodeId();
-          const allNodes = workbench.getNodes(true);
-          for (const nodeId in allNodes) {
-            let node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbench.removeEdge(edgeId);
-            }
-          }
-          removed = true;
-        } else {
-          removed = workbench.removeEdge(edgeId);
-        }
-        if (removed) {
-          this.__workbenchUI.clearEdge(edgeId);
-        }
+        this.__removeEdge(edgeId);
       }, this);
-      this.showInMainView(workbenchUI, "root");
+      this.showInMainView(workbenchUI, study.getUuid());
 
-      const nodeView = this.__nodeView = new osparc.component.widget.NodeView().set({
+      this.__nodeView = new osparc.component.widget.NodeView().set({
         minHeight: 200
       });
-      nodeView.setWorkbench(study.getWorkbench());
     },
 
-    connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", this.__startPipeline, this);
-      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
+    __connectEvents: function() {
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
+      controlsBar.addListener("showSettings", this.__showSettings, this);
+      controlsBar.addListener("groupSelection", this.__groupSelection, this);
+      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
+      controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
@@ -167,31 +141,53 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getLogger().info(nodeId, msg);
       }, this);
 
+      const workbenchUI = this.__workbenchUI;
+      const nodesTree = this.__nodesTree;
       [
-        this.__nodesTree,
-        this.__workbenchUI
-      ].forEach(wb => {
-        wb.addListener("nodeSelected", e => {
+        nodesTree,
+        workbenchUI
+      ].forEach(widget => {
+        widget.addListener("nodeDoubleClicked", e => {
           const nodeId = e.getData();
-          this.nodeSelected(nodeId, true);
+          this.nodeSelected(nodeId);
         }, this);
       });
 
-      const workbenchUI = this.__workbenchUI;
-      const nodesTree = this.__nodesTree;
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());
         if (node && node.classname.includes("NodeUI")) {
           node.setActive(true);
         }
       });
+      nodesTree.addListener("exportNode", e => {
+        const nodeId = e.getData();
+        const node = this.getStudy().getWorkbench().getNode(nodeId);
+        if (node && node.isContainer()) {
+          // const exportGroupView = new osparc.component.export.ExportGroup(node);
+
+          const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
+            appearance: "service-window",
+            layout: new qx.ui.layout.Grow(),
+            autoDestroy: true,
+            contentPadding: 0,
+            width: 900,
+            height: 800,
+            showMinimize: false,
+            modal: true
+          });
+          // window.add(exportGroupView);
+          window.center();
+          window.open();
+        }
+      });
+
       workbenchUI.addListener("changeSelectedNode", e => {
         const nodeId = e.getData();
         nodesTree.nodeSelected(nodeId);
       });
     },
 
-    nodeSelected: function(nodeId, openNodeAndParents = false) {
+    nodeSelected: function(nodeId) {
       if (!nodeId) {
         this.__loggerView.setCurrentNodeId();
         return;
@@ -200,73 +196,50 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__nodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
-      const widget = this.__getWidgetForNode(nodeId);
-      const workbench = this.getStudy().getWorkbench();
-      if (widget != this.__workbenchUI && workbench.getNode(nodeId).isFilePicker()) {
-        // open file picker in window
-        const filePickerWin = new qx.ui.window.Window(widget.getNode().getLabel()).set({
-          appearance: "service-window",
-          layout: new qx.ui.layout.Grow(),
-          autoDestroy: true,
-          contentPadding: 0,
-          width: 570,
-          height: 450,
-          showMinimize: false,
-          modal: true
-        });
-        const showParentWorkbench = () => {
-          const node = widget.getNode();
-          this.nodeSelected(node.getParentNodeId() || "root");
-        };
-        filePickerWin.add(widget);
-        qx.core.Init.getApplication().getRoot().add(filePickerWin);
-        filePickerWin.show();
-        filePickerWin.center();
 
-        widget.addListener("finished", () => filePickerWin.close(), this);
-        filePickerWin.addListener("close", () => showParentWorkbench());
+      const study = this.getStudy();
+      const workbench = study.getWorkbench();
+      if (nodeId === study.getUuid()) {
+        this.showInMainView(this.__workbenchUI, nodeId);
+        this.__workbenchUI.loadModel(workbench);
       } else {
-        this.showInMainView(widget, nodeId);
-      }
-      if (widget === this.__workbenchUI) {
-        if (nodeId === "root") {
-          this.__workbenchUI.loadModel(workbench);
-        } else {
-          let node = workbench.getNode(nodeId);
+        const node = workbench.getNode(nodeId);
+        if (node.isFilePicker()) {
+          this.__openFilePicker(node);
+        } else if (node.isContainer()) {
+          this.showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
-        }
-      }
-
-      this.__nodesTree.nodeSelected(nodeId, openNodeAndParents);
-      this.__loggerView.setCurrentNodeId(nodeId);
-    },
-
-    __getWidgetForNode: function(nodeId) {
-      // Find widget for the given nodeId
-      const workbench = this.getStudy().getWorkbench();
-      let widget = null;
-      if (nodeId === "root") {
-        widget = this.__workbenchUI;
-      } else {
-        let node = workbench.getNode(nodeId);
-        if (node.isContainer()) {
-          if (node.hasDedicatedWidget() && node.showDedicatedWidget()) {
-            if (node.isInKey("multi-plot")) {
-              widget = new osparc.component.widget.DashGrid(node);
-            }
-          }
-          if (widget === null) {
-            widget = this.__workbenchUI;
-          }
-        } else if (node.isFilePicker()) {
-          widget = new osparc.file.FilePicker(node, this.getStudy().getUuid());
         } else {
+          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.setNode(node);
           this.__nodeView.buildLayout();
-          widget = this.__nodeView;
         }
       }
-      return widget;
+    },
+
+    __openFilePicker: function(node) {
+      const filePicker = new osparc.file.FilePicker(node, this.getStudy().getUuid());
+      // open file picker in window
+      const filePickerWin = new qx.ui.window.Window(node.getLabel()).set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 0,
+        width: 570,
+        height: 450,
+        showMinimize: false,
+        modal: true
+      });
+      const showParentWorkbench = () => {
+        this.nodeSelected(node.getParentNodeId() || this.getStudy().getUuid());
+      };
+      filePickerWin.add(filePicker);
+      qx.core.Init.getApplication().getRoot().add(filePickerWin);
+      filePickerWin.show();
+      filePickerWin.center();
+
+      filePicker.addListener("finished", () => filePickerWin.close(), this);
+      filePickerWin.addListener("close", () => showParentWorkbench());
     },
 
     __addNode: function() {
@@ -297,7 +270,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __removeEdge: function(edgeId) {
       const workbench = this.getStudy().getWorkbench();
-      if (workbench.removeEdge(edgeId, this.__currentNodeId)) {
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      const edge = workbench.getEdge(edgeId);
+      let removed = false;
+      if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
+        let inputNode = workbench.getNode(edge.getInputNodeId());
+        currentNode.removeOutputNode(inputNode.getNodeId());
+
+        // Remove also dependencies from outter nodes
+        const cNodeId = inputNode.getNodeId();
+        const allNodes = workbench.getNodes(true);
+        for (const nodeId in allNodes) {
+          let node = allNodes[nodeId];
+          if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
+            workbench.removeEdge(edgeId);
+          }
+        }
+        removed = true;
+      } else {
+        removed = workbench.removeEdge(edgeId);
+      }
+      if (removed) {
         this.__workbenchUI.clearEdge(edgeId);
       }
     },
@@ -308,34 +301,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
-      const node = this.getStudy().getWorkbench().getNode(nodeId);
-      if (node && node.hasDedicatedWidget()) {
-        let dedicatedWrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-        const dedicatedWidget = node.getDedicatedWidget();
-        const btnLabel = dedicatedWidget ? this.tr("Setup view") : this.tr("Grid view");
-        const btnIcon = dedicatedWidget ? "@FontAwesome5Solid/wrench/16" : "@FontAwesome5Solid/eye/16";
-        let expertModeBtn = new qx.ui.form.Button().set({
-          label: btnLabel,
-          icon: btnIcon,
-          gap: 10,
-          alignX: "right",
-          height: 25,
-          maxWidth: 150
-        });
-        expertModeBtn.addListener("execute", () => {
-          node.setDedicatedWidget(!dedicatedWidget);
-          this.nodeSelected(nodeId);
-        }, this);
-        dedicatedWrapper.add(expertModeBtn);
-        dedicatedWrapper.add(widget, {
-          flex: 1
-        });
-        this.__mainPanel.setMainView(dedicatedWrapper);
-      } else {
-        this.__mainPanel.setMainView(widget);
-      }
+      this.__mainPanel.setMainView(widget);
 
-      let nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
+      this.__nodesTree.nodeSelected(nodeId);
+      this.__loggerView.setCurrentNodeId(nodeId);
+
+      const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
@@ -346,18 +317,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __getCurrentPipeline: function() {
       const saveContainers = false;
       const savePosition = false;
-      let currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers, savePosition);
-      for (const nodeId in currentPipeline) {
-        let currentNode = currentPipeline[nodeId];
-        if (currentNode.key.includes("/neuroman")) {
-          // HACK: Only Neuroman should enter here
-          currentNode.key = "simcore/services/dynamic/modeler/webserver";
-          currentNode.version = "2.8.0";
-          const modelSelected = currentNode.inputs["inModel"];
-          delete currentNode.inputs["inModel"];
-          currentNode.inputs["model_name"] = modelSelected;
-        }
-      }
+      const currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers, savePosition);
       return currentPipeline;
     },
 
@@ -366,14 +326,94 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         false,
         this.__retrieveInputs.bind(this, node, portKey)
       );
-      this.getLogger().debug("root", "Updating pipeline");
+      this.getLogger().debug(null, "Updating pipeline");
     },
 
     __retrieveInputs: function(node, portKey = null) {
-      this.getLogger().debug("root", "Retrieveing inputs");
+      this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
         node.retrieveInputs(portKey);
       }
+    },
+
+    __showWorkbenchUI: function() {
+      if (this.__workbenchUI.getCurrentModel().getNodeId && this.__currentNodeId === this.__workbenchUI.getCurrentModel().getNodeId()) {
+        this.showInMainView(this.__workbenchUI, this.__currentNodeId);
+      } else {
+        osparc.component.message.FlashMessenger.getInstance().logAs("No Workbench view for this node", "ERROR");
+      }
+    },
+
+    __showSettings: function() {
+      if (this.__nodeView.isPropertyInitialized("node") && this.__currentNodeId === this.__nodeView.getNode().getNodeId()) {
+        this.showInMainView(this.__nodeView, this.__currentNodeId);
+      } else {
+        osparc.component.message.FlashMessenger.getInstance().logAs("No Settings view for this node", "ERROR");
+      }
+    },
+
+    __isSelectionEmpty: function(selectedNodeUIs) {
+      if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
+        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
+        return true;
+      }
+      return false;
+    },
+
+    __groupSelection: function() {
+      // Some checks
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return;
+      }
+
+      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      if (this.__isSelectionEmpty(selectedNodeUIs)) {
+        return;
+      }
+
+      const selectedNodes = [];
+      selectedNodeUIs.forEach(selectedNodeUI => {
+        selectedNodes.push(selectedNodeUI.getNode());
+      });
+
+      const workbench = this.getStudy().getWorkbench();
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      workbench.groupNodes(currentModel, selectedNodes);
+
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
+      this.__workbenchChanged();
+
+      this.__workbenchUI.resetSelectedNodes();
+    },
+
+    __ungroupSelection: function() {
+      // Some checks
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        return;
+      }
+      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      if (this.__isSelectionEmpty(selectedNodeUIs)) {
+        return;
+      }
+      if (selectedNodeUIs.length > 1) {
+        osparc.component.message.FlashMessenger.getInstance().logAs("Select only one group", "ERROR");
+        return;
+      }
+      const nodesGroup = selectedNodeUIs[0].getNode();
+      if (!nodesGroup.isContainer()) {
+        osparc.component.message.FlashMessenger.getInstance().logAs("Select a group", "ERROR");
+        return;
+      }
+
+      // Collect info
+      const workbench = this.getStudy().getWorkbench();
+      const currentModel = this.__workbenchUI.getCurrentModel();
+      workbench.ungroupNode(currentModel, nodesGroup);
+
+      this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
+      this.__workbenchChanged();
+
+      this.__workbenchUI.resetSelectedNodes();
     },
 
     __startPipeline: function() {
@@ -415,19 +455,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       // post pipeline
-      this.__pipelineId = null;
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error("root", "Error submitting pipeline");
+        this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("root", "Failed submitting pipeline");
+        this.getLogger().error(null, "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info("root", "Starting pipeline");
+      this.getLogger().info(null, "Starting pipeline");
       return true;
     },
 
@@ -444,28 +483,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", e => {
-        this.getLogger().error("root", "Error stopping pipeline");
+        this.getLogger().error(null, "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error("root", "Failed stopping pipeline");
+        this.getLogger().error(null, "Failed stopping pipeline");
       }, this);
       // req.send();
 
-      this.getLogger().info("root", "Stopping pipeline. Not yet implemented");
+      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
       return true;
     },
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["projectId"];
-      this.getLogger().debug("root", "Pipeline ID " + pipelineId);
+      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.__pipelineId = null;
-        this.getLogger().error("root", "Submission failed");
+        this.getLogger().error(null, "Submission failed");
       } else {
-        this.__pipelineId = pipelineId;
-        this.getLogger().info("root", "Pipeline started");
+        this.getLogger().info(null, "Pipeline started");
       }
     },
 
@@ -522,7 +559,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           cbSuccess.call(this);
         }
       }).catch(error => {
-        this.getLogger().error("root", "Error updating pipeline");
+        this.getLogger().error(null, "Error updating pipeline");
       });
     },
 
