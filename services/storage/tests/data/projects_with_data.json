@@ -14,7 +14,6 @@
       "label": "File Picker 1",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {
         "outFile": {
           "store": 1,
@@ -34,7 +33,6 @@
       "label": "File Picker 2",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {
         "outFile": {
           "store": 1,
@@ -66,7 +64,6 @@
         "template-uuid-5753-af37-e6aec8120bf2",
         "template-uuid-522c-a377-dd8d7cd1265b"
       ],
-      "outputNode": false,
       "outputs": {},
       "progress": 85,
       "thumbnail": "",
@@ -92,7 +89,6 @@
       "label": "File Picker 0D",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {
         "outFile": {
           "store": 1,
@@ -133,7 +129,6 @@
       "inputNodes": [
         "template-uuid-59d6-b1a5-6e7b2773636b"
       ],
-      "outputNode": false,
       "outputs": {},
       "progress": 0,
       "thumbnail": "",
@@ -159,7 +154,6 @@
       "inputNodes": [
         "template-uuid-562f-afd1-cca5105c8844"
       ],
-      "outputNode": false,
       "outputs": {},
       "progress": 20,
       "thumbnail": "",

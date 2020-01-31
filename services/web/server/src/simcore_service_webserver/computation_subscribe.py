@@ -2,7 +2,8 @@ import asyncio
 import json
 import logging
 from functools import wraps
-from typing import Dict, Callable, Coroutine
+from pprint import pprint
+from typing import Any, Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
@@ -10,9 +11,9 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
+from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
-from .computation_api import get_task_output
 from .projects import projects_api
 from .resource_manager.websocket_manager import managed_resource
 from .socketio.config import get_socket_server
@@ -43,24 +44,47 @@ async def parse_message_data(app: web.Application, data: Dict) -> None:
             task_output = await get_task_output(app, project_id=data["project_id"], node_id=data["Node"])
             await projects_api.update_project_node_outputs(app, user_id=data["user_id"], project_id=data["project_id"], node_id=data["Node"], data=task_output)
 
+async def post_messages(app: web.Application, user_id: str, messages: Dict[str, Any]) -> None:
+    sio = get_socket_server(app)
+    with managed_resource(user_id, None, app) as rt:
+        socket_ids = await rt.find_socket_ids()
+        for sid in socket_ids:
+            # we only send the data to the right sockets (there might be several tabs open)
+            tasks = [sio.emit(event, json.dumps(data), room=sid) for event, data in messages.items()]
+            asyncio.ensure_future(asyncio.gather(*tasks))
+
+
+async def parse_message_data(app: web.Application, data: Dict) -> None:
+    log.debug("parsing message data:\n%s", pprint(data))
+    # get common data
+    user_id = data["user_id"]
+    project_id = data["project_id"]
+    node_id = data["Node"]
+
+    messages = {}
+
+    if data["Channel"] == "Progress":
+        # update corresponding project, node, progress value
+        node_data = await projects_api.update_project_node_progress(app, user_id, project_id, node_id, progress=data["Progress"])
+        messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
+    
+    if data["Channel"] == "Log":
+        messages["logger"] = data
+        if "...postprocessing end" in data["Messages"]:
+            # the computational service completed
+            # pass comp_task payload to project
+            task_output = await get_task_output(app, project_id, node_id)
+            node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
+            messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
+
+
+    if messages: 
+        await post_messages(app, user_id, messages)
 
 async def on_message(message: aio_pika.IncomingMessage, app: web.Application) -> None:
-    sio = get_socket_server(app)
     with message.process():
         data = json.loads(message.body)
         await parse_message_data(app, data)
-
-        user_id = data["user_id"]
-        with managed_resource(user_id, None, app) as rt:
-            socket_ids = await rt.find_socket_ids()
-            for sid in socket_ids:
-                # we only send the data to the right sockets
-                await sio.emit(
-                    "logger" if data["Channel"] == "Log" else "progress",
-                    data = json.dumps(data),
-                    room=sid
-                )
-        asyncio.sleep(1)
 
 async def subscribe(app: web.Application) -> None:
     # TODO: catch and deal with missing connections:

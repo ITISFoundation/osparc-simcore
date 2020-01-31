@@ -92,7 +92,7 @@ qx.Class.define("osparc.Application", {
           // Route: /#/study/{id}
           osparc.utils.Utils.cookie.deleteCookie("user");
           osparc.auth.Manager.getInstance().validateToken(() => {
-            osparc.store.Store.getInstance().setCurrentStudy(urlFragment.nav[1]);
+            osparc.store.Store.getInstance().setCurrentStudyId(urlFragment.nav[1]);
             this.__loadMainPage();
           }, this.__loadLoginPage, this);
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {

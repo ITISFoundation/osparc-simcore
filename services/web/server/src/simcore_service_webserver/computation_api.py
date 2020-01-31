@@ -37,6 +37,8 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
                         "type":"dynamic"
             }
         return fake_node_details
+    if "frontend/nodes-group" in node_key:
+        return None
     if "StimulationSelectivity" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -74,9 +76,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dic
         # check for links
         if isinstance(input_data, dict) and all(k in input_data for k in ("nodeUuid", "output")):
             log.debug("decoding link %s", input_data)
-            input_node_uuid = input_data["nodeUuid"]
-            if "demodec" in pipeline_data[input_node_uuid]["key"]:
-                continue
+            input_node_uuid = input_data["nodeUuid"]            
             input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"], app)
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:
@@ -89,7 +89,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dic
                     dag_adjacency_list[input_node_uuid].append(node_uuid)
     return dag_adjacency_list
 
-async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: disable=R0912
+async def _parse_project_data(pipeline_data:Dict, app: web.Application): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -110,12 +110,10 @@ async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: d
             node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
 
-        # HACK: skip fake services
-        if "demodec" in node_key:
-            log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
-            continue
         node_details = await _get_node_details(node_key, node_version, app)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, pformat(node_details))
+        if node_details is None:
+            continue
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
         log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 
@@ -201,7 +199,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 image = task["image"],
                                 schema = task["schema"],
                                 inputs = task["inputs"],
-                                outputs = task["outputs"],
+                                outputs = task["outputs"] if task["outputs"] else {},
                                 submit = datetime.datetime.utcnow())
                 internal_id = internal_id+1
             else:
@@ -215,31 +213,36 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                     image = task["image"],
                                     schema = task["schema"],
                                     inputs = task["inputs"],
-                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs,
+                                    outputs = task["outputs"] if task["outputs"] else {},
                                     submit = datetime.datetime.utcnow())
                 else:
+                    update_keys = {}
+                    if comp_task["inputs"] != task["inputs"]:
+                        update_keys["inputs"] = task["inputs"]
+                    if task["outputs"]:
+                        update_keys["outputs"] = task["outputs"]
+                    if not update_keys:
+                        continue
                     #pylint: disable=no-value-for-parameter
                     query = comp_tasks.update().\
                             where(and_(comp_tasks.c.project_id==project_id,
                                     comp_tasks.c.node_id==node_id)).\
-                            values(inputs = task["inputs"],
-                                    outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs)
+                            values(**update_keys)
             await conn.execute(query)
 
 # API ------------------------------------------
 
-async def update_pipeline_db(app: web.Application, project_id: str, pipeline_data: Dict, replace_pipeline: bool = True):
+async def update_pipeline_db(app: web.Application, project_id: str, project_data: Dict, replace_pipeline: bool = True) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
 
-    log.info("Pipeline has been updated for project %s", project_id)
-    log.debug("Updating pipeline: %s", pformat(pipeline_data))
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
+    log.debug("Updating pipeline with project data: %s", pformat(project_data))
+    dag_adjacency_list, tasks = await _parse_project_data(project_data, app)
 
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
+    log.debug("Project parsed:\ndag_list: %s\ntasks: %s", pformat(dag_adjacency_list), pformat(tasks))
     await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
-    log.debug("END OF ROUTINE.")
+    log.info("Pipeline has been updated for project %s", project_id)
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]

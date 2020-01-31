@@ -13,7 +13,6 @@
       "label": "File Picker 0D",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {
         "outFile": {
           "store": 1,
@@ -54,7 +53,6 @@
       "inputNodes": [
         "template-uuid-4674-b758-946151cae351"
       ],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
@@ -79,7 +77,6 @@
       "inputNodes": [
         "template-uuid-409d-998c-c1f04de67f8b"
       ],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
