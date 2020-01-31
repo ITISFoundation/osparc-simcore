@@ -171,6 +171,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
+    "outputChanged": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
 
@@ -521,6 +522,7 @@ qx.Class.define("osparc.data.model.Node", {
             this.__outputs[outputKey] = {};
           }
           this.__outputs[outputKey]["value"] = nodeData.outputs[outputKey];
+          this.fireDataEvent("outputChanged", outputKey);
         }
       }
     },
