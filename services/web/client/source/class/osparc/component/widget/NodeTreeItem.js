@@ -75,7 +75,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     },
 
     _applyNodeId: function(nodeId) {
-      osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (nodeId === study.getUuid()) {
+        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_root");
+      } else {
+        osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem_" + nodeId);
+      }
     }
   }
 });

@@ -37,6 +37,8 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
                         "type":"dynamic"
             }
         return fake_node_details
+    if "frontend/nodes-group" in node_key:
+        return None
     if "StimulationSelectivity" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -116,6 +118,8 @@ async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: d
             continue
         node_details = await _get_node_details(node_key, node_version, app)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, pformat(node_details))
+        if node_details is None:
+            continue
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
         log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 

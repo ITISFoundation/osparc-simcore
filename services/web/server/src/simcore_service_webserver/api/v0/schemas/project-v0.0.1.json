@@ -237,11 +237,29 @@
               }
             },
             "outputNode": {
-              "type": "boolean"
+              "type": "boolean",
+              "deprecated": true
+            },
+            "outputNodes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\S+$"
+              },
+              "description": "Used in group-nodes. Node IDs of those connected to the output",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
             },
             "parent": {
               "type": ["string", "null"],
-              "pattern": "^\\S+$"
+              "pattern": "^\\S+$",
+              "description": "Parent's (group-nodes') node ID s.",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
             },
             "position": {
               "type": "object",
