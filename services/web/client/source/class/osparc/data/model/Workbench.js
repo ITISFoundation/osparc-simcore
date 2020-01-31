@@ -29,7 +29,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   study.setWorkbench(new osparc.data.model.Workbench(study, study.workbench));
+ *   const workbench = new osparc.data.model.Workbench(study.workbench)
+ *   study.setWorkbench(workbench);
+ *   workbench.initWorkbench();
  * </pre>
  */
 
@@ -37,28 +39,12 @@ qx.Class.define("osparc.data.model.Workbench", {
   extend: qx.core.Object,
 
   /**
-    * @param study {osparc.data.model.Study} Study owning the Workbench
-    * @param workbenchData {qx.core.Object} Object containing the workbench raw data
+    * @param workbenchData {Object} Object containing the workbench raw data
     */
-  construct: function(study, workbenchData) {
+  construct: function(workbenchData) {
     this.base(arguments);
 
-    this.setStudy(study);
-    this.setStudyName(study.getName());
-
-    this.__deserializeWorkbench(workbenchData);
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      nullable: false
-    },
-
-    studyName: {
-      check: "String",
-      nullable: false
-    }
+    this.__workbenchInitData = workbenchData;
   },
 
   events: {
@@ -68,8 +54,25 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   members: {
-    __nodesTopLevel: null,
+    __workbenchInitData: null,
+    __rootNodes: null,
     __edges: null,
+
+    buildWorkbench: function() {
+      this.__rootNodes = {};
+      this.__edges = {};
+      this.__deserializeWorkbench(this.__workbenchInitData);
+      this.__workbenchInitData = null;
+    },
+
+    initWorkbench: function() {
+      const allModels = this.getNodes(true);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        node.addDynamicButtons();
+        node.startDynamicService();
+      }
+    },
 
     isContainer: function() {
       return false;
@@ -85,9 +88,9 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getNodes: function(recursive = false) {
-      let nodes = Object.assign({}, this.__nodesTopLevel);
+      let nodes = Object.assign({}, this.__rootNodes);
       if (recursive) {
-        let topLevelNodes = Object.values(this.__nodesTopLevel);
+        let topLevelNodes = Object.values(this.__rootNodes);
         for (const topLevelNode of topLevelNodes) {
           let innerNodes = topLevelNode.getInnerNodes(true);
           nodes = Object.assign(nodes, innerNodes);
@@ -97,8 +100,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getPathIds: function(nodeId) {
-      if (nodeId === "root" || nodeId === undefined) {
-        return ["root"];
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const studyId = study.getUuid();
+      if (nodeId === studyId || nodeId === undefined) {
+        return [studyId];
       }
       const nodePath = [];
       nodePath.unshift(nodeId);
@@ -111,7 +116,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           parentNodeId = checkThisNode.getParentNodeId();
         }
       }
-      nodePath.unshift("root");
+      nodePath.unshift(studyId);
       return nodePath;
     },
 
@@ -179,8 +184,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
-
-      const node = new osparc.data.model.Node(this, key, version, uuid);
+      const node = new osparc.data.model.Node(key, version, uuid);
       const metaData = node.getMetaData();
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
         const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
@@ -194,10 +198,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.giveUniqueName();
 
       // create the node in the backend here
-      const prjId = this.getStudy().getUuid();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: prjId
+          projectId: study.getUuid()
         },
         data: {
           "service_id": node.getNodeId(),
@@ -245,19 +249,35 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodeData = nodeToClone.serialize();
       node.setInputData(nodeData);
       node.setOutputData(nodeData);
-      node.setInputNodes(nodeData);
-      node.setIsOutputNode(nodeToClone.getIsOutputNode());
+      node.addInputNodes(nodeData.inputNodes);
+      node.addOutputNodes(nodeData.outputNodes);
       return node;
     },
 
     addNode: function(node, parentNode) {
-      const uuid = node.getNodeId();
+      const nodeId = node.getNodeId();
       if (parentNode) {
-        parentNode.addInnerNode(uuid, node);
+        parentNode.addInnerNode(nodeId, node);
       } else {
-        this.__nodesTopLevel[uuid] = node;
+        this.__rootNodes[nodeId] = node;
       }
+      node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("workbenchChanged");
+    },
+
+    moveNode: function(node, newParent, oldParent) {
+      const nodeId = node.getNodeId();
+      if (oldParent === null) {
+        delete this.__rootNodes[nodeId];
+      } else {
+        oldParent.removeInnerNode(nodeId);
+      }
+      if (newParent === null) {
+        this.__rootNodes[nodeId] = node;
+      } else {
+        newParent.addInnerNode(nodeId, node);
+      }
+      node.setParentNodeId(newParent ? newParent.getNodeId() : null);
     },
 
     removeNode: function(nodeId) {
@@ -265,9 +285,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
       // remove node in the backend
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: this.getStudy().getUuid(),
+          projectId: study.getUuid(),
           nodeId: nodeId
         }
       };
@@ -284,9 +305,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       let node = this.getNode(nodeId);
       if (node) {
         node.removeNode();
-        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
+        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
         if (isTopLevel) {
-          delete this.__nodesTopLevel[nodeId];
+          delete this.__rootNodes[nodeId];
         }
         this.fireEvent("workbenchChanged");
         return true;
@@ -304,7 +325,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const currentNode = this.getNode(currentNodeId);
         if (currentNode && currentNode.isContainer() && edge.getOutputNodeId() === currentNode.getNodeId()) {
           const inputNode = this.getNode(edge.getInputNodeId());
-          inputNode.setIsOutputNode(false);
+          currentNode.removeOutputNode(inputNode.getNodeId());
 
           // Remove also dependencies from outter nodes
           const cNodeId = inputNode.getNodeId();
@@ -324,6 +345,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
+          node.removeNodePortConnections(inputNodeId);
           delete this.__edges[edgeId];
           return true;
         }
@@ -342,9 +364,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserializeWorkbench: function(workbenchData) {
-      this.__nodesTopLevel = {};
-      this.__edges = {};
-
       this.__deserializeNodes(workbenchData);
       this.__deserializeEdges(workbenchData);
     },
@@ -371,22 +390,13 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
+        const node = new osparc.data.model.Node(nodeData.key, nodeData.version, nodeId);
+        this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
           parentNode = this.getNode(nodeData.parent);
         }
-        let node = null;
-        if (nodeData.key) {
-          // not container
-          node = new osparc.data.model.Node(this, nodeData.key, nodeData.version, nodeId);
-        } else {
-          // container
-          node = new osparc.data.model.Node(this, null, null, nodeId);
-        }
-        if (node) {
-          this.__initNodeSignals(node);
-          this.addNode(node, parentNode);
-        }
+        this.addNode(node, parentNode);
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
@@ -401,15 +411,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    initWorkbench: function() {
-      const allModels = this.getNodes(true);
-      const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        node.addDynamicButtons();
-        node.startDynamicService();
-      }
-    },
-
     __deserializeEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
@@ -417,19 +418,163 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node === null) {
           continue;
         }
-        if (nodeData.inputNodes) {
-          for (let i=0; i < nodeData.inputNodes.length; i++) {
-            const outputNodeId = nodeData.inputNodes[i];
-            const edge = new osparc.data.model.Edge(null, outputNodeId, nodeId);
-            this.addEdge(edge);
-            node.addInputNode(outputNodeId);
-          }
-        }
-        if (nodeData.outputNode) {
-          const edge = new osparc.data.model.Edge(null, nodeId, nodeData.parent);
+        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes, true);
+        this.__addInputOutputNodesAndEdges(node, nodeData.outputNodes, false);
+      }
+    },
+
+    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds, isInput) {
+      if (inputOutputNodeIds) {
+        inputOutputNodeIds.forEach(inputOutputNodeId => {
+          const edge = new osparc.data.model.Edge(null, inputOutputNodeId, node.getNodeId());
           this.addEdge(edge);
+          if (isInput) {
+            node.addInputNode(inputOutputNodeId);
+          } else {
+            node.addOutputNode(inputOutputNodeId);
+          }
+        });
+      }
+    },
+
+    __getBrotherNodes: function(currentModel, excludeNodeIds) {
+      let brotherNodesObj = {};
+      if (currentModel.getNodeId) {
+        brotherNodesObj = currentModel.getInnerNodes(false);
+      } else {
+        brotherNodesObj = this.getNodes(false);
+      }
+
+      const brotherNodes = [];
+      for (const brotherNodeId in brotherNodesObj) {
+        const index = excludeNodeIds.indexOf(brotherNodeId);
+        if (index === -1) {
+          const brotherNode = this.getNode(brotherNodeId);
+          brotherNodes.push(brotherNode);
         }
       }
+      return brotherNodes;
+    },
+
+    __getAveragePosition: function(nodes) {
+      let avgX = 0;
+      let avgY = 0;
+      nodes.forEach(node => {
+        avgX += node.getPosition().x;
+        avgY += node.getPosition().y;
+      });
+      avgX /= nodes.length;
+      avgY /= nodes.length;
+      return {
+        x: avgX,
+        y: avgY
+      };
+    },
+
+    groupNodes: function(currentModel, selectedNodes) {
+      const selectedNodeIds = [];
+      selectedNodes.forEach(selectedNode => {
+        selectedNodeIds.push(selectedNode.getNodeId());
+      });
+
+      const brotherNodes = this.__getBrotherNodes(currentModel, selectedNodeIds);
+
+      // Create nodesGroup
+      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      const parentNode = currentModel.getNodeId ? currentModel : null;
+      const nodesGroup = this.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
+      if (!nodesGroup) {
+        return;
+      }
+
+      const avgPos = this.__getAveragePosition(selectedNodes);
+      nodesGroup.setPosition(avgPos.x, avgPos.y);
+
+      // change parents on future inner nodes
+      selectedNodes.forEach(selectedNode => {
+        this.moveNode(selectedNode, nodesGroup, parentNode);
+      });
+
+      // find inputNodes for nodesGroup
+      selectedNodes.forEach(selectedNode => {
+        const selInputNodes = selectedNode.getInputNodes();
+        selInputNodes.forEach(inputNode => {
+          const index = selectedNodeIds.indexOf(inputNode);
+          if (index === -1) {
+            nodesGroup.addInputNode(inputNode);
+          }
+        });
+      });
+
+      // change input nodes in those nodes connected to the selected ones
+      brotherNodes.forEach(brotherNode => {
+        selectedNodes.forEach(selectedNode => {
+          const selectedNodeId = selectedNode.getNodeId();
+          if (brotherNode.isInputNode(selectedNodeId)) {
+            brotherNode.addInputNode(nodesGroup.getNodeId());
+            brotherNode.removeInputNode(selectedNodeId);
+            nodesGroup.addOutputNode(selectedNodeId);
+          }
+        });
+      });
+
+      // update output nodes list
+      if (currentModel.isContainer()) {
+        selectedNodes.forEach(selectedNode => {
+          const selectedNodeId = selectedNode.getNodeId();
+          if (currentModel.isOutputNode(selectedNodeId)) {
+            currentModel.removeOutputNode(selectedNodeId);
+            nodesGroup.addOutputNode(selectedNodeId);
+            currentModel.addOutputNode(nodesGroup.getNodeId());
+          }
+        });
+      }
+    },
+
+    ungroupNode: function(currentModel, nodesGroup) {
+      let newParentNode = null;
+      if (currentModel !== this) {
+        newParentNode = currentModel;
+      }
+
+      const brotherNodes = this.__getBrotherNodes(currentModel, [nodesGroup.getNodeId()]);
+
+
+      // change parents on old inner nodes
+      const innerNodes = nodesGroup.getInnerNodes(false);
+      for (const innerNodeId in innerNodes) {
+        const innerNode = innerNodes[innerNodeId];
+        this.moveNode(innerNode, newParentNode, nodesGroup);
+      }
+
+      // change input nodes in those nodes connected to the nodesGroup
+      brotherNodes.forEach(brotherNode => {
+        if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
+          brotherNode.removeInputNode(nodesGroup.getNodeId());
+          brotherNode.addInputNodes(nodesGroup.getOutputNodes());
+
+          if (brotherNode.isContainer()) {
+            const broInnerNodes = Object.values(brotherNode.getInnerNodes(true));
+            broInnerNodes.forEach(broInnerNode => {
+              if (broInnerNode.isInputNode(nodesGroup.getNodeId())) {
+                broInnerNode.removeInputNode(nodesGroup.getNodeId());
+                broInnerNode.addInputNodes(nodesGroup.getOutputNodes());
+              }
+            });
+          }
+        }
+      });
+
+      // update output nodes list
+      if (currentModel.isContainer()) {
+        if (currentModel.isOutputNode(nodesGroup.getNodeId())) {
+          currentModel.removeOutputNode(nodesGroup.getNodeId());
+          currentModel.addOutputNodes(nodesGroup.getOutputNodes());
+        }
+      }
+
+      // Remove nodesGroup
+      this.removeNode(nodesGroup.getNodeId());
     },
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {

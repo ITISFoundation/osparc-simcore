@@ -159,9 +159,8 @@ qx.Class.define("osparc.file.FilesAdd", {
     },
 
     __getStudyId: function() {
-      return this.getNode().getWorkbench()
-        .getStudy()
-        .getUuid();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      return study.getUuid();
     }
   }
 });

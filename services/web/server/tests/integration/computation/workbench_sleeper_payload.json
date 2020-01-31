@@ -6,7 +6,6 @@
             "label": "File Picker",
             "inputs": {},
             "inputNodes": [],
-            "outputNode": false,
             "outputs": {
                 "outFile": {
                     "store": "0",
@@ -32,7 +31,6 @@
             "inputNodes": [
                 "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
             ],
-            "outputNode": false,
             "outputs": {},
             "parent": null,
             "progress": 0,
@@ -51,7 +49,6 @@
                 "in_2": 2
             },
             "inputNodes": [],
-            "outputNode": false,
             "outputs": {},
             "parent": null,
             "progress": 0,
@@ -78,7 +75,6 @@
             "inputNodes": [
                 "884fa617-615f-407b-ad41-88c899561cda"
             ],
-            "outputNode": false,
             "outputs": {},
             "parent": null,
             "progress": 0,
@@ -106,7 +102,6 @@
                 "ee8d7b25-f203-4472-9210-86409b4364e2",
                 "d5012020-7a5d-4b04-a017-9560fa1ede7e"
             ],
-            "outputNode": false,
             "outputs": {},
             "parent": null,
             "progress": 0,

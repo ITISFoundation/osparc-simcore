@@ -30,7 +30,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let node = new osparc.data.model.Node(this, key, version, uuid);
+ *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
  *   node.addDynamicButtons();
@@ -43,26 +43,24 @@ qx.Class.define("osparc.data.model.Node", {
   include: qx.locale.MTranslation,
 
   /**
-    * @param workbench {osparc.data.model.Workbench} workbench owning the widget the node
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
     * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(workbench, key, version, uuid) {
-    this.setWorkbench(workbench);
-
+  construct: function(key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__outputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
 
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidv4(),
       key,
-      version
+      version,
+      nodeId: uuid || osparc.utils.Utils.uuidv4()
     });
 
     let metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
@@ -79,18 +77,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (metaData.outputs) {
         this.__addOutputs(metaData.outputs);
       }
-      if (metaData.dedicatedWidget) {
-        this.setDedicatedWidget(metaData.dedicatedWidget);
-      }
     }
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
-    },
-
     key: {
       check: "String",
       nullable: true
@@ -113,20 +103,8 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeLabel"
     },
 
-    propsWidget: {
-      check: "osparc.component.form.renderer.PropForm",
-      init: null,
-      nullable: true
-    },
-
     inputAccess: {
       check: "Object",
-      nullable: true
-    },
-
-    inputsMapper: {
-      check: "qx.ui.core.Widget",
-      init: null,
       nullable: true
     },
 
@@ -135,38 +113,10 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    dedicatedWidget: {
-      check: "Boolean",
-      init: null,
-      nullable: true
-    },
-
-    isOutputNode: {
-      check: "Boolean",
-      init: false,
-      nullable: false
-    },
-
     serviceUrl: {
       check: "String",
       nullable: true,
       event: "changeServiceUrl"
-    },
-
-    iFrame: {
-      check: "osparc.component.widget.PersistentIframe",
-      init: null,
-      nullable: true
-    },
-
-    restartIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
-    },
-
-    retrieveIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
     },
 
     progress: {
@@ -185,12 +135,41 @@ qx.Class.define("osparc.data.model.Node", {
       check: "String",
       nullable: true,
       event: "changeInteractiveStatus"
+    },
+
+    propsWidget: {
+      check: "osparc.component.form.renderer.PropForm",
+      init: null,
+      nullable: true
+    },
+
+    inputsMapper: {
+      check: "osparc.component.widget.InputsMapper",
+      init: null,
+      nullable: true
+    },
+
+    iFrame: {
+      check: "osparc.component.widget.PersistentIframe",
+      init: null,
+      nullable: true
+    },
+
+    restartIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
+    },
+
+    retrieveIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
     }
   },
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
-    "showInLogger": "qx.event.type.Data"
+    "showInLogger": "qx.event.type.Data",
+    "outputListChanged": "qx.event.type.Event"
   },
 
   statics: {
@@ -215,6 +194,7 @@ qx.Class.define("osparc.data.model.Node", {
     __metaData: null,
     __innerNodes: null,
     __inputNodes: null,
+    __outputNodes: null,
     __settingsForm: null,
     __inputsDefault: null,
     __inputsDefaultWidget: null,
@@ -222,6 +202,11 @@ qx.Class.define("osparc.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
+
+    getWorkbench: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      return study.getWorkbench();
+    },
 
     isInKey: function(str) {
       if (this.getMetaData() === null) {
@@ -233,24 +218,8 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getKey().includes(str);
     },
 
-    hasDedicatedWidget: function() {
-      if (this.getDedicatedWidget() === null) {
-        return false;
-      }
-      return true;
-    },
-
-    showDedicatedWidget: function() {
-      if (this.hasDedicatedWidget()) {
-        return this.getDedicatedWidget();
-      }
-      return false;
-    },
-
     isContainer: function() {
-      const hasKey = (this.getKey() === null);
-      const hasChildren = this.hasChildren();
-      return hasKey || hasChildren;
+      return this.getKey().includes("nodes-group");
     },
 
     isDynamic: function() {
@@ -331,7 +300,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
-      innerNode.setParentNodeId(this.getNodeId());
     },
 
     removeInnerNode: function(innerNodeId) {
@@ -342,20 +310,22 @@ qx.Class.define("osparc.data.model.Node", {
       return (inputNodeId in this.__innerNodes);
     },
 
-    getExposedInnerNodes: function(recursive = false) {
-      const innerNodes = this.getInnerNodes(recursive);
-      let exposedInnerNodes = {};
-      for (const innerNodeId in innerNodes) {
-        const innerNode = innerNodes[innerNodeId];
-        if (innerNode.getIsOutputNode()) {
-          exposedInnerNodes[innerNodeId] = innerNode;
+    getExposedInnerNodes: function() {
+      const workbench = osparc.store.Store.getInstance().getCurrentStudy()
+        .getWorkbench();
+
+      let outputNodes = [];
+      for (let i=0; i<this.__outputNodes.length; i++) {
+        const outputNode = workbench.getNode(this.__outputNodes[i]);
+        if (outputNode.isContainer()) {
+          let myOutputNodes = outputNode.getExposedInnerNodes();
+          outputNodes = outputNodes.concat(myOutputNodes);
+        } else {
+          outputNodes.push(outputNode);
         }
       }
-      return exposedInnerNodes;
-    },
-
-    getInputNodes: function() {
-      return this.__inputNodes;
+      const uniqueNodes = [...new Set(outputNodes)];
+      return uniqueNodes;
     },
 
     populateNodeData: function(nodeData) {
@@ -368,11 +338,11 @@ qx.Class.define("osparc.data.model.Node", {
         this.setOutputData(nodeData);
 
         if (nodeData.inputNodes) {
-          this.setInputNodes(nodeData);
+          this.addInputNodes(nodeData.inputNodes);
         }
 
-        if (nodeData.outputNode) {
-          this.setIsOutputNode(nodeData.outputNode);
+        if (nodeData.outputNodes) {
+          this.addOutputNodes(nodeData.outputNodes);
         }
 
         if (nodeData.position) {
@@ -475,7 +445,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      const propsWidget = new osparc.component.form.renderer.PropForm(form, this.getWorkbench(), this);
+      const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("removeLink", e => {
         const changedField = e.getData();
@@ -485,6 +455,17 @@ qx.Class.define("osparc.data.model.Node", {
         const portId = e.getData();
         this.__retrieveInputs(portId);
       }, this);
+    },
+
+    removeNodePortConnections: function(inputNodeId) {
+      let inputs = this.getInputValues();
+      for (const portId in inputs) {
+        if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
+          if (inputs[portId]["nodeUuid"] === inputNodeId) {
+            this.__settingsForm.removeLink(portId);
+          }
+        }
+      }
     },
 
     getOutputWidget: function() {
@@ -572,7 +553,7 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (osparc.utils.Services.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          if (osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               autoConnections++;
               break;
@@ -590,6 +571,19 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
+    // ----- Input Nodes -----
+    getInputNodes: function() {
+      return this.__inputNodes;
+    },
+
+    addInputNodes: function(inputNodes) {
+      if (inputNodes) {
+        for (let i=0; i<inputNodes.length; i++) {
+          this.addInputNode(inputNodes[i]);
+        }
+      }
+    },
+
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
@@ -598,29 +592,11 @@ qx.Class.define("osparc.data.model.Node", {
       return false;
     },
 
-    setInputNodes: function(nodeData) {
-      if (nodeData.inputNodes) {
-        for (let i=0; i<nodeData.inputNodes.length; i++) {
-          this.addInputNode(nodeData.inputNodes[i]);
-        }
-      }
-    },
-
     removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
       if (index > -1) {
         // remove node connection
         this.__inputNodes.splice(index, 1);
-
-        // remove port connections
-        let inputs = this.getInputValues();
-        for (const portId in inputs) {
-          if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
-            if (inputs[portId]["nodeUuid"] === inputNodeId) {
-              this.__settingsForm.removeLink(portId);
-            }
-          }
-        }
         return true;
       }
       return false;
@@ -630,6 +606,45 @@ qx.Class.define("osparc.data.model.Node", {
       const index = this.__inputNodes.indexOf(inputNodeId);
       return (index > -1);
     },
+    // !---- Input Nodes -----
+
+    // ----- Output Nodes -----
+    getOutputNodes: function() {
+      return this.__outputNodes;
+    },
+
+    addOutputNodes: function(outputNodes) {
+      if (outputNodes) {
+        for (let i=0; i<outputNodes.length; i++) {
+          this.addOutputNode(outputNodes[i]);
+        }
+      }
+    },
+
+    addOutputNode: function(outputNodeId) {
+      if (!this.__outputNodes.includes(outputNodeId)) {
+        this.__outputNodes.push(outputNodeId);
+        this.fireEvent("outputListChanged");
+        return true;
+      }
+      return false;
+    },
+
+    removeOutputNode: function(outputNodeId) {
+      const index = this.__outputNodes.indexOf(outputNodeId);
+      if (index > -1) {
+        // remove node connection
+        this.__outputNodes.splice(index, 1);
+        this.fireEvent("outputListChanged");
+      }
+      return false;
+    },
+
+    isOutputNode: function(outputNodeId) {
+      const index = this.__outputNodes.indexOf(outputNodeId);
+      return (index > -1);
+    },
+    // !---- Output Nodes -----
 
     renameNode: function(newLabel) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
@@ -713,7 +728,8 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, true, data["size_bytes"]);
+            const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
+            this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
@@ -823,10 +839,10 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
     __nodeState: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       const params = {
         url: {
-          projectId: this.getWorkbench().getStudy()
-            .getUuid(),
+          projectId: study.getUuid(),
           nodeId: this.getNodeId()
         }
       };
@@ -895,6 +911,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (parentNodeId) {
         let parentNode = this.getWorkbench().getNode(parentNodeId);
         parentNode.removeInnerNode(this.getNodeId());
+        parentNode.removeOutputNode(this.getNodeId());
       }
     },
 
@@ -907,8 +924,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setPosition: function(x, y) {
-      this.__posX = x;
-      this.__posY = y;
+      this.__posX = parseInt(x);
+      this.__posY = parseInt(y);
     },
 
     getPosition: function() {
@@ -918,7 +935,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
-    serialize: function(saveContainers, savePosition) {
+    serialize: function(saveContainers = true, savePosition = true) {
       if (!saveContainers && this.isContainer()) {
         return null;
       }
@@ -931,10 +948,13 @@ qx.Class.define("osparc.data.model.Node", {
         inputs: this.getInputValues(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
-        outputNode: this.getIsOutputNode(),
         parent: this.getParentNodeId(),
         thumbnail: this.getThumbnail()
       };
+
+      if (this.isContainer()) {
+        nodeEntry.outputNodes = this.getOutputNodes();
+      }
 
       if (this.isFilePicker()) {
         nodeEntry.outputs = this.getOutputValues();

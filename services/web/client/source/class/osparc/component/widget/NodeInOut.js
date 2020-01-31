@@ -32,25 +32,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
 
     let nodeInOutLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInOutLayout);
-
-    this.set({
-      decorator: "main"
-    });
-
-    let atom = this.__atom = new qx.ui.basic.Atom().set({
-      rich: true,
-      center: true,
-      draggable: true,
-      droppable: true
-    });
-    atom.getChildControl("label").set({
-      font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-16"]),
-      textAlign: "center"
-    });
-
-    this._add(atom, {
-      flex: 1
-    });
   },
 
   properties: {
@@ -78,12 +59,6 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
   },
 
   members: {
-    __atom: null,
-
-    getAtom: function() {
-      return this.__atom;
-    },
-
     getNodeId: function() {
       return this.getNode().getNodeId();
     },
@@ -114,14 +89,23 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
       if (cel) {
         let domeEle = cel.getDomElement();
         if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
+          const left = parseInt(domeEle.style.left);
+          const top = parseInt(domeEle.style.top);
+          bounds.left = left || 0;
+          bounds.top = top || 0;
         }
       }
       return bounds;
     },
 
-    _createUIPorts: function(isInput, ports) {
+    _populateNodeLayout: function(isInput) {
+      this.emptyPorts();
+
+      const metaData = this.getNode().getMetaData();
+      this.__createUIPorts(isInput, metaData.outputs);
+    },
+
+    __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;

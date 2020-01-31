@@ -148,12 +148,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           rich: true,
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
+        const study = this.getStudy();
         const nodeId = nodeIds[i];
-        if (nodeId === "root") {
-          this.getStudy().bind("name", btn, "label");
+        if (nodeId === study.getUuid()) {
+          study.bind("name", btn, "label");
         } else {
-          const node = this.getStudy().getWorkbench()
-            .getNode(nodeId);
+          const node = study.getWorkbench().getNode(nodeId);
           if (node) {
             node.bind("label", btn, "label");
           }

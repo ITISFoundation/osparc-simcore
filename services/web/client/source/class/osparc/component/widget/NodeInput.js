@@ -40,16 +40,76 @@ qx.Class.define("osparc.component.widget.NodeInput", {
   construct: function(node) {
     this.base(arguments, node);
 
-    const atom = this.getAtom();
-    this.getNode().bind("label", atom, "label");
+    this.__populateInput();
   },
 
   members: {
-    populateNodeLayout: function() {
-      this.emptyPorts();
+    __populateInput: function() {
+      const node = this.getNode();
+      if (!node) {
+        return;
+      }
 
-      const metaData = this.getNode().getMetaData();
-      this._createUIPorts(false, metaData.outputs);
+      const nodeUILayoutBig = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      nodeUILayoutBig.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      const nodeUILayout = this.__createFakeNodeUI();
+      nodeUILayoutBig.add(nodeUILayout);
+      nodeUILayoutBig.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      this._add(nodeUILayoutBig, {
+        flex: 1
+      });
+    },
+
+    __createFakeNodeUI: function() {
+      const node = this.getNode();
+
+      const nodeUILayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        height: 80,
+        backgroundColor: "node-notselected-backgroud",
+        draggable: true,
+        droppable: true
+      });
+
+      const header = new qx.ui.basic.Label().set({
+        font: "text-13",
+        textColor: "#DCDCDC",
+        textAlign: "left",
+        height: 18,
+        padding: 3
+      });
+      node.bind("label", header, "value");
+      const outPort = new qx.ui.basic.Label(this.tr("out")).set({
+        font: "text-13",
+        textColor: "#BABABA",
+        allowGrowX: true,
+        textAlign: "right",
+        padding: 5
+      });
+      const progressBar = new qx.ui.indicator.ProgressBar().set({
+        height: 10,
+        margin: 3
+      });
+      node.bind("label", progressBar, "value");
+
+      nodeUILayout.add(header);
+      nodeUILayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      nodeUILayout.add(outPort);
+      nodeUILayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      nodeUILayout.add(progressBar);
+
+      return nodeUILayout;
+    },
+
+    populateNodeLayout: function() {
+      this._populateNodeLayout(false);
     }
   }
 });
