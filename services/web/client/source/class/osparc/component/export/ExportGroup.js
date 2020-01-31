@@ -24,6 +24,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       inputNode: node
     });
 
+    this.__cloneInput();
+
     this.__buildLayout();
   },
 
@@ -33,6 +35,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
   properties: {
     inputNode: {
+      check: "osparc.data.model.Node",
+      nullable: false
+    },
+
+    outputNode: {
       check: "osparc.data.model.Node",
       nullable: false
     }
@@ -81,6 +88,20 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return formRenderer;
     },
 
+    __cloneInput: function() {
+      const inputNode = this.getInputNode();
+      const key = inputNode.getKey();
+      const version = inputNode.getVersion();
+      const outputNode = new osparc.data.model.Node(key, version);
+      this.setOutputNode(outputNode);
+
+      const nodeData = inputNode.serialize();
+      outputNode.setInputData(nodeData);
+      outputNode.setOutputData(nodeData);
+      outputNode.addInputNodes(nodeData.inputNodes);
+      outputNode.addOutputNodes(nodeData.outputNodes);
+    },
+
     __buildInputSettings: function() {
     },
 
@@ -89,10 +110,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
     __exportAsMacroService: function() {
       const nodesGroup = this.getInputNode();
-      const nodeKey = "simcore/services/frontend/nodes-group/macros/" + nodesGroup.getNodeId();
-      const version = "1.0.0";
+      const outputNode = this.getOutputNode();
       const workbench = this.__groupToWorkbenchData(nodesGroup);
 
+      const nodeKey = "simcore/services/frontend/nodes-group/macros/" + nodesGroup.getNodeId();
+      const version = "1.0.0";
       const nodesGroupService = osparc.utils.Services.getNodesGroupService();
       nodesGroupService["key"] = nodeKey;
       nodesGroupService["version"] = version;
