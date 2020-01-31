@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -9,11 +7,9 @@ from copy import deepcopy
 import pytest
 import sqlalchemy as sa
 import tenacity
-from sqlalchemy.orm import sessionmaker
-
-from servicelib.aiopg_utils import PostgresRetryPolicyUponInitialization
+from servicelib.aiopg_utils import DSN, PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.base import metadata
-from simcore_service_webserver.db import DSN
+from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture(scope='module')

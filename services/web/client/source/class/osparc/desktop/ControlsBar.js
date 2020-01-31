@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createSettingsButton: function() {
-      const settingsButton = this.__createRadioButton(this.tr("The other view"), "list", "settingsViewBtn", "showSettings");
+      const settingsButton = this.__createRadioButton(this.tr("Node view"), "list", "settingsViewBtn", "showSettings");
       return settingsButton;
     },
 
