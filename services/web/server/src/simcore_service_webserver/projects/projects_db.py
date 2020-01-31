@@ -196,7 +196,7 @@ class ProjectDBAPI:
             async for row in conn.execute(query):
                 result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_study(study_id=result_dict['id'])
+                tags = await self._get_tags_by_project(project_id=result_dict['id'])
                 result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
@@ -217,12 +217,13 @@ class ProjectDBAPI:
             async for row in conn.execute(query):
                 result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_study(study_id=result_dict['id'])
+                tags = await self._get_tags_by_project(project_id=result_dict['id'])
                 result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
-    async def _get_study(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
+    async def _get_project(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
+        exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
             query = select([projects]).select_from(joint_table).where(
@@ -230,46 +231,46 @@ class ProjectDBAPI:
                      user_to_projects.c.user_id == user_id)
             )
             result = await conn.execute(query)
-            study_row = await result.first()
+            project_row = await result.first()
 
-            if not study_row:
+            if not project_row:
                 raise ProjectNotFoundError(project_uuid)
 
-            study = dict(study_row.items())
+            project = dict(project_row.items())
 
-            if 'tags' not in (exclude_foreign or []):
-                tags = await self._get_tags_by_study(study_id=study_row.id)
-                study['tags'] = tags
+            if 'tags' not in exclude_foreign:
+                tags = await self._get_tags_by_project(project_id=project_row.id)
+                project['tags'] = tags
 
-            return study
+            return project
 
 
     async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
-        study = await self._get_study(user_id, project_uuid)
+        project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(
-                study_id=study['id'],
+                study_id=project['id'],
                 tag_id=tag_id
             )
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
-                    study['tags'].append(tag_id)
-                    return _convert_to_schema_names(study)
+                    project['tags'].append(tag_id)
+                    return _convert_to_schema_names(project)
                 raise ProjectsException()
 
 
     async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
-        study = await self._get_study(user_id, project_uuid)
+        project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
-                and_(study_tags.c.study_id == study['id'], study_tags.c.tag_id == tag_id)
+                and_(study_tags.c.study_id == project['id'], study_tags.c.tag_id == tag_id)
             )
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
-                    study['tags'].remove(tag_id)
-                    return _convert_to_schema_names(study)
+                    project['tags'].remove(tag_id)
+                    return _convert_to_schema_names(project)
                 raise ProjectsException()
 
 
@@ -289,8 +290,8 @@ class ProjectDBAPI:
         if prj and not prj.template:
             return Fake.projects[project_uuid].data
 
-        study = await self._get_study(user_id, project_uuid)
-        return _convert_to_schema_names(study)
+        project = await self._get_project(user_id, project_uuid)
+        return _convert_to_schema_names(project)
 
     async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
@@ -316,7 +317,7 @@ class ProjectDBAPI:
             row = await result.first()
             if row:
                 template_prj = _convert_to_schema_names(row)
-                tags = await self._get_tags_by_study(study_id=row.id)
+                tags = await self._get_tags_by_project(project_id=row.id)
                 template_prj['tags'] = tags
 
         return template_prj
@@ -340,7 +341,7 @@ class ProjectDBAPI:
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            row = await self._get_study(user_id, project_uuid, exclude_foreign=['tags'])
+            row = await self._get_project(user_id, project_uuid, exclude_foreign=['tags'])
 
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
@@ -435,9 +436,9 @@ class ProjectDBAPI:
             row = await result.first()
         return row[users.c.email] if row else "Unknown"
 
-    async def _get_tags_by_study(self, study_id):
+    async def _get_tags_by_project(self, project_id):
         async with self.engine.acquire() as conn:
-            query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == study_id)
+            query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
             result = []
             async for row_proxy in conn.execute(query):
                 result.append(row_proxy.tag_id)
