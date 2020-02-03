@@ -60,19 +60,10 @@ qx.Class.define("osparc.component.form.Auto", {
 
   /**
     * @param structure {Object} form structure
-    * @param node {osparc.data.model.Node} Node owning the widget
     */
-  construct: function(structure, node) {
-    // node is necessary for creating links
-    if (node) {
-      this.setNode(node);
-    } else {
-      this.setNode(null);
-    }
-
+  construct: function(structure) {
     this.base(arguments);
     this.__ctrlMap = {};
-    this.__ctrlLinkMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
@@ -89,13 +80,6 @@ qx.Class.define("osparc.component.form.Auto", {
     this);
   },
 
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      nullable: true
-    }
-  },
-
   events: {
     /**
      * fire when the form changes content and
@@ -107,7 +91,6 @@ qx.Class.define("osparc.component.form.Auto", {
   members: {
     __boxCtrl: null,
     __ctrlMap: null,
-    __ctrlLinkMap: null,
     __formCtrl: null,
     __model: null,
     __settingData: false,
@@ -141,10 +124,6 @@ qx.Class.define("osparc.component.form.Auto", {
      */
     getControl: function(key) {
       return this.__ctrlMap[key];
-    },
-
-    getControlLink: function(key) {
-      return this.__ctrlLinkMap[key];
     },
 
 
@@ -432,12 +411,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__ctrlMap[key] = control;
       let option = {}; // could use this to pass on info to the form renderer
       this.add(control, s.label ? this["tr"](s.label) : null, null, key, null, option);
-
-      let controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = key;
-      this.__ctrlLinkMap[key] = controlLink;
     },
 
     __getField: function(s, key) {

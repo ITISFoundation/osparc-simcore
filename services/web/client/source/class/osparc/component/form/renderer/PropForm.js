@@ -19,10 +19,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   /**
    * create a page for the View Tab with the given title
    *
+   * @param structure {Object} form structure
    * @param form {osparc.component.form.Auto} form widget to embedd
    * @param node {osparc.data.model.Node} Node owning the widget
    */
-  construct: function(form, node) {
+  construct: function(structure, form, node) {
     if (node) {
       this.setNode(node);
     } else {
@@ -31,8 +32,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     this.base(arguments, form);
 
+    this.__ctrlLinkMap = {};
     for (let key in structure) {
-      this.__addField(structure[key], key);
+      this.__addLinkCtrls(key);
     }
 
     const fl = this._getLayout();
@@ -86,6 +88,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       retrieving: 1,
       succeed: 2
     },
+
+    __ctrlLinkMap: null,
 
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
@@ -206,7 +210,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         this._remove(child);
 
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-        hBox.add(this._form.getControlLink(portId), {
+        hBox.add(this.getControlLink(portId), {
           flex: 1
         });
 
@@ -421,6 +425,18 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
 
+    getControlLink: function(key) {
+      return this.__ctrlLinkMap[key];
+    },
+
+    __addLinkCtrls: function(key) {
+      let controlLink = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlLink.key = key;
+      this.__ctrlLinkMap[key] = controlLink;
+    },
+
     __isPortAvailable: function(portId) {
       const port = this._form.getControl(portId);
       if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
@@ -444,7 +460,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const fromNode = workbench.getNode(fromNodeId);
       const port = fromNode.getOutput(fromPortId);
       const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", this._form.getControlLink(toPortId), "value", {
+      fromNode.bind("label", this.getControlLink(toPortId), "value", {
         converter: label => label + ": " + fromPortLabel
       });
 
