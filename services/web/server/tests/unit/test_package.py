@@ -21,8 +21,12 @@ def pylintrc(osparc_simcore_root_dir):
     return pylintrc
 
 def test_run_pylint(pylintrc, package_dir):
-    cmd = 'pylint -j 2 --rcfile {} -v {}'.format(pylintrc, package_dir)
-    assert subprocess.check_call(cmd.split()) == 0
+    try:
+        AUTODETECT=0
+        cmd = f'pylint --jobs={AUTODETECT} --rcfile {pylintrc} -v {package_dir}'.split()
+        assert subprocess.check_call(cmd) == 0
+    except subprocess.CalledProcessError as err:
+        pytest.fail("Linting error. Linter existed with code %d" % err.returncode)
 
 
 def test_main(here): # pylint: disable=unused-variable

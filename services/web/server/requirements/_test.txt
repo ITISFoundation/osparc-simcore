@@ -9,89 +9,104 @@ aio-pika==2.9.0
 aiohttp-jinja2==1.1.1
 aiohttp-security==0.4.0
 aiohttp-session[secure]==2.7.0
+aiohttp-swagger[performance]==1.0.14
 aiohttp==3.6.2
 aiopg[sa]==1.0.0
+aioredis==1.3.0
 aiosmtplib==1.0.5
+aiozipkin==0.6.0
 amqp==2.4.2
 asn1crypto==0.24.0
 asset==0.6.12
-astroid==2.2.5            # via pylint
+astroid==2.3.3            # via pylint
 async-timeout==3.0.1
 asyncpg==0.18.3
-atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
 billiard==3.6.0.0
 celery==4.3.0
-certifi==2019.9.11        # via requests
+certifi==2019.11.28       # via requests
 cffi==1.12.3
 change-case==0.5.2
 chardet==3.0.4
 codecov==2.0.15
-coverage==4.5.3           # via codecov, coveralls, pytest-cov
-coveralls==1.7.0
+coverage==4.5.1
+coveralls==1.10.0
 cryptography==2.6.1
-docker==4.0.1
+docker==4.1.0
 docopt==0.6.2             # via coveralls
-faker==1.0.7
+expiringdict==1.2.0
+faker==3.0.0
 globre==0.1.5
+hiredis==1.0.1
 idna-ssl==1.1.0
 idna==2.8
-importlib-metadata==0.16  # via pluggy
-isort==4.3.20             # via pylint
+importlib-metadata==0.23
+isodate==0.6.0
+isort==4.3.21             # via pylint
 jinja-app-loader==1.0.2
 jinja2==2.10.1
 jsondiff==1.1.2
-jsonschema==2.6.0
+jsonschema==3.2.0
 kombu==4.5.0
-lazy-object-proxy==1.4.1
+lazy-object-proxy==1.4.3
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
-more-itertools==7.0.0     # via pytest
+mock==3.0.5
+more-itertools==7.2.0
 multidict==4.5.2
-openapi-core==0.8.0
-openapi-spec-validator==0.2.7
+openapi-core==0.12.0
+openapi-spec-validator==0.2.8
+packaging==20.0           # via pytest, pytest-sugar
 passlib==1.7.1
 passwordmeter==0.1.8
 pika==0.10.0
-pluggy==0.12.0            # via pytest
+pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1
-psycopg2-binary==2.8.2
-ptvsd==4.2.10
-py==1.8.0                 # via pytest
+psycopg2-binary==2.8.3
+ptvsd==4.3.2
+py==1.8.1                 # via pytest
 pycparser==2.19
-pylint==2.3.1
+pylint==2.4.4
+pyparsing==2.4.6          # via packaging
+pyrsistent==0.15.6
 pytest-aiohttp==0.3.0
-pytest-cov==2.7.1
+pytest-cov==2.8.1
 pytest-docker==0.6.1
-pytest-mock==1.10.4
-pytest-runner==5.1
-pytest==4.5.0
-python-dateutil==2.8.0    # via faker
+pytest-instafail==0.4.1.post0
+pytest-mock==2.0.0
+pytest-runner==5.2
+pytest-sugar==0.9.2
+pytest==5.3.2
+python-dateutil==2.8.1    # via faker
 python-engineio==3.9.3
 python-socketio==4.3.1
 pytz==2019.1
 pyyaml==5.1
+redis==3.3.11
 requests==2.22.0          # via codecov, coveralls, docker
 semantic-version==2.6.0
 shortuuid==0.5.0
 six==1.12.0
 sqlalchemy[postgresql_psycopg2binary]==1.3.4
 strict-rfc3339==0.7
-tenacity==5.0.4
-text-unidecode==1.2       # via faker
+tenacity==6.0.0
+termcolor==1.1.0          # via pytest-sugar
+text-unidecode==1.3       # via faker
 trafaret-config==2.0.2
 trafaret==1.2.0
-typed-ast==1.3.5          # via astroid
+typed-ast==1.4.0          # via astroid
 typing-extensions==3.7.2
+typing==3.7.4.1
 ujson==1.35
-urllib3==1.25.6           # via requests
+urllib3==1.25.7           # via requests
 vine==1.3.0
-wcwidth==0.1.7            # via pytest
-websocket-client==0.56.0  # via docker
+wcwidth==0.1.8            # via pytest
+websocket-client==0.57.0  # via docker
+websockets==8.1
 werkzeug==0.16.0
-wrapt==1.11.1             # via astroid
+wrapt==1.11.2             # via astroid
 yarl==1.3.0
-zipp==0.5.1               # via importlib-metadata
+zipp==1.0.0
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

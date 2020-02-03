@@ -13,8 +13,13 @@ import logging
 import sys
 from pathlib import Path
 from typing import Dict
+from uuid import uuid4
 
 import pytest
+
+
+from simcore_service_webserver.resources import resources
+from simcore_service_webserver.utils import now_str
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -40,10 +45,33 @@ def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
 
+@pytest.fixture
+def api_version_prefix() -> str:
+    return "v0"
 
 @pytest.fixture
-def project_schema_file(api_specs_dir: Path) -> Path:
-    return api_specs_dir / "v0/components/schemas/project-v0.0.1.json"
+def empty_project():
+    def create():
+        empty_project = {
+            "uuid": f"project-{uuid4()}",
+            "name": "Empty name",
+            "description": "some description of an empty project",
+            "prjOwner": "I'm the empty project owner, hi!",
+            "creationDate": now_str(),
+            "lastChangeDate": now_str(),
+            "thumbnail": "",
+            "workbench": {}
+        }
+        return empty_project
+    return create
+
+
+@pytest.fixture
+def project_schema_file(api_version_prefix) -> Path:
+    prj_schema_path = resources.get_path(f"api/{api_version_prefix}/schemas/project-v0.0.1.json")
+    assert prj_schema_path.exists()
+    return prj_schema_path
+
 
 @pytest.fixture
 def activity_data(fake_data_dir: Path) -> Dict:

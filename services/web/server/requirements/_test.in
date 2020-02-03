@@ -9,18 +9,26 @@
 # 'services/web/server/tests/unit' dependencies
 
 # testing
+coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
+
+mock
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-docker
+pytest-instafail
 pytest-mock
 pytest-runner
+pytest-sugar
+websockets
 
 # fixtures
 Faker
-openapi-spec-validator # TODO: this library is limiting jsonschema<3 (see base.in)
+openapi-spec-validator
+jsonschema
 tenacity
 docker
+redis
 
 # tools
 pylint

@@ -33,13 +33,8 @@ qx.Class.define("osparc.test.data.model.Workbench",
         // ToDo OM: Tobi is this correct?
         osparc.data.Permissions.getInstance().setRole("user");
 
-        const studyData = {
-          name: "Test Study",
-          description: ""
-        };
-        const study = new osparc.data.model.Study(studyData);
         const wbData = {};
-        this.__workbench = new osparc.data.model.Workbench(study, wbData);
+        this.__workbench = new osparc.data.model.Workbench(wbData);
       },
 
       tearDown: function() {
@@ -53,8 +48,7 @@ qx.Class.define("osparc.test.data.model.Workbench",
         const version = null;
         const uuid = null;
         const parent = null;
-        const populateNodeData = true;
-        return this.__workbench.createNode(key, version, uuid, parent, populateNodeData);
+        return this.__workbench.createNode(key, version, uuid, parent);
       },
 
       /*

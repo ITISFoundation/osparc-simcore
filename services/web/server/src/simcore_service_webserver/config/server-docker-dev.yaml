@@ -9,12 +9,22 @@ main:
   testing: True
   studies_access_enabled: True
   monitoring_enabled: True
+socketio:
+  enabled: True
+  message_queue:
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    user: ${RABBIT_USER}
+    password: ${RABBIT_PASSWORD}
+tracing:
+  enabled: True
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: "v0"
 db:
-  init_tables: True
+  init_tables: False
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -22,6 +32,15 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+    minsize: 4
+    maxsize: 4
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds:  ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}
@@ -53,10 +72,8 @@ smtp:
   password: Null
 rest:
   version: v0
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-
+  enabled: True
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}

@@ -7,10 +7,18 @@ main:
   testing: true
   studies_access_enabled: True
   monitoring_enabled: True
+tracing:
+  enabled: True
+  zipkin_endpoint: http://jaeger:9411
 director:
   host: director
   port: 8001
   version: v0
+socketio:
+  enabled: True  
+  message_queue:
+    user: simcore
+    password: simcore
 db:
   init_tables: False
   postgres:
@@ -22,6 +30,14 @@ db:
     password: simcore
     port: 5432
     user: simcore
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds: 900
+  garbage_collection_interval_seconds: 30
+  redis:
+    enabled: True
+    host: redis
+    port: 6379
 rabbit:
   enabled: True
   host: rabbit
@@ -53,11 +69,8 @@ storage:
   version: v0
 rest:
   version: v0
-  location: http://localhost:8043/api/specs/webserver/v0/openapi.yaml
-  extra_urls:
-    - http://localhost:9081
 projects:
-  location: http://localhost:8043/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+  enabled: True
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
 activity:

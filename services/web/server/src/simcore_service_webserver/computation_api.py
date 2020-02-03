@@ -12,11 +12,10 @@ from aiopg.sa import Engine
 from sqlalchemy import and_
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from simcore_director_sdk.rest import ApiException
 from simcore_postgres_database.webserver_models import (comp_pipeline,
                                                         comp_tasks)
 
-from .director import director_sdk
+from .director import director_api
 
 log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
@@ -38,6 +37,8 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
                         "type":"dynamic"
             }
         return fake_node_details
+    if "frontend/nodes-group" in node_key:
+        return None
     if "StimulationSelectivity" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -53,13 +54,12 @@ async def _get_node_details(node_key:str, node_version:str, app: web.Application
                         "type":"dynamic"
             }
         return fake_node_details
-    try:
-        services_enveloped = await director_sdk.create_director_api_client(app).services_by_key_version_get(node_key, node_version)
-        node_details = services_enveloped.data[0].to_dict()
-        return node_details
-    except ApiException as err:
-        log.exception("Error could not find service %s:%s", node_key, node_version)
-        raise web_exceptions.HTTPNotFound(reason=str(err))
+    node_details = await director_api.get_service_by_key_version(app, node_key, node_version)
+    if not node_details:
+        log.error("Error could not find service %s:%s", node_key, node_version)
+        raise web_exceptions.HTTPNotFound(reason=f"details of service {node_key}:{node_version} could not be found")
+    return node_details
+
 
 async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dict, pipeline_data:Dict, dag_adjacency_list:Dict, app: web.Application)->Dict: # pylint: disable=too-many-arguments
     if node_inputs is None or node_schema is None:
@@ -118,6 +118,8 @@ async def _parse_pipeline(pipeline_data:Dict, app: web.Application): # pylint: d
             continue
         node_details = await _get_node_details(node_key, node_version, app)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, pformat(node_details))
+        if node_details is None:
+            continue
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
         log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 
@@ -230,7 +232,7 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
 
 # API ------------------------------------------
 
-async def update_pipeline_db(app: web.Application, project_id, pipeline_data, replace_pipeline = True):
+async def update_pipeline_db(app: web.Application, project_id: str, pipeline_data: Dict, replace_pipeline: bool = True):
     db_engine = app[APP_DB_ENGINE_KEY]
 
     log.info("Pipeline has been updated for project %s", project_id)
@@ -242,3 +244,16 @@ async def update_pipeline_db(app: web.Application, project_id, pipeline_data, re
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
     log.debug("END OF ROUTINE.")
+
+async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
+    db_engine = app[APP_DB_ENGINE_KEY]
+
+    async with db_engine.acquire() as conn:
+        #pylint: disable=no-value-for-parameter
+        query = comp_tasks.delete().\
+            where(comp_tasks.c.project_id == project_id)
+        await conn.execute(query)
+        query = comp_pipeline.delete().\
+            where(comp_pipeline.c.project_id == project_id)
+        await conn.execute(query)
+

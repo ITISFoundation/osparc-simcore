@@ -35,8 +35,7 @@ describe('Calls after logging in', () => {
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
-  // ToDo: No registry is available for travis
-  test.skip('Services', async () => {
+  test('Services', async () => {
     const responseEnv = await utils.fetch('services');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);

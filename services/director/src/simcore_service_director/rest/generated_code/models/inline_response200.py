@@ -1,11 +1,11 @@
 # coding: utf-8
 
-from __future__ import absolute_import
-from datetime import date, datetime  # noqa: F401
+from datetime import date, datetime
 
-from typing import List, Dict  # noqa: F401
+from typing import List, Dict, Type
 
 from .base_model_ import Model
+from .inline_response200_data import InlineResponse200Data
 from .. import util
 
 
@@ -15,17 +15,15 @@ class InlineResponse200(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data=None, error=None):  # noqa: E501
+    def __init__(self, data: InlineResponse200Data=None, error: object=None):
         """InlineResponse200 - a model defined in OpenAPI
 
-        :param data: The data of this InlineResponse200.  # noqa: E501
-        :type data: InlineResponse200Data
-        :param error: The error of this InlineResponse200.  # noqa: E501
-        :type error: object
+        :param data: The data of this InlineResponse200.
+        :param error: The error of this InlineResponse200.
         """
         self.openapi_types = {
-            'data': 'InlineResponse200Data',
-            'error': 'object'
+            'data': InlineResponse200Data,
+            'error': object
         }
 
         self.attribute_map = {
@@ -37,13 +35,11 @@ class InlineResponse200(Model):
         self._error = error
 
     @classmethod
-    def from_dict(cls, dikt) -> 'InlineResponse200':
+    def from_dict(cls, dikt: dict) -> 'InlineResponse200':
         """Returns the dict as a model
 
         :param dikt: A dict.
-        :type: dict
-        :return: The inline_response_200 of this InlineResponse200.  # noqa: E501
-        :rtype: InlineResponse200
+        :return: The inline_response_200 of this InlineResponse200.
         """
         return util.deserialize_model(dikt, cls)
 
@@ -66,7 +62,7 @@ class InlineResponse200(Model):
         :type data: InlineResponse200Data
         """
         if data is None:
-            raise ValueError("Invalid value for `data`, must not be `None`")  # noqa: E501
+            raise ValueError("Invalid value for `data`, must not be `None`")
 
         self._data = data
 

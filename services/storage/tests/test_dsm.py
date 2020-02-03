@@ -1,9 +1,9 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+# pylint:disable=no-name-in-module
+# pylint:disable=no-member
 
 import copy
 import datetime
@@ -12,18 +12,14 @@ import io
 import json
 import os
 import urllib
-import uuid
-from asyncio import Future
 from pathlib import Path
-from pprint import pprint
 from shutil import copyfile
 
 import attr
 import pytest
 
 import utils
-from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData, FileMetaDataEx
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
                                               SIMCORE_S3_STR)
 from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
@@ -356,7 +352,6 @@ def test_fmd_build():
     assert fmd.location_id == SIMCORE_S3_ID
     assert fmd.bucket_name == "test-bucket"
 
-
 async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
     dsm = dsm_fixture
     _id = "21"
@@ -371,6 +366,17 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.project_name
         assert d.raw_file_path
 
+async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
+    file_1, file_2 = dsm_mockup_complete_db
+    _id = "21"
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    response = await dsm_fixture.delete_project_simcore_s3(user_id=_id, project_id=file_1["project_id"], node_id=file_1["node_id"])
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    assert len(data) == 1
+    assert data[0].fmd.file_name == file_2["filename"]
+    response = await dsm_fixture.delete_project_simcore_s3(user_id=_id, project_id=file_1["project_id"], node_id=None)
+    data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
+    assert not data
 
 async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_service_url, datcore_structured_testbucket):
     if not has_datcore_tokens():
@@ -397,7 +403,6 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
             "label": "File Picker",
             "inputs": {},
             "inputNodes": [],
-            "outputNode": False,
             "outputs": {
               "outFile": {
                 "store": 1,
@@ -424,7 +429,6 @@ async def test_deep_copy_project_simcore_s3(dsm_fixture, s3_client, postgres_ser
             "inputNodes": [
               "template-uuid-48eb-a9d2-aaad6b72400a"
             ],
-            "outputNode": False,
             "outputs": {},
             "progress": 0,
             "thumbnail": "",
@@ -476,7 +480,7 @@ async def test_dsm_list_datasets_s3(dsm_fixture, dsm_mockup_complete_db):
 
     datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
 
-    assert len(datasets) == 2
+    assert len(datasets) == 1
     assert any("Kember" in d.display_name for d in datasets)
 
 async def test_dsm_list_datasets_datcore(dsm_fixture, datcore_structured_testbucket):
@@ -492,7 +496,7 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
     dsm_fixture.has_project_db = True
 
     datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
-    assert len(datasets) == 2
+    assert len(datasets) == 1
     assert any("Kember" in d.display_name for d in datasets)
     for d in datasets:
         files = await dsm_fixture.list_files_dataset(user_id="21", location=SIMCORE_S3_STR, dataset_id=d.dataset_id)

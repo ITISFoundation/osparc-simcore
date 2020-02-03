@@ -1,0 +1,18 @@
+ConfigEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/ConfigSchema'
+    error:
+      nullable: true
+      default: null
+
+ConfigSchema:
+  type: object
+  properties:
+    invitation_required:
+      type: boolean
+  example:
+    invitation_required: true

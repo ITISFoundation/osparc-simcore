@@ -37,9 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
 
   /**
     * @param studyData {Object} Object containing the serialized Project Data
-    * @param initWorkbench {Boolean} True to initialize workbench nodes. Default false
     */
-  construct: function(studyData, initWorkbench = false) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
@@ -53,10 +52,7 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new osparc.data.model.Workbench(this, wbData));
-    if (initWorkbench) {
-      this.getWorkbench().initWorkbench();
-    }
+    this.setWorkbench(new osparc.data.model.Workbench(wbData));
   },
 
   properties: {
@@ -69,9 +65,8 @@ qx.Class.define("osparc.data.model.Study", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Study",
       event: "changeName",
-      apply : "__applyName"
+      init: "New Study"
     },
 
     description: {
@@ -128,20 +123,51 @@ qx.Class.define("osparc.data.model.Study", {
         lastChangeDate: new Date(),
         workbench: {}
       };
+    },
+    updateStudy: function(params) {
+      return osparc.data.Resources.fetch("studies", "put", {
+        url: {
+          projectId: params.uuid
+        },
+        data: params
+      }).then(data => {
+        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+        return data;
+      });
     }
   },
 
   members: {
-    __applyName: function(newName) {
-      if (this.isPropertyInitialized("workbench")) {
-        this.getWorkbench().setStudyName(newName);
-      }
+    buildWorkbench: function() {
+      this.getWorkbench().buildWorkbench();
+    },
+
+    openStudy: function() {
+      const params = {
+        url: {
+          projectId: this.getUuid()
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "open", params)
+        .then(data => this.getWorkbench().initWorkbench())
+        .catch(err => console.error(err));
     },
 
     closeStudy: function() {
+      const params = {
+        url: {
+          projectId: this.getUuid()
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "close", params)
+        .catch(err => console.error(err));
+
+      // remove iFrames
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
-        node.stopInteractiveService();
+        node.removeIFrame();
       }
     },
 
@@ -156,6 +182,22 @@ qx.Class.define("osparc.data.model.Study", {
         }
       }
       return jsonObject;
+    },
+
+    updateStudy: function(params) {
+      return this.self().updateStudy({
+        ...this.serializeStudy(),
+        ...params
+      })
+        .then(data => {
+          this.set({
+            ...data,
+            creationDate: new Date(data.creationDate),
+            lastChangeDate: new Date(data.lastChangeDate),
+            workbench: this.getWorkbench()
+          });
+          return data;
+        });
     }
   }
 });

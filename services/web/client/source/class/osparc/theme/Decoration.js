@@ -137,6 +137,14 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "border-editable": {
+      style: {
+        width: 1,
+        radius: 3,
+        color: "text-disabled"
+      }
+    },
+
     "hint": {
       style: {
         radius: 3

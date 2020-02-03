@@ -1,16 +1,6 @@
 version: '3.7'
 services:
 
-  apihub:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    deploy:
-      placement:
-       constraints:
-          - node.platform.os == linux
-    networks:
-      - default
-
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -20,6 +10,8 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - REGISTRY_SSL=${REGISTRY_SSL}
+      - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
+      - DIRECTOR_REGISTRY_CACHING_TTL=${DIRECTOR_REGISTRY_CACHING_TTL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -33,6 +25,8 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
@@ -48,8 +42,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
@@ -59,9 +51,9 @@ services:
     env_file:
       - ../.env
     depends_on:
-      - apihub
       - postgres
       - rabbit
+      - redis
     deploy:
       placement:
         constraints:
@@ -119,8 +111,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -136,9 +126,10 @@ services:
       - S3_SECURE=${S3_SECURE}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     depends_on:
       - postgres
-      - apihub
     deploy:
       placement:
         constraints:
@@ -159,7 +150,7 @@ services:
       - computational_services_subnet
 
   postgres:
-    image: postgres:10.10
+    image: postgres:10.11
     init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -171,6 +162,12 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+
+  redis:
+    image: redis:5.0-alpine
+    init: true
+    networks:
+      - default
 
 volumes:
   input: {}

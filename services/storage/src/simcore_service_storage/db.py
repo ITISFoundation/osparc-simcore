@@ -1,12 +1,11 @@
 import logging
 
-import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import create_engine
-from tenacity import retry
-
-from servicelib.aiopg_utils import (DBAPIError,
-                                    PostgresRetryPolicyUponInitialization)
+from servicelib.aiopg_utils import (DataSourceName,
+                                    PostgresRetryPolicyUponInitialization,
+                                    create_pg_engine, init_pg_tables,
+                                    is_pg_responsive, raise_if_not_responsive)
+from tenacity import Retrying
 
 from .models import metadata
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
@@ -14,47 +13,54 @@ from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = 'postgres'
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
-
-
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
-async def __create_tables(**params):
-    try:
-        url = DSN.format(**params) + f"?application_name={__name__}_init"
-        sa_engine = sa.create_engine(url)
-        metadata.create_all(sa_engine)
-    finally:
-        sa_engine.dispose()
 
 async def pg_engine(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
-    params = {key:cfg[key] for key in 'database user password host port minsize maxsize'.split()}
+    pg_cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
+    dsn = DataSourceName(
+            application_name=f'{__name__}_{id(app)}',
+            database=pg_cfg['database'],
+            user=pg_cfg['user'],
+            password=pg_cfg['password'],
+            host=pg_cfg['host'],
+            port=pg_cfg['port']
+        )
 
-    # TODO: set this as optional?
-    await __create_tables(**params)
+    log.info("Creating pg engine for %s", dsn)
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+        with attempt:
+            engine = await create_pg_engine(dsn,
+                minsize=pg_cfg['minsize'],
+                maxsize=pg_cfg['maxsize']
+            )
+            await raise_if_not_responsive(engine)
 
-    async with create_engine(application_name=f'{__name__}_{id(app)}', **params) as engine:
-        app[APP_DB_ENGINE_KEY] = engine
+    if app[APP_CONFIG_KEY]["main"]["testing"]:
+        log.info("Initializing tables for %s", dsn)
+        init_pg_tables(dsn, schema=metadata)
 
-        yield # ----------
+    assert engine
+    app[APP_DB_ENGINE_KEY] = engine
 
-        if engine is not app.get(APP_DB_ENGINE_KEY):
-            log.error("app does not hold right db engine")
+    yield # ----------
+
+    if engine is not app.get(APP_DB_ENGINE_KEY):
+        log.critical("app does not hold right db engine. Somebody has changed it??")
+
+    if engine:
+        engine.close()
+        await engine.wait_closed()
+        log.debug("engine '%s' after shutdown: closed=%s, size=%d", engine.dsn, engine.closed, engine.size)
+
+
 
 async def is_service_responsive(app:web.Application):
     """ Returns true if the app can connect to db service
 
     """
-    engine = app[APP_DB_ENGINE_KEY]
-    try:
-        async with engine.acquire() as conn:
-            await conn.execute("SELECT 1 as is_alive")
-            log.debug("%s is alive", THIS_SERVICE_NAME)
-            return True
-    except DBAPIError as err:
-        log.debug("%s is NOT responsive: %s", THIS_SERVICE_NAME, err)
-        return False
+    is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
+    return is_responsive
+
 
 def setup_db(app: web.Application):
     disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])

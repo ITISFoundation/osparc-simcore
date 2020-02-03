@@ -53,7 +53,7 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
                    docker_swarm_node) -> Dict:
 
     environ = dict(os.environ)
-    if "TRAVIS" not in environ:
+    if "TRAVIS" not in environ and "GITHUB_ACTIONS" not in environ:
         environ["DOCKER_REGISTRY"] = "local"
         environ["DOCKER_IMAGE_TAG"] = "production"
 
@@ -103,5 +103,13 @@ def osparc_deploy( osparc_simcore_root_dir: Path,
             else:
                 break
 
-    (osparc_simcore_root_dir / ".stack-simcore-version.yml").unlink()
-    (osparc_simcore_root_dir / ".stack-ops.yml").unlink()
+    # make down might delete these files
+    def _safe_unlink(file_path: Path):
+        # TODO: in py 3.8 it will simply be file_path.unlink(missing_ok=True)
+        try:
+            file_path.unlink()
+        except FileNotFoundError:
+            pass
+
+    _safe_unlink(osparc_simcore_root_dir / ".stack-simcore-version.yml")
+    _safe_unlink(osparc_simcore_root_dir / ".stack-ops.yml")

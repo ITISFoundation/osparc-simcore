@@ -75,7 +75,22 @@ qx.Class.define("osparc.data.Resources", {
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
+          },
+          getActive: {
+            usesCache: false,
+            method: "GET",
+            url: statics.API + "/projects/active?client_session_id={tabId}"
+          },
+          open: {
+            usesCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{projectId}:open"
+          },
+          close: {
+            usesCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{projectId}:close"
           },
           post: {
             method: "POST",
@@ -83,15 +98,30 @@ qx.Class.define("osparc.data.Resources", {
           },
           postFromTemplate: {
             method: "POST",
-            url: statics.API + "/projects?from_template={template_id}"
+            url: statics.API + "/projects?from_template={templateId}"
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
+          },
+          addNode: {
+            usesCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{projectId}/nodes"
+          },
+          getNode: {
+            usesCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
+          },
+          deleteNode: {
+            usesCache: false,
+            method: "DELETE",
+            url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           }
         }
       },
@@ -111,11 +141,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/projects/{project_id}"
+            url: statics.API + "/projects/{projectId}"
           }
         }
       },
@@ -197,18 +227,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * INTERACTIVE SERVICES
-       */
-      interactiveServices: {
-        usesCache: false,
-        endpoints: {
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/running_interactive_services/{nodeId}"
-          }
-        }
-      },
-      /*
        * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
        */
       servicesTodo: {
@@ -230,8 +248,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/login"
           },
-          getLogout: {
-            method: "GET",
+          postLogout: {
+            method: "POST",
             url: statics.API + "/auth/logout"
           },
           postRegister: {
@@ -323,6 +341,23 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/activity/status"
           }
         }
+      },
+
+      /*
+       * Test/Diagnonstic entrypoint
+       */
+      checkEP: {
+        usesCache: false,
+        endpoints: {
+          postFail: {
+            method: "POST",
+            url: statics.API + "/check/fail"
+          },
+          postEcho: {
+            method: "POST",
+            url: statics.API + "/check/echo"
+          }
+        }
       }
     };
   },
@@ -350,7 +385,9 @@ qx.Class.define("osparc.data.Resources", {
 
         res.addListenerOnce(endpoint + "Success", e => {
           const data = e.getRequest().getResponse().data;
-          if (resourceDefinition.usesCache) {
+          const endpointDef = resourceDefinition.endpoints[endpoint];
+          const useCache = ("usesCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.usesCache;
+          if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);
             } else {

@@ -14,48 +14,36 @@ from aiohttp import ClientSession
 import simcore_service_director
 from simcore_service_director import config, resources
 
-pytest_plugins = ["fixtures.docker_registry", "fixtures.docker_swarm", "fixtures.fake_services"]
+pytest_plugins = [
+    "fixtures.docker_registry",
+    "fixtures.docker_swarm",
+    "fixtures.fake_services"
+]
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
-_logger = logging.getLogger(__name__)
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
 @pytest.fixture(scope='session')
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-@pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.resolve()
+def osparc_simcore_root_dir():
+    root_dir = current_dir.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig, here):
-    my_path = here / "docker-compose.yml"
-    return my_path
-
-@pytest.fixture(scope='session')
-def api_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "director"
+def common_schemas_specs_dir(osparc_simcore_root_dir):
+    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "common" / "schemas"
     assert specs_dir.exists()
     return specs_dir
 
 @pytest.fixture(scope='session')
-def shared_schemas_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "shared" / "schemas"
-    assert specs_dir.exists()
-    return specs_dir
-
-@pytest.fixture(scope='session')
-def package_dir(here):
+def package_dir():
     dirpath = Path(simcore_service_director.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
 
 @pytest.fixture
-def configure_schemas_location(package_dir, shared_schemas_specs_dir):
-    config.NODE_SCHEMA_LOCATION = str(shared_schemas_specs_dir / "node-meta-v0.0.1.json")
+def configure_schemas_location(package_dir, common_schemas_specs_dir):
+    config.NODE_SCHEMA_LOCATION = str(common_schemas_specs_dir / "node-meta-v0.0.1.json")
     resources.RESOURCE_NODE_SCHEMA = os.path.relpath(config.NODE_SCHEMA_LOCATION, package_dir)
 
 
@@ -63,7 +51,7 @@ def configure_schemas_location(package_dir, shared_schemas_specs_dir):
 def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_SSL = False
-    config.REGISTRY_CACHING = False
+    config.DIRECTOR_REGISTRY_CACHING = False
 
 @pytest.fixture
 def user_id():
@@ -86,7 +74,7 @@ def configure_custom_registry(pytestconfig):
     config.REGISTRY_AUTH = True
     config.REGISTRY_USER = pytestconfig.getoption("registry_user")
     config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
-    config.REGISTRY_CACHING = False
+    config.DIRECTOR_REGISTRY_CACHING = False
 
 
 @pytest.fixture
@@ -109,3 +97,9 @@ async def aiohttp_mock_app(loop, mocker):
     # cleanup session
     await session.close()
     print("client session closed")
+
+
+@pytest.fixture
+def api_version_prefix() -> str:
+    assert "v0" in resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
+    return "v0"

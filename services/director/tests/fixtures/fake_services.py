@@ -20,9 +20,8 @@ def push_services(loop, docker_registry, tmpdir):
 
     list_of_pushed_images_tags = []
     dependent_images = []
-    def build_push_images(number_of_computational_services, number_of_interactive_services, inter_dependent_services=False, bad_json_format=False):
+    def build_push_images(number_of_computational_services, number_of_interactive_services, inter_dependent_services=False, bad_json_format=False, version="1.0."):
         try:
-            version = "1.0."
             dependent_image = None
             if inter_dependent_services:
                 dependent_image = _build_push_image(tmp_dir, registry_url, "computational", "dependency", "10.52.999999", None, bad_json_format=bad_json_format)

@@ -34,7 +34,7 @@
 qx.Class.define("osparc.desktop.Dashboard", {
   extend: qx.ui.tabview.TabView,
 
-  construct: function(studyId) {
+  construct: function() {
     this.base(arguments);
 
     this.setBarPosition("left");
@@ -42,7 +42,7 @@ qx.Class.define("osparc.desktop.Dashboard", {
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
     osparc.wrapper.DOMPurify.getInstance().init();
-    this.__createMainViewLayout(studyId);
+    this.__createMainViewLayout();
   },
 
   properties: {
@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.Dashboard", {
       return this.__dataManager;
     },
 
-    __createMainViewLayout: function(studyId) {
+    __createMainViewLayout: function() {
       [
         [this.tr("Studies"), this.__createStudiesView],
         [this.tr("Services"), this.__createServicesLayout],
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.Dashboard", {
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
-        const viewLayout = tuple[1].call(this, studyId);
+        const viewLayout = tuple[1].call(this);
         tabButton.addListener("execute", () => {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
@@ -97,8 +97,8 @@ qx.Class.define("osparc.desktop.Dashboard", {
       }, this);
     },
 
-    __createStudiesView: function(studyId) {
-      const studiesView = this.__prjBrowser = new osparc.desktop.StudyBrowser(studyId);
+    __createStudiesView: function() {
+      const studiesView = this.__prjBrowser = new osparc.desktop.StudyBrowser();
       return studiesView;
     },
 

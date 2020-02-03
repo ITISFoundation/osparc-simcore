@@ -8,15 +8,16 @@ FOLDER_CHECKS=(api/ director packages/ .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        bash ci/travis/helpers/update_docker
         bash ci/travis/helpers/install_docker_compose
-        bash ci/travis/helpers/show_system_versions
+        bash ci/helpers/show_system_versions
     fi
 }
 
 install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/ensure_python_pip
+        bash ci/helpers/ensure_python_pip
         pushd services/director; pip3 install -r requirements/ci.txt; popd
     fi
 }
@@ -31,7 +32,9 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_service_director --cov-append -v services/director/tests
+        pytest --cov=simcore_service_director --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml \
+          -v -m "not travis" services/director/tests
     else
         echo "No changes detected. Skipping unit-testing of director."
     fi

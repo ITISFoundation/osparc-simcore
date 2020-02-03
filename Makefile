@@ -25,7 +25,6 @@ SHELL := /bin/bash
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead
 SERVICES_LIST := \
-	apihub \
 	director \
 	sidecar \
 	storage \
@@ -39,6 +38,11 @@ export VCS_REF          := $(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# api-versions
+export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
+export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
+export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
@@ -192,6 +196,8 @@ down: ## Stops and removes stack
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
+	# Removing generated docker compose configurations, i.e. .stack-*
+	-$(shell rm $(wildcard .stack-*))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -272,7 +278,7 @@ PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
-	/bin/bash -c "pylint --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*contrib*" \
 											-not -path "*-sdk/python*" \
@@ -280,14 +286,19 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
-devenv: .venv ## creates a python virtual environment with development tools (e.g. pip, pylint, pip-tools, etc ...)
+.PHONY: devenv
+
 .venv:
-	$(if $(IS_WIN),python.exe,python3) -m venv .venv
-	$(PY_PIP) install --upgrade pip wheel setuptools
-	$(PY_PIP) install \
+	python3 -m venv $@
+	$@/bin/pip3 install --upgrade \
+		pip \
+		wheel \
+		setuptools
+
+devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+	$</bin/pip3 install \
 		pylint \
 		autopep8 \
-		virtualenv \
 		pip-tools \
 		rope
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
@@ -297,7 +308,7 @@ devenv: .venv ## creates a python virtual environment with development tools (e.
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
-	$(PY_PIP) install cookiecutter
+	$</bin/pip3 install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 # TODO: NOT windows friendly
@@ -312,6 +323,11 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	@diff -uN $@ $<
 	@false
 
+.PHONY: openapi-specs
+openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
+	@$(MAKE) --directory services/web/server $@
+	@$(MAKE) --directory services/storage $@
+	@$(MAKE) --directory services/director $@
 
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
@@ -325,6 +341,9 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
+	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
+	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
+	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
 	# tools version
 	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
 	@echo ' jq     : $(shell jq --version)'

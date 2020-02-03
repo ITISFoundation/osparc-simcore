@@ -38,7 +38,8 @@ async def get_api_token_and_secret(request: web.Request, userid) -> Tuple[str, s
         try:
             data = await _get_tokens_from_db(engine, userid)
         except DbApiError:
-            log.exception("Cannot retrieve tokens for user %s in pgdb %s", userid, engine)
+            # NOTE this shall not log as error since is a possible outcome with an alternative
+            log.warning("Cannot retrieve tokens for user %s in pgdb %s", userid, engine, exc_info=True)
         else:
             data = data.get('token_data', {})
             api_token = data.get('token_key', api_token)

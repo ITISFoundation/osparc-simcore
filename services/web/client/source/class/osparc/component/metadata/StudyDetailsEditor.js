@@ -204,7 +204,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __saveStudy: function(btn) {
       const params = {
         url: {
-          "project_id": this.__model.getUuid()
+          projectId: this.__model.getUuid()
         },
         data: this.__serializeForm()
       };
@@ -286,7 +286,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __isCurrentUserOwner: function() {
       if (this.__model) {
-        return this.__model.getPrjOwner() === osparc.data.Permissions.getInstance().getLogin();
+        return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }

@@ -28,7 +28,6 @@
  *
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.widget.NodeView();
- *   nodeView.setWorkbench(workbench);
  *   nodeView.setNode(workbench.getNode1());
  *   nodeView.buildLayout();
  *   this.getRoot().add(nodeView);
@@ -85,11 +84,6 @@ qx.Class.define("osparc.component.widget.NodeView", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: false
-    },
-
     node: {
       check: "osparc.data.model.Node",
       apply: "_applyNode"
@@ -119,8 +113,9 @@ qx.Class.define("osparc.component.widget.NodeView", {
       toolbar.add(infoPart);
       toolbar.addSpacer();
 
-      const title = this.__title = new qx.ui.basic.Atom().set({
-        font: "title-18"
+      const title = this.__title = new osparc.ui.form.EditLabel().set({
+        labelFont: "title-18",
+        inputFont: "text-18"
       });
       titlePart.add(title);
 
@@ -134,6 +129,20 @@ qx.Class.define("osparc.component.widget.NodeView", {
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+
+      title.addListener("editValue", evt => {
+        if (evt.getData() !== this.__title.getValue()) {
+          const node = this.getNode();
+          if (node) {
+            node.renameNode(evt.getData());
+          }
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          qx.event.message.Bus.getInstance().dispatchByName(
+            "updateStudy",
+            study.serializeStudy()
+          );
+        }
+      }, this);
 
       return toolbar;
     },
@@ -156,11 +165,13 @@ qx.Class.define("osparc.component.widget.NodeView", {
 
       // Add the representations for the inputs
       const inputNodes = this.getNode().getInputNodes();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
+        let inputNode = study.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
-          for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
-            const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];
+          const exposedInnerNodes = inputNode.getExposedInnerNodes();
+          for (const exposedInnerNodeId in exposedInnerNodes) {
+            const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
             this.__createInputPortsUI(exposedInnerNode);
           }
         } else {
@@ -180,9 +191,8 @@ qx.Class.define("osparc.component.widget.NodeView", {
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1
         });
+        nodePorts.setCollapsed(false);
       }
-      nodePorts.setCollapsed(false);
-      return nodePorts;
     },
 
     __addSettings: function() {
@@ -269,23 +279,8 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
-
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        height: 600,
-        modal: true,
-        showMinimize: false,
-        width: 900
-      });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
-      win.add(nodeDataManager);
-
-      win.center();
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
+      const win = nodeDataManager.getWindow();
       win.open();
     },
 
@@ -321,7 +316,7 @@ qx.Class.define("osparc.component.widget.NodeView", {
     },
 
     _applyNode: function(node) {
-      this.__title.setLabel(node.getLabel());
+      node.bind("label", this.__title, "value");
     }
   }
 });

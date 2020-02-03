@@ -6,8 +6,9 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
 
 before_install() {
+    bash ci/travis/helpers/update_docker;
     bash ci/travis/helpers/install_docker_compose;
-    bash ci/travis/helpers/show_system_versions;
+    bash ci/helpers/show_system_versions;
     env
 }
 
@@ -16,24 +17,11 @@ install() {
 }
 
 before_script() {
-    {
-        make pull-cache
-    } || {
-        # if this is the very first build in a branch
-        # there is no cache available so let's use the main one if possible
-        if [[ -v DOCKER_REGISTRY ]]; then
-            branch_registry=${DOCKER_REGISTRY}
-            export DOCKER_REGISTRY=itisfoundation
-            # try getting the main cache, and set back the DOCKER_REGISTRY if it fails...
-            make pull-cache || export DOCKER_REGISTRY=${branch_registry}
-        fi
-    } || true
-    make pull-version || true
+    bash ci/build/test-images pull_images
 }
 
 script() {
-    make build-cache
-    make build
+    bash ci/build/test-images build_images
 }
 
 after_success() {

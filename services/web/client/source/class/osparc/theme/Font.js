@@ -34,6 +34,12 @@ qx.Theme.define("osparc.theme.Font", {
       bold: true
     },
 
+    "text-18": {
+      size: 18,
+      family: ["Roboto"],
+      color: "text"
+    },
+
     "title-16": {
       size: 16,
       family: ["Roboto"],
@@ -57,6 +63,19 @@ qx.Theme.define("osparc.theme.Font", {
     "text-14": {
       size: 14,
       family: ["Roboto"],
+      color: "text"
+    },
+
+    "title-13": {
+      size: 13,
+      family: ["Roboto", "sans-serif"],
+      color: "text",
+      bold: true
+    },
+
+    "text-13": {
+      size: 13,
+      family: ["Roboto", "sans-serif"],
       color: "text"
     },
 
@@ -102,6 +121,13 @@ qx.Theme.define("osparc.theme.Font", {
     "workbench-start-hint": {
       size: 20,
       family: ["Roboto"],
+      color: "workbench-start-hint",
+      bold: true
+    },
+
+    "workbench-io-label": {
+      size: 20,
+      family: ["monospace"],
       color: "workbench-start-hint",
       bold: true
     }
