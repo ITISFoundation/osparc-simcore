@@ -303,16 +303,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       let icon;
       switch (status) {
         case this._retrieveStatus.failed:
-          icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(false);
+          icon = this.self().getRetrievedAtom(false);
           break;
         case this._retrieveStatus.empty:
-          icon = osparc.component.form.renderer.PropForm.getRetrievedEmpty();
+          icon = this.self().getRetrievedEmpty();
           break;
         case this._retrieveStatus.retrieving:
-          icon = osparc.component.form.renderer.PropForm.getRetrievingAtom();
+          icon = this.self().getRetrievingAtom();
           break;
         case this._retrieveStatus.succeed:
-          icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(true);
+          icon = this.self().getRetrievedAtom(true);
           break;
       }
       icon.key = portId;
