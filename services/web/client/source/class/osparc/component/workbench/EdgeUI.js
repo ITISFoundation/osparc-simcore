@@ -47,10 +47,6 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     this.subscribeToFilterGroup("workbench");
   },
 
-  events: {
-    "edgeSelected": "qx.event.type.Data"
-  },
-
   properties: {
     edge: {
       check: "osparc.data.model.Edge",

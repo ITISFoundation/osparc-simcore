@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
-          this.__studyEditor.nodeSelected(nodeId, true);
+          this.__studyEditor.nodeSelected(nodeId);
         }
       }, this);
       return navBar;
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__prjStack.add(this.__studyEditor);
       this.__prjStack.setSelection([this.__studyEditor]);
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(study.getWorkbench().getPathIds("root"));
+      this.__navBar.setPathButtons(study.getWorkbench().getPathIds(study.getUuid()));
 
       this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();
