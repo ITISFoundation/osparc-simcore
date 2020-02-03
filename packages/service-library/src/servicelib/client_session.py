@@ -32,6 +32,7 @@ async def persistent_client_session(app: web.Application):
     """
     # lazy creation and holds reference to session at this point
     session = get_client_session(app)
+    log.info("Starting session %s", session)
 
     yield
 
@@ -42,6 +43,7 @@ async def persistent_client_session(app: web.Application):
             app.get(APP_CLIENT_SESSION_KEY))
 
     await session.close()
+    log.info("Session is actually closed? %s", session.closed)
 
 # FIXME: if get_client_session upon startup fails and session is NOT closed. Implement some kind of gracefull shutdonw https://docs.aiohttp.org/en/latest/client_advanced.html#graceful-shutdown
 # TODO: add some tests

@@ -16,8 +16,8 @@ install-dev install-prod install-ci: ## install app in development/production or
 	@pip3 install -r requirements/$(subst install-,,$@).txt
 
 
-.PHONY: test
-test: ## runs unit tests
+.PHONY: tests
+tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 

@@ -28,7 +28,7 @@ def create(config: Dict) -> web.Application:
 
     tracing = config["tracing"]["enabled"]
     if tracing:
-        setup_tracing(app, "simcore_service_storage", 
+        setup_tracing(app, "simcore_service_storage",
                         config["main"]["host"], config["main"]["port"], config["tracing"])
     setup_db(app)   # -> postgres service
     setup_s3(app)   # -> minio service
