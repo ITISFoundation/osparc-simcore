@@ -233,7 +233,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__settingData = false;
 
       /* only fire ONE if there was an attempt at change */
-
       this.fireDataEvent("changeData", this.getData());
     },
 
@@ -260,10 +259,9 @@ qx.Class.define("osparc.component.form.Auto", {
     /**
      * set access level to the data model
      *
-     * @param model {let} TODOC
      * @param data {let} TODOC
      */
-    __setAccessLevel: function(model, data) {
+    __setAccessLevel: function(data) {
       this.__settingData = true;
 
       for (const key in data) {
@@ -292,7 +290,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__settingData = false;
 
       /* only fire ONE if there was an attempt at change */
-
       this.fireDataEvent("changeData", this.getData());
     },
 
@@ -590,7 +587,7 @@ qx.Class.define("osparc.component.form.Auto", {
       return control;
     },
 
-    isPortAvailable: function(portId) {
+    __isPortAvailable: function(portId) {
       const port = this.getControl(portId);
       if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
         return false;
@@ -599,7 +596,7 @@ qx.Class.define("osparc.component.form.Auto", {
     },
 
     addLink: function(toPortId, fromNodeId, fromPortId) {
-      if (!this.isPortAvailable(toPortId)) {
+      if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
       this.getControl(toPortId).setEnabled(false);
