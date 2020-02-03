@@ -1,0 +1,52 @@
+# SEE scripts/code-climate.sh
+# SEE https://docs.codeclimate.com/docs/advanced-configuration
+version: "2"
+checks:
+  argument-count:
+    config:
+      threshold: 6
+  complex-logic:
+    config:
+      threshold: 4
+  file-lines:
+    config:
+      threshold: 500
+  method-complexity:
+    config:
+      threshold: 6
+  method-count:
+    config:
+      threshold: 20
+  method-lines:
+    config:
+      threshold: 25
+  nested-control-flow:
+    config:
+      threshold: 5
+  return-statements:
+    config:
+      threshold: 4
+  similar-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+  identical-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+plugins:
+  pep8:
+    enabled: false
+  pylint:
+    enabled: true
+    channel: "beta"
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - javascript:
+      - python:
+        python_version: 3
+exclude_patterns:
+- "**/tests/"
+- "**/node_modules/"
+- "**/.venv/"
+- ".venv/"
