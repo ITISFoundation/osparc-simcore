@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return filteredData;
     },
 
-    __getLayoutChild(portId, column) {
+    __getLayoutChild: function(portId, column) {
       let row = null;
       const children = this._getChildren();
       for (let i=0; i<children.length; i++) {
