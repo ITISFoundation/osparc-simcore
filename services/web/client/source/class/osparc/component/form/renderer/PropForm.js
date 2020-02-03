@@ -197,7 +197,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return null;
     },
 
-    __getEntryFieldChild(portId) {
+    __getEntryFieldChild: function(portId) {
       return this.__getLayoutChild(portId, this._gridPos.entryField);
     },
 
