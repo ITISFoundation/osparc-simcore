@@ -14,7 +14,8 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 
-from servicelib.aiopg_utils import (DatabaseError, DataSourceName,
+from servicelib.aiopg_utils import (ERROR_MSG_NON_RESPONSIVE, DatabaseError,
+                                    DataSourceName,
                                     PostgresRetryPolicyUponOperation,
                                     create_pg_engine, init_pg_tables,
                                     is_pg_responsive, retry_pg_api)
@@ -123,7 +124,7 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
         # goes, fails and max retries
         with pytest.raises(web.HTTPServiceUnavailable):
             await dec_go(engine, gid=1, raise_cls=DatabaseError)
-        assert "Postgres service non-responsive" in caplog.text
+        assert ERROR_MSG_NON_RESPONSIVE in caplog.text
 
         print(dec_go.retry.statistics)
         assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1

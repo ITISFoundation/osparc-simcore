@@ -28,6 +28,8 @@ from tenacity import (RetryCallState, after_log, before_sleep_log, retry,
 log = logging.getLogger(__name__)
 
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
+ERROR_MSG_NON_RESPONSIVE = "Postgres service is non-responsive"
+
 
 @attr.s(auto_attribs=True)
 class DataSourceName:
@@ -115,7 +117,6 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
     return ok
 
 
-
 def raise_http_unavailable_error(retry_state: RetryCallState):
     # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop. TIP: obj, query = retry_state.args; obj.app.register_incidents
 
@@ -141,7 +142,7 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     resp = web.HTTPServiceUnavailable()
 
     # logs
-    msg = f"Postgres service is non-responsive: [{type(exc)}] {str(exc) or repr(exc)}"
+    msg = f"{ERROR_MSG_NON_RESPONSIVE}: ({type(exc)}) {str(exc) or repr(exc)}"
     log.error(msg)
 
     raise resp
