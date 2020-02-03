@@ -481,21 +481,8 @@ qx.Class.define("osparc.data.model.Node", {
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs, this);
-      form.addListener("linkAdded", e => {
-        const changedField = e.getData();
-        this.getPropsWidget().linkAdded(changedField);
-      }, this);
-      form.addListener("linkRemoved", e => {
-        const changedField = e.getData();
-        this.getPropsWidget().linkRemoved(changedField);
-      }, this);
-
       const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("removeLink", e => {
-        const changedField = e.getData();
-        this.__settingsForm.removeLink(changedField);
-      }, this);
       propsWidget.addListener("dataFieldModified", e => {
         const portId = e.getData();
         this.__retrieveInputs(portId);
@@ -507,7 +494,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.__settingsForm.removeLink(portId);
+            this.getPropsWidget().removeLink(portId);
           }
         }
       }
@@ -549,8 +536,9 @@ qx.Class.define("osparc.data.model.Node", {
     setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
+        this.getPropsWidget().addLinks(nodeData.inputs);
         if ("inputAccess" in nodeData) {
-          this.__settingsForm.setAccessLevel(nodeData.inputAccess);
+          this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
           this.setInputAccess(nodeData.inputAccess);
         }
       }
@@ -610,7 +598,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.getPropsWidget().addLink(toPortId, fromNodeId, fromPortId);
     },
 
     // ----- Input Nodes -----

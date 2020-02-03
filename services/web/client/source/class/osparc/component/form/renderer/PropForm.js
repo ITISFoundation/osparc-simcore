@@ -30,7 +30,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     }
 
     this.base(arguments, form);
-    let fl = this._getLayout();
+
+    for (let key in structure) {
+      this.__addField(structure[key], key);
+    }
+
+    const fl = this._getLayout();
     // have plenty of space for input, not for the labels
     fl.setColumnFlex(0, 0);
     fl.setColumnAlign(0, "left", "top");
@@ -42,7 +47,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   events: {
-    "removeLink" : "qx.event.type.Data",
     "dataFieldModified": "qx.event.type.Data"
   },
 
@@ -208,7 +212,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
         unlinkBtn.addListener("execute", function() {
-          this.fireDataEvent("removeLink", portId);
+          this.removeLink(portId);
         }, this);
         hBox.add(unlinkBtn);
 
@@ -414,6 +418,90 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.addListener("mouseup", e => {
         this.__unhighlightAll();
       });
+    },
+
+
+    __isPortAvailable: function(portId) {
+      const port = this._form.getControl(portId);
+      if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
+        return false;
+      }
+      return true;
+    },
+
+    addLink: function(toPortId, fromNodeId, fromPortId) {
+      if (!this.__isPortAvailable(toPortId)) {
+        return false;
+      }
+      this._form.getControl(toPortId).setEnabled(false);
+      this._form.getControl(toPortId).link = {
+        nodeUuid: fromNodeId,
+        output: fromPortId
+      };
+
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
+      const fromNode = workbench.getNode(fromNodeId);
+      const port = fromNode.getOutput(fromPortId);
+      const fromPortLabel = port ? port.label : null;
+      fromNode.bind("label", this._form.getControlLink(toPortId), "value", {
+        converter: label => label + ": " + fromPortLabel
+      });
+
+      this.linkAdded(toPortId);
+
+      return true;
+    },
+
+    addLinks: function(data) {
+      for (let key in data) {
+        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
+          this.addLink(key, data[key].nodeUuid, data[key].output);
+          continue;
+        }
+      }
+    },
+
+    removeLink: function(toPortId) {
+      this._form.getControl(toPortId).setEnabled(true);
+      if ("link" in this._form.getControl(toPortId)) {
+        delete this._form.getControl(toPortId).link;
+      }
+
+      this.linkRemoved(toPortId);
+    },
+
+    /**
+     * set access level to the data main model
+     *
+     * @param data {let} map with key access level pairs to apply
+     */
+    setAccessLevel: function(data) {
+      for (const key in data) {
+        const control = this._form.getControl(key);
+        if (control) {
+          switch (data[key]) {
+            case "Invisible": {
+              control.setEnabled(false);
+              control.setVisibility("excluded");
+              break;
+            }
+            case "ReadOnly": {
+              control.setEnabled(false);
+              control.setVisibility("visible");
+              break;
+            }
+            case "ReadAndWrite": {
+              control.setEnabled(true);
+              control.setVisibility("visible");
+              break;
+            }
+          }
+        }
+      }
+
+      /* only fire ONE if there was an attempt at change */
+      // this.fireDataEvent("changeData", this.getData());
     }
   }
 });
