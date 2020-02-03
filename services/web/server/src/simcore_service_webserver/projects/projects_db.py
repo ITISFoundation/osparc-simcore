@@ -268,7 +268,7 @@ class ProjectDBAPI:
                 and_(study_tags.c.study_id == project['id'], study_tags.c.tag_id == tag_id)
             )
             async with conn.execute(query):
-                if tag_id in projects["tags"]:
+                if tag_id in project['tags']:
                     project['tags'].remove(tag_id)
                 return _convert_to_schema_names(project)
 
