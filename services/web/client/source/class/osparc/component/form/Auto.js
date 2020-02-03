@@ -126,6 +126,10 @@ qx.Class.define("osparc.component.form.Auto", {
       return this.__ctrlMap[key];
     },
 
+    getControls: function() {
+      return this.__ctrlMap;
+    },
+
 
     /**
      * fetch the data for this form
