@@ -184,7 +184,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
       this.__setAccessLevel(data);
 
-      const inputAccess = this.getNode().getInputAccess();
+      let inputAccess = this.getNode().getInputAccess();
+      if (inputAccess === null) {
+        inputAccess = {};
+      }
       inputAccess[portId] = accessLevel;
       this.getNode().setInputAccess(inputAccess);
 
