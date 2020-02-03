@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     fl.setColumnMinWidth(1, 130);
     fl.setColumnFlex(2, 0);
 
+    this.__ctrlRBsMap = {};
     this.__addAccessLevelRBs();
   },
 
@@ -62,12 +63,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       entryField: 1,
       accessLevel: 2
     },
-
     _accessLevel: {
       hidden: 0,
       readOnly: 1,
       readAndWrite: 2
     },
+
+    __ctrlRBsMap: null,
 
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
@@ -111,6 +113,29 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       }
     },
 
+    setAccessLevel: function(data) {
+      for (const key in data) {
+        const control = this.__getRadioButtonsFieldChild(key);
+        if (control) {
+          const group = this.__ctrlRBsMap[key];
+          switch (data[key]) {
+            case "Invisible": {
+              group.setSelection([group.getSelectables()[0]]);
+              break;
+            }
+            case "ReadOnly": {
+              group.setSelection([group.getSelectables()[1]]);
+              break;
+            }
+            case "ReadAndWrite": {
+              group.setSelection([group.getSelectables()[2]]);
+              break;
+            }
+          }
+        }
+      }
+    },
+
     __addAccessLevelRBs: function() {
       const ctrls = this._form.getControls();
       for (const portId in ctrls) {
@@ -131,6 +156,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
         const group = new qx.ui.form.RadioGroup(rbHidden, rbReadOnly, rbEditable);
         group.setSelection([rbEditable]);
+        this.__ctrlRBsMap[portId] = group;
         group.addListener("changeSelection", this.__onAccessLevelChanged, this);
 
         const entryField = this.__getEntryFieldChild(portId);
@@ -237,6 +263,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __getEntryFieldChild: function(portId) {
       return this.__getLayoutChild(portId, this._gridPos.entryField);
+    },
+
+    __getRadioButtonsFieldChild: function(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.accessLevel);
     }
   }
 });

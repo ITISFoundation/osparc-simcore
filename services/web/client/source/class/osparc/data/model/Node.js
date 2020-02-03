@@ -570,7 +570,7 @@ qx.Class.define("osparc.data.model.Node", {
         if ("inputAccess" in nodeData) {
           this.setInputAccess(nodeData.inputAccess);
           this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
-          this.getPropsWidgetEditor().addAccessLevel(nodeData.inputAccess);
+          this.getPropsWidgetEditor().setAccessLevel(nodeData.inputAccess);
         }
       }
     },
