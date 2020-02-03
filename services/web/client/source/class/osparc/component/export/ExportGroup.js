@@ -110,9 +110,9 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __buildInputSettings: function() {
-      const settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+      const settingsLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
 
-      const innerNodes = this.getOuputNode().getInnerNodes(true);
+      const innerNodes = this.getOutputNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
         innerNode.bind("label", innerSettings, "legend");
