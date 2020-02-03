@@ -238,7 +238,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.column === this._gridPos.entryField) {
           this._remove(child);
-          const field = new osparc.component.form.FieldWHint(null, this._form.getControl(portId).description, this._form.getControl(portId));
+          const item = this._form.getControl(portId);
+          const field = new osparc.component.form.FieldWHint(null, item.description, item);
           this._addAt(field, idx, {
             row: layoutProps.row,
             column: layoutProps.column
