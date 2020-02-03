@@ -129,9 +129,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       buttonsPart.add(filesBtn);
 
-      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
-
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       title.addListener("editValue", evt => {
         if (evt.getData() !== this._title.getValue()) {
