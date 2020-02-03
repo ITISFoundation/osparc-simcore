@@ -267,11 +267,10 @@ class ProjectDBAPI:
             query = study_tags.delete().where(
                 and_(study_tags.c.study_id == project['id'], study_tags.c.tag_id == tag_id)
             )
-            async with conn.execute(query) as result:
-                if result.rowcount == 1:
+            async with conn.execute(query):
+                if tag_id in projects["tags"]:
                     project['tags'].remove(tag_id)
-                    return _convert_to_schema_names(project)
-                raise ProjectsException()
+                return _convert_to_schema_names(project)
 
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:

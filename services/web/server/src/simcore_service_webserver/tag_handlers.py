@@ -78,6 +78,4 @@ async def delete_tag(request: web.Request):
             and_(tags.c.id == tag_id, tags.c.user_id == uid)
         )
         async with conn.execute(query) as result:
-            if result.rowcount == 1:
-                raise web.HTTPNoContent(content_type='application/json')
-            raise web.HTTPInternalServerError()
+            raise web.HTTPNoContent(content_type='application/json')
