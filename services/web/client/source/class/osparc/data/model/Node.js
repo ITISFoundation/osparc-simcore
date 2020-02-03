@@ -143,6 +143,12 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    propsWidgetEditor: {
+      check: "osparc.component.form.renderer.PropFormEditor",
+      init: null,
+      nullable: true
+    },
+
     inputsMapper: {
       check: "osparc.component.widget.InputsMapper",
       init: null,
@@ -489,6 +495,12 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
     },
 
+    __addSettingsEditor: function(inputs) {
+      const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
+      const propsWidgetEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
+      this.setPropsWidgetEditor(propsWidgetEditor);
+    },
+
     removeNodePortConnections: function(inputNodeId) {
       let inputs = this.getInputValues();
       for (const portId in inputs) {
@@ -525,6 +537,7 @@ qx.Class.define("osparc.data.model.Node", {
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
       this.__addSettings(filteredInputs);
+      this.__addSettingsEditor(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
@@ -555,8 +568,9 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsWidget().addLinks(inputLinks);
         this.__settingsForm.setData(inputData);
         if ("inputAccess" in nodeData) {
-          this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
           this.setInputAccess(nodeData.inputAccess);
+          this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
+          this.getPropsWidgetEditor().addAccessLevel(nodeData.inputAccess);
         }
       }
     },

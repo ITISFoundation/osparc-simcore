@@ -125,11 +125,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
       infoPart.add(infoBtn);
 
+      const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
+      infoPart.add(editAccessLevel);
+
       const filesBtn = this._filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       buttonsPart.add(filesBtn);
 
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+      editAccessLevel.addListener("execute", () => this.__openEditAccessLevel(), this);
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       title.addListener("editValue", evt => {
@@ -240,6 +244,22 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __openServiceInfo: function() {
       const win = new osparc.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
+      win.center();
+      win.open();
+    },
+
+    __openEditAccessLevel: function() {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        // autoDestroy: true,
+        contentPadding: 10,
+        showMinimize: false,
+        resizable: true,
+        modal: true,
+        height: 600,
+        width: 800
+      });
+      win.add(this.getNode().getPropsWidgetEditor());
       win.center();
       win.open();
     },
