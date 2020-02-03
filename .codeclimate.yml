@@ -1,51 +1,73 @@
-# SEE scripts/code-climate.sh
+# To validate, run ./scripts/code-climate.sh validate-config
+#
 # SEE https://docs.codeclimate.com/docs/advanced-configuration
+#
 version: "2"
 checks:
   argument-count:
+    enabled: true
     config:
       threshold: 6
   complex-logic:
+    enabled: true
     config:
-      threshold: 4
+      threshold: 5
   file-lines:
+    enabled: true
     config:
       threshold: 500
   method-complexity:
+    enabled: true
     config:
       threshold: 6
   method-count:
+    enabled: true
     config:
       threshold: 20
   method-lines:
+    enabled: true
     config:
-      threshold: 25
+      threshold: 30
   nested-control-flow:
+    enabled: true
     config:
-      threshold: 5
+      threshold: 4
   return-statements:
+    enabled: true
     config:
       threshold: 4
   similar-code:
+    enabled: true
     config:
-      threshold: # language-specific defaults. an override will affect all languages.
+      threshold: #language-specific defaults. overrides affect all languages.
   identical-code:
+    enabled: true
     config:
-      threshold: # language-specific defaults. an override will affect all languages.
+      threshold: #language-specific defaults. overrides affect all languages.
+
+
 plugins:
-  pep8:
-    enabled: false
+  rubocop: # https://docs.codeclimate.com/docs/rubocop
+    enabled: true
+  eslint:
+    enabled: true
   pylint:
     enabled: true
     channel: "beta"
-  duplication:
-    enabled: true
-    config:
-      languages:
-      - javascript:
-      - python:
+  pep8:
+    enabled: false
+
 exclude_patterns:
-- "**/tests/"
-- "**/node_modules/"
-- "**/.venv/"
-- ".venv/"
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "**/node_modules/"
+  - "script/"
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - "**/vendor/"
+  - "**/*.d.ts"
+  - "**/.venv/"
+  - ".venv/"
