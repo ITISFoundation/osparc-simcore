@@ -6,7 +6,7 @@
    Utf8Check: äöü
 ************************************************************************ */
 
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true}] */
 
 /**
  * A special renderer for AutoForms which includes notes below the section header
@@ -14,12 +14,14 @@
  */
 
 qx.Class.define("osparc.component.form.renderer.PropForm", {
-  extend : qx.ui.form.renderer.Single,
+  extend: qx.ui.form.renderer.Single,
+
   /**
-     * create a page for the View Tab with the given title
-     *
-     * @param vizWidget {Widget} visualization widget to embedd
-     */
+   * create a page for the View Tab with the given title
+   *
+   * @param form {osparc.component.form.Auto} form widget to embedd
+   * @param node {osparc.data.model.Node} Node owning the widget
+   */
   construct: function(form, node) {
     if (node) {
       this.setNode(node);
@@ -80,6 +82,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       retrieving: 1,
       succeed: 2
     },
+
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
       if (title !== null) {
@@ -324,14 +327,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         row: row,
         column: this._gridPos.retrieveStatus
       });
-    },
-
-    __isInputData: function(portId) {
-      const port = this.getNode().getInput(portId);
-      if (port) {
-        return port.type.includes("data");
-      }
-      return false;
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {

@@ -59,9 +59,10 @@ qx.Class.define("osparc.component.form.Auto", {
   include: [qx.locale.MTranslation],
 
   /**
-     * @param structure {Array} form structure
-     */
-  construct: function(content, node) {
+    * @param structure {Object} form structure
+    * @param node {osparc.data.model.Node} Node owning the widget
+    */
+  construct: function(structure, node) {
     // node is necessary for creating links
     if (node) {
       this.setNode(node);
@@ -75,8 +76,8 @@ qx.Class.define("osparc.component.form.Auto", {
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
-    for (let key in content) {
-      this.__addField(content[key], key);
+    for (let key in structure) {
+      this.__addField(structure[key], key);
     }
     let model = this.__model = formCtrl.createModel(true);
 
