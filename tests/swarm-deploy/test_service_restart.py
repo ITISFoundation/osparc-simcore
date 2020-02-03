@@ -24,8 +24,11 @@ current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 
 # time measured from command 'up' finished until *all* tasks are running
 MAX_TIME_TO_DEPLOY_SECS = 60
-MAX_TIME_TO_RESTART_SERVICE = 5
+MAX_TIME_TO_RESTART_SERVICE_SECS = 5
 
+# FIXME: how to compute these times? Measure in dev computer and extrapolate based on testing machines?
+# TODO: routines to "tune" these times and how can we see evolution?
+#  - testing timing with respect to release version?? test it cannot be slower than released version?
 
 
 @pytest.fixture("module")
@@ -64,6 +67,9 @@ def test_graceful_restart_services(
     """
         NOTE: loop fixture makes this test async
         NOTE: needs to run AFTER test_core_service_running
+
+        SEE Gracefully Stopping Docker Containers by DeHamer: https://www.ctl.io/developers/blog/post/gracefully-stopping-docker-containers/
+        SEE Gracefully Shutdown Docker Container by Kakashi: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )
 
@@ -84,13 +90,14 @@ def test_graceful_restart_services(
 
     assert service.force_update()
 
-    time.sleep(MAX_TIME_TO_RESTART_SERVICE)
+    time.sleep(MAX_TIME_TO_RESTART_SERVICE_SECS)
 
     shutdown_tasks = service.tasks(filters={'desired-state': 'shutdown'})
     assert len(shutdown_tasks) == 1
 
     task = shutdown_tasks[0]
-    assert task['Status']['ContainerStatus']['ExitCode'] == 0, pformat(task['Status'])
+    assert task['Status']['ContainerStatus']['ExitCode'] == 0, \
+        pformat(task['Status']) + f"\nLOGS:\n{pformat(list( service.logs() ))}\n"
 
     # TODO: check ps ax has TWO processes
     ## name = core_service_name.name.replace("simcore_", "")
