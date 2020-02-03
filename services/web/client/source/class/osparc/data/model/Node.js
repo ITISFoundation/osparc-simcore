@@ -533,10 +533,27 @@ qx.Class.define("osparc.data.model.Node", {
       this.__addOutputWidget();
     },
 
+    __isInputDataALink: function(data) {
+      if (data !== null && typeof data === "object" && data.nodeUuid) {
+        return true;
+      }
+      return false;
+    },
+
     setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
-        this.__settingsForm.setData(nodeData.inputs);
-        this.getPropsWidget().addLinks(nodeData.inputs);
+        const inputData = {};
+        const inputLinks = {};
+        const inputs = osparc.utils.Utils.deepCloneObject(nodeData.inputs);
+        for (let key in inputs) {
+          if (this.__isInputDataALink(inputs[key])) {
+            inputLinks[key] = inputs[key];
+          } else {
+            inputData[key] = inputs[key];
+          }
+        }
+        this.getPropsWidget().addLinks(inputLinks);
+        this.__settingsForm.setData(inputData);
         if ("inputAccess" in nodeData) {
           this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
           this.setInputAccess(nodeData.inputAccess);

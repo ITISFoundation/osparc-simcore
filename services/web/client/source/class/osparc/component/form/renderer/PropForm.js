@@ -474,7 +474,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       for (let key in data) {
         if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
-          continue;
         }
       }
     },
