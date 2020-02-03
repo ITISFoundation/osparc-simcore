@@ -44,7 +44,6 @@ plugins:
       languages:
       - javascript:
       - python:
-        python_version: 3
 exclude_patterns:
 - "**/tests/"
 - "**/node_modules/"
