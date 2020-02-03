@@ -69,7 +69,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
 
       const nodeUILayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
         height: 80,
-        backgroundColor: "node-background",
+        backgroundColor: "background-selected-dark",
         draggable: true,
         droppable: true
       });

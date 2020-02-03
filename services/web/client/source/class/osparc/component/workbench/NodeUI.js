@@ -115,26 +115,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return this.getChildControl("captionbar");
     },
 
-    setTriSelected: function(triState) {
-      switch (triState) {
-        case 0:
-          // unselect
-          this.resetBackgroundColor();
-          this.getCaptionBar().resetBackgroundColor();
-          break;
-        case 1:
-          // semiselect
-          this.setBackgroundColor("node-selected-background");
-          this.getCaptionBar().setBackgroundColor("node-selected-background");
-          break;
-        case 2:
-          // select
-          this.setBackgroundColor("node-selected-background");
-          this.getCaptionBar().setBackgroundColor("node-selected-background");
-          break;
-      }
-    },
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
