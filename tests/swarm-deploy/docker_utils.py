@@ -19,7 +19,7 @@ from typing import Callable
 import docker
 from tenacity import Retrying, stop_after_delay
 
-TASK_STATE_DESCRIPTION = OrderedDict([ re.split(r'\s+', entry, 1) for entry in dedent("""
+TASK_STATE_DESCRIPTION = """
 NEW       The task was initialized.
 PENDING   Resources for the task were allocated.
 ASSIGNED  Docker assigned the task to nodes.
@@ -33,9 +33,11 @@ SHUTDOWN  Docker requested the task to shut down.
 REJECTED  The worker node rejected the task.
 ORPHANED  The node was down for too long.
 REMOVE    The task is not terminal but the associated service was removed or scaled down.
-""").strip().split('\n') ])
+"""
 
-TaskState = Enum("TaskState", list(TASK_STATE_DESCRIPTION.keys()))
+statename2description = OrderedDict([ re.split(r'\s+', entry, 1) for entry in dedent(TASK_STATE_DESCRIPTION).strip().split('\n') ])
+
+TaskState = Enum("TaskState", list(statename2description.keys()))
 
 
 failed_states = [

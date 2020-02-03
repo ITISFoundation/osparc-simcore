@@ -123,7 +123,7 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
         # goes, fails and max retries
         with pytest.raises(web.HTTPServiceUnavailable):
             await dec_go(engine, gid=1, raise_cls=DatabaseError)
-        assert "Postgres service non-responsive, responding 503" in caplog.text
+        assert "Postgres service non-responsive" in caplog.text
 
         print(dec_go.retry.statistics)
         assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1
