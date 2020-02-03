@@ -1,10 +1,10 @@
 """
 
 
- Swarm task states:
+ SEE Swarm task states:
     https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
- Lifecyle of Docker Container:
+ SEE Lifecyle of Docker Container:
     https://medium.com/@nagarwal/lifecycle-of-docker-container-d2da9f85959
     http://docker-saigon.github.io/post/Docker-Internals/#docker-api:cb6baf67dddd3a71c07abfd705dc7d4b
 """
@@ -38,18 +38,6 @@ REMOVE    The task is not terminal but the associated service was removed or sca
 statename2description = OrderedDict([ re.split(r'\s+', entry, 1) for entry in dedent(TASK_STATE_DESCRIPTION).strip().split('\n') ])
 
 TaskState = Enum("TaskState", list(statename2description.keys()))
-
-
-failed_states = [
-    TaskState.COMPLETE,
-    TaskState.FAILED,
-    TaskState.SHUTDOWN,
-    TaskState.REJECTED,
-    TaskState.ORPHANED,
-    TaskState.REMOVE,
-    TaskState.CREATED
-]
-
 
 
 
