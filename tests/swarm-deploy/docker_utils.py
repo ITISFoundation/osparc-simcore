@@ -14,7 +14,7 @@ from enum import Enum
 from pprint import pformat
 from textwrap import dedent
 from timeit import default_timer
-from typing import Callable
+from typing import Callable, Dict
 
 import docker
 from tenacity import Retrying, stop_after_delay
@@ -52,9 +52,31 @@ def assert_all_services_ready(filters=None):
     docker_client = docker.from_env()
     for service in docker_client.services.list(filters=filters):
         for task in service.tasks():
-            assert task['Status']['State'] == task['DesiredState'], \
-                f'{service.name} still not ready: {pformat(task)}'
+            current_state = task['Status']['State']
+            desired_state = task['DesiredState']
+            assert  current_state == desired_state, "\n".join([
+                f"{service.name} is not ready [expected state {desired_state}, got {current_state}]",
+                box_message("TASK", pformat(task)),
+                box_message(f"LOGS {service.name} - {task['ID']}", get_task_logs(task, docker_client))
+                ])
 
+
+def get_task_logs(task: Dict, docker_client) -> str:
+    try:
+        cid = task['Status']['ContainerStatus']['ContainerID']
+        container = docker_client.containers[cid]
+        failed_logs = container.logs().decode('utf-8')
+    except KeyError:
+        failed_logs = "log unavailable. container does not exists"
+    return failed_logs
+
+def box_message(title: str, msg: str) -> str:
+    header = f"{title} BEGIN "
+    footer = f"{title} END "
+    return "\n".join([
+        f"{header:=^10}",
+        msg.strip(),
+        f"{footer:=^10}"])
 
 def eval_time_elapsed(assert_fun: Callable, max_timeout_secs=120):
     start = default_timer()
