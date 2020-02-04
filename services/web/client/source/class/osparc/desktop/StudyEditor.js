@@ -215,13 +215,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (node.isFilePicker()) {
           this.__openFilePicker(node);
         } else if (node.isContainer()) {
+          this.__groupNodeView.setNode(node);
           this.showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
-          this.__groupNodeView.setNode(node);
           this.__groupNodeView.populateLayout();
         } else {
-          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.setNode(node);
+          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.populateLayout();
         }
       }
