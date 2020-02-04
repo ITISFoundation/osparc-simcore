@@ -84,6 +84,10 @@ qx.Class.define("osparc.store.Store", {
     storageLocations: {
       check: "Array",
       init: []
+    },
+    statics: {
+      check: "Object",
+      init: {}
     }
   },
 

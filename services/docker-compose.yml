@@ -42,10 +42,12 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - BUILD_DATE=${BUILD_DATE:-1970-01-01T01:00:00Z}
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
       - WEBSERVER_LOGLEVEL=INFO
     env_file:
