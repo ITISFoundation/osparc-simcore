@@ -329,6 +329,15 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE) --directory services/storage $@
 	@$(MAKE) --directory services/director $@
 
+
+.PHONY: code-analysis
+code-analysis: .codeclimate.yml ## runs code-climate analysis
+	# Validates @<
+	./scripts/code-climate.sh validate-config
+	# Running analysis
+	./scripts/code-climate.sh analyze
+
+
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
 	# setup info:

@@ -11,7 +11,7 @@ checks:
   complex-logic:
     enabled: true
     config:
-      threshold: 5
+      threshold: 10
   file-lines:
     enabled: true
     config:
@@ -49,13 +49,12 @@ checks:
 plugins:
   rubocop: # https://docs.codeclimate.com/docs/rubocop
     enabled: true
-  eslint:
+  eslint: # https://docs.codeclimate.com/docs/eslint
     enabled: true
-  pylint:
-    enabled: true
-    channel: "beta"
-  pep8:
-    enabled: false
+    channel: "eslint-6"
+    config:
+      extensions:
+      - .js
 
 exclude_patterns:
   - "config/"

@@ -3,6 +3,7 @@
 # Runs code climate locally on CWD
 #
 # SEE https://github.com/codeclimate/codeclimate#manual-docker-invocation
+#     https://github.com/codeclimate/codeclimate#commands
 #
 echo Running codeclimate on "$PWD"
 
