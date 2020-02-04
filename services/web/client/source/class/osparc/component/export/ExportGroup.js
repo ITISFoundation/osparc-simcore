@@ -127,9 +127,10 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __exportAsMacroService: function() {
-      const outputNode = this.getOutputNode();
-      const workbench = this.__groupToWorkbenchData(outputNode);
+      const inputNode = this.getInputNode();
+      const workbench = this.__groupToWorkbenchData(inputNode);
 
+      const outputNode = this.getOutputNode();
       const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
       const version = "1.0.0";
       const nodesGroupService = osparc.utils.Services.getNodesGroup();
