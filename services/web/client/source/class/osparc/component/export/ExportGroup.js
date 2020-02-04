@@ -132,7 +132,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
       const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
       const version = "1.0.0";
-      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      const nodesGroupService = osparc.utils.Services.getNodesGroup();
       nodesGroupService["key"] = nodeKey;
       nodesGroupService["version"] = version;
       nodesGroupService["name"] = this.__groupName.getValue();
