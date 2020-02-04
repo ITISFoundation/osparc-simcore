@@ -224,13 +224,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (node.isFilePicker()) {
           this.__openFilePicker(node);
         } else if (node.isContainer()) {
+          this.__groupNodeView.setNode(node);
           this.showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
-          this.__groupNodeView.setNode(node);
           this.__groupNodeView.populateLayout();
         } else {
-          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.setNode(node);
+          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.populateLayout();
         }
       }
@@ -324,6 +324,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
+
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.setWorkbenchVisibility(widget === this.__workbenchUI);
+      controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
 
       const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
