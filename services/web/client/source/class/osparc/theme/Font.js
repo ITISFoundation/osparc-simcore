@@ -92,6 +92,13 @@ qx.Theme.define("osparc.theme.Font", {
       color: "text"
     },
 
+    "link-label": {
+      size: 12,
+      family: ["Roboto"],
+      color: "text-darker",
+      decoration: "underline"
+    },
+
     "text-12-italic": {
       size: 12,
       family: ["Roboto"],
@@ -107,6 +114,12 @@ qx.Theme.define("osparc.theme.Font", {
 
     "text-10": {
       size: 10,
+      family: ["Roboto"],
+      color: "text"
+    },
+
+    "text-9": {
+      size: 9,
       family: ["Roboto"],
       color: "text"
     },

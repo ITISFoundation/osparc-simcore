@@ -22,20 +22,26 @@ qx_packages:
 compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --rm qooxdoo-kit \
-		qx compile $(flags)\
-			--set osparc.vcsRef='"${VCS_REF}"' \
-			--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
-			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
-			--set osparc.vcsOriginUrl='"${VCS_URL}"'
+		qx compile $(flags) \
+			--set-env osparc.vcsRef="${VCS_REF}" \
+			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
+			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
+			--set-env osparc.vcsOriginUrl="${VCS_URL}"
 
 .PHONY: compile touch
 compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=build-client .
+	@docker build --file $(docker_file) --tag $(docker_image) \
+		--build-arg tag=${QOOXDOO_KIT_TAG} \
+		--build-arg VCS_REF=${VCS_REF} \
+		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
+		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
+		--build-arg VCS_URL=${VCS_URL} \
+		--target=build-client .
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker build -f $(docker_file) -t $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
+	@docker build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
 
 
 .PHONY: down
@@ -47,10 +53,10 @@ down: ## tear down docker-compose
 define qx_serve =
 			qx serve $(flags) \
 				--set qx.allowUrlSettings=true \
-				--set osparc.vcsOriginUrl='"${VCS_URL}"' \
-				--set osparc.vcsRef='"${VCS_REF}"' \
-				--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
-				--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
+				--set-env osparc.vcsOriginUrl="${VCS_URL}" \
+				--set-env osparc.vcsRef="${VCS_REF}" \
+				--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
+				--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}"
 endef
 
 .PHONY: serve-dev

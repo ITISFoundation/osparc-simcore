@@ -8,7 +8,7 @@ from typing import Dict
 
 import yaml
 
-VARIABLE_SUBSTITUTION = re.compile(r'\$\{(\w+)+') #
+VARIABLE_SUBSTITUTION = re.compile(r'\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$')
 
 def load_env(file_handler) -> Dict:
     """ Deserializes an environment file like .env-devel and
@@ -40,6 +40,8 @@ def eval_environs_in_docker_compose(docker_compose: Dict, docker_compose_dir: Pa
             host_environ, use_env_devel=use_env_devel)
     return content
 
+from typing import List
+
 def replace_environs_in_docker_compose_service(service_section: Dict,
     docker_compose_dir: Path,
     host_environ: Dict=None,
@@ -55,9 +57,9 @@ def replace_environs_in_docker_compose_service(service_section: Dict,
     service_environ = {}
 
     # environment defined in env_file
-    env_files = service_section.pop("env_file", list())
+    env_files: List[str] = service_section.pop("env_file", list())
     for env_file in env_files:
-        if env_file == "../.env" and use_env_devel:
+        if env_file.endswith(".env") and use_env_devel:
             env_file += "-devel"
 
         env_file_path = (docker_compose_dir / env_file).resolve()
@@ -68,16 +70,20 @@ def replace_environs_in_docker_compose_service(service_section: Dict,
     # explicit environment [overrides env_file]
     environ_items = service_section.get("environment", list())
     if environ_items and isinstance(environ_items, list):
-        # TODO: use docker-compose config first
         for item in environ_items:
             key, value = item.split("=")
-
             m = VARIABLE_SUBSTITUTION.match(value)
-            if m:
-                # In VAR=${FOO} matches VAR and FOO
-                #    - TODO: add to read defaults
-                envkey = m.groups()[0]
-                value = host_environ[envkey] # fails when variable in docker-compose is NOT defined
+            if m: # There is a variable as value in docker-compose
+                envkey = m.groups()[0] # Variable name
+                if len(m.groups()) == 3: # There is a default value
+                    default_value = m.groups()[2]
+                if envkey in host_environ:
+                    value = host_environ[envkey] # Use host environ
+                    if default_value and len(value) == 0 and m.groups()[1] == ':-':
+                        value = default_value # Unless it is empty and default exists
+                elif default_value:
+                    value = default_value # Use default if exists
+                
             service_environ[key] = value
 
     service_section["environment"] = service_environ

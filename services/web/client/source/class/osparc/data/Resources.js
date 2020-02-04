@@ -358,6 +358,17 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/check/echo"
           }
         }
+      },
+
+      statics: {
+        usesCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/resource/statics.json",
+            isJsonFile: true
+          }
+        }
       }
     };
   },
@@ -384,8 +395,9 @@ qx.Class.define("osparc.data.Resources", {
         }
 
         res.addListenerOnce(endpoint + "Success", e => {
-          const data = e.getRequest().getResponse().data;
+          const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
+          const data = endpointDef.isJsonFile ? response : response.data;
           const useCache = ("usesCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.usesCache;
           if (useCache) {
             if (endpoint.includes("delete")) {
