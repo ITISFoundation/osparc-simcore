@@ -76,22 +76,19 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     __addIFrame: function() {
       this._iFrameLayout.removeAll();
 
-      const tabView = new qx.ui.tabview.TabView();
+      const tabView = new qx.ui.tabview.TabView().set({
+        contentPadding: 0
+      });
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const iFrame = innerNode.getIFrame();
         if (iFrame) {
           const page = new qx.ui.tabview.Page().set({
-            layout: new qx.ui.layout.Canvas(),
+            layout: new qx.ui.layout.Grow(),
             showCloseButton: false
           });
           innerNode.bind("label", page, "label");
-          page.add(iFrame, {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0
-          });
+          page.add(iFrame);
           tabView.add(page);
 
           iFrame.addListener("maximize", e => {

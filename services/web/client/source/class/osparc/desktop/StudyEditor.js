@@ -316,6 +316,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
 
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.setWorkbenchVisibility(widget === this.__workbenchUI);
+      controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
+
       const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },

@@ -46,7 +46,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      apply: "_applyNode"
+      apply: "_applyNode",
+      nullable: true,
+      init: null
     }
   },
 
@@ -221,7 +223,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __hasIFrame: function() {
-      return (this.isPropertyInitialized("node") && this.getNode().getIFrame());
+      return (this.isPropertyInitialized("node") && this.getNode() && this.getNode().getIFrame());
     },
 
     restoreIFrame: function() {
