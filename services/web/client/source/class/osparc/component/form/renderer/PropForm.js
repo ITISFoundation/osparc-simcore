@@ -496,6 +496,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       for (const key in data) {
         const control = this._form.getControl(key);
         this.__changeControlVisibility(control, data[key]);
+
+        const controlLink = this.__getCtrlFieldChild(key);
+        if (controlLink) {
+          this.__changeControlVisibility(controlLink.child, data[key]);
+        }
       }
     },
 
