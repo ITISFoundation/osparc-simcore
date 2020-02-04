@@ -20,7 +20,7 @@ WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
 .update-schemas:
 	# Convert common schemas to openapi-compatible schemas
 	@$(MAKE) --directory ${API_SPECS_DIR}/common/schemas
-	# Updating ${API_SPECS_DIR}/schemas with common json-schemas
+	# Updating ${API_SPECS_DIR}/schemas with common json-schemas (CP fails in MacOS)
 	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \
 		--remove-destination \

@@ -6,13 +6,15 @@
     - The client application is under ``services/web/client`` and the ``webclient`` service
     is used to build it.
 """
+import json
 import logging
+import os
 from pathlib import Path
 
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import app_module_setup, ModuleCategory
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 INDEX_RESOURCE_NAME = "statics.index"
 
@@ -43,6 +45,13 @@ async def index(request: web.Request):
         return web.Response(text=ofh.read(), content_type="text/html")
 
 
+def write_statics_file(directory):
+    statics = {}
+    statics['stackName'] = os.environ.get('SWARM_STACK_NAME')
+    statics['buildDate'] = os.environ.get('BUILD_DATE')
+    with open(directory / 'statics.json', 'w') as statics_file:
+        json.dump(statics, statics_file)
+
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
@@ -71,6 +80,9 @@ def setup_statics(app: web.Application):
         # TODO: check whether this can be done at oncen
         for path in folders:
             app.router.add_static('/' + path.name, path)
+
+        # Create statics file
+        write_statics_file(outdir / 'resource')
 
     except web.HTTPServiceUnavailable as ex:
         log.exception(ex.text)
