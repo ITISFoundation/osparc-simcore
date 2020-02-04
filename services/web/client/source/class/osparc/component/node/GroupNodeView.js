@@ -37,15 +37,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
   },
 
   members: {
-    populateLayout: function() {
-      this.getNode().bind("label", this._title, "value");
-      this._addInputPortsUIs();
-      this.__addSettings();
-      this.__addIFrame();
-      this._addButtons();
-    },
-
-    __addSettings: function() {
+    _addSettings: function() {
       this._settingsLayout.removeAll();
       this._mapperLayout.removeAll();
 
@@ -72,7 +64,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
     },
 
-    __addIFrame: function() {
+    _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
       const tabView = new qx.ui.tabview.TabView().set({

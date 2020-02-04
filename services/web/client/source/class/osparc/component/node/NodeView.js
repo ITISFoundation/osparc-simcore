@@ -42,15 +42,7 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
-    populateLayout: function() {
-      this.getNode().bind("label", this._title, "value");
-      this._addInputPortsUIs();
-      this.__addSettings();
-      this.__addIFrame();
-      this._addButtons();
-    },
-
-    __addSettings: function() {
+    _addSettings: function() {
       this._settingsLayout.removeAll();
       this._mapperLayout.removeAll();
 
@@ -72,7 +64,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
-    __addIFrame: function() {
+    _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
       const iFrame = this.getNode().getIFrame();

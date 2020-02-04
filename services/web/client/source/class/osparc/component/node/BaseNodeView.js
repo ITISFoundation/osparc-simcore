@@ -65,6 +65,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _buttonContainer: null,
     _filesButton: null,
 
+    populateLayout: function() {
+      this.getNode().bind("label", this._title, "value");
+      this._addInputPortsUIs();
+      this._addSettings();
+      this._addIFrame();
+      this._addButtons();
+    },
+
     __buildInputsView: function() {
       const inputsView = this._inputsView = new osparc.desktop.SidePanel().set({
         minWidth: 300
@@ -289,6 +297,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           node.setCollapsed(true);
         });
       }, this);
+    },
+
+    /**
+      * @abstract
+      */
+    _addSettings: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    /**
+      * @abstract
+      */
+    _addIFrame: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    /**
+      * @abstract
+      */
+    _openEditAccessLevel: function() {
+      throw new Error("Abstract method called!");
     },
 
     /**
