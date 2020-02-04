@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
   members: {
     _gridPos: {
       label: 0,
-      entryField: 1,
+      ctrlField: 1,
       accessLevel: 2
     },
     _accessLevel: {
@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         field.key = item.key;
         this._add(field, {
           row: this._row,
-          column: this._gridPos.entryField
+          column: this._gridPos.ctrlField
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -159,10 +159,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         this.__ctrlRBsMap[portId] = group;
         group.addListener("changeSelection", this.__onAccessLevelChanged, this);
 
-        const entryField = this.__getEntryFieldChild(portId);
-        if (entryField) {
-          const idx = entryField.idx;
-          const child = entryField.child;
+        const ctrlField = this.__getCtrlFieldChild(portId);
+        if (ctrlField) {
+          const idx = ctrlField.idx;
+          const child = ctrlField.child;
           const layoutProps = child.getLayoutProperties();
           this._addAt(groupBox, idx, {
             row: layoutProps.row,
@@ -268,8 +268,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       return this.__getLayoutChild(portId, this._gridPos.label);
     },
 
-    __getEntryFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.entryField);
+    __getCtrlFieldChild: function(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.ctrlField);
     },
 
     __getRadioButtonsFieldChild: function(portId) {

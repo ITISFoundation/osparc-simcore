@@ -79,7 +79,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   members: {
     _gridPos: {
       label: 0,
-      entryField: 1,
+      ctrlField: 1,
       retrieveStatus: 2
     },
     _retrieveStatus: {
@@ -118,7 +118,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         field.key = item.key;
         this._add(field, {
           row: this._row,
-          column: this._gridPos.entryField
+          column: this._gridPos.ctrlField
         });
         this._row++;
         this._connectVisibility(item, label);
@@ -197,12 +197,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return null;
     },
 
-    __getEntryFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.entryField);
+    __getCtrlFieldChild: function(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.ctrlField);
     },
 
     linkAdded: function(portId) {
-      let data = this.__getEntryFieldChild(portId);
+      let data = this.__getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
@@ -223,7 +223,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         hBox.key = portId;
         this._addAt(hBox, idx, {
           row: layoutProps.row,
-          column: this._gridPos.entryField
+          column: this._gridPos.ctrlField
         });
 
         this.fireDataEvent("dataFieldModified", portId);
@@ -231,12 +231,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     linkRemoved: function(portId) {
-      let data = this.__getEntryFieldChild(portId);
+      let data = this.__getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.entryField) {
+        if (layoutProps.column === this._gridPos.ctrlField) {
           this._remove(child);
           const item = this._form.getControl(portId);
           const field = new osparc.component.form.FieldWHint(null, item.description, item);
@@ -253,7 +253,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     retrievingPortData: function(portId) {
       const status = this._retrieveStatus.retrieving;
       if (portId) {
-        let data = this.__getEntryFieldChild(portId);
+        let data = this.__getCtrlFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
@@ -264,7 +264,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i = this._getChildren().length; i--;) {
           let child = this._getChildren()[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this._gridPos.entryField) {
+          if (layoutProps.column === this._gridPos.ctrlField) {
             const ctrl = this._form.getControl(child.key);
             if (ctrl && ctrl.link) {
               this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
@@ -280,7 +280,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         status = this._retrieveStatus.empty;
       }
       if (portId) {
-        let data = this.__getEntryFieldChild(portId);
+        let data = this.__getCtrlFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
