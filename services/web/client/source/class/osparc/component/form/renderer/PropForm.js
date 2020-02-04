@@ -487,6 +487,18 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.linkRemoved(toPortId);
     },
 
+    hasVisibleInputs: function() {
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.label && child.getBuddy().isVisible()) {
+          return true;
+        }
+      }
+      return false;
+    },
+
     /**
      * set access level to the data main model
      *
