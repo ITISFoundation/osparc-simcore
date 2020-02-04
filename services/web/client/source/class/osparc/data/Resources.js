@@ -392,6 +392,21 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/tags/{tagId}"
           }
         }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
+      statics: {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/resource/statics.json",
+            isJsonFile: true
+          }
+        }
       }
     };
   },
@@ -418,9 +433,10 @@ qx.Class.define("osparc.data.Resources", {
         }
 
         res.addListenerOnce(endpoint + "Success", e => {
-          const data = e.getRequest().getResponse().data;
+          const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
-          const useCache = "useCache" in endpointDef ? endpointDef.useCache : resourceDefinition.useCache;
+          const data = endpointDef.isJsonFile ? response : response.data;
+          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);
