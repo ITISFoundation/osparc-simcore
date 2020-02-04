@@ -495,29 +495,29 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     setAccessLevel: function(data) {
       for (const key in data) {
         const control = this._form.getControl(key);
-        if (control) {
-          switch (data[key]) {
-            case "Invisible": {
-              control.setEnabled(false);
-              control.setVisibility("excluded");
-              break;
-            }
-            case "ReadOnly": {
-              control.setEnabled(false);
-              control.setVisibility("visible");
-              break;
-            }
-            case "ReadAndWrite": {
-              control.setEnabled(true);
-              control.setVisibility("visible");
-              break;
-            }
-          }
-        }
+        this.__changeControlVisibility(control, data[key]);
+      }
+    },
+
+    __changeControlVisibility: function(control, visibility) {
+      if (control === null) {
+        return;
       }
 
-      /* only fire ONE if there was an attempt at change */
-      // this.fireDataEvent("changeData", this.getData());
+      switch (visibility) {
+        case "Invisible":
+          control.setEnabled(false);
+          control.setVisibility("excluded");
+          break;
+        case "ReadOnly":
+          control.setEnabled(false);
+          control.setVisibility("visible");
+          break;
+        case "ReadAndWrite":
+          control.setEnabled(true);
+          control.setVisibility("visible");
+          break;
+      }
     }
   }
 });
