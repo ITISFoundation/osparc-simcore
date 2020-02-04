@@ -496,7 +496,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __addSettingsEditor: function(inputs) {
-      const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
+      const form = new osparc.component.form.Auto(inputs);
       const propsWidgetEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
       this.setPropsWidgetEditor(propsWidgetEditor);
     },
