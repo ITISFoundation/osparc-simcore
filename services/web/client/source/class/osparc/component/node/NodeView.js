@@ -86,6 +86,27 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
+    _openEditAccessLevel: function() {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 10,
+        showMinimize: false,
+        resizable: true,
+        modal: true,
+        height: 600,
+        width: 800
+      });
+
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings")).set({
+        maxWidth: 800
+      });
+      settingsEditorLayout.add(this.getNode().getPropsWidgetEditor());
+
+      win.add(settingsEditorLayout);
+      win.center();
+      win.open();
+    },
+
     _applyNode: function(node) {
       if (node.isContainer()) {
         console.error("Only non-group nodes are supported");

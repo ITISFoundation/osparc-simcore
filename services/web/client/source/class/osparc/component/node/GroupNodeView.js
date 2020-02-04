@@ -100,6 +100,38 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
     },
 
+    _openEditAccessLevel: function() {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 10,
+        showMinimize: false,
+        resizable: true,
+        modal: true,
+        height: 600,
+        width: 800
+      });
+
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings")).set({
+        maxWidth: 800
+      });
+      const innerNodes = this.getNode().getInnerNodes(true);
+      Object.values(innerNodes).forEach(innerNode => {
+        const propsWidget = innerNode.getPropsWidgetEditor();
+        if (propsWidget && Object.keys(innerNode.getInputs()).length) {
+          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
+            maxWidth: 700
+          });
+          innerNode.bind("label", innerSettings, "legend");
+          innerSettings.add(propsWidget);
+          settingsEditorLayout.add(innerSettings);
+        }
+      });
+
+      win.add(settingsEditorLayout);
+      win.center();
+      win.open();
+    },
+
     _applyNode: function(node) {
       if (!node.isContainer()) {
         console.error("Only group nodes are supported");

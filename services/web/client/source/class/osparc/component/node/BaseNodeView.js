@@ -143,7 +143,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       buttonsPart.add(filesBtn);
 
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
-      editAccessLevel.addListener("execute", () => this.__openEditAccessLevel(), this);
+      editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       title.addListener("editValue", evt => {
@@ -254,22 +254,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __openServiceInfo: function() {
       const win = new osparc.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
-      win.center();
-      win.open();
-    },
-
-    __openEditAccessLevel: function() {
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        layout: new qx.ui.layout.Grow(),
-        // autoDestroy: true,
-        contentPadding: 10,
-        showMinimize: false,
-        resizable: true,
-        modal: true,
-        height: 600,
-        width: 800
-      });
-      win.add(this.getNode().getPropsWidgetEditor());
       win.center();
       win.open();
     },
