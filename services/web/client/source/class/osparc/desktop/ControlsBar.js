@@ -54,17 +54,23 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __stopButton: null,
     __groupButton: null,
     __ungroupButton: null,
-    __settingsViewButton: null,
     __workbenchViewButton: null,
+    __settingsViewButton: null,
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
+      this.__serviceFilters.setVisibility(isWorkbenchContext ? "visible" : "excluded");
       this.__groupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
       this.__ungroupButton.setVisibility(isWorkbenchContext ? "visible" : "excluded");
     },
 
+    setExtraViewVisibility: function(hasExtraView) {
+      this.__workbenchViewButton.setVisibility(hasExtraView ? "visible" : "excluded");
+      this.__settingsViewButton.setVisibility(hasExtraView ? "visible" : "excluded");
+    },
+
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
-      const serviceFilters = new osparc.desktop.ServiceFilters("workbench");
+      const serviceFilters = this.__serviceFilters = new osparc.desktop.ServiceFilters("workbench");
       osparc.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
       filterCtrls.add(serviceFilters);
       this.add(filterCtrls);
@@ -80,16 +86,12 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const viewRadioGroup = new qx.ui.form.RadioGroup();
       viewRadioGroup.add(workbenchViewButton, settingsViewButton);
 
-      this.addSpacer();
-
       const groupCtrls = new qx.ui.toolbar.Part();
       const groupButton = this.__groupButton = this.__createGroupButton();
       const ungroupButton = this.__ungroupButton = this.__createUngroupButton();
       groupCtrls.add(groupButton);
       groupCtrls.add(ungroupButton);
       this.add(groupCtrls);
-
-      this.addSpacer();
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
