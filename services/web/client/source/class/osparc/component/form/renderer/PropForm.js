@@ -31,15 +31,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     this.base(arguments, form);
 
-    this.__ctrlLinkMap = {};
-    this.__addLinkCtrls();
-
     const fl = this._getLayout();
     // have plenty of space for input, not for the labels
     fl.setColumnFlex(0, 0);
     fl.setColumnAlign(0, "left", "top");
     fl.setColumnFlex(1, 1);
     fl.setColumnMinWidth(1, 130);
+
+    this.__ctrlLinkMap = {};
+    this.__addLinkCtrls();
 
     this.setDroppable(true);
     this.__attachDragoverHighlighter();
