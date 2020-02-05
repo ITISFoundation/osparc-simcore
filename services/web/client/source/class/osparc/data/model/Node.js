@@ -339,16 +339,11 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
 
-        this.setInputData(nodeData);
-        this.setOutputData(nodeData);
-
-        if (nodeData.inputNodes) {
-          this.addInputNodes(nodeData.inputNodes);
-        }
-
-        if (nodeData.outputNodes) {
-          this.addOutputNodes(nodeData.outputNodes);
-        }
+        this.setInputData(nodeData.inputs);
+        this.setInputDataAcess(nodeData.inputAccess);
+        this.setOutputData(nodeData.outputs);
+        this.addInputNodes(nodeData.inputNodes);
+        this.addOutputNodes(nodeData.outputNodes);
 
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -553,25 +548,28 @@ qx.Class.define("osparc.data.model.Node", {
       return false;
     },
 
-    setInputData: function(nodeData) {
-      if (this.__settingsForm && nodeData) {
+    setInputData: function(inputs) {
+      if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
-        const inputs = osparc.utils.Utils.deepCloneObject(nodeData.inputs);
-        for (let key in inputs) {
-          if (this.__isInputDataALink(inputs[key])) {
-            inputLinks[key] = inputs[key];
+        const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        for (let key in inputsCopy) {
+          if (this.__isInputDataALink(inputsCopy[key])) {
+            inputLinks[key] = inputsCopy[key];
           } else {
-            inputData[key] = inputs[key];
+            inputData[key] = inputsCopy[key];
           }
         }
         this.getPropsWidget().addLinks(inputLinks);
         this.__settingsForm.setData(inputData);
-        if ("inputAccess" in nodeData) {
-          this.setInputAccess(nodeData.inputAccess);
-          this.getPropsWidget().setAccessLevel(nodeData.inputAccess);
-          this.getPropsWidgetEditor().setAccessLevel(nodeData.inputAccess);
-        }
+      }
+    },
+
+    setInputDataAcess: function(inputAccess) {
+      if (inputAccess) {
+        this.setInputAccess(inputAccess);
+        this.getPropsWidget().setAccessLevel(inputAccess);
+        this.getPropsWidgetEditor().setAccessLevel(inputAccess);
       }
     },
 
@@ -639,9 +637,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInputNodes: function(inputNodes) {
       if (inputNodes) {
-        for (let i=0; i<inputNodes.length; i++) {
-          this.addInputNode(inputNodes[i]);
-        }
+        inputNodes.forEach(inputNode => {
+          this.addInputNode(inputNode);
+        });
       }
     },
 
@@ -676,9 +674,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     addOutputNodes: function(outputNodes) {
       if (outputNodes) {
-        for (let i=0; i<outputNodes.length; i++) {
-          this.addOutputNode(outputNodes[i]);
-        }
+        outputNodes.forEach(outputNode => {
+          this.addOutputNode(outputNode);
+        });
       }
     },
 

@@ -116,13 +116,13 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        const propsWidget = innerNode.getPropsWidgetEditor();
-        if (propsWidget && Object.keys(innerNode.getInputs()).length) {
+        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
+        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
             maxWidth: 700
           });
           innerNode.bind("label", innerSettings, "legend");
-          innerSettings.add(propsWidget);
+          innerSettings.add(propsWidgetEditor);
           settingsEditorLayout.add(innerSettings);
         }
       });

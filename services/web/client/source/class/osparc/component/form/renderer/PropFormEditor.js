@@ -45,10 +45,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     this.__addAccessLevelRBs();
   },
 
-  events: {
-    "dataFieldModified": "qx.event.type.Data"
-  },
-
   properties: {
     node: {
       check: "osparc.data.model.Node",

@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
 
       const scroll = new qx.ui.container.Scroll();
       const settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const settingsView = this.__buildInputSettings();
+      const settingsView = this.__buildOutputSettings();
       settingsLayout.add(settingsView, {
         flex: 1
       });
@@ -103,22 +103,25 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       this.setOutputNode(outputNode);
 
       const nodeData = inputNode.serialize();
-      outputNode.setInputData(nodeData);
-      outputNode.setOutputData(nodeData);
+      outputNode.setInputData(nodeData.inputs);
+      outputNode.setInputDataAcess(nodeData.inputAccess);
+      outputNode.setOutputData(nodeData.outputs);
       outputNode.addInputNodes(nodeData.inputNodes);
       outputNode.addOutputNodes(nodeData.outputNodes);
     },
 
-    __buildInputSettings: function() {
+    __buildOutputSettings: function() {
       const settingsLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
 
       const innerNodes = this.getOutputNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
-        innerNode.bind("label", innerSettings, "legend");
-        const propsWidget = innerNode.getPropsWidget();
-        if (propsWidget && Object.keys(innerNode.getInputs()).length) {
-          innerSettings.add(propsWidget);
+        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
+        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
+          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
+            maxWidth: 700
+          });
+          innerNode.bind("label", innerSettings, "legend");
+          innerSettings.add(propsWidgetEditor);
           settingsLayout.add(innerSettings);
         }
       });
