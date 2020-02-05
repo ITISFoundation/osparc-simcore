@@ -19,11 +19,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   /**
    * create a page for the View Tab with the given title
    *
-   * @param structure {Object} form structure
    * @param form {osparc.component.form.Auto} form widget to embedd
    * @param node {osparc.data.model.Node} Node owning the widget
    */
-  construct: function(structure, form, node) {
+  construct: function(form, node) {
     if (node) {
       this.setNode(node);
     } else {
