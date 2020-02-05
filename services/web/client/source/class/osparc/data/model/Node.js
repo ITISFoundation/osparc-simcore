@@ -531,8 +531,10 @@ qx.Class.define("osparc.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSettings(filteredInputs);
-      this.__addSettingsEditor(filteredInputs);
+      if (Object.keys(filteredInputs).length) {
+        this.__addSettings(filteredInputs);
+        this.__addSettingsEditor(filteredInputs);
+      }
     },
 
     __addOutputs: function(outputs) {

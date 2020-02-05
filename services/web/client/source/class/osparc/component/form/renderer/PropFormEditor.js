@@ -134,7 +134,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __addAccessLevelRBs: function() {
       Object.keys(this._form.getControls()).forEach(portId => {
-        this.__addAccessLevelRBs(portId);
+        this.__addAccessLevelRB(portId);
       });
     },
 
