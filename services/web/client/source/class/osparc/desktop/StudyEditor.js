@@ -168,9 +168,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          const lastCurrentId = this.__currentNodeId;
-          this.nodeSelected(nodeId);
-
           const exportGroupView = new osparc.component.export.ExportGroup(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
@@ -191,7 +188,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             window.close();
           }, this);
-          window.addListener("close", () => this.nodeSelected(lastCurrentId));
         }
       });
 
