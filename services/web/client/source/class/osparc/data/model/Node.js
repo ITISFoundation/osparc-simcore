@@ -485,14 +485,44 @@ qx.Class.define("osparc.data.model.Node", {
       const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("linkModified", e => {
-        const portId = e.getData();
+        const linkModified = e.getData();
+        const portId = linkModified.portId;
         this.__retrieveInputs(portId);
       }, this);
     },
 
     __addSettingsEditor: function(inputs) {
+      const propsWidget = this.getPropsWidget();
       const form = new osparc.component.form.Auto(inputs);
+      form.setData(this.__settingsForm.getData());
       const propsWidgetEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
+      this.__settingsForm.addListener("changeData", e => {
+        // apply data
+        const data = this.__settingsForm.getData();
+        form.setData(data);
+
+        // override links
+        const ctrlsLinks = propsWidget.getControlLinks();
+        for (let portId in ctrlsLinks) {
+          const ctrlLink = propsWidget.getControlLink(portId);
+          if (ctrlLink.getValue() !== null) {
+            const linkValue = ctrlLink.getValue();
+            form.getControl(portId).setValue(linkValue);
+          }
+        }
+      }, this);
+      propsWidget.addListener("linkModified", e => {
+        const linkModified = e.getData();
+        const portId = linkModified.portId;
+        const added = linkModified.added;
+        let newValue = null;
+        if (added) {
+          newValue = propsWidget.getControlLink(portId).getValue();
+        } else {
+          newValue = this.__settingsForm.getControl(portId).getValue();
+        }
+        form.getControl(portId).setValue(newValue);
+      }, this);
       this.setPropsWidgetEditor(propsWidgetEditor);
     },
 

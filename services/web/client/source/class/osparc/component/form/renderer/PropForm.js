@@ -227,7 +227,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this._gridPos.ctrlField
         });
 
-        this.fireDataEvent("linkModified", portId);
+        const linkModified = {
+          portId,
+          added: true
+        };
+        this.fireDataEvent("linkModified", linkModified);
       }
     },
 
@@ -246,7 +250,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             column: layoutProps.column
           });
 
-          this.fireDataEvent("linkModified", portId);
+          const linkModified = {
+            portId,
+            added: false
+          };
+          this.fireDataEvent("linkModified", linkModified);
         }
       }
     },
@@ -426,6 +434,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
+    getControlLinks: function() {
+      return this.__ctrlLinkMap;
+    },
 
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
