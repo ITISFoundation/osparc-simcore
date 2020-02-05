@@ -46,7 +46,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   events: {
-    "dataFieldModified": "qx.event.type.Data"
+    "linkModified": "qx.event.type.Data"
   },
 
   properties: {
@@ -227,7 +227,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this._gridPos.ctrlField
         });
 
-        this.fireDataEvent("dataFieldModified", portId);
+        this.fireDataEvent("linkModified", portId);
       }
     },
 
@@ -246,7 +246,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             column: layoutProps.column
           });
 
-          this.fireDataEvent("dataFieldModified", portId);
+          this.fireDataEvent("linkModified", portId);
         }
       }
     },

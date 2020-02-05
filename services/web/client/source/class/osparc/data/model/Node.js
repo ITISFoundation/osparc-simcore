@@ -484,7 +484,7 @@ qx.Class.define("osparc.data.model.Node", {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
       const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("dataFieldModified", e => {
+      propsWidget.addListener("linkModified", e => {
         const portId = e.getData();
         this.__retrieveInputs(portId);
       }, this);
