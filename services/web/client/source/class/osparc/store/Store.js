@@ -202,7 +202,7 @@ qx.Class.define("osparc.store.Store", {
         } else if (Array.isArray(resources)) {
           propertyArray = resources;
         }
-        propertyArray.map(propName => this.reset(propName));
+        propertyArray.forEach(propName => this.reset(propName));
       }
     },
 

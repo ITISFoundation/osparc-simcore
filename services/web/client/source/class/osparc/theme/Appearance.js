@@ -74,7 +74,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "window", // redirect kids to window/kid
       style: function(states) {
         return {
-          backgroundColor: "background-selected-dark",
+          backgroundColor: states.selected ? "node-selected-background" : "background-selected-dark",
           decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
@@ -87,7 +87,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           padding: [0, 3, 0, 3],
           minHeight: 20,
-          backgroundColor: "background-selected-dark",
+          backgroundColor: "transparent",
           decorator: "workbench-small-cap-captionbar"
         };
       }
