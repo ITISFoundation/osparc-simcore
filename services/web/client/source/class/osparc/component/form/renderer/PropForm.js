@@ -457,7 +457,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
-      this._form.getControl(toPortId).setEnabled(false);
+      this.getControlLink(toPortId).setEnabled(false);
       this._form.getControl(toPortId).link = {
         nodeUuid: fromNodeId,
         output: fromPortId
@@ -486,7 +486,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     removeLink: function(toPortId) {
-      this._form.getControl(toPortId).setEnabled(true);
+      this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId).link;
       }
