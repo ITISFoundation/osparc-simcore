@@ -86,16 +86,12 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const viewRadioGroup = new qx.ui.form.RadioGroup();
       viewRadioGroup.add(workbenchViewButton, settingsViewButton);
 
-      this.addSpacer();
-
       const groupCtrls = new qx.ui.toolbar.Part();
       const groupButton = this.__groupButton = this.__createGroupButton();
       const ungroupButton = this.__ungroupButton = this.__createUngroupButton();
       groupCtrls.add(groupButton);
       groupCtrls.add(ungroupButton);
       this.add(groupCtrls);
-
-      this.addSpacer();
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
