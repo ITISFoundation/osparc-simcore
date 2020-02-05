@@ -33,9 +33,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     this.base(arguments, form);
 
     this.__ctrlLinkMap = {};
-    for (let key in structure) {
-      this.__addLinkCtrls(key);
-    }
+    this.__addLinkCtrls();
 
     const fl = this._getLayout();
     // have plenty of space for input, not for the labels
@@ -434,12 +432,18 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return this.__ctrlLinkMap[key];
     },
 
-    __addLinkCtrls: function(key) {
-      let controlLink = new qx.ui.form.TextField().set({
+    __addLinkCtrls: function() {
+      Object.keys(this._form.getControls()).forEach(portId => {
+        this.__addLinkCtrl(portId);
+      });
+    },
+
+    __addLinkCtrl: function(portId) {
+      const controlLink = new qx.ui.form.TextField().set({
         enabled: false
       });
-      controlLink.key = key;
-      this.__ctrlLinkMap[key] = controlLink;
+      controlLink.key = portId;
+      this.__ctrlLinkMap[portId] = controlLink;
     },
 
     __isPortAvailable: function(portId) {

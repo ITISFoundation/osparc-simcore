@@ -137,38 +137,41 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     },
 
     __addAccessLevelRBs: function() {
-      const ctrls = this._form.getControls();
-      for (const portId in ctrls) {
-        const rbHidden = new qx.ui.form.RadioButton(this.tr("Not Visible"));
-        rbHidden.accessLevel = "Invisible";
-        rbHidden.portId = portId;
-        const rbReadOnly = new qx.ui.form.RadioButton(this.tr("Read Only"));
-        rbReadOnly.accessLevel = "ReadOnly";
-        rbReadOnly.portId = portId;
-        const rbEditable = new qx.ui.form.RadioButton(this.tr("Editable"));
-        rbEditable.accessLevel = "ReadAndWrite";
-        rbEditable.portId = portId;
+      Object.keys(this._form.getControls()).forEach(portId => {
+        this.__addAccessLevelRBs(portId);
+      });
+    },
 
-        const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-        groupBox.add(rbHidden);
-        groupBox.add(rbReadOnly);
-        groupBox.add(rbEditable);
+    __addAccessLevelRB: function(portId) {
+      const rbHidden = new qx.ui.form.RadioButton(this.tr("Not Visible"));
+      rbHidden.accessLevel = "Invisible";
+      rbHidden.portId = portId;
+      const rbReadOnly = new qx.ui.form.RadioButton(this.tr("Read Only"));
+      rbReadOnly.accessLevel = "ReadOnly";
+      rbReadOnly.portId = portId;
+      const rbEditable = new qx.ui.form.RadioButton(this.tr("Editable"));
+      rbEditable.accessLevel = "ReadAndWrite";
+      rbEditable.portId = portId;
 
-        const group = new qx.ui.form.RadioGroup(rbHidden, rbReadOnly, rbEditable);
-        group.setSelection([rbEditable]);
-        this.__ctrlRBsMap[portId] = group;
-        group.addListener("changeSelection", this.__onAccessLevelChanged, this);
+      const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      groupBox.add(rbHidden);
+      groupBox.add(rbReadOnly);
+      groupBox.add(rbEditable);
 
-        const ctrlField = this.__getCtrlFieldChild(portId);
-        if (ctrlField) {
-          const idx = ctrlField.idx;
-          const child = ctrlField.child;
-          const layoutProps = child.getLayoutProperties();
-          this._addAt(groupBox, idx, {
-            row: layoutProps.row,
-            column: this._gridPos.accessLevel
-          });
-        }
+      const group = new qx.ui.form.RadioGroup(rbHidden, rbReadOnly, rbEditable);
+      group.setSelection([rbEditable]);
+      this.__ctrlRBsMap[portId] = group;
+      group.addListener("changeSelection", this.__onAccessLevelChanged, this);
+
+      const ctrlField = this.__getCtrlFieldChild(portId);
+      if (ctrlField) {
+        const idx = ctrlField.idx;
+        const child = ctrlField.child;
+        const layoutProps = child.getLayoutProperties();
+        this._addAt(groupBox, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.accessLevel
+        });
       }
     },
 
