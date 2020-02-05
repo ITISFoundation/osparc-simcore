@@ -69,6 +69,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __scrollContainer: null,
     __workbenchUI: null,
     __nodeView: null,
+    __groupNodeView: null,
     __nodesTree: null,
     __extraView: null,
     __loggerView: null,
@@ -110,7 +111,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
       this.showInMainView(workbenchUI, study.getUuid());
 
-      this.__nodeView = new osparc.component.widget.NodeView().set({
+      this.__nodeView = new osparc.component.node.NodeView().set({
+        minHeight: 200
+      });
+
+      this.__groupNodeView = new osparc.component.node.GroupNodeView().set({
         minHeight: 200
       });
     },
@@ -195,6 +200,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.__nodeView) {
         this.__nodeView.restoreIFrame();
       }
+      if (this.__groupNodeView) {
+        this.__groupNodeView.restoreIFrame();
+      }
       this.__currentNodeId = nodeId;
 
       const study = this.getStudy();
@@ -207,12 +215,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (node.isFilePicker()) {
           this.__openFilePicker(node);
         } else if (node.isContainer()) {
+          this.__groupNodeView.setNode(node);
           this.showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
+          this.__groupNodeView.populateLayout();
         } else {
-          this.showInMainView(this.__nodeView, nodeId);
           this.__nodeView.setNode(node);
-          this.__nodeView.buildLayout();
+          this.showInMainView(this.__nodeView, nodeId);
+          this.__nodeView.populateLayout();
         }
       }
     },
@@ -306,6 +316,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
 
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.setWorkbenchVisibility(widget === this.__workbenchUI);
+      controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
+
       const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
@@ -337,7 +351,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showWorkbenchUI: function() {
-      if (this.__workbenchUI.getCurrentModel().getNodeId && this.__currentNodeId === this.__workbenchUI.getCurrentModel().getNodeId()) {
+      const workbench = this.getStudy().getWorkbench();
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      if (currentNode === this.__workbenchUI.getCurrentModel()) {
         this.showInMainView(this.__workbenchUI, this.__currentNodeId);
       } else {
         osparc.component.message.FlashMessenger.getInstance().logAs("No Workbench view for this node", "ERROR");
@@ -345,7 +361,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showSettings: function() {
-      if (this.__nodeView.isPropertyInitialized("node") && this.__currentNodeId === this.__nodeView.getNode().getNodeId()) {
+      const workbench = this.getStudy().getWorkbench();
+      const currentNode = workbench.getNode(this.__currentNodeId);
+      if (this.__groupNodeView.isPropertyInitialized("node") && currentNode === this.__groupNodeView.getNode()) {
+        this.showInMainView(this.__groupNodeView, this.__currentNodeId);
+      } else if (this.__nodeView.isPropertyInitialized("node") && currentNode === this.__nodeView.getNode()) {
         this.showInMainView(this.__nodeView, this.__currentNodeId);
       } else {
         osparc.component.message.FlashMessenger.getInstance().logAs("No Settings view for this node", "ERROR");
