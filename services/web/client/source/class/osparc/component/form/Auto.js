@@ -188,7 +188,7 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
-        this.getControl(key).setEnabled(true);
+        // this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
         let value = data[key];
