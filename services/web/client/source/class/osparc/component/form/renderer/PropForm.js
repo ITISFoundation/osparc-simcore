@@ -201,6 +201,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return this.__getLayoutChild(portId, this._gridPos.ctrlField);
     },
 
+    __getRetrieveFieldChild: function(portId) {
+      return this.__getLayoutChild(portId, this._gridPos.retrieveStatus);
+    },
+
     linkAdded: function(portId) {
       let data = this.__getCtrlFieldChild(portId);
       if (data) {
@@ -512,6 +516,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const controlLink = this.__getCtrlFieldChild(key);
         if (controlLink) {
           this.__changeControlVisibility(controlLink.child, data[key]);
+        }
+
+        const retrieveField = this.__getRetrieveFieldChild(key);
+        if (retrieveField) {
+          this.__changeControlVisibility(retrieveField.child, data[key]);
         }
       }
     },
