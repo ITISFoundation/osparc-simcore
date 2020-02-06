@@ -500,28 +500,20 @@ qx.Class.define("osparc.data.model.Node", {
         // apply data
         const data = this.__settingsForm.getData();
         form.setData(data);
-
-        // override links
-        const ctrlsLinks = propsWidget.getControlLinks();
-        for (let portId in ctrlsLinks) {
-          const ctrlLink = propsWidget.getControlLink(portId);
-          if (ctrlLink.getValue() !== null) {
-            const linkValue = ctrlLink.getValue();
-            form.getControl(portId).setValue(linkValue);
-          }
-        }
       }, this);
       propsWidget.addListener("linkModified", e => {
         const linkModified = e.getData();
         const portId = linkModified.portId;
         const added = linkModified.added;
-        let newValue = null;
         if (added) {
-          newValue = propsWidget.getControlLink(portId).getValue();
+          const newValue = propsWidget.getControlLink(portId).getValue();
+          const controlLink = new qx.ui.form.TextField(newValue).set({
+            enabled: false
+          });
+          propsWidgetEditor.linkAdded(portId, controlLink);
         } else {
-          newValue = this.__settingsForm.getControl(portId).getValue();
+          propsWidgetEditor.linkRemoved(portId);
         }
-        form.getControl(portId).setValue(newValue);
       }, this);
       this.setPropsWidgetEditor(propsWidgetEditor);
     },

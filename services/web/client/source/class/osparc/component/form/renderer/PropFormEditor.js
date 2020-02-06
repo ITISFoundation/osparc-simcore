@@ -132,6 +132,35 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       }
     },
 
+    linkAdded: function(portId, controlLink) {
+      let data = this.__getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        let idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        controlLink.oldCtrl = child;
+        this._removeAt(idx);
+        this._addAt(controlLink, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.ctrlField
+        });
+      }
+    },
+
+    linkRemoved: function(portId) {
+      let data = this.__getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        let idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        this._removeAt(idx);
+        this._addAt(child.oldCtrl, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.ctrlField
+        });
+      }
+    },
+
     __addAccessLevelRBs: function() {
       Object.keys(this._form.getControls()).forEach(portId => {
         this.__addAccessLevelRB(portId);
