@@ -201,9 +201,9 @@ qx.Class.define("osparc.utils.Services", {
         description: "File Picker",
         authors: [{
           name: "Odei Maiz",
-          email: "maiz@itis.ethz.ch"
+          email: "maiz@itis.swiss"
         }],
-        contact: "maiz@itis.ethz.ch",
+        contact: "maiz@itis.swiss",
         inputs: {},
         outputs: {
           outFile: {
@@ -223,6 +223,11 @@ qx.Class.define("osparc.utils.Services", {
         type: "group",
         name: "Group",
         description: "Group of nodes",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.swiss"
+        }],
+        contact: "maiz@itis.swiss",
         inputs: {},
         outputs: {}
       };
