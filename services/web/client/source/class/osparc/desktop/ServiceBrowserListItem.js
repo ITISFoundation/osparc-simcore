@@ -131,7 +131,9 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
       let control;
       switch (id) {
         case "title":
-          control = new osparc.ui.basic.Label(14, true);
+          control = new qx.ui.basic.Label().set({
+            font: osparc.utils.Utils.getFont(14, true)
+          });
           this._add(control, {
             row: 0,
             column: 0
