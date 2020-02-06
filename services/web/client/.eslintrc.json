@@ -23,7 +23,15 @@
         "enforceInMethodNames": true
       }
     ],
-    "no-warning-comments": "off"
+    "no-warning-comments": "off",
+    "no-confusing-arrow": "off",
+    "object-curly-newline": "off",
+    "newline-per-chained-call": [
+      "error",
+      {
+        "ignoreChainWithDepth": 3
+      }
+    ]
   },
   "env": {
     "browser": true

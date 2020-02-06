@@ -77,12 +77,13 @@ qx.Class.define("osparc.About", {
         entryLabel = new qx.ui.basic.Label(item);
       }
       entryLayout.set({
-        font: osparc.ui.basic.Label.getFont(14, true)
+        font: osparc.utils.Utils.getFont(14, true)
       });
       entryLayout.add(entryLabel);
 
-      let entryVersion = new osparc.ui.basic.Label(14).set({
-        value: vers
+      let entryVersion = new qx.ui.basic.Label().set({
+        value: vers,
+        font: osparc.utils.Utils.getFont(14)
       });
       entryLayout.add(entryVersion);
 

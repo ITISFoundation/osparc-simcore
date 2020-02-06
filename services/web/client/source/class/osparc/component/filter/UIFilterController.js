@@ -34,10 +34,13 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
       this.getInstance().registerFilterContainer(containerId, container);
     },
     resetGroup: function(groupId) {
-      this.getInstance().resetFilterGroup(groupId);
+      this.getInstance().resetGroup(groupId);
     },
     setContainerVisibility: function(containerId, visibility) {
       this.getInstance().setFilterContainerVisibility(containerId, visibility);
+    },
+    dispatch: function(groupId) {
+      this.getInstance().dispatch(groupId);
     }
   },
 
@@ -123,7 +126,19 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
       this.__state[groupId] = this.__state[groupId] || {};
       this.__state[groupId][filterId] = data;
       // Dispatch relevant message
-      qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(groupId), this.__state[groupId]);
+      this.dispatch(groupId);
+    },
+
+    /**
+     * This function actually dispatches the data for a filter group to apply filtering. It gets called
+     * whenever a filter changes or can also be programmatically called.
+     *
+     * @param {String} groupId Id of the filtering group whose data needs to be dispatched.
+     */
+    dispatch: function(groupId) {
+      if (this.__state && this.__state[groupId]) {
+        qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(groupId), this.__state[groupId]);
+      }
     }
   }
 });

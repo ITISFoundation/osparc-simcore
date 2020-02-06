@@ -5,6 +5,9 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * A singleton window is a type of window that can only have one instance.
+ */
 qx.Class.define("osparc.ui.window.SingletonWindow", {
   extend: qx.ui.window.Window,
 

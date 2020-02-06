@@ -22,19 +22,20 @@
 */
 
 qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, this.tr("Preferences"));
+    this.base(arguments, "preferences", this.tr("Preferences"));
     this.set({
-      layout: new qx.ui.layout.VBox(10),
+      layout: new qx.ui.layout.Grow(),
       modal: true,
-      width: 500,
-      height: 500 * 1.2,
+      width: 550,
+      height: 550 * 1.2,
       showClose: true,
       showMaximize: false,
       showMinimize: false,
-      resizable: false
+      resizable: false,
+      appearance: "service-window"
     });
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "preferencesWindowCloseBtn");
@@ -58,9 +59,9 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
     tabView.add(expPage);
 
-    this.add(tabView, {
-      flex: 1
-    });
-  }
+    const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+    tabView.add(tagsPage);
 
+    this.add(tabView);
+  }
 });

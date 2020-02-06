@@ -30,6 +30,7 @@ from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .tags import setup_tags
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ def create_application(config: Dict) -> web.Application:
     setup_activity(app)
     setup_app_proxy(app) # TODO: under development!!!
     setup_resource_manager(app)
+    setup_tags(app)
 
     return app
 

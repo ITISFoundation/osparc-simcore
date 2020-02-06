@@ -30,6 +30,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 from utils_assert import assert_status
 from utils_login import LoggedUser
@@ -63,6 +64,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_resource_manager(app)
     setup_sockets(app)
     setup_director(app)
+    setup_tags(app)
     assert setup_projects(app)
 
     # server and client
@@ -728,3 +730,48 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
     else:
         mock_director_api_stop_services.assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role,expected", [
+    (UserRole.USER, web.HTTPOk)
+])
+async def test_tags_to_studies(client, logged_user, user_project, expected, test_tags_data):
+    # Add test tags
+    tags = test_tags_data
+    added_tags = []
+    for tag in tags:
+        url = client.app.router["create_tag"].url_for()
+        resp = await client.post(url, json=tag)
+        added_tag, _ = await assert_status(resp, expected)
+        added_tags.append(added_tag)
+        # Add tag to study
+        url = client.app.router["add_tag"].url_for(study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id")))
+        resp = await client.put(url)
+        data, _ = await assert_status(resp, expected)
+        # Tag is included in response
+        assert added_tag.get("id") in data.get("tags")
+
+    # Delete tag0
+    url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
+    resp = await client.delete(url)
+    await assert_status(resp, web.HTTPNoContent)
+    # Get project and check that tag is no longer there
+    url = client.app.router["get_project"].url_for(project_id=str(user_project.get("uuid")))
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, expected)
+    assert added_tags[0].get("id") not in data.get("tags")
+
+    #Remove tag1 from project
+    url = client.app.router["remove_tag"].url_for(study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id")))
+    resp = await client.delete(url)
+    await assert_status(resp, expected)
+    # Get project and check that tag is no longer there
+    url = client.app.router["get_project"].url_for(project_id=str(user_project.get("uuid")))
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, expected)
+    assert added_tags[1].get("id") not in data.get("tags")
+
+    # Delete tag1
+    url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
+    resp = await client.delete(url)
+    await assert_status(resp, web.HTTPNoContent)

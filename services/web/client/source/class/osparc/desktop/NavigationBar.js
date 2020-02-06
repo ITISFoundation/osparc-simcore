@@ -261,15 +261,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __onOpenAccountSettings: function() {
-      if (!this.__preferencesWin) {
-        this.__preferencesWin = new osparc.desktop.preferences.PreferencesWindow();
-      }
-
-      let win = this.__preferencesWin;
-      if (win) {
-        win.center();
-        win.open();
-      }
+      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
+      preferencesWindow.center();
+      preferencesWindow.open();
     },
 
     __openActivityManager: function() {

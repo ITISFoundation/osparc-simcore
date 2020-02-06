@@ -85,6 +85,11 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    tags: {
+      check: "Array",
+      init: [],
+      event: "changeTags"
+    },
     statics: {
       check: "Object",
       init: {}
@@ -118,7 +123,7 @@ qx.Class.define("osparc.store.Store", {
             });
             this.set(resource, newStored);
           } else {
-            stored.push(data);
+            this.set(resource, [...stored, data]);
           }
         }
       } else {
@@ -138,7 +143,7 @@ qx.Class.define("osparc.store.Store", {
         const item = stored.find(element => element[idField] === id);
         if (item) {
           const index = stored.indexOf(item);
-          stored.splice(index, 1);
+          this.set(resource, [...stored.slice(0, index), ...stored.slice(index + 1)]);
         }
       } else {
         this.set(resource, {});

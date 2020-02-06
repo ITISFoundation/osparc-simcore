@@ -380,3 +380,25 @@ async def delete_node(request: web.Request) -> web.Response:
     await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
 
     raise web.HTTPNoContent(content_type='application/json')
+
+
+@login_required
+async def add_tag(request: web.Request):
+    uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
+    tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
+    return await db.add_tag(
+        project_uuid=study_uuid,
+        user_id=uid,
+        tag_id=int(tag_id)
+    )
+            
+            
+@login_required
+async def remove_tag(request: web.Request):
+    uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
+    tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
+    return await db.remove_tag(
+        project_uuid=study_uuid,
+        user_id=uid,
+        tag_id=int(tag_id)
+    )
