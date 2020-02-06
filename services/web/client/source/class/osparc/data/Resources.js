@@ -158,6 +158,38 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
+       */
+      servicesTodo: {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/services"
+          }
+        }
+      },
+      /*
+       * GROUPS
+       */
+      groups: {
+        usesCache: true,
+        endpoints: {
+          post: {
+            method: "POST",
+            url: statics.API + "/groups"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/groups"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/groups/{serviceId}"
+          }
+        }
+      },
+      /*
        * CONFIG
        */
       config: {
@@ -231,18 +263,6 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/"
-          }
-        }
-      },
-      /*
-       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
-       */
-      servicesTodo: {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/services"
           }
         }
       },
