@@ -77,3 +77,8 @@ def project_schema_file(api_version_prefix) -> Path:
 def activity_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "test_activity_data.json").open() as fp:
         yield json.load(fp)
+
+@pytest.fixture
+def test_tags_data(fake_data_dir: Path) -> Dict:
+    with (fake_data_dir / 'test_tags_data.json').open() as fp:
+        yield json.load(fp).get('added_tags')

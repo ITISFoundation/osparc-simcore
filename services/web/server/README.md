@@ -20,12 +20,11 @@ cd path/to/osparc-simcore
 python3 -m venv .venv
 source .venv/bin/activate
 
-# installs all dependencies as well as web/server package in edit-mode
+# instals all dependencies as well as web/server package in edit-mode
 cd services/web/server
 pip3 install -r requirements/dev.txt
 
 # runs server.__main__.py e.g.
-
 simcore-service-webserver --help
 ```
 
@@ -80,5 +79,15 @@ DEBUG:asyncio:Using selector: EpollSelector
 ```
 
 ### RestAPI doc & test
+
+#### Validating and bundling the OAS (OpenAPI specification)
+```
+make openapi-specs
+```
+Note that if you are about to modify some JSONSchema specs, you will first have to have the converting tool installed:
+```
+cd {base_path}/scripts/json-schema-to-openapi-schema
+make
+```
 
 To access the apidoc page, open http://localhost:8080/apidoc/ and explore http://localhost:8080/apidoc/swagger.yaml?spec=/v1 (i.e. add this in explore entry)

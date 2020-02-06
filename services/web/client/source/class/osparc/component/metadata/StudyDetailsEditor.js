@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this._setLayout(new qx.ui.layout.Grow());
 
     this.__isTemplate = isTemplate;
+    this.__selectedTags = study.tags;
     this.__model = qx.data.marshal.Json.createModel(study);
 
     this.__stack = new qx.ui.container.Stack();
@@ -50,6 +51,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   events: {
     updatedStudy: "qx.event.type.Data",
     updatedTemplate: "qx.event.type.Data",
+    updateTags: "qx.event.type.Data",
     closed: "qx.event.type.Event",
     openedStudy: "qx.event.type.Event"
   },
@@ -69,6 +71,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __model: null,
     __isTemplate: null,
     __fields: null,
+    __selectedTags: null,
 
     __createDisplayView: function(study) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -91,14 +94,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       });
 
       const openButton = new qx.ui.form.Button("Open").set({
-        appearance: "md-button"
+        appearance: "lg-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
       openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
       buttonsLayout.add(openButton);
 
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
-        appearance: "md-button",
+        appearance: "lg-button",
         visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
@@ -111,7 +114,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
-          appearance: "md-button"
+          appearance: "lg-button"
         });
         osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {
@@ -155,7 +158,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       };
 
       const modeButton = new qx.ui.form.Button("Save", "@FontAwesome5Solid/save/16").set({
-        appearance: "md-button"
+        appearance: "lg-button"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "studyDetailsEditorSaveBtn");
       modeButton.addListener("execute", e => {
@@ -166,7 +169,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         this.__saveStudy(btn);
       }, this);
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
-        appearance: "md-button",
+        appearance: "lg-button",
         enabled: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate)
       });
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
@@ -193,12 +196,55 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
       osparc.utils.Utils.setIdToWidget(thumbnail, "studyDetailsEditorThumbFld");
       editView.add(thumbnail);
-      editView.add(buttons);
+
+      editView.add(this.__tagsSection());
 
       buttons.add(modeButton);
       buttons.add(cancelButton);
+      editView.add(buttons);
 
       return editView;
+    },
+
+    __tagsSection: function() {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      }));
+      header.add(new qx.ui.basic.Label(this.tr("Tags")).set({
+        font: "text-14"
+      }));
+
+      const editButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
+        appearance: "link-button"
+      });
+      editButton.addListener("execute", () => {
+        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__model.getUuid());
+        tagManager.addListener("changeSelected", evt => {
+          this.__selectedTags = evt.getData().selected;
+        }, this);
+        tagManager.addListener("close", () => {
+          this.__renderTags();
+          this.fireDataEvent("updateTags", this.__model.getUuid());
+        }, this);
+      });
+      header.add(editButton);
+
+      const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      tagSection.add(header);
+      tagSection.add(this.__renderTags());
+      osparc.store.Store.getInstance().addListener("changeTags", () => this.__renderTags(), this);
+      return tagSection;
+    },
+
+    __renderTags: function() {
+      this.__tagsContainer = this.__tagsContainer || new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this.__tagsContainer.removeAll();
+      this.__tagsContainer.setMarginTop(5);
+      osparc.store.Store.getInstance().getTags().filter(tag => this.__selectedTags.includes(tag.id))
+        .forEach(selectedTag => {
+          this.__tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+        });
+      return this.__tagsContainer;
     },
 
     __saveStudy: function(btn) {

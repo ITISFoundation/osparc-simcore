@@ -112,7 +112,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     __createServicesListLayout: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      const serviceFilters = this.__serviceFilters = new osparc.desktop.ServiceFilters("serviceBrowser");
+      const serviceFilters = this.__serviceFilters = new osparc.component.filter.group.ServiceFilterGroup("serviceBrowser");
       servicesLayout.add(serviceFilters);
 
       const servicesList = this.__servicesList = new qx.ui.form.List().set({

@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __initDefault: function() {
       const filterCtrls = new qx.ui.toolbar.Part();
-      const serviceFilters = this.__serviceFilters = new osparc.desktop.ServiceFilters("workbench");
+      const serviceFilters = this.__serviceFilters = new osparc.component.filter.group.ServiceFilterGroup("workbench");
       osparc.component.filter.UIFilterController.getInstance().registerContainer("workbench", serviceFilters);
       filterCtrls.add(serviceFilters);
       this.add(filterCtrls);
