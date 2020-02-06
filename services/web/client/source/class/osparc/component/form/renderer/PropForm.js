@@ -247,7 +247,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           const field = new osparc.component.form.FieldWHint(null, item.description, item);
           this._addAt(field, idx, {
             row: layoutProps.row,
-            column: layoutProps.column
+            column: this._gridPos.ctrlField
           });
 
           const linkModified = {
