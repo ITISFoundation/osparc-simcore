@@ -166,26 +166,6 @@ qx.Class.define("osparc.utils.Services", {
       return false;
     },
 
-    filterOutUnavailableGroups: function(listOfServices) {
-      const filteredServices = [];
-      for (let i=0; i<listOfServices.length; i++) {
-        const service = listOfServices[i];
-        if ("innerNodes" in service) {
-          let allIn = true;
-          const innerServices = service["innerNodes"];
-          for (const innerService in innerServices) {
-            allIn &= this.isServiceInList(listOfServices, innerServices[innerService].key);
-          }
-          if (allIn) {
-            filteredServices.push(service);
-          }
-        } else {
-          filteredServices.push(service);
-        }
-      }
-      return filteredServices;
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {

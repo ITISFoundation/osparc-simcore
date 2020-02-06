@@ -204,7 +204,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       if (services === null) {
         store.addListener("servicesRegistered", e => {
           const data = e.getData();
-          this.__addNewData(data["services"]);
+          this.__addNewData(data);
         }, this);
       } else {
         this.__addNewData(services);

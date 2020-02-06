@@ -189,12 +189,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.addNode(node, parent);
 
       const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
-        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
-        for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node);
-        }
-      }
       if (metaData && Object.prototype.hasOwnProperty.call(metaData, "workbench")) {
         this.__createInnerWorkbench(node, metaData);
       }

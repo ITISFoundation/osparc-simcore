@@ -157,27 +157,19 @@ qx.Class.define("osparc.store.Store", {
     getServices: function(reload) {
       if (!osparc.utils.Services.reloadingServices && (reload || Object.keys(osparc.utils.Services.servicesCached).length === 0)) {
         osparc.utils.Services.reloadingServices = true;
+        const allServices = osparc.utils.Services.getBuiltInServices();
         osparc.data.Resources.get("servicesTodo", null, !reload)
           .then(data => {
-            const allServices = data.concat(osparc.utils.Services.getBuiltInServices());
-            const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
-            const services = osparc.utils.Services.convertArrayToObject(filteredServices);
-            osparc.utils.Services.servicesToCache(services, true);
-            this.fireDataEvent("servicesRegistered", {
-              services,
-              fromServer: true
-            });
+            allServices.push(...data);
           })
           .catch(err => {
             console.error("getServices failed", err);
-            const allServices = osparc.dev.fake.Data.getFakeServices().concat(osparc.utils.Services.getBuiltInServices());
-            const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
-            const services = osparc.utils.Services.convertArrayToObject(filteredServices);
-            osparc.utils.Services.servicesToCache(services, false);
-            this.fireDataEvent("servicesRegistered", {
-              services,
-              fromServer: false
-            });
+            allServices.push(...osparc.dev.fake.Data.getFakeServices());
+          })
+          .finally(() => {
+            const services = osparc.utils.Services.convertArrayToObject(allServices);
+            osparc.utils.Services.servicesToCache(services, true);
+            this.fireDataEvent("servicesRegistered", services);
           });
         return null;
       }
