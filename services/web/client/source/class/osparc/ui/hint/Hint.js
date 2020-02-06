@@ -193,7 +193,11 @@ qx.Class.define("osparc.ui.hint.Hint", {
     __addListeners: function(events, skipThis = false) {
       let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
       while (widget && widget !== this.__root) {
-        events.map(e => widget.addListener(e, this.__elementVisibilityHandler, this));
+        events.forEach(e => {
+          if (qx.util.OOUtil.supportsEvent(widget, e)) {
+            widget.addListener(e, this.__elementVisibilityHandler, this);
+          }
+        });
         widget = widget.getLayoutParent();
       }
     },
@@ -201,7 +205,11 @@ qx.Class.define("osparc.ui.hint.Hint", {
     __removeListeners: function(events, skipThis = false) {
       let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
       while (widget && widget !== this.__root) {
-        events.map(e => widget.removeListener(e, this.__elementVisibilityHandler));
+        events.forEach(e => {
+          if (qx.util.OOUtil.supportsEvent(widget, e)) {
+            widget.removeListener(e, this.__elementVisibilityHandler);
+          }
+        });
         widget = widget.getLayoutParent();
       }
     },
