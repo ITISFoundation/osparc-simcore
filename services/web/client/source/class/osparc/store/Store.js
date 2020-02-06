@@ -84,6 +84,10 @@ qx.Class.define("osparc.store.Store", {
     storageLocations: {
       check: "Array",
       init: []
+    },
+    statics: {
+      check: "Object",
+      init: {}
     }
   },
 
@@ -193,7 +197,7 @@ qx.Class.define("osparc.store.Store", {
         } else if (Array.isArray(resources)) {
           propertyArray = resources;
         }
-        propertyArray.map(propName => this.reset(propName));
+        propertyArray.forEach(propName => this.reset(propName));
       }
     },
 

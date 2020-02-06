@@ -32,12 +32,13 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
   extend: qx.ui.basic.Label,
 
   construct: function(label, url) {
-    this.base(arguments, "<u>"+label+"</u>");
+    this.base(arguments, label);
 
     this.set({
       rich: true,
       cursor: "pointer",
-      url: url
+      url: url,
+      font: "link-label"
     });
 
     this.addListener("click", this._onClick);
