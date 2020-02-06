@@ -155,8 +155,7 @@ qx.Class.define("osparc.store.Store", {
      * @param {Boolean} reload ?
      */
     getServices: function(reload) {
-      if (!osparc.utils.Services.reloadingServices && (reload || Object.keys(osparc.utils.Services.servicesCached).length === 0)) {
-        osparc.utils.Services.reloadingServices = true;
+      return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
         osparc.data.Resources.get("servicesTodo", null, !reload)
           .then(data => {
@@ -170,10 +169,9 @@ qx.Class.define("osparc.store.Store", {
             const services = osparc.utils.Services.convertArrayToObject(allServices);
             osparc.utils.Services.servicesToCache(services, true);
             this.fireDataEvent("servicesRegistered", services);
+            resolve(osparc.utils.Services.servicesCached);
           });
-        return null;
-      }
-      return osparc.utils.Services.servicesCached;
+      });
     },
 
     /**

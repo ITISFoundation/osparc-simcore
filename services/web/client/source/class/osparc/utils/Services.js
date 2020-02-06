@@ -75,7 +75,6 @@ qx.Class.define("osparc.utils.Services", {
       }
     },
 
-    reloadingServices: false,
     servicesCached: {},
 
     getTypes: function() {
@@ -169,24 +168,11 @@ qx.Class.define("osparc.utils.Services", {
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        metaData = this.getFromObject(osparc.store.Store.getInstance().getServices(), key, version);
+        const services = osparc.utils.Services.servicesCached;
+        metaData = this.getFromObject(services, key, version);
         if (metaData) {
           metaData = osparc.utils.Utils.deepCloneObject(metaData);
-          if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
-            metaData.outputs["modeler"] = {
-              "label": "Modeler",
-              "displayOrder":0,
-              "description": "Modeler",
-              "type": "node-output-tree-api-v0.0.1"
-            };
-            delete metaData.outputs["output_1"];
-          }
           return metaData;
-        }
-        const allServices = osparc.dev.fake.Data.getFakeServices().concat(this.getBuiltInServices());
-        metaData = this.getFromArray(allServices, key, version);
-        if (metaData) {
-          return osparc.utils.Utils.deepCloneObject(metaData);
         }
       }
       return null;
@@ -249,7 +235,6 @@ qx.Class.define("osparc.utils.Services", {
       this.servicesCached = {};
       this.__addCategoryToServices(services);
       this.servicesCached = Object.assign(this.servicesCached, services);
-      this.reloadingServices = false;
     },
 
     __addCategoryToServices: function(services) {
