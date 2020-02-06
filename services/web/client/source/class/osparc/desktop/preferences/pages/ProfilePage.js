@@ -23,10 +23,10 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
-  extend:osparc.desktop.preferences.pages.BasePage,
+  extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/sliders-h/24";
+    const iconSrc = "@FontAwesome5Solid/user/24";
     const title = this.tr("Profile");
     this.base(arguments, title, iconSrc);
 

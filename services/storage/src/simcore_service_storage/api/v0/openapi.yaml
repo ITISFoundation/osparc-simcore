@@ -1932,6 +1932,10 @@ paths:
                                 'y':
                                   type: integer
                       additionalProperties: true
+                    tags:
+                      type: array
+                      items:
+                        type: integer
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2135,6 +2139,10 @@ paths:
                                 'y':
                                   type: integer
                       additionalProperties: true
+                    tags:
+                      type: array
+                      items:
+                        type: integer
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -2348,6 +2356,10 @@ paths:
                               'y':
                                 type: integer
                     additionalProperties: true
+                  tags:
+                    type: array
+                    items:
+                      type: integer
         default:
           description: Unexpected error
           content:
@@ -2661,6 +2673,10 @@ components:
                     'y':
                       type: integer
           additionalProperties: true
+        tags:
+          type: array
+          items:
+            type: integer
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'

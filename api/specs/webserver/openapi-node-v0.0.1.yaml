@@ -1,36 +1,4 @@
-openapi: 3.0.2
-servers: []
-
-info:
-  description: OSparc Node UI API
-  version: "0.0.1"
-  title: OSparc Node UI REST API
-  contact:
-    name: Tobias Oetiker
-    email: tobi@itis.swiss
-  license:
-    name: MIT
-    url: "https://opensource.org/licenses/MIT"
-
-tags:
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
-
 paths:
-  #/nodes/{nodeInstanceUUID}/mainUi:
-  #  get:
-  #    tags:
-  #      - node
-  #    summary: get a json description of the ui to use to present the node specific ui
-  #    # a custom json schema for this description has to be provided
-  #  post:
-  #    tags:
-  #      - node
-  #    summary: send data back. the protocol depends on the ui description.
-
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     get:
       tags:

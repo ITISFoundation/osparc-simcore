@@ -167,6 +167,30 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 0
       }
+    },
+
+    "tag": {
+      style: {
+        radius: 2
+      }
+    },
+    "tagitem": {
+      style: {
+        radius: 2
+      }
+    },
+    "tagitem-colorbutton": {
+      include: "material-button",
+      style: {
+        radiusBottomRight: 0,
+        radiusTopRight: 0
+      }
+    },
+    "tagbutton": {
+      include: "material-button",
+      style: {
+        radius: 0
+      }
     }
   }
 });

@@ -11,6 +11,7 @@ from .models.projects import ProjectType, projects
 from .models.tokens import tokens
 from .models.user_to_projects import user_to_projects
 from .models.users import UserRole, UserStatus, users
+from .models.tags import tags, study_tags
 
 __all__ = [
     "users", "UserRole", "UserStatus",
@@ -19,5 +20,7 @@ __all__ = [
     "confirmations", "ConfirmationAction",
     "tokens",
     "comp_tasks",
-    "comp_pipeline"
+    "comp_pipeline",
+    "tags",
+    "study_tags"
 ]
