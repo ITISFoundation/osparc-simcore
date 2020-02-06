@@ -196,7 +196,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
         this.getChildControl("lastChangeDate").show();
       }
       tagsContainer.removeAll();
-      tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color)));
+      tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
     },
 
     /**
