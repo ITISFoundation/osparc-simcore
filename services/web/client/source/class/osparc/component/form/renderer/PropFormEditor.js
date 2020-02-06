@@ -194,12 +194,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       propWidget.setAccessLevel(data);
     },
 
-    addDelTag: function(label) {
+    __addDelTag: function(label) {
       const newLabel = "<del>" + label + "</del>";
       return newLabel;
     },
 
-    removeDelTag: function(label) {
+    __removeDelTag: function(label) {
       let newLabel = label.replace("<del>", "");
       newLabel = newLabel.replace("</del>", "");
       return newLabel;
@@ -211,21 +211,21 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         const control = this._form.getControl(key);
         switch (data[key]) {
           case "Invisible": {
-            const newLabel = this.addDelTag(label.getValue());
+            const newLabel = this.__addDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(false);
             control.setEnabled(false);
             break;
           }
           case "ReadOnly": {
-            const newLabel = this.removeDelTag(label.getValue());
+            const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(false);
             control.setEnabled(false);
             break;
           }
           case "ReadAndWrite": {
-            const newLabel = this.removeDelTag(label.getValue());
+            const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(true);
             control.setEnabled(true);
