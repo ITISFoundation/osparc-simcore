@@ -23,8 +23,10 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 SHELL := /bin/bash
 
 # VARIABLES ----------------------------------------------
-# TODO: read from docker-compose file instead
+# TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
+# or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
+	catalog \
 	director \
 	sidecar \
 	storage \
