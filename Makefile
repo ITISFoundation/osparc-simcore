@@ -70,44 +70,39 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build
-build: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+.PHONY: build build-nc rebuild
+
+define cache_option
+$(if $(subst build-,,$@),--no-cache,)
+endef
+
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 ifeq ($(target),)
 	# Building services
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	docker-compose -f services/docker-compose-build.yml build --parallel $(cache_option)
 else
-	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
-endif
-
-.PHONY: rebuild build-nc
-rebuild: build-nc
-build-nc: .env ## As build but w/o cache (alias: rebuild)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
-ifeq ($(target),)
-	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache
-else
 	# Building service $(target)
 	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache $(target)
+	docker-compose -f services/docker-compose-build.yml build  $(cache_option)
 endif
+
+rebuild: build-nc # alias
+
 
 .PHONY: build-devel
 build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
-	# Compiling front-end
-	@$(MAKE) -C services/web/client touch compile-dev
 ifeq ($(target),)
 	# Building services
 	@export BUILD_TARGET=development; \
 	docker-compose -f services/docker-compose-build.yml build --parallel
 else
+	# Compiling front-end
+	@$(MAKE) -C services/web/client touch compile-dev
 	# Building service $(target)
 	@export BUILD_TARGET=development; \
 	docker-compose -f services/docker-compose-build.yml build $(target)
