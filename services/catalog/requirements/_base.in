@@ -1,0 +1,11 @@
+#
+# Specifies third-party dependencies for 'services/catalog/src'
+#
+# NOTE: ALL version constraints MUST be commented
+
+aiohttp
+trafaret
+trafaret-config
+tenacity
+
+-e git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=servicelib\&subdirectory=packages/service-library

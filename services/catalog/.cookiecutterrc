@@ -1,0 +1,23 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc ../cookiecutter-simcore-py-fastapi/
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _template:                 '../cookiecutter-simcore-py-fastapi/'
+    command_line_interface_bin_name: 'simcore-service-catalog'
+    distribution_name:         'simcore-service-catalog'
+    dockercompose_service_api_port: '8080'
+    dockercompose_service_name: 'catalog'
+    enable_aiohttp_swagger:    'false'
+    full_name:                 'Pedro Crespo'
+    github_username:           'pcrespov'
+    openapi_specs_version:     'v0'
+    package_name:              'simcore_service_catalog'
+    project_name:              'Components Catalog Service'
+    project_short_description: 'Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)'
+    project_slug:              'catalog'
+    version:                   '0.1.0'
+    year:                      '2020'
