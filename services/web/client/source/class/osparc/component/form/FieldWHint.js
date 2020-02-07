@@ -76,8 +76,11 @@ qx.Class.define("osparc.component.form.FieldWHint", {
 
     __attachEventHandlers: function() {
       if (this.__hintText) {
-        this.__infoButton.addListener("mouseover", () => this.__hint = new osparc.ui.hint.Hint(this.__infoButton, this.__hintText), this);
-        this.__infoButton.addListener("mouseout", () => this.__hint.destroy(), this);
+        this.__hint = new osparc.ui.hint.Hint(this.__infoButton, this.__hintText).set({
+          active: false
+        });
+        this.__infoButton.addListener("mouseover", () => this.__hint.show(), this);
+        this.__infoButton.addListener("mouseout", () => this.__hint.exclude(), this);
 
         this.__field.bind("visibility", this, "visibility");
       }

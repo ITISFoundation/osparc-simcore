@@ -38,10 +38,12 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     // If it is a simple label
     if (text) {
-      this.__hintContainer.setLayout(new qx.ui.layout.Basic());
+      this.setLayout(new qx.ui.layout.Basic());
       this.add(new qx.ui.basic.Label(text).set({
         rich: true
       }));
+    } else {
+      this.setLayout(new qx.ui.layout.Grow());
     }
   },
 
@@ -61,7 +63,6 @@ qx.Class.define("osparc.ui.hint.Hint", {
     },
     active: {
       check: "Boolean",
-      apply: "_applyActive",
       nullable: false,
       init: true
     },
@@ -80,7 +81,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     __createWidget: function() {
       this.__hintContainer = this.__hintContainer || new qx.ui.container.Composite().set({
-        appearance: "hint"
+        appearance: "hint",
+        backgroundColor: "node-selected-background"
       });
       this.__caret = this.__caret || new qx.ui.container.Composite().set({
         backgroundColor: "transparent"
@@ -125,37 +127,39 @@ qx.Class.define("osparc.ui.hint.Hint", {
     },
 
     __updatePosition: function() {
-      const element = this.getElement().getContentElement()
-        .getDomElement();
-      const {
-        top,
-        left
-      } = qx.bom.element.Location.get(element);
-      const {
-        width,
-        height
-      } = qx.bom.element.Dimension.getSize(element);
-      const selfBounds = this.getBounds() || this.getSizeHint();
-      let properties = {};
-      switch (this.getOrientation()) {
-        case this.self().orientation.TOP:
-          properties.top = top - selfBounds.height;
-          properties.left = Math.floor(left + (width - selfBounds.width) / 2);
-          break;
-        case this.self().orientation.RIGHT:
-          properties.top = Math.floor(top + (height - selfBounds.height) / 2);
-          properties.left = left + width;
-          break;
-        case this.self().orientation.BOTTOM:
-          properties.top = top + height;
-          properties.left = Math.floor(left + (width - selfBounds.width) / 2);
-          break;
-        case this.self().orientation.LEFT:
-          properties.top = Math.floor(top + (height - selfBounds.height) / 2);
-          properties.left = left - selfBounds.width;
-          break;
+      if (this.isPropertyInitialized("element")) {
+        const element = this.getElement().getContentElement()
+          .getDomElement();
+        const {
+          top,
+          left
+        } = qx.bom.element.Location.get(element);
+        const {
+          width,
+          height
+        } = qx.bom.element.Dimension.getSize(element);
+        const selfBounds = this.getBounds() || this.getSizeHint();
+        let properties = {};
+        switch (this.getOrientation()) {
+          case this.self().orientation.TOP:
+            properties.top = top - selfBounds.height;
+            properties.left = Math.floor(left + (width - selfBounds.width) / 2);
+            break;
+          case this.self().orientation.RIGHT:
+            properties.top = Math.floor(top + (height - selfBounds.height) / 2);
+            properties.left = left + width;
+            break;
+          case this.self().orientation.BOTTOM:
+            properties.top = top + height;
+            properties.left = Math.floor(left + (width - selfBounds.width) / 2);
+            break;
+          case this.self().orientation.LEFT:
+            properties.top = Math.floor(top + (height - selfBounds.height) / 2);
+            properties.left = left - selfBounds.width;
+            break;
+        }
+        this.setLayoutProperties(properties);
       }
-      this.setLayoutProperties(properties);
     },
 
     _applyOrientation: function() {
@@ -179,7 +183,6 @@ qx.Class.define("osparc.ui.hint.Hint", {
         const isElementVisible = qx.ui.core.queue.Visibility.isVisible(element);
         if (isElementVisible && this.isActive()) {
           this.show();
-          this.__updatePosition();
         }
         element.addListener("appear", this.__elementVisibilityHandler, this);
         element.addListener("disappear", this.__elementVisibilityHandler, this);
@@ -230,6 +233,12 @@ qx.Class.define("osparc.ui.hint.Hint", {
           setTimeout(() => this.__updatePosition(), 50); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
+    },
+
+    // overridden
+    _applyVisibility: function(ne, old) {
+      this.base(arguments, ne, old);
+      this.__updatePosition();
     },
 
     __attachEventHandlers: function() {

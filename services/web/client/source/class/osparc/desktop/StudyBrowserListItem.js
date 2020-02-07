@@ -48,8 +48,6 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
-
-    this.__hint = new osparc.ui.hint.Hint(this, "Hola mundo!");
   },
 
   events: {
