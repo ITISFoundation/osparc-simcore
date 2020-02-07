@@ -6,7 +6,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "dusers"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
@@ -16,14 +16,14 @@ class User(Base):
     items = relationship("Item", back_populates="owner")
 
 class Item(Base):
-    __tablename__ = "items"
+    __tablename__ = "ditems"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("dusers.id"))
 
-    owner = relationship("User", back_populates="items")
+    owner = relationship("User", back_populates="ditems")
 
 
 users = User.__table__
