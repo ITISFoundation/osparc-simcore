@@ -35,11 +35,24 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
         appearance: "settings-groupbox",
-        maxWidth: 500,
+        maxWidth: 800,
         alignX: "center",
         layout: new qx.ui.layout.VBox()
       });
       return settingsGroupBox;
+    },
+
+    createWindow: function(label) {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 10,
+        showMinimize: false,
+        resizable: true,
+        modal: true,
+        height: 600,
+        width: 800
+      });
+      return win;
     }
   },
 

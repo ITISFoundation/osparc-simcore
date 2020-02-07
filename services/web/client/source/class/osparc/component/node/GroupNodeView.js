@@ -101,19 +101,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     },
 
     _openEditAccessLevel: function() {
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 10,
-        showMinimize: false,
-        resizable: true,
-        modal: true,
-        height: 600,
-        width: 800
-      });
-
-      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings")).set({
-        maxWidth: 800
-      });
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const propsWidgetEditor = innerNode.getPropsWidgetEditor();
@@ -127,6 +115,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
         }
       });
 
+      const win = osparc.component.node.BaseNodeView.createWindow();
       win.add(settingsEditorLayout);
       win.center();
       win.open();
