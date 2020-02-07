@@ -143,7 +143,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
           this._addAt(control, 3);
           break;
         case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
           this._addAt(control, 4);
           break;
       }
