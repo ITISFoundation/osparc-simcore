@@ -70,53 +70,51 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
 
-define cache_option
-$(if $(subst build-,,$@),--no-cache,)
+define _docker_compose_build
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(findstring -cache,cache,production)); \
+docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
 endef
 
+rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
-ifeq ($(target),)
 	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel $(cache_option)
+	$(_docker_compose_build) --parallel
 else
+ifeq ($(target),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build  $(cache_option)
+	$(_docker_compose_build) $(target)
 endif
 
-rebuild: build-nc # alias
 
-
-.PHONY: build-devel
-build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
 else
+ifeq ($(target),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client touch compile-dev
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
+	$(_docker_compose_build) $(target)
 endif
 
 
-.PHONY: build-cache
 # TODO: should download cache if any??
-build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
-	@export BUILD_TARGET=cache; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
+
 
 
 $(CLIENT_WEB_OUTPUT):
