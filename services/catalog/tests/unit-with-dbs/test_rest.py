@@ -11,7 +11,7 @@ from simcore_service_catalog.application_config import APP_CONFIG_KEY
 from simcore_service_catalog import __version__
 
 major_version = __version__.split('.')[0]
-API_VERSION = f"v{major_version}""
+API_VERSION = f"v{major_version}"
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ async def test_check_action(client):
     assert data
     assert not error
 
-    
+
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
     assert data['body_value'] == FAKE

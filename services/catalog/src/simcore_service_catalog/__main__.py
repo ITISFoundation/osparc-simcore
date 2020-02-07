@@ -12,5 +12,9 @@ import uvicorn
 from .main import app
 from .config import app_config
 
-if __name__ == "__main__":
+def main():
+    # TODO: passar argumnts a uvicorn. Using  https://www.uvicorn.org/settings/
     uvicorn.run(app, **app_config)
+
+if __name__ == "__main__":
+    main()

@@ -24,6 +24,7 @@ async def get_user_by_email(conn: db.SAConnection, email: str):
 async def get_users(conn: db.SAConnection, skip: int = 0, limit: int = 100):
     # return db.query(orm.User).offset(skip).limit(limit).all()
     # TODO: offset??
+    print(skip)
     rows: List[db.RowProxy] = []
     async for row in conn.execute(orm.users.select()):
         rows.append(row)
@@ -44,6 +45,7 @@ async def create_user(conn: db.SAConnection, user: schemas.UserCreate):
 
 async def get_items(conn: db.SAConnection, skip: int = 0, limit: int = 100):
     #return db.query(orm.Item).offset(skip).limit(limit).all()
+    print(skip)
     rows: List[db.RowProxy] = []
     async for row in conn.execute(orm.items.select()):
         rows.append(row)
