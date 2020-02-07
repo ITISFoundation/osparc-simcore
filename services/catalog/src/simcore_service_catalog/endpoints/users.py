@@ -2,9 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from . import crud
-from . import db
-from . import schemas
+from .. import crud, db, schemas
 
 router = APIRouter()
 
@@ -64,10 +62,3 @@ async def create_item_for_user(
 async def read_items(skip: int = Query(0, gt=0), limit: int = 100, conn: db.SAConnection = Depends(get_conx)):
     items = await crud.get_items(conn, skip=skip, limit=limit)
     return items
-
-
-project_router = router
-
-__all__ = (
-    'project_router'
-)

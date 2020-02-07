@@ -1,9 +1,10 @@
 
 from fastapi import APIRouter
 
+from ..__version__ import __version__
+
 router = APIRouter()
 
-from .__version__ import __version__
 
 
 @router.get("/")
