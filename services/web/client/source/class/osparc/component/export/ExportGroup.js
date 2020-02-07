@@ -130,10 +130,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
       nodesGroupService["workbench"] = workbench;
 
-      const service = {};
-      service[nodeKey] = {};
-      service[nodeKey][version] = nodesGroupService;
-      osparc.utils.Services.addServiceToCache(service);
+      osparc.store.Store.getInstance().addGroup(nodesGroupService);
 
       this.fireDataEvent("finished");
     },
