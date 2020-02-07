@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       settingsEditorLayout.add(this.getNode().getPropsWidgetEditor());
 
-      const win = osparc.component.node.BaseNodeView.createWindow();
+      const win = osparc.component.node.BaseNodeView.createWindow(this.getNode().getLabel());
       win.add(settingsEditorLayout);
       win.center();
       win.open();

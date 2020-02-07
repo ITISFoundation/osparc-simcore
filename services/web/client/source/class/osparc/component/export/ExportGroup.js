@@ -111,22 +111,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __buildOutputSettings: function() {
-      const settingsLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-
-      const innerNodes = this.getOutputNode().getInnerNodes(true);
-      Object.values(innerNodes).forEach(innerNode => {
-        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
-        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
-          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
-            maxWidth: 700
-          });
-          innerNode.bind("label", innerSettings, "legend");
-          innerSettings.add(propsWidgetEditor);
-          settingsLayout.add(innerSettings);
-        }
-      });
-
-      return settingsLayout;
+      const settingsEditorLayout = osparc.component.node.GroupNodeView.getSettingsEditorLayout(this.getOutputNode());
+      return settingsEditorLayout;
     },
 
     __exportAsMacroService: function() {

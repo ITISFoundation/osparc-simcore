@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     createWindow: function(label) {
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+      const win = new qx.ui.window.Window(label).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 10,
         showMinimize: false,

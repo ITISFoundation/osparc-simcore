@@ -36,6 +36,25 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     this.base(arguments);
   },
 
+  statics: {
+    getSettingsEditorLayout: function(node) {
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox("Settings");
+      const innerNodes = node.getInnerNodes(true);
+      Object.values(innerNodes).forEach(innerNode => {
+        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
+        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
+          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
+            maxWidth: 700
+          });
+          innerNode.bind("label", innerSettings, "legend");
+          innerSettings.add(propsWidgetEditor);
+          settingsEditorLayout.add(innerSettings);
+        }
+      });
+      return settingsEditorLayout;
+    }
+  },
+
   members: {
     _addSettings: function() {
       this._settingsLayout.removeAll();
@@ -101,21 +120,8 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     },
 
     _openEditAccessLevel: function() {
-      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-      const innerNodes = this.getNode().getInnerNodes(true);
-      Object.values(innerNodes).forEach(innerNode => {
-        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
-        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
-          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
-            maxWidth: 700
-          });
-          innerNode.bind("label", innerSettings, "legend");
-          innerSettings.add(propsWidgetEditor);
-          settingsEditorLayout.add(innerSettings);
-        }
-      });
-
-      const win = osparc.component.node.BaseNodeView.createWindow();
+      const settingsEditorLayout = this.getSettingsEditorLayout(this.getNode());
+      const win = osparc.component.node.BaseNodeView.createWindow(this.getNode().getLabel());
       win.add(settingsEditorLayout);
       win.center();
       win.open();
