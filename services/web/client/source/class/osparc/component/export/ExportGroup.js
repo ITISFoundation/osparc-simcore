@@ -103,11 +103,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       this.setOutputNode(outputNode);
 
       const nodeData = inputNode.serialize();
-      outputNode.setInputData(nodeData.inputs);
-      outputNode.setInputDataAcess(nodeData.inputAccess);
-      outputNode.setOutputData(nodeData.outputs);
-      outputNode.addInputNodes(nodeData.inputNodes);
-      outputNode.addOutputNodes(nodeData.outputNodes);
+      outputNode.populateInputOutputData(nodeData);
     },
 
     __buildOutputSettings: function() {

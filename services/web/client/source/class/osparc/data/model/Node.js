@@ -339,11 +339,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
 
-        this.setInputData(nodeData.inputs);
-        this.setInputDataAcess(nodeData.inputAccess);
-        this.setOutputData(nodeData.outputs);
-        this.addInputNodes(nodeData.inputNodes);
-        this.addOutputNodes(nodeData.outputNodes);
+        this.populateInputOutputData(nodeData);
 
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -364,6 +360,14 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+    },
+
+    populateInputOutputData: function(nodeData) {
+      this.setInputData(nodeData.inputs);
+      this.setInputDataAcess(nodeData.inputAccess);
+      this.setOutputData(nodeData.outputs);
+      this.addInputNodes(nodeData.inputNodes);
+      this.addOutputNodes(nodeData.outputNodes);
     },
 
     giveUniqueName: function() {

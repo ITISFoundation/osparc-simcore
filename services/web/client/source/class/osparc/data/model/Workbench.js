@@ -233,11 +233,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const parentNode = this.getNode(nodeToClone.getParentNodeId());
       let node = this.createNode(key, version, null, parentNode);
       const nodeData = nodeToClone.serialize();
-      node.setInputData(nodeData.inputs);
-      node.setInputDataAcess(nodeData.inputAccess);
-      node.setOutputData(nodeData.outputs);
-      node.addInputNodes(nodeData.inputNodes);
-      node.addOutputNodes(nodeData.outputNodes);
+      node.populateInputOutputData(nodeData);
       return node;
     },
 
