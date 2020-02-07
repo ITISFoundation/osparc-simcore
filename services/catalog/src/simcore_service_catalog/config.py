@@ -22,7 +22,7 @@ postgres_cfg = {**postgres_cfg, 'uri':pg_dsn}
 
 
 app_config = {
-    'host':"127.0.0.1",
+    'host':"0.0.0.0" if "SC_BOOT_MODE" in os.environ else "127.0.0.1",
     'port':8000,
     'log_level': os.environ.get("LOGLEVEL", "debug").lower()
 }

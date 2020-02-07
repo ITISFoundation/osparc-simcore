@@ -45,6 +45,7 @@ packaging==20.1           # via pytest
 pluggy==0.13.1            # via pytest
 promise==2.3
 psycopg2-binary==2.8.4
+ptvsd==4.3.2
 py==1.8.1                 # via pytest
 pydantic==1.4
 pylint==2.4.4

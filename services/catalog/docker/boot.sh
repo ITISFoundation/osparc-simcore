@@ -22,16 +22,18 @@ then
   which python | sed 's/^/    /'
   echo "  PIP :"
   $SC_PIP list | sed 's/^/    /'
+
 fi
 
 
 # RUNNING application ----------------------------------------
 if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  # NOTE: needs ptvsd installed
-  echo $INFO "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
-  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_catalog
+  # TODO: add ptvsd programmatically instead
+  #echo $INFO "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
+  #eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
+  #  simcore_service_catalog
+  uvicorn simcore_service_catalog.main:app --reload --host 0.0.0.0
 else
   exec simcore-service-catalog
 fi

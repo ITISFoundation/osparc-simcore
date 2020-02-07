@@ -22,3 +22,4 @@ Faker
 pylint
 coveralls
 codecov
+ptvsd

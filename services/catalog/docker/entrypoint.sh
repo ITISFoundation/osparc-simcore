@@ -44,6 +44,11 @@ then
     fi
 fi
 
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
+then
+  # NOTE: production does NOT pre-installs ptvsd
+  python3 -m pip install ptvsd
+fi
 
 echo $INFO "Starting boot ..."
 su-exec scu "$@"

@@ -1,4 +1,4 @@
-from datetime import datetime
+import logging
 
 from fastapi import FastAPI
 
@@ -7,10 +7,10 @@ from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import diagnostics, users
 
-
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
 
+log = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Components Catalog Service",
@@ -28,12 +28,11 @@ app.include_router(users.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}"
 @app.on_event("startup")
 def startup_event():
     # TODO: logging
-    with open("log.txt", mode="a") as log:
-        print( f"{datetime.now()}:" ,"Application startup", file=log)
-        if is_testing_enabled:
-            # retry?
-            create_tables()
-            print( f"{datetime.now()}:" ,"Created Tables", file=log)
+    log.info( "Application started")
+    if is_testing_enabled:
+        # TODO: retry?
+        log.info( "Creating tables")
+        create_tables()
 
 
 @app.on_event("startup")
@@ -44,9 +43,7 @@ async def start_db():
 
 @app.on_event("shutdown")
 def shutdown_event():
-    with open("log.txt", mode="a") as log:
-        print( f"{datetime.now()}:" ,"Application shutdown", file=log)
-
+    log.info("Application shutdown")
 
 @app.on_event("shutdown")
 async def shutdown_db():
