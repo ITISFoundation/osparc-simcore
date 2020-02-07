@@ -21,7 +21,7 @@ ENV PATH "/home/scu/.local/bin:$PATH"
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
-EXPOSE 8080
+EXPOSE 8000
 
 
 # -------------------------- Build stage -------------------
@@ -37,8 +37,8 @@ ENV SC_BUILD_TARGET build
 
 
 RUN apk add --no-cache \
-      postgresql-dev \  
-      libc-dev \        
+      postgresql-dev \
+      libc-dev \
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/catalog /build/services/catalog
 
@@ -78,7 +78,7 @@ HEALTHCHECK --interval=30s \
             --timeout=20s \
             --start-period=30s \
             --retries=3 \
-            CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8080/v0/"]
+            CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/v0/"]
 
 ENTRYPOINT [ "/bin/sh", "services/catalog/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/catalog/docker/boot.sh"]

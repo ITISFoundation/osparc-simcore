@@ -9,7 +9,7 @@ default_context:
     _template:                 '../cookiecutter-simcore-py-fastapi/'
     command_line_interface_bin_name: 'simcore-service-catalog'
     distribution_name:         'simcore-service-catalog'
-    dockercompose_service_api_port: '8080'
+    dockercompose_service_api_port: '8000'
     dockercompose_service_name: 'catalog'
     enable_aiohttp_swagger:    'false'
     full_name:                 'Pedro Crespo'

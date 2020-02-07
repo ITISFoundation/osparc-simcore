@@ -8,7 +8,7 @@ Example of usage in a Dockerfile
                 --timeout=30s \
                 --start-period=1s \
                 --retries=3 \
-                CMD python3 docker/healthcheck.py http://localhost:8080/v0/
+                CMD python3 docker/healthcheck.py http://localhost:8000/
 ```
 
 Q&A:

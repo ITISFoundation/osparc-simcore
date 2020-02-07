@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from . import crud
 from . import db

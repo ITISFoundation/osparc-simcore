@@ -6,6 +6,8 @@ from .__version__ import __version__
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import project_router
+from . import endpoints_diagnostics
+
 
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
@@ -15,12 +17,12 @@ app = FastAPI(
     title="My Super Project",
     description="This is a very fancy project, with auto docs for the API and everything",
     version=API_VERSION,
-    openapi_url=f"/api/v{API_MAJOR_VERSION}/openapi.json"
+    openapi_url=f"/v{API_MAJOR_VERSION}/openapi.json"
 )
 
 # projects
-app.include_router(project_router, prefix=f"/api/v{API_MAJOR_VERSION}")
-#app.include_router(project_router, prefix="/api/latest")
+app.include_router(endpoints_diagnostics.router, tags=['diagnostics'])
+app.include_router(project_router, prefix=f"/v{API_MAJOR_VERSION}")
 
 
 @app.on_event("startup")
