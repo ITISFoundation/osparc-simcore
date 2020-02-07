@@ -14,8 +14,7 @@ then
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  APP_CONFIG=config-host-dev.yaml
-  $SC_PIP install --user -e services/catalog
+  $SC_PIP install --user --editable services/catalog
 
   #--------------------
   echo "  Python :"
@@ -23,23 +22,16 @@ then
   which python | sed 's/^/    /'
   echo "  PIP :"
   $SC_PIP list | sed 's/^/    /'
-
-
-elif [[ ${SC_BUILD_TARGET} == "production" ]]
-then
-  APP_CONFIG=config-host-dev.yaml
-
 fi
 
 
 # RUNNING application ----------------------------------------
-if [[ ${BOOT_MODE} == "debug" ]]
+if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  echo $INFO "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
-  echo $INFO "Running: import pdb, simcore_service_catalog.cli; pdb.run('simcore_service_catalog.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-  python -c "import pdb, simcore_service_catalog.cli; \
-             pdb.run('simcore_service_catalog.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-
+  # NOTE: needs ptvsd installed
+  echo $INFO "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
+  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
+    simcore_service_catalog
 else
-  simcore-service-catalog --config $APP_CONFIG
+  exec simcore-service-catalog
 fi

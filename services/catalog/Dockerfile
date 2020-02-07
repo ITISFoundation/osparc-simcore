@@ -9,7 +9,6 @@ FROM python:3.6-alpine as base
 
 LABEL maintainer=pcrespov
 
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
 RUN apk add --no-cache \
@@ -37,8 +36,37 @@ ENV SC_BUILD_TARGET build
 
 
 RUN apk add --no-cache \
-      postgresql-dev \
-      libc-dev \
+      alpine-sdk \
+      alpine-sdk \
+      python3-dev \
+      musl-dev \
+      postgresql-dev
+
+RUN $SC_PIP install --upgrade \
+      pip \
+      wheel \
+      setuptools
+
+WORKDIR /build
+
+# install base 3rd party dependencies
+COPY  services/catalog/requirements/*.txt \
+      services/catalog/requirements/
+
+RUN $SC_PIP install \
+      -r services/catalog/requirements/_base.txt
+
+
+# --------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
+#  + /build
+#    + services/catalog [scu:scu] WORKDIR
+#
+FROM build as cache
+
+ENV SC_BUILD_TARGET cache
+
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/catalog /build/services/catalog
 
@@ -70,9 +98,11 @@ RUN mkdir -p services/catalog &&\
 
 
 RUN apk del --no-cache\
-      gcc \
-      git
-
+      alpine-sdk \
+      alpine-sdk \
+      python3-dev \
+      musl-dev \
+      postgresql-dev
 
 HEALTHCHECK --interval=30s \
             --timeout=20s \

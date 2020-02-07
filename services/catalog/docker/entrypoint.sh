@@ -30,10 +30,10 @@ then
     then
         addgroup scu root
     else
-        # take host's credentials in myu
+        # take host's credentials in host_group
         if [[ -z "$GROUPNAME" ]]
         then
-            GROUPNAME=myu
+            GROUPNAME=host_group
             addgroup -g $GROUPID $GROUPNAME
         else
             addgroup scu $GROUPNAME
@@ -44,26 +44,6 @@ then
     fi
 fi
 
-
-
-# Appends docker group if socket is mounted
-DOCKER_MOUNT=/var/run/docker.sock
-
-stat $DOCKER_MOUNT &> /dev/null
-if [[ $? -eq 0 ]]
-then
-    GROUPID=$(stat -c %g $DOCKER_MOUNT)
-    
-    GROUPNAME=scdocker
-
-    addgroup -g $GROUPID $GROUPNAME &> /dev/null
-    if [[ $? -gt 0 ]]
-    then
-        # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
-    fi
-    addgroup scu $GROUPNAME
-fi
 
 echo $INFO "Starting boot ..."
 su-exec scu "$@"
