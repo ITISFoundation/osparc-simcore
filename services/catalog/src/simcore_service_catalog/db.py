@@ -1,9 +1,6 @@
 
 
 # setup pg engine using aiopg
-import asyncio
-from typing import Iterator
-
 import aiopg.sa
 import sqlalchemy as sa
 from aiopg.sa import Engine
@@ -48,6 +45,6 @@ async def teardown_engine() -> None:
 
 __all__ = (
     'Engine',
-    'ResultsProxy', 'RowProxy',
+    'ResultProxy', 'RowProxy',
     'SAConnection'
 )

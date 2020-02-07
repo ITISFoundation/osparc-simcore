@@ -13,7 +13,7 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
 
-    items = relationship("Item", back_populates="owner")
+    ditems = relationship("Item", back_populates="owner")
 
 class Item(Base):
     __tablename__ = "ditems"

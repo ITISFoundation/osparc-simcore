@@ -1,5 +1,7 @@
 
 #  reusable functions to interact with the data in the database.
+from typing import List
+
 from . import db
 from . import orm, schemas
 
@@ -27,7 +29,7 @@ async def get_users(conn: db.SAConnection, skip: int = 0, limit: int = 100):
         rows.append(row)
         if len(rows)>=limit:
             break
-    return [orm.User(**r) if r else None for r in rows]
+    return [orm.User(**r) for r in rows if r]
 
 
 async def create_user(conn: db.SAConnection, user: schemas.UserCreate):
@@ -36,7 +38,7 @@ async def create_user(conn: db.SAConnection, user: schemas.UserCreate):
         hashed_password=user.password + "notreallyhashed"
     )
     await conn.execute(q)
-    row: db.RowProxy = await(await conn.execute(orm.users.select())).first()
+    row: db.RowProxy = await(await conn.execute(orm.users.select(orm.users.c.email == user.email))).first()
     return orm.User(**row) if row else None
 
 
@@ -47,7 +49,7 @@ async def get_items(conn: db.SAConnection, skip: int = 0, limit: int = 100):
         rows.append(row)
         if len(rows) >= limit:
             break
-    return [orm.Item(**r) for r in rows]
+    return [orm.Item(**r) for r in rows if r]
 
 
 async def create_user_item(conn: db.SAConnection, item: schemas.ItemCreate, user_id: int):
