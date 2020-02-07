@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
-  extend: qx.ui.form.renderer.Single,
+  extend: osparc.component.form.renderer.PropFormBase,
 
   /**
    * create a page for the View Tab with the given title
@@ -26,34 +26,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
    * @param node {osparc.data.model.Node} Node owning the widget
    */
   construct: function(form, node) {
-    if (node) {
-      this.setNode(node);
-    } else {
-      this.setNode(null);
-    }
-
-    this.base(arguments, form);
-
-    const fl = this._getLayout();
-    fl.setColumnFlex(0, 0);
-    fl.setColumnAlign(0, "left", "top");
-    fl.setColumnFlex(1, 1);
-    fl.setColumnMinWidth(1, 130);
-    fl.setColumnFlex(2, 0);
+    this.base(arguments, form, node);
 
     this.__ctrlRBsMap = {};
     this.__addAccessLevelRBs();
   },
 
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      nullable: true
-    }
-  },
-
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    // overridden
     _gridPos: {
       label: 0,
       ctrlField: 1,
@@ -67,48 +48,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __ctrlRBsMap: null,
 
-    addItems: function(items, names, title, itemOptions, headerOptions) {
-      // add the header
-      if (title !== null) {
-        this._add(
-          this._createHeader(title), {
-            row: this._row,
-            column: this._gridPos.label,
-            colSpan: Object.keys(this._gridPos).length
-          }
-        );
-        this._row++;
-      }
-
-      // add the items
-      for (let i = 0; i < items.length; i++) {
-        let item = items[i];
-        let label = this._createLabel(names[i], item);
-        this._add(label, {
-          row: this._row,
-          column: this._gridPos.label
-        });
-        label.setBuddy(item);
-
-        const field = new osparc.component.form.FieldWHint(null, item.description, item);
-        field.key = item.key;
-        this._add(field, {
-          row: this._row,
-          column: this._gridPos.ctrlField
-        });
-        this._row++;
-        this._connectVisibility(item, label);
-        // store the names for translation
-        if (qx.core.Environment.get("qx.dynlocale")) {
-          this._names.push({
-            name: names[i],
-            label: label,
-            item: items[i]
-          });
-        }
-      }
-    },
-
+    // overridden
     setAccessLevel: function(data) {
       for (const key in data) {
         const control = this.__getRadioButtonsFieldChild(key);
@@ -133,7 +73,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     },
 
     linkAdded: function(portId, controlLink) {
-      let data = this.__getCtrlFieldChild(portId);
+      let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
@@ -148,7 +88,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     },
 
     linkRemoved: function(portId) {
-      let data = this.__getCtrlFieldChild(portId);
+      let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
@@ -188,7 +128,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       this.__ctrlRBsMap[portId] = group;
       group.addListener("changeSelection", this.__onAccessLevelChanged, this);
 
-      const ctrlField = this.__getCtrlFieldChild(portId);
+      const ctrlField = this._getCtrlFieldChild(portId);
       if (ctrlField) {
         const idx = ctrlField.idx;
         const child = ctrlField.child;
@@ -236,7 +176,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __setAccessLevel: function(data) {
       for (const key in data) {
-        const label = this.__getLabelFieldChild(key).child;
+        const label = this._getLabelFieldChild(key).child;
         const control = this._form.getControl(key);
         switch (data[key]) {
           case "Invisible": {
@@ -264,44 +204,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       }
     },
 
-    __getLayoutChild: function(portId, column) {
-      let row = null;
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label &&
-          child.getBuddy().key === portId) {
-          row = layoutProps.row;
-          break;
-        }
-      }
-      if (row !== null) {
-        for (let i=0; i<children.length; i++) {
-          const child = children[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === column &&
-            layoutProps.row === row) {
-            return {
-              child,
-              idx: i
-            };
-          }
-        }
-      }
-      return null;
-    },
-
-    __getLabelFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.label);
-    },
-
-    __getCtrlFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.ctrlField);
-    },
-
     __getRadioButtonsFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.accessLevel);
+      return this._getLayoutChild(portId, this._gridPos.accessLevel);
     }
   }
 });

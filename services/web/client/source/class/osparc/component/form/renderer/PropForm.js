@@ -14,7 +14,7 @@
  */
 
 qx.Class.define("osparc.component.form.renderer.PropForm", {
-  extend: qx.ui.form.renderer.Single,
+  extend: osparc.component.form.renderer.PropFormBase,
 
   /**
    * create a page for the View Tab with the given title
@@ -23,20 +23,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
    * @param node {osparc.data.model.Node} Node owning the widget
    */
   construct: function(form, node) {
-    if (node) {
-      this.setNode(node);
-    } else {
-      this.setNode(null);
-    }
-
-    this.base(arguments, form);
-
-    const fl = this._getLayout();
-    // have plenty of space for input, not for the labels
-    fl.setColumnFlex(0, 0);
-    fl.setColumnAlign(0, "left", "top");
-    fl.setColumnFlex(1, 1);
-    fl.setColumnMinWidth(1, 130);
+    this.base(arguments, form, node);
 
     this.__ctrlLinkMap = {};
     this.__addLinkCtrls();
@@ -47,13 +34,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
   events: {
     "linkModified": "qx.event.type.Data"
-  },
-
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      nullable: true
-    }
   },
 
   statics: {
@@ -74,6 +54,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
+    // overridden
     _gridPos: {
       label: 0,
       ctrlField: 1,
@@ -88,45 +69,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __ctrlLinkMap: null,
 
+    // overridden
     addItems: function(items, names, title, itemOptions, headerOptions) {
-      // add the header
-      if (title !== null) {
-        this._add(
-          this._createHeader(title), {
-            row: this._row,
-            column: this._gridPos.label,
-            colSpan: Object.keys(this._gridPos).length
-          }
-        );
-        this._row++;
-      }
+      this.base(arguments, items, names, title, itemOptions, headerOptions);
 
-      // add the items
-      for (let i = 0; i < items.length; i++) {
-        let item = items[i];
-        let label = this._createLabel(names[i], item);
-        this._add(label, {
-          row: this._row,
-          column: this._gridPos.label
-        });
-        label.setBuddy(item);
-
-        const field = new osparc.component.form.FieldWHint(null, item.description, item);
-        field.key = item.key;
-        this._add(field, {
-          row: this._row,
-          column: this._gridPos.ctrlField
-        });
-        this._row++;
-        this._connectVisibility(item, label);
-        // store the names for translation
-        if (qx.core.Environment.get("qx.dynlocale")) {
-          this._names.push({
-            name: names[i],
-            label: label,
-            item: items[i]
-          });
-        }
+      items.forEach(item => {
         this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
@@ -142,6 +89,24 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             qx.event.message.Bus.getInstance().dispatchByName("inputFocusout", msgDataFn);
           }
         }, this);
+      });
+    },
+
+    // overridden
+    setAccessLevel: function(data) {
+      for (const key in data) {
+        const control = this._form.getControl(key);
+        this.__changeControlVisibility(control, data[key]);
+
+        const controlLink = this._getCtrlFieldChild(key);
+        if (controlLink) {
+          this.__changeControlVisibility(controlLink.child, data[key]);
+        }
+
+        const retrieveField = this.__getRetrieveFieldChild(key);
+        if (retrieveField) {
+          this.__changeControlVisibility(retrieveField.child, data[key]);
+        }
       }
     },
 
@@ -166,44 +131,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return filteredData;
     },
 
-    __getLayoutChild: function(portId, column) {
-      let row = null;
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label &&
-          child.getBuddy().key === portId) {
-          row = layoutProps.row;
-          break;
-        }
-      }
-      if (row !== null) {
-        for (let i=0; i<children.length; i++) {
-          const child = children[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === column &&
-            layoutProps.row === row) {
-            return {
-              child,
-              idx: i
-            };
-          }
-        }
-      }
-      return null;
-    },
-
-    __getCtrlFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.ctrlField);
-    },
-
-    __getRetrieveFieldChild: function(portId) {
-      return this.__getLayoutChild(portId, this._gridPos.retrieveStatus);
-    },
-
     linkAdded: function(portId) {
-      let data = this.__getCtrlFieldChild(portId);
+      let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
@@ -236,7 +165,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     linkRemoved: function(portId) {
-      let data = this.__getCtrlFieldChild(portId);
+      let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
         let idx = data.idx;
@@ -262,7 +191,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     retrievingPortData: function(portId) {
       const status = this._retrieveStatus.retrieving;
       if (portId) {
-        let data = this.__getCtrlFieldChild(portId);
+        let data = this._getCtrlFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
@@ -289,7 +218,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         status = this._retrieveStatus.empty;
       }
       if (portId) {
-        let data = this.__getCtrlFieldChild(portId);
+        let data = this._getCtrlFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
@@ -517,28 +446,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return false;
     },
 
-    /**
-     * set access level to the data main model
-     *
-     * @param data {let} map with key access level pairs to apply
-     */
-    setAccessLevel: function(data) {
-      for (const key in data) {
-        const control = this._form.getControl(key);
-        this.__changeControlVisibility(control, data[key]);
-
-        const controlLink = this.__getCtrlFieldChild(key);
-        if (controlLink) {
-          this.__changeControlVisibility(controlLink.child, data[key]);
-        }
-
-        const retrieveField = this.__getRetrieveFieldChild(key);
-        if (retrieveField) {
-          this.__changeControlVisibility(retrieveField.child, data[key]);
-        }
-      }
-    },
-
     __changeControlVisibility: function(control, visibility) {
       if (control === null) {
         return;
@@ -558,6 +465,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           control.setVisibility("visible");
           break;
       }
+    },
+
+    __getRetrieveFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this._gridPos.retrieveStatus);
     }
   }
 });
