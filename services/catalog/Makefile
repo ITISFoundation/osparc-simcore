@@ -20,18 +20,14 @@ devenv: ## build development environment (using main services/docker-compose-bui
 	@$(MAKE) --directory ${REPO_BASE_DIR} $@
 
 
-.PHONY: openapi-specs
-openapi-specs: ## updates and validates openapi specifications
-	@$(MAKE) --directory $(CURDIR)/src/simcore_service_catalog/api $@
-
-
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE) --directory requirements all
 
+# TODO: REQS = $(shell find  requirements -type f -name '*.txt')
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: openapi-specs ## install app in development/production or CI mode
+install-dev install-prod install-ci: requirements ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	@$(VENV_DIR)/bin/pip3 install -r requirements/$(subst install-,,$@).txt
 
@@ -52,6 +48,7 @@ tests-integration: ## runs integration tests against local+production images
 .PHONY: run-devel
 run-devel:
 	uvicorn simcore_service_catalog.main:app --reload
+
 
 .PHONY: build
 build: ## builds docker image (using main services/docker-compose-build.yml)

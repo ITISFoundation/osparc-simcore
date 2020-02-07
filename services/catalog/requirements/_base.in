@@ -3,9 +3,9 @@
 #
 # NOTE: ALL version constraints MUST be commented
 
-aiohttp
-trafaret
-trafaret-config
+fastapi[all]
+aiopg[sa]
 tenacity
 
--e git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=servicelib\&subdirectory=packages/service-library
+async-exit-stack  # not needed when python>=3.7
+async-generator   # not needed when python>=3.7
