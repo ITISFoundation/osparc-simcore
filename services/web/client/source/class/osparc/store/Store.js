@@ -163,7 +163,6 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => {
             console.error("getServices failed", err);
-            allServices.push(...osparc.dev.fake.Data.getFakeServices());
           })
           .finally(() => {
             const services = osparc.utils.Services.convertArrayToObject(allServices);
