@@ -286,7 +286,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
-.PHONY: devenv
+.PHONY: devenv devenv-all
 
 .venv:
 	python3 -m venv $@
@@ -302,6 +302,12 @@ devenv: .venv ## create a python virtual environment with dev tools (e.g. linter
 		pip-tools \
 		rope
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+
+devenv-all: devenv ## sets up extra development tools (everything else besides python)
+	# Upgrading client compiler
+	@$(MAKE) --directory services/web/client upgrade
+	# Building tools
+	@$(MAKE) --directory scripts/json-schema-to-openapi-schema
 
 
 ## MISC -------------------------------
@@ -388,14 +394,14 @@ endif
 
 .PHONY: clean clean-images
 
-.check-clean:
-	@git clean -ndxf -e .vscode/
+git_clean_args = -dxf -e .vscode
+
+clean: ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
+	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
-	@git clean -dxf -e .vscode/
+	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
 
@@ -405,6 +411,9 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+
+clean-all: clean clean-images
+	# Cleaning both output files and images
 
 
 .PHONY: reset
