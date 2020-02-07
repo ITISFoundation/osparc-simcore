@@ -14,7 +14,7 @@ postgres_cfg = {
     'password': os.environ.get("POSTGRES_PASSWORD", "test"),
     'database': os.environ.get("POSTGRES_DB", "test"),
     'host':  os.environ.get("POSTGRES_HOST", "localhost"),
-    'port': int(os.environ.get("POSTGRES_HOST", "5432"))
+    'port': int(os.environ.get("POSTGRES_PORT", "5432"))
 }
 
 pg_dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_cfg)
