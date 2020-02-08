@@ -2,8 +2,9 @@
 #  reusable functions to interact with the data in the database.
 from typing import List
 
-from . import db
-from . import orm, schemas
+from .. import db
+from ..orm import orm_dusers as orm
+from ..schemas import schemas_dusers as schemas
 
 
 async def get_user(conn: db.SAConnection, user_id: int):

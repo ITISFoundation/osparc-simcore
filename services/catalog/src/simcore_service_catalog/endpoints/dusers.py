@@ -2,7 +2,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from .. import crud, db, schemas
+from .. import db
+from ..crud import crud_dusers as crud
+from ..schemas import schemas_dusers as schemas
 
 router = APIRouter()
 

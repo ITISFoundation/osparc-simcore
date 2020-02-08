@@ -8,7 +8,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 
 from .config import pg_dsn
-from .orm import Base
+from .orm.base import Base
 
 
 def create_tables():

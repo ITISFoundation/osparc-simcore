@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from . import __version__
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
-from .endpoints import diagnostics, users
+from .endpoints import diagnostics, dusers
 
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
@@ -22,7 +22,7 @@ app = FastAPI(
 
 # projects
 app.include_router(diagnostics.router, tags=['diagnostics'])
-app.include_router(users.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}")
+app.include_router(dusers.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}")
 
 
 @app.on_event("startup")
