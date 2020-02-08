@@ -1,8 +1,9 @@
-import uuid as uuidlib
+import logging
+#import uuid as uuidlib
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from fastapi.encoders import jsonable_encoder
+#from fastapi.encoders import jsonable_encoder
 from starlette.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                               HTTP_409_CONFLICT)
 
@@ -11,11 +12,10 @@ from ..crud import crud_dags as crud
 from ..schemas import schemas_dags as schemas
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 
-@router.get("/dags",
-    response_model=List[schemas.DAGOut]
-    )
+@router.get("/dags", response_model=List[schemas.DAGOut])
 async def list_dags(
     page_token: Optional[str] = Query(None, description="Requests a specific page of the list results"),
     page_size: int = Query(0, ge=0, description="Maximum number of results to be returned by the server"),
@@ -32,34 +32,23 @@ async def list_dags(
     # Applicable naming conventions
     # TODO: filter: https://cloud.google.com/apis/design/naming_convention#list_filter_field
     # SEE response: https://cloud.google.com/apis/design/naming_convention#list_response
-
-    #print(page_token)
-    #print(page_size)
-    #print(order_by)
+    log.debug("%s %s %s", page_token, page_size, order_by)
     dags = await crud.list_dags(conn)
     return dags
 
 
-
-
-@router.get("/dags:batchGet"
-    )
+@router.get("/dags:batchGet")
 async def batch_get_dags():
     raise NotImplementedError()
 
 
-@router.get("/dags:search"
-    )
+@router.get("/dags:search")
 async def search_dags():
     # A method that takes multiple resource IDs and returns an object for each of those IDs
     # Alternative to List for fetching data that does not adhere to List semantics, such as services.search.
     #https://cloud.google.com/apis/design/standard_methods#list
     raise NotImplementedError()
 
-
-
-
-# GET --------------
 
 @router.get("/dags/{dag_id}",
     response_model=schemas.DAGOut
@@ -69,9 +58,6 @@ async def get_dag(dag_id: int):
     ### return schemas.DAG(f"dag {dag_id} in collection")
 
 
-
-
-# CREATE --------------
 @router.post("/dags",
     response_model=int,
     status_code=HTTP_201_CREATED,
@@ -95,8 +81,6 @@ async def create_dag(
     return dag_id
 
 
-
-# UPDATE  --------------
 @router.patch("/dags/{dag_id}",
     response_model=schemas.DAGOut
     )
@@ -111,7 +95,6 @@ async def udpate_dag(dag_id: int,
     return updated_dag
 
 
-
 @router.put("/dags/{dag_id}",
     response_model=Optional[schemas.DAGOut]
     )
@@ -124,7 +107,6 @@ async def replace_dag(dag_id: int,
     return None
 
 
-# DELETE  --------------
 @router.delete("/dags/{dag_id}",
     status_code=HTTP_204_NO_CONTENT,
     response_description="Successfully deleted"

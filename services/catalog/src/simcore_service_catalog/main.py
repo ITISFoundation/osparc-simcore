@@ -1,11 +1,12 @@
 import logging
 
 from fastapi import FastAPI
+from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
 from . import __version__
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
-from .endpoints import diagnostics, dusers, dags
+from .endpoints import dags, diagnostics, dusers
 
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
@@ -28,18 +29,26 @@ app.include_router(dusers.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}
 
 @app.on_event("startup")
 def startup_event():
-    # TODO: logging
     log.info( "Application started")
-    if is_testing_enabled:
-        # TODO: retry?
-        log.info( "Creating tables")
-        create_tables()
 
 
 @app.on_event("startup")
 async def start_db():
-    # TODO: retry here, access to another server
-    await setup_engine()
+    log.info("Initializing db")
+
+    retry_policy = dict(
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(20),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True
+    )
+    for attempt in Retrying(**retry_policy):
+        with attempt:
+            await setup_engine()
+
+    if is_testing_enabled:
+        log.info("Creating db tables (testing mode)")
+        create_tables()
 
 
 @app.on_event("shutdown")
@@ -48,11 +57,8 @@ def shutdown_event():
 
 @app.on_event("shutdown")
 async def shutdown_db():
+    log.info("Shutting down db")
     await teardown_engine()
-
-
-
-
 
 ## DEBUG: uvicorn simcore_service_components_catalog.main:app --reload
 # TODO: use entry-point to call uvicorn's entrypoint above

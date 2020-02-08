@@ -22,8 +22,6 @@ def create_tables():
 app_context = {}
 
 
-
-
 def info():
     engine = get_engine()
     props = "closed driver dsn freesize maxsize minsize name  size timeout".split()

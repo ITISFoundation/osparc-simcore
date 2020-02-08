@@ -47,6 +47,9 @@ tests-integration: ## runs integration tests against local+production images
 
 .PHONY: run-devel
 run-devel:
+	# starting db ...
+	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
+	# starting service
 	uvicorn simcore_service_catalog.main:app --reload
 
 

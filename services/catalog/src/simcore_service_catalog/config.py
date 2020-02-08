@@ -1,4 +1,10 @@
+"""
+
+    NOTE: CONS of programmatic config
+    - not testing-friendly since variables set upon import. Must reload when fixture is setup
+"""
 import os
+
 
 
 def to_bool(s: str) -> bool:
@@ -6,7 +12,6 @@ def to_bool(s: str) -> bool:
 
 
 is_testing_enabled = to_bool(os.environ.get("TESTING", "true"))
-
 
 # defaults in test variables
 postgres_cfg = {
