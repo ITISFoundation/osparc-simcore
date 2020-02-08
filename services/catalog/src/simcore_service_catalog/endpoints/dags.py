@@ -1,14 +1,14 @@
 import uuid as uuidlib
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from starlette.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                               HTTP_409_CONFLICT)
 
+from .. import db
+from ..crud import crud_dags as crud
 from ..schemas import schemas_dags as schemas
-
-## from ..crud import crud_dags as crud
 
 router = APIRouter()
 
@@ -16,13 +16,14 @@ router = APIRouter()
 @router.get("/dags",
     response_model=List[schemas.DAG]
     )
-async def list_DAGs(
+async def list_dags(
     page_token: Optional[str] = Query(None, description="Requests a specific page of the list results"),
     page_size: int = Query(0, ge=0, description="Maximum number of results to be returned by the server"),
-    order_by: Optional[str] = Query(None, description="Sorts in ascending order comma-separated fields")
+    order_by: Optional[str] = Query(None, description="Sorts in ascending order comma-separated fields"),
+    conn: db.SAConnection = Depends(db.get_cnx)
     ):
-    # List is suited to data from a single collection that is bounded in size and not cached
 
+    # List is suited to data from a single collection that is bounded in size and not cached
 
     # Applicable common patterns
     # SEE pagination: https://cloud.google.com/apis/design/design_patterns#list_pagination
@@ -37,15 +38,21 @@ async def list_DAGs(
     print(order_by)
 
 
+    dags = await crud.list_dags(conn)
+    return dags
+
+
+
+
 @router.get("/dags:batchGet"
     )
-async def batch_get_DAGs():
+async def batch_get_dags():
     raise NotImplementedError()
 
 
 @router.get("/dags:search"
     )
-async def search_DAGs():
+async def search_dags():
     # A method that takes multiple resource IDs and returns an object for each of those IDs
     # Alternative to List for fetching data that does not adhere to List semantics, such as services.search.
     #https://cloud.google.com/apis/design/standard_methods#list
@@ -59,30 +66,34 @@ async def search_DAGs():
 @router.get("/dags/{dag_id}",
     response_model=schemas.DAG
     )
-async def get_DAG(dag_id: int):
+async def get_dag(dag_id: int):
     raise NotImplementedError()
-    ### return schemas.DAG(f"node {dag_id} in collection")
+    ### return schemas.DAG(f"dag {dag_id} in collection")
 
 
 
 
 # CREATE --------------
 @router.post("/dags",
-    response_model=schemas.DAG,
+    response_model=int,
     status_code=HTTP_201_CREATED,
     response_description="Successfully created"
     )
-async def create_DAG(node: schemas.DAGIn=Body(None)):
-    raise NotImplementedError()
-    # ...
-    if node.id:
+async def create_dag(dag: schemas.DAGIn=Body(None),
+    conn: db.SAConnection = Depends(db.get_cnx)
+    ):
+
+    if dag.version == "0.0.0" and dag.key=="foo":
         # client-assigned resouce name
-        raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Node {node.id} already exists")
+        raise HTTPException(
+            status_code=HTTP_409_CONFLICT,
+            detail=f"DAG {dag.key}:{dag.version} already exists"
+        )
 
-    node = schemas.DAG(uuidlib.uuid4(), "new")
-    # crud.set_DAG(node.id, node)
-    return node
-
+    # FIXME: conversion DAG (issue with workbench being json in orm and dict in schema)
+    dag_id = await crud.create_dag(conn, dag)
+    # TODO: no need to return since there is not extra info?, perhaps return
+    return dag_id
 
 
 
@@ -90,19 +101,19 @@ async def create_DAG(node: schemas.DAGIn=Body(None)):
 @router.patch("/dags/{dag_id}",
     response_model=schemas.DAG
     )
-async def udpate_DAG(dag_id: int, *, node: schemas.DAGIn):
+async def udpate_dag(dag_id: int, *, dag: schemas.DAGIn):
     # load
-    stored_data = crud.get_DAG(dag_id)
+    stored_data = crud.get_dag(dag_id)
     stored_obj = schemas.DAG(**stored_data)
 
     # update
-    update_data = node.dict(exclude_unset=True)
+    update_data = dag.dict(exclude_unset=True)
     updated_obj = stored_obj.copy(update=update_data)
 
     # save
-    crud.set_DAG(dag_id, jsonable_encoder(updated_obj))
+    crud.set_dag(dag_id, jsonable_encoder(updated_obj))
 
-    return node
+    return dag
 
 
 # DELETE  --------------
@@ -110,7 +121,7 @@ async def udpate_DAG(dag_id: int, *, node: schemas.DAGIn):
     status_code=HTTP_204_NO_CONTENT,
     response_description="Successfully deleted"
     )
-async def delete_DAG(dag_id: int):
+async def delete_dag(dag_id: int):
     print(f"Node {dag_id} deleted")
 
     #If the Delete method immediately removes the resource, it should return an empty response.

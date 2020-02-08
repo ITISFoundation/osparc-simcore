@@ -6,6 +6,8 @@ import sqlalchemy as sa
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+# Dependency
+from fastapi import Depends
 
 from .config import pg_dsn
 from .orm.base import Base
@@ -20,8 +22,7 @@ def create_tables():
 app_context = {}
 
 
-def get_engine() -> Engine:
-    return app_context["engine"]
+
 
 def info():
     engine = get_engine()
@@ -40,6 +41,16 @@ async def teardown_engine() -> None:
     engine = app_context['engine']
     engine.close()
     await engine.wait_closed()
+
+
+
+def get_engine() -> Engine:
+    return app_context["engine"]
+
+async def get_cnx(engine: Engine = Depends(get_engine)):
+    # TODO: problem here is retries??
+    async with engine.acquire() as conn:
+        yield conn
 
 
 

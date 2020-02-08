@@ -1,6 +1,6 @@
 from typing import Dict
 
-from pydantic import BaseModel ## pylint: disable=no-name-in-module
+from pydantic import BaseModel, Json ## pylint: disable=no-name-in-module
 # TODO: why?
 
 from . import project
@@ -19,9 +19,10 @@ from . import project
 class DAGBase(BaseModel):
     key: str
     version: str
+
     name: str
     description: str=""
-    contact: str
+    contact: str=""
     workbench: Dict[str, project.Node]
 
 
@@ -31,3 +32,9 @@ class DAGIn(DAGBase):
 
 class DAG(DAGBase):
     pass
+
+class DAGInDB(DAGBase):
+    workbench: Json[Dict[str, project.Node]]
+
+    class Config:
+        orm_mode = True
