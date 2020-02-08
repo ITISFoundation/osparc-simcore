@@ -73,7 +73,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 .PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(findstring -cache,cache,production)); \
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
 docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
 endef
 
@@ -85,7 +85,7 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build) --parallel
 else
-ifeq ($(target),webserver)
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
 endif
@@ -99,7 +99,7 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build) --parallel
 else
-ifeq ($(target),webserver)
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client touch compile-dev
 endif
