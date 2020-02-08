@@ -5,7 +5,6 @@
 import pytest
 from starlette.testclient import TestClient
 
-from ..fakes import DAG_WORKBENCH_JSON
 
 # TODO: app is init globally ... which is bad!
 from simcore_service_catalog.main import __version__, app

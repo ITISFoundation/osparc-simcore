@@ -34,10 +34,11 @@ class UserDetailed(User):
 
 def test_dev():
 
-    dag_in = schemas_dags.DAGIn(key="simcore/services/frontend/nodes-group/macros/")
+    dag_in = schemas_dags.DAGIn(key="simcore/services/frontend/nodes-group/macros/", version="1.0.0", name="foo")
 
     assert 'key' in dag_in.__fields_set__
-    assert 'version' not in dag_in.__fields_set__
+    assert 'version' in dag_in.__fields_set__
+    assert 'description' not in dag_in.__fields_set__
 
     print()
     # to update_dat
@@ -58,6 +59,8 @@ def test_db_to_api():
 
     dag_orm = orm_dags.DAG(id=1, key="foo", version="1.0.0", name="bar",
         description="some", contact="me", workbench=DAG_WORKBENCH_JSON)
+
+    import pdb; pdb.set_trace()
 
     dag_db = schemas_dags.DAGAtDB.from_orm(dag_orm)
 
