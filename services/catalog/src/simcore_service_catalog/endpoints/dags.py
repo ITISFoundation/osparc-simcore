@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/dags",
-    response_model=List[schemas.DAG]
+    response_model=List[schemas.DAGOut]
     )
 async def list_dags(
     page_token: Optional[str] = Query(None, description="Requests a specific page of the list results"),
@@ -33,11 +33,9 @@ async def list_dags(
     # TODO: filter: https://cloud.google.com/apis/design/naming_convention#list_filter_field
     # SEE response: https://cloud.google.com/apis/design/naming_convention#list_response
 
-    print(page_token)
-    print(page_size)
-    print(order_by)
-
-
+    #print(page_token)
+    #print(page_size)
+    #print(order_by)
     dags = await crud.list_dags(conn)
     return dags
 
@@ -64,7 +62,7 @@ async def search_dags():
 # GET --------------
 
 @router.get("/dags/{dag_id}",
-    response_model=schemas.DAG
+    response_model=schemas.DAGOut
     )
 async def get_dag(dag_id: int):
     raise NotImplementedError()
@@ -79,7 +77,8 @@ async def get_dag(dag_id: int):
     status_code=HTTP_201_CREATED,
     response_description="Successfully created"
     )
-async def create_dag(dag: schemas.DAGIn=Body(None),
+async def create_dag(
+    dag: schemas.DAGIn=Body(None),
     conn: db.SAConnection = Depends(db.get_cnx)
     ):
 
@@ -99,21 +98,30 @@ async def create_dag(dag: schemas.DAGIn=Body(None),
 
 # UPDATE  --------------
 @router.patch("/dags/{dag_id}",
-    response_model=schemas.DAG
+    response_model=schemas.DAGOut
     )
-async def udpate_dag(dag_id: int, *, dag: schemas.DAGIn):
-    # load
-    stored_data = crud.get_dag(dag_id)
-    stored_obj = schemas.DAG(**stored_data)
+async def udpate_dag(dag_id: int,
+    dag: schemas.DAGIn=Body(None),
+    conn: db.SAConnection = Depends(db.get_cnx) ):
 
-    # update
-    update_data = dag.dict(exclude_unset=True)
-    updated_obj = stored_obj.copy(update=update_data)
+    with conn.begin():
+        await crud.update_dag(conn, dag_id, dag)
+        updated_dag = await crud.get_dag(conn, dag_id)
 
-    # save
-    crud.set_dag(dag_id, jsonable_encoder(updated_obj))
+    return updated_dag
 
-    return dag
+
+
+@router.put("/dags/{dag_id}",
+    response_model=Optional[schemas.DAGOut]
+    )
+async def replace_dag(dag_id: int,
+    dag: schemas.DAGIn = Body(...),
+    conn: db.SAConnection = Depends(db.get_cnx) ):
+
+    await crud.replace_dag(conn, dag_id, dag)
+
+    return None
 
 
 # DELETE  --------------
@@ -121,9 +129,9 @@ async def udpate_dag(dag_id: int, *, dag: schemas.DAGIn):
     status_code=HTTP_204_NO_CONTENT,
     response_description="Successfully deleted"
     )
-async def delete_dag(dag_id: int):
-    print(f"Node {dag_id} deleted")
-
-    #If the Delete method immediately removes the resource, it should return an empty response.
-    #If the Delete method initiates a long-running operation, it should return the long-running operation.
-    #If the Delete method only marks the resource as being deleted, it should return the updated resource.
+async def delete_dag(dag_id: int,
+    conn: db.SAConnection = Depends(db.get_cnx) ):
+    # If the Delete method immediately removes the resource, it should return an empty response.
+    # If the Delete method initiates a long-running operation, it should return the long-running operation.
+    # If the Delete method only marks the resource as being deleted, it should return the updated resource.
+    await crud.delete_dag(conn, dag_id)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from simcore_service_catalog.__main__ import main
+#from simcore_service_catalog.__main__ import main
 
 
 @pytest.fixture

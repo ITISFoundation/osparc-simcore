@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Json ## pylint: disable=no-name-in-module
 # TODO: why?
@@ -17,23 +17,25 @@ from . import project
 #   nodesGroupService["workbench"] = workbench;
 
 class DAGBase(BaseModel):
-    key: str
-    version: str
+    key: str=""
+    version: str=""
 
-    name: str
+    name: str=""
     description: str=""
     contact: str=""
-    workbench: Dict[str, project.Node]
 
 
 class DAGIn(DAGBase):
+    workbench: Optional[Dict[str, project.Node]]
+
+class DAGOut(DAGIn):
+    pass
+
+class DAG(DAGIn):
     pass
 
 
-class DAG(DAGBase):
-    pass
-
-class DAGInDB(DAGBase):
+class DAGAtDB(DAGBase):
     workbench: Json[Dict[str, project.Node]]
 
     class Config:

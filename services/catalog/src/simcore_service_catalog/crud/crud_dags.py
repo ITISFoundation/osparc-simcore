@@ -8,38 +8,51 @@ from ..orm import orm_dags as orm
 from ..schemas import schemas_dags as schemas
 
 
-async def get_dag(conn: db.SAConnection, dag_id: int) -> Optional[orm.DAG]:
-    query = orm.dags.select().where(orm.dags.c.id == dag_id)
-    row: db.RowProxy = await (await conn.execute(query)).first()
-    if row:
-        return orm.DAG(**row)
-    return None
-
-
-async def list_dags(conn: db.SAConnection) -> List[orm.DAG]:
+async def list_dags(conn: db.SAConnection) -> List[schemas.DAGAtDB]:
     dags = []
     async for row in conn.execute(orm.dags.select()):
         if row:
-            dags.append(orm.DAG(**row))
+            dags.append(schemas.DAGAtDB(**row))
     return dags
 
 
+async def get_dag(conn: db.SAConnection, dag_id: int) -> Optional[schemas.DAGAtDB]:
+    stmt = orm.dags.select().where(orm.dags.c.id == dag_id)
+    row: db.RowProxy  = await (await conn.execute(stmt)).first()
+    if row:
+        return schemas.DAGAtDB(**row)
+    return None
+
+
 async def create_dag(conn: db.SAConnection, dag: schemas.DAGIn):
-    q = orm.dags.insert().values(
-        key = dag.key,
-        version = dag.version,
-        name = dag.name,
-        description = dag.description,
-        contact = dag.contact,
-        workbench = json.dumps(dag.dict()['workbench'])
+    stmt = orm.dags.insert().values(
+        workbench = json.dumps(dag.dict()['workbench']),
+        **dag.dict(exclude={'workbench'})
     )
-
-    new_id: int = await(await conn.execute(q)).scalar()
-
-    # TODO: convert
-    q = orm.dags.select( (orm.dags.c.id == new_id) )
-    row: db.RowProxy = await(await conn.execute(q)).first()
-    assert row
-    #if row:
-    #    _dag = orm.DAG(**row)
+    new_id: int = await(await conn.execute(stmt)).scalar()
     return new_id
+
+
+async def replace_dag(conn: db.SAConnection, dag_id: int, dag: schemas.DAGIn):
+    stmt = orm.dags.update().values(
+        workbench = json.dumps(dag.dict()['workbench']),
+        **dag.dict(exclude={'workbench'})
+    ).where(orm.dags.c.id == dag_id)
+    await conn.execute(stmt)
+
+
+async def update_dag(conn: db.SAConnection, dag_id: int, dag: schemas.DAGIn):
+    patch = dag.dict(exclude_unset=True, exclude={'workbench'})
+    if 'workbench' in dag.__fields_set__:
+        patch['workbench'] = json.dumps(patch['workbench'])
+
+    stmt = sa.update(orm.dags).values(**patch).where(orm.dags.c.id == dag_id)
+    res = await conn.execute(stmt)
+
+    # TODO: dev asserts
+    assert res.returns_rows==False
+
+
+async def delete_dag(conn: db.SAConnection, dag_id: int):
+    stmt = sa.delete(orm.dags).where(orm.dags.c.id == dag_id)
+    await conn.execute(stmt)
