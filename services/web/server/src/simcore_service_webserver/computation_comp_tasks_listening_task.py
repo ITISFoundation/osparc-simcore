@@ -86,7 +86,7 @@ async def listen(app: web.Application):
             task_output = node_data["outputs"]
             node_id = node_data["node_id"]
             project_id = node_data["project_id"]
-            # find the user(s) linked to that project (why do I need to know the user?)
+            # find the user(s) linked to that project
             joint_table = user_to_projects.join(projects)
             query = select([user_to_projects]).select_from(joint_table).where(projects.c.uuid == project_id)
             async for row in conn.execute(query):
