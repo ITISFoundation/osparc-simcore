@@ -3,7 +3,7 @@ import json
 import logging
 from functools import wraps
 from pprint import pprint
-from typing import Any, Callable, Coroutine, Dict
+from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
@@ -15,13 +15,12 @@ from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
 from .projects import projects_api
-from .resource_manager.websocket_manager import managed_resource
-from .socketio.config import get_socket_server
+from .socketio.events import post_messages
 
 log = logging.getLogger(__file__)
 
 
-def rabbit_handler(app: web.Application) -> Callable:
+def rabbit_adapter(app: web.Application) -> Callable:
     """this decorator allows passing additional paramters to python-socketio compatible handlers.
     I.e. aiopika handler expect functions of type `async def function(message)`
     This allows to create a function of type `async def function(message, app: web.Application)
@@ -33,18 +32,7 @@ def rabbit_handler(app: web.Application) -> Callable:
         return wrapped
     return decorator
 
-
-async def post_messages(app: web.Application, user_id: str, messages: Dict[str, Any]) -> None:
-    sio = get_socket_server(app)
-    with managed_resource(user_id, None, app) as rt:
-        socket_ids = await rt.find_socket_ids()
-        for sid in socket_ids:
-            # we only send the data to the right sockets (there might be several tabs open)
-            tasks = [sio.emit(event, json.dumps(data), room=sid) for event, data in messages.items()]
-            asyncio.ensure_future(asyncio.gather(*tasks))
-
-
-async def parse_message_data(app: web.Application, data: Dict) -> None:
+async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
     log.debug("parsing message data:\n%s", pprint(data))
     # get common data
     user_id = data["user_id"]
@@ -71,10 +59,10 @@ async def parse_message_data(app: web.Application, data: Dict) -> None:
     if messages: 
         await post_messages(app, user_id, messages)
 
-async def on_message(message: aio_pika.IncomingMessage, app: web.Application) -> None:
+async def rabbit_message_handler(message: aio_pika.IncomingMessage, app: web.Application) -> None:
     with message.process():
         data = json.loads(message.body)
-        await parse_message_data(app, data)
+        await parse_rabbit_message_data(app, data)
 
 async def subscribe(app: web.Application) -> None:
     # TODO: catch and deal with missing connections:
@@ -114,6 +102,6 @@ async def subscribe(app: web.Application) -> None:
     await queue.bind(progress_exchange)
 
     # Start listening the queue with name 'task_queue'
-    partial_on_message = rabbit_handler(app)(on_message)
-    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_on_message]
-    await queue.consume(partial_on_message)
+    partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
+    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
+    await queue.consume(partial_rabbit_message_handler)

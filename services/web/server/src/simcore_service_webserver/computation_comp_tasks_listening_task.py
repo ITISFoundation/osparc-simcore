@@ -15,6 +15,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .projects import projects_api
 from .projects.projects_models import projects, user_to_projects
+from .socketio.events import post_messages
 
 log = logging.getLogger(__name__)
 
@@ -91,8 +92,6 @@ async def listen(app: web.Application):
             async for row in conn.execute(query):
                 user_id = row["user_id"]
                 node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
-                #FIXME: this is not the final version
-                from .computation_subscribe import post_messages
                 messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
                 await post_messages(app, user_id, messages)
         
