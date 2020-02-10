@@ -88,7 +88,7 @@ async def udpate_dag(dag_id: int,
     dag: schemas.DAGIn=Body(None),
     conn: db.SAConnection = Depends(db.get_cnx) ):
 
-    with conn.begin():
+    async with conn.begin():
         await crud.update_dag(conn, dag_id, dag)
         updated_dag = await crud.get_dag(conn, dag_id)
 
