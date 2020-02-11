@@ -17,8 +17,8 @@ from .login.decorators import login_required
 logger = logging.getLogger(__name__)
 
 
-#from servicelib.rest_responses import wrap_envelope
-#from .security_api import check_permission
+#TODO: from servicelib.rest_responses import wrap_envelope
+#TODO: from .security_api import check_permission
 
 
 async def is_service_responsive(app:web.Application):
