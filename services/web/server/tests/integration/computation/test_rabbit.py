@@ -133,7 +133,7 @@ async def all_in_one(request, loop, rabbit_config, pika_connection, node_uuid, u
     }
 
     # socket event
-    socket_event_name = "logger" if request.param is "log" else "progress"
+    socket_event_name = "nodeUpdated"
     yield {"rabbit_channel": pika_exchange, "data": message, "socket_name": socket_event_name}
 
 @pytest.fixture
@@ -164,7 +164,7 @@ async def test_rabbit_websocket_connection(logged_user,
                 body=json.dumps(channel_message).encode(),
                 content_type="text/json"), routing_key = ""
             ) for i in range(NUMBER_OF_MESSAGES)]
-    await gather(*publish_tasks, return_exceptions=True)
+    await gather(*publish_tasks)
     await sleep(WAIT_FOR_MESSAGES_S)
     log_fct.assert_not_called()
 
@@ -175,7 +175,7 @@ async def test_rabbit_websocket_connection(logged_user,
                 body=json.dumps(channel_message).encode(),
                 content_type="text/json"), routing_key = ""
             ) for i in range(NUMBER_OF_MESSAGES)]
-    await gather(*publish_tasks, return_exceptions=True)
+    await gather(*publish_tasks)
     await sleep(WAIT_FOR_MESSAGES_S)
 
     log_fct.assert_called()
