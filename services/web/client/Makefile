@@ -47,7 +47,6 @@ upgrade: ## upgrade to official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}
 	@${docker_compose} pull
 
-
 .PHONY: down
 down: ## tear down docker-compose
 	@${docker_compose} down
@@ -98,7 +97,7 @@ help: ## this colorful help
 	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
 	@echo ""
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 
 

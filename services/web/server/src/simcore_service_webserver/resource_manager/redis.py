@@ -12,17 +12,17 @@ log = logging.getLogger(__name__)
 THIS_SERVICE_NAME = 'redis'
 DSN = "redis://{host}:{port}"
 
-retry_policy = dict(
+retry_upon_init_policy = dict(
     stop=stop_after_attempt(3),
     wait=wait_random(min=1, max=2),
-    before=before_log(log, logging.ERROR))
-
+    before=before_log(log, logging.WARNING)
+)
 
 async def redis_client(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     url = DSN.format(**cfg["redis"])
 
-    for attempt in Retrying(**retry_policy): # pylint: disable=not-an-iterable
+    for attempt in Retrying(**retry_upon_init_policy):
         with attempt:
             client = await aioredis.create_redis_pool(url, encoding="utf-8")
 
