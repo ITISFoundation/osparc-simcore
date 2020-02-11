@@ -1,0 +1,406 @@
+components:
+  schemas:
+    DAGIn:
+      properties:
+        contact:
+          format: email
+          title: Contact
+          type: string
+        description:
+          title: Description
+          type: string
+        key:
+          example: simcore/services/frontend/nodes-group/macros/1
+          pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$'
+          title: Key
+          type: string
+        name:
+          title: Name
+          type: string
+        version:
+          example: 1.0.0
+          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+          title: Version
+          type: string
+        workbench:
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
+          title: Workbench
+          type: object
+      required:
+        - key
+        - version
+        - name
+      title: DAGIn
+      type: object
+    DAGOut:
+      properties:
+        contact:
+          format: email
+          title: Contact
+          type: string
+        description:
+          title: Description
+          type: string
+        id:
+          title: Id
+          type: integer
+        key:
+          example: simcore/services/frontend/nodes-group/macros/1
+          pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$'
+          title: Key
+          type: string
+        name:
+          title: Name
+          type: string
+        version:
+          example: 1.0.0
+          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+          title: Version
+          type: string
+        workbench:
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
+          title: Workbench
+          type: object
+      required:
+        - key
+        - version
+        - name
+        - id
+      title: DAGOut
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    Input:
+      properties: {}
+      title: Input
+      type: object
+    Node:
+      properties:
+        inputAccess:
+          additionalProperties:
+            enum:
+              - ReadAndWrite
+              - Invisible
+              - ReadOnly
+          title: Inputaccess
+          type: object
+        inputNodes:
+          items:
+            type: string
+          title: Inputnodes
+          type: array
+        inputs:
+          additionalProperties:
+            $ref: '#/components/schemas/Input'
+          title: Inputs
+          type: object
+        key:
+          example: simcore/services/comp/sleeper
+          pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$'
+          title: Key
+          type: string
+        label:
+          title: Label
+          type: string
+        outputs:
+          additionalProperties:
+            $ref: '#/components/schemas/Output'
+          title: Outputs
+          type: object
+        parent:
+          title: Parent
+          type: string
+        position:
+          $ref: '#/components/schemas/Position'
+        progress:
+          title: Progress
+          type: number
+        thumbnail:
+          title: Thumbnail
+          type: string
+        version:
+          example: 6.2.0
+          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+          title: Version
+          type: string
+      required:
+        - key
+        - version
+        - label
+        - progress
+        - inputs
+        - inputAccess
+        - inputNodes
+        - outputs
+        - parent
+        - position
+      title: Node
+      type: object
+    Output:
+      properties: {}
+      title: Output
+      type: object
+    Position:
+      properties:
+        x:
+          title: X
+          type: integer
+        'y':
+          title: 'Y'
+          type: integer
+      required:
+        - x
+        - 'y'
+      title: Position
+      type: object
+    ValidationError:
+      properties:
+        loc:
+          items:
+            type: string
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+      type: object
+info:
+  description: 'Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)'
+  title: Components Catalog Service
+  version: 0.1.0
+openapi: 3.0.2
+paths:
+  /:
+    get:
+      operationId: healthcheck__get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Healthcheck
+      tags:
+        - diagnostics
+  /v0/dags:
+    get:
+      operationId: list_dags_v0_dags_get
+      parameters:
+        - description: Requests a specific page of the list results
+          in: query
+          name: page_token
+          required: false
+          schema:
+            description: Requests a specific page of the list results
+            title: Page Token
+            type: string
+        - description: Maximum number of results to be returned by the server
+          in: query
+          name: page_size
+          required: false
+          schema:
+            default: 0
+            description: Maximum number of results to be returned by the server
+            minimum: 0
+            title: Page Size
+            type: integer
+        - description: Sorts in ascending order comma-separated fields
+          in: query
+          name: order_by
+          required: false
+          schema:
+            description: Sorts in ascending order comma-separated fields
+            title: Order By
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DAGOut'
+                title: Response List Dags V0 Dags Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Dags
+      tags:
+        - dags
+    post:
+      operationId: create_dag_v0_dags_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DAGIn'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                title: Response Create Dag V0 Dags Post
+                type: integer
+          description: Successfully created
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Dag
+      tags:
+        - dags
+  '/v0/dags/{dag_id}':
+    delete:
+      operationId: delete_dag_v0_dags__dag_id__delete
+      parameters:
+        - in: path
+          name: dag_id
+          required: true
+          schema:
+            title: Dag Id
+            type: integer
+      responses:
+        '204':
+          description: Successfully deleted
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Dag
+      tags:
+        - dags
+    get:
+      operationId: get_dag_v0_dags__dag_id__get
+      parameters:
+        - in: path
+          name: dag_id
+          required: true
+          schema:
+            title: Dag Id
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DAGOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Dag
+      tags:
+        - dags
+    patch:
+      operationId: udpate_dag_v0_dags__dag_id__patch
+      parameters:
+        - in: path
+          name: dag_id
+          required: true
+          schema:
+            title: Dag Id
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DAGIn'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DAGOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Udpate Dag
+      tags:
+        - dags
+    put:
+      operationId: replace_dag_v0_dags__dag_id__put
+      parameters:
+        - in: path
+          name: dag_id
+          required: true
+          schema:
+            title: Dag Id
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DAGIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DAGOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Replace Dag
+      tags:
+        - dags
+  '/v0/dags:batchGet':
+    get:
+      operationId: batch_get_dags_v0_dags_batchGet_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Batch Get Dags
+      tags:
+        - dags
+  '/v0/dags:search':
+    get:
+      operationId: search_dags_v0_dags_search_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Search Dags
+      tags:
+        - dags

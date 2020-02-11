@@ -45,6 +45,10 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
+.PHONY: openapi-specs
+openapi-specs: ## TODO: implementing a way to serialize openapi
+	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
+
 .PHONY: run-devel down
 run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
