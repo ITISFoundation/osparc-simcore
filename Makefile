@@ -54,9 +54,9 @@ export DOCKER_REGISTRY  ?= itisfoundation
 .PHONY: help
 help: ## help on rule's targets
 ifeq ($(IS_WIN),)
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 else
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
 
@@ -328,6 +328,15 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE) --directory services/web/server $@
 	@$(MAKE) --directory services/storage $@
 	@$(MAKE) --directory services/director $@
+
+
+.PHONY: code-analysis
+code-analysis: .codeclimate.yml ## runs code-climate analysis
+	# Validates @<
+	./scripts/code-climate.sh validate-config
+	# Running analysis
+	./scripts/code-climate.sh analyze
+
 
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
