@@ -120,7 +120,9 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: str) 
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(user_id: Optional[str], project_uuid: Optional[str], app: web.Application) -> None:
-    assert user_id or project_uuid
+    if not user_id and not project_uuid:
+        raise ValueError("Expected either user or project")
+
     list_of_services = await director_api.get_running_interactive_services(app,
                                                                             project_id=project_uuid,
                                                                             user_id=user_id)

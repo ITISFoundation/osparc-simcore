@@ -76,12 +76,14 @@ def create_schema() -> T.Dict:
     })
 
     section_names = [k.name for k in schema.keys]
-    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names
+
+    assert len(section_names) == len(set(section_names)), \
+        "Found repeated section names in %s" % section_names # nosec
 
     return schema
 
 
 CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-app_schema = create_schema() # TODO: rename as schema
+app_schema = create_schema()
 
-assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )
+assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE ) # nosec
