@@ -23,7 +23,8 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 SHELL := /bin/bash
 
 # VARIABLES ----------------------------------------------
-# TODO: read from docker-compose file instead
+# TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
+# or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
 	director \
 	sidecar \
@@ -68,58 +69,51 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build
-build: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
+
+define _docker_compose_build
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
+docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
+endef
+
+rebuild: build-nc # alias
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
-ifeq ($(target),)
 	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
 else
-	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
-endif
-
-.PHONY: rebuild build-nc
-rebuild: build-nc
-build-nc: .env ## As build but w/o cache (alias: rebuild)
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
-ifeq ($(target),)
-	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache
-else
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache $(target)
+	$(_docker_compose_build) $(target)
 endif
 
-.PHONY: build-devel
-build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+ifeq ($(target),)
+	# Building services
+	$(_docker_compose_build) --parallel
+else
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client touch compile-dev
-ifeq ($(target),)
-	# Building services
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
-else
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
+	$(_docker_compose_build) $(target)
 endif
 
 
-.PHONY: build-cache
 # TODO: should download cache if any??
-build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
-	@export BUILD_TARGET=cache; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
+
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -286,7 +280,7 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
-.PHONY: devenv
+.PHONY: devenv devenv-all
 
 .venv:
 	python3 -m venv $@
@@ -302,6 +296,12 @@ devenv: .venv ## create a python virtual environment with dev tools (e.g. linter
 		pip-tools \
 		rope
 	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+
+devenv-all: devenv ## sets up extra development tools (everything else besides python)
+	# Upgrading client compiler
+	@$(MAKE) --directory services/web/client upgrade
+	# Building tools
+	@$(MAKE) --directory scripts/json-schema-to-openapi-schema
 
 
 ## MISC -------------------------------
@@ -397,14 +397,14 @@ endif
 
 .PHONY: clean clean-images
 
-.check-clean:
-	@git clean -ndxf -e .vscode/
+git_clean_args = -dxf -e .vscode
+
+clean: ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
+	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
-	@git clean -dxf -e .vscode/
+	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
 
@@ -414,6 +414,9 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+
+clean-all: clean clean-images
+	# Cleaning both output files and images
 
 
 .PHONY: reset
