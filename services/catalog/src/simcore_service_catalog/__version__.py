@@ -25,4 +25,3 @@ Package version is defined in the setup.py following the principle of single-sou
 import pkg_resources
 
 __version__ = pkg_resources.get_distribution('simcore_service_catalog').version
-assert __version__=="0.1.0", "Did you `pip install` this package?"

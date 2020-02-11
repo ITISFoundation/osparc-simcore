@@ -1,17 +1,26 @@
 import logging
+from pathlib import Path
+import sys
 
+import yaml
 from fastapi import FastAPI
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
 from . import __version__
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
-from .endpoints import dags, diagnostics, dusers
+from .endpoints import dags, diagnostics
+#, dusers
 
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
+API_VERSION_PREFIX = f"v{API_MAJOR_VERSION}"
+
+
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="Components Catalog Service",
@@ -24,7 +33,16 @@ app = FastAPI(
 # projects
 app.include_router(diagnostics.router, tags=['diagnostics'])
 app.include_router(dags.router, tags=['dags'], prefix=f"/v{API_MAJOR_VERSION}")
-app.include_router(dusers.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}")
+
+#TODO: remove
+#from .endpoints import dusers
+#  app.include_router(dusers.router, tags=['dummy'], prefix=f"/v{API_MAJOR_VERSION}")
+
+def dump_openapi():
+    oas_path: Path = current_dir / f"api/{API_VERSION_PREFIX}/openapi.yaml"
+    log.info("Saving openapi schema to %s", oas_path)
+    with open( oas_path, 'wt') as fh:
+        yaml.safe_dump(app.openapi(), fh)
 
 
 @app.on_event("startup")
