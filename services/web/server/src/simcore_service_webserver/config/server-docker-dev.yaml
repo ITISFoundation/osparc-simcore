@@ -23,6 +23,10 @@ director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: "v0"
+catalog:
+  host: catalog
+  port: 8000
+  version: v0
 db:
   init_tables: False
   postgres:

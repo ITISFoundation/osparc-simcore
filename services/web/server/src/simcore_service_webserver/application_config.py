@@ -31,6 +31,7 @@ from .projects import config as projects_config
 from .resource_manager import config as resource_manager_config
 from .resources import resources
 from .socketio import config as socketio_config
+from . import catalog_config
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def create_schema() -> T.Dict:
         addon_section("users", optional=True): minimal_addon_schema(),
         addon_section("studies_access", optional=True): minimal_addon_schema(),
         addon_section("tags", optional=True): minimal_addon_schema(),
-        addon_section("catalog", optional=True): minimal_addon_schema()
+        addon_section("catalog", optional=True): catalog_config.schema,
     })
 
     section_names = [k.name for k in schema.keys]
