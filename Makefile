@@ -332,7 +332,7 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 
 .PHONY: code-analysis
 code-analysis: .codeclimate.yml ## runs code-climate analysis
-	# Validates @<
+	# Validates $<
 	./scripts/code-climate.sh validate-config
 	# Running analysis
 	./scripts/code-climate.sh analyze
