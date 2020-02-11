@@ -77,8 +77,7 @@ def create_schema() -> T.Dict:
 
     section_names = [k.name for k in schema.keys]
 
-    assert len(section_names) == len(set(section_names)), \
-        "Found repeated section names in %s" % section_names # nosec
+    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names # nosec
 
     return schema
 
