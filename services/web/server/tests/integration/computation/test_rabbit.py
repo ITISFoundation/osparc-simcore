@@ -113,6 +113,19 @@ def project_id() -> str:
 
 # ------------------------------------------
 
+@pytest.fixture
+async def rabbit_channel():
+    async def create(channel_name: str):
+        # create rabbit pika exchange channel
+        channel = await pika_connection.channel()
+        pika_channel = rabbit_config["channels"][channel_name]
+        pika_exchange = await channel.declare_exchange(
+            pika_channel, aio_pika.ExchangeType.FANOUT,
+            auto_delete=True
+        )
+        return pika_exchange
+
+
 @pytest.fixture(params=["log", "progress"])
 async def all_in_one(request, loop, rabbit_config, pika_connection, node_uuid, user_id, project_id):
     # create rabbit pika exchange channel
@@ -126,11 +139,14 @@ async def all_in_one(request, loop, rabbit_config, pika_connection, node_uuid, u
     # create corresponding message
     message = {
         "Channel":request.param.title(),
-        "Progress": 0.56,
         "Node": node_uuid,
         "user_id": user_id,
         "project_id": project_id
     }
+    if request.param == "log":
+        message["Messages"] = "some log messages"
+    if request.param == "progress":
+        message["Progress"] = 0
 
     # socket event
     socket_event_name = "nodeUpdated"
