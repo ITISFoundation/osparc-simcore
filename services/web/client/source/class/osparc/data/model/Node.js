@@ -1048,8 +1048,8 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (savePosition) {
         nodeEntry.position = {
-          x: this.getPosition().x,
-          y: this.getPosition().y
+          x: this.getPosition().x ? this.getPosition().x : 0,
+          y: this.getPosition().y ? this.getPosition().y : 0
         };
       }
       // remove null entries from the payload
