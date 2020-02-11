@@ -96,7 +96,7 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
+ENV PYTHONOPTIMIZE=TRUE
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
