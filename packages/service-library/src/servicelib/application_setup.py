@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 
 from aiohttp import web
 
@@ -26,7 +26,7 @@ def app_module_setup(module_name: str, category: ModuleCategory,*,
         depends: Optional[List[str]]=None,
         config_section: str=None, config_enabled: str=None,
         logger: Optional[logging.Logger]=None
-    ) -> bool:
+    ) -> Callable:
     """ Decorator that marks a function as 'a setup function' for a given module in an application
 
         - Marks a function as 'setup' of a given module in an application
