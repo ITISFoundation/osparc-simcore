@@ -13,8 +13,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {osparc.data.model.Node} Node owning the widget
-    */
+   * @param node {osparc.data.model.Node} Node owning the widget
+   */
   construct: function(node) {
     this.base(arguments);
 
@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     });
 
     this.__prepareOutputNode();
-
+    this.__prepareOutputWorkbench();
     this.__buildLayout();
   },
 
@@ -39,13 +39,13 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nullable: false
     },
 
-    outputWorkbench: {
-      check: "osparc.data.model.Workbench",
+    outputNode: {
+      check: "osparc.data.model.Node",
       nullable: false
     },
 
-    outputNode: {
-      check: "osparc.data.model.Node",
+    outputWorkbench: {
+      check: "osparc.data.model.Workbench",
       nullable: false
     }
   },
@@ -53,6 +53,36 @@ qx.Class.define("osparc.component.export.ExportGroup", {
   members: {
     __groupName: null,
     __groupDesc: null,
+    __activeStudy: null,
+
+    destruct: function() {
+      osparc.store.Store.getInstance().setCurrentStudy(this.__activeStudy);
+    },
+
+    __prepareOutputNode: function() {
+      const inputNode = this.getInputNode();
+
+      const key = inputNode.getKey();
+      const version = inputNode.getVersion();
+      const nodeData = inputNode.serialize();
+      const nodesGroup = new osparc.data.model.Node(key, version);
+      nodesGroup.populateInputOutputData(nodeData);
+      this.setOutputNode(nodesGroup);
+    },
+
+    __prepareOutputWorkbench: function() {
+      const inputNode = this.getInputNode();
+
+      const studydata = {
+        workbench: this.__groupToWorkbenchData(inputNode)
+      };
+      const dummyStudy = new osparc.data.model.Study(studydata);
+
+      this.__activeStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      osparc.store.Store.getInstance().setCurrentStudy(dummyStudy);
+      this.setOutputWorkbench(dummyStudy.getWorkbench());
+      dummyStudy.getWorkbench().buildWorkbench();
+    },
 
     __buildLayout: function() {
       const formRenderer = this.__buildMetaDataForm();
@@ -95,27 +125,16 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return formRenderer;
     },
 
-    __prepareOutputNode: function() {
-      const inputNode = this.getInputNode();
-      const key = inputNode.getKey();
-      const version = inputNode.getVersion();
-      const outputNode = new osparc.data.model.Node(key, version);
-      this.setOutputNode(outputNode);
-
-      const nodeData = inputNode.serialize();
-      outputNode.populateInputOutputData(nodeData);
-    },
-
     __buildOutputSettings: function() {
-      const settingsEditorLayout = osparc.component.node.GroupNodeView.getSettingsEditorLayout(this.getOutputNode());
+      const innerNodes = this.getOutputWorkbench().getNodes(true);
+      const settingsEditorLayout = osparc.component.node.GroupNodeView.getSettingsEditorLayout(innerNodes);
       return settingsEditorLayout;
     },
 
     __exportAsMacroService: function() {
-      const inputNode = this.getInputNode();
-      const workbench = this.__groupToWorkbenchData(inputNode);
-
       const outputNode = this.getOutputNode();
+      const outputWorkbench = this.getOutputWorkbench();
+
       const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
       const version = "1.0.0";
       const nodesGroupService = osparc.utils.Services.getNodesGroup();
@@ -124,7 +143,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["name"] = this.__groupName.getValue();
       nodesGroupService["description"] = this.__groupDesc.getValue();
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
-      nodesGroupService["workbench"] = workbench;
+      nodesGroupService["workbench"] = outputWorkbench.serializeWorkbench();
 
       osparc.store.Store.getInstance().addGroup(nodesGroupService);
 
@@ -132,30 +151,30 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __groupToWorkbenchData: function(nodesGroup) {
-      let workbench = {};
+      let workbenchData = {};
 
       // serialize innerNodes
       const innerNodes = nodesGroup.getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        workbench[innerNode.getNodeId()] = innerNode.serialize();
+        workbenchData[innerNode.getNodeId()] = innerNode.serialize();
       });
 
       // remove parent from first level
       const firstLevelNodes = nodesGroup.getInnerNodes(false);
       Object.values(firstLevelNodes).forEach(firstLevelNode => {
-        workbench[firstLevelNode.getNodeId()]["parent"] = null;
+        workbenchData[firstLevelNode.getNodeId()]["parent"] = null;
       });
 
-      // deep copy workbench
-      workbench = osparc.utils.Utils.deepCloneObject(workbench);
+      // deep copy workbenchData
+      workbenchData = osparc.utils.Utils.deepCloneObject(workbenchData);
 
       // removeOutReferences
-      workbench = this.__removeOutReferences(workbench);
+      workbenchData = this.__removeOutReferences(workbenchData);
 
       // replace Uuids
-      workbench = osparc.data.Converters.replaceUuids(workbench);
+      workbenchData = osparc.data.Converters.replaceUuids(workbenchData);
 
-      return workbench;
+      return workbenchData;
     },
 
     __removeOutReferences: function(workbench) {

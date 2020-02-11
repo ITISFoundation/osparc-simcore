@@ -37,10 +37,9 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
   },
 
   statics: {
-    getSettingsEditorLayout: function(node) {
+    getSettingsEditorLayout: function(nodes) {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox("Settings");
-      const innerNodes = node.getInnerNodes(true);
-      Object.values(innerNodes).forEach(innerNode => {
+      Object.values(nodes).forEach(innerNode => {
         const propsWidgetEditor = innerNode.getPropsWidgetEditor();
         if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
@@ -120,7 +119,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     },
 
     _openEditAccessLevel: function() {
-      const settingsEditorLayout = this.self().getSettingsEditorLayout(this.getNode());
+      const settingsEditorLayout = this.self().getSettingsEditorLayout(this.getNode().getInnerNodes());
       const win = osparc.component.node.BaseNodeView.createWindow(this.getNode().getLabel());
       win.add(settingsEditorLayout);
       win.center();
