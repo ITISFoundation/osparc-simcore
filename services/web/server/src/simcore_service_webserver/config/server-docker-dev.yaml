@@ -49,11 +49,6 @@ rabbit:
   channels:
     progress: ${RABBIT_PROGRESS_CHANNEL}
     log: ${RABBIT_LOG_CHANNEL}
-# s3:
-#   endpoint: ${S3_ENDPOINT}
-#   access_key: ${S3_ACCESS_KEY}
-#   secret_key: ${S3_SECRET_KEY}
-#   bucket_name: ${S3_BUCKET_NAME}
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
