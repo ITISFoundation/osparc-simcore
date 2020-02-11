@@ -26,7 +26,7 @@ from ..storage_api import (delete_data_folders_of_project,
                            delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import ProjectNotFoundError
+from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -187,8 +187,8 @@ async def update_project_node_progress(app: web.Application, user_id: str, proje
     log.debug("updating node %s progress in project %s for user %s with %s", node_id, project_id, user_id, progress)
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
-        log.warning("progress update: node %s is not in project %s, was it deleted?", node_id, project_id)
-        return
+        raise NodeNotFoundError(project_id, node_id)
+
     project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + .5)
     db = app[APP_PROJECT_DBAPI]
     await db.update_user_project(project, user_id, project_id)
@@ -198,8 +198,8 @@ async def update_project_node_outputs(app: web.Application, user_id: str, projec
     log.debug("updating node %s outputs in project %s for user %s with %s", node_id, project_id, user_id, pprint(data))
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
-        log.warning("progress update: node %s is not in project %s, was it deleted?", node_id, project_id)
-        return
+        raise NodeNotFoundError(project_id, node_id)
+
     node_description = project["workbench"][node_id]
     node_description["outputs"] = data
     # update outputs if necessary
@@ -216,4 +216,3 @@ async def update_project_node_outputs(app: web.Application, user_id: str, projec
     db = app[APP_PROJECT_DBAPI]
     await db.update_user_project(project, user_id, project_id)
     return node_description
-
