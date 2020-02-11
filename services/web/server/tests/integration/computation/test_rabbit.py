@@ -164,6 +164,7 @@ async def _wait_until(fct: Callable, timeout: int):
 async def test_rabbit_websocket_computation(loop, logged_user, user_project,
                                             socketio_client, client_session_id, mocker,
                                             rabbit_channels, node_uuid, user_id, project_id):
+
     # corresponding websocket event names
     websocket_log_event = "logger"
     websocket_node_update_event = "nodeUpdated"
@@ -186,17 +187,28 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     # publish messages with correct user id, but no project
     log_messages, _, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_channels)
     def predicate() -> bool:
-        return mock_log_handler_fct.call_count == NUMBER_OF_MESSAGES
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
     await _wait_until(predicate, TIMEOUT_S)
     # await sleep(WAIT_FOR_MESSAGES_S)
-    calls = [call(json.dumps(message)) for message in log_messages]
-    mock_log_handler_fct.assert_has_calls(calls, any_order=True)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler_fct.assert_not_called()
     # publish message with correct user id, project but not node
     mock_log_handler_fct.reset_mock()
     log_messages, _, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
     await _wait_until(predicate, TIMEOUT_S)
-    calls = [call(json.dumps(message)) for message in log_messages]
-    mock_log_handler_fct.assert_has_calls(calls, any_order=True)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler_fct.assert_not_called()
     mock_log_handler_fct.reset_mock()
+
+    # publish message with correct user id, project node
+    mock_log_handler_fct.reset_mock()
+    node_uuid = list(user_project["workbench"])[0]
+    log_messages, progress_messages, final_log_message = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    await _wait_until(predicate, TIMEOUT_S)
+    log_messages.append(final_log_message)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
+    mock_node_update_handler_fct.assert_called()
+    assert mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)

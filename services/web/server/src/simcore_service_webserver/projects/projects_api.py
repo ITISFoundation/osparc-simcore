@@ -194,24 +194,24 @@ async def update_project_node_progress(app: web.Application, user_id: str, proje
     await db.update_user_project(project, user_id, project_id)
     return project["workbench"][node_id]
 
-async def update_project_node_outputs(app: web.Application, user_id: str, project_id: str, node_id: str, data: Dict) -> Optional[Dict]:
+async def update_project_node_outputs(app: web.Application, user_id: str, project_id: str, node_id: str, data: Optional[Dict]) -> Optional[Dict]:
     log.debug("updating node %s outputs in project %s for user %s with %s", node_id, project_id, user_id, pprint(data))
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
-
     node_description = project["workbench"][node_id]
     node_description["outputs"] = data
     # update outputs if necessary
-    for output_key in node_description["outputs"].keys():
-        if not isinstance(node_description["outputs"][output_key], dict):
-            continue
-        if "path" in node_description["outputs"][output_key]:
-            # file_id is of type study_id/node_id/file.ext
-            file_id = node_description["outputs"][output_key]["path"]
-            study_id, _, file_ext = file_id.split("/")
-            node_description["outputs"][output_key]["dataset"] = study_id
-            node_description["outputs"][output_key]["label"] = file_ext
+    if node_description["outputs"]:
+        for output_key in node_description["outputs"].keys():
+            if not isinstance(node_description["outputs"][output_key], dict):
+                continue
+            if "path" in node_description["outputs"][output_key]:
+                # file_id is of type study_id/node_id/file.ext
+                file_id = node_description["outputs"][output_key]["path"]
+                study_id, _, file_ext = file_id.split("/")
+                node_description["outputs"][output_key]["dataset"] = study_id
+                node_description["outputs"][output_key]["label"] = file_ext
 
     db = app[APP_PROJECT_DBAPI]
     await db.update_user_project(project, user_id, project_id)
