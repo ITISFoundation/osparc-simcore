@@ -4,57 +4,95 @@
 import logging
 
 from aiohttp import web
-
 from yarl import URL
 
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.rest_routing import iter_path_operations
+
+from .__version__ import api_version_prefix
+from .catalog_config import get_client_session, get_config
+from .login.decorators import login_required
 
 logger = logging.getLogger(__name__)
 
 
-async def _forward(url: str, request: web.Request):
-    # forward
+#from servicelib.rest_responses import wrap_envelope
+#from .security_api import check_permission
+
+
+async def is_service_responsive(app:web.Application):
+    """ Returns true if catalog is ready """
+    origin: URL = app.get(f'{__name__}.catalog_origin')
+
+    if not origin: # service was not enabled!
+        return False
+
+    client = get_client_session(app)
+
+    # call to health-check entry-point
+    async with client.get(origin, ssl=False) as resp:
+        return resp.status_code == 200
+
+
+
+@login_required
+async def _reverse_proxy_handler(request: web.Request):
+    """
+        - Adds auth layer
+        - Adds access layer
+        - Forwards request to catalog service
+    """
+    # TODO: await check_permission
+
+
+    # path
+    rel_url:URL = request.rel_url
+    origin: URL = request.app[f'{__name__}.catalog_origin']
+    version_prefix: str = request.app[f'{__name__}.catalog_version_prefix']
+
+    # E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
+    new_path = rel_url.path.replace(f"/{api_version_prefix}/catalog", f"/{version_prefix}")
+    backend_url = origin.with_path(new_path).with_query(rel_url.query)
+    logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
+
+    # TODO: there must be a way to simply forward everything to
+    # body
     body = None
     if request.can_read_body:
         body = await request.json()
 
-    session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False, json=body) as resp:
-        payload = await resp.json()
-        return payload
+    #TODO: header?
+
+    # forward request
+    client = get_client_session(request.app)
+    async with client.request(request.method, backend_url, ssl=False, json=body) as resp:
+        data = await resp.json()
+        if resp.status >= 300: # if error
+            #T
+            pass
+            # TODO: create proper error enveloped unwrap_envelope
+        return data
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=[],
+    depends=['simcore_service_webserver.rest'],
     logger=logger)
 def setup_catalog(app: web.Application):
 
+    # resolve url
+    cfg = get_config(app).copy()
+    app[f'{__name__}.catalog_origin'] = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
+    app[f'{__name__}.catalog_version_prefix'] = cfg['version']
 
     specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
-    # TODO: filter by tag??
 
-
-    # bind routes with redirects? some decoration?
-    # auth layer
-    # access layer
-
-    # resolve url
-    # GET https://osparc.io/v0/dags -> http://catalog:8080/v0/dags
-    #
-
-
-
-    # forward layer (resolve )
-    cfg = app[APP_CONFIG_KEY]
-    base_url = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
-
-
-
-
-
+    # bind routes with handlers
+    routes = [ web.route(method.upper(), path, _reverse_proxy_handler, name=operation_id)
+        for method, path, operation_id, tags in iter_path_operations(specs)
+            if 'catalog' in tags
+    ]
+    assert routes, "Got no paths tagged as catalog"
 
     # reverse proxy to catalog's API
-    app.router.add_routes()
+    app.router.add_routes(routes)
