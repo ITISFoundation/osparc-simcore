@@ -206,6 +206,9 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     mock_log_handler_fct.reset_mock()
     node_uuid = list(user_project["workbench"])[0]
     log_messages, progress_messages, final_log_message = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    def predicate2() -> bool:
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES+1) and
+            mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
     await _wait_until(predicate, TIMEOUT_S)
     log_messages.append(final_log_message)
     log_calls = [call(json.dumps(message)) for message in log_messages]
