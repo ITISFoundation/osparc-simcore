@@ -55,7 +55,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     __groupDesc: null,
     __activeStudy: null,
 
-    destruct: function() {
+    tearDown: function() {
       osparc.store.Store.getInstance().setCurrentStudy(this.__activeStudy);
     },
 

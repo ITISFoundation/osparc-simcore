@@ -174,14 +174,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
-            width: 400,
-            height: 200,
+            width: 700,
+            height: 700,
             showMinimize: false,
             modal: true
           });
           window.add(exportGroupView);
           window.center();
           window.open();
+
+          window.addListener("close", () => {
+            exportGroupView.tearDown();
+          }, this);
 
           exportGroupView.addListener("finished", () => {
             const text = this.tr("Group added to the Service catalog");
