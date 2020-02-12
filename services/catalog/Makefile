@@ -26,8 +26,12 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 # TODO: REQS = $(shell find  requirements -type f -name '*.txt')
 
+.check-venv-active:
+	# checking whether virtual environment was activated
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
+
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: requirements ## install app in development/production or CI mode
+install-dev install-prod install-ci: requirements .check-venv-active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	python3 -m pip install -r requirements/$(subst install-,,$@).txt
 
