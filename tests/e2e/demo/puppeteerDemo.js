@@ -7,7 +7,7 @@ const url = "http://127.0.0.1:9081/";
 const {
   user,
   pass
-} = utils.getRandUserAndPass();
+} = utils.getUserAndPass();
 
 async function run () {
   const browser = await startBrowser.getBrowser(demo);
