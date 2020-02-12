@@ -316,6 +316,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         }
         data[fieldKey] = clean;
       }, this);
+      data.tags = this.__selectedTags;
       return data;
     },
 

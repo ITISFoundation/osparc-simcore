@@ -71,7 +71,9 @@ qx.Class.define("osparc.component.filter.TextFilter", {
           control.getContentElement().setAttribute("autocomplete", "off");
           // FIXME: autocomplete "off" doesn't work on Chrome
           // https://www.codementor.io/leonardofaria/disabling-autofill-in-chrome-zec47xcui
-          this._add(control);
+          this._add(control, {
+            width: "100%"
+          });
           break;
         case "clearbutton":
           control = new osparc.component.form.IconButton("@MaterialIcons/close/12", () => {
