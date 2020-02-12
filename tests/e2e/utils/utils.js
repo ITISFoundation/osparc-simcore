@@ -4,7 +4,7 @@ function getUserAndPass(args) {
     pass: null,
     newUser: true
   };
-  if (args.length === 3) {
+  if (args && args.length === 3) {
     userPass.user = args[1];
     userPass.pass = args[2];
     userPass.newUser = false;
