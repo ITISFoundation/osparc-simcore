@@ -6,14 +6,14 @@ const tutorialBase = require('./tutorialBase');
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
-  
   process.exit(1);
 }
 const url = args[0];
-const userPass = utils.getUserAndPass(args);
-const user = userPass.user;
-const pass = userPass.pass;
-const newUser = userPass.newUser;
+const {
+  user,
+  pass,
+  newUser
+} = utils.getUserAndPass(args);
 
 const templateName = "Sleepers";
 
