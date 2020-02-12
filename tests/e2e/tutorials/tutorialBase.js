@@ -96,6 +96,15 @@ class TutorialBase {
     }
   }
 
+  async openNodeRetrieveAndRestart(nodePosInTree = 0, waitAfterRetrieve = 5000) {
+    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
+    await auto.openNode(this.__page, nodePosInTree);
+    await auto.clickRetrieve(this.__page);
+    await this.__page.waitFor(waitAfterRetrieve);
+    await auto.clickRestart(this.__page);
+    await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
+  }
+
   async checkResults() {
     await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_before");
     try {

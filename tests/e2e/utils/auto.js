@@ -364,6 +364,20 @@ async function downloadSelectedFile(page) {
   }
 }
 
+async function clickRetrieve(page) {
+  console.log("Opening Data produced by Node");
+
+  await page.waitForSelector('[osparc-test-id="nodeViewRetrieveBtn"]')
+  await page.click('[osparc-test-id="nodeViewRetrieveBtn"]')
+}
+
+async function clickRestart(page) {
+  console.log("Opening Data produced by Node");
+
+  await page.waitForSelector('[osparc-test-id="nodeViewRetrieveBtn"]')
+  await page.click('[osparc-test-id="nodeViewRetrieveBtn"]')
+}
+
 
 module.exports = {
   register,
@@ -385,4 +399,6 @@ module.exports = {
   openNodeFiles,
   checkDataProducedByNode,
   downloadSelectedFile,
+  clickRetrieve,
+  clickRestart,
 }
