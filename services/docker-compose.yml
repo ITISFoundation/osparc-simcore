@@ -153,7 +153,7 @@ services:
 
   postgres:
     image: postgres:10.11
-    init: true
+    init: true    
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -164,13 +164,17 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-    sysctls:
-      # NOTES: these values are needed here because docker swarm kills long running idle 
-      # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
-      # info about these values are here https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
-      - net.ipv4.tcp_keepalive_intvl=600
-      - net.ipv4.tcp_keepalive_probes=9
-      - net.ipv4.tcp_keepalive_time=600
+    # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
+    # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
+    # in the meantime postgres allows to set a configuration through CLI.
+    # sysctls:
+    #   # NOTES: these values are needed here because docker swarm kills long running idle 
+    #   # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
+    #   # info about these values are here https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
+    #   - net.ipv4.tcp_keepalive_intvl=600
+    #   - net.ipv4.tcp_keepalive_probes=9
+    #   - net.ipv4.tcp_keepalive_time=600
+    command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c tcp_keepalives_count=5
 
   redis:
     image: redis:5.0-alpine
