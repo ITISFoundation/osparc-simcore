@@ -514,10 +514,11 @@ qx.Class.define("osparc.data.model.Node", {
         const portId = linkModified.portId;
         const added = linkModified.added;
         if (added) {
-          const newValue = propsWidget.getControlLink(portId).getValue();
-          const controlLink = new qx.ui.form.TextField(newValue).set({
+          const srcControlLink = propsWidget.getControlLink(portId);
+          const controlLink = new qx.ui.form.TextField().set({
             enabled: false
           });
+          srcControlLink.bind("value", controlLink, "value");
           propsWidgetEditor.linkAdded(portId, controlLink);
         } else {
           propsWidgetEditor.linkRemoved(portId);
