@@ -17,13 +17,17 @@ TODO: add support for versioning.
 TODO: add simcore_sdk.config.s3 section!!!
 """
 import logging
+from typing import Dict
+from pathlib import Path
 
 import trafaret as T
+from trafaret_config.simple import read_and_validate
+
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
-from . import (computation_config, db_config, email_config, rest_config,
-               session_config, storage_config, tracing)
+from . import (catalog_config, computation_config, db_config, email_config,
+               rest_config, session_config, storage_config, tracing)
 from .activity import config as activity_config
 from .director import config as director_config
 from .login import config as login_config
@@ -31,9 +35,11 @@ from .projects import config as projects_config
 from .resource_manager import config as resource_manager_config
 from .resources import resources
 from .socketio import config as socketio_config
-from . import catalog_config
 
 log = logging.getLogger(__name__)
+
+CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
+assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )
 
 
 def create_schema() -> T.Dict:
@@ -83,7 +89,9 @@ def create_schema() -> T.Dict:
     return schema
 
 
-CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-app_schema = create_schema() # TODO: rename as schema
+def load_default_config(environs=None) -> Dict:
+    filepath: Path = resources.get_path(f'config/{CLI_DEFAULT_CONFIGFILE}')
+    return read_and_validate(filepath, trafaret=app_schema, vars=environs)
 
-assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )
+
+app_schema = create_schema() # TODO: rename as schema
