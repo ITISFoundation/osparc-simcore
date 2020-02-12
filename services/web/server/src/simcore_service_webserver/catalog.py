@@ -32,7 +32,17 @@ async def is_service_responsive(app:web.Application):
 
     # call to health-check entry-point
     async with client.get(origin, ssl=False) as resp:
-        return resp.status_code == 200
+        return resp.status == 200
+
+
+def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
+    """ Translates relative url to backend catalog service url
+
+        E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
+    """
+    assert not rel_url.is_absolute() # nosec
+    new_path = rel_url.path.replace(f"/{api_version_prefix}/catalog", f"/{version_prefix}")
+    return origin.with_path(new_path).with_query(rel_url.query)
 
 
 
@@ -45,15 +55,12 @@ async def _reverse_proxy_handler(request: web.Request):
     """
     # TODO: await check_permission
 
-
-    # path
-    rel_url:URL = request.rel_url
-    origin: URL = request.app[f'{__name__}.catalog_origin']
-    version_prefix: str = request.app[f'{__name__}.catalog_version_prefix']
-
-    # E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
-    new_path = rel_url.path.replace(f"/{api_version_prefix}/catalog", f"/{version_prefix}")
-    backend_url = origin.with_path(new_path).with_query(rel_url.query)
+    # path & queries
+    backend_url = to_backend_service(
+        request.rel_url,
+        request.app[f'{__name__}.catalog_origin'],
+        request.app[f'{__name__}.catalog_version_prefix']
+    )
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
     # TODO: there must be a way to simply forward everything to

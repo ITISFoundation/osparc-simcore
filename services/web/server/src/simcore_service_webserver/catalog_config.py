@@ -19,7 +19,6 @@ _default_values = {
     'port': int(os.environ.get("CATALOG_PORT", 8000))
 }
 
-
 schema = T.Dict({
     T.Key("enabled", default=True, optional=True): T.Bool(),
     T.Key("host", default=_default_values['host']): T.String(),
