@@ -16,10 +16,10 @@ class ModuleCategory(Enum):
     SYSTEM = 0
     ADDON = 1
 
-class AppSetupBaseError(Exception):
+class ApplicationSetupError(Exception):
     pass
 
-class DependencyError(AppSetupBaseError):
+class DependencyError(ApplicationSetupError):
     pass
 
 def app_module_setup(module_name: str, category: ModuleCategory,*,
@@ -42,7 +42,7 @@ def app_module_setup(module_name: str, category: ModuleCategory,*,
     :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
     :raises DependencyError
-    :raises AppSetupBaseError
+    :raises ApplicationSetupError
     :return: False if setup was skipped
     :rtype: bool
 
@@ -109,7 +109,7 @@ def app_module_setup(module_name: str, category: ModuleCategory,*,
                 try:
                     is_enabled = _get(cfg, config_enabled.split("."))
                 except KeyError as ee:
-                    raise AppSetupBaseError(f"Cannot find '{config_enabled}' in app config in [ {ee} ]")
+                    raise ApplicationSetupError(f"Cannot find '{config_enabled}' in app config at [ {ee} ]")
 
                 if not is_enabled:
                     logger.info("Skipping '%s' setup. Explicitly disabled in config", module_name)
@@ -125,7 +125,7 @@ def app_module_setup(module_name: str, category: ModuleCategory,*,
             if module_name in app[APP_SETUP_KEY]:
                 msg = f"'{module_name}' was already initialized in {app}. Setup can only be executed once per app."
                 logger.error(msg)
-                raise AppSetupBaseError(msg)
+                raise ApplicationSetupError(msg)
 
             # execution of setup
             ok = setup_func(app, *args, **kargs)
