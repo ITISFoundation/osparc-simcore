@@ -1,11 +1,9 @@
 import logging
-#import uuid as uuidlib
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-#from fastapi.encoders import jsonable_encoder
 from starlette.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
-                              HTTP_409_CONFLICT)
+                              HTTP_409_CONFLICT, HTTP_501_NOT_IMPLEMENTED)
 
 from .. import db
 from ..crud import crud_dags as crud
@@ -39,7 +37,7 @@ async def list_dags(
 
 @router.get("/dags:batchGet")
 async def batch_get_dags():
-    raise NotImplementedError()
+    raise HTTPException(status_code=HTTP_501_NOT_IMPLEMENTED, detail="Still not implemented")
 
 
 @router.get("/dags:search")
@@ -47,15 +45,18 @@ async def search_dags():
     # A method that takes multiple resource IDs and returns an object for each of those IDs
     # Alternative to List for fetching data that does not adhere to List semantics, such as services.search.
     #https://cloud.google.com/apis/design/standard_methods#list
-    raise NotImplementedError()
+    raise HTTPException(status_code=HTTP_501_NOT_IMPLEMENTED, detail="Still not implemented")
 
 
 @router.get("/dags/{dag_id}",
     response_model=schemas.DAGOut
     )
-async def get_dag(dag_id: int):
-    raise NotImplementedError()
-    ### return schemas.DAG(f"dag {dag_id} in collection")
+async def get_dag(
+    dag_id: int,
+    conn: db.SAConnection = Depends(db.get_cnx)
+    ):
+    dag = await crud.get_dag(conn, dag_id)
+    return dag
 
 
 @router.post("/dags",
