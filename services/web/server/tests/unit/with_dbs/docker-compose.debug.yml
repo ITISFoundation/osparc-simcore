@@ -10,6 +10,12 @@ services:
       POSTGRES_DB: ${TEST_POSTGRES_DB:-test}
     ports:
       - '5432:5432'
+    sysctls:
+      # NOTES: these values are needed here because docker swarm kills long running idle 
+      # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
+      - net.ipv4.tcp_keepalive_intvl=600
+      - net.ipv4.tcp_keepalive_probes=15
+      - net.ipv4.tcp_keepalive_time=600
   # ONLY FOR DEBUGGING
   adminer:
     image: adminer
