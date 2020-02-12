@@ -1,8 +1,8 @@
 """ rest - middlewares for error, enveloping and validation
 
-
+    SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
-# TODO: check https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
+import json
 import logging
 
 from aiohttp import web
@@ -10,11 +10,10 @@ from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
-                             create_error_response, is_enveloped_from_text, is_enveloped_from_map, wrap_as_envelope)
+                             create_error_response, is_enveloped_from_map,
+                             is_enveloped_from_text, wrap_as_envelope)
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
-import json
-
 
 DEFAULT_API_VERSION = "v0"
 
@@ -117,16 +116,14 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             try:
                 path, query, body = await validator.check_request(request)
 
-                # TODO: simplify!!!!
                 # Injects validated
                 request["validated-path"] = path
                 request["validated-query"] = query
                 request["validated-body"] = body
+
             except OpenAPIError:
                 logger.debug("Failing openAPI specs", exc_info=1)
                 raise
-            except Exception: # pylint: disable=W0703
-                pass
 
             response = await handler(request)
 

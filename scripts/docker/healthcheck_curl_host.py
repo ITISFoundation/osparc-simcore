@@ -1,39 +1,34 @@
+#!/bin/python
 """ Healthcheck script to run inside docker
 
 Example of usage in a Dockerfile
 ```
-    COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
+    COPY --chown=scu:scu docker/healthcheck.py docker/healthcheck.py
     HEALTHCHECK --interval=30s \
                 --timeout=30s \
                 --start-period=1s \
                 --retries=3 \
-                CMD [ "python", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8080/v0/" ]
-    ...
+                CMD python3 docker/healthcheck.py http://localhost:8080/v0/
 ```
-
 
 Q&A:
     1. why not to use curl instead of a python script?
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
-
 """
-
 
 import os
 import sys
+from urllib.request import urlopen
 
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+SUCCESS, UNHEALTHY = 0, 1
 
-BOOTS_WITH_DEBUGGER = "2"
-if os.environ.get("DEBUG") == BOOTS_WITH_DEBUGGER:
-    # Healthcheck disabled with service is boot with a debugger
-    print(0)
-else:
-    print(0 if urlopen("{host}{baseurl}".format(
+# Disabled if boots with debugger
+ok = os.environ.get("SC_BOOT_MODE").lower() == "debug"
+
+# Queries host
+ok = ok or urlopen("{host}{baseurl}".format(
         host=sys.argv[1],
-        baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", ""))
+        baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")) # adds a base-path if defined in environ
         ).getcode() == 200
-        else 1)
+
+sys.exit(SUCCESS if ok else UNHEALTHY)

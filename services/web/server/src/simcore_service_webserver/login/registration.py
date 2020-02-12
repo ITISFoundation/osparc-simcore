@@ -109,9 +109,9 @@ def get_confirmation_info(confirmation):
 
 def get_invitation_url(confirmation, origin: URL=None) -> URL:
     code = confirmation['code']
-    assert confirmation['action'] == ConfirmationAction.INVITATION.name
+    is_invitation = confirmation['action'] == ConfirmationAction.INVITATION.name
 
-    if origin is None:
+    if origin is None or not is_invitation:
         origin = URL()
 
     # https://some-web-url.io/#/registration/?invitation={code}

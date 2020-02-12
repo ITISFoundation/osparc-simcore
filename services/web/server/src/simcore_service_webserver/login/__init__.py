@@ -6,9 +6,9 @@
 import asyncio
 import logging
 
+import asyncpg
 from aiohttp import web
 
-import asyncpg
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -93,9 +93,9 @@ def setup(app: web.Application):
     :param app: main application
     :type app: web.Application
     """
-    assert REST_SECTION in app[APP_CONFIG_KEY]
-    assert SMTP_SECTION in app[APP_CONFIG_KEY]
-    assert DB_SECTION in app[APP_CONFIG_KEY]
+    assert REST_SECTION in app[APP_CONFIG_KEY] # nosec
+    assert SMTP_SECTION in app[APP_CONFIG_KEY] # nosec
+    assert DB_SECTION in app[APP_CONFIG_KEY]   # nosec
 
     # TODO: automatize dependencies
     enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )

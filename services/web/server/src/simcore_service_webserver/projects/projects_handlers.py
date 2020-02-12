@@ -324,8 +324,7 @@ async def create_node(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     body = await request.json()
-    assert "service_key" in body
-    assert "service_version" in body
+
     # ensure the project exists
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
@@ -335,9 +334,14 @@ async def create_node(request: web.Request) -> web.Response:
             include_templates=True
         )
     data = {
-        "node_id": await projects_api.add_project_node(request, project_uuid, user_id, body["service_key"], body["service_version"],
-                                        body["service_id"] if "service_id" in body else None
-                                        )
+        "node_id": await projects_api.add_project_node(
+            request,
+            project_uuid,
+            user_id,
+            body["service_key"],
+            body["service_version"],
+            body["service_id"] if "service_id" in body else None
+        )
     }
     return web.json_response({'data': data}, status=web.HTTPCreated.status_code)
 
@@ -392,8 +396,8 @@ async def add_tag(request: web.Request):
         user_id=uid,
         tag_id=int(tag_id)
     )
-            
-            
+
+
 @login_required
 async def remove_tag(request: web.Request):
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]

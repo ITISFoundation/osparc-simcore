@@ -113,7 +113,6 @@ class FileMetaData:
     #pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
-        assert len(parts) == 3
         if len(parts) == 3:
             self.location = SIMCORE_S3_STR
             self.location_id = SIMCORE_S3_ID
