@@ -13,7 +13,7 @@ idna==2.8
 mako==1.0.12              # via alembic
 markupsafe==1.1.1         # via mako
 multidict==4.5.2
-psycopg2-binary==2.8.3
+psycopg2-binary==2.8.4
 python-dateutil==2.8.0    # via alembic
 python-editor==1.0.4      # via alembic
 requests==2.22.0          # via docker

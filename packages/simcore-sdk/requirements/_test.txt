@@ -29,7 +29,7 @@ networkx==2.3
 packaging==20.0           # via pytest, pytest-sugar
 pika==1.0.1
 pluggy==0.13.1            # via pytest
-psycopg2-binary==2.8.3
+psycopg2-binary==2.8.4
 py==1.8.1                 # via pytest
 pylint==2.4.4
 pyparsing==2.4.6          # via packaging

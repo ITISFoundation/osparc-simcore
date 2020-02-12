@@ -7,7 +7,8 @@
         - upon failure raise errors that can be also HTTP reponses
 """
 import logging
-from asyncio import gather, ensure_future
+from asyncio import ensure_future, gather
+from pprint import pprint
 from typing import Dict, Optional
 from uuid import uuid4
 
@@ -19,14 +20,13 @@ from servicelib.observer import observe
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..security_api import check_permission
 from ..storage_api import \
     copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (delete_data_folders_of_project,
                            delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import ProjectNotFoundError
+from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -39,16 +39,16 @@ def validate_project(app: web.Application, project: Dict):
     validate_instance(project, project_schema) # TODO: handl
 
 
-async def get_project_for_user(request: web.Request, project_uuid, user_id, *, include_templates=False) -> Dict:
+async def get_project_for_user(app: web.Application, project_uuid, user_id, *, include_templates=False) -> Dict:
     """ Returns a project accessible to user
 
     :raises web.HTTPNotFound: if no match found
     :return: schema-compliant project data
     :rtype: Dict
     """
-    await check_permission(request, "project.read")
+
     try:
-        db = request.config_dict[APP_PROJECT_DBAPI]
+        db = app[APP_PROJECT_DBAPI]
 
         project = None
         if include_templates:
@@ -59,7 +59,7 @@ async def get_project_for_user(request: web.Request, project_uuid, user_id, *, i
 
         # TODO: how to handle when database has an invalid project schema???
         # Notice that db model does not include a check on project schema.
-        validate_project(request.app, project)
+        validate_project(app, project)
         return project
 
     except ProjectNotFoundError:
@@ -183,3 +183,38 @@ async def delete_project_node(request: web.Request, project_uuid: str, user_id: 
             break
     # remove its data if any
     await delete_data_folders_of_project_node(request.app, project_uuid, node_uuid, user_id)
+
+
+async def update_project_node_progress(app: web.Application, user_id: str, project_id: str, node_id: str, progress: float) -> Optional[Dict]:
+    log.debug("updating node %s progress in project %s for user %s with %s", node_id, project_id, user_id, progress)
+    project = await get_project_for_user(app, project_id, user_id)
+    if not node_id in project["workbench"]:
+        raise NodeNotFoundError(project_id, node_id)
+
+    project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + .5)
+    db = app[APP_PROJECT_DBAPI]
+    await db.update_user_project(project, user_id, project_id)
+    return project["workbench"][node_id]
+
+async def update_project_node_outputs(app: web.Application, user_id: str, project_id: str, node_id: str, data: Optional[Dict]) -> Optional[Dict]:
+    log.debug("updating node %s outputs in project %s for user %s with %s", node_id, project_id, user_id, pprint(data))
+    project = await get_project_for_user(app, project_id, user_id)
+    if not node_id in project["workbench"]:
+        raise NodeNotFoundError(project_id, node_id)
+    node_description = project["workbench"][node_id]
+    node_description["outputs"] = data
+    # update outputs if necessary
+    if node_description["outputs"]:
+        for output_key in node_description["outputs"].keys():
+            if not isinstance(node_description["outputs"][output_key], dict):
+                continue
+            if "path" in node_description["outputs"][output_key]:
+                # file_id is of type study_id/node_id/file.ext
+                file_id = node_description["outputs"][output_key]["path"]
+                study_id, _, file_ext = file_id.split("/")
+                node_description["outputs"][output_key]["dataset"] = study_id
+                node_description["outputs"][output_key]["label"] = file_ext
+
+    db = app[APP_PROJECT_DBAPI]
+    await db.update_user_project(project, user_id, project_id)
+    return node_description

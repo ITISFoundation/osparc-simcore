@@ -46,7 +46,7 @@ async def create_projects(request: web.Request):
             # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
             from .projects_api import get_project_for_user
 
-            source_project = await get_project_for_user(request,
+            source_project = await get_project_for_user(request.app,
                 project_uuid=as_template,
                 user_id=user_id,
                 include_templates=False
@@ -137,11 +137,12 @@ async def get_project(request: web.Request):
 
     """
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    await check_permission(request, "project.read")
     from .projects_api import get_project_for_user
 
     project_uuid = request.match_info.get("project_id")
 
-    project = await get_project_for_user(request,
+    project = await get_project_for_user(request.app,
         project_uuid=project_uuid,
         user_id=request[RQT_USERID_KEY],
         include_templates=True
@@ -220,7 +221,7 @@ async def delete_project(request: web.Request):
     # first check if the project exists
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    project = await projects_api.get_project_for_user(request,
+    project = await projects_api.get_project_for_user(request.app,
         project_uuid=project_uuid,
         user_id=user_id,
         include_templates=True
@@ -252,7 +253,7 @@ async def open_project(request: web.Request) -> web.Response:
     client_session_id = await request.json()
 
     with managed_resource(user_id, client_session_id, request.app) as rt:
-        project = await get_project_for_user(request,
+        project = await get_project_for_user(request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True
@@ -280,7 +281,7 @@ async def close_project(request: web.Request) -> web.Response:
     from .projects_api import get_project_for_user
 
     with managed_resource(user_id, client_session_id, request.app) as rt:
-        project = await get_project_for_user(request,
+        project = await get_project_for_user(request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True
@@ -296,7 +297,7 @@ async def close_project(request: web.Request) -> web.Response:
 
 @login_required
 async def get_active_project(request: web.Request) -> web.Response:
-    # await check_permission(request, "project.read")
+    await check_permission(request, "project.read")
     user_id = request[RQT_USERID_KEY]
     client_session_id = request.query["client_session_id"]
     project = None
@@ -306,7 +307,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         if list_project_ids:
             # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
             from .projects_api import get_project_for_user
-            project = await get_project_for_user(request,
+            project = await get_project_for_user(request.app,
                 project_uuid=list_project_ids[0],
                 user_id=user_id,
                 include_templates=True
@@ -327,7 +328,7 @@ async def create_node(request: web.Request) -> web.Response:
     # ensure the project exists
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
-    await get_project_for_user(request,
+    await get_project_for_user(request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True
@@ -354,7 +355,7 @@ async def get_node(request: web.Request) -> web.Response:
     # ensure the project exists
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
-    await get_project_for_user(request,
+    await get_project_for_user(request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True
@@ -375,7 +376,7 @@ async def delete_node(request: web.Request) -> web.Response:
     # ensure the project exists
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
-    await get_project_for_user(request,
+    await get_project_for_user(request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True
