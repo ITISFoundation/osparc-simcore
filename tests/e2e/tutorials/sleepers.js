@@ -31,7 +31,7 @@ async function runTutorial () {
   await tutorial.waitFor(5000);
 
   await tutorial.runPipeline(25000);
-  await tutorial.openFirstNodeFiles();
+  await tutorial.openNodeFiles(0);
   await tutorial.checkResults();
   await tutorial.removeStudy();
   await tutorial.logOut();

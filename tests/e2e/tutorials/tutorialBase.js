@@ -84,8 +84,8 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
   }
 
-  async openFirstNodeFiles() {
-    await auto.openNode(this.__page, 0);
+  async openNodeFiles(nodePosInTree = 0) {
+    await auto.openNode(this.__page, nodePosInTree);
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
     await auto.openNodeFiles(this.__page);
     try {

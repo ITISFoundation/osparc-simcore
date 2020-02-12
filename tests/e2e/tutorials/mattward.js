@@ -31,7 +31,7 @@ async function runTutorial () {
   // Wait service to start and output files to be pushed
   await tutorial.waitFor(60000);
 
-  await tutorial.openFirstNodeFiles();
+  await tutorial.openNodeFiles(0);
   await tutorial.checkResults();
   await tutorial.removeStudy();
   await tutorial.logOut();
