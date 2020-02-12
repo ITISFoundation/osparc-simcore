@@ -483,6 +483,24 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }, this);
 
+      // callback for node updates
+      const slotName3 = "nodeUpdated";
+      socket.removeSlot(slotName3);
+      socket.on(slotName3, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const nodeData = d["Data"];
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          node.setOutputData(nodeData);
+          if (nodeData.progress) {
+            const progress = Number.parseInt(nodeData.progress);
+            node.setProgress(progress);
+          }
+        }
+      }, this);
+
       // post pipeline
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
