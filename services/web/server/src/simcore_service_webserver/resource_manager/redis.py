@@ -26,7 +26,7 @@ async def redis_client(app: web.Application):
         with attempt:
             client = await aioredis.create_redis_pool(url, encoding="utf-8")
 
-    assert client
+    assert client # nosec
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client
 
     yield

@@ -75,7 +75,9 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
             raise director_exceptions.DirectorException(payload)
 
 async def stop_services(app: web.Application, user_id: Optional[str] = None, project_id: Optional[str] = None) -> None:
-    assert (user_id or project_id)
+    if not user_id and not project_id:
+        raise ValueError("Expected either user or project")
+
     services = await get_running_interactive_services(app, user_id=user_id, project_id=project_id)
     stop_tasks = [stop_service(app, service_uuid) for service_uuid in services]
     await asyncio.gather(*stop_tasks)

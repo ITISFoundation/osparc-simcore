@@ -45,8 +45,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
      */
     reset: function() {
       // Remove ticks from menu
-      const menuButtons = this._dropdown.getMenu().getChildren()
-        .filter(child => child instanceof qx.ui.menu.Button);
+      const menuButtons = this._getMenuButtons();
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
       if (this.__activeTags && this.__activeTags.length) {
@@ -61,7 +60,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
-    __addTag: function(tagName, menuButton) {
+    _addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
       if (this.__activeTags.includes(tagName)) {
@@ -95,6 +94,11 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
+    _getMenuButtons: function() {
+      return this._dropdown.getMenu().getChildren()
+        .filter(child => child instanceof qx.ui.menu.Button);
+    },
+
     _addOption: function(tagName) {
       if (this.__menu === null) {
         this.__menu = new qx.ui.menu.Menu();
@@ -106,7 +110,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         return existing;
       }
       const button = new qx.ui.menu.Button(tagName);
-      button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
+      button.addListener("execute", e => this._addTag(tagName, e.getTarget()));
       this.__menu.add(button);
       return button;
     },

@@ -21,7 +21,6 @@ from .login import setup_login
 from .projects import setup_projects
 from .resource_manager import setup_resource_manager
 from .rest import setup_rest
-from .s3 import setup_s3
 from .security import setup_security
 from .session import setup_session
 from .socketio import setup_sockets
@@ -66,7 +65,6 @@ def create_application(config: Dict) -> web.Application:
     setup_sockets(app)
     setup_login(app)
     setup_director(app)
-    setup_s3(app)
     setup_storage(app)
     setup_users(app)
     setup_projects(app) # needs storage

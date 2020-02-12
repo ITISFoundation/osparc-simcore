@@ -54,7 +54,7 @@ DEFAULTS = {
     'STORAGE': REQUIRED,
 }
 
-assert 'STORAGE' in DEFAULTS.keys()
+assert 'STORAGE' in DEFAULTS.keys() # nosec
 
 def get_storage(app: web.Application):
     return app[APP_LOGIN_CONFIG]['STORAGE']

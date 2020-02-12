@@ -14,17 +14,15 @@ TODO: add more strict checks with re
 TODO: add support for versioning.
     - check shema fits version
     - parse/format version in schema
-TODO: add simcore_sdk.config.s3 section!!!
 """
 import logging
-from typing import Dict
 from pathlib import Path
+from typing import Dict
 
 import trafaret as T
-from trafaret_config.simple import read_and_validate
-
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
 from . import (catalog_config, computation_config, db_config, email_config,
                rest_config, session_config, storage_config, tracing)
@@ -39,7 +37,7 @@ from .socketio import config as socketio_config
 log = logging.getLogger(__name__)
 
 CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )
+assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE ) # nosec
 
 
 def create_schema() -> T.Dict:
@@ -72,8 +70,6 @@ def create_schema() -> T.Dict:
         session_config.CONFIG_SECTION_NAME: session_config.schema,
         activity_config.CONFIG_SECTION_NAME: activity_config.schema,
         resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
-        #TODO: s3_config.CONFIG_SECTION_NAME: s3_config.schema
-        #TODO: enable when sockets are refactored
         # BELOW HERE minimal sections until more options are needed
         addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
         addon_section("application_proxy", optional=True): minimal_addon_schema(),
@@ -84,7 +80,8 @@ def create_schema() -> T.Dict:
     })
 
     section_names = [k.name for k in schema.keys]
-    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names
+
+    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names # nosec
 
     return schema
 

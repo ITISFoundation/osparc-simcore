@@ -16,9 +16,8 @@ from .openapi_wrappers import (PARAMETERS_KEYS, AiohttpOpenAPIRequest,
 
 logger = logging.getLogger(__name__)
 
-#from openapi_core.wrappers.mock import MockRequest
 
-PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS #pylint: disable=W0612
+PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
 
 
 async def validate_request(request: web.Request, spec: OpenApiSpec):
@@ -41,9 +40,6 @@ async def validate_body(spec: OpenApiSpec, request: web.Request):
     req = await AiohttpOpenAPIRequest.create(request)
     return shortcuts.validate_body(spec, req)
 
-
-
-
 async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
     if isinstance(request, web.Request):
@@ -54,7 +50,7 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
         #opapi_request = MockRequest(*args)
 
         params = ['full_url_pattern', 'method']
-        assert all(hasattr(request, attr) for attr in params)
+        assert all(hasattr(request, attr) for attr in params) # nosec
         # TODO: if a dict with params, convert dict to dot operations! and reverse
 
 

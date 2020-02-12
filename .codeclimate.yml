@@ -3,9 +3,10 @@
 # SEE https://docs.codeclimate.com/docs/advanced-configuration
 #
 version: "2"
+# SEE https://docs.codeclimate.com/docs/maintainability#section-checks
 checks:
   argument-count:
-    enabled: true
+    enabled: false
     config:
       threshold: 6
   complex-logic:
@@ -17,7 +18,7 @@ checks:
     config:
       threshold: 500
   method-complexity:
-    enabled: true
+    enabled: false
     config:
       threshold: 6
   method-count:
@@ -27,7 +28,7 @@ checks:
   method-lines:
     enabled: true
     config:
-      threshold: 30
+      threshold: 50
   nested-control-flow:
     enabled: true
     config:
@@ -37,7 +38,7 @@ checks:
     config:
       threshold: 4
   similar-code:
-    enabled: true
+    enabled: false
     config:
       threshold: #language-specific defaults. overrides affect all languages.
   identical-code:
@@ -45,12 +46,13 @@ checks:
     config:
       threshold: #language-specific defaults. overrides affect all languages.
 
-
 plugins:
-  rubocop: # https://docs.codeclimate.com/docs/rubocop
+  # https://github.com/PyCQA/bandit#configuration
+  bandit:
     enabled: true
-  eslint: # https://docs.codeclimate.com/docs/eslint
-    enabled: true
+  # https://docs.codeclimate.com/docs/eslint
+  eslint:
+    enabled: false
     channel: "eslint-6"
     config:
       extensions:
@@ -70,3 +72,8 @@ exclude_patterns:
   - "**/*.d.ts"
   - "**/.venv/"
   - ".venv/"
+  - "**/healthcheck.py"
+  - "**/client-sdk/"
+  - "**/generated_code/"
+  - "**/migrations/"
+  - "**/*.js"

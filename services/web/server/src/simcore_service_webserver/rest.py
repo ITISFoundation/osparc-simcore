@@ -60,8 +60,9 @@ def setup(app: web.Application):
         # version check
         base_path = openapi.get_base_path(specs)
         major, *_ = specs.info.version
-        assert f"/v{major}" == base_path, \
-            f"Basepath naming {base_path} does not fit API version {specs.info.version}"
+
+        if f"/v{major}" != base_path:
+            raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
 
         # diagnostics routes
         routes = rest_routes.create(specs)

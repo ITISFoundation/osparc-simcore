@@ -12,11 +12,7 @@ from . import __version__
 
 
 async def check_health(request: web.Request):
-    params, query, body = await extract_and_validate(request)
-
-    assert not params
-    assert not query
-    assert not body
+    await extract_and_validate(request)
 
     data = {
         'name':__name__.split('.')[0],
@@ -31,9 +27,9 @@ async def check_health(request: web.Request):
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
-    assert params, "params %s" % params
-    assert query, "query %s" % query
-    assert body, "body %s" % body
+    assert params, "params %s" % params # nosec
+    assert query, "query %s" % query    # nosec
+    assert body, "body %s" % body       # nosec
 
     if params['action'] == 'fail':
         raise ValueError("some randome failure")
@@ -41,8 +37,8 @@ async def check_action(request: web.Request):
 
     # echo's input
     data = {
-        "path_value" : params.get('action'),
-        "query_value": query.get('data'),
+        "path_value" : params['action'],
+        "query_value": query['data'],
         "body_value" : body_to_dict(body)
     }
 
@@ -60,11 +56,7 @@ async def get_config(request: web.Request):
         register but the server has been setup to require an invitation. This option is setup
         at runtime and the front-end can only get it upon request to /config
     """
-    params, query, body = await extract_and_validate(request)
-
-    assert not params
-    assert not query
-    assert not body
+    await extract_and_validate(request)
 
     cfg = request.app[APP_CONFIG_KEY]
     login_cfg = cfg.get('login',{})

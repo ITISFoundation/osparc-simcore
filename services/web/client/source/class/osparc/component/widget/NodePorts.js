@@ -73,25 +73,19 @@ qx.Class.define("osparc.component.widget.NodePorts", {
     populatePortsData: function() {
       const metaData = this.getNode().getMetaData();
       if (this.getIsInputModel()) {
-        this.__createUIPorts(false, metaData.outputs);
+        this.__createUIPorts(metaData.outputs);
       } else if (metaData.inputsDefault) {
-        this.__createUIPorts(false, metaData.inputsDefault);
+        this.__createUIPorts(metaData.inputsDefault);
       }
     },
 
-    __createUIPorts: function(isInput, ports) {
+    __createUIPorts: function(ports) {
       // Always create ports if node is a container
       if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
-      if (ports.defaultNeuromanModels) {
-        // Maintaining NodeOutputListIcon for Neuroman
-        const nodeOutputList = new osparc.component.widget.inputs.NodeOutputListIcon(this.getNode(), ports.defaultNeuromanModels, "defaultNeuromanModels");
-        this.setContent(nodeOutputList.getOutputWidget());
-      } else {
-        const portTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
-        this.setContent(portTree);
-      }
+      const portTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), ports);
+      this.setContent(portTree);
     }
   }
 });

@@ -45,7 +45,7 @@ async def pg_engine(app: web.Application):
             )
             await raise_if_not_responsive(engine)
 
-    assert engine
+    assert engine # nosec
     app[APP_DB_ENGINE_KEY] = engine
 
     if cfg['init_tables']:

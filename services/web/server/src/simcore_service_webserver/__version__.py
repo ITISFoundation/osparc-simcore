@@ -1,4 +1,4 @@
-""" Current version of the simcore_service_webserver application.
+""" Current version of the simcore_service_webserver application and its API
 
 This project uses the Semantic Versioning scheme in conjunction with PEP 0440:
 
@@ -22,12 +22,11 @@ Package version is defined in the setup.py following the principle of single-sou
 
 """
 import pkg_resources
+
 from semantic_version import Version
 
-## TODO: introduce metadata info from vcs
+__version__ : str  = pkg_resources.get_distribution('simcore_service_webserver').version
 
+version = Version(__version__)
 
-__version__ = Version(pkg_resources.get_distribution('simcore_service_webserver').version)
-assert str(__version__)== "0.2.1", "Did you install this package?"
-
-api_version_prefix: str = f"v{__version__.major}"
+api_version_prefix: str = f"v{version.major}"
