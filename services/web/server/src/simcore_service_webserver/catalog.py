@@ -2,13 +2,14 @@
 
 """
 import logging
+from typing import Dict
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
+from yarl import URL
 
 from .__version__ import api_version_prefix
 from .catalog_config import get_client_session, get_config
@@ -52,6 +53,8 @@ async def _reverse_proxy_handler(request: web.Request):
         - Adds auth layer
         - Adds access layer
         - Forwards request to catalog service
+
+    SEE https://gist.github.com/barrachri/32f865c4705f27e75d3b8530180589fb
     """
     # TODO: await check_permission
 
@@ -63,23 +66,28 @@ async def _reverse_proxy_handler(request: web.Request):
     )
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
-    # TODO: there must be a way to simply forward everything to
     # body
-    body = None
-    if request.can_read_body:
-        body = await request.json()
-
-    #TODO: header?
+    raw: bytes = await request.read()
 
     # forward request
-    client = get_client_session(request.app)
-    async with client.request(request.method, backend_url, ssl=False, json=body) as resp:
-        data = await resp.json()
-        if resp.status >= 300: # if error
-            #T
-            pass
-            # TODO: create proper error enveloped unwrap_envelope
-        return data
+    session = get_client_session(request.app)
+    async with session.request(
+            request.method,
+            backend_url,
+            headers=request.headers,
+            data=raw
+        ) as resp:
+
+        payload: Dict = await resp.json()
+
+        if resp.status >= 400:
+            # Only if error, it wraps since catalog service does not return (for the moment) enveloped
+            data = wrap_as_envelope(error=payload)
+        else:
+            data = wrap_as_envelope(data=payload)
+
+        return web.json_response(data, status=resp.status)
+
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON,
