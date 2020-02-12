@@ -116,6 +116,7 @@ FROM cache as production
 
 
 ENV SC_BUILD_TARGET production
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 

@@ -14,7 +14,7 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
     this.base(arguments, this.tr("Tags"), filterId, groupId);
     this._setLayout(new qx.ui.layout.HBox());
     this.__buildMenu();
-    this.__attachEventListeners();
+    this.__attachEventListeners(filterId, groupId);
   },
   members: {
     __buildMenu: function() {
@@ -25,10 +25,15 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
           menuButton.getChildControl("icon").setTextColor(tag.color);
         });
     },
-    __attachEventListeners: function() {
+    __attachEventListeners: function(filterId, groupId) {
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this._removeAllOptions();
         this.__buildMenu();
+      }, this);
+      qx.event.message.Bus.subscribe(osparc.utils.Utils.capitalize(groupId, filterId, "trigger"), msg => {
+        const menuButtons = this._getMenuButtons();
+        const tagButton = menuButtons.find(btn => btn.getLabel() === msg.getData());
+        this._addTag(tagButton.getLabel(), tagButton);
       }, this);
     }
   }

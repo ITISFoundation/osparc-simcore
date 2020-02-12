@@ -79,10 +79,12 @@ class ServiceMonitor(ServiceResolutionPolicy):
     depends=["simcore_service_webserver.director", ],
     logger=logger)
 def setup(app: web.Application):
-    monitor = ServiceMonitor(app, base_url=app[APP_DIRECTOR_API_KEY])
-    setup_reverse_proxy(app, monitor)
 
-    assert "reverse_proxy" in app.router
+    monitor = ServiceMonitor(app, base_url=app[APP_DIRECTOR_API_KEY])
+
+    setup_reverse_proxy(app, monitor)
+    assert "reverse_proxy" in app.router # nosec
+
     app["reverse_proxy.basemount"] = monitor.base_mountpoint
 
 

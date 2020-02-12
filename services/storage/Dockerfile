@@ -104,7 +104,7 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 ENV SC_BUILD_TARGET production
-
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 

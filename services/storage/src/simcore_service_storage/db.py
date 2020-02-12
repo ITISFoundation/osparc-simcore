@@ -39,7 +39,7 @@ async def pg_engine(app: web.Application):
         log.info("Initializing tables for %s", dsn)
         init_pg_tables(dsn, schema=metadata)
 
-    assert engine
+    assert engine # nosec
     app[APP_DB_ENGINE_KEY] = engine
 
     yield # ----------
