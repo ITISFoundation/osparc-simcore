@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 
-async function launch(demo) {
+async function getBrowser(demo) {
   let options = {};
   if (demo) {
     const visibleOptions = {
@@ -22,11 +22,21 @@ async function launch(demo) {
     };
     Object.assign(options, woSandbox);
   }
-  console.log("launch chrome with these options\n", options);
   const browser = await puppeteer.launch(options);
   return browser;
 }
 
+async function getPage(browser) {
+  const page = await browser.newPage();
+  page.setCacheEnabled(false);
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+  return page;
+}
+
 module.exports = {
-  launch,
+  getBrowser,
+  getPage
 }
