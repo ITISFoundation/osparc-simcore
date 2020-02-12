@@ -4,7 +4,7 @@
 import logging
 from typing import Dict
 
-from aiohttp import web
+from aiohttp import ContentTypeError, web
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
@@ -67,7 +67,9 @@ async def _reverse_proxy_handler(request: web.Request):
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
     # body
-    raw: bytes = await request.read()
+    raw = None
+    if request.can_read_body:
+        raw: bytes = await request.read()
 
     # forward request
     session = get_client_session(request.app)
@@ -78,9 +80,15 @@ async def _reverse_proxy_handler(request: web.Request):
             data=raw
         ) as resp:
 
-        payload: Dict = await resp.json()
+        is_error = resp.status >= 400
+        # catalog backend sometimes sends error in plan=in text
+        try:
+            payload: Dict = await resp.json()
+        except ContentTypeError:
+            payload = await resp.text()
+            is_error = True
 
-        if resp.status >= 400:
+        if is_error:
             # Only if error, it wraps since catalog service does not return (for the moment) enveloped
             data = wrap_as_envelope(error=payload)
         else:

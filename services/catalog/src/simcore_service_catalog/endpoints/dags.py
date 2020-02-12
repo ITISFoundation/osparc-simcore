@@ -65,9 +65,10 @@ async def get_dag(
     response_description="Successfully created"
     )
 async def create_dag(
-    dag: schemas.DAGIn=Body(None),
+    dag: schemas.DAGIn=Body(...),
     conn: db.SAConnection = Depends(db.get_cnx)
     ):
+    assert dag # nsec
 
     if dag.version == "0.0.0" and dag.key=="foo":
         # client-assigned resouce name
