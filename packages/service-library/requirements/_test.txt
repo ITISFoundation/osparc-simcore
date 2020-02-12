@@ -30,7 +30,7 @@ openapi-spec-validator==0.2.7
 packaging==20.0           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1
-psycopg2-binary==2.8.3
+psycopg2-binary==2.8.4
 py==1.8.1                 # via pytest
 pylint==2.4.4
 pyparsing==2.4.6          # via packaging

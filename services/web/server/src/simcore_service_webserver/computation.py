@@ -15,9 +15,10 @@ from servicelib.rest_routing import (iter_path_operations,
                                      map_handlers_with_operations)
 
 from . import computation_handlers
+from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
+from .computation_config import CONFIG_SECTION_NAME
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
-from .computation_config import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__file__)
 
@@ -46,6 +47,7 @@ def setup(app: web.Application):
         strict=True
     )
     app.router.add_routes(routes)
+    setup_comp_tasks_listener(app)
 
 # alias
 setup_computation = setup
