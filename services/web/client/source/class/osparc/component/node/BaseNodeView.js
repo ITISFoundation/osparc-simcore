@@ -142,10 +142,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
             node.renameNode(evt.getData());
           }
           const study = osparc.store.Store.getInstance().getCurrentStudy();
-          qx.event.message.Bus.getInstance().dispatchByName(
-            "updateStudy",
-            study.serializeStudy()
-          );
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serializeStudy());
         }
       }, this);
 
