@@ -68,7 +68,7 @@ async def update_my_profile(request: web.Request):
                     .values(name=name)
                 )
         resp = await conn.execute(query)
-        assert resp.rowcount == 1
+        assert resp.rowcount == 1 # nosec
 
     raise web.HTTPNoContent(content_type='application/json')
 
@@ -166,7 +166,7 @@ async def update_token(request: web.Request):
                        .values(token_data=data)
         )
         resp = await conn.execute(query)
-        assert resp.rowcount == 1
+        assert resp.rowcount == 1 # nosec
 
     raise web.HTTPNoContent(content_type='application/json')
 

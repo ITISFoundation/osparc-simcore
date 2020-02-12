@@ -52,10 +52,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     this.__metaData = {};
     this.__innerNodes = {};
-    this.__inputNodes = [];
-    this.__outputNodes = [];
+    this.__inputs = {};
     this.__inputsDefault = {};
     this.__outputs = {};
+
+    this.__inputNodes = [];
+    this.__outputNodes = [];
 
     this.set({
       key,
@@ -169,6 +171,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
+    "outputChanged": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event"
   },
 
@@ -196,6 +199,7 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __outputNodes: null,
     __settingsForm: null,
+    __inputs: null,
     __inputsDefault: null,
     __inputsDefaultWidget: null,
     __outputs: null,
@@ -514,7 +518,11 @@ qx.Class.define("osparc.data.model.Node", {
     setOutputData: function(nodeData) {
       if (nodeData.outputs) {
         for (const outputKey in nodeData.outputs) {
-          this.__outputs[outputKey].value = nodeData.outputs[outputKey];
+          if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
+            this.__outputs[outputKey] = {};
+          }
+          this.__outputs[outputKey]["value"] = nodeData.outputs[outputKey];
+          this.fireDataEvent("outputChanged", outputKey);
         }
       }
     },
@@ -945,14 +953,17 @@ qx.Class.define("osparc.data.model.Node", {
         inputs: this.getInputValues(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
-        outputs: this.getOutputValues(),
         parent: this.getParentNodeId(),
-        progress: this.getProgress(),
         thumbnail: this.getThumbnail()
       };
 
       if (this.isContainer()) {
         nodeEntry.outputNodes = this.getOutputNodes();
+      }
+
+      if (this.isFilePicker()) {
+        nodeEntry.outputs = this.getOutputValues();
+        nodeEntry.progress = this.getProgress();
       }
 
       if (savePosition) {

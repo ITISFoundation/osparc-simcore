@@ -12,6 +12,9 @@ def setup_remote_debugging(force_enabled=False):
     """ Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
 
     """
+    if "SC_BOOT_MODE" not in os.environ:
+        raise ValueError("Remote debugging only available when running in a container")
+
     boot_mode = os.environ["SC_BOOT_MODE"]
 
     if boot_mode == "debug-ptvsd" or force_enabled:
@@ -21,7 +24,7 @@ def setup_remote_debugging(force_enabled=False):
             # SEE https://github.com/microsoft/ptvsd#enabling-debugging
             #
             import ptvsd
-            ptvsd.enable_attach(address=('0.0.0.0', 3000), redirect_output=True)
+            ptvsd.enable_attach(address=('0.0.0.0', 3000), redirect_output=True) # nosec
 
         except ImportError:
             log.exception("Unable to use remote debugging. ptvsd is not installed")

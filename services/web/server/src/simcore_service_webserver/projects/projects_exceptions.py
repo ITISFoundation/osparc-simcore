@@ -21,3 +21,11 @@ class ProjectNotFoundError(ProjectsException):
         msg = "Project with uuid {} not found".format(project_uuid)
         super(ProjectNotFoundError, self).__init__(msg)
         self.project_uuid = project_uuid
+
+class NodeNotFoundError(ProjectsException):
+    """Node was not found in project"""
+    def __init__(self, project_uuid: str, node_uuid: str):
+        msg = f"Node {node_uuid} not found in project {project_uuid}"
+        super(NodeNotFoundError, self).__init__(msg)
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid
