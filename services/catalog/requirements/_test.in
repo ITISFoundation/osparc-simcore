@@ -1,0 +1,26 @@
+#
+# Specifies dependencies required to run 'services/catalog/test'
+#  both for unit and integration tests!!
+#
+
+# frozen specs
+-r _base.txt
+
+# 'services/catalog/tests/unit' dependencies
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-mock
+pytest-runner
+pytest-docker
+
+# fixtures
+Faker
+
+# tools
+pylint
+coveralls
+codecov
+ptvsd

@@ -22,8 +22,11 @@ Package version is defined in the setup.py following the principle of single-sou
 
 """
 import pkg_resources
+
 from semantic_version import Version
 
-__version__ = Version(pkg_resources.get_distribution('simcore_service_webserver').version)
+__version__ : str  = pkg_resources.get_distribution('simcore_service_webserver').version
 
-api_version_prefix: str = f"v{__version__.major}"
+version = Version(__version__)
+
+api_version_prefix: str = f"v{version.major}"

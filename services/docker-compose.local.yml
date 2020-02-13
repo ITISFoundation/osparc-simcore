@@ -11,6 +11,11 @@
 #
 version: "3.7"
 services:
+  catalog:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "8000"
 
   director:
     environment:

@@ -64,6 +64,10 @@ storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
   version: v0
+catalog:
+  host: catalog
+  port: 8000
+  version: v0
 rest:
   version: v0
 projects:

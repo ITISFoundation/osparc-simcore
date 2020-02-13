@@ -1,0 +1,47 @@
+paths:
+  /catalog/dags:
+    get:
+      tags:
+        - catalog
+      operationId: list_catalog_dags
+      responses:
+        '200':
+          description: List of catalog dags
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+        - catalog
+      summary: Creates a new dag in catalog
+      operationId: create_catalog_dag
+      responses:
+        '200':
+          description: The created dag
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /catalog/dags/{dag_id}:
+    parameters:
+      - in: path
+        name: dag_id
+        required: true
+        schema:
+          title: Dag Id
+          type: integer
+    put:
+      tags:
+        - catalog
+      summary: Replaces a dag in catalog
+      operationId: replace_catalog_dag
+      responses:
+        '200':
+          description: The dag was replaced in catalog
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - catalog
+      summary: Deletes an existing dag
+      operationId: delete_catalog_dag
+      responses:
+        '204':
+          description: Successfully deleted
