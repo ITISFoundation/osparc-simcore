@@ -328,6 +328,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         activeNode.addState("selected");
       }
       this.__selectedItemChanged(activeNode.getNodeId());
+      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", this.__selectedNodes.map(selected => selected.getNode()));
     },
 
     __createNodeUI: function(nodeId) {
