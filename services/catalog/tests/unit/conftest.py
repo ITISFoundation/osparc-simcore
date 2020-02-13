@@ -31,7 +31,7 @@ def package_dir():
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir():
-    root_dir = search_osparc_repo_dir(current_dir) or here.parent.parent / "_osparc-simcore-stub"
+    root_dir = search_osparc_repo_dir(current_dir) or current_dir.parent.parent / "_osparc-simcore-stub"
     assert root_dir and root_dir.exists(), "Did you renamed or moved the integration folder under catalog??"
     assert any(root_dir.glob("services/catalog")), "%s not look like rootdir" % root_dir
     return root_dir
