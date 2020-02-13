@@ -24,22 +24,30 @@ servers:
           - v0
         default: v0
 tags:
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
+  - name: authentication
+  - name: project
+  - name: user
+  - name: catalog
+  - name: service
+  - name: activity
+  - name: storage
   - name: tag
     description: |
       Grouping the paths and operations that perform changes on the TAG entity.
       Tags are customized visual elements that help the user group and quickly identify different items
       on the interface. They can also be used for searching and filtering purposes.
-  - name: project
+  - name: node
     description: |
-      Grouping the paths and operations that perform changes on the PROJECT entity.
+      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
+      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
+      defines the protocol for the frontend to interact with the node.
+  - name: configuration
+  - name: maintenance
 paths:
   /:
     get:
+      tags:
+        - maintenance
       summary: Service health check
       operationId: check_health
       responses:
@@ -156,6 +164,8 @@ paths:
                         status: 400
   '/check/{action}':
     post:
+      tags:
+        - maintenance
       summary: service test endpoint
       operationId: check_action
       parameters:
@@ -267,6 +277,8 @@ paths:
     get:
       summary: Front end runtime configuration
       operationId: get_config
+      tags:
+        - configuration
       responses:
         '200':
           description: configuration details
@@ -373,6 +385,8 @@ paths:
   /auth/register:
     post:
       operationId: auth_register
+      tags:
+        - authentication
       requestBody:
         description: user registration
         content:
@@ -521,6 +535,8 @@ paths:
   /auth/login:
     post:
       summary: user logs in
+      tags:
+        - authentication
       operationId: auth_login
       requestBody:
         content:
@@ -657,6 +673,8 @@ paths:
                         status: 400
   /auth/logout:
     post:
+      tags:
+        - authentication
       operationId: auth_logout
       requestBody:
         content:
@@ -790,6 +808,8 @@ paths:
   /auth/reset-password:
     post:
       summary: a non logged-in user requests a password reset
+      tags:
+        - authentication
       operationId: auth_reset_password
       requestBody:
         content:
@@ -925,6 +945,8 @@ paths:
                         status: 400
   '/auth/reset-password/{code}':
     post:
+      tags:
+        - authentication
       summary: changes password using a token code without being logged in
       operationId: auth_reset_password_allowed
       parameters:
@@ -1155,6 +1177,8 @@ paths:
   /auth/change-email:
     post:
       summary: logged in user changes email
+      tags:
+        - authentication
       operationId: auth_change_email
       requestBody:
         content:
@@ -1457,6 +1481,8 @@ paths:
   /auth/change-password:
     post:
       summary: logged in user changes password
+      tags:
+        - authentication
       operationId: auth_change_password
       requestBody:
         content:
@@ -1850,6 +1876,8 @@ paths:
   '/auth/confirmation/{code}':
     get:
       summary: email link sent to user to confirm an action
+      tags:
+        - authentication
       operationId: auth_confirmation
       parameters:
         - name: code
@@ -1863,6 +1891,8 @@ paths:
   '/auth/check-password/{password}':
     get:
       summary: checks password strenght and provides recommendations to improve it
+      tags:
+        - authentication
       operationId: auth_check_password_strength
       parameters:
         - name: password
@@ -1909,6 +1939,8 @@ paths:
   /me:
     get:
       operationId: get_my_profile
+      tags:
+        - user
       responses:
         '200':
           description: current user profile
@@ -2034,6 +2066,8 @@ paths:
                         status: 400
     put:
       operationId: update_my_profile
+      tags:
+        - user
       requestBody:
         content:
           application/json:
@@ -2142,6 +2176,8 @@ paths:
     get:
       summary: List tokens
       operationId: list_tokens
+      tags:
+        - user
       responses:
         '200':
           description: list of tokens
@@ -2263,6 +2299,8 @@ paths:
     post:
       summary: Create tokens
       operationId: create_tokens
+      tags:
+        - user
       requestBody:
         content:
           application/json:
@@ -2420,6 +2458,8 @@ paths:
     get:
       summary: Gets specific token
       operationId: get_token
+      tags:
+        - user
       responses:
         '200':
           description: got detailed token
@@ -2456,18 +2496,24 @@ paths:
     put:
       summary: Updates token
       operationId: update_token
+      tags:
+        - user
       responses:
         '204':
           description: token has been successfully updated
     delete:
       summary: Delete token
       operationId: delete_token
+      tags:
+        - user
       responses:
         '204':
           description: token has been successfully deleted
   /storage/locations:
     get:
       summary: Get available storage locations
+      tags:
+        - storage
       operationId: get_storage_locations
       responses:
         '200':
@@ -2572,6 +2618,8 @@ paths:
   '/storage/locations/{location_id}/files/metadata':
     get:
       summary: Get list of file meta data
+      tags:
+        - storage
       operationId: get_files_metadata
       parameters:
         - name: location_id
@@ -2733,6 +2781,8 @@ paths:
   '/storage/locations/{location_id}/files/{fileId}':
     get:
       summary: Returns download link for requested file
+      tags:
+        - storage
       operationId: download_file
       parameters:
         - name: fileId
@@ -2759,6 +2809,8 @@ paths:
                   link: example_link
     put:
       summary: Returns upload link or performs copy operation to datcore
+      tags:
+        - storage
       operationId: upload_file
       parameters:
         - name: fileId
@@ -2795,6 +2847,8 @@ paths:
                   link: example_link
     delete:
       summary: Deletes File
+      tags:
+        - storage
       operationId: delete_file
       parameters:
         - name: fileId
@@ -2813,6 +2867,8 @@ paths:
   '/storage/locations/{location_id}/files/{fileId}/metadata':
     get:
       summary: Get File Metadata
+      tags:
+        - storage
       operationId: get_file_metadata
       parameters:
         - name: fileId
@@ -2893,6 +2949,8 @@ paths:
                   parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
     patch:
       summary: Update File Metadata
+      tags:
+        - storage
       operationId: update_file_meta_data
       parameters:
         - name: fileId
@@ -3038,6 +3096,8 @@ paths:
   '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       summary: Get Files Metadata
+      tags:
+        - storage
       operationId: get_files_metadata_dataset
       parameters:
         - name: location_id
@@ -3204,6 +3264,8 @@ paths:
   '/storage/locations/{location_id}/datasets':
     get:
       summary: Get datasets metadata
+      tags:
+        - storage
       operationId: get_datasets_metadata
       parameters:
         - name: location_id
@@ -3314,6 +3376,8 @@ paths:
   /services:
     get:
       description: Lists available services in catalog
+      tags:
+        - service
       operationId: services_get
       parameters:
         - in: query
@@ -3779,6 +3843,8 @@ paths:
   '/computation/pipeline/{project_id}':
     put:
       description: Update a pipeline using workbench section from given project
+      tags:
+        - service
       operationId: update_pipeline
       parameters:
         - in: path
@@ -3877,6 +3943,8 @@ paths:
   '/computation/pipeline/{project_id}/start':
     post:
       description: Starts a pipeline of a given project
+      tags:
+        - service
       operationId: start_pipeline
       parameters:
         - in: path
@@ -6867,7 +6935,7 @@ paths:
     get:
       tags:
         - node
-      summary: get a json description of the ui for presenting the output within the mainUi and a list of open api json schema objects describing the possible json payloads and responses for the api calls available at this endpoint
+      description: get a json description of the ui for presenting the output within the mainUi and a list of open api json schema objects describing the possible json payloads and responses for the api calls available at this endpoint
       operationId: get_node_output_ui
       parameters:
         - in: path
@@ -7666,6 +7734,8 @@ paths:
   /activity/status:
     get:
       operationId: get_status
+      tags:
+        - activity
       responses:
         '200':
           description: 'Object containing queuing, CPU and Memory usage/limits information of services'

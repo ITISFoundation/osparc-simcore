@@ -2,6 +2,8 @@ paths:
   /services:
     get:
       description: Lists available services in catalog
+      tags:
+        - service
       operationId: services_get
       parameters:
         - $ref: "#/components/parameters/ServiceType"
@@ -21,6 +23,8 @@ paths:
   /computation/pipeline/{project_id}:
     put:
       description: "Update a pipeline using workbench section from given project"
+      tags:
+        - service
       operationId: update_pipeline
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -33,6 +37,8 @@ paths:
   /computation/pipeline/{project_id}/start:
     post:
       description: Starts a pipeline of a given project
+      tags:
+        - service
       operationId: start_pipeline
       parameters:
         - $ref: "#/components/parameters/ProjectId"

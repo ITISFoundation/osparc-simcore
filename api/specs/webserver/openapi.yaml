@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: simcore-service-webserver API
   version: 0.2.1
-  description: API definition for simcore-service-webserver service
+  description: RestAPI for the Web Gateway
   contact:
     name: IT'IS Foundation
     email: support@simcore.io
@@ -24,19 +24,27 @@ servers:
           - v0
         default: v0
 tags:
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
+  - name: authentication
+  - name: project
+  - name: user
+  - name: catalog
+  - name: service
+  - name: activity
+  - name: storage
   - name: tag
     description: |
       Grouping the paths and operations that perform changes on the TAG entity.
       Tags are customized visual elements that help the user group and quickly identify different items
       on the interface. They can also be used for searching and filtering purposes.
-  - name: project
-    description: | # Complete description
-      Grouping the paths and operations that perform changes on the PROJECT entity.
+  - name: node
+    description: |
+      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
+      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
+      defines the protocol for the frontend to interact with the node.
+  - name: configuration
+  - name: maintenance
+
+
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
   /:
