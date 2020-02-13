@@ -8232,6 +8232,8 @@ paths:
       responses:
         '200':
           description: List of catalog dags
+        '422':
+          description: Validation Error
         default:
           description: Default http error response body
           content:
@@ -8320,9 +8322,17 @@ paths:
         - catalog
       summary: Creates a new dag in catalog
       operationId: create_catalog_dag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
       responses:
-        '200':
-          description: The created dag
+        '201':
+          description: The dag was successfully created
+        '422':
+          description: Validation Error
         default:
           description: Default http error response body
           content:
@@ -8419,9 +8429,17 @@ paths:
         - catalog
       summary: Replaces a dag in catalog
       operationId: replace_catalog_dag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
       responses:
         '200':
           description: The dag was replaced in catalog
+        '422':
+          description: Validation Error
         default:
           description: Default http error response body
           content:
@@ -8513,6 +8531,8 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+        '422':
+          description: Validation Error
 components:
   responses:
     DefaultErrorResponse:
