@@ -1,4 +1,4 @@
-const startBrowser = require('../utils/startBrowser');
+const startBrowser = require('../utils/startPuppe');
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
@@ -7,10 +7,10 @@ const url = "http://127.0.0.1:9081/";
 const {
   user,
   pass
-} = utils.getRandUserAndPass();
+} = utils.getUserAndPass();
 
 async function run () {
-  const browser = await startBrowser.launch(demo);
+  const browser = await startBrowser.getBrowser(demo);
   const page = await browser.newPage();
   await page.goto(url);
 

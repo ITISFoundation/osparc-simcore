@@ -852,6 +852,7 @@ qx.Class.define("osparc.data.model.Node", {
     addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
         const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+        osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
         retrieveBtn.addListener("execute", e => {
           this.__retrieveInputs();
         }, this);
@@ -859,6 +860,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setRetrieveIFrameButton(retrieveBtn);
 
         const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
+        osparc.utils.Utils.setIdToWidget(restartBtn, "nodeViewRestartBtn");
         restartBtn.addListener("execute", e => {
           this.restartIFrame();
         }, this);
