@@ -456,7 +456,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         }
       });
 
-      item.addListener("execute", e => {
+      item.addListener("execute", () => {
         // Selection logic
         if (item.getValue()) {
           if (isTemplate) {
