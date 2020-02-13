@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: simcore-service-webserver API
+  title: osparc-simcore RESTful API
   version: 0.3.0
-  description: API definition for simcore-service-webserver service
+  description: RESTful API designed for web clients
   contact:
     name: IT'IS Foundation
     email: support@simcore.io
@@ -25,12 +25,12 @@ servers:
         default: v0
 tags:
   - name: authentication
-  - name: project
   - name: user
+  - name: project
   - name: catalog
+  - name: storage
   - name: service
   - name: activity
-  - name: storage
   - name: tag
     description: |
       Grouping the paths and operations that perform changes on the TAG entity.
