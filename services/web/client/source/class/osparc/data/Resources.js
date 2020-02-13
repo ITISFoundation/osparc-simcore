@@ -177,15 +177,15 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           post: {
             method: "POST",
-            url: statics.API + "/groups"
+            url: statics.API + "/catalog/dags"
           },
           get: {
             method: "GET",
-            url: statics.API + "/groups"
+            url: statics.API + "/catalog/dags"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/groups/{serviceId}"
+            url: statics.API + "/catalog/dags/{serviceId}"
           }
         }
       },
