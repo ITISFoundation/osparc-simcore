@@ -46,10 +46,6 @@ qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
   type : "singleton",
 
-  construct: function() {
-    this.__groupsLinvingInFrontend = [];
-  },
-
   properties: {
     currentStudy: {
       check: "osparc.data.model.Study",
@@ -105,8 +101,6 @@ qx.Class.define("osparc.store.Store", {
   },
 
   members: {
-    __groupsLinvingInFrontend: null,
-
     /**
      * Updates an element or a set of elements in the store.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.
@@ -164,14 +158,10 @@ qx.Class.define("osparc.store.Store", {
       return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
         const servicesPromise = osparc.data.Resources.get("servicesTodo", null, !reload);
-        const waitFor = 100;
-        const groupsPromise = new Promise((resolveGrp, rejectGrp) => {
-          setTimeout(resolveGrp, waitFor, this.__groupsLinvingInFrontend);
-        });
-        // const groupsPromise = osparc.data.Resources.get("groups", null, !reload);
+        const groupsPromise = osparc.data.Resources.get("groups", null, !reload);
         Promise.all([servicesPromise, groupsPromise])
           .catch(err => {
-            console.error("getServices failed", err)
+            console.error("getServices failed", err);
           })
           .then(values => {
             allServices.push(...values[0], ...values[1]);
@@ -215,8 +205,8 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
-    addGroup: function(group) {
-      this.__groupsLinvingInFrontend.push(group);
+    addGroupToCatalog: function(group) {
+      return osparc.data.Resources.fetch("groups", "post", group);
     }
   }
 });

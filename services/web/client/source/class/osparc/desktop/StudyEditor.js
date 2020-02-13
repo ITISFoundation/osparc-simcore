@@ -188,8 +188,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }, this);
 
           exportGroupView.addListener("finished", () => {
-            const text = this.tr("Group added to the Service catalog");
-            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             window.close();
           }, this);
         }

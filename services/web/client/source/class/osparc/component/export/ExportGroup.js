@@ -104,7 +104,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         alignX: "right"
       });
       exportBtn.addListener("execute", () => {
-        this.__exportAsMacroService();
+        this.__exportAsMacroService(exportBtn);
       }, this);
       this._add(exportBtn);
     },
@@ -131,7 +131,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return settingsEditorLayout;
     },
 
-    __exportAsMacroService: function() {
+    __exportAsMacroService: function(exportBtn) {
+      exportBtn.setIcon("@FontAwesome5Solid/circle-notch/12");
+      exportBtn.getChildControl("icon").getContentElement()
+        .addClass("rotate");
+
       const outputNode = this.getOutputNode();
       const outputWorkbench = this.getOutputWorkbench();
 
@@ -145,9 +149,23 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
       nodesGroupService["workbench"] = outputWorkbench.serializeWorkbench();
 
-      osparc.store.Store.getInstance().addGroup(nodesGroupService);
-
-      this.fireDataEvent("finished");
+      osparc.store.Store.getInstance().addGroupToCatalog(nodesGroupService)
+        .finally(() => {
+          exportBtn.resetIcon();
+          exportBtn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+        })
+        .then(data => {
+          console.log("group id", data);
+          const text = this.tr("Group added to the Service catalog");
+          osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          this.fireDataEvent("finished");
+        })
+        .catch(err => {
+          console.error("error creating group", err);
+          const text = this.tr("Something went wrong adding the Group to the Service catalog");
+          osparc.component.message.FlashMessenger.getInstance().logAs(text, "ERROR");
+        });
     },
 
     __groupToWorkbenchData: function(nodesGroup) {
