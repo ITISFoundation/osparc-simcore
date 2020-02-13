@@ -399,7 +399,7 @@ endif
 
 .PHONY: clean clean-images
 
-git_clean_args = -dxf -e .vscode
+git_clean_args = -dxf -e .vscode -e TODO.md
 
 clean: ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
