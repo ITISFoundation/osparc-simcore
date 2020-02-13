@@ -13,7 +13,7 @@ import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-
+import asyncio
 from servicelib.aiopg_utils import (DatabaseError, DataSourceName,
                                     PostgresRetryPolicyUponOperation,
                                     create_pg_engine, init_pg_tables,
@@ -92,6 +92,36 @@ async def test_create_pg_engine(postgres_service_with_fake_data):
             raise ValueError()
     except ValueError:
         assert engine4.closed
+
+@pytest.mark.skip(reason="for documentation only and needs a swarm")
+async def test_engine_when_idle_for_some_time():
+    # NOTE: this test needs a docker swarm and a running postgres service
+    dsn = DataSourceName(
+        user="test",
+        password="secret",
+        host="127.0.0.1",
+        port=5432,
+        database="db",
+        application_name="test-app"
+    )
+    engine = await create_pg_engine(dsn, minsize=1, maxsize=1)
+    init_pg_tables(dsn, metadata)
+    # import pdb; pdb.set_trace()
+    assert not engine.closed # does not mean anything!!!
+    # pylint: disable=no-value-for-parameter
+    async with engine.acquire() as conn:
+        # writes
+        await conn.execute(tbl.insert().values(val=f'first'))
+
+    # by default docker swarm kills connections that are idle for more than 15 minutes
+    await asyncio.sleep(901)
+    # import pdb; pdb.set_trace()
+
+    async with engine.acquire() as conn:
+        await conn.execute(tbl.insert().values(val=f'third'))
+
+    # import pdb; pdb.set_trace()
+
 
 
 async def test_engine_when_pg_not_reachable():
