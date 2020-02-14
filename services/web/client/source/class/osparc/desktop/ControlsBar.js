@@ -116,7 +116,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         "object-group",
         "groupNodesBtn",
         "groupSelection",
-        "excluded"  
+        "excluded"
       );
     },
 

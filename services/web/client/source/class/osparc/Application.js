@@ -236,11 +236,11 @@ qx.Class.define("osparc.Application", {
     },
 
     __setFavicon: function() {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-      link.type = 'image/x-icon';
-      link.rel = 'shortcut icon';
-      link.href = '/resource/osparc/favicon.png';
-      document.getElementsByTagName('head')[0].appendChild(link);
+      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
+      link.type = "image/x-icon";
+      link.rel = "shortcut icon";
+      link.href = "/resource/osparc/favicon.png";
+      document.getElementsByTagName("head")[0].appendChild(link);
     }
   }
 });
