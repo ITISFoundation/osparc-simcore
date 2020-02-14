@@ -524,7 +524,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         paddingTop: 4,
         paddingLeft: 3,
-        minWidth: 80
+        minWidth: 80,
+        backgroundColor: "transparent"
       })
     },
 
