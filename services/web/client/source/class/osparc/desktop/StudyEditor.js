@@ -369,7 +369,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __isSelectionEmpty: function(selectedNodeUIs) {
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
         return true;
       }
       return false;
