@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     this.setAppearance("sidepanel");
 
     this.__initDefault();
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -90,7 +91,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       groupCtrls.add(groupButton);
       groupCtrls.add(ungroupButton);
       this.add(groupCtrls);
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", msg => this.__updateGroupButtonsVisibility(msg.getData()), this);
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
@@ -161,7 +161,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return button;
     },
 
-    __updateGroupButtonsVisibility: function(selectedNodes) {
+    __updateGroupButtonsVisibility: function(msg) {
+      const selectedNodes = msg.getData();
       let groupBtnVisibility = "excluded";
       let ungroupBtnVisibility = "excluded";
       if (selectedNodes.length > 1) {
@@ -171,6 +172,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       }
       this.__groupButton.setVisibility(groupBtnVisibility);
       this.__ungroupButton.setVisibility(ungroupBtnVisibility);
+    },
+
+    __attachEventHandlers: function() {
+      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__updateGroupButtonsVisibility, this);
     }
   }
 });

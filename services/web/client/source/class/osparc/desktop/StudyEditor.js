@@ -23,12 +23,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.store.Store.getInstance().setCurrentStudy(study);
-    study.buildWorkbench();
-    study.openStudy();
-
-    this.setStudy(study);
-
     let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
@@ -43,18 +37,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
+    
+    if (study) {
+      this.setStudy(study);
+    }
 
-    this.__initDefault();
-    this.__connectEvents();
-
-    this.__startAutoSaveTimer();
     this.__attachEventHandlers();
   },
 
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      nullable: false
+      apply: "_applyStudy"
     }
   },
 
@@ -75,6 +69,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __loggerView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+
+    _applyStudy: function(study) {
+      osparc.store.Store.getInstance().setCurrentStudy(study);
+      study.buildWorkbench();
+      study.openStudy();
+      this.__initDefault();
+      this.__connectEvents();
+      this.__startAutoSaveTimer();
+    },
 
     /**
      * Destructor
