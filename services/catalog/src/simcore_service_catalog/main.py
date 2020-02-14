@@ -10,6 +10,8 @@ from . import __version__
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import dags, diagnostics
+from .remote_debug import setup_remote_debugging
+
 #, dusers
 
 API_VERSION = __version__
@@ -48,6 +50,7 @@ def dump_openapi():
 @app.on_event("startup")
 def startup_event():
     log.info( "Application started")
+    setup_remote_debugging()
 
 
 @app.on_event("startup")

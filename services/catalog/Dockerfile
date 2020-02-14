@@ -21,6 +21,7 @@ ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
 EXPOSE 8000
+EXPOSE 3000
 
 
 # -------------------------- Build stage -------------------
