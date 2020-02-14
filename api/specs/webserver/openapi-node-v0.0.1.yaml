@@ -3,7 +3,7 @@ paths:
     get:
       tags:
         - node
-      summary:
+      description:
         get a json description of the ui for presenting the output within the mainUi
         and a list of open api json schema objects describing the possible
         json payloads and responses for the api calls available at this endpoint

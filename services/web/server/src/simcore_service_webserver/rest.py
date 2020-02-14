@@ -49,39 +49,33 @@ def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
     depends=['simcore_service_webserver.security'],
     logger=log)
 def setup(app: web.Application):
-    try:
-        cfg = get_rest_config(app) # TODO: can be automaticaly injected by app_module_setup??
-        api_version_dir = cfg["version"]
-        spec_path = get_openapi_specs_path(api_version_dir)
+    cfg = get_rest_config(app)
+    api_version_dir = cfg["version"]
+    spec_path = get_openapi_specs_path(api_version_dir)
 
-        # validated openapi specs
-        app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
+    # validated openapi specs
+    app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
 
-        # version check
-        base_path = openapi.get_base_path(specs)
-        major, *_ = specs.info.version
+    # version check
+    base_path = openapi.get_base_path(specs)
+    major, *_ = specs.info.version
 
-        if f"/v{major}" != base_path:
-            raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
+    if f"/v{major}" != base_path:
+        raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
 
-        # diagnostics routes
-        routes = rest_routes.create(specs)
-        app.router.add_routes(routes)
+    # diagnostics routes
+    routes = rest_routes.create(specs)
+    app.router.add_routes(routes)
 
-        # middlewares
-        append_rest_middlewares(app, base_path)
+    # middlewares
+    append_rest_middlewares(app, base_path)
 
-        # rest API doc at /api/doc
-        log.debug("OAS loaded from %s ", spec_path)
-        setup_swagger(app,
-            swagger_from_file=str(spec_path),
-            ui_version=3)
+    # rest API doc at /api/doc
+    log.debug("OAS loaded from %s ", spec_path)
+    setup_swagger(app,
+        swagger_from_file=str(spec_path),
+        ui_version=3)
 
-    except openapi.OpenAPIError:
-        # TODO: protocol when some parts are unavailable because of failure
-        # Define whether it is critical or this server can still
-        # continue working offering partial services
-        log.exception("Invalid rest API specs. Rest API is DISABLED")
 
 
 # alias

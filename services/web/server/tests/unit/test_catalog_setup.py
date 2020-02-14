@@ -25,6 +25,7 @@ def client(loop, aiohttp_client):
     app = create_safe_application(cfg)
 
     app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
+
     assert setup_catalog(app)
 
     # needs to start application ...
