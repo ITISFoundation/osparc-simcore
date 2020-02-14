@@ -35,11 +35,24 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
         appearance: "settings-groupbox",
-        maxWidth: 500,
+        maxWidth: 800,
         alignX: "center",
         layout: new qx.ui.layout.VBox()
       });
       return settingsGroupBox;
+    },
+
+    createWindow: function(label) {
+      const win = new qx.ui.window.Window(label).set({
+        layout: new qx.ui.layout.Grow(),
+        contentPadding: 10,
+        showMinimize: false,
+        resizable: true,
+        modal: true,
+        height: 600,
+        width: 800
+      });
+      return win;
     }
   },
 
@@ -64,6 +77,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _iFrameLayout: null,
     _buttonContainer: null,
     _filesButton: null,
+
+    populateLayout: function() {
+      this.getNode().bind("label", this._title, "value");
+      this._addInputPortsUIs();
+      this._addSettings();
+      this._addIFrame();
+      this._addButtons();
+    },
 
     __buildInputsView: function() {
       const inputsView = this._inputsView = new osparc.desktop.SidePanel().set({
@@ -127,13 +148,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
       infoPart.add(infoBtn);
 
+      const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
+      infoPart.add(editAccessLevel);
+
       const filesBtn = this._filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       buttonsPart.add(filesBtn);
 
-      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
-
       infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+      editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
+      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
 
       title.addListener("editValue", evt => {
         if (evt.getData() !== this._title.getValue()) {
@@ -270,6 +294,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           node.setCollapsed(true);
         });
       }, this);
+    },
+
+    /**
+      * @abstract
+      */
+    _addSettings: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    /**
+      * @abstract
+      */
+    _addIFrame: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    /**
+      * @abstract
+      */
+    _openEditAccessLevel: function() {
+      throw new Error("Abstract method called!");
     },
 
     /**

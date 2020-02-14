@@ -169,8 +169,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           createItem: () => new osparc.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
-            c.bindProperty("label", "label", null, item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
+            if (node) {
+              node.bind("label", item.getModel(), "label");
+            }
+            c.bindProperty("label", "label", null, item, id);
           },
           configureItem: item => {
             item.addListener("dbltap", () => {
@@ -234,7 +238,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
           const nodeId = selectedItem.getNodeId();
-          this.__openItem(nodeId);
           this.fireDataEvent("exportNode", nodeId);
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
@@ -267,7 +270,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                 selectedItem.setLabel(data.name);
               });
           } else {
-            selectedItem.setLabel(newLabel);
             const node = study.getWorkbench().getNode(nodeId);
             if (node) {
               node.renameNode(newLabel);

@@ -201,9 +201,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __getServicesPreload: function() {
       let store = osparc.store.Store.getInstance();
       store.addListener("servicesRegistered", e => {
-        this.__servicesReady = e.getData();
+        this.__servicesReady = true;
       }, this);
-      store.getServices(true);
     },
 
     __createStudiesLayout: function() {

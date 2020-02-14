@@ -168,21 +168,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          // const exportGroupView = new osparc.component.export.ExportGroup(node);
-
+          const exportGroupView = new osparc.component.export.ExportGroup(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
-            width: 900,
-            height: 800,
+            width: 700,
+            height: 700,
             showMinimize: false,
             modal: true
           });
-          // window.add(exportGroupView);
+          window.add(exportGroupView);
           window.center();
           window.open();
+
+          window.addListener("close", () => {
+            exportGroupView.tearDown();
+          }, this);
+
+          exportGroupView.addListener("finished", () => {
+            window.close();
+          }, this);
         }
       });
 
@@ -484,7 +491,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          node.setOutputData(nodeData);
+          node.setOutputData(nodeData.outputs);
           if (nodeData.progress) {
             const progress = Number.parseInt(nodeData.progress);
             node.setProgress(progress);

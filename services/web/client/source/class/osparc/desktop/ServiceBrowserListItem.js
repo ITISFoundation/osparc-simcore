@@ -161,22 +161,34 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
     },
 
     _applyKey: function(value, old) {
+      if (value === null) {
+        return;
+      }
       const parts = value.split("/");
       const id = parts.pop();
       osparc.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
     },
 
     _applyTitle: function(value) {
+      if (value === null) {
+        return;
+      }
       const label = this.getChildControl("title");
       label.setValue(value);
     },
 
     _applyDescription: function(value) {
+      if (value === null) {
+        return;
+      }
       const label = this.getChildControl("description");
       label.setValue(value);
     },
 
     _applyContact: function(value) {
+      if (value === null) {
+        return;
+      }
       const label = this.getChildControl("contact");
       label.setValue(value);
     },

@@ -184,50 +184,36 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return null;
       }
+
       const node = new osparc.data.model.Node(key, version, uuid);
+      this.addNode(node, parent);
+
       const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
-        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
-        for (const innerNodeMetaData of innerNodeMetaDatas) {
-          this.createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, node);
-        }
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "workbench")) {
+        this.__createInnerWorkbench(node, metaData);
       }
       this.__initNodeSignals(node);
 
       node.populateNodeData();
       node.giveUniqueName();
-
-      // create the node in the backend here
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const params = {
-        url: {
-          projectId: study.getUuid()
-        },
-        data: {
-          "service_id": node.getNodeId(),
-          "service_key": key,
-          "service_version": version
-        }
-      };
-      this.addNode(node, parent);
-      node.addDynamicButtons();
-
-      osparc.data.Resources.fetch("studies", "addNode", params)
-        .then(data => {
-          node.startDynamicService();
-        })
-        .catch(err => {
-          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + err.getTarget().getResponse()["error"];
-          const errorMsgData = {
-            nodeId: node.getNodeId(),
-            msg: errorMsg
-          };
-          node.fireDataEvent("showInLogger", errorMsgData);
-          node.setInteractiveStatus("failed");
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
-        });
+      node.startInBackend();
 
       return node;
+    },
+
+    __createInnerWorkbench: function(parentNode, metaData) {
+      // this is must be a nodes group
+      const workbench = osparc.data.Converters.replaceUuids(metaData["workbench"]);
+      for (let innerNodeId in workbench) {
+        workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
+      }
+
+      this.__deserializeNodes(workbench);
+      this.__deserializeEdges(workbench);
+
+      for (let innerNodeId in workbench) {
+        this.getNode(innerNodeId).startInBackend();
+      }
     },
 
     __initNodeSignals: function(node) {
@@ -247,10 +233,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const parentNode = this.getNode(nodeToClone.getParentNodeId());
       let node = this.createNode(key, version, null, parentNode);
       const nodeData = nodeToClone.serialize();
-      node.setInputData(nodeData);
-      node.setOutputData(nodeData);
-      node.addInputNodes(nodeData.inputNodes);
-      node.addOutputNodes(nodeData.outputNodes);
+      node.populateInputOutputData(nodeData);
       return node;
     },
 
@@ -284,16 +267,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
-      // remove node in the backend
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const params = {
-        url: {
-          projectId: study.getUuid(),
-          nodeId: nodeId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "deleteNode", params)
-        .catch(err => console.error(err));
 
       // remove first the connected edges
       const connectedEdges = this.getConnectedEdges(nodeId);
@@ -480,7 +453,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const brotherNodes = this.__getBrotherNodes(currentModel, selectedNodeIds);
 
       // Create nodesGroup
-      const nodesGroupService = osparc.utils.Services.getNodesGroupService();
+      const nodesGroupService = osparc.utils.Services.getNodesGroup();
       const parentNode = currentModel.getNodeId ? currentModel : null;
       const nodesGroup = this.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
       if (!nodesGroup) {

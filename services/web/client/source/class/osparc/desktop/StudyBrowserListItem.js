@@ -149,7 +149,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
