@@ -29,10 +29,8 @@ fi
 # RUNNING application ----------------------------------------
 if [[ ${SC_BOOT_MODE} == "debug-ptvsd" ]]
 then
-  # TODO: add ptvsd programmatically instead
-  #echo $INFO "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
-  #eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-  #  simcore_service_catalog
+  # NOTE: ptvsd is programmatically enabled inside of the service
+  # this way we can have reload in place as well
   uvicorn simcore_service_catalog.main:app --reload --host 0.0.0.0
 else
   exec simcore-service-catalog
