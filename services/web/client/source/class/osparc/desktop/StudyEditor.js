@@ -124,14 +124,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __connectEvents: function() {
-      const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
-      controlsBar.addListener("showSettings", this.__showSettings, this);
-      controlsBar.addListener("groupSelection", this.__groupSelection, this);
-      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
-      controlsBar.addListener("startPipeline", this.__startPipeline, this);
-      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
-
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
@@ -625,6 +617,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
+      controlsBar.addListener("showSettings", this.__showSettings, this);
+      controlsBar.addListener("groupSelection", this.__groupSelection, this);
+      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
+      controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     }
   }
 });

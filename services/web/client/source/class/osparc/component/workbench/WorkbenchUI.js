@@ -310,6 +310,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     resetSelectedNodes: function() {
       this.__selectedNodes = [];
+      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
     },
 
     __activeNodeChanged: function(activeNode, isControlPressed = false) {
@@ -761,6 +762,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     loadModel: function(model) {
       this.clearAll();
+      this.resetSelectedNodes();
       this.__currentModel = model;
       if (model) {
         const isContainer = model.isContainer();
@@ -794,9 +796,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
                 nodeUuid: nodeUuid
               });
             } else {
-              if (!isContainer) {
-                console.log("Shouldn't be the case");
-              }
               this.__createEdgeBetweenNodesAndInputNodes({
                 nodeUuid: inputNode
               }, {
