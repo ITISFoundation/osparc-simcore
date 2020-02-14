@@ -12,8 +12,6 @@ from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import dags, diagnostics
 from .remote_debug import setup_remote_debugging
 
-#, dusers
-
 API_VERSION = __version__
 API_MAJOR_VERSION = API_VERSION.split(".")[0]
 API_VERSION_PREFIX = f"v{API_MAJOR_VERSION}"
@@ -25,6 +23,7 @@ log = logging.getLogger(__name__)
 
 
 app = FastAPI(
+    debug = is_testing_enabled,
     title="Components Catalog Service",
     # TODO: get here extended description from setup
     description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",

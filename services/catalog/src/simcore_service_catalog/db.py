@@ -9,12 +9,12 @@ from aiopg.sa.result import ResultProxy, RowProxy
 # Dependency
 from fastapi import Depends
 
-from .config import pg_dsn, app_context
+from .config import postgres_dsn, app_context
 from .orm.base import Base
 
 
 def create_tables():
-    engine = sa.create_engine(pg_dsn)
+    engine = sa.create_engine(postgres_dsn)
     Base.metadata.create_all(bind=engine)
 
 
@@ -28,7 +28,7 @@ def info():
 # TODO: idealy context cleanup. This concept here? app-context Dependency?
 async def setup_engine() -> None:
     engine = await aiopg.sa.create_engine(
-        pg_dsn,
+        postgres_dsn,
         application_name=f"{__name__}_{id(app_context)}", # unique identifier per app
         minsize=5,
         maxsize=10
