@@ -58,6 +58,8 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     __latestServicesModel: null,
     __servicesUIList: null,
     __versionsUIBox: null,
+    __deleteServiceBtn: null,
+    __selectedService: null,
 
     /**
      * Function that resets the selected item by reseting the filters and the service selection
@@ -202,6 +204,18 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       }, this);
       descriptionView.add(titleContainer);
 
+      const actionsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      actionsContainer.add(new qx.ui.core.Spacer(300, null));
+      const deleteServiceBtn = this.__deleteServiceBtn = new qx.ui.form.Button(this.tr("Delete")).set({
+        allowGrowX: false,
+        visibility: "hidden"
+      });
+      deleteServiceBtn.addListener("execute", () => {
+        this.__deleteService();
+      }, this);
+      actionsContainer.add(deleteServiceBtn);
+      descriptionView.add(actionsContainer);
+
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
       descriptionView.add(descriptionContainer, {
         flex: 1
@@ -274,13 +288,29 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     __updateServiceDescription: function(selectedService) {
       const serviceDescription = this.__serviceDescription;
       if (serviceDescription) {
-        if (selectedService) {
-          const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
-          serviceDescription.add(serviceInfo);
-        } else {
-          serviceDescription.add(null);
-        }
+        const serviceInfo = selectedService ? new osparc.component.metadata.ServiceInfo(selectedService) : null;
+        serviceDescription.add(serviceInfo);
+        this.__selectedService = selectedService;
+        const showDelete = this.__canServiceBeDeleted(selectedService);
+        this.__deleteServiceBtn.setVisibility(showDelete ? "visible" : "hidden");
       }
+    },
+
+    __canServiceBeDeleted: function(selectedService) {
+      // const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
+      const isMacro = selectedService.key.includes("frontend/nodes-group");
+      const isOwner = selectedService.contact === osparc.auth.Data.getInstance().getEmail();
+      return isMacro && isOwner;
+    },
+
+    __deleteService: function() {
+      const serviceId = this.__selectedService.key;
+      const params = {
+        url: {
+          "dag_id": serviceId
+        }
+      };
+      return osparc.data.Resources.fetch("groups", "delete", params, serviceId);
     },
 
     __nodeCheck: function(services) {
