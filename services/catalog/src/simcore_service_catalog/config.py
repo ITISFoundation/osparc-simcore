@@ -30,3 +30,7 @@ app_config = {
     'port':8000,
     'log_level': os.environ.get("LOGLEVEL", "debug").lower()
 }
+
+
+# TODO: hate globals!
+app_context = {}
