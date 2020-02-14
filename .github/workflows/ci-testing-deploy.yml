@@ -1,0 +1,699 @@
+name: Github-CI-Push
+
+on:
+  push:
+
+env:
+  # secrets can be set in settings/secrets on github
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  CODECOV_TOKEN: 0e81ae5f-1909-4035-921c-571693fdafd1
+  CC_TEST_REPORTER_ID: 21a72eb30476c870140b1576258873a41be6692f71bd9aebe812174b7d8f4b4e
+  #enable buildkit
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  unit-test-api:
+    name: Unit-testing api
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install api
+      run: ./ci/github/unit-testing/api install
+    - name: test
+      run: ./ci/github/unit-testing/api test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_api_coverage
+        path: codeclimate.unit_api_coverage.json
+
+  unit-test-director:
+    name: Unit-testing director
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/director install
+    - name: test
+      run: ./ci/github/unit-testing/director test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_director_coverage
+        path: codeclimate.unit_director_coverage.json
+
+  unit-test-frontend:
+    name: Unit-testing frontend
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: [10]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/frontend install
+    - name: test
+      run: ./ci/github/unit-testing/frontend test
+    # no coverage here??
+    # - uses: codecov/codecov-action@v1
+    #   with:
+    #     token: ${{ env.CODECOV_TOKEN }} #required
+    #     flags: unittests #optional
+
+  unit-test-python-linting:
+    name: Unit-testing python-linting
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/python-linting install
+    - name: test
+      run: ./ci/github/unit-testing/python-linting test
+
+
+  unit-test-service-library:
+    name: Unit-testing service-library
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/service-library install
+    - name: test
+      run: ./ci/github/unit-testing/service-library test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_servicelib_coverage
+        path: codeclimate.unit_servicelib_coverage.json
+
+  # DISABLED for now
+  # unit-test-sidecar:
+  #   name: Unit-testing sidecar
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: [3.6]
+  #       os: [ubuntu-18.04]
+  #     fail-fast: false
+  #   steps:
+  #   - uses: actions/checkout@v1
+  #   - name: setup-docker
+  #     uses: docker-practice/actions-setup-docker@0.0.1
+  #   - name: setup docker-compose
+  #     run: sudo ./ci/github/helpers/setup_docker_compose.sh
+  #   - name: setup python environment
+  #     uses: actions/setup-python@v1.1.1
+  #     with:
+  #       python-version: ${{ matrix.python }}
+  #   - name: show system version
+  #     run: ./ci/helpers/show_system_versions
+  #   - name: install
+  #     run: ./ci/github/unit-testing/sidecar install
+  #   - name: test
+  #     run: ./ci/github/unit-testing/sidecar test
+  #   - uses: codecov/codecov-action@v1
+  #     with:
+  #       token: ${{ env.CODECOV_TOKEN }} #required
+  #       flags: unittests #optional
+
+  unit-test-simcore-sdk:
+    name: Unit-testing simcore-sdk
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/simcore-sdk install
+    - name: test
+      run: ./ci/github/unit-testing/simcore-sdk test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_simcoresdk_coverage
+        path: codeclimate.unit_simcoresdk_coverage.json
+
+  unit-test-storage:
+    name: Unit-testing storage
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/storage install
+    - name: test
+      run: ./ci/github/unit-testing/storage test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_storage_coverage
+        path: codeclimate.unit_storage_coverage.json
+
+  unit-test-webserver:
+    name: Unit-testing webserver
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install webserver
+      run: ./ci/github/unit-testing/webserver install
+    - name: test
+      run: ./ci/github/unit-testing/webserver test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_webserver_coverage
+        path: codeclimate.unit_webserver_coverage.json
+
+  build-test-images:
+    runs-on: ubuntu-18.04
+    name: build docker test images
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: show system environs
+      run: ./ci/helpers/show_system_versions
+    - name: pull images
+      run: ./ci/build/test-images pull_images
+    - name: build images
+      run: ./ci/build/test-images build_images
+    - name: set owner variable
+      run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+    - name: push images
+      run: ./ci/deploy/dockerhub-test-images
+
+  integration-test-webserver:
+    name: Integration-testing webserver
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/integration-testing/webserver install
+    - name: test
+      run: ./ci/github/integration-testing/webserver test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/integration-testing/webserver clean_up
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: integrationtests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: integration_webserver_coverage
+        path: codeclimate.integration_webserver_coverage.json
+
+  integration-test-simcore-sdk:
+    name: Integration-testing simcore-sdk
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/integration-testing/simcore-sdk install
+    - name: test
+      run: ./ci/github/integration-testing/simcore-sdk test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/integration-testing/simcore-sdk clean_up
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: integrationtests
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: integration_simcoresdk_coverage
+        path: codeclimate.integration_simcoresdk_coverage.json
+
+  system-test-swarm-deploy:
+    name: System-testing deploy simcore
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-16.04, ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/system-testing/swarm-deploy install
+    - name: test
+      run: ./ci/github/system-testing/swarm-deploy test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/system-testing/swarm-deploy clean_up
+
+  system-test-e2e:
+    name: System-testing e2e
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        node: [10]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions
+    - uses: actions/cache@v1
+      name: getting cached data python
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - uses: actions/cache@v1
+      name: getting cached data node
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: install
+      run: ./ci/github/system-testing/e2e install
+    - name: test
+      run: ./ci/github/system-testing/e2e test
+    - name: recover docker logs
+      id: logs_recovery
+      if: always()
+      run: ./ci/github/system-testing/e2e recover_artifacts
+    - name: upload docker logs
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: e2e_docker_container_logs
+        path: simcore_logs
+    - name: upload screenshots
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: e2e_screenshots
+        path: tests/e2e/screenshots
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: e2etests #optional
+    - name: cleanup
+      if: always()
+      run: ./ci/github/system-testing/swarm-deploy clean_up
+
+  coverage:
+    needs: [
+      unit-test-api, unit-test-director, unit-test-service-library, unit-test-simcore-sdk,
+      unit-test-storage, unit-test-webserver, integration-test-webserver, integration-test-simcore-sdk
+      ]
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_api_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_director_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_servicelib_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_simcoresdk_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_storage_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_webserver_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: integration_webserver_coverage
+    - uses: actions/download-artifact@v1
+      with:
+        name: integration_simcoresdk_coverage
+    - name: put all artefacts together
+      run: |
+        mkdir all_coverages
+        cp unit_api_coverage/*.json unit_director_coverage/*.json unit_servicelib_coverage/*.json unit_simcoresdk_coverage/*.json unit_storage_coverage/*.json unit_webserver_coverage/*.json \
+          integration_webserver_coverage/*.json integration_simcoresdk_coverage/*.json all_coverages/
+        ls -al all_coverages
+    - name: install codeclimate test reporter
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 8
+    - name: upload coverages
+      run: |
+        ./cc-test-reporter upload-coverage
+
+  deploy:
+    name: deploy to dockerhub
+    needs: [
+      unit-test-api, unit-test-director, unit-test-frontend, unit-test-python-linting,
+      unit-test-service-library, unit-test-simcore-sdk, unit-test-storage, unit-test-webserver,
+      integration-test-webserver, integration-test-simcore-sdk,
+      system-test-swarm-deploy, system-test-e2e
+          ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@0.0.1
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      - name: set owner variable
+        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+      - name: deploy master
+        if: github.ref == 'refs/heads/master'
+        env:
+          TAG_PREFIX: master-github
+        run: ./ci/deploy/dockerhub-deploy
+      - name: deploy staging
+        if: github.ref == 'refs/heads/staging'
+        env:
+          TAG_PREFIX: staging-github
+        run: ./ci/deploy/dockerhub-deploy
+      # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
+      # - name: mattermost notification
+      #   uses: tferreira/matterfy@releases/v1
+      #   if: always()
+      #   with:
+      #     type: ${{ job.status }}
+      #     job_name: '*Simcore build state*'
+      #     channel: '${{ secrets.MATTERMOST_CHANNEL }}'
+      #     url: ${{ secrets.MATTERMOST_URL }}

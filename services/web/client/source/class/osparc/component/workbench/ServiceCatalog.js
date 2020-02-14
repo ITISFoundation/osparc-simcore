@@ -97,7 +97,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       const filterPart = new qx.ui.toolbar.Part().set({
         spacing: 10
       });
-      const filters = new osparc.desktop.ServiceFilters("serviceCatalog");
+      const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog");
       this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
       const showAllCheckbox = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));

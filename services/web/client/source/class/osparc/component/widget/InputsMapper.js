@@ -218,7 +218,7 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
       }
       switch (keyEvent.getKeyIdentifier()) {
         case "F2": {
-          let treeItemRenamer = new osparc.component.widget.TreeItemRenamer(selectedItem);
+          let treeItemRenamer = new osparc.component.widget.Renamer(selectedItem.getLabel());
           treeItemRenamer.addListener("labelChanged", e => {
             let newLabel = e.getData()["newLabel"];
             selectedItem.setLabel(newLabel);

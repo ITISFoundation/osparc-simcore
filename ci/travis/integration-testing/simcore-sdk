@@ -3,24 +3,24 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk .travis.yml)
 
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        bash ci/travis/helpers/update_docker
         bash ci/travis/helpers/install_docker_compose
-        bash ci/travis/helpers/show_system_versions
+        bash ci/helpers/show_system_versions
     fi
 }
 
 install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/ensure_python_pip
+        bash ci/helpers/ensure_python_pip
         pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
-        pip3 install services/storage/client-sdk/python
     fi
 }
 
@@ -37,7 +37,9 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        pytest --color=yes --cov=simcore_sdk --cov-append -v packages/simcore-sdk/tests
+        pytest --cov=simcore_sdk --durations=10 --cov-append \
+                --color=yes --cov-report=term-missing --cov-report=xml \
+                -v -m "not travis" packages/simcore-sdk/tests/integration
     else
         echo "No changes detected. Skipping integration-testing of simcore-sdk."
     fi

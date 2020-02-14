@@ -1,7 +1,10 @@
-dist: xenial
+dist: bionic
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.23.2
+    - DOCKER_COMPOSE_VERSION=1.25.0
+    - DOCKER_VERSION=5:19.03.5~3-0~ubuntu-bionic
+    # - DOCKER_BUILDKIT=1
+    # - COMPOSE_DOCKER_CLI_BUILD=1
 services:
   - docker
 addons:
@@ -13,9 +16,7 @@ addons:
 stages:
   - name: build / unit-testing
     if: tag IS blank
-  - name: integration-testing
-    if: tag IS blank
-  - name: system-testing
+  - name: integration-testing / system-testing
     if: tag IS blank
   - deployment
 
@@ -27,6 +28,8 @@ jobs:
       if: NOT type = pull_request AND tag IS blank
       name: build simcore images
       sudo: required
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
       before_install:
         - sudo bash ci/travis/build/test-images before_install
       install:
@@ -42,7 +45,7 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: unbuffer bash ci/travis/deploy/test-images
+          script: unbuffer bash ci/deploy/dockerhub-test-images
           on:
             all_branches: true
 
@@ -170,6 +173,27 @@ jobs:
       after_failure:
         - bash ci/travis/unit-testing/service-library after_failure
 
+    # test python, service-library ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: simcore-sdk
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/simcore-sdk before_install
+      install:
+        - bash ci/travis/unit-testing/simcore-sdk install
+      before_script:
+        - bash ci/travis/unit-testing/simcore-sdk before_script
+      script:
+        - bash ci/travis/unit-testing/simcore-sdk script
+      after_success:
+        - bash ci/travis/unit-testing/simcore-sdk after_success
+      after_failure:
+        - bash ci/travis/unit-testing/simcore-sdk after_failure
+
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: storage
@@ -193,26 +217,26 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/storage after_failure
 
-    # test python, apihub ----------------------------------------------------------------------
+    # test python, api ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: apihub
+      name: api
       language: python
       python:
         - "3.6"
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/apihub before_install
+        - sudo bash ci/travis/unit-testing/api before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/apihub install
+        - unbuffer bash ci/travis/unit-testing/api install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/apihub before_script
+        - unbuffer bash ci/travis/unit-testing/api before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/apihub script
+        - unbuffer bash ci/travis/unit-testing/api script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/apihub after_success
+        - unbuffer bash ci/travis/unit-testing/api after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/apihub after_failure
+        - unbuffer bash ci/travis/unit-testing/api after_failure
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -235,7 +259,7 @@ jobs:
         - unbuffer bash ci/travis/unit-testing/python-linting after_failure
 
     # integrate webserver in swarm -------------------------------------------------------------
-    - stage: integration-testing
+    - stage: integration-testing / system-testing
       name: webserver in swarm
       language: python
       python:
@@ -256,7 +280,7 @@ jobs:
         - unbuffer bash ci/travis/integration-testing/webserver after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
-    - stage: integration-testing
+    - stage: integration-testing / system-testing
       name: simcore-sdk in swarm
       language: python
       python:
@@ -277,7 +301,7 @@ jobs:
         - unbuffer bash ci/travis/integration-testing/simcore-sdk after_failure
 
     # system testing swarm deploy ----------------------------------------------------------------
-    - stage: system-testing
+    - stage: integration-testing / system-testing
       name: swarm deploy
       sudo: required
       language: python
@@ -299,19 +323,21 @@ jobs:
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: system-testing
+    - stage: integration-testing / system-testing
       name: e2e testing
-      dist: trusty
       language: node_js
       node_js:
-        - "8.11.3"
+        - "10"
       sudo: required
+      services:
+        - xvfb
       addons:
         apt:
           packages:
             - libnss3 # This is required to run new chrome on old trusty
             - expect-dev # for unbuffer: brings color back into travis logs
             - docker-ce
+            - python3-venv
       notifications:
         email: false
       cache:
@@ -333,33 +359,43 @@ jobs:
     - stage: deployment
       name: master
       if: branch = master
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=master
       git:
         depth: false
       script: echo "Deploy master"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/master
+          script: unbuffer bash ci/deploy/dockerhub-deploy
           on:
             branch: master
     - stage: deployment
       name: staging
       if: branch = staging
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
       git:
         depth: false
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/staging
+          script: unbuffer bash ci/deploy/dockerhub-deploy
           on:
             branch: staging
     - stage: deployment
       name: production/release
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
+        - GIT_TAG=${TRAVIS_TAG}
       git:
         depth: false
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/production
+          script: unbuffer bash ci/deploy/dockerhub-release
           on:
             all_branches: true
             tags: true

@@ -1,8 +1,8 @@
 """ rest - middlewares for error, enveloping and validation
 
-
+    SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
-# TODO: check https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
+import json
 import logging
 
 from aiohttp import web
@@ -10,11 +10,10 @@ from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
-                             create_error_response, is_enveloped_from_text, is_enveloped_from_map, wrap_as_envelope)
+                             create_error_response, is_enveloped_from_map,
+                             is_enveloped_from_text, wrap_as_envelope)
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
-import json
-
 
 DEFAULT_API_VERSION = "v0"
 
@@ -28,8 +27,12 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 
 
 def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-    # TODO: send info + trace to client ONLY in debug mode!!!
-    resp = create_error_response( [err,], "Unexpected Server error", web.HTTPInternalServerError)
+    # FIXME: send info + trace to client ONLY in debug mode!!!
+    resp = create_error_response(
+            [err,],
+            "Unexpected Server error",
+            web.HTTPInternalServerError
+        )
 
     logger.exception('Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
         type(err),
@@ -78,7 +81,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
                         ex.text = json.dumps(payload)
-                except Exception as err:  # pylint: disable=W0703
+                except Exception as err:  # pylint: disable=broad-except
                     _process_and_raise_unexpected_error(request, err)
             raise ex
 
@@ -86,7 +89,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             logger.debug("Redirected to %s", ex)
             raise
 
-        except Exception as err:  # pylint: disable=W0703
+        except Exception as err: # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
     return _middleware
@@ -113,16 +116,14 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             try:
                 path, query, body = await validator.check_request(request)
 
-                # TODO: simplify!!!!
                 # Injects validated
                 request["validated-path"] = path
                 request["validated-query"] = query
                 request["validated-body"] = body
+
             except OpenAPIError:
                 logger.debug("Failing openAPI specs", exc_info=1)
                 raise
-            except Exception: # pylint: disable=W0703
-                pass
 
             response = await handler(request)
 

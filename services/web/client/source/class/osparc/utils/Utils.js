@@ -101,10 +101,15 @@ qx.Class.define("osparc.utils.Utils", {
       return luminance;
     },
 
+    getContrastedTextColor: function(hexColor) {
+      const L = this.getColorLuminance(hexColor);
+      return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
+    },
+
     bytesToSize: function(bytes) {
       const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
       if (bytes == 0) {
-        return "0 Byte";
+        return "0 Bytes";
       }
       const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
@@ -302,6 +307,31 @@ qx.Class.define("osparc.utils.Utils", {
       if (qWidget.getContentElement) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
+    },
+
+    getClientSessionID: function() {
+      // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
+      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
+      sessionStorage.setItem("clientsessionid", clientSessionID);
+      return clientSessionID;
+    },
+
+    getFont: function(size=14, bold=false) {
+      return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
+    },
+
+    getFreeDistanceToWindowEdges: function(layoutItem) {
+      const domElement = layoutItem.getContentElement().getDomElement();
+      if (domElement === null) {
+        return null;
+      }
+      const location = qx.bom.element.Location.get(domElement);
+      return {
+        top: location.top,
+        right: window.innerWidth - location.right,
+        bottom: window.innerHeight - location.bottom,
+        left: location.left
+      };
     }
   }
 });

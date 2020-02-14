@@ -68,10 +68,11 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
     },
 
     __createThumbnail: function() {
-      return new qx.ui.basic.Image(this.__metadata.thumbnail || osparc.utils.Utils.getThumbnailFromString(this.__metadata.key)).set({
+      return new qx.ui.basic.Image(this.__metadata.thumbnail || "@FontAwesome5Solid/flask/50").set({
         scale: true,
         width: 300,
-        height: 180
+        height: 180,
+        paddingTop: this.__metadata.thumbnail ? 0 : 60
       });
     },
 

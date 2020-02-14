@@ -26,13 +26,13 @@ MAX_WAIT_TIME=240
 
 
 docker_compose_service_names = [
-    'apihub',
     'director',
     'sidecar',
     'storage',
     'webserver',
     'rabbit',
-    'postgres'
+    'postgres',
+    'redis'
 ]
 
 stack_name = os.environ.get("SWARM_STACK_NAME", 'simcore')

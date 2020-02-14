@@ -7,13 +7,8 @@
 version: '3.7'
 services:
 
-  apihub:
-    volumes:
-      - '../api:/srv/http/api'
-
   director:
     environment:
-      - REGISTRY_CACHING=False
       - SC_BOOT_MODE=debug-ptvsd
     volumes:
       - ./director:/devel/services/director
@@ -27,6 +22,7 @@ services:
       - ../packages:/devel/packages
     environment:
       - SC_BOOT_MODE=debug-ptvsd
+      - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
 
   sidecar:
     volumes:

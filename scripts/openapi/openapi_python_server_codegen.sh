@@ -7,7 +7,7 @@ usage()
 
 input_file=
 output_directory=
-generator="python-flask"
+generator="python-aiohttp"
 # process arguments
 while [ "$1" != "" ]; do
     case $1 in
@@ -34,7 +34,7 @@ fi
 output_absolute_dir="$(realpath ${output_directory})"
 echo "output directory is ${output_absolute_dir}"
 
-# generate a python-flask server
+# generate a python-aiohttp server
 temp_folder=${PWD}/tmp
 if [ -d "$temp_folder" ]; then
   rm -rf $temp_folder
@@ -50,8 +50,11 @@ sudo chown -R $USER $temp_folder
 
 echo "retrieving util.py..."
 mv -uf ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}/util.py
-echo "retrieving __init__.py..."
-mv -uf ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}/__init__.py
+echo "retrieving typing_utils.py..."
+mv -uf ${temp_folder}/${generator}/openapi_server/typing_utils.py ${output_directory}/typing_utils.py
+echo "creating empty __init__.py..."
+touch ${output_directory}/__init__.py
+# mv -uf ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}/__init__.py
 echo "retrieving models..."
 if [ ! -d "$output_directory/models" ]; then
   mkdir ${output_directory}/models

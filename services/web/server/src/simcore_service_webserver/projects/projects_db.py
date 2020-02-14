@@ -8,7 +8,7 @@
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, Optional
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -23,9 +23,11 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from ..db_models import users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
-                                  ProjectNotFoundError)
+                                  ProjectNotFoundError,
+                                  ProjectsException)
 from .projects_fakes import Fake
 from .projects_models import ProjectType, projects, user_to_projects
+from ..db_models import study_tags
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +38,8 @@ DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
     for key, value in project_document_data.items():
-        converted_args[ChangeCase.camel_to_snake(key)] = value
+        if key != 'tags': # No column for tags
+            converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
 def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
@@ -191,8 +194,10 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             async for row in conn.execute(query):
-                result_dict = {key:value for key,value in row.items()}
+                result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
+                tags = await self._get_tags_by_project(project_id=result_dict['id'])
+                result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
 
@@ -210,10 +215,63 @@ class ProjectDBAPI:
 
             query = select([projects]).where(expression)
             async for row in conn.execute(query):
-                result_dict = {key:value for key,value in row.items()}
+                result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
+                tags = await self._get_tags_by_project(project_id=result_dict['id'])
+                result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
+
+    async def _get_project(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
+        exclude_foreign = exclude_foreign or []
+        async with self.engine.acquire() as conn:
+            joint_table = user_to_projects.join(projects)
+            query = select([projects]).select_from(joint_table).where(
+                and_(projects.c.uuid == project_uuid,
+                     user_to_projects.c.user_id == user_id)
+            )
+            result = await conn.execute(query)
+            project_row = await result.first()
+
+            if not project_row:
+                raise ProjectNotFoundError(project_uuid)
+
+            project = dict(project_row.items())
+
+            if 'tags' not in exclude_foreign:
+                tags = await self._get_tags_by_project(project_id=project_row.id)
+                project['tags'] = tags
+
+            return project
+
+
+    async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+        project = await self._get_project(user_id, project_uuid)
+        async with self.engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.insert().values(
+                study_id=project['id'],
+                tag_id=tag_id
+            )
+            async with conn.execute(query) as result:
+                if result.rowcount == 1:
+                    project['tags'].append(tag_id)
+                    return _convert_to_schema_names(project)
+                raise ProjectsException()
+
+
+    async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+        project = await self._get_project(user_id, project_uuid)
+        async with self.engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.delete().where(
+                and_(study_tags.c.study_id == project['id'], study_tags.c.tag_id == tag_id)
+            )
+            async with conn.execute(query):
+                if tag_id in project['tags']:
+                    project['tags'].remove(tag_id)
+                return _convert_to_schema_names(project)
+
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
@@ -231,19 +289,8 @@ class ProjectDBAPI:
         if prj and not prj.template:
             return Fake.projects[project_uuid].data
 
-        async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table).where(
-                and_(projects.c.uuid == project_uuid,
-                     user_to_projects.c.user_id == user_id)
-            )
-            result = await conn.execute(query)
-            row = await result.first()
-
-            # FIXME: prefer None to raise an exception. Read https://stackoverflow.com/questions/1313812/raise-exception-vs-return-none-in-functions?answertab=votes#tab-top
-            if not row:
-                raise ProjectNotFoundError(project_uuid)
-            return _convert_to_schema_names(row)
+        project = await self._get_project(user_id, project_uuid)
+        return _convert_to_schema_names(project)
 
     async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
@@ -269,6 +316,8 @@ class ProjectDBAPI:
             row = await result.first()
             if row:
                 template_prj = _convert_to_schema_names(row)
+                tags = await self._get_tags_by_project(project_id=row.id)
+                template_prj['tags'] = tags
 
         return template_prj
 
@@ -291,19 +340,10 @@ class ProjectDBAPI:
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = select([projects.c.id, projects.c.uuid]).\
-                select_from(joint_table).\
-                    where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
-            result = await conn.execute(query)
-
-            # ensure we have found one
-            row = await result.first()
-            if not row:
-                raise ProjectNotFoundError(project_uuid)
+            row = await self._get_project(user_id, project_uuid, exclude_foreign=['tags'])
 
             # uuid can ONLY be set upon creation
-            if row[projects.c.uuid] != project_data["uuid"]:
+            if row[projects.c.uuid.key] != project_data["uuid"]:
                 # TODO: add message
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
             # TODO: should also take ownership???
@@ -316,7 +356,7 @@ class ProjectDBAPI:
             # pylint: disable=E1120
             query = projects.update().\
                 values(**_convert_to_db_names(project_data)).\
-                    where(projects.c.id == row[projects.c.id])
+                    where(projects.c.id == row[projects.c.id.key])
             await conn.execute(query)
 
 
@@ -395,6 +435,13 @@ class ProjectDBAPI:
             row = await result.first()
         return row[users.c.email] if row else "Unknown"
 
+    async def _get_tags_by_project(self, project_id):
+        async with self.engine.acquire() as conn:
+            query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
+            result = []
+            async for row_proxy in conn.execute(query):
+                result.append(row_proxy.tag_id)
+            return result
 
 
 def setup_projects_db(app: web.Application):

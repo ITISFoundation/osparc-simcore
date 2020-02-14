@@ -4,15 +4,16 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
 
 before_install() {
+    bash ci/travis/helpers/update_docker
     bash ci/travis/helpers/install_docker_compose
-    bash ci/travis/helpers/show_system_versions
+    bash ci/helpers/show_system_versions
 }
 
 install() {
-    bash ci/travis/helpers/ensure_python_pip
+    bash ci/helpers/ensure_python_pip
     pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
 }
 
@@ -23,7 +24,9 @@ before_script() {
 }
 
 script() {
-    pytest --cov=simcore_service_webserver --cov-append -v services/web/server/tests/integration
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+        --color=yes --cov-report=term-missing --cov-report=xml \
+        -v -m "not travis" services/web/server/tests/integration
     # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
     #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }

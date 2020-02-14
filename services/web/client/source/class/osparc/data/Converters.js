@@ -17,21 +17,7 @@
 
 /**
  *   Collection of static methods for converting data coming from the webserver into suitable
- * data for the frontend.
- *
- * *Example*
- *
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   let dataStore = osparc.store.Data.getInstance();
- *   dataStore.addListenerOnce("nodeFiles", e => {
- *     const files = e.getData();
- *     const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
- *     this.__addTreeData(newChildren);
- *   }, this);
- *   dataStore.getNodeFiles(nodeId);
- * </pre>
+ *  data for the frontend.
  */
 
 qx.Class.define("osparc.data.Converters", {
@@ -53,8 +39,7 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
-    fromDSMToVirtualTreeModel: function(files) {
-      let uuidToName = osparc.utils.UuidToName.getInstance();
+    fromDSMToVirtualTreeModel: function(datasetId, files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
@@ -70,9 +55,9 @@ qx.Class.define("osparc.data.Converters", {
             const prjId = splitted[0];
             const nodeId = splitted[1];
             const fileId = splitted[2];
-            let prjLabel = file["project_name"] === "" ? uuidToName.convertToName(prjId) : file["project_name"];
-            let nodeLabel = file["node_name"] === "" ? uuidToName.convertToName(nodeId) : file["node_name"];
-            let fileName = file["file_name"] === "" ? fileId : file["file_name"];
+            const prjLabel = file["project_name"];
+            const nodeLabel = file["node_name"];
+            const fileName = file["file_name"] === "" ? fileId : file["file_name"];
             // node file
             fileInTree.children.push(
               this.createDirEntry(
@@ -86,6 +71,7 @@ qx.Class.define("osparc.data.Converters", {
                   [this.createFileEntry(
                     fileName,
                     file["location_id"],
+                    datasetId,
                     file["file_id"],
                     file["last_modified"],
                     file["file_size"])
@@ -111,6 +97,7 @@ qx.Class.define("osparc.data.Converters", {
           let fileInfo = this.createFileEntry(
             splitted[splitted.length-1],
             file["location_id"],
+            datasetId,
             file["file_id"],
             file["last_modified"],
             file["file_size"]);
@@ -135,7 +122,7 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, fileId, lastModified, size) {
+    createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
@@ -154,6 +141,7 @@ qx.Class.define("osparc.data.Converters", {
       return {
         label,
         location,
+        datasetId,
         fileId,
         itemId: fileId,
         lastModified,

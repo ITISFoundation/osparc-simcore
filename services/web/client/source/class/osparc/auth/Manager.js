@@ -66,7 +66,7 @@ qx.Class.define("osparc.auth.Manager", {
       } else {
         osparc.data.Resources.getOne("profile", {}, null, false)
           .then(profile => {
-            this.__loginUser(profile.login);
+            this.__loginUser(profile);
             successCb.call(ctx, profile);
           })
           .catch(err => {
@@ -84,16 +84,28 @@ qx.Class.define("osparc.auth.Manager", {
       };
       osparc.data.Resources.fetch("auth", "postLogin", params)
         .then(data => {
-          this.__loginUser(email);
-          successCbk.call(context, data);
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(profile => {
+              this.__loginUser(profile);
+              successCbk.call(context, data);
+            })
+            .catch(err => failCbk.call(context, err.message));
         })
         .catch(err => failCbk.call(context, err.message));
     },
 
     logout: function() {
-      osparc.data.Resources.fetch("auth", "getLogout");
-      this.__logoutUser();
-      this.fireEvent("logout");
+      const params = {
+        data: {
+          "client_session_id": osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postLogout", params)
+        .then(data => {
+          this.fireEvent("logout");
+        })
+        .catch(error => console.log("already logged out"))
+        .finally(this.__logoutUser());
     },
 
     register: function(userData, successCbk, failCbk, context) {
@@ -140,14 +152,16 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
-    __loginUser: function(email) {
-      osparc.auth.Data.getInstance().setEmail(email);
-      osparc.auth.Data.getInstance().setToken(email);
+    __loginUser: function(profile) {
+      osparc.auth.Data.getInstance().setEmail(profile.login);
+      osparc.auth.Data.getInstance().setToken(profile.login);
+      osparc.data.Permissions.getInstance().setRole(profile.role);
     },
 
     __logoutUser: function() {
       osparc.auth.Data.getInstance().resetEmail();
       osparc.auth.Data.getInstance().resetToken();
+      osparc.store.Store.getInstance().setCurrentStudyId(null);
     }
   }
 });

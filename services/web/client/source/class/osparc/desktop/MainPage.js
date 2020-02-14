@@ -36,7 +36,7 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyId) {
+  construct: function() {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -44,12 +44,10 @@ qx.Class.define("osparc.desktop.MainPage", {
     let navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    let prjStack = this.__prjStack = this.__createMainView(studyId);
+    let prjStack = this.__prjStack = this.__createMainView();
     this._add(prjStack, {
       flex: 1
     });
-
-    osparc.io.WatchDog.getInstance().startCheck();
   },
 
   events: {},
@@ -76,19 +74,19 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__showDashboard();
       }, this);
 
-      navBar.addListener("nodeDoubleClicked", e => {
+      navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
-          this.__studyEditor.nodeSelected(nodeId, true);
+          this.__studyEditor.nodeSelected(nodeId);
         }
       }, this);
       return navBar;
     },
 
-    __createMainView: function(studyId) {
+    __createMainView: function() {
       let prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new osparc.desktop.Dashboard(studyId);
+      let dashboard = this.__dashboard = new osparc.desktop.Dashboard();
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
         this.__showStudyEditor(studyEditor);
@@ -117,7 +115,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__prjStack.add(this.__studyEditor);
       this.__prjStack.setSelection([this.__studyEditor]);
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(study.getWorkbench().getPathIds("root"));
+      this.__navBar.setPathButtons(study.getWorkbench().getPathIds(study.getUuid()));
 
       this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();

@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.DataBrowser", {
     __pieChart: null,
 
     __initResources: function(locationId) {
-      this.__filesTree.populateTree(null, locationId);
+      this.__filesTree.populateTree(locationId);
     },
 
     __createDataManagerLayout: function() {
@@ -139,13 +139,6 @@ qx.Class.define("osparc.desktop.DataBrowser", {
       actionsToolbar.add(fileActions);
       actionsToolbar.addSpacer();
       actionsToolbar.add(addFile);
-
-      const addBtn = new osparc.file.FilesAdd();
-      addBtn.addListener("fileAdded", e => {
-        const fileMetadata = e.getData();
-        this.__initResources(fileMetadata["locationId"]);
-      }, this);
-      addFile.add(addBtn);
 
       const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {

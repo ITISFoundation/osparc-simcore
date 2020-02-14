@@ -17,8 +17,8 @@
 
 ## Checklist
 
-- [ ] I think the code is well written
+- [ ] Did you change any service's API? Then make sure to bundle document and upgrade version (``make openapi-specs``, ``git commit ...`` and then ``make version-*``)
 - [ ] Unit tests for the changes exist
+- [ ] Runs in the swarm
 - [ ] Documentation reflects the changes
-- [ ] **Runs in the swarm**
-- [ ] If you design a new module, add your user to .github/CODEOWNERS
+- [ ] New module? Add your github username to [.github/CODEOWNERS](.github/CODEOWNERS)

@@ -31,7 +31,7 @@ fi
 
 docker run \
     -v $apihub_specs_dir:/input \
-    -v ${PWD}/src/simcore_service_director/oas3/v0:/output \
+    -v ${PWD}/src/simcore_service_director/api/v0:/output \
     itisfoundation/oas_resolver \
     /input/director/v0/openapi.yaml \
     /output/openapi.yaml

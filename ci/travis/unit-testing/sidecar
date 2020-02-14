@@ -8,15 +8,16 @@ FOLDER_CHECKS=(api/ sidecar packages/ .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        bash ci/travis/helpers/update_docker
         bash ci/travis/helpers/install_docker_compose
-        bash ci/travis/helpers/show_system_versions
+        bash ci/helpers/show_system_versions
     fi
 }
 
 install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/ensure_python_pip;
+        bash ci/helpers/ensure_python_pip;
         pushd services/sidecar; pip3 install -r requirements/ci.txt; popd;
     fi
 }
@@ -32,7 +33,9 @@ script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         # TODO: call services/sidecar/tests/unit when integration tests available
-        pytest --cov=simcore_service_sidecar --cov-append -v -m "not travis" services/sidecar/tests
+        pytest --cov=simcore_service_sidecar --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml \
+          -v -m "not travis" services/sidecar/tests
     else
         echo "No changes detected. Skipping unit-testing of sidecar."
     fi

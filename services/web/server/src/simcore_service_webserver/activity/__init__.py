@@ -25,7 +25,7 @@ def setup(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     def include_path(tup_object):
-        _method, path, _operation_id = tup_object
+        _method, path, _operation_id, _tags = tup_object
         return any( tail in path  for tail in ['/activity/status'] )
 
     handlers_dict = {

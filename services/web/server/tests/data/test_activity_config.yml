@@ -50,9 +50,8 @@ storage:
   version: v0
 rest:
   version: v0
-  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+  enabled: True
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
 activity:

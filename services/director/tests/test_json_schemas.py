@@ -25,7 +25,7 @@ def validate_individual_schemas(list_of_paths):
 
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_valid_individual_json_schemas_specs(version):
-    name = "{root}/{version}/schemas".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
+    name = f"{resources.RESOURCE_OPENAPI_ROOT}/{version}/schemas"
     schemas_folder_path = resources.get_path(name)
 
     validate_individual_schemas(Path(schemas_folder_path).rglob("*.json"))

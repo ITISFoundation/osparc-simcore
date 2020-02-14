@@ -44,10 +44,19 @@
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
-
   type : "singleton",
 
   properties: {
+    currentStudy: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: true
+    },
+    currentStudyId: {
+      check: "String",
+      init: null,
+      nullable: true
+    },
     studies: {
       check: "Array",
       init: []
@@ -75,6 +84,15 @@ qx.Class.define("osparc.store.Store", {
     storageLocations: {
       check: "Array",
       init: []
+    },
+    tags: {
+      check: "Array",
+      init: [],
+      event: "changeTags"
+    },
+    statics: {
+      check: "Object",
+      init: {}
     }
   },
 
@@ -105,7 +123,7 @@ qx.Class.define("osparc.store.Store", {
             });
             this.set(resource, newStored);
           } else {
-            stored.push(data);
+            this.set(resource, [...stored, data]);
           }
         }
       } else {
@@ -125,7 +143,7 @@ qx.Class.define("osparc.store.Store", {
         const item = stored.find(element => element[idField] === id);
         if (item) {
           const index = stored.indexOf(item);
-          stored.splice(index, 1);
+          this.set(resource, [...stored.slice(0, index), ...stored.slice(index + 1)]);
         }
       } else {
         this.set(resource, {});
@@ -139,7 +157,7 @@ qx.Class.define("osparc.store.Store", {
     getServices: function(reload) {
       if (!osparc.utils.Services.reloadingServices && (reload || Object.keys(osparc.utils.Services.servicesCached).length === 0)) {
         osparc.utils.Services.reloadingServices = true;
-        osparc.data.Resources.get("servicesTodo")
+        osparc.data.Resources.get("servicesTodo", null, !reload)
           .then(data => {
             const allServices = data.concat(osparc.utils.Services.getBuiltInServices());
             const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
@@ -184,7 +202,15 @@ qx.Class.define("osparc.store.Store", {
         } else if (Array.isArray(resources)) {
           propertyArray = resources;
         }
-        propertyArray.map(propName => this.reset(propName));
+        propertyArray.forEach(propName => this.reset(propName));
+      }
+    },
+
+    _applyStudy: function(newStudy) {
+      if (newStudy) {
+        this.setCurrentStudyId(newStudy.getStudyId());
+      } else {
+        this.setCurrentStudyId(null);
       }
     }
   }

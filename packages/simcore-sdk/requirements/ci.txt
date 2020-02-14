@@ -12,6 +12,7 @@
 # installs this repo's packages
 ../postgres-database/
 ../s3wrapper/
+../service-library/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 

@@ -8,9 +8,10 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from asyncio import Future
+from asyncio import Future, Task, wait_for
 from copy import deepcopy
 from pathlib import Path
+from pprint import pprint
 from typing import Dict, List
 
 import pytest
@@ -21,6 +22,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
+from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -33,8 +35,9 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
-    'apihub',
+    'director',
     'postgres',
+    'redis',
 ]
 
 ops_services = [
@@ -47,10 +50,14 @@ def client(loop, aiohttp_client,
         app_config,    ## waits until swarm with *_services are up
     ):
     assert app_config["rest"]["version"] == API_VERSION
-    assert API_VERSION in app_config["rest"]["location"]
+
+    app_config['main']['testing'] = True
+    app_config['db']['init_tables'] = True
 
     app_config['storage']['enabled'] = False
     app_config['rabbit']['enabled'] = False
+
+    pprint(app_config)
 
     app = create_safe_application(app_config)
 
@@ -59,6 +66,7 @@ def client(loop, aiohttp_client,
     setup_security(app)
     setup_rest(app)
     setup_login(app)
+    setup_resource_manager(app)
     assert setup_projects(app)
 
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
@@ -140,7 +148,7 @@ async def storage_subsystem_mock(loop, mocker):
 
     # requests storage to delete data
     #mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
-    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=Future())
+    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project', return_value=Future())
     mock1.return_value.set_result("")
     return mock, mock1
 
@@ -229,6 +237,12 @@ async def test_workflow(client, fake_project_data, logged_user, computational_sy
 
     # delete
     await _request_delete(client, pid)
+
+    # wait for delete tasks to finish
+    tasks = Task.all_tasks()
+    for task in tasks:
+        if "delete_project" in task._coro.__name__:
+            await wait_for(task, timeout=60.0)
 
     # list empty
     projects = await _request_list(client)

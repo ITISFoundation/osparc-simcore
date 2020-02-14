@@ -1,0 +1,79 @@
+# To validate, run ./scripts/code-climate.sh validate-config
+#
+# SEE https://docs.codeclimate.com/docs/advanced-configuration
+#
+version: "2"
+# SEE https://docs.codeclimate.com/docs/maintainability#section-checks
+checks:
+  argument-count:
+    enabled: false
+    config:
+      threshold: 6
+  complex-logic:
+    enabled: true
+    config:
+      threshold: 10
+  file-lines:
+    enabled: true
+    config:
+      threshold: 500
+  method-complexity:
+    enabled: false
+    config:
+      threshold: 6
+  method-count:
+    enabled: true
+    config:
+      threshold: 20
+  method-lines:
+    enabled: true
+    config:
+      threshold: 50
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 4
+  return-statements:
+    enabled: true
+    config:
+      threshold: 4
+  similar-code:
+    enabled: false
+    config:
+      threshold: #language-specific defaults. overrides affect all languages.
+  identical-code:
+    enabled: true
+    config:
+      threshold: #language-specific defaults. overrides affect all languages.
+
+plugins:
+  # https://github.com/PyCQA/bandit#configuration
+  bandit:
+    enabled: true
+  # https://docs.codeclimate.com/docs/eslint
+  eslint:
+    enabled: false
+    channel: "eslint-6"
+    config:
+      extensions:
+      - .js
+
+exclude_patterns:
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "**/node_modules/"
+  - "script/"
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - "**/vendor/"
+  - "**/*.d.ts"
+  - "**/.venv/"
+  - ".venv/"
+  - "**/healthcheck.py"
+  - "**/client-sdk/"
+  - "**/generated_code/"
+  - "**/migrations/"
+  - "**/*.js"

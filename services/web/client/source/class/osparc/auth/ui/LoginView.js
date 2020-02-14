@@ -85,8 +85,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      const loginBtn = new qx.ui.form.Button(this.tr("Log In"));
-      loginBtn.addListener("execute", () => this.__login(), this);
+      const loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
+      loginBtn.addListener("execute", () => {
+        loginBtn.setFetching(true);
+        this.__login(loginBtn);
+      }, this);
       // Listen to "Enter" key
       this.addListener("keypress", keyEvent => {
         if (keyEvent.getKeyIdentifier() === "Enter") {
@@ -158,7 +161,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       return grp;
     },
 
-    __login: function() {
+    __login: function(loginBtn) {
       if (!this.__form.validate()) {
         return;
       }
@@ -166,9 +169,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
-      const manager = osparc.auth.Manager.getInstance();
-
       const successFun = function(log) {
+        loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
@@ -177,6 +179,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const failFun = function(msg) {
+        loginBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Introduced an invalid email or password");
         [email, pass].forEach(item => {
@@ -189,6 +192,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
+      const manager = osparc.auth.Manager.getInstance();
       manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
     },
 

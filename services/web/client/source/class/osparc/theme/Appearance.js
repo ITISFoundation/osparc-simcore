@@ -74,7 +74,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "window", // redirect kids to window/kid
       style: function(states) {
         return {
-          backgroundColor: "background-selected-dark",
+          backgroundColor: states.selected ? "node-selected-background" : "background-selected-dark",
           decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
@@ -87,7 +87,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           padding: [0, 3, 0, 3],
           minHeight: 20,
-          backgroundColor: "background-selected-dark",
+          backgroundColor: "transparent",
           decorator: "workbench-small-cap-captionbar"
         };
       }
@@ -162,6 +162,12 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "service-window",
       style: state => ({
         maxHeight: state.maximized ? null : 500
+      })
+    },
+
+    "dialog-window-content": {
+      style: () => ({
+        backgroundColor: "material-button-background"
       })
     },
     /*
@@ -325,7 +331,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button": {
+    "xl-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -336,14 +342,14 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button/label": {
+    "xl-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "title-16"
       })
     },
 
-    "md-button": {
+    "lg-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -354,10 +360,28 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "md-button/label": {
+    "lg-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "text-16"
+      })
+    },
+
+    "md-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 25,
+        center: true
+      })
+    },
+
+    "md-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "text-14"
       })
     },
 
@@ -477,6 +501,63 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "tabview-page/button",
       style: state => ({
         font: state.checked ? "title-16" : "text-16"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      EditLabel
+    ---------------------------------------------------------------------------
+    */
+    "editlabel": {},
+    "editlabel/label": {
+      include: "atom/label",
+      style: state => ({
+        decorator: state.hovered && state.editable ? "border-editable" : null,
+        marginLeft: state.hovered && state.editable ? 0 : 1,
+        padding: [2, state.hovered && state.editable ? 2 : 3, 2, 2],
+        cursor: state.editable ? "text" : "auto"
+      })
+    },
+    "editlabel/input": {
+      include: "textfield",
+      style: state => ({
+        paddingTop: 4,
+        paddingLeft: 3,
+        minWidth: 80
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tag
+    ---------------------------------------------------------------------------
+    */
+    "tag": {
+      include: "atom/label",
+      style: state => ({
+        decorator: "tag",
+        padding: [1, 5]
+      })
+    },
+    "tagitem": {
+      style: () => ({
+        decorator: "tagitem",
+        padding: 5
+      })
+    },
+    "tagitem/colorbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagitem-colorbutton"
+      })
+    },
+    "tagbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagbutton"
       })
     }
   }

@@ -95,7 +95,8 @@ COPY --chown=scu:scu services/director /build/services/director
 # FIXME:
 # necessary to prevent duplicated files.
 # Will be removed when director is refactored using cookiecutter as this will not be necessary anymore
-COPY --chown=scu:scu api/specs/shared/schemas/node-meta-v0.0.1.json /build/services/director/src/simcore_service_director/oas3/v0/schemas/node-meta-v0.0.1.json
+COPY --chown=scu:scu api/specs/common/schemas/node-meta-v0.0.1.json \
+  /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
 
 WORKDIR /build/services/director
 
@@ -115,6 +116,7 @@ FROM cache as production
 
 
 ENV SC_BUILD_TARGET production
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
@@ -155,7 +157,7 @@ WORKDIR /devel
 VOLUME  /devel/packages
 VOLUME  /devel/services/director/
 VOLUME /devel/services/api
-ENV NODE_SCHEMA_LOCATION ../../../api/specs/shared/schemas/node-meta-v0.0.1.json
+ENV NODE_SCHEMA_LOCATION ../../../api/specs/common/schemas/node-meta-v0.0.1.json
 
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]

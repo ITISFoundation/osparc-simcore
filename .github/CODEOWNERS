@@ -3,7 +3,8 @@
 
 # files and folders recursively
 Makefile                                  @pcrespov, @sanderegg
-/.travis.yml                              @sanderegg
+.codeclimate.yml                          @sanderegg, @pcrespov
+.travis.yml                               @sanderegg
 /api/                                     @sanderegg, @pcrespov
 /ci/                                      @sanderegg, @pcrespov
 /docs/                                    @pcrespov

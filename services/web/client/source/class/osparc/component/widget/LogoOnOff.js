@@ -37,7 +37,6 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
 
   construct: function() {
     this.base(arguments);
-
     [
       "osparc/osparc-red.svg",
       "osparc/osparc-white.svg"
@@ -47,13 +46,22 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
         height: 32,
         scale: true
       });
-      this._add(image);
+      this.add(image);
     }, this);
   },
 
+  properties: {
+    onLine: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyOnLine"
+    }
+  },
+
   members: {
-    online: function(online = true) {
-      this.setSelection([this.getSelectables()[online ? 1 : 0]]);
+    _applyOnLine: function(value) {
+      this.setSelection([this.getSelectables()[value ? 1 : 0]]);
     }
   }
 });
