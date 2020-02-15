@@ -13,14 +13,7 @@ def setup_remote_debugging(force_enabled=False):
     """
         Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
     """
-    try:
-        boot_mode = os.environ["SC_BOOT_MODE"]
-    except KeyError:
-        raise ValueError(
-            "Remote debugging only allowed when running in a container "
-            "and SC_BOOT_MODE environ variable is defined"
-        )
-
+    boot_mode = os.environ.get("SC_BOOT_MODE")
     if boot_mode == "debug-ptvsd" or force_enabled:
         try:
             log.debug("Enabling attach ptvsd ...")
