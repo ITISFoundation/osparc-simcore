@@ -12,28 +12,13 @@ APP_CLI_NAME := simcore-service-public-api-gateway
 export APP_VERSION = $(shell cat VERSION)
 
 
-REPO_BASE_DIR  = $(CURDIR)
-
+REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR      ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 .PHONY: devenv
 
-.venv:
-	python3 -m venv $@
-	$@/bin/pip3 install --upgrade \
-		pip \
-		wheel \
-		setuptools
-
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 install \
-		pylint \
-		autopep8 \
-		pip-tools \
-		rope
-	@echo "To activate the venv, execute 'source .venv/bin/activate'
-
-
+devenv: ## build development environment (using main services/docker-compose-build.yml)
+	@$(MAKE) --directory ${REPO_BASE_DIR} $@
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
@@ -68,7 +53,7 @@ run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
 	# starting service
-	uvicorn simcore_service_catalog.main:app --reload
+	uvicorn simcore_service_public_api_gateway.main:app --reload
 	# stop
 
 down: ## stops pg fixture
@@ -92,11 +77,11 @@ version-major: ## commits version with backwards-INcompatible addition or change
 
 .PHONY: replay
 replay: .cookiecutterrc ## re-applies cookiecutter
-	# Replaying ../cookiecutter-simcore-py-fastapi/ ...
+	# Replaying /home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi ...
 	@cookiecutter --no-input --overwrite-if-exists \
 		--config-file=$< \
 		--output-dir="$(abspath $(CURDIR)/..)" \
-		"../cookiecutter-simcore-py-fastapi/"
+		"/home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi"
 
 
 .PHONY: clean clean-all

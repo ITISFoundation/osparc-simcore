@@ -1,12 +1,12 @@
 # This file exists so you can easily regenerate your project.
 #
-#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc ../cookiecutter-simcore-py-fastapi/
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc /home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi
 #
 
 default_context:
 
     _extensions:               ['jinja2_time.TimeExtension']
-    _template:                 '../cookiecutter-simcore-py-fastapi/'
+    _template:                 '/home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi'
     distribution_name:         'simcore-service-public-api-gateway'
     enable_docker_daemon_access: 'False'
     full_name:                 'Pedro Crespo'

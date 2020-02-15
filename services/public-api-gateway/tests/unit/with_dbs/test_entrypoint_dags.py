@@ -5,7 +5,7 @@
 import pytest
 
 # TODO: app is init globally ... which is bad!
-from simcore_service_catalog.main import api_version, app
+from simcore_service_public_api_gateway.main import api_version, app
 from starlette.testclient import TestClient
 
 

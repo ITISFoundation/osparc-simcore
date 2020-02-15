@@ -12,7 +12,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from tenacity import before_sleep_log, stop_after_attempt, wait_fixed
 
 from .config import app_context, postgres_dsn
-from .orm import Base
+from .orm.base import Base
 
 log = logging.getLogger(__name__)
 

@@ -19,8 +19,8 @@ log = logging.getLogger(__name__)
 # APPLICATION
 app = FastAPI(
     debug = is_testing_enabled,
-    title=Public API Gateway,
-    description=Platform's API Gateway for external clients,
+    title="Public API Gateway",
+    description="Platform's API Gateway for external clients",
     version=api_version,
     openapi_url=f"/api/{api_version_prefix}/openapi.json"
 )
