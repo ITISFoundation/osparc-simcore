@@ -9,10 +9,5 @@
 # installs base + tests requirements
 -r _test.txt
 
-# installs this repo's packages
--e ../../packages/s3wrapper/
--e ../../packages/postgres-database/
--e ../../packages/service-library/
-
 # installs current package
 -e .
