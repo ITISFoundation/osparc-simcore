@@ -18,7 +18,8 @@ log_level = getattr(logging, log_level_name.upper())
 log_formatter = logging.Formatter('%(levelname)s:  %(message)s [%(name)s:%(lineno)d]')
 
 logging.root.setLevel(log_level)
-logging.root.handlers[0].setFormatter(log_formatter)
+if logging.root.handlers:
+    logging.root.handlers[0].setFormatter(log_formatter)
 
 
 # TEST MODE

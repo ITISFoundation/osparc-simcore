@@ -7,8 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from servicelib.utils import search_osparc_repo_dir
-
 import simcore_service_public_api_gateway
 
 
@@ -28,17 +26,9 @@ def package_dir():
     assert dirpath.exists()
     return dirpath
 
-
 @pytest.fixture(scope='session')
-def osparc_simcore_root_dir():
-    root_dir = search_osparc_repo_dir(current_dir) or here.parent.parent / "_osparc-simcore-stub"
+def osparc_simcore_root_dir(project_slug_dir):
+    root_dir =  project_slug_dir.parent.parent
     assert root_dir and root_dir.exists(), "Did you renamed or moved the integration folder under public-api-gateway??"
     assert any(root_dir.glob("services/public-api-gateway")), "%s not look like rootdir" % root_dir
     return root_dir
-
-
-@pytest.fixture(scope='session')
-def api_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "public-api-gateway"
-    assert specs_dir.exists()
-    return specs_dir
