@@ -1,0 +1,13 @@
+# Shortcut to install 'services/public-api-gateway' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs base requirements
+-r _base.txt
+
+# installs current package
+.
