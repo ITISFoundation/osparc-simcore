@@ -1,4 +1,4 @@
-FROM python:3.6-alpine as base
+FROM python:3.6.10-alpine3.11 as base
 #
 #  USAGE:
 #     cd sercices/catalog
@@ -16,7 +16,7 @@ RUN apk add --no-cache \
 
 ENV PATH "/home/scu/.local/bin:$PATH"
 
-# All SC_ variables are customized
+# NOTE: All SC_ variables are customized
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
@@ -29,15 +29,11 @@ EXPOSE 3000
 #
 # + /build             WORKDIR
 #
-
-
 FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-
 RUN apk add --no-cache \
-      alpine-sdk \
       alpine-sdk \
       python3-dev \
       musl-dev \
@@ -54,8 +50,7 @@ WORKDIR /build
 COPY  services/catalog/requirements/*.txt \
       services/catalog/requirements/
 
-RUN $SC_PIP install \
-      -r services/catalog/requirements/_base.txt
+RUN $SC_PIP install -r services/catalog/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------
@@ -100,7 +95,6 @@ RUN mkdir -p services/catalog &&\
 
 RUN apk del --no-cache\
       alpine-sdk \
-      alpine-sdk \
       python3-dev \
       musl-dev \
       postgresql-dev
@@ -109,7 +103,7 @@ HEALTHCHECK --interval=30s \
             --timeout=20s \
             --start-period=30s \
             --retries=3 \
-            CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/v0/"]
+            CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/catalog/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/catalog/docker/boot.sh"]
@@ -127,12 +121,6 @@ FROM build as development
 
 ENV SC_BUILD_TARGET development
 ENV SC_BOOT_MODE development
-
-
-
-
-WORKDIR /build
-
 
 WORKDIR /devel
 VOLUME  /devel/packages
