@@ -193,7 +193,7 @@ down: ## Stops and removes stack
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
 	# Removing postgres migration
-	-$(MAKE) -C services/postgres down
+	-$(MAKE) -C packages/postgres-database/docker down
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -410,7 +410,7 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
 	# Cleaning postgres maintenance
-	@$(MAKE) -C services/postgres clean
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -419,7 +419,7 @@ clean-images: ## removes all created images
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
 	# Cleaning postgres maintenance
-	@$(MAKE) -C services/postgres clean
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-all: clean clean-images
 	# Cleaning both output files and images
@@ -427,8 +427,8 @@ clean-all: clean clean-images
 
 .PHONY: postgres-upgrade
 postgres-upgrade: ## initalize or upgrade postgres db to latest state
-	@$(MAKE) -C services/postgres build
-	@$(MAKE) -C services/postgres upgrade
+	@$(MAKE) -C packages/postgres-database/docker build
+	@$(MAKE) -C packages/postgres-database/docker upgrade
 
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)

@@ -3,7 +3,7 @@
 REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
 VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
-APP_NAME     := $(notdir $(CURDIR))
+APP_NAME     := tool_$(notdir $(abspath $(CURDIR)/../))
 
 # this is a way to get a valid git repo/git branch
 LOCAL_BRANCH = $(shell git name-rev --name-only HEAD)
@@ -15,8 +15,7 @@ REMOTE_URL = $(shell git config remote.$(TRACKING_REMOTE).url)
 GIT_REPOSITORY ?= $(subst git@github.com:,https://github.com/,$(REMOTE_URL))
 GIT_BRANCH ?= $(LOCAL_BRANCH)
 
-MIGRATER_NAME = maintenance_postgres_migration
-MIGRATER_TAG_NAME = local/$(MIGRATER_NAME):latest
+MIGRATER_TAG_NAME = local/$(APP_NAME):latest
 SWARM_STACK_NAME ?= simcore
 SIMCORE_NETWORK ?= $(SWARM_STACK_NAME)_default
 
@@ -34,19 +33,29 @@ build: ## build postgres migration image
 upgrade: ## migrate the postgres database
 	@docker service create --restart-condition=on-failure \
 						   --network $(SIMCORE_NETWORK) \
-						   --name $(MIGRATER_NAME) \
+						   --name $(APP_NAME) \
 						   --replicas 1 \
 						   --init \
 						   --detach \
 						   $(MIGRATER_TAG_NAME)
+	@sleep 2
+	@TASK_ID=$$(docker service ps --format="{{.ID}}" $(APP_NAME));\
+	TASK_STATE=$$(docker inspect --format="{{.Status.State}}" $${TASK_ID});\
+	while [ "$${TASK_STATE}" != "complete" ] && [ "$${TASK_STATE}" != "failed" ] && [ "$${TASK_STATE}" != "rejected" ]; do\
+		echo "waiting for migration to finish..., (current state: $${TASK_STATE})"; \
+		sleep 1; \
+		TASK_STATE=$$(docker inspect --format="{{.Status.State}}" $${TASK_ID});\
+	done
+	@docker service rm $(APP_NAME)
+
 
 .PHONY: down
 down: ## stop migration service
-	@docker service rm $(MIGRATER_NAME)
+	@docker service rm $(APP_NAME)
 
 .PHONY: clean
 clean: ## clean all created images
-	-@docker image rm -f $(shell docker images */$(MIGRATER_NAME):* -q)
+	-@docker image rm -f $(shell docker images */$(APP_NAME):* -q)
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
