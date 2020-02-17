@@ -51,7 +51,7 @@ async def send_mail(recipient, subject, body):
         loop=cfg.APP.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=bool(cfg.SMTP_TLS),
+        use_tls=bool(cfg.SMTP_TLS_ENABLED),
     )
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
@@ -64,7 +64,7 @@ async def send_mail(recipient, subject, body):
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
         await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-        if cfg.SMTP_TLS:
+        if cfg.SMTP_TLS_ENABLED:
             await smtp.starttls(validate_certs=False)
         if cfg.SMTP_USERNAME:
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
