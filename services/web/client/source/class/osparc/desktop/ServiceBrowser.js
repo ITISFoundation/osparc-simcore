@@ -53,6 +53,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
   },
 
   members: {
+    __reloadBtn: null,
     __serviceFilters: null,
     __allServices: null,
     __latestServicesModel: null,
@@ -88,6 +89,8 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __populateList: function(reload) {
+      this.__reloadBtn.setFetching(true);
+
       const store = osparc.store.Store.getInstance();
       store.getServices(reload)
         .then(services => {
@@ -97,6 +100,9 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
             const latestService = osparc.utils.Services.getLatest(services, serviceKey);
             this.__latestServicesModel.append(qx.data.marshal.Json.createModel(latestService));
           }
+        })
+        .finally(() => {
+          this.__reloadBtn.setFetching(false);
         });
     },
 
@@ -114,7 +120,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
       // button for refetching services
-      const reloadBtn = new qx.ui.form.Button().set({
+      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/sync-alt/16",
         allowGrowX: false
@@ -208,7 +214,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
 
       const actionsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       actionsContainer.add(new qx.ui.core.Spacer(300, null));
-      const deleteServiceBtn = this.__deleteServiceBtn = new qx.ui.form.Button(this.tr("Delete")).set({
+      const deleteServiceBtn = this.__deleteServiceBtn = new osparc.ui.form.FetchButton(this.tr("Delete")).set({
         allowGrowX: false,
         visibility: "hidden"
       });
@@ -305,13 +311,22 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __deleteService: function() {
+      this.__deleteServiceBtn.setFetching(true);
+
       const serviceId = this.__selectedService.id;
       const params = {
         url: {
           groupId: serviceId
         }
       };
-      return osparc.data.Resources.fetch("groups", "delete", params, serviceId);
+      osparc.data.Resources.fetch("groups", "delete", params, serviceId)
+        .then(() => {
+          this.__populateList(true);
+        })
+        .catch(err => console.error(err))
+        .finally(() => {
+          this.__deleteServiceBtn.setFetching(false);
+        });
     },
 
     __nodeCheck: function(services) {
