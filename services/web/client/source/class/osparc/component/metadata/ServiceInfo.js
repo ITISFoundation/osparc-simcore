@@ -145,7 +145,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
 
     __createDescription: function() {
       const description = new osparc.ui.markdown.Markdown();
-      description.setMarkdown(this.__metadata.description);
+      description.setMarkdown(this.__metadata.description || "");
       return description;
     },
 
