@@ -192,6 +192,8 @@ down: ## Stops and removes stack
 	-$(MAKE) -C services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
+	# Removing postgres migration
+	-$(MAKE) -C services/postgres down
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -407,6 +409,8 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C services/postgres clean
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -414,6 +418,8 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C services/postgres clean
 
 clean-all: clean clean-images
 	# Cleaning both output files and images

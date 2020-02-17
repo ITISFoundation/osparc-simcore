@@ -44,13 +44,8 @@ down: ## stop migration service
 	@docker service rm $(MIGRATER_NAME)
 
 .PHONY: clean
-clean: ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
-	@git clean -ndxf -e .vscode/
-	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@git clean -dxf -e .vscode/
-
+clean: ## clean all created images
+	-@docker image rm -f $(shell docker images */$(MIGRATER_NAME):* -q)
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
