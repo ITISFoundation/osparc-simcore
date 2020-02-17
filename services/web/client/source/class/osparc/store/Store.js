@@ -206,7 +206,10 @@ qx.Class.define("osparc.store.Store", {
     },
 
     addGroupToCatalog: function(group) {
-      return osparc.data.Resources.fetch("groups", "post", group);
+      const params = {
+        data: group
+      };
+      return osparc.data.Resources.fetch("groups", "post", params);
     }
   }
 });
