@@ -29,4 +29,3 @@ ENV POSTGRES_USER=scu \
 
 ENTRYPOINT [ "/bin/sh", "/migration/entrypoint.sh" ]
 CMD [ "sc-pg", "upgrade" ]
-# CMD ["top"]
