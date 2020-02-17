@@ -150,11 +150,6 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["workbench"] = outputWorkbench.serializeWorkbench();
 
       osparc.store.Store.getInstance().addGroupToCatalog(nodesGroupService)
-        .finally(() => {
-          exportBtn.resetIcon();
-          exportBtn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
-        })
         .then(data => {
           console.log("group id", data);
           const text = this.tr("Group added to the Service catalog");
@@ -165,6 +160,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           console.error("error creating group", err);
           const text = this.tr("Something went wrong adding the Group to the Service catalog");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "ERROR");
+        })
+        .finally(() => {
+          exportBtn.resetIcon();
+          exportBtn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
         });
     },
 
