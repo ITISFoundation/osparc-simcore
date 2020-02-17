@@ -51,7 +51,7 @@ async def send_mail(recipient, subject, body):
         loop=cfg.APP.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=cfg.SMTP_TLS,
+        use_tls=bool(cfg.SMTP_TLS),
     )
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject

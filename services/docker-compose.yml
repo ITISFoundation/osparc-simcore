@@ -50,6 +50,9 @@ services:
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
       - WEBSERVER_LOGLEVEL=INFO
+      - WEBSERVER_SMTP_USERNAME=${MAIL_USERNAME:-Null}
+      - WEBSERVER_SMTP_PASSWORD=${MAIL_PASSWORD:-Null}
+      - WEBSERVER_SMTP_TLS_ENABLED=${MAIL_TLS:-0}
     env_file:
       - ../.env
     depends_on:
