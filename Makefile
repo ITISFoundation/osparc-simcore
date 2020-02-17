@@ -292,12 +292,8 @@ pylint: ## Runs python linter framework's wide
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 install \
-		pylint \
-		autopep8 \
-		pip-tools \
-		rope
-	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+	$</bin/pip3 install -r requirements.txt
+	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
@@ -397,19 +393,19 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images clean-venv
+.PHONY: clean clean-images clean-venv clean-all
 
 git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
-tmp_empty_reqs := /tmp/no-reqs.txt
+
 
 .check-clean:
 	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-clean-venv: ## empties venv from packages
+clean-venv: ## Purges .venv into original configuration
 	# Cleaning your venv
-	@touch ${tmp_empty_reqs}; pip-sync ${tmp_empty_reqs}; rm ${tmp_empty_reqs}
+	pip-sync $(CURDIR)/requirements.txt
 	@pip list
 
 clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
@@ -424,6 +420,9 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+
+clean-all: clean clean-images # Deep clean including .venv and produced images
+	-rm -rf .venv
 
 
 .PHONY: reset
