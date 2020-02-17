@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && apk del --no-cache .build-deps
 
 # runtime dependency
-RUN apk add --no-cache --virtual .build-deps \
+RUN apk add --no-cache \
     bash \
     postgresql
 
