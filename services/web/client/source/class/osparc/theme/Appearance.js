@@ -559,6 +559,18 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: () => ({
         decorator: "tagbutton"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tag
+    ---------------------------------------------------------------------------
+    */
+    "form-array-container": {
+      style: () => ({
+        padding: 10,
+        decorator: "border-editable"
+      })
     }
   }
 });

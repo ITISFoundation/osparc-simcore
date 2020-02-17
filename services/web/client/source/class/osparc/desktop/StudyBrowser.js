@@ -101,6 +101,24 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     userTimer.start();
 
     this.__initResources();
+      
+    const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
+      appearance: "service-window",
+      modal: true,
+      autoDestroy: true,
+      showMinimize: false,
+      allowMinimize: false,
+      centerOnAppear: true,
+      layout: new qx.ui.layout.Grow()
+    });
+    const scroll = new qx.ui.container.Scroll();
+    addServiceWindow.add(scroll);
+    const form = new osparc.component.form.JsonSchemaForm("/resource/form/service.json");
+    form.addListener("ready", () => {
+      addServiceWindow.open();
+      addServiceWindow.maximize();
+    });
+    scroll.add(form);
   },
 
   events: {

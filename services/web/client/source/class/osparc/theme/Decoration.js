@@ -191,6 +191,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 0
       }
+    },
+
+    "form-array-container": {
+      style: {
+        radius: 2,
+        width: 1
+      }
     }
   }
 });

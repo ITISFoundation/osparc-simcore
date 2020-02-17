@@ -34,6 +34,8 @@
  *   let servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
  *   this.getRoot().add(servicesView);
  * </pre>
+ * 
+ * @asset(form/service.json)
  */
 
 qx.Class.define("osparc.desktop.ServiceBrowser", {
@@ -209,11 +211,36 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         marginTop: 20
       });
 
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 150
+        allowStretchX: true
       });
-      vBoxLayout.add(label);
+      header.add(label, {
+        flex: 1
+      });
+      const addServiceButton = new qx.ui.form.Button(this.tr("Add service"), "@FontAwesome5Solid/plus-circle/14");
+      addServiceButton.addListener("execute", () => {
+        const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
+          appearance: "service-window",
+          modal: true,
+          autoDestroy: true,
+          showMinimize: false,
+          allowMinimize: false,
+          centerOnAppear: true,
+          layout: new qx.ui.layout.Grow()
+        });
+        const scroll = new qx.ui.container.Scroll();
+        addServiceWindow.add(scroll);
+        const form = new osparc.component.form.JsonSchemaForm("/resource/form/service.json");
+        form.addListener("ready", () => {
+          addServiceWindow.open();
+          addServiceWindow.maximize();
+        });
+        scroll.add(form);
+      });
+      header.add(addServiceButton);
+      vBoxLayout.add(header);
 
       return vBoxLayout;
     },
