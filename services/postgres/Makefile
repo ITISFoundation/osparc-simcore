@@ -17,7 +17,8 @@ GIT_BRANCH ?= $(LOCAL_BRANCH)
 
 MIGRATER_NAME = maintenance_postgres_migration
 MIGRATER_TAG_NAME = local/$(MIGRATER_NAME):latest
-SIMCORE_NETWORK ?= simcore_default
+SWARM_STACK_NAME ?= simcore
+SIMCORE_NETWORK ?= $(SWARM_STACK_NAME)_default
 
 
 .PHONY: build
