@@ -57,9 +57,9 @@ smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  tls: ${WEBSERVER_SMTP_TLS_ENABLED}
-  username: ${WEBSERVER_SMTP_USERNAME}
-  password: ${WEBSERVER_SMTP_PASSWORD}
+  tls: ${SMTP_TLS_ENABLED}
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
