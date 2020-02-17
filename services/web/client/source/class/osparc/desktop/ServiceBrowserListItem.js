@@ -74,6 +74,15 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
       apply : "_applyKey"
     },
 
+    version: {
+      check: "String"
+    },
+
+    dagId: {
+      check : "String",
+      nullable : true
+    },
+
     title: {
       check : "String",
       apply : "_applyTitle",

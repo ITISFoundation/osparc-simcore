@@ -153,6 +153,8 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "key", null, item, id);
+          ctrl.bindProperty("version", "version", null, item, id);
+          ctrl.bindProperty("id", "dagId", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
@@ -297,14 +299,13 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __canServiceBeDeleted: function(selectedService) {
-      // const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
-      const isMacro = selectedService.key.includes("frontend/nodes-group");
+      const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
       const isOwner = selectedService.contact === osparc.auth.Data.getInstance().getEmail();
       return isMacro && isOwner;
     },
 
     __deleteService: function() {
-      const serviceId = this.__selectedService.key;
+      const serviceId = this.__selectedService.id;
       const params = {
         url: {
           groupId: serviceId
