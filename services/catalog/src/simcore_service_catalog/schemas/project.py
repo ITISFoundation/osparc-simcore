@@ -50,7 +50,7 @@ class Node(BaseModel):
     thumbnail: Optional[str]
 
     inputs: Optional[Dict[str, InputTypes]]
-    inputAccess: Dict[str, AccessEnum] = Field(AccessEnum.ReadAndWrite)
+    inputAccess: Optional[Dict[str, AccessEnum]]
     inputNodes: List[str] = []
 
     outputs: Optional[Dict[str, OutputTypes]] = None
