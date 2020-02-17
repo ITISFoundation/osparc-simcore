@@ -10,7 +10,7 @@ CONFIG_SECTION_NAME = 'smtp'
 
 
 schema = T.Dict({
-    T.Key('sender', default='OSPARC support <crespo@itis.swiss>'): T.String(), # FIXME: email format
+    T.Key('sender', default='OSPARC support <support@osparc.io>'): T.String(), # FIXME: email format
     'host': T.String(),
     'port': T.Int(),
     T.Key('tls', default=False): T.Or(T.Bool(), T.Int),

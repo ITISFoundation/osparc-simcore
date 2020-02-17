@@ -123,11 +123,9 @@ def test_correctness_under_environ(configfile, service_webserver_environ):
         config = parse(cmd, parser)
 
         for key, value in config.items():
-            assert value != 'None', "Use instead Null in {} for {}".format(
-                configfile, key)
+            assert value != 'None', "Use instead Null in {} for {}".format(configfile, key)
 
         # adds some defaults checks here
-        assert config['smtp']['username'] is None
 
 
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
@@ -155,3 +153,48 @@ def test_schema_sections(app_config_schema, app_subsystems):
 
     for section in app_config_schema.keys:
         assert section.name in section_names, "Check application config schema!"
+
+
+
+from simcore_service_webserver.login import ( APP_CONFIG_KEY,
+            SMTP_SECTION,
+             DB_SECTION )
+from simcore_service_webserver.login import CONFIG_SECTION_NAME as LOGIN_SECTION
+
+from simcore_service_webserver.login import _create_login_config
+
+from simcore_service_webserver.login.cfg import Cfg
+from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
+
+@pytest.mark.parametrize("configfile", [str(n)
+                                        for n in resources.listdir("config")
+                                        ])
+def test_login_config(configfile, service_webserver_environ):
+    parser = setup_parser(argparse.ArgumentParser("test-parser"))
+
+    with mock.patch('os.environ', service_webserver_environ):
+        app_config = parse(["-c", configfile], parser)
+
+        for key, value in app_config.items():
+            assert value != 'None', "Use instead Null in {} for {}".format(configfile, key)
+
+        # login section
+        assert LOGIN_SECTION in app_config.keys()
+        assert SMTP_SECTION in app_config.keys()
+        assert DB_SECTION in app_config.keys()
+
+        fake_app = { APP_CONFIG_KEY: app_config}
+        fake_storage = object()
+
+        update_cfg = _create_login_config(fake_app, fake_storage)
+        assert all(
+            value.lower() is not ['none', 'null', '']
+                for value in update_cfg.values()
+                    if isinstance(value, str)
+        )
+
+        internal_cfg = Cfg(CONFIG_DEFAULTS)
+        try:
+            internal_cfg.configure(update_cfg)
+        except ValueError as ee:
+            pytest.fail(f"{ee}: \n {update_cfg}")

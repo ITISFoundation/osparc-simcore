@@ -59,8 +59,6 @@ assert 'STORAGE' in DEFAULTS.keys() # nosec
 def get_storage(app: web.Application):
     return app[APP_LOGIN_CONFIG]['STORAGE']
 
-
-# pylint: disable=W0231
 class Cfg(dict):
     '''
     Settings storage witch suports both, dict and dot notations
@@ -106,8 +104,8 @@ class Cfg(dict):
         ...
     AttributeError
     '''
-
     def __init__(self, defaults):
+        super().__init__(self)
         self.defaults = defaults
         self.configured = False
 
