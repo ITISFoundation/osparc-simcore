@@ -17,7 +17,7 @@ DEFAULTS = {
     'SMTP_SENDER': None,
     'SMTP_HOST': REQUIRED,
     'SMTP_PORT': REQUIRED,
-    'SMTP_TLS': False,
+    'SMTP_TLS_ENABLED': False,
     'SMTP_USERNAME': None,
     'SMTP_PASSWORD': None,
 
