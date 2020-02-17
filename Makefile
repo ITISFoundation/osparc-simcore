@@ -192,8 +192,6 @@ down: ## Stops and removes stack
 	-$(MAKE) -C services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
-	# Removing postgres migration
-	-$(MAKE) -C packages/postgres-database/docker down
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
