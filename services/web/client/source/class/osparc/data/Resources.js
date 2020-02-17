@@ -185,7 +185,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/catalog/dags/{serviceId}"
+            url: statics.API + "/catalog/dags/{groupId}"
           }
         }
       },

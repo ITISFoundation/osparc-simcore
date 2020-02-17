@@ -307,7 +307,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       const serviceId = this.__selectedService.key;
       const params = {
         url: {
-          "dag_id": serviceId
+          groupId: serviceId
         }
       };
       return osparc.data.Resources.fetch("groups", "delete", params, serviceId);
