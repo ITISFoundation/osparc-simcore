@@ -397,15 +397,23 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images
+.PHONY: clean clean-images clean-venv
 
-git_clean_args = -dxf -e .vscode -e TODO.md
+git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+tmp_empty_reqs := /tmp/no-reqs.txt
 
-clean: ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
+.check-clean:
 	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
+clean-venv: ## empties venv from packages
+	# Cleaning your venv
+	@touch ${tmp_empty_reqs}; pip-sync ${tmp_empty_reqs}; rm ${tmp_empty_reqs}
+	@pip list
+
+clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
 	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
@@ -416,9 +424,6 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
-
-clean-all: clean clean-images
-	# Cleaning both output files and images
 
 
 .PHONY: reset

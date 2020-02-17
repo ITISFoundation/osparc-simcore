@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter
 
-from ..__version__ import __version__
+from ..__version__ import __version__, api_version
 
 router = APIRouter()
 
@@ -15,5 +15,5 @@ async def healthcheck():
         'name':__name__.split('.')[0],
         'version': __version__,
         'status': 'SERVICE_RUNNING',
-        'api_version': __version__
+        'api_version': api_version
     }

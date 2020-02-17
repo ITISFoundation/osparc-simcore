@@ -33,7 +33,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: requirements .check-venv-active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	python3 -m pip install -r requirements/$(subst install-,,$@).txt
+	pip-sync requirements/$(subst install-,,$@).txt
 
 
 PHONY: tests-unit tests-integration
