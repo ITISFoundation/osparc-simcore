@@ -59,7 +59,9 @@ run-devel: down ## runs app with pg fixture for development
 down: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
 
-
+.PHONY: build
+build: ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE) --directory ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
 define _bumpversion
