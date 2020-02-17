@@ -419,6 +419,11 @@ clean-all: clean clean-images
 	# Cleaning both output files and images
 
 
+.PHONY: postgres-upgrade
+postgres-upgrade: ## initalize or upgrade postgres db to latest state
+	@$(MAKE) -C services/postgres build
+	@$(MAKE) -C services/postgres upgrade
+
 .PHONY: reset
-reset: ## restart docker daemon
+reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker

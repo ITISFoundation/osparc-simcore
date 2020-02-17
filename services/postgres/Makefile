@@ -3,7 +3,7 @@
 REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
 VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
-APP_NAME     := postgres
+APP_NAME     := $(notdir $(CURDIR))
 
 # this is a way to get a valid git repo/git branch
 LOCAL_BRANCH = $(shell git name-rev --name-only HEAD)
@@ -29,8 +29,8 @@ build: ## build postgres migration image
 				  --build-arg GIT_BRANCH=$(GIT_BRANCH) \
 				  .
 
-.PHONY: migrate-db
-migrate-db: ## migrate the postgres database
+.PHONY: upgrade
+upgrade: ## migrate the postgres database
 	@docker service create --restart-condition=on-failure \
 						   --network $(SIMCORE_NETWORK) \
 						   --name $(MIGRATER_NAME) \
