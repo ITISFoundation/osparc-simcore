@@ -145,11 +145,15 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function __addZerosAtTheBeggining(input) {
+  return String(input).padStart(2, "0");
+}
+
 async function takeScreenshot(page, captureName) {
   const d = new Date();
-  const date = d.getMonth()+1+"-"+d.getDate();
-  const time = d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
-  const timeStamp = date+"_"+time;
+  const date = __addZerosAtTheBeggining(d.getMonth()) +"-"+ __addZerosAtTheBeggining(d.getDate());
+  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
+  const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
   await page.screenshot({
     fullPage: true,
