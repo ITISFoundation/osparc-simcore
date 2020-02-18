@@ -177,7 +177,7 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     sio.on(websocket_node_update_event, handler=mock_node_update_handler_fct)
     # publish messages with wrong user id
     NUMBER_OF_MESSAGES = 100
-    TIMEOUT_S = 5
+    TIMEOUT_S = 300
 
     await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, user_id, project_id, rabbit_channels)
     await sleep(1)
