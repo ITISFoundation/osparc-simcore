@@ -1,4 +1,8 @@
-# Runs insides a container
+#
+# The environment variables in this context are those defined in the production container
+#
+# NOTE: Trafaret does not handle defaults as ${WEBSERVER_LOGLEVEL:-info}
+#       To define defaults, see services/web/server/src/simcore_service_webserver/cli.py::create_environ
 ---
 version: "1.0"
 main:
