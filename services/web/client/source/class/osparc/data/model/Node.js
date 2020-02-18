@@ -393,6 +393,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     startInBackend: function() {
+      this.addDynamicButtons();
+
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
@@ -407,8 +409,6 @@ qx.Class.define("osparc.data.model.Node", {
           "service_version": version
         }
       };
-      this.addDynamicButtons();
-
       osparc.data.Resources.fetch("studies", "addNode", params)
         .then(data => {
           this.startDynamicService();
