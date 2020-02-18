@@ -23,8 +23,7 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
       "/resource/object-path/object-path-0-11-4.min.js"
     ]);
     ajvLoader.addListener("ready", e => {
-      fetch(schemaUrl)
-        .then(response => response.json())
+      osparc.utils.Utils.fetchJSON(schemaUrl)
         .then(this.__validateSchema)
         .then(this.__render)
         .catch(err => {
@@ -84,46 +83,108 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
           }
         });
     },
+    /**
+     * Function in charge of recursively building the form.
+     * 
+     * @param {String} key Key of the entry in the schema.
+     * @param {Object} schema Current schema being expanded.
+     * @param {Integer} depth Increases as we go deeper into the schema.
+     * @param {String} path Constructs the input path.
+     */
     __expand: function(key, schema, depth=0, path="") {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
         marginBottom: 10
       });
+      const isArrayItem = Number.isInteger(key);
       if (schema.type === "object" || schema.type === "array") {
-        const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-        header.add(new qx.ui.basic.Label(schema.title || key).set({
-          font: depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14",
-          allowStretchX: true,
-          marginBottom: 10
-        }), {
-          flex: 1
-        });
+        // Objects and arrays have a section with a header and some hierarchical distinction
+        const header = this.__getHeader(key, schema, depth, isArrayItem);
         container.add(header);
+        
         if (schema.type === "object" && schema.properties) {
-          Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
+          // Expanding object's properties
+          const content = this.__expandObject(schema.properties, depth, path, isArrayItem);
+          container.add(content);
+          // Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
         } else if (schema.type === "array") {
-          let length = 0;
+          // Arrays allow to create new items with a button
+          let pos = 0;
           container.setAppearance("form-array-container");
           const addButton = new qx.ui.form.Button(`Add ${key}`, "@FontAwesome5Solid/plus-circle/14");
-          addButton.addListener("execute", () => container.add(this.__expand(`${key} #${length}`, schema.items, depth+1, `${path}.${length++}`)), this);
+          addButton.addListener("execute", () => container.add(this.__expand(pos, schema.items, depth+1, `${path}.${pos++}`)), this);
           header.add(addButton);
         }
       } else {
-        container.add(new qx.ui.basic.Label(key));
-        const fixedPath = path.substring(1);
-        let input;
-        switch (schema.type) {
-          default:
-            input = new qx.ui.form.TextField();
-        }
-        this.__inputsMap[fixedPath] = input;
+        // Leaf (render input depending on type)
+        container.add(new qx.ui.basic.Label(key)); // Input label
+        const fixedPath = path.substring(1); // Removes starting point from path
+        const input = this.__getInput(schema.type);
+        this.__inputsMap[fixedPath] = input; // Keeps a map of the inputs with their paths for later use
         container.add(input);
       }
       return container;
     },
+    /**
+     * Expands and object property changing its style depending on certain parameters.
+     * 
+     * @param {Object} properties Object's properties to be expanded.
+     * @param {Integer} depth Current depth into the schema.
+     * @param {String} path Current result object path.
+     * @param {Boolean} isArrayItem Used for different styling.
+     */
+    __expandObject: function(properties, depth, path, isArrayItem) {
+      let container = new qx.ui.container.Composite()
+      if (isArrayItem) {
+        container.setLayout(new qx.ui.layout.HBox(10));
+        Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`), {
+          flex: 1
+        }));
+      } else {
+        container.setLayout(new qx.ui.layout.VBox());
+        Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
+      }
+      return container;
+    },
+    /**
+     * Uses objectPath library to construct a JS object with the values of the inputs.
+     */
     toObject: function() {
       const obj = {};
       Object.entries(this.__inputsMap).forEach(([path, input]) => objectPath.set(obj, path, input.getValue()));
       return obj;
+    },
+    /**
+     * 
+     * @param {String} key Current object's key.
+     * @param {Object} schema Current schema.
+     * @param {Integer} depth Current depth into the schema.
+     * @param {Boolean} isArrayItem Used for styling.
+     */
+    __getHeader: function(key, schema, depth, isArrayItem) {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+        marginBottom: 10
+      });
+      const labelText = schema.title || (isArrayItem ? "#" + key : key);
+      header.add(new qx.ui.basic.Label(labelText).set({
+        font: depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14",
+        allowStretchX: true
+      }), {
+        flex: 1
+      });
+      return header;
+    },
+    /**
+     * Function that returns an appropriate widget fot the given type.
+     * 
+     * @param {String} type Type of the input that will be used to determine the render behavior
+     */
+    __getInput: function(type) {
+      let input;
+      switch (type) {
+        default:
+          input = new qx.ui.form.TextField();
+      }
+      return input;
     }
   }
 });
