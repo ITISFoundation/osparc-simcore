@@ -6,6 +6,9 @@
 fastapi[all]
 aiopg[sa]
 tenacity
+passlib[bcrypt]
+pyjwt
+
 
 async-exit-stack  # not needed when python>=3.7
 async-generator   # not needed when python>=3.7
