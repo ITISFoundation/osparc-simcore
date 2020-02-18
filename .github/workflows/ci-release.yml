@@ -18,14 +18,16 @@ jobs:
     name: deploy release
     runs-on: ubuntu-latest
     env:
-      OWNER: ${GITHUB_REPOSITORY%/*}
       TAG_PREFIX: staging-github
-      GIT_TAG: ${GITHUB_REF##*/}
     steps:
       - uses: actions/checkout@v1
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      - name: set owner variable
+        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+      - name: set git tag
+        run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
       - name: deploy
         run: ./ci/deploy/dockerhub-release
