@@ -147,9 +147,9 @@ function sleep(ms) {
 
 async function takeScreenshot(page, captureName) {
   const d = new Date();
-  const date = d.getMonth()+1+"/"+d.getDate();
+  const date = d.getMonth()+1+"-"+d.getDate();
   const time = d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
-  const timeStamp = date+"-"+time;
+  const timeStamp = date+"_"+time;
   captureName = captureName.replace("undefined", "");
   await page.screenshot({
     fullPage: true,
