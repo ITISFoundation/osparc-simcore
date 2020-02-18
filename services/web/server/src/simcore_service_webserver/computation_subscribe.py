@@ -68,7 +68,7 @@ async def rabbit_message_handler(message: aio_pika.IncomingMessage, app: web.App
         data = json.loads(message.body)
         await parse_rabbit_message_data(app, data)
         # NOTE: this allows the webserver to breath if a lot of messages are entering
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
 async def subscribe(app: web.Application) -> None:
     # TODO: catch and deal with missing connections:
