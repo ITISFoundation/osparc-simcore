@@ -22,6 +22,7 @@
 
 /**
  * @ignore(URL)
+ * @ignore(sessionStorage)
  */
 
 /**
