@@ -8,7 +8,6 @@ import logging
 from typing import Dict
 
 import asyncpg
-
 from aiohttp import web
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -35,7 +34,7 @@ def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
         Creates compatible config to update login.cfg.cfg object
     """
     login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
-    stmp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
+    smtp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
 
     config = {
         "APP": app,
@@ -51,7 +50,7 @@ def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
     for key, value in login_cfg.items():
         config[key.upper()] = _fmt(value)
 
-    for key, value in stmp_cfg.items():
+    for key, value in smtp_cfg.items():
         config["SMTP_{}".format(key.upper())] = _fmt(value)
 
     return config
@@ -67,8 +66,6 @@ async def _setup_config_and_pgpool(app: web.Application):
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    #TODO: setup lifetime of this pool?
-    #TODO: determin min/max size of the pool
     pool = await asyncpg.create_pool(
         dsn=DSN.format(**db_cfg) + f"?application_name={__name__}_{id(app)}",
         min_size=db_cfg['minsize'],
@@ -103,22 +100,10 @@ async def _setup_config_and_pgpool(app: web.Application):
 @app_module_setup(__name__, ModuleCategory.ADDON,
     depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
     logger=log)
-def setup(app: web.Application):
-    """ Setting up subsystem in application
+def setup_login(app: web.Application):
+    """ Setting up login subsystem in application
 
-    :param app: main application
-    :type app: web.Application
     """
-    assert REST_SECTION in app[APP_CONFIG_KEY] # nosec
-    assert SMTP_SECTION in app[APP_CONFIG_KEY] # nosec
-    assert DB_SECTION in app[APP_CONFIG_KEY]   # nosec
-
-    # TODO: automatize dependencies
-    enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )
-    if not enabled:
-        log.warning("Disabling '%s' since %s or %s were explictily disabled in config", __name__, SMTP_SECTION, DB_SECTION)
-        return False
-
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = create_routes(specs)
@@ -128,9 +113,6 @@ def setup(app: web.Application):
     app.cleanup_ctx.append(_setup_config_and_pgpool)
     return True
 
-
-# alias
-setup_login = setup
 
 __all__ = (
     'setup_login'
