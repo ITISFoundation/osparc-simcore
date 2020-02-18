@@ -151,7 +151,7 @@ function __addZerosAtTheBeggining(input) {
 
 async function takeScreenshot(page, captureName) {
   const d = new Date();
-  const date = __addZerosAtTheBeggining(d.getMonth()) +"-"+ __addZerosAtTheBeggining(d.getDate());
+  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
   const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
   const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
