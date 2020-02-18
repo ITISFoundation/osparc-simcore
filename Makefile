@@ -407,6 +407,8 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -414,11 +416,18 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-all: clean clean-images
 	# Cleaning both output files and images
 
 
+.PHONY: postgres-upgrade
+postgres-upgrade: ## initalize or upgrade postgres db to latest state
+	@$(MAKE) -C packages/postgres-database/docker build
+	@$(MAKE) -C packages/postgres-database/docker upgrade
+
 .PHONY: reset
-reset: ## restart docker daemon
+reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
