@@ -75,6 +75,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __loggerView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+    __lastSavedStudy: null,
 
     /**
      * Destructor
@@ -562,7 +563,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getStudy().serializeStudy();
-        const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
+        const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
           // lastChangeDate should not be taken into account as data change
@@ -599,7 +600,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
       osparc.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
-        this.__lastSavedPrj = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }
