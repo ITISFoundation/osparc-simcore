@@ -604,11 +604,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: e2e_screenshots
-        path: tests/e2e/screenshots
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ env.CODECOV_TOKEN }} #required
-        flags: e2etests #optional
+        path: tests/e2e/screenshots    
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
