@@ -202,17 +202,6 @@ async def replace_project(request: web.Request):
 
     return {'data': new_project}
 
-
-# TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-#@login_required
-#async def patch_project(_request: web.Request):
-#    """
-#        Client sends a patch and return updated project
-#        PATCH
-#    """
-#    # TODO: implement patch with diff as body!
-#    raise NotImplementedError()
-
 @login_required
 async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
