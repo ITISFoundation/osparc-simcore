@@ -4,4 +4,3 @@ omit =
     */tests/*
     */generated_code/*
 parallel = True
-relative_files = True
