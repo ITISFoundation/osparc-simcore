@@ -42,7 +42,6 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
       this.__preventAutofillBrowserSyles();
-      this.__setFavicon();
 
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
@@ -233,14 +232,6 @@ qx.Class.define("osparc.Application", {
     __loadCommonCss: function() {
       const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
       qx.module.Css.includeStylesheet(commonCssUri);
-    },
-
-    __setFavicon: function() {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
-      link.type = "image/x-icon";
-      link.rel = "shortcut icon";
-      link.href = "/resource/osparc/favicon.png";
-      document.getElementsByTagName("head")[0].appendChild(link);
     }
   }
 });
