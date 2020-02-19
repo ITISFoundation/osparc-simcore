@@ -211,8 +211,12 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       this.__deserializeWorkbench(workbench);
 
-      for (let innerNodeId in workbench) {
-        this.getNode(innerNodeId).startInBackend();
+      const innerNodeIds = Object.keys(workbench);
+      for (let i=0; i<innerNodeIds.length; i++) {
+        // OM: HACK. We need to wait for the previuos node to be started
+        qx.event.Timer.once(() => {
+          this.getNode(innerNodeIds[i]).startInBackend();
+        }, this, i*200);
       }
     },
 
