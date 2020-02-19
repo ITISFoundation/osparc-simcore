@@ -12,8 +12,8 @@ install() {
 }
 
 test() {
-  pytest --cov=api/specs --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml \
+  pytest --cov=api --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" api/tests
 }
 

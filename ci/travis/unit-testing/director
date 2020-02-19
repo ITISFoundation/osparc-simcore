@@ -33,7 +33,7 @@ script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_service_director --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" services/director/tests
     else
         echo "No changes detected. Skipping unit-testing of director."
