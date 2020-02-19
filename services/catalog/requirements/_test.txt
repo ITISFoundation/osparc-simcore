@@ -40,7 +40,7 @@ lazy-object-proxy==1.4.3  # via astroid
 markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
 more-itertools==8.2.0     # via pytest
-multidict==4.7.4          # via aiohttp, yarl
+multidict==4.7.4
 packaging==20.1           # via pytest
 pluggy==0.13.1            # via pytest
 promise==2.3
@@ -75,5 +75,5 @@ uvloop==0.14.0
 wcwidth==0.1.8            # via pytest
 websockets==8.1
 wrapt==1.11.2             # via astroid
-yarl==1.4.2               # via aiohttp
+yarl==1.4.2
 zipp==2.1.0               # via importlib-metadata

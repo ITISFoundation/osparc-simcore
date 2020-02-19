@@ -9,5 +9,8 @@
 # installs base + tests requirements
 -r _test.txt
 
+# installs this repo's packages
+-e ../../packages/postgres-database/
+
 # installs current package
 -e .

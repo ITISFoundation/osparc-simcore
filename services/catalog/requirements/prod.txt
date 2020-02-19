@@ -10,5 +10,8 @@
 # installs base requirements
 -r _base.txt
 
+# installs this repo's packages
+../../../packages/postgres-database/
+
 # installs current package
 .
