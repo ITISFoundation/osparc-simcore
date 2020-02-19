@@ -219,7 +219,15 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         visibility: "hidden"
       });
       deleteServiceBtn.addListener("execute", () => {
-        this.__deleteService();
+        const msg = this.tr("Are you sure you want to delete the group?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__deleteService();
+          }
+        }, this);
+        win.center();
+        win.open();
       }, this);
       actionsContainer.add(deleteServiceBtn);
       descriptionView.add(actionsContainer);
@@ -294,20 +302,24 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __updateServiceDescription: function(selectedService) {
+      let showDelete = false;
       const serviceDescription = this.__serviceDescription;
       if (serviceDescription) {
         const serviceInfo = selectedService ? new osparc.component.metadata.ServiceInfo(selectedService) : null;
         serviceDescription.add(serviceInfo);
         this.__selectedService = selectedService;
-        const showDelete = this.__canServiceBeDeleted(selectedService);
-        this.__deleteServiceBtn.setVisibility(showDelete ? "visible" : "hidden");
+        showDelete = this.__canServiceBeDeleted(selectedService);
       }
+      this.__deleteServiceBtn.setVisibility(showDelete ? "visible" : "hidden");
     },
 
     __canServiceBeDeleted: function(selectedService) {
-      const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
-      const isOwner = selectedService.contact === osparc.auth.Data.getInstance().getEmail();
-      return isMacro && isOwner;
+      if (selectedService) {
+        const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
+        const isOwner = selectedService.contact === osparc.auth.Data.getInstance().getEmail();
+        return isMacro && isOwner;
+      }
+      return false;
     },
 
     __deleteService: function() {
@@ -321,9 +333,13 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       };
       osparc.data.Resources.fetch("groups", "delete", params, serviceId)
         .then(() => {
+          this.__updateServiceDescription(null);
           this.__populateList(true);
         })
-        .catch(err => console.error(err))
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Unable to delete the group."), "ERROR");
+          console.error(err);
+        })
         .finally(() => {
           this.__deleteServiceBtn.setFetching(false);
         });
