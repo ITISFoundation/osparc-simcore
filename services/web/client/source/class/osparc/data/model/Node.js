@@ -1001,8 +1001,11 @@ qx.Class.define("osparc.data.model.Node", {
 
     __removeInnerNodes: function() {
       const innerNodes = Object.values(this.getInnerNodes());
-      for (const innerNode of innerNodes) {
-        innerNode.removeNode();
+      for (let i=0; i<innerNodes.length; i++) {
+        // OM: HACK. We need to wait for the response of the previuos node
+        qx.event.Timer.once(() => {
+          innerNodes[i].removeNode();
+        }, this, i*200);
       }
     },
 
