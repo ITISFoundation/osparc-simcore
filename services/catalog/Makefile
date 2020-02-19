@@ -49,17 +49,6 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
-
-.PHONY: autoformat
-autoformat:
-	# auto formatting with black
-	@python3 -m black --verbose $(CURDIR)
-
-
-.PHONY: openapi-specs
-openapi-specs: ## TODO: implementing a way to serialize openapi
-	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
-
 .PHONY: run-devel down
 run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
@@ -77,16 +66,27 @@ build: ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) --directory ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
+.PHONY: autoformat
+autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
+	# auto formatting with black
+	@python3 -m black --verbose $(CURDIR)
+
+
+.PHONY: openapi-specs
+openapi-specs: ## TODO: implementing a way to serialize openapi
+	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
+
+
 define _bumpversion
 	# upgrades as $(subst version-,,$@) version, commits and tags
 	@bump2version --verbose --list $(subst version-,,$@)
 endef
 
-version-patch: ## commits version with bug fixes not affecting the cookiecuter config
+version-patch: openapi-specs ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)
-version-minor: ## commits version with backwards-compatible API addition or changes (i.e. can replay)
+version-minor: openapi-specs ## commits version with backwards-compatible API addition or changes (i.e. can replay)
 	$(_bumpversion)
-version-major: ## commits version with backwards-INcompatible addition or changes
+version-major: openapi-specs ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
 
 
