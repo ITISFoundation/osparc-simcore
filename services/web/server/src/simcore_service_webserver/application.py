@@ -38,8 +38,6 @@ log = logging.getLogger(__name__)
     config_enabled="main.monitoring_enabled",
     logger=log)
 def setup_app_monitoring(app: web.Application):
-    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
-    # TODO: move option to section?
     return setup_monitoring(app, "simcore_service_webserver")
 
 def create_application(config: Dict) -> web.Application:
@@ -51,9 +49,8 @@ def create_application(config: Dict) -> web.Application:
 
     app = create_safe_application(config)
 
-    # testing = config["main"].get("testing", False)
-
-    # TODO: create dependency mechanism and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+    # TODO: create dependency mechanism
+    # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     setup_app_monitoring(app)
     setup_app_tracing(app)
     setup_statics(app)
@@ -71,7 +68,7 @@ def create_application(config: Dict) -> web.Application:
     setup_projects(app) # needs storage
     setup_studies_access(app)
     setup_activity(app)
-    setup_app_proxy(app) # TODO: under development!!!
+    setup_app_proxy(app)
     setup_resource_manager(app)
     setup_tags(app)
 

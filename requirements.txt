@@ -1,0 +1,8 @@
+# Python tools installed in .venv for development
+#
+# $ make devenv
+#
+pylint
+autopep8
+pip-tools
+rope
