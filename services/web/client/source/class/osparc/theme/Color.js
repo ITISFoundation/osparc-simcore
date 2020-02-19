@@ -45,6 +45,8 @@ qx.Theme.define("osparc.theme.Color", {
     "ready-green": "#33925A",
     "failed-red": "#FF2D2D",
     "contrasted-text-dark": "#222222",
-    "contrasted-text-light": "#EEEEEE"
+    "contrasted-text-light": "#EEEEEE",
+
+    "progressbar": "#60909e"
   }
 });

@@ -125,6 +125,7 @@ qx.Class.define("osparc.file.FilesAdd", {
       const hBox = this._createChildControlImpl("progressBox");
       const label = new qx.ui.basic.Atom(file.name);
       const progressBar = new osparc.ui.toolbar.ProgressBar();
+      progressBar.getChildControl("progress").setBackgroundColor("progressbar");
       hBox.add(label);
       hBox.add(progressBar);
 
