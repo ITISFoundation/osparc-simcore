@@ -213,19 +213,20 @@ class ProjectDBAPI:
         return projects_list
 
     async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
-        projects_list: List[Dict] = []
+        api_projects: List[Dict] = [] # API model-compatible projects
+        db_projects: List[Dict] = []  # DB model-compatible projects
         async for row in conn.execute(query):
-            result_dict = dict(row.items())
-            log.debug("found project: %s", result_dict)
-            result_dict['tags'] = []
-            projects_list.append(_convert_to_schema_names(result_dict))
+            prj = dict(row.items())
+            log.debug("found project: %s", prj)
+            db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
         # FIXME: temporary avoids inner async loops issue https://github.com/aio-libs/aiopg/issues/535
-        for prj in projects_list:
-            prj['tags'] = await self._get_tags_by_project(conn, project_id=result_dict['id'])
+        for db_prj in db_projects:
+            db_prj['tags'] = await self._get_tags_by_project(conn, project_id=db_prj['id'])
+            api_projects.append(_convert_to_schema_names(db_prj))
 
-        return projects_list
+        return api_projects
 
     async def _get_project(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
         exclude_foreign = exclude_foreign or []
