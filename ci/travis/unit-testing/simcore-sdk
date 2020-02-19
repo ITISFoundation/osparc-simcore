@@ -35,7 +35,7 @@ script() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_sdk --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" packages/simcore-sdk/tests/unit
 
     else
@@ -47,7 +47,6 @@ after_success() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         coveralls
-        codecov
     fi
 }
 

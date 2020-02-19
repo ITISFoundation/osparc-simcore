@@ -47,20 +47,6 @@ jobs:
       run: ./ci/github/unit-testing/api install
     - name: test
       run: ./ci/github/unit-testing/api test
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ env.CODECOV_TOKEN }} #required
-        flags: unittests #optional
-    - name: prepare codeclimate coverage file
-      run: |
-        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        chmod +x ./cc-test-reporter
-        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_coverage.json coverage.xml
-    - name: upload codeclimate coverage
-      uses: actions/upload-artifact@v1
-      with:
-        name: unit_api_coverage
-        path: codeclimate.unit_api_coverage.json
 
   unit-test-catalog:
     name: Unit-testing catalog
@@ -627,26 +613,25 @@ jobs:
       with:
         name: e2e_screenshots
         path: tests/e2e/screenshots
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ env.CODECOV_TOKEN }} #required
-        flags: e2etests #optional
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
 
   coverage:
     needs: [
-      unit-test-api, unit-test-catalog, unit-test-director, unit-test-service-library, unit-test-simcore-sdk,
-      unit-test-storage, unit-test-webserver, integration-test-webserver, integration-test-simcore-sdk
+      unit-test-catalog,
+      unit-test-director,
+      unit-test-service-library,
+      unit-test-simcore-sdk,
+      unit-test-storage,
+      unit-test-webserver,
+      integration-test-webserver,
+      integration-test-simcore-sdk
       ]
     name: coverage
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/download-artifact@v1
-      with:
-        name: unit_api_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_catalog_coverage
@@ -674,14 +659,21 @@ jobs:
     - name: put all artefacts together
       run: |
         mkdir all_coverages
-        cp unit_api_coverage/*.json unit_catalog_coverage/*.json unit_director_coverage/*.json unit_servicelib_coverage/*.json unit_simcoresdk_coverage/*.json unit_storage_coverage/*.json unit_webserver_coverage/*.json \
-          integration_webserver_coverage/*.json integration_simcoresdk_coverage/*.json all_coverages/
+        cp unit_catalog_coverage/*.json \
+          unit_director_coverage/*.json \
+          unit_servicelib_coverage/*.json \
+          unit_simcoresdk_coverage/*.json \
+          unit_storage_coverage/*.json \
+          unit_webserver_coverage/*.json \
+          integration_webserver_coverage/*.json \
+          integration_simcoresdk_coverage/*.json \
+          all_coverages/
         ls -al all_coverages
     - name: install codeclimate test reporter
       run: |
         curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
         chmod +x ./cc-test-reporter
-        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 8
+        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 7
     - name: upload coverages
       run: |
         ./cc-test-reporter upload-coverage

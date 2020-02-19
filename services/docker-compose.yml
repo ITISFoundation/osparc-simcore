@@ -209,6 +209,8 @@ volumes:
   postgres_data: {}
 
 networks:
+  default:
+    attachable: true
   interactive_services_subnet:
     driver: overlay
     attachable: true
