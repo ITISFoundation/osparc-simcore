@@ -14,20 +14,21 @@ import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
+from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import ResultProxy, RowProxy
+
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import users
+from ..db_models import study_tags, users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (ProjectInvalidRightsError,
-                                  ProjectNotFoundError,
-                                  ProjectsException)
+                                  ProjectNotFoundError, ProjectsException)
 from .projects_fakes import Fake
 from .projects_models import ProjectType, projects, user_to_projects
-from ..db_models import study_tags
 
 log = logging.getLogger(__name__)
 
@@ -117,9 +118,10 @@ class ProjectDBAPI:
         :rtype: str
         """
         #pylint: disable=no-value-for-parameter
-        user_email = await self._get_user_email(user_id)
 
         async with self.engine.acquire() as conn:
+            user_email = await self._get_user_email(conn, user_id)
+
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
@@ -196,7 +198,7 @@ class ProjectDBAPI:
             async for row in conn.execute(query):
                 result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_project(project_id=result_dict['id'])
+                tags = await self._get_tags_by_project(conn, project_id=result_dict['id'])
                 result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
@@ -217,7 +219,7 @@ class ProjectDBAPI:
             async for row in conn.execute(query):
                 result_dict = dict(row.items())
                 log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_project(project_id=result_dict['id'])
+                tags = await self._get_tags_by_project(conn, project_id=result_dict['id'])
                 result_dict['tags'] = tags
                 projects_list.append(_convert_to_schema_names(result_dict))
         return projects_list
@@ -239,11 +241,10 @@ class ProjectDBAPI:
             project = dict(project_row.items())
 
             if 'tags' not in exclude_foreign:
-                tags = await self._get_tags_by_project(project_id=project_row.id)
+                tags = await self._get_tags_by_project(conn, project_id=project_row.id)
                 project['tags'] = tags
 
             return project
-
 
     async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
@@ -259,7 +260,6 @@ class ProjectDBAPI:
                     return _convert_to_schema_names(project)
                 raise ProjectsException()
 
-
     async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
@@ -271,7 +271,6 @@ class ProjectDBAPI:
                 if tag_id in project['tags']:
                     project['tags'].remove(tag_id)
                 return _convert_to_schema_names(project)
-
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
@@ -316,7 +315,7 @@ class ProjectDBAPI:
             row = await result.first()
             if row:
                 template_prj = _convert_to_schema_names(row)
-                tags = await self._get_tags_by_project(project_id=row.id)
+                tags = await self._get_tags_by_project(conn, project_id=row.id)
                 template_prj['tags'] = tags
 
         return template_prj
@@ -331,7 +330,6 @@ class ProjectDBAPI:
             if row:
                 return row[projects.c.workbench]
         return {}
-
 
     async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
         """ updates a project from a user
@@ -359,11 +357,9 @@ class ProjectDBAPI:
                     where(projects.c.id == row[projects.c.id.key])
             await conn.execute(query)
 
-
     async def pop_project(self, project_uuid) -> Dict:
         # TODO: delete projects and returns a copy
         pass
-
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         """ deletes a project from a user
@@ -426,22 +422,21 @@ class ProjectDBAPI:
                     break
         return project_uuid
 
-    async def _get_user_email(self, user_id):
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select([users.c.email])\
-                    .where(users.c.id == user_id)
-            )
-            row = await result.first()
+    async def _get_user_email(self, conn: SAConnection, user_id: str) -> str:
+        stmt = sa.select([users.c.email]).where(users.c.id == user_id)
+        result: ResultProxy = await conn.execute(stmt)
+        row: RowProxy = await result.first()
         return row[users.c.email] if row else "Unknown"
 
-    async def _get_tags_by_project(self, project_id):
-        async with self.engine.acquire() as conn:
-            query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
-            result = []
-            async for row_proxy in conn.execute(query):
-                result.append(row_proxy.tag_id)
-            return result
+    async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
+        query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
+        rows = await (await conn.execute(query)).fetchall()
+        return [ row.tag_id for row in rows ]
+
+        #result = []
+        #async for row_proxy in conn.execute(query):
+        #    result.append(row_proxy.tag_id)
+        #return result
 
 
 def setup_projects_db(app: web.Application):
