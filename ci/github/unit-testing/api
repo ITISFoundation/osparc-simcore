@@ -12,7 +12,7 @@ install() {
 }
 
 test() {
-  pytest --cov=api --durations=10 --cov-append \
+  pytest --cov=api/specs --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml \
           -v -m "not travis" api/tests
 }
