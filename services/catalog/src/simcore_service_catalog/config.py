@@ -5,12 +5,8 @@
 """
 import logging
 import os
-from typing import Dict
 
-
-def to_bool(s: str) -> bool:
-    return s.lower() in ["true", "1", "yes"]
-
+from .utils import cast_to_bool
 
 # DOCKER
 is_container_environ: bool = "SC_BOOT_MODE" in os.environ
@@ -26,7 +22,7 @@ if logging.root.handlers:
 
 
 # TEST MODE
-is_testing_enabled: bool = to_bool(os.environ.get("TESTING", "true"))
+is_testing_enabled: bool = cast_to_bool(os.environ.get("TESTING", "true"))
 
 
 # POSGRESS API
