@@ -289,7 +289,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         win.center();
         win.open();
         win.addListener("close", () => {
-          if (win["value"] === 1) {
+          if (win.getConfirmed()) {
             this.__deleteStudy(selection.map(button => this.__getStudyData(button.getUuid(), isTemplate)), isTemplate);
           }
         }, this);
@@ -575,18 +575,8 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createConfirmWindow: function(isMulti) {
-      const win = new osparc.ui.window.Dialog("Confirmation", null,
-        `Are you sure you want to delete the ${isMulti ? "studies" : "study"}?`
-      );
-      const btnYes = new qx.ui.toolbar.Button("Yes");
-      osparc.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
-      btnYes.addListener("execute", e => {
-        win["value"] = 1;
-        win.close(1);
-      }, this);
-      win.addCancelButton();
-      win.addButton(btnYes);
-      return win;
+      const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
+      return new osparc.ui.window.Confirmation(msg);
     }
   }
 });
