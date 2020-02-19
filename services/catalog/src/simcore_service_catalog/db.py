@@ -15,7 +15,7 @@ from .orm import DAG, dags
 
 
 # TODO: idealy context cleanup. This concept here? app-context Dependency?
-async def setup_engine() -> None:
+async def setup_engine() -> Engine:
     engine = await aiopg.sa.create_engine(
         postgres_dsn,
         # unique identifier per app
@@ -24,6 +24,8 @@ async def setup_engine() -> None:
         maxsize=10,
     )
     app_context["engine"] = engine
+
+    return engine
 
 
 async def teardown_engine() -> None:

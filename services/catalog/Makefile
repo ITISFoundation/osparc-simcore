@@ -37,10 +37,11 @@ install-dev install-prod install-ci: requirements .check-venv-active ## install 
 
 
 PHONY: tests-unit tests-integration
+tests: tests-unit tests-integration
+
 tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/unit
-
 
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...

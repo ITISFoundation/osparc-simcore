@@ -7,7 +7,7 @@ import json
 
 from pydantic import BaseModel, validator
 
-from simcore_service_catalog.orm import orm_dags
+from simcore_service_catalog.orm import DAG
 from simcore_service_catalog.schemas import schemas_dags
 
 
@@ -55,7 +55,7 @@ def test_dev():
 
 
 def test_db_to_api(fake_data_dag_in):
-    dag_orm = orm_dags.DAG(
+    dag_orm = DAG(
         id=1,
         key="simcore/services/comp/foo",
         version="1.0.0",
