@@ -149,12 +149,13 @@ async def _publish_messages(num_messages: int, node_uuid: str, user_id: str, pro
     return (log_messages, progress_messages, final_log_message)
 
 
-async def _wait_until(fct: Callable, timeout: int):
+async def _wait_until(pred: Callable, timeout: int):
     max_wait_time = time.time() + timeout
     while time.time() < max_wait_time:
-        if fct():
-            break
-        await sleep(0.1)
+        if pred():
+            return
+        await sleep(1)
+    pytest.fail("waited too long for getting websockets events")
 
 @pytest.mark.parametrize("user_role", [
     (UserRole.GUEST),
@@ -176,7 +177,7 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     sio.on(websocket_log_event, handler=mock_log_handler_fct)
     sio.on(websocket_node_update_event, handler=mock_node_update_handler_fct)
     # publish messages with wrong user id
-    NUMBER_OF_MESSAGES = 5
+    NUMBER_OF_MESSAGES = 1
     TIMEOUT_S = 20
 
     await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, user_id, project_id, rabbit_channels)
@@ -187,9 +188,8 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     # publish messages with correct user id, but no project
     log_messages, _, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_channels)
     def predicate() -> bool:
-        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES)
     await _wait_until(predicate, TIMEOUT_S)
-    # await sleep(WAIT_FOR_MESSAGES_S)
     log_calls = [call(json.dumps(message)) for message in log_messages]
     mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler_fct.assert_not_called()
@@ -209,7 +209,7 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     def predicate2() -> bool:
         return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES+1) and \
             mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
-    await _wait_until(predicate, TIMEOUT_S)
+    await _wait_until(predicate2, TIMEOUT_S)
     log_messages.append(final_log_message)
     log_calls = [call(json.dumps(message)) for message in log_messages]
     mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
