@@ -68,7 +68,7 @@ async def create_dag(
     dag: schemas.DAGIn=Body(...),
     conn: db.SAConnection = Depends(db.get_cnx)
     ):
-    assert dag # nsec
+    assert dag # nosec
 
     if dag.version == "0.0.0" and dag.key=="foo":
         # client-assigned resouce name

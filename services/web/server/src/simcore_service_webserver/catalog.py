@@ -115,7 +115,7 @@ def setup_catalog(app: web.Application):
         for method, path, operation_id, tags in iter_path_operations(specs)
             if 'catalog' in tags
     ]
-    assert routes, "Got no paths tagged as catalog"
+    assert routes, "Got no paths tagged as catalog" # nosec
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)

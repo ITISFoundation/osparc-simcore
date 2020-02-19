@@ -50,7 +50,7 @@ async def update_dag(conn: db.SAConnection, dag_id: int, dag: schemas.DAGIn):
     res = await conn.execute(stmt)
 
     # TODO: dev asserts
-    assert res.returns_rows==False
+    assert res.returns_rows==False  # nosec
 
 
 async def delete_dag(conn: db.SAConnection, dag_id: int):
