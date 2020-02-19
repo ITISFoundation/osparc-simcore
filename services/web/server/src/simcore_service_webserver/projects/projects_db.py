@@ -181,11 +181,7 @@ class ProjectDBAPI:
             return prj["uuid"]
 
     async def load_user_projects(self, user_id: str, *, exclude_templates=True) -> List[Dict]:
-        """ loads a project for a user
-
-        """
         log.info("Loading projects for user %s", user_id)
-        projects_list = []
 
         condition = user_to_projects.c.user_id == user_id
         if exclude_templates:
@@ -195,17 +191,13 @@ class ProjectDBAPI:
         query = select([projects]).select_from(joint_table).where(condition)
 
         async with self.engine.acquire() as conn:
-            async for row in conn.execute(query):
-                result_dict = dict(row.items())
-                log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_project(conn, project_id=result_dict['id'])
-                result_dict['tags'] = tags
-                projects_list.append(_convert_to_schema_names(result_dict))
+            projects_list = await self.__load_projects(conn, query)
+
         return projects_list
 
     async def load_template_projects(self, *, only_published=False) -> List[Dict]:
-        log.info("Loading template projects")
-        # TODO:
+        log.info("Loading public template projects")
+
         # TODO: eliminate this and use mock to replace get_user_project instead
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
@@ -216,12 +208,23 @@ class ProjectDBAPI:
                 expression = projects.c.type == ProjectType.TEMPLATE
 
             query = select([projects]).where(expression)
-            async for row in conn.execute(query):
-                result_dict = dict(row.items())
-                log.debug("found project: %s", result_dict)
-                tags = await self._get_tags_by_project(conn, project_id=result_dict['id'])
-                result_dict['tags'] = tags
-                projects_list.append(_convert_to_schema_names(result_dict))
+            projects_list.extend( await self.__load_projects(conn, query) )
+
+        return projects_list
+
+    async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
+        projects_list: List[Dict] = []
+        async for row in conn.execute(query):
+            result_dict = dict(row.items())
+            log.debug("found project: %s", result_dict)
+            result_dict['tags'] = []
+            projects_list.append(_convert_to_schema_names(result_dict))
+
+        # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
+        # FIXME: temporary avoids inner async loops issue https://github.com/aio-libs/aiopg/issues/535
+        for prj in projects_list:
+            prj['tags'] = await self._get_tags_by_project(conn, project_id=result_dict['id'])
+
         return projects_list
 
     async def _get_project(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
@@ -432,11 +435,6 @@ class ProjectDBAPI:
         query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
         rows = await (await conn.execute(query)).fetchall()
         return [ row.tag_id for row in rows ]
-
-        #result = []
-        #async for row_proxy in conn.execute(query):
-        #    result.append(row_proxy.tag_id)
-        #return result
 
 
 def setup_projects_db(app: web.Application):
