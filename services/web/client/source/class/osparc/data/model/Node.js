@@ -999,19 +999,27 @@ qx.Class.define("osparc.data.model.Node", {
       this.__retrieveInputs();
     },
 
-    removeNode: function() {
-      this.stopInBackend();
-      this.removeIFrame();
+    __removeInnerNodes: function() {
       const innerNodes = Object.values(this.getInnerNodes());
       for (const innerNode of innerNodes) {
         innerNode.removeNode();
       }
+    },
+
+    __detachFromParent: function() {
       const parentNodeId = this.getParentNodeId();
       if (parentNodeId) {
-        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        const parentNode = this.getWorkbench().getNode(parentNodeId);
         parentNode.removeInnerNode(this.getNodeId());
         parentNode.removeOutputNode(this.getNodeId());
       }
+    },
+
+    removeNode: function() {
+      this.stopInBackend();
+      this.removeIFrame();
+      this.__removeInnerNodes();
+      this.__detachFromParent();
     },
 
     removeIFrame: function() {
