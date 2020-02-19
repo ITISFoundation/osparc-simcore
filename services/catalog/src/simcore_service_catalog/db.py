@@ -4,14 +4,14 @@
 from typing import Optional
 
 import aiopg.sa
-import sqlalchemy as sa
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from fastapi import Depends
+from sqlalchemy.sql.ddl import CreateTable
 
 from .config import app_context, postgres_dsn
-from .orm.base import Base
+from .orm import DAG, dags
 
 
 # TODO: idealy context cleanup. This concept here? app-context Dependency?
@@ -32,9 +32,9 @@ async def teardown_engine() -> None:
     await engine.wait_closed()
 
 
-def create_tables():
-    engine = sa.create_engine(postgres_dsn)
-    Base.metadata.create_all(bind=engine)
+async def create_tables(conn: SAConnection):
+    await conn.execute(f'DROP TABLE IF EXISTS {DAG.__tablename__}')
+    await conn.execute(CreateTable(dags))
 
 
 def info(engine: Optional[Engine] = None):

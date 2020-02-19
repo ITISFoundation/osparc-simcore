@@ -56,11 +56,11 @@ async def start_db():
     )
     for attempt in Retrying(**retry_policy):
         with attempt:
-            await setup_engine()
-
-    if is_testing_enabled:
-        log.info("Creating db tables (testing mode)")
-        create_tables()
+            engine = await setup_engine()
+            if is_testing_enabled:
+                log.info("Creating db tables (testing mode)")
+                async with engine.acquire() as conn:
+                    await create_tables(conn)
 
 
 @app.on_event("shutdown")

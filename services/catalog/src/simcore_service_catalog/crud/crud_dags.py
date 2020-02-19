@@ -3,8 +3,9 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 
+import orm
+
 from .. import db
-from ..orm import orm_dags as orm
 from ..schemas import schemas_dags as schemas
 
 
