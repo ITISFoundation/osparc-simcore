@@ -12,29 +12,32 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field
 
-KEY_RE = r'^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$'
-VERSION_RE = r'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+KEY_RE = r"^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$"
+VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 
-current_dir = Path( sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 class Connection(BaseModel):
     nodeUuid: Optional[str]
     output: Optional[str]
 
+
 class FilePickerOutput(BaseModel):
-    store: Union[str, int] # simcore/datcore
-    dataset: Optional[str] #
-    path: str #
-    label: str # name of the file
+    store: Union[str, int]  # simcore/datcore
+    dataset: Optional[str]
+    path: str
+    label: str  # name of the file
+
 
 InputTypes = Union[int, bool, str, float, Connection, FilePickerOutput]
 OutputTypes = Union[int, bool, str, float, FilePickerOutput]
 
 
 class AccessEnum(str, Enum):
-    ReadAndWrite="ReadAndWrite"
-    Invisible="Invisible"
-    ReadOnly="ReadOnly"
+    ReadAndWrite = "ReadAndWrite"
+    Invisible = "Invisible"
+    ReadOnly = "ReadOnly"
 
 
 class Position(BaseModel):
@@ -57,7 +60,9 @@ class Node(BaseModel):
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: List[str] = []
 
-    parent: Optional[str] = Field(None, description="Parent's (group-nodes') node ID s.", example="nodeUUid1")
+    parent: Optional[str] = Field(
+        None, description="Parent's (group-nodes') node ID s.", example="nodeUUid1"
+    )
 
     position: Position = Field(...)
 
@@ -74,5 +79,5 @@ class Project(BaseModel):
     tags: Optional[List[int]] = []
 
 
-#with open( current_dir / "project.json", 'wt') as fh:
+# with open( current_dir / "project.json", 'wt') as fh:
 #    print(Project.schema_json(indent=2), file=fh)

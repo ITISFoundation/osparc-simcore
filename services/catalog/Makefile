@@ -49,6 +49,13 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
+
+.PHONY: autoformat
+autoformat:
+	# auto formatting with black
+	@python3 -m black --verbose $(CURDIR)
+
+
 .PHONY: openapi-specs
 openapi-specs: ## TODO: implementing a way to serialize openapi
 	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"

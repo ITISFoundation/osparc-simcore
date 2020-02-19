@@ -22,7 +22,7 @@ def test_read_healthcheck(client):
     response = client.get("/")
     assert response.status_code == 200
     assert "api_version" in response.json()
-    assert response.json()['api_version'] == api_version
+    assert response.json()["api_version"] == api_version
 
 
 def test_standard_operations_on_resource(client, fake_data_dag_in):
@@ -41,7 +41,7 @@ def test_standard_operations_on_resource(client, fake_data_dag_in):
 
     # TODO: data_in is not the same as data_out??
     data_out = got[0]
-    assert data_out['id'] == 1 # extra key, once in db
+    assert data_out["id"] == 1  # extra key, once in db
 
     # get
     response = client.get("/v0/dags/1")

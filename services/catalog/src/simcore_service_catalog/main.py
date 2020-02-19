@@ -12,8 +12,7 @@ from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import dags, diagnostics
 from .remote_debug import setup_remote_debugging
 
-current_dir = Path(sys.argv[0] if __name__ ==
-                   "__main__" else __file__).resolve().parent
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
 
@@ -24,18 +23,18 @@ app = FastAPI(
     # TODO: get here extended description from setup
     description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
     version=api_version,
-    openapi_url=f"/{api_version_prefix}/openapi.json"
+    openapi_url=f"/{api_version_prefix}/openapi.json",
 )
 
 # projects
-app.include_router(diagnostics.router, tags=['diagnostics'])
-app.include_router(dags.router, tags=['dags'], prefix=f"/{api_version_prefix}")
+app.include_router(diagnostics.router, tags=["diagnostics"])
+app.include_router(dags.router, tags=["dags"], prefix=f"/{api_version_prefix}")
 
 
 def dump_openapi():
     oas_path: Path = current_dir / f"api/{api_version_prefix}/openapi.yaml"
     log.info("Saving openapi schema to %s", oas_path)
-    with open(oas_path, 'wt') as fh:
+    with open(oas_path, "wt") as fh:
         yaml.safe_dump(app.openapi(), fh)
 
 
@@ -53,7 +52,7 @@ async def start_db():
         wait=wait_fixed(5),
         stop=stop_after_attempt(20),
         before_sleep=before_sleep_log(log, logging.WARNING),
-        reraise=True
+        reraise=True,
     )
     for attempt in Retrying(**retry_policy):
         with attempt:

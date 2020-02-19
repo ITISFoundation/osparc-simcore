@@ -2,12 +2,10 @@ from typing import Dict, Optional
 
 # TODO: why pylint error in pydantic???
 # pylint: disable=no-name-in-module
-from pydantic import (BaseModel, EmailStr,
-                      Field, Json)
+from pydantic import BaseModel, EmailStr, Field, Json
 
 from . import project
-from .project import VERSION_RE, KEY_RE
-
+from .project import KEY_RE, VERSION_RE
 
 #   const outputNode = this.getOutputNode();
 #   const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
@@ -22,7 +20,9 @@ from .project import VERSION_RE, KEY_RE
 
 
 class DAGBase(BaseModel):
-    key: str = Field(..., regex=KEY_RE, example="simcore/services/frontend/nodes-group/macros/1")
+    key: str = Field(
+        ..., regex=KEY_RE, example="simcore/services/frontend/nodes-group/macros/1"
+    )
     version: str = Field(..., regex=VERSION_RE, example="1.0.0")
     name: str
     description: Optional[str]
@@ -31,6 +31,7 @@ class DAGBase(BaseModel):
 
 class DAGIn(DAGBase):
     workbench: Optional[Dict[str, project.Node]]
+
 
 class DAGInPath(DAGBase):
     version: str
