@@ -1,0 +1,6 @@
+[run]
+branch = True
+omit = 
+    */tests/*
+    */generated_code/*
+parallel = True
