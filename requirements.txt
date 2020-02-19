@@ -6,3 +6,4 @@ pylint
 black
 pip-tools
 rope
+bump2version
