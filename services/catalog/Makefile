@@ -50,15 +50,24 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
-.PHONY: run-devel down
-run-devel: down ## runs app with pg fixture for development
-	# starting pg database ...
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
-	# starting service
+.PHONY: run-devel down-pg up-pg
+run-devel run-prod: up-pg ## runs app with pg service
+	# starting service ...
+ifeq ($(subst run-,,$@),devel)
+	# development mode (with reload upon change)
 	uvicorn simcore_service_catalog.main:app --reload
+else
+	# production mode
+	simcore-service-catalog
+endif
 	# stop
 
-down: ## stops pg fixture
+
+up-pg: down-pg
+	# starting pg database ...
+	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
+
+down-pg: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
 
 

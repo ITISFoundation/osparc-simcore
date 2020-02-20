@@ -5,8 +5,8 @@
 """
 import uvicorn
 
-from .main import app
-from .config import uvicorn_settings
+from simcore_service_catalog.main import app
+from simcore_service_catalog.config import uvicorn_settings
 
 
 def main():
