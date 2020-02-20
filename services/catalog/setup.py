@@ -34,8 +34,9 @@ setup(
     version=version,
     author="Pedro Crespo (pcrespov)",
     description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
+    # Get tags from https://pypi.org/classifiers/
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3.6",
