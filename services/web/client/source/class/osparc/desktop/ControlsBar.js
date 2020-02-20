@@ -169,7 +169,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       let ungroupBtnVisibility = "excluded";
       if (selectedNodes.length) {
         groupBtnVisibility = "visible";
-      } else if (selectedNodes.length === 1 && selectedNodes[0].getMetaData().type === "group") {
+      }
+      if (selectedNodes.length === 1 && selectedNodes[0].getMetaData().type === "group") {
         ungroupBtnVisibility = "visible";
       }
       this.__groupButton.setVisibility(groupBtnVisibility);
