@@ -36,7 +36,7 @@ setup(
     ],
     long_description=readme,
     license="MIT license",
-    packages=find_packages(wcurrent_dir="src"),
+    packages=find_packages(where="src"),
     package_dir={"": "src"},
     test_suite="tests",
     install_requires=install_requirements,
