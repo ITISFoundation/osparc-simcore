@@ -156,7 +156,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             row: 2,
             column: 0
           });
-          control.getChildControl("progress").setBackgroundColor("progressbar");
           break;
       }
       return control || this.base(arguments, id);

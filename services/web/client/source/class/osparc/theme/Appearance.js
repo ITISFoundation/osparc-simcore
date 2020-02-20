@@ -143,6 +143,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "window-small-cap/progress": "progressbar",
+
     "service-window": {
       include: "window",
       alias: "window",

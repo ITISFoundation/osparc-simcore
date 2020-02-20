@@ -93,7 +93,6 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         height: 10,
         margin: 3
       });
-      progressBar.getChildControl("progress").setBackgroundColor("progressbar");
       node.bind("label", progressBar, "value");
 
       nodeUILayout.add(header);
