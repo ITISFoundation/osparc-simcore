@@ -64,7 +64,8 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
 @pytest.mark.skipif(os.environ.get('GITHUB_ACTIONS', '') == "true", reason="test fails consistently on Github Actions")
 @pytest.mark.parametrize("service_name", [
     'simcore_webserver',
-    'simcore_storage'
+    'simcore_storage',
+    'simcore_catalog',
 ])
 def test_graceful_restart_services(
     service_name: str,
