@@ -6,7 +6,6 @@
 import json
 
 import pytest
-from pydantic import BaseModel, validator
 
 from simcore_service_catalog.orm import DAG
 from simcore_service_catalog.schemas import schemas_dags
