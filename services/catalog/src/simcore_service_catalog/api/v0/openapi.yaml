@@ -229,7 +229,7 @@ info:
   description: Manages and maintains a **catalog** of all published components (e.g.
     macro-algorithms, scripts, etc)
   title: Components Catalog Service
-  version: 0.3.1
+  version: 0.3.2
 openapi: 3.0.2
 paths:
   /:
