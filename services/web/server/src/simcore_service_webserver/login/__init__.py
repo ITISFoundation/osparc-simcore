@@ -5,10 +5,10 @@
 """
 import asyncio
 import logging
+from typing import Dict
 
 import asyncpg
 from aiohttp import web
-
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -24,10 +24,36 @@ from .routes import create_routes
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
-module_name = __name__.replace(".__init__", "")
+
 
 TIMEOUT_SECS = 5
 
+
+def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
+    """
+        Creates compatible config to update login.cfg.cfg object
+    """
+    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
+    smtp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
+
+    config = {
+        "APP": app,
+        "STORAGE": storage
+    }
+
+    def _fmt(val):
+        if isinstance(val, str):
+            if val.strip().lower() in ['null', 'none', '']:
+                return None
+        return val
+
+    for key, value in login_cfg.items():
+        config[key.upper()] = _fmt(value)
+
+    for key, value in smtp_cfg.items():
+        config["SMTP_{}".format(key.upper())] = _fmt(value)
+
+    return config
 
 async def _setup_config_and_pgpool(app: web.Application):
     """
@@ -37,15 +63,11 @@ async def _setup_config_and_pgpool(app: web.Application):
     :param app: fully setup application on startup
     :type app: web.Application
     """
-    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
-    stmp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
     # db
-    #TODO: setup lifetime of this pool?
-    #TODO: determin min/max size of the pool
     pool = await asyncpg.create_pool(
-        dsn=DSN.format(**db_cfg) + f"?application_name={module_name}_{id(app)}",
+        dsn=DSN.format(**db_cfg) + f"?application_name={__name__}_{id(app)}",
         min_size=db_cfg['minsize'],
         max_size=db_cfg['maxsize'],
         loop=asyncio.get_event_loop())
@@ -53,16 +75,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
 
     # config
-    config = {}
-    for key, value in login_cfg.items():
-        config[key.upper()] = value
-
-    for key, value in stmp_cfg.items():
-        config["SMTP_{}".format(key.upper())] = value
-
-    config['APP'] = app
-    config["STORAGE"] = storage
-
+    config = _create_login_config(app, storage)
     cfg.configure(config)
 
     if INDEX_RESOURCE_NAME in app.router:
@@ -84,25 +97,13 @@ async def _setup_config_and_pgpool(app: web.Application):
 
 
 
-@app_module_setup(module_name, ModuleCategory.ADDON,
+@app_module_setup(__name__, ModuleCategory.ADDON,
     depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
     logger=log)
-def setup(app: web.Application):
-    """ Setting up subsystem in application
+def setup_login(app: web.Application):
+    """ Setting up login subsystem in application
 
-    :param app: main application
-    :type app: web.Application
     """
-    assert REST_SECTION in app[APP_CONFIG_KEY] # nosec
-    assert SMTP_SECTION in app[APP_CONFIG_KEY] # nosec
-    assert DB_SECTION in app[APP_CONFIG_KEY]   # nosec
-
-    # TODO: automatize dependencies
-    enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )
-    if not enabled:
-        log.warning("Disabling '%s' since %s or %s were explictily disabled in config", __name__, SMTP_SECTION, DB_SECTION)
-        return False
-
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = create_routes(specs)
@@ -112,9 +113,6 @@ def setup(app: web.Application):
     app.cleanup_ctx.append(_setup_config_and_pgpool)
     return True
 
-
-# alias
-setup_login = setup
 
 __all__ = (
     'setup_login'

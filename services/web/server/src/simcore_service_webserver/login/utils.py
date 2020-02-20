@@ -1,16 +1,16 @@
 import random
 import string
-
 from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
+from pprint import pformat
 
 import aiosmtplib
 import attr
 import passlib.hash
-from aiohttp import web
 from aiohttp_jinja2 import render_string
 
+from aiohttp import web
 from servicelib.rest_models import LogMessageType
 
 from ..resources import resources
@@ -51,31 +51,35 @@ async def send_mail(recipient, subject, body):
         loop=cfg.APP.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=cfg.SMTP_TLS,
+        use_tls=bool(cfg.SMTP_TLS_ENABLED),
     )
+    log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
+
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
     msg['From'] = cfg.SMTP_SENDER
     msg['To'] = recipient
 
     if cfg.SMTP_PORT == 587:
-        # aiosmtplib does not handle port 587 correctly
+        # NOTE: aiosmtplib does not handle port 587 correctly
         # plaintext first, then use starttls
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
         await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-        if cfg.SMTP_TLS:
+        if cfg.SMTP_TLS_ENABLED:
+            log.info("Starting TLS ...")
             await smtp.starttls(validate_certs=False)
         if cfg.SMTP_USERNAME:
+            log.info("Login email server ...")
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
             if cfg.SMTP_USERNAME:
+                log.info("Login email server ...")
                 await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
             await smtp.send_message(msg)
-
 
 async def render_and_send_mail(request, to, template, context=None):
     page = render_string(str(template), request, context)

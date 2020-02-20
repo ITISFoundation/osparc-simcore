@@ -1,49 +1,54 @@
+""" Access to postgres service
 
+"""
+from typing import Optional
 
-# setup pg engine using aiopg
 import aiopg.sa
-import sqlalchemy as sa
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-# Dependency
 from fastapi import Depends
+from sqlalchemy.sql.ddl import CreateTable
 
-from .config import pg_dsn
-from .orm.base import Base
-
-
-def create_tables():
-    engine = sa.create_engine(pg_dsn)
-    Base.metadata.create_all(bind=engine)
+from .config import app_context, postgres_dsn
+from .orm import DAG, dags
 
 
-# TODO: hate globals!
-app_context = {}
+# TODO: idealy context cleanup. This concept here? app-context Dependency?
+async def setup_engine() -> Engine:
+    engine = await aiopg.sa.create_engine(
+        postgres_dsn,
+        # unique identifier per app
+        application_name=f"{__name__}_{id(app_context)}",
+        minsize=5,
+        maxsize=10,
+    )
+    app_context["engine"] = engine
+
+    return engine
 
 
-def info():
-    engine = get_engine()
+async def teardown_engine() -> None:
+    engine = app_context["engine"]
+    engine.close()
+    await engine.wait_closed()
+
+
+async def create_tables(conn: SAConnection):
+    await conn.execute(f'DROP TABLE IF EXISTS {DAG.__tablename__}')
+    await conn.execute(CreateTable(dags))
+
+
+def info(engine: Optional[Engine] = None):
+    engine = engine or get_engine()
     props = "closed driver dsn freesize maxsize minsize name  size timeout".split()
     for p in props:
         print(f"{p} = {getattr(engine, p)}")
 
 
-# TODO: idealy context cleanup. This concept here? app-context Dependency?
-async def setup_engine() -> None:
-    engine = await aiopg.sa.create_engine(pg_dsn, application_name=__name__, minsize=5, maxsize=10)
-    app_context['engine'] = engine
-
-
-async def teardown_engine() -> None:
-    engine = app_context['engine']
-    engine.close()
-    await engine.wait_closed()
-
-
-
 def get_engine() -> Engine:
     return app_context["engine"]
+
 
 async def get_cnx(engine: Engine = Depends(get_engine)):
     # TODO: problem here is retries??
@@ -51,9 +56,4 @@ async def get_cnx(engine: Engine = Depends(get_engine)):
         yield conn
 
 
-
-__all__ = (
-    'Engine',
-    'ResultProxy', 'RowProxy',
-    'SAConnection'
-)
+__all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")

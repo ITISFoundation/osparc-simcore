@@ -292,12 +292,8 @@ pylint: ## Runs python linter framework's wide
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 install \
-		pylint \
-		autopep8 \
-		pip-tools \
-		rope
-	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+	$</bin/pip3 install -r requirements.txt
+	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
@@ -397,18 +393,28 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images
+.PHONY: clean clean-images clean-venv clean-all
 
-git_clean_args = -dxf -e .vscode -e TODO.md
+git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 
-clean: ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
+
+.check-clean:
 	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
+clean-venv: ## Purges .venv into original configuration
+	# Cleaning your venv
+	pip-sync $(CURDIR)/requirements.txt
+	@pip list
+
+clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
 	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -416,11 +422,18 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
-clean-all: clean clean-images
-	# Cleaning both output files and images
+clean-all: clean clean-images # Deep clean including .venv and produced images
+	-rm -rf .venv
 
+
+.PHONY: postgres-upgrade
+postgres-upgrade: ## initalize or upgrade postgres db to latest state
+	@$(MAKE) -C packages/postgres-database/docker build
+	@$(MAKE) -C packages/postgres-database/docker upgrade
 
 .PHONY: reset
-reset: ## restart docker daemon
+reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker

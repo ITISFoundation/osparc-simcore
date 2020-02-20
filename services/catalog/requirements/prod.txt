@@ -6,14 +6,11 @@
 #   pip install -r requirements/prod.txt
 #
 
-
 # installs base requirements
 -r _base.txt
 
 # installs this repo's packages
-../../packages/s3wrapper/
-../../packages/postgres-database/
-../../packages/service-library/
+../../../packages/postgres-database/
 
 # installs current package
 .

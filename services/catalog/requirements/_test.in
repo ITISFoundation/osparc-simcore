@@ -20,6 +20,7 @@ pytest-docker
 Faker
 
 # tools
+-r ../../../requirements.txt
 pylint
 coveralls
 codecov

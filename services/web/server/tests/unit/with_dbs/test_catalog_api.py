@@ -2,18 +2,17 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from copy import deepcopy
+
 import pytest
 from aiohttp import web
-from yarl import URL
 
-from simcore_service_webserver.application import create_safe_application
-from simcore_service_webserver.catalog import setup_catalog
-from simcore_service_webserver.application import create_safe_application
-from simcore_service_webserver.catalog import setup_catalog
-from simcore_service_webserver.catalog_config import schema as catalog_schema
+from simcore_service_webserver.application import (create_safe_application,
+                                                   setup_catalog, setup_db,
+                                                   setup_login, setup_rest,
+                                                   setup_security,
+                                                   setup_session)
 from simcore_service_webserver.db_models import UserRole
-
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY
 from utils_login import LoggedUser
 
 
@@ -33,7 +32,6 @@ async def logged_user(client, user_role: UserRole):
         print("<----- logged out user", user_role)
 
 
-
 @pytest.fixture()
 async def client(loop, app_cfg, aiohttp_client, postgres_db):
     # fixture: minimal client with catalog-subsystem enabled and
@@ -41,12 +39,19 @@ async def client(loop, app_cfg, aiohttp_client, postgres_db):
     #
     # - Mocks calls to actual API
 
-    assert app_cfg['catalog']['enabled']
+    cfg = deepcopy(app_cfg)
+
+    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg['catalog']['enabled'] = True
 
     app = create_safe_application(app_cfg)
 
     # patch all
-    assert setup_rest(app)
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app)
+    setup_login(app)            # needed for login_utils fixtures
     assert setup_catalog(app)
 
     yield loop.run_until_complete( aiohttp_client( app,
@@ -65,7 +70,7 @@ async def client(loop, app_cfg, aiohttp_client, postgres_db):
     (UserRole.USER, web.HTTPOk),
     #(UserRole.TESTER, web.HTTPOk),
 ])
-async def test_dag_resource(client, logged_user, api_version_prefix, mocker):
+async def test_dag_resource(client, logged_user, expected, api_version_prefix, mocker):
     v = api_version_prefix
 
     # from .login.decorators import login_required

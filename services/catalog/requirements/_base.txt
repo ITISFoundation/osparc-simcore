@@ -21,10 +21,11 @@ graphql-core==2.3.1       # via graphene, graphql-relay
 graphql-relay==2.0.1      # via graphene
 h11==0.9.0                # via uvicorn
 httptools==0.0.13         # via uvicorn
-idna==2.8                 # via email-validator, requests
+idna==2.8                 # via email-validator, requests, yarl
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.1            # via fastapi
 markupsafe==1.1.1         # via jinja2
+multidict==4.7.4          # via yarl
 promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.4    # via aiopg, sqlalchemy
 pydantic==1.4             # via fastapi
@@ -33,7 +34,7 @@ pyyaml==5.3               # via fastapi
 requests==2.22.0          # via fastapi
 rx==1.6.1                 # via graphql-core
 six==1.14.0               # via graphene, graphql-core, graphql-relay, promise, python-multipart, tenacity
-sqlalchemy[postgresql_psycopg2binary]==1.3.13  # via aiopg
+sqlalchemy[postgresql_psycopg2binary]==1.3.13
 starlette==0.12.9         # via fastapi
 tenacity==6.0.0
 ujson==1.35               # via fastapi
@@ -41,3 +42,4 @@ urllib3==1.25.8           # via requests
 uvicorn==0.11.2           # via fastapi
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn
+yarl==1.4.2
