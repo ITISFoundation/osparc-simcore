@@ -1,17 +1,15 @@
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+#pylint: disable=protected-access
 
 import json
 
+import pytest
 from pydantic import BaseModel, validator
 
 from simcore_service_catalog.orm import DAG
 from simcore_service_catalog.schemas import schemas_dags
-
-
-
 
 # from typing import Optional, TypeVar, Generic
 # from pydantic import GenericModel, BaseModel
@@ -28,6 +26,7 @@ from simcore_service_catalog.schemas import schemas_dags
 #     error: Optional[Error]
 
 
+@pytest.mark.skip(reason="DEV")
 def test_dev():
 
     dag_in = schemas_dags.DAGIn(
@@ -52,10 +51,11 @@ def test_api_in_2_orm(fake_data_dag_in):
 
     # TODO: create DAG.from_api( :DAGIn)
     # SEE crud_dags.create_dag
+    selection = set( DAG.__table__.columns.keys() ).remove('workbench')
     dag_orm = DAG(
         id = 1,
-        workbench=json.dumps(fake_data_dag_in["workbench"],
-        **dag_in.dict(exclude={'workbench'}),)
+        workbench=json.dumps(fake_data_dag_in["workbench"]),
+        **dag_in.dict(include=selection, exclude={"workbench"}),
     )
 
 
@@ -74,4 +74,4 @@ def test_orm_2_api_out(fake_data_dag_in):
     assert type(dag_db.workbench) == dict
 
     dag_out = schemas_dags.DAGOut(**dag_db.dict())
-    assert dag_out['id'] == 1
+    assert dag_out.id == 1
