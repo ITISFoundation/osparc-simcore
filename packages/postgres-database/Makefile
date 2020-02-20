@@ -46,9 +46,7 @@ info: ## displays
 
 
 .PHONY: setup-commit
-setup-commit: install-dev ## sets up a database to create a new commit into migration history
-	# creating empty pg server
-	docker-compose -f tests/docker-compose.yml up -d
+setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
 	# discovering
 	sc-pg --help
 	sc-pg discover -u test -p test -d test
@@ -59,8 +57,19 @@ setup-commit: install-dev ## sets up a database to create a new commit into migr
 	@echo "To add new commit, sc-pg review -m "Some message" "
 
 
+_docker_compose_config := tests/docker-compose.yml
+
+.PHONY: up-pg down-pg
+
+up-pg: ## starts pg server
+	docker-compose -f $(_docker_compose_config) up -d
+
+down-pg: ## stops pg server
+	docker-compose -f $(_docker_compose_config) down
+
+
 .PHONY: clean
-clean: ## cleans all unversioned files in project and temp files create by this makefile
+clean: down ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean -ndxf
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
