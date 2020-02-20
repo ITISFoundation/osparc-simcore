@@ -7,17 +7,17 @@ import json
 
 from pydantic import BaseModel, validator
 
-from simcore_service_catalog.orm import orm_dags
+from simcore_service_catalog.orm import DAG
 from simcore_service_catalog.schemas import schemas_dags
 
 
 class User(BaseModel):
     id: int
-    name = 'Jane'
+    name = "Jane"
+
 
 class UserDetailed(User):
-    surname = 'Doe'
-
+    surname = "Doe"
 
 
 # from typing import Optional, TypeVar, Generic
@@ -34,13 +34,16 @@ class UserDetailed(User):
 #     data: Optional[DataT]
 #     error: Optional[Error]
 
+
 def test_dev():
 
-    dag_in = schemas_dags.DAGIn(key="simcore/services/frontend/nodes-group/macros/", version="1.0.0", name="foo")
+    dag_in = schemas_dags.DAGIn(
+        key="simcore/services/frontend/nodes-group/macros/", version="1.0.0", name="foo"
+    )
 
-    assert 'key' in dag_in.__fields_set__
-    assert 'version' in dag_in.__fields_set__
-    assert 'description' not in dag_in.__fields_set__
+    assert "key" in dag_in.__fields_set__
+    assert "version" in dag_in.__fields_set__
+    assert "description" not in dag_in.__fields_set__
 
     print()
     # to update_dat
@@ -52,14 +55,14 @@ def test_dev():
 
 
 def test_db_to_api(fake_data_dag_in):
-    dag_orm = orm_dags.DAG(
+    dag_orm = DAG(
         id=1,
         key="simcore/services/comp/foo",
         version="1.0.0",
         name="bar",
         description="some",
         contact="me@me.com",
-        workbench=json.dumps(fake_data_dag_in['workbench'])
+        workbench=json.dumps(fake_data_dag_in["workbench"]),
     )
 
     dag_db = schemas_dags.DAGAtDB.from_orm(dag_orm)

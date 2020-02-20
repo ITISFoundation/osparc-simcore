@@ -1,47 +1,54 @@
 """ Access to postgres service
 
 """
-import sqlalchemy as sa
+from typing import Optional
 
 import aiopg.sa
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from fastapi import Depends
+from sqlalchemy.sql.ddl import CreateTable
 
 from .config import app_context, postgres_dsn
-from .orm.base import Base
+from .orm import DAG, dags
 
 
 # TODO: idealy context cleanup. This concept here? app-context Dependency?
-async def setup_engine() -> None:
+async def setup_engine() -> Engine:
     engine = await aiopg.sa.create_engine(
         postgres_dsn,
-        application_name=f"{__name__}_{id(app_context)}", # unique identifier per app
+        # unique identifier per app
+        application_name=f"{__name__}_{id(app_context)}",
         minsize=5,
-        maxsize=10
+        maxsize=10,
     )
-    app_context['engine'] = engine
+    app_context["engine"] = engine
+
+    return engine
 
 
 async def teardown_engine() -> None:
-    engine = app_context['engine']
+    engine = app_context["engine"]
     engine.close()
     await engine.wait_closed()
 
 
-def create_tables():
-    engine = sa.create_engine(postgres_dsn)
-    Base.metadata.create_all(bind=engine)
+async def create_tables(conn: SAConnection):
+    await conn.execute(f'DROP TABLE IF EXISTS {DAG.__tablename__}')
+    await conn.execute(CreateTable(dags))
 
-def info():
-    engine = get_engine()
+
+def info(engine: Optional[Engine] = None):
+    engine = engine or get_engine()
     props = "closed driver dsn freesize maxsize minsize name  size timeout".split()
     for p in props:
         print(f"{p} = {getattr(engine, p)}")
 
+
 def get_engine() -> Engine:
     return app_context["engine"]
+
 
 async def get_cnx(engine: Engine = Depends(get_engine)):
     # TODO: problem here is retries??
@@ -49,8 +56,4 @@ async def get_cnx(engine: Engine = Depends(get_engine)):
         yield conn
 
 
-__all__ = (
-    'Engine',
-    'ResultProxy', 'RowProxy',
-    'SAConnection'
-)
+__all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")

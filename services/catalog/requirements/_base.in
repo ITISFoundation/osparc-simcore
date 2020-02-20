@@ -2,6 +2,7 @@
 # Specifies third-party dependencies for 'services/catalog/src'
 #
 # NOTE: ALL version constraints MUST be commented
+-r ../../../packages/postgres-database/requirements/_base.in
 
 fastapi[all]
 aiopg[sa]
