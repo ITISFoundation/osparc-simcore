@@ -111,11 +111,14 @@ endif
 
 # TODO: should download cache if any??
 build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
 	$(_docker_compose_build) --parallel
-
+else
+	$(_docker_compose_build) $(target)
+endif
 
 
 $(CLIENT_WEB_OUTPUT):

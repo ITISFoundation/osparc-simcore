@@ -17,7 +17,6 @@ RUN apk add --no-cache \
 ENV PATH "/home/scu/.local/bin:$PATH"
 
 # NOTE: All SC_ variables are customized
-ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 
 EXPOSE 8000
@@ -39,7 +38,7 @@ RUN apk add --no-cache \
       musl-dev \
       postgresql-dev
 
-RUN $SC_PIP install --upgrade \
+RUN pip3 --no-cache-dir install --upgrade \
       pip \
       wheel \
       setuptools
@@ -50,7 +49,7 @@ WORKDIR /build
 COPY  services/catalog/requirements/*.txt \
       services/catalog/requirements/
 
-RUN $SC_PIP install -r services/catalog/requirements/_base.txt
+RUN pip3 --no-cache-dir install -r services/catalog/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------
@@ -68,9 +67,8 @@ COPY --chown=scu:scu services/catalog /build/services/catalog
 
 WORKDIR /build/services/catalog
 
-
-RUN $SC_PIP install . &&\
-    $SC_PIP list -v
+RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
+    pip3 --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -91,7 +89,6 @@ RUN mkdir -p services/catalog &&\
     chown scu:scu services/catalog &&\
     mv /build/services/catalog/docker services/catalog/docker &&\
     rm -rf /build
-
 
 RUN apk del --no-cache\
       alpine-sdk \
