@@ -26,14 +26,14 @@ def client(loop, aiohttp_client):
 
     app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
 
-    assert setup_catalog(app)
+    setup_catalog.__wrapped__(app, disable_auth=True)
 
     # needs to start application ...
     yield loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture
-def mock_api_calls(client, mocker):
+def mock_api_calls_to_catalog(client, mocker):
     client_session = client.app[APP_CLIENT_SESSION_KEY]
 
     class MockClientSession(mocker.MagicMock):
@@ -59,7 +59,6 @@ def mock_api_calls(client, mocker):
     yield mock
 
 
-
 def test_url_translation():
     front_url = URL(f"https://osparc.io/{api_version_prefix}/catalog/dags/123?page_size=6")
 
@@ -80,11 +79,14 @@ def test_catalog_routing(client):
         assert resource.canonical.startswith(f"/{api_version_prefix}/catalog")
 
 
-async def test_catalog_api_calls(client, mock_api_calls):
+# TODO: auto-create calls from openapi specs together with expected responses
+# TODO: this test shall simply check that Web API calls are redirected correctly
+@pytest.mark.skip(reason="DEV")
+async def test_catalog_api_calls(client, mock_api_calls_to_catalog):
     client_session = client.app[APP_CLIENT_SESSION_KEY]
 
     assert await is_service_responsive(client.app)
-    mock_api_calls.assert_called_once()
+    mock_api_calls_to_catalog.assert_called_once()
 
     # from .login.decorators import login_required
     v = api_version_prefix
@@ -92,7 +94,7 @@ async def test_catalog_api_calls(client, mock_api_calls):
     # create resource
     data = {} # TODO: some fake data
     res = await client.post(f"/{v}/catalog/dags", json=data)
-    assert res.status == 200
+    assert res.status == 201
 
     # list resources
     res = await client.get(f"/{v}/catalog/dags")
@@ -115,4 +117,4 @@ async def test_catalog_api_calls(client, mock_api_calls):
 
     # delete
     res = await client.delete(f"/{v}/dags/{dag_id}")
-    assert res.status == 200
+    assert res.status == 204

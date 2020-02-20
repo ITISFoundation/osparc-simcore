@@ -73,6 +73,7 @@ async def _reverse_proxy_handler(request: web.Request):
 
     # forward request
     session = get_client_session(request.app)
+
     async with session.request(
             request.method,
             backend_url,
@@ -101,7 +102,7 @@ async def _reverse_proxy_handler(request: web.Request):
 @app_module_setup(__name__, ModuleCategory.ADDON,
     depends=['simcore_service_webserver.rest'],
     logger=logger)
-def setup_catalog(app: web.Application):
+def setup_catalog(app: web.Application, *, disable_auth=False):
 
     # resolve url
     cfg = get_config(app).copy()
@@ -111,7 +112,8 @@ def setup_catalog(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
 
     # bind routes with handlers
-    routes = [ web.route(method.upper(), path, _reverse_proxy_handler, name=operation_id)
+    handler = _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
+    routes = [ web.route(method.upper(), path, handler, name=operation_id)
         for method, path, operation_id, tags in iter_path_operations(specs)
             if 'catalog' in tags
     ]
