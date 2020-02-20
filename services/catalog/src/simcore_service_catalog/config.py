@@ -6,7 +6,7 @@
 import logging
 import os
 
-from .utils import cast_to_bool
+from .utils.helpers import cast_to_bool
 
 # DOCKER
 is_container_environ: bool = "SC_BOOT_MODE" in os.environ
