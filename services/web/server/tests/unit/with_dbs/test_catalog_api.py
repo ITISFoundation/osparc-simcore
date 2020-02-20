@@ -104,7 +104,7 @@ async def logged_user(client, user_role: UserRole):
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        # (UserRole.GUEST, web.HTTPOk),
+        (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],

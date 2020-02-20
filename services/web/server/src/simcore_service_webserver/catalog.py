@@ -5,21 +5,19 @@ import logging
 from typing import Dict
 
 from aiohttp import ContentTypeError, web
+from yarl import URL
+
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
-from yarl import URL
 
 from .__version__ import api_version_prefix
 from .catalog_config import get_client_session, get_config
 from .login.decorators import login_required
+from .security_api import check_permission
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: from servicelib.rest_responses import wrap_envelope
-# TODO: from .security_api import check_permission
 
 
 async def is_service_responsive(app: web.Application):
@@ -57,7 +55,7 @@ async def _reverse_proxy_handler(request: web.Request):
 
     SEE https://gist.github.com/barrachri/32f865c4705f27e75d3b8530180589fb
     """
-    # TODO: await check_permission
+    await check_permission(request, "services.catalog.*")
 
     # path & queries
     backend_url = to_backend_service(
