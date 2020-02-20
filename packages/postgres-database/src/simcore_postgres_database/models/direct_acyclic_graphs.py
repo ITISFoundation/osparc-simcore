@@ -9,6 +9,7 @@ class DAG(Base):
 
         Managed  by the catalog's service
     """
+
     __tablename__ = "dags"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -5,12 +5,18 @@ from yarl import URL
 from .models.base import metadata
 
 
-def build_url(database, user, password, host: str='localhost', port: int=5432) -> URL:
+def build_url(
+    database, user, password, host: str = "localhost", port: int = 5432
+) -> URL:
     # postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}
-    dsn = URL.build(scheme="postgresql+psycopg2",
-        user=user, password=password,
-        host=host, port=port,
-        path=f"/{database}")
+    dsn = URL.build(
+        scheme="postgresql+psycopg2",
+        user=user,
+        password=password,
+        host=host,
+        port=port,
+        path=f"/{database}",
+    )
     return dsn
 
 
