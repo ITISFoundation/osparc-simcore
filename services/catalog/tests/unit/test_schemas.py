@@ -1,7 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-#pylint: disable=protected-access
+# pylint:disable=protected-access
 
 import json
 
@@ -51,9 +51,9 @@ def test_api_in_2_orm(fake_data_dag_in):
 
     # TODO: create DAG.from_api( :DAGIn)
     # SEE crud_dags.create_dag
-    selection = set( DAG.__table__.columns.keys() ).remove('workbench')
+    selection = set(DAG.__table__.columns.keys()).remove("workbench")
     dag_orm = DAG(
-        id = 1,
+        id=1,
         workbench=json.dumps(fake_data_dag_in["workbench"]),
         **dag_in.dict(include=selection, exclude={"workbench"}),
     )

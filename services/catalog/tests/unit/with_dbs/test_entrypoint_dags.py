@@ -11,11 +11,6 @@ from starlette.testclient import TestClient
 from simcore_service_catalog.main import api_version, app
 
 
-
-
-
-
-
 @pytest.fixture
 def client(environ_context, postgres_service):
     # TODO: create new web-app everyt
@@ -41,8 +36,6 @@ def test_list_dags(client):
     # TODO: assert i can list them as dagouts
 
     # TODO: assert dagout have identifiers now
-
-
 
 
 def test_standard_operations_on_resource(client, fake_data_dag_in):
