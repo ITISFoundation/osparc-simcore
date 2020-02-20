@@ -19,5 +19,5 @@ default_context:
     project_name:              'Components Catalog Service'
     project_short_description: 'Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)'
     project_slug:              'catalog'
-    version:                   '0.3.0'
+    version:                   '0.3.1'
     year:                      '2020'
