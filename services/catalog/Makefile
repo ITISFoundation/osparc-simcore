@@ -84,11 +84,11 @@ define _bumpversion
 	@bump2version --verbose --list $(subst version-,,$@)
 endef
 
-version-patch: openapi-specs ## commits version with bug fixes not affecting the cookiecuter config
+version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)
-version-minor: openapi-specs ## commits version with backwards-compatible API addition or changes (i.e. can replay)
+version-minor: ## commits version with backwards-compatible API addition or changes (i.e. can replay)
 	$(_bumpversion)
-version-major: openapi-specs ## commits version with backwards-INcompatible addition or changes
+version-major: ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
 
 
