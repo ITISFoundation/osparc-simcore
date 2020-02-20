@@ -10,7 +10,7 @@ from starlette.status import (
 )
 
 from .. import db
-from ..crud import crud_dags as crud
+from ..storage import crud_dags as crud
 from ..schemas import schemas_dags as schemas
 
 router = APIRouter()
@@ -98,7 +98,6 @@ async def udpate_dag(
     dag: schemas.DAGIn = Body(None),
     conn: db.SAConnection = Depends(db.get_cnx),
 ):
-
     async with conn.begin():
         await crud.update_dag(conn, dag_id, dag)
         updated_dag = await crud.get_dag(conn, dag_id)
@@ -112,10 +111,7 @@ async def replace_dag(
     dag: schemas.DAGIn = Body(...),
     conn: db.SAConnection = Depends(db.get_cnx),
 ):
-
     await crud.replace_dag(conn, dag_id, dag)
-
-    return None
 
 
 @router.delete(
