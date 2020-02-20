@@ -75,7 +75,7 @@ autoformat: ## runs black python formatter on this service's code [https://black
 
 
 .PHONY: openapi-specs
-openapi-specs: ## TODO: implementing a way to serialize openapi
+openapi-specs: install-dev ## TODO: implementing a way to serialize openapi
 	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
 
 
