@@ -29,7 +29,7 @@
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
       ],
-      "bootPath": "./source/boot"
+      "bootPath": "source/boot"
     },
     {
       "class": "qxl.apiviewer.Application",
