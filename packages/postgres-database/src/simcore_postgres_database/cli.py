@@ -14,17 +14,17 @@ from pathlib import Path
 import alembic.command
 import click
 import docker
-import sqlalchemy as sa
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 
-from simcore_postgres_database.settings import build_url
+from simcore_postgres_database.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split('.')[0:3]])
 
-here = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
-default_ini = here / 'alembic.ini'
-migration_dir = here / 'migration'
+current_dir = Path( sys.argv[0] if __name__ == "__main__" else __file__ ).parent.resolve()
+default_ini = current_dir / 'alembic.ini'
+migration_dir = current_dir / 'migration'
 discovered_cache = os.path.expanduser("~/.simcore_postgres_database_cache.json")
 
 log = logging.getLogger('root')
@@ -43,16 +43,6 @@ def safe(if_fails_return=False):
             return deepcopy(if_fails_return) # avoid issues with default mutables
         return safe_func
     return decorate
-
-#@retry(wait=wait_fixed(0.1), stop=stop_after_delay(60))
-def _ping(url):
-    """checks whether database is responsive"""
-    try:
-        engine = sa.create_engine(str(url))
-        conn = engine.connect()
-        conn.close()
-    finally:
-        engine.dispose()
 
 
 
@@ -110,7 +100,7 @@ def main():
 @click.option('--password', '-p')
 @click.option('--host')
 @click.option('--port', type=int)
-@click.option('--database')
+@click.option('--database', '-d')
 def discover(**cli_inputs):
     """ Discovers databases and stores configs in ~/.simcore_postgres_database.json """
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
@@ -158,7 +148,7 @@ def discover(**cli_inputs):
 
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
-            _ping(url)
+            raise_if_not_responsive(url)
 
             with open(discovered_cache, 'w') as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
