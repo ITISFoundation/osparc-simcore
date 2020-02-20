@@ -11,6 +11,11 @@ from starlette.testclient import TestClient
 from simcore_service_catalog.main import api_version, app
 
 
+
+
+
+
+
 @pytest.fixture
 def client(environ_context, postgres_service):
     # TODO: create new web-app everyt
@@ -23,6 +28,21 @@ def test_read_healthcheck(client):
     assert response.status_code == 200
     assert "api_version" in response.json()
     assert response.json()["api_version"] == api_version
+
+
+def test_list_dags(client):
+    response = client.get("/v0/dags")
+    assert response.status_code == 200
+    assert response.json() == []
+
+    # inject three dagin
+    response = client.get("/v0/dags")
+    assert response.status_code == 200
+    # TODO: assert i can list them as dagouts
+
+    # TODO: assert dagout have identifiers now
+
+
 
 
 def test_standard_operations_on_resource(client, fake_data_dag_in):

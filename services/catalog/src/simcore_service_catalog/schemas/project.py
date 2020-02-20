@@ -4,7 +4,6 @@
 # TODO: why pylint error in pydantic???
 # pylint: disable=no-name-in-module
 
-
 import sys
 from enum import Enum
 from pathlib import Path
@@ -12,10 +11,10 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field
 
+current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
+
 KEY_RE = r"^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$"
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
-
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 class Connection(BaseModel):
@@ -79,5 +78,8 @@ class Project(BaseModel):
     tags: Optional[List[int]] = []
 
 
-# with open( current_dir / "project.json", 'wt') as fh:
-#    print(Project.schema_json(indent=2), file=fh)
+
+if __name__ == "__main__":
+
+    with open( current_file.with_suffix(".json"), 'wt') as fh:
+        print(Project.schema_json(indent=2), file=fh)
