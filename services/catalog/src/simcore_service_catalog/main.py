@@ -57,7 +57,7 @@ async def start_db():
     for attempt in Retrying(**retry_policy):
         with attempt:
             engine = await setup_engine()
-            assert engine # nsec
+            assert engine  # nosec
 
             if is_testing_enabled:
                 log.info("Creating db tables (testing mode)")

@@ -62,9 +62,10 @@ down: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
 
 
-.PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) --directory ${REPO_BASE_DIR} target=${APP_NAME} $@
+.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
+	# building ${APP_NAME} ...
+	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
 .PHONY: autoformat

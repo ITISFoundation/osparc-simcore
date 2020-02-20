@@ -35,7 +35,7 @@ async def teardown_engine() -> None:
 
 
 async def create_tables(conn: SAConnection):
-    await conn.execute(f'DROP TABLE IF EXISTS {DAG.__tablename__}')
+    await conn.execute(f"DROP TABLE IF EXISTS {DAG.__tablename__}")
     await conn.execute(CreateTable(dags))
 
 

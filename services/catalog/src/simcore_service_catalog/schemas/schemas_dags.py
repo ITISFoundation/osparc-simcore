@@ -7,17 +7,6 @@ from pydantic import BaseModel, EmailStr, Field, Json
 from . import project
 from .project import KEY_RE, VERSION_RE
 
-#   const outputNode = this.getOutputNode();
-#   const nodeKey = "simcore/services/frontend/nodes-group/macros/" + outputNode.getNodeId();
-#   const version = "1.0.0";
-#   const nodesGroupService = osparc.utils.Services.getNodesGroup();
-#   nodesGroupService["key"] = nodeKey;
-#   nodesGroupService["version"] = version;
-#   nodesGroupService["name"] = this.__groupName.getValue();
-#   nodesGroupService["description"] = this.__groupDesc.getValue();
-#   nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
-#   nodesGroupService["workbench"] = workbench;
-
 
 class DAGBase(BaseModel):
     key: str = Field(
