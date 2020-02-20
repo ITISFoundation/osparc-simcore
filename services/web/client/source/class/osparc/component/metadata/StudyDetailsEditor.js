@@ -200,7 +200,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         editView.add(this.__tagsSection());
       }
-      
+
       buttons.add(modeButton);
       buttons.add(cancelButton);
       editView.add(buttons);
