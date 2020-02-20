@@ -145,6 +145,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.start",
           "study.node.data.push",
           "study.node.data.delete",
+          "study.node.grouping",
           "study.edge.create",
           "study.edge.delete",
           "study.tag"

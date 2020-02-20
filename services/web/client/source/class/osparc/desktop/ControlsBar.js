@@ -90,7 +90,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const ungroupButton = this.__ungroupButton = this.__createUngroupButton();
       groupCtrls.add(groupButton);
       groupCtrls.add(ungroupButton);
-      this.add(groupCtrls);
+      if (osparc.data.Permissions.getInstance().canDo("study.node.grouping")) {
+        this.add(groupCtrls);
+      }
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
