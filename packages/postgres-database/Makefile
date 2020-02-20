@@ -45,6 +45,20 @@ info: ## displays
 	@cat setup.py | grep version=
 
 
+.PHONY: setup-commit
+setup-commit: install-dev ## sets up a database to create a new commit into migration history
+	# creating empty pg server
+	docker-compose -f tests/docker-compose.yml up -d
+	# discovering
+	sc-pg --help
+	sc-pg discover -u test -p test -d test
+	# upgrade
+	sc-pg upgrade
+	# some info
+	sc-pg info
+	@echo "To add new commit, sc-pg review -m "Some message" "
+
+
 .PHONY: clean
 clean: ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
