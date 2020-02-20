@@ -191,10 +191,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __initResources: function() {
-      osparc.data.Resources.get("tags")
-        .then(() => {
-          this.__userReady = true;
-        });
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        osparc.data.Resources.get("tags")
+          .catch(console.error)
+          .finally(() => this.__userReady = true);
+      } else {
+        this.__userReady = true;
+      }
       this.__getServicesPreload();
     },
 

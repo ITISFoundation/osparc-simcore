@@ -138,6 +138,7 @@ qx.Class.define("osparc.data.Permissions", {
           "preferences.user.update",
           "preferences.token.create",
           "preferences.token.delete",
+          "preferences.tag",
           "study.node.create",
           "study.node.delete",
           "study.node.rename",
@@ -145,7 +146,8 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.data.push",
           "study.node.data.delete",
           "study.edge.create",
-          "study.edge.delete"
+          "study.edge.delete",
+          "study.tag"
         ],
         "tester": [
           "services.all.read",

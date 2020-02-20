@@ -258,7 +258,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
           const study = osparc.store.Store.getInstance().getCurrentStudy();
-          if (nodeId === study.getUuid()) {
+          if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
             const params = {
               name: newLabel
             };
@@ -266,7 +266,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               .then(data => {
                 selectedItem.setLabel(data.name);
               });
-          } else {
+          } else if (osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
             selectedItem.setLabel(newLabel);
             const node = study.getWorkbench().getNode(nodeId);
             if (node) {

@@ -54,10 +54,12 @@ ROLES_PERMISSIONS = {
                                  # "study.edge.delete"
           "project.node.create",
           "project.node.delete",
+          "project.tag.*",       # "study.tag"
           "user.profile.update", # "preferences.user.update",
                                  # "preferences.role.update"
           "user.tokens.*",       # "preferences.token.create",
                                  # "preferences.token.delete"
+          "tag.crud.*"           # "preferences.tag"
 
         # NOTE: All services* are not necessary since it only requires login
         # and there is no distinction among logged in users.
