@@ -11,13 +11,6 @@ from simcore_service_catalog.orm import DAG
 from simcore_service_catalog.schemas import schemas_dags
 
 
-class User(BaseModel):
-    id: int
-    name = "Jane"
-
-
-class UserDetailed(User):
-    surname = "Doe"
 
 
 # from typing import Optional, TypeVar, Generic
@@ -40,7 +33,6 @@ def test_dev():
     dag_in = schemas_dags.DAGIn(
         key="simcore/services/frontend/nodes-group/macros/", version="1.0.0", name="foo"
     )
-
     assert "key" in dag_in.__fields_set__
     assert "version" in dag_in.__fields_set__
     assert "description" not in dag_in.__fields_set__
@@ -54,7 +46,20 @@ def test_dev():
     print(dag_in.dict(exclude_none=True))
 
 
-def test_db_to_api(fake_data_dag_in):
+def test_api_in_2_orm(fake_data_dag_in):
+    # dag in to db
+    dag_in = schemas_dags.DAGIn(**fake_data_dag_in)
+
+    # TODO: create DAG.from_api( :DAGIn)
+    # SEE crud_dags.create_dag
+    dag_orm = DAG(
+        id = 1,
+        workbench=json.dumps(fake_data_dag_in["workbench"],
+        **dag_in.dict(exclude={'workbench'}),)
+    )
+
+
+def test_orm_2_api_out(fake_data_dag_in):
     dag_orm = DAG(
         id=1,
         key="simcore/services/comp/foo",
@@ -66,7 +71,7 @@ def test_db_to_api(fake_data_dag_in):
     )
 
     dag_db = schemas_dags.DAGAtDB.from_orm(dag_orm)
-
     assert type(dag_db.workbench) == dict
 
     dag_out = schemas_dags.DAGOut(**dag_db.dict())
+    assert dag_out['id'] == 1
