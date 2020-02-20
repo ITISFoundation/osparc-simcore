@@ -583,10 +583,6 @@ jobs:
       with:
         name: e2e_screenshots
         path: tests/e2e/screenshots
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ env.CODECOV_TOKEN }} #required
-        flags: e2etests #optional
     - name: cleanup
       if: always()
       run: ./ci/github/system-testing/swarm-deploy clean_up
@@ -606,9 +602,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/download-artifact@v1
-      with:
-        name: unit_api_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_catalog_coverage

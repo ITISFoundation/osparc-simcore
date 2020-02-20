@@ -627,9 +627,6 @@ jobs:
     - uses: actions/checkout@v1
     - uses: actions/download-artifact@v1
       with:
-        name: unit_api_coverage
-    - uses: actions/download-artifact@v1
-      with:
         name: unit_catalog_coverage
     - uses: actions/download-artifact@v1
       with:

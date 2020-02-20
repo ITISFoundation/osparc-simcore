@@ -428,9 +428,6 @@ clean-images: ## removes all created images
 clean-all: clean clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
-clean-all: clean clean-images # Deep clean including .venv and produced images
-	-rm -rf .venv
-
 .PHONY: postgres-upgrade
 postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE) -C packages/postgres-database/docker build
