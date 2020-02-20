@@ -305,7 +305,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const studyTitle = new osparc.ui.form.EditLabel().set({
         visibility: "excluded",
         labelFont: "title-16",
-        inputFont: "text-16"
+        inputFont: "text-16",
+        editable: osparc.data.Permissions.getInstance().canDo("study.update")
       });
       studyTitle.addListener("editValue", evt => {
         if (evt.getData() !== this.__studyTitle.getValue()) {
