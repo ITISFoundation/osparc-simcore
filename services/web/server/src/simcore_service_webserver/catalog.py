@@ -18,15 +18,15 @@ from .login.decorators import login_required
 logger = logging.getLogger(__name__)
 
 
-#TODO: from servicelib.rest_responses import wrap_envelope
-#TODO: from .security_api import check_permission
+# TODO: from servicelib.rest_responses import wrap_envelope
+# TODO: from .security_api import check_permission
 
 
-async def is_service_responsive(app:web.Application):
+async def is_service_responsive(app: web.Application):
     """ Returns true if catalog is ready """
-    origin: URL = app.get(f'{__name__}.catalog_origin')
+    origin: URL = app.get(f"{__name__}.catalog_origin")
 
-    if not origin: # service was not enabled!
+    if not origin:  # service was not enabled!
         return False
 
     client = get_client_session(app)
@@ -41,10 +41,11 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
 
         E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
     """
-    assert not rel_url.is_absolute() # nosec
-    new_path = rel_url.path.replace(f"/{api_version_prefix}/catalog", f"/{version_prefix}")
+    assert not rel_url.is_absolute()  # nosec
+    new_path = rel_url.path.replace(
+        f"/{api_version_prefix}/catalog", f"/{version_prefix}"
+    )
     return origin.with_path(new_path).with_query(rel_url.query)
-
 
 
 @login_required
@@ -61,8 +62,8 @@ async def _reverse_proxy_handler(request: web.Request):
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
-        request.app[f'{__name__}.catalog_origin'],
-        request.app[f'{__name__}.catalog_version_prefix']
+        request.app[f"{__name__}.catalog_origin"],
+        request.app[f"{__name__}.catalog_version_prefix"],
     )
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
@@ -75,11 +76,8 @@ async def _reverse_proxy_handler(request: web.Request):
     session = get_client_session(request.app)
 
     async with session.request(
-            request.method,
-            backend_url,
-            headers=request.headers,
-            data=raw
-        ) as resp:
+        request.method, backend_url, headers=request.headers, data=raw
+    ) as resp:
 
         is_error = resp.status >= 400
         # catalog backend sometimes sends error in plan=in text
@@ -98,26 +96,33 @@ async def _reverse_proxy_handler(request: web.Request):
         return web.json_response(data, status=resp.status)
 
 
-
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=['simcore_service_webserver.rest'],
-    logger=logger)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.rest"],
+    logger=logger,
+)
 def setup_catalog(app: web.Application, *, disable_auth=False):
 
     # resolve url
     cfg = get_config(app).copy()
-    app[f'{__name__}.catalog_origin'] = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
-    app[f'{__name__}.catalog_version_prefix'] = cfg['version']
+    app[f"{__name__}.catalog_origin"] = URL.build(
+        scheme="http", host=cfg["host"], port=cfg["port"]
+    )
+    app[f"{__name__}.catalog_version_prefix"] = cfg["version"]
 
-    specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
+    specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
     # bind routes with handlers
-    handler = _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
-    routes = [ web.route(method.upper(), path, handler, name=operation_id)
+    handler = (
+        _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
+    )
+    routes = [
+        web.route(method.upper(), path, handler, name=operation_id)
         for method, path, operation_id, tags in iter_path_operations(specs)
-            if 'catalog' in tags
+        if "catalog" in tags
     ]
-    assert routes, "Got no paths tagged as catalog" # nosec
+    assert routes, "Got no paths tagged as catalog"  # nosec
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)
