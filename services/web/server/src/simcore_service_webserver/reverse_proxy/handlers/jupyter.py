@@ -7,7 +7,7 @@ import logging
 import pprint
 
 import aiohttp
-from aiohttp import web 
+from aiohttp import web
 from .aiohttp_client_extension import client_request
 from yarl import URL
 
@@ -58,32 +58,33 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             try:
                 req.app[APP_SOCKETS_KEY].append(ws_server)
 
-                client_session = aiohttp.ClientSession(cookies=req.cookies)
-                async with client_session.ws_connect(target_url) as ws_client:
-                    logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
+                async with aiohttp.ClientSession(cookies=req.cookies) as session:
+                    # websocket connection with backend
+                    async with session.ws_connect(target_url) as ws_client:
+                        logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
-                    async def ws_forward(ws_from, ws_to):
-                        async for msg in ws_from:
-                            mt = msg.type
-                            md = msg.data
-                            if mt == aiohttp.WSMsgType.TEXT:
-                                await ws_to.send_str(md)
-                            elif mt == aiohttp.WSMsgType.BINARY:
-                                await ws_to.send_bytes(md)
-                            elif mt == aiohttp.WSMsgType.PING:
-                                await ws_to.ping()
-                            elif mt == aiohttp.WSMsgType.PONG:
-                                await ws_to.pong()
-                            elif ws_to.closed:
-                                await ws_to.close(code=ws_to.close_code, message=msg.extra)
-                            else:
-                                raise ValueError(
-                                    'unexpected message type: %s' % pprint.pformat(msg))
+                        async def ws_forward(ws_from, ws_to):
+                            async for msg in ws_from:
+                                mt = msg.type
+                                md = msg.data
+                                if mt == aiohttp.WSMsgType.TEXT:
+                                    await ws_to.send_str(md)
+                                elif mt == aiohttp.WSMsgType.BINARY:
+                                    await ws_to.send_bytes(md)
+                                elif mt == aiohttp.WSMsgType.PING:
+                                    await ws_to.ping()
+                                elif mt == aiohttp.WSMsgType.PONG:
+                                    await ws_to.pong()
+                                elif ws_to.closed:
+                                    await ws_to.close(code=ws_to.close_code, message=msg.extra)
+                                else:
+                                    raise ValueError(
+                                        'unexpected message type: %s' % pprint.pformat(msg))
 
-                    await asyncio.wait([ws_forward(ws_server, ws_client),
-                                        ws_forward(ws_client, ws_server)],
-                                        return_when=asyncio.FIRST_COMPLETED)
-                    return ws_server
+                        await asyncio.wait([ws_forward(ws_server, ws_client),
+                                            ws_forward(ws_client, ws_server)],
+                                            return_when=asyncio.FIRST_COMPLETED)
+                        return ws_server
             finally:
                 req.app[APP_SOCKETS_KEY].remove(ws_server)
     else:
@@ -94,11 +95,11 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             allow_redirects=False,
             data=await req.read()
         ) as res:
-            body = await res.read()
+            data = await res.read()
             response = web.Response(
                 headers=res.headers.copy(),
                 status=res.status,
-                body=body
+                body=data
             )
         # TODO: PC add chunks load. Mattwards takes very long to load
         # TODO: PC unique session or redo context management??
