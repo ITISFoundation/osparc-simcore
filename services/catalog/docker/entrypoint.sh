@@ -51,4 +51,4 @@ then
 fi
 
 echo "$INFO" "Starting boot ..."
-su-exec scu "$@"
+exec su-exec scu "$@"
