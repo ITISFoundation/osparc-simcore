@@ -626,7 +626,7 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: integration_simcoresdk_coverage
-    - name: Put all artefacts together
+    - name: put all artefacts together
       run: |
         mkdir all_coverages
         cp unit_catalog_coverage/*.json \
@@ -639,11 +639,11 @@ jobs:
           integration_simcoresdk_coverage/*.json \
           all_coverages/
         ls -al all_coverages
-    - name: Install codeclimate test reporter
+    - name: install codeclimate test reporter
       run: |
         curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
         chmod +x ./cc-test-reporter
         ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 8
-    - name: Upload coverages
+    - name: upload coverages
       run: |
         ./cc-test-reporter upload-coverage
