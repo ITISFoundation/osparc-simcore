@@ -586,7 +586,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       socket.removeSlot(slotName);
       socket.on(slotName, function(jsonString) {
         const data = JSON.parse(jsonString);
-        if (data.hasOwnProperty("project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+        if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
           // Filtering out logs from other studies
           return;
         }
