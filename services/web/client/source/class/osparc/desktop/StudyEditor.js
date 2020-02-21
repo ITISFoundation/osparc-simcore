@@ -160,6 +160,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
       nodesTree.addListener("exportNode", e => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
+          return;
+        }
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {

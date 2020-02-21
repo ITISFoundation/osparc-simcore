@@ -96,12 +96,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       toolbar.addSpacer();
 
-      const exportButton = new qx.ui.toolbar.Button(this.tr("Export"));
-      exportButton.addListener("execute", () => {
-        this.__exportGroup();
-      }, this);
-      osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
-      toolbar.add(exportButton);
+      if (osparc.data.Permissions.getInstance().canDo("study.node.export")) {
+        const exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/share/"+iconSize);
+        exportButton.addListener("execute", () => {
+          this.__exportGroup();
+        }, this);
+        osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
+        toolbar.add(exportButton);
+      }
 
       const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
