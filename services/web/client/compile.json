@@ -28,7 +28,8 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
-      ]
+      ],
+      "bootPath": "source/boot"
     },
     {
       "class": "qxl.apiviewer.Application",
