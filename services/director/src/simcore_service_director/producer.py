@@ -137,7 +137,14 @@ async def _create_docker_service_params(app: web.Application,
             "uuid": node_uuid,
             "study_id": project_id,
             "user_id": user_id,
-            "type": "main" if main_service else "dependency"
+            "type": "main" if main_service else "dependency",
+            "io.simcore.zone": "internal_simcore_stack",
+            "traefik.enable": "true",
+            "traefik.docker.network": "simcore_default",
+            f"traefik.http.services.{node_uuid}.loadbalancer.server.port": 8080,
+            f"traefik.http.routers.{node_uuid}.rule": f"PathPrefix(`/x/{node_uuid}`)",
+            f"traefik.http.routers.{node_uuid}.entrypoints": "http",
+            f"traefik.http.routers.{node_uuid}.middlewares": "gzip@docker, sslheader@docker",
         },
         "networks": [internal_network_id] if internal_network_id else []
     }
@@ -165,7 +172,7 @@ async def _create_docker_service_params(app: web.Application,
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
-            docker_params["labels"]["port"] = str(param["value"])
+            docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{node_uuid}.loadbalancer.server.port"] = str(param["value"])
             if config.DEBUG_MODE:
                 # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
                 docker_params["endpoint_spec"]["Ports"] = [
@@ -177,7 +184,7 @@ async def _create_docker_service_params(app: web.Application,
         elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
             if "Ports" in param["value"]:
                 if isinstance(param["value"]["Ports"], list) and "TargetPort" in param["value"]["Ports"][0]:
-                    docker_params["labels"]["port"] = str(param["value"]["Ports"][0]["TargetPort"])
+                    docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{node_uuid}.loadbalancer.server.port"] = str(param["value"]["Ports"][0]["TargetPort"])
             if config.DEBUG_MODE:
                 docker_params["endpoint_spec"] = param["value"]
 
