@@ -45,8 +45,39 @@ info: ## displays
 	@cat setup.py | grep version=
 
 
+.PHONY: setup-commit
+setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
+	# discovering
+	sc-pg --help
+	sc-pg discover -u test -p test -d test
+	# upgrade
+	sc-pg upgrade
+	# some info
+	sc-pg info
+	@echo "To add new commit, sc-pg review -m "Some message" "
+
+
+_docker_compose_config := tests/docker-compose.yml
+
+.PHONY: up-pg down-pg
+
+up-pg: ## starts pg server
+	docker-compose -f $(_docker_compose_config) up -d
+
+down-pg: ## stops pg server
+	docker-compose -f $(_docker_compose_config) down
+
+
+.PHONY: autoformat
+autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
+	# auto formatting with black
+	@python3 -m black --verbose \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		$(CURDIR)
+
+
 .PHONY: clean
-clean: ## cleans all unversioned files in project and temp files create by this makefile
+clean: down ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean -ndxf
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]

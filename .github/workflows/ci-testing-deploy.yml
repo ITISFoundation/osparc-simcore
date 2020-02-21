@@ -652,7 +652,7 @@ jobs:
     - name: put all artefacts together
       run: |
         mkdir all_coverages
-        cp unit_catalog_coverage/*.json\
+        cp unit_catalog_coverage/*.json \
           unit_director_coverage/*.json \
           unit_servicelib_coverage/*.json \
           unit_simcoresdk_coverage/*.json \
@@ -666,7 +666,7 @@ jobs:
       run: |
         curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
         chmod +x ./cc-test-reporter
-        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 7
+        ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json -p 8
     - name: upload coverages
       run: |
         ./cc-test-reporter upload-coverage

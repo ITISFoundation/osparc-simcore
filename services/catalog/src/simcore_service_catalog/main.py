@@ -10,7 +10,7 @@ from .__version__ import api_version, api_version_prefix
 from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import dags, diagnostics
-from .remote_debug import setup_remote_debugging
+from .utils.remote_debug import setup_remote_debugging
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

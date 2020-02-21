@@ -93,8 +93,7 @@ RUN mkdir -p services/catalog &&\
 RUN apk del --no-cache\
       alpine-sdk \
       python3-dev \
-      musl-dev \
-      postgresql-dev
+      musl-dev
 
 HEALTHCHECK --interval=30s \
             --timeout=20s \

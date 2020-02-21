@@ -21,18 +21,15 @@ def setup_remote_debugging(force_enabled=False):
             # SEE https://github.com/microsoft/ptvsd#enabling-debugging
             #
             import ptvsd
-
-            ptvsd.enable_attach(
-                address=("0.0.0.0", REMOTE_DEBUG_PORT), redirect_output=True
-            )  # nosec
+            ptvsd.enable_attach(address=('0.0.0.0', REMOTE_DEBUG_PORT), redirect_output=True) # nosec
         except ImportError:
-            raise ValueError(
-                "Cannot enable remote debugging. Please install ptvsd first"
-            )
+            raise ValueError("Cannot enable remote debugging. Please install ptvsd first")
 
         log.info("Remote debugging enabled: listening port %s", REMOTE_DEBUG_PORT)
     else:
         log.debug("Booting without remote debugging since SC_BOOT_MODE=%s", boot_mode)
 
 
-__all__ = ["setup_remote_debugging"]
+__all__ = [
+    'setup_remote_debugging'
+]

@@ -50,15 +50,24 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
-.PHONY: run-devel down
-run-devel: down ## runs app with pg fixture for development
-	# starting pg database ...
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
-	# starting service
+.PHONY: run-devel down-pg up-pg
+run-devel run-prod: up-pg ## runs app with pg service
+	# starting service ...
+ifeq ($(subst run-,,$@),devel)
+	# development mode (with reload upon change)
 	uvicorn simcore_service_catalog.main:app --reload
+else
+	# production mode
+	simcore-service-catalog
+endif
 	# stop
 
-down: ## stops pg fixture
+
+up-pg: down-pg
+	# starting pg database ...
+	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
+
+down-pg: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
 
 
@@ -75,7 +84,7 @@ autoformat: ## runs black python formatter on this service's code [https://black
 
 
 .PHONY: openapi-specs
-openapi-specs: ## TODO: implementing a way to serialize openapi
+openapi-specs: install-dev ## TODO: implementing a way to serialize openapi
 	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
 
 
@@ -84,11 +93,11 @@ define _bumpversion
 	@bump2version --verbose --list $(subst version-,,$@)
 endef
 
-version-patch: openapi-specs ## commits version with bug fixes not affecting the cookiecuter config
+version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)
-version-minor: openapi-specs ## commits version with backwards-compatible API addition or changes (i.e. can replay)
+version-minor: ## commits version with backwards-compatible API addition or changes (i.e. can replay)
 	$(_bumpversion)
-version-major: openapi-specs ## commits version with backwards-INcompatible addition or changes
+version-major: ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
 
 
