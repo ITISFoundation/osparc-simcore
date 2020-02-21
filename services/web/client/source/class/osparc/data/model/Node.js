@@ -368,7 +368,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     populateInputOutputData: function(nodeData) {
       this.setInputData(nodeData.inputs);
-      this.setInputDataAcess(nodeData.inputAccess);
+      this.setInputDataAccess(nodeData.inputAccess);
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -598,7 +598,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setInputDataAcess: function(inputAccess) {
+    setInputDataAccess: function(inputAccess) {
       if (inputAccess) {
         this.setInputAccess(inputAccess);
         this.getPropsWidget().setAccessLevel(inputAccess);
