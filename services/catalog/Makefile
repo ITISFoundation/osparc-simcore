@@ -24,7 +24,6 @@ devenv: ## build development environment (using main services/docker-compose-bui
 requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE) --directory requirements all
 
-# TODO: REQS = $(shell find  requirements -type f -name '*.txt')
 
 .check-venv-active:
 	# checking whether virtual environment was activated
