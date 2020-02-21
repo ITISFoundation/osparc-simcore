@@ -79,6 +79,14 @@ services:
         constraints:
           - node.platform.os == linux
           - node.role == manager
+      labels:
+        - io.simcore.zone=internal_simcore_stack
+        - traefik.enable=true
+        - traefik.docker.network=simcore_default
+        - traefik.http.services.webserver.loadbalancer.server.port=8080
+        - traefik.http.routers.webserver.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.webserver.entrypoints=http
+        - traefik.http.routers.webserver.middlewares=gzip@docker, sslheader@docker
     networks:
       - default
       - interactive_services_subnet
@@ -90,7 +98,7 @@ services:
       mode: replicated
       replicas: 4
       endpoint_mode: dnsrr
-      replicas: 2
+      replicas: 10
       resources:
         reservations:
           cpus: "0.1"
@@ -208,6 +216,56 @@ services:
     init: true
     networks:
       - default
+
+  traefik:
+    image: traefik:v2.1
+    init: true
+    command:
+          - '--api=true'
+          - '--api.dashboard=true'
+          - '--log.level=INFO'
+          - '--accesslog=false'
+          - '--metrics.prometheus=true'
+          - '--metrics.prometheus.addEntryPointsLabels=true'
+          - '--metrics.prometheus.addServicesLabels=true'
+          - '--entryPoints.metrics.address=:8082'
+          - '--metrics.prometheus.entryPoint=metrics'
+          - '--entryPoints.http.address=:80'
+          - '--entryPoints.traefik_dashboard.address=:8080'
+          - '--providers.docker.endpoint=unix:///var/run/docker.sock'
+          - '--providers.docker.swarmMode=true'
+          - '--providers.docker.exposedByDefault=false'
+          - '--providers.docker.constraints=Label(`io.simcore.zone`, `internal_simcore_stack`)'
+          - '--tracing=true'
+          - '--tracing.jaeger=true'
+          - '--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling'
+          - '--tracing.jaeger.localAgentHostPort=jaeger:6831'
+
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - io.simcore.zone=internal_simcore_stack
+        - traefik.enable=true
+        - traefik.docker.network=simcore_default
+        # gzip compression
+        - traefik.http.middlewares.gzip.compress=true
+        # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
+        - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+        # traefik UI
+        - traefik.http.routers.api.service=api@internal
+        - traefik.http.routers.api.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        - traefik.http.routers.api.entrypoints=traefik_dashboard
+        - traefik.http.routers.api.middlewares=gzip@docker
+        - traefik.http.services.api.loadbalancer.server.port=8080
+    networks:
+      - default
+      - interactive_services_subnet
 
 volumes:
   input: {}
