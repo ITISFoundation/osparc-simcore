@@ -204,7 +204,7 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
       if (data.tags && data.tags.length) {
         const category = this.getCategory() || "";
         const type = this.getType() || "";
-        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }

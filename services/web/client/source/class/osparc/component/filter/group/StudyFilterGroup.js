@@ -22,7 +22,9 @@ qx.Class.define("osparc.component.filter.group.StudyFilterGroup", {
 
     this.__textFilter = new osparc.component.filter.TextFilter("text", groupId);
     osparc.utils.Utils.setIdToWidget(this.__textFilter, "studyFiltersTextFld");
-    this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", groupId);
+    this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", groupId).set({
+      visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
+    });
     this._add(this.__textFilter);
     this._add(this.__tagsFilter);
   },
