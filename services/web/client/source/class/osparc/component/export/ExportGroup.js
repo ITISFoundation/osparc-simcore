@@ -149,9 +149,18 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
       nodesGroupService["workbench"] = outputWorkbench.serializeWorkbench();
 
+      // Use editorValues
+      const innerNodes = this.getOutputWorkbench().getNodes(true);
+      const nodes = Object.values(innerNodes);
+      for (const node of nodes) {
+        const nodeEntry = nodesGroupService["workbench"][node.getNodeId()];
+        for (let [portId, portValue] of Object.entries(node.getInputEditorValues())) {
+          nodeEntry.inputs[portId] = portValue;
+        }
+      }
+
       osparc.store.Store.getInstance().addGroupToCatalog(nodesGroupService)
         .then(data => {
-          console.log("group id", data);
           const text = this.tr("Group added to the Service catalog");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
           this.fireDataEvent("finished");
