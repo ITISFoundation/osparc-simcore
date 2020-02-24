@@ -98,6 +98,27 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       }
     },
 
+    getValues: function() {
+      let data = this._form.getData();
+      for (const portId in data) {
+        let ctrl = this._form.getControl(portId);
+        if (ctrl && ctrl.link) {
+          data[portId] = ctrl.link;
+        }
+        // FIXME: "null" should be a valid input
+        if (data[portId] === "null") {
+          data[portId] = null;
+        }
+      }
+      let filteredData = {};
+      for (const key in data) {
+        if (data[key] !== null) {
+          filteredData[key] = data[key];
+        }
+      }
+      return filteredData;
+    },
+
     /**
       * @abstract
       */
