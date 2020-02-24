@@ -15,7 +15,7 @@ HATCH_RATE = 2
 
 up-locust: .check-venv-active
 	# Starting http://localhost:8089/
-	locust --csv-full-history --locustfile=locust_files/published.py
+	locust --csv-full-history --locustfile=locust_files/basic.py
 
 down:
 	pkill locust

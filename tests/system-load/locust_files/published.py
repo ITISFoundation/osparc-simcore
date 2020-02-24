@@ -1,10 +1,12 @@
 import csv
+import random
+import sys
+import time
 from pathlib import Path
 from typing import Dict, List
-import sys
-from locust import HttpLocust, TaskSet, between, task
 from uuid import uuid4
-import random
+
+from locust import HttpLocust, TaskSet, between, task
 from yarl import URL
 
 # pylint: disable=attribute-defined-outside-init
@@ -45,8 +47,9 @@ class UserBehaviour(TaskSet):
     def run_project(self):
         url = get_url(self._prj)
         print(f"Getting {url}")
-        self.client.get(str(url))
-
+        resp = self.client.get(str(url))
+        print(resp)
+        # TODO: shall run project
 
 
 class WebsiteUser(HttpLocust):
