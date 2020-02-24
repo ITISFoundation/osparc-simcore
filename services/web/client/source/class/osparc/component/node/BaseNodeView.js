@@ -144,22 +144,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         inputFont: "text-18",
         editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
-      titlePart.add(title);
-
-      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
-      infoPart.add(infoBtn);
-
-      const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
-      infoPart.add(editAccessLevel);
-
-      const filesBtn = this._filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
-      osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
-      buttonsPart.add(filesBtn);
-
-      infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
-      editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
-
       title.addListener("editValue", evt => {
         if (evt.getData() !== this._title.getValue()) {
           const node = this.getNode();
@@ -170,6 +154,22 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serializeStudy());
         }
       }, this);
+      titlePart.add(title);
+
+      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
+      infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+      infoPart.add(infoBtn);
+
+      if (osparc.data.Permissions.getInstance().canDo("study.node.update")) {
+        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
+        editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
+        infoPart.add(editAccessLevel);
+      }
+
+      const filesBtn = this._filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
+      filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
+      buttonsPart.add(filesBtn);
 
       return toolbar;
     },
