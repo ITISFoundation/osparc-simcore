@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from .utils.remote_debug import setup_remote_debugging
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
-
+pid = os.getpid()
 
 app = FastAPI(
     debug=is_testing_enabled,
@@ -40,7 +41,7 @@ def dump_openapi():
 
 @app.on_event("startup")
 def startup_event():
-    log.info("Application started")
+    log.info("Starting app '%d' [%d]...", id(app), pid)
     setup_remote_debugging()
 
 
@@ -67,10 +68,10 @@ async def start_db():
 
 @app.on_event("shutdown")
 def shutdown_event():
-    log.info("Application shutdown")
+    log.info("Closing app '%d' [%d]...", id(app), pid)
 
 
 @app.on_event("shutdown")
 async def shutdown_db():
-    log.info("Shutting down db")
+    log.info("Closing db")
     await teardown_engine()
