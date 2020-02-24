@@ -5,19 +5,18 @@ ERROR="ERROR: [$(basename "$0")] "
 
 # BOOTING application ---------------------------------------------
 echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
+echo "  User    :$(id "$(whoami)")"
+echo "  Workdir :$(pwd)"
 
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then
-  echo "  User    :$(id "$(whoami)")"
-  echo "  Workdir :$(pwd)"
   echo "  Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  cd services/catalog
+  cd services/catalog || exit
   $SC_PIP install --user -r requirements/dev.txt
-  cd /devel
-
+  cd /devel || exit
 
   #--------------------
   echo "$INFO" "  Python :"
