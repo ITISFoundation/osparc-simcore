@@ -14,13 +14,16 @@ then
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  $SC_PIP install --user --editable services/catalog
+  cd services/catalog
+  $SC_PIP install --user -r requirements/dev.txt
+  cd /devel
+
 
   #--------------------
-  echo "  Python :"
+  echo "$INFO" "  Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  echo "  PIP :"
+  echo "$INFO" "  PIP :"
   $SC_PIP list | sed 's/^/    /'
 fi
 
