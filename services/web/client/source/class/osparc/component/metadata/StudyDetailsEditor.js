@@ -118,11 +118,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
         osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {
-          const btn = e.getTarget();
-          btn.setIcon("@FontAwesome5Solid/circle-notch/12");
-          btn.getChildControl("icon").getContentElement()
-            .addClass("rotate");
-          this.__saveAsTemplate(btn);
+          this.__openSaveAsTemplate();
         }, this);
         buttonsLayout.add(saveAsTemplateButton);
       }
@@ -274,27 +270,33 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
     },
 
-    __saveAsTemplate: function(btn) {
-      const params = {
-        url: {
-          "study_url": this.__model.getUuid()
-        },
-        data: this.__serializeForm()
-      };
-      osparc.data.Resources.fetch("templates", "postToTemplate", params)
-        .then(template => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
+    __openSaveAsTemplate: function() {
+      const window = new qx.ui.window.Window(this.tr("Save as Template")).set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 0,
+        width: 500,
+        height: 400,
+        showMinimize: false,
+        modal: true
+      });
+
+      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
+      window.add(saveAsTemplateView);
+      saveAsTemplateView.addListener("finished", e => {
+        const template = e.getData();
+        if (template) {
           this.fireDataEvent("updatedTemplate", template);
           this.__model.set(template);
           this.setMode("display");
-        })
-        .catch(err => {
-          btn.resetIcon();
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
-        });
+
+          window.close();
+        }
+      }, this);
+
+      window.center();
+      window.open();
     },
 
     __serializeForm: function() {
