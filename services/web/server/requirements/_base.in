@@ -33,3 +33,4 @@ semantic_version
 tenacity
 trafaret
 trafaret_config
+aiodebug

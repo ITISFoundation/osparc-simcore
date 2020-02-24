@@ -5,6 +5,7 @@ import json
 import logging
 from typing import Dict
 
+import aiodebug.log_slow_callbacks
 from aiohttp import web
 from servicelib.application import create_safe_application
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -83,6 +84,10 @@ def run_service(config: dict):
     log.debug("Serving app ... ")
 
     app = create_application(config)
+
+    # NOTE: Every task blocking > 0.5 secs is considered slow and logged as warning
+    aiodebug.log_slow_callbacks.enable(slow_duration=0.5)
+
     web.run_app(app,
                 host=config["main"]["host"],
                 port=config["main"]["port"])
