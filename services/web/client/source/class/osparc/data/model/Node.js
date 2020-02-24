@@ -259,6 +259,13 @@ qx.Class.define("osparc.data.model.Node", {
       return {};
     },
 
+    getInputEditorValues: function() {
+      if (this.isPropertyInitialized("propsWidgetEditor") && this.getPropsWidgetEditor()) {
+        return this.getPropsWidgetEditor().getValues();
+      }
+      return {};
+    },
+
     getInputsDefault: function() {
       return this.__inputsDefault;
     },
