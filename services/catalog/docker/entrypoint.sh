@@ -19,7 +19,7 @@ then
     # NOTE: expects docker run ... -v $(pwd):/devel/services/catalog
     DEVEL_MOUNT=/devel/services/catalog
 
-    stat $DEVEL_MOUNT /dev/null 2>&1 || \
+    stat $DEVEL_MOUNT > /dev/null 2>&1 || \
         (echo "$ERROR" ": You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
 
     USERID=$(stat -c %u $DEVEL_MOUNT)
@@ -39,7 +39,7 @@ then
             addgroup scu $GROUPNAME
         fi
 
-        deluser scu /dev/null 2>&1
+        deluser scu > /dev/null 2>&1
         adduser -u "$USERID" -G $GROUPNAME -D -s /bin/sh scu
     fi
 fi
