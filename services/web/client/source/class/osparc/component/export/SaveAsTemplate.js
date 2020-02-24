@@ -42,6 +42,11 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __formData: null,
 
     __buildLayout: function() {
+      const shareWith = new osparc.component.export.ShareWith();
+      this._add(shareWith, {
+        flex: 1
+      });
+
       const saveAsTemplateBtn = new osparc.ui.form.FetchButton(this.tr("Save as Template")).set({
         allowGrowX: false,
         alignX: "right"
@@ -49,6 +54,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
       saveAsTemplateBtn.addListener("execute", () => {
         this.__saveAsTemplate(saveAsTemplateBtn);
       }, this);
+      shareWith.bind("ready", saveAsTemplateBtn, "enabled");
       this._add(saveAsTemplateBtn);
     },
 
