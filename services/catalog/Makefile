@@ -35,7 +35,8 @@ install-dev install-prod install-ci: requirements .check-venv-active ## install 
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-PHONY: tests-unit tests-integration
+PHONY: tests-unit tests-integration tests
+
 tests: tests-unit tests-integration
 
 tests-unit: ## runs unit tests
