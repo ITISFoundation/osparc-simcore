@@ -17,6 +17,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
+import aiohttp
 
 from .application import run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
@@ -71,6 +72,7 @@ def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
     environ.setdefault("SMTP_USERNAME", "None")
     environ.setdefault("SMTP_PASSWORD", "None")
     environ.setdefault("SMTP_TLS_ENABLED", "0")
+    environ.setdefault("WEBSERVER_LOGLEVEL","DEBUG")
 
     #----------------------------------------------------------
 
@@ -99,12 +101,15 @@ def main(args: Optional[List]=None):
     # logging
     log_level = getattr(logging, config["main"]["log_level"])
     logging.basicConfig(level=log_level)
-
     logging.root.setLevel(log_level)
+
+    aiohttp.log.access_logger.setLevel(log_level)
 
     # mute noisy loggers
     logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+
 
     # run
     run_service(config)

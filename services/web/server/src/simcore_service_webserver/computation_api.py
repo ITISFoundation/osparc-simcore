@@ -18,7 +18,6 @@ from simcore_postgres_database.webserver_models import (comp_pipeline,
 from .director import director_api
 
 log = logging.getLogger(__file__)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
 
@@ -76,7 +75,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:Dict, node_inputs:Dic
         # check for links
         if isinstance(input_data, dict) and all(k in input_data for k in ("nodeUuid", "output")):
             log.debug("decoding link %s", input_data)
-            input_node_uuid = input_data["nodeUuid"]            
+            input_node_uuid = input_data["nodeUuid"]
             input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"], app)
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:

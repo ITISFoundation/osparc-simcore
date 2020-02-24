@@ -5,7 +5,7 @@ main:
   host: 0.0.0.0
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}
-  log_level: DEBUG
+  log_level: ${WEBSERVER_LOGLEVEL}
   testing: True
   studies_access_enabled: True
   monitoring_enabled: True
