@@ -5,10 +5,12 @@ from sqlalchemy import and_
 
 from .db_models import tags
 from .login.decorators import RQT_USERID_KEY, login_required
+from .security_api import check_permission
 
 
 @login_required
 async def list_tags(request: web.Request):
+    await check_permission(request, 'tag.crud.*')
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         columns = [col for col in tags.columns if col.key != 'user_id'] # pylint: disable=not-an-iterable
@@ -22,6 +24,7 @@ async def list_tags(request: web.Request):
 
 @login_required
 async def update_tag(request: web.Request):
+    await check_permission(request, 'tag.crud.*')
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     tag_id = request.match_info.get('tag_id')
     tag_data = await request.json()
@@ -46,6 +49,7 @@ async def update_tag(request: web.Request):
 
 @login_required
 async def create_tag(request: web.Request):
+    await check_permission(request, 'tag.crud.*')
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     tag_data = await request.json()
     async with engine.acquire() as conn:
@@ -70,6 +74,7 @@ async def create_tag(request: web.Request):
 
 @login_required
 async def delete_tag(request: web.Request):
+    await check_permission(request, 'tag.crud.*')
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     tag_id = request.match_info.get('tag_id')
     async with engine.acquire() as conn:

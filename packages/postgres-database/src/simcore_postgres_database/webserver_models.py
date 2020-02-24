@@ -14,13 +14,17 @@ from .models.users import UserRole, UserStatus, users
 from .models.tags import tags, study_tags
 
 __all__ = [
-    "users", "UserRole", "UserStatus",
-    "projects", "ProjectType",
+    "users",
+    "UserRole",
+    "UserStatus",
+    "projects",
+    "ProjectType",
     "user_to_projects",
-    "confirmations", "ConfirmationAction",
+    "confirmations",
+    "ConfirmationAction",
     "tokens",
     "comp_tasks",
     "comp_pipeline",
     "tags",
-    "study_tags"
+    "study_tags",
 ]

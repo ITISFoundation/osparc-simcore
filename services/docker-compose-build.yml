@@ -7,6 +7,22 @@
 #
 version: '3.7'
 services:
+  catalog:
+    image: local/catalog:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/catalog/Dockerfile
+      cache_from:
+        - local/catalog:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/catalog:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+        io.osparc.api-version: "${CATALOG_API_VERSION}"
 
   director:
     image: local/director:${BUILD_TARGET:?build_target_required}

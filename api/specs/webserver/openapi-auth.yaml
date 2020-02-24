@@ -2,6 +2,8 @@ paths:
   /auth/register:
     post:
       operationId: auth_register
+      tags:
+        - authentication
       requestBody:
         description: user registration
         content:
@@ -22,6 +24,8 @@ paths:
   /auth/login:
     post:
       summary: user logs in
+      tags:
+        - authentication
       operationId: auth_login
       requestBody:
         content:
@@ -40,6 +44,8 @@ paths:
 
   /auth/logout:
     post:
+      tags:
+        - authentication
       operationId: auth_logout
       requestBody:
         content:
@@ -59,6 +65,8 @@ paths:
   /auth/reset-password:
     post:
       summary: "a non logged-in user requests a password reset"
+      tags:
+        - authentication
       operationId: auth_reset_password
       requestBody:
         content:
@@ -81,6 +89,8 @@ paths:
 
   /auth/reset-password/{code}:
     post:
+      tags:
+        - authentication
       summary: changes password using a token code without being logged in
       operationId: auth_reset_password_allowed
       parameters:
@@ -114,6 +124,8 @@ paths:
   /auth/change-email:
     post:
       summary: logged in user changes email
+      tags:
+        - authentication
       operationId: auth_change_email
       requestBody:
         content:
@@ -145,6 +157,8 @@ paths:
   /auth/change-password:
     post:
       summary: logged in user changes password
+      tags:
+        - authentication
       operationId: auth_change_password
       requestBody:
         content:
@@ -182,6 +196,8 @@ paths:
   /auth/confirmation/{code}:
     get:
       summary: email link sent to user to confirm an action
+      tags:
+        - authentication
       operationId: auth_confirmation
       parameters:
         - name: code
@@ -197,6 +213,8 @@ paths:
   /auth/check-password/{password}:
     get:
       summary: checks password strenght and provides recommendations to improve it
+      tags:
+        - authentication
       operationId: auth_check_password_strength
       parameters:
         - name: password
@@ -224,4 +242,3 @@ components:
         client_session_id:
           type: string
           example: 5ac57685-c40f-448f-8711-70be1936fd63
-      

@@ -3,6 +3,8 @@
 ROOT_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
+.PHONY: all
+all: install tests
 
 %.txt: %.in
 	# pip compiling $<
