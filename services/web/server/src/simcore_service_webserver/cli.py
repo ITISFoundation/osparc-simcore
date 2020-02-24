@@ -112,10 +112,10 @@ def main(args: Optional[List]=None):
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
-
-    slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.25))
-    # NOTE: Every task blocking > 0.25 secs is considered slow and logged as warning
+    # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
+    slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.01))
     log_slow_callbacks.enable(slow_duration)
+
 
     # run
     run_service(config)
