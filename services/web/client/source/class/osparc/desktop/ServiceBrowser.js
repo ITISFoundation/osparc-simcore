@@ -160,7 +160,6 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("version", "version", null, item, id);
-          ctrl.bindProperty("id", "dagId", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
