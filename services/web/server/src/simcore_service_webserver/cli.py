@@ -17,7 +17,9 @@ import os
 import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
+
 import aiohttp
+from aiodebug import log_slow_callbacks
 
 from .application import run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
@@ -72,7 +74,7 @@ def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
     environ.setdefault("SMTP_USERNAME", "None")
     environ.setdefault("SMTP_PASSWORD", "None")
     environ.setdefault("SMTP_TLS_ENABLED", "0")
-    environ.setdefault("WEBSERVER_LOGLEVEL","DEBUG")
+    environ.setdefault("WEBSERVER_LOGLEVEL","WARNING")
 
     #----------------------------------------------------------
 
@@ -110,6 +112,10 @@ def main(args: Optional[List]=None):
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
+
+    slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.25))
+    # NOTE: Every task blocking > 0.25 secs is considered slow and logged as warning
+    log_slow_callbacks.enable(slow_duration)
 
     # run
     run_service(config)
