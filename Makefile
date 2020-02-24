@@ -26,6 +26,7 @@ SHELL := /bin/bash
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
+	catalog \
 	director \
 	sidecar \
 	storage \
@@ -41,6 +42,7 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
+export CATALOG_API_VERSION  := $(shell cat $(CURDIR)/services/catalog/VERSION)
 export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
 export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
 export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
@@ -109,11 +111,14 @@ endif
 
 # TODO: should download cache if any??
 build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
 	$(_docker_compose_build) --parallel
-
+else
+	$(_docker_compose_build) $(target)
+endif
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -393,7 +398,8 @@ endif
 
 .PHONY: clean clean-images clean-venv clean-all
 
-git_clean_args = -dxf -e .vscode -e .venv
+git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+
 
 .check-clean:
 	@git clean -n $(git_clean_args)

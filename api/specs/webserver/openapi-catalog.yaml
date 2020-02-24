@@ -1,0 +1,67 @@
+paths:
+  /catalog/dags:
+    get:
+      tags:
+        - catalog
+      operationId: list_catalog_dags
+      responses:
+        '200':
+          description: List of catalog dags
+        '422':
+          description: Validation Error
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+        - catalog
+      summary: Creates a new dag in catalog
+      operationId: create_catalog_dag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: The dag was successfully created
+        '422':
+          description: Validation Error
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /catalog/dags/{dag_id}:
+    parameters:
+      - in: path
+        name: dag_id
+        required: true
+        schema:
+          title: Dag Id
+          type: integer
+    put:
+      tags:
+        - catalog
+      summary: Replaces a dag in catalog
+      operationId: replace_catalog_dag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: The dag was replaced in catalog
+        '422':
+          description: Validation Error
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - catalog
+      summary: Deletes an existing dag
+      operationId: delete_catalog_dag
+      responses:
+        '204':
+          description: Successfully deleted
+        '422':
+          description: Validation Error

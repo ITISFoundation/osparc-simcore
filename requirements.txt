@@ -3,6 +3,7 @@
 # $ make devenv
 #
 pylint
-autopep8
+black
 pip-tools
 rope
+bump2version

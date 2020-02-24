@@ -26,6 +26,7 @@ MAX_WAIT_TIME=240
 
 
 docker_compose_service_names = [
+    'catalog',
     'director',
     'sidecar',
     'storage',

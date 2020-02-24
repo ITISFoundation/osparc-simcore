@@ -3,7 +3,8 @@ import sqlalchemy as sa
 from .base import metadata
 
 file_meta_data = sa.Table(
-    "file_meta_data", metadata,
+    "file_meta_data",
+    metadata,
     sa.Column("file_uuid", sa.String, primary_key=True),
     sa.Column("location_id", sa.String),
     sa.Column("location", sa.String),
@@ -22,5 +23,5 @@ file_meta_data = sa.Table(
     sa.Column("created_at", sa.String),
     sa.Column("last_modified", sa.String),
     sa.Column("file_size", sa.Integer)
-#    sa.Column("state", sa.String())
+    #    sa.Column("state", sa.String())
 )

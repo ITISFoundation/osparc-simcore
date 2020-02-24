@@ -14,16 +14,18 @@ TODO: add more strict checks with re
 TODO: add support for versioning.
     - check shema fits version
     - parse/format version in schema
-TODO: add simcore_sdk.config.s3 section!!!
 """
 import logging
+from pathlib import Path
+from typing import Dict
 
 import trafaret as T
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
-from . import (computation_config, db_config, email_config, rest_config,
-               session_config, storage_config, tracing)
+from . import (catalog_config, computation_config, db_config, email_config,
+               rest_config, session_config, storage_config, tracing)
 from .activity import config as activity_config
 from .director import config as director_config
 from .login import config as login_config
@@ -33,6 +35,9 @@ from .resources import resources
 from .socketio import config as socketio_config
 
 log = logging.getLogger(__name__)
+
+CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
+assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE ) # nosec
 
 
 def create_schema() -> T.Dict:
@@ -70,7 +75,8 @@ def create_schema() -> T.Dict:
         addon_section("application_proxy", optional=True): minimal_addon_schema(),
         addon_section("users", optional=True): minimal_addon_schema(),
         addon_section("studies_access", optional=True): minimal_addon_schema(),
-        addon_section("tags", optional=True): minimal_addon_schema()
+        addon_section("tags", optional=True): minimal_addon_schema(),
+        addon_section("catalog", optional=True): catalog_config.schema,
     })
 
     section_names = [k.name for k in schema.keys]
@@ -80,7 +86,9 @@ def create_schema() -> T.Dict:
     return schema
 
 
-CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-app_schema = create_schema()
+def load_default_config(environs=None) -> Dict:
+    filepath: Path = resources.get_path(f'config/{CLI_DEFAULT_CONFIGFILE}')
+    return read_and_validate(filepath, trafaret=app_schema, vars=environs)
 
-assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE ) # nosec
+
+app_schema = create_schema() # TODO: rename as schema

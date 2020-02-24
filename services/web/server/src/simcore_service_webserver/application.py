@@ -6,13 +6,13 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-
 from servicelib.application import create_safe_application
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.monitoring import setup_monitoring
 
 from .activity import setup_activity
 from .application_proxy import setup_app_proxy
+from .catalog import setup_catalog
 from .computation import setup_computation
 from .db import setup_db
 from .director import setup_director
@@ -27,9 +27,9 @@ from .socketio import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
+from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .tags import setup_tags
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ log = logging.getLogger(__name__)
     logger=log)
 def setup_app_monitoring(app: web.Application):
     return setup_monitoring(app, "simcore_service_webserver")
+
 
 def create_application(config: Dict) -> web.Application:
     """
@@ -71,6 +72,7 @@ def create_application(config: Dict) -> web.Application:
     setup_app_proxy(app)
     setup_resource_manager(app)
     setup_tags(app)
+    setup_catalog(app)
 
     return app
 

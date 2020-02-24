@@ -31,18 +31,25 @@ tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/unit
 
-
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
+tests: tests-unit tests-integration
 
-.PHONY: build
-build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
+.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-specs ## docker image build in many flavours
+	# building ${APP_NAME} ...
+	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
+
+
+.PHONY: autoformat
+autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
+	# auto formatting with black
+	@python3 -m black --verbose $(CURDIR)
 
 .PHONY: version-patch version-minor
 version-patch version-minor: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)

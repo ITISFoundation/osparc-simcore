@@ -13,10 +13,10 @@ def read_reqs( reqs_path: Path):
 
 install_requirements = read_reqs( here / "requirements" / "_base.in" )
 test_requirements = read_reqs( here / "requirements" / "_test.txt" ) + [
-    "simcore-postgres-database==0.1.0",
-    "simcore-service-library==0.1.0",
-    "s3wrapper==0.1.0",
-    "simcore-service-storage-sdk==0.1.0"
+    "simcore-postgres-database",
+    "simcore-service-library",
+    "s3wrapper",
+    "simcore-service-storage-sdk"
 ]
 
 setup(

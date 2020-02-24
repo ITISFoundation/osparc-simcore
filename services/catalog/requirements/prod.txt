@@ -1,0 +1,16 @@
+# Shortcut to install 'services/catalog' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs base requirements
+-r _base.txt
+
+# installs this repo's packages
+../../packages/postgres-database/
+
+# installs current package
+.
