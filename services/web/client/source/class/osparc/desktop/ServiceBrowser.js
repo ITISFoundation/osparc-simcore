@@ -172,18 +172,6 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         flex: 1
       });
 
-      /*
-      // Workaround to the list.changeSelection
-      servCtrl.addListener("changeValue", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData().toArray()[0];
-          this.__serviceSelected(selectedService);
-        } else {
-          this.__serviceSelected(null);
-        }
-      }, this);
-      */
-
       return servicesLayout;
     },
 
