@@ -14,8 +14,8 @@ then
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  cd services/catalog || exit
-  $SC_PIP install --user -r requirements/dev.txt
+  cd /devel/services/catalog || exit
+  pip3 --no-cache-dir install --user -r requirements/dev.txt
   cd /devel || exit
 
   #--------------------
@@ -23,7 +23,7 @@ then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   echo "$INFO" "  PIP :"
-  $SC_PIP list | sed 's/^/    /'
+  pip3 --no-cache-dir list | sed 's/^/    /'
 fi
 
 
