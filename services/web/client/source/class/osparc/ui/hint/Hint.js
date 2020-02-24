@@ -220,7 +220,9 @@ qx.Class.define("osparc.ui.hint.Hint", {
     __elementVisibilityHandler: function(e) {
       switch (e.getType()) {
         case "appear":
-          this.show();
+          if (this.isActive()) {
+            this.show();
+          }
           this.__updatePosition();
           break;
         case "disappear":

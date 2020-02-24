@@ -23,12 +23,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function(study) {
     this.base(arguments, "horizontal");
 
-    osparc.store.Store.getInstance().setCurrentStudy(study);
-    study.buildWorkbench();
-    study.openStudy();
-
-    this.setStudy(study);
-
     let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
@@ -44,17 +38,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
 
-    this.__initDefault();
-    this.__connectEvents();
+    if (study) {
+      this.setStudy(study);
+    }
 
-    this.__startAutoSaveTimer();
     this.__attachEventHandlers();
   },
 
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      nullable: false
+      apply: "_applyStudy"
     }
   },
 
@@ -76,6 +70,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __currentNodeId: null,
     __autoSaveTimer: null,
     __lastSavedStudy: null,
+
+    _applyStudy: function(study) {
+      osparc.store.Store.getInstance().setCurrentStudy(study);
+      study.buildWorkbench();
+      study.openStudy();
+      this.__initDefault();
+      this.__connectEvents();
+      this.__startAutoSaveTimer();
+    },
 
     /**
      * Destructor
@@ -122,14 +125,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __connectEvents: function() {
-      const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
-      controlsBar.addListener("showSettings", this.__showSettings, this);
-      controlsBar.addListener("groupSelection", this.__groupSelection, this);
-      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
-      controlsBar.addListener("startPipeline", this.__startPipeline, this);
-      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
-
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
@@ -166,6 +161,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
       nodesTree.addListener("exportNode", e => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
+          return;
+        }
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
@@ -382,7 +380,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __isSelectionEmpty: function(selectedNodeUIs) {
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Empty selection", "ERROR");
         return true;
       }
       return false;
@@ -455,51 +452,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
 
-      const socket = osparc.wrapper.WebSocket.getInstance();
-
-      // callback for incoming logs
-      const slotName = "logger";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const msgs = d["Messages"];
-        this.getLogger().infos(nodeId, msgs);
-      }, this);
-      socket.emit(slotName);
-
-      // callback for incoming progress
-      const slotName2 = "progress";
-      socket.removeSlot(slotName2);
-      socket.on(slotName2, function(data) {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setProgress(progress);
-        }
-      }, this);
-
-      // callback for node updates
-      const slotName3 = "nodeUpdated";
-      socket.removeSlot(slotName3);
-      socket.on(slotName3, function(data) {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const nodeData = d["Data"];
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setOutputData(nodeData.outputs);
-          if (nodeData.progress) {
-            const progress = Number.parseInt(nodeData.progress);
-            node.setProgress(progress);
-          }
-        }
-      }, this);
-
       // post pipeline
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
@@ -542,7 +494,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["projectId"];
+      const pipelineId = resp.data["project_id"];
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -629,6 +581,61 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
+      }, this);
+
+      const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
+      controlsBar.addListener("showSettings", this.__showSettings, this);
+      controlsBar.addListener("groupSelection", this.__groupSelection, this);
+      controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
+      controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
+
+      // Listen to socket
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      // callback for incoming logs
+      const slotName = "logger";
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(jsonString) {
+        const data = JSON.parse(jsonString);
+        if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+          // Filtering out logs from other studies
+          return;
+        }
+        this.getLogger().infos(data["Node"], data["Messages"]);
+      }, this);
+      socket.emit(slotName);
+
+      // callback for incoming progress
+      const slotName2 = "progress";
+      socket.removeSlot(slotName2);
+      socket.on(slotName2, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          node.setProgress(progress);
+        }
+      }, this);
+
+      // callback for node updates
+      const slotName3 = "nodeUpdated";
+      socket.removeSlot(slotName3);
+      socket.on(slotName3, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const nodeData = d["Data"];
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        if (node) {
+          node.setOutputData(nodeData);
+          if (nodeData.progress) {
+            const progress = Number.parseInt(nodeData.progress);
+            node.setProgress(progress);
+          }
+        }
       }, this);
     }
   }

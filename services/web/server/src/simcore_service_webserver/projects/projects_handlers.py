@@ -378,6 +378,7 @@ async def delete_node(request: web.Request) -> web.Response:
 
 @login_required
 async def add_tag(request: web.Request):
+    await check_permission(request, 'project.tag.*')
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
     return await db.add_tag(
@@ -389,6 +390,7 @@ async def add_tag(request: web.Request):
 
 @login_required
 async def remove_tag(request: web.Request):
+    await check_permission(request, 'project.tag.*')
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
     return await db.remove_tag(

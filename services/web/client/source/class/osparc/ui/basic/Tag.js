@@ -30,6 +30,7 @@ qx.Class.define("osparc.ui.basic.Tag", {
         e.stopPropagation();
         qx.event.message.Bus.dispatchByName(osparc.utils.Utils.capitalize(filterGroupId, "tags", "trigger"), this.getValue());
       }, this);
+      // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
       this.addListener("pointerdown", e => e.stopPropagation());
     }
   },
