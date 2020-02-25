@@ -954,7 +954,7 @@ qx.Class.define("osparc.data.model.Node", {
           if (servicePath) {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
             const srvUrl = servicePath + entryPoint;
-            this.__wait_for_service_ready(srvUrl);
+            this.__waitForServiceReady(srvUrl);
           }
           break;
         }
@@ -1019,7 +1019,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       this.__nodeState();
     },
-    __wait_for_service_ready: function(srvUrl) {
+    __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", function(e) {
@@ -1030,7 +1030,7 @@ qx.Class.define("osparc.data.model.Node", {
         const error = e.getTarget().getResponse();
         console.log("service not ready yet, waiting... " + error);
         const interval = 1000;
-        qx.event.Timer.once(() => this.__wait_for_service_ready(srvUrl), this, interval);
+        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       });
       pingRequest.send();
     },
