@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
         this._add(buttonContainer);
       } else {
         // Validation failed
-        this.__add(new qx.ui.basic.Label().set({
+        this._add(new qx.ui.basic.Label().set({
           value: this.tr("There was an error generating the form or one or more schemas failed to validate. Check your Javascript console for more details."),
           font: "title-16",
           textColor: "service-window-hint",
@@ -69,19 +69,14 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
       this.fireEvent("ready");
     },
     __validateSchema: function(schema) {
-      const jsonSchemaUrl = schema.$schema;
-      return fetch(jsonSchemaUrl)
-        .then(response => response.json())
-        .then(jsonSchema => {
-          const ajv = new Ajv();
-          const validate = ajv.compile(jsonSchema);
-          if (validate(schema)) {
-            return schema;
-          } else {
-            console.error(ajv.errors);
-            return null;
-          }
-        });
+      return new Promise((resolve, reject) => {
+        const ajv = new Ajv();
+        ajv.validate(schema.$schema, schema)
+        if (ajv.errors) {
+          reject(ajv.errors);
+        }
+        resolve(schema);
+      });
     },
     /**
      * Function in charge of recursively building the form.
@@ -154,6 +149,7 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
       return obj;
     },
     /**
+     * Generates a non-leaf form item.
      * 
      * @param {String} key Current object's key.
      * @param {Object} schema Current schema.
@@ -161,16 +157,30 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
      * @param {Boolean} isArrayItem Used for styling.
      */
     __getHeader: function(key, schema, depth, isArrayItem) {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      })).set({
         marginBottom: 10
       });
       const labelText = schema.title || (isArrayItem ? "#" + key : key);
-      header.add(new qx.ui.basic.Label(labelText).set({
+      const label = new qx.ui.basic.Label(labelText).set({
         font: depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14",
         allowStretchX: true
-      }), {
-        flex: 1
       });
+      header.add(label, {
+        flex: isArrayItem ? 0 : 1
+      });
+      if (isArrayItem) {
+        const deleteButton = new qx.ui.form.Button(this.tr("Remove")).set({
+          appearance: "link-button"
+        });
+        header.add(deleteButton);
+        deleteButton.addListener("execute", () => {
+          const container = header.getLayoutParent();
+          const parent = container.getLayoutParent();
+          parent.remove(container);
+        }, this);
+      }
       return header;
     },
     /**
