@@ -250,19 +250,19 @@ services:
         constraints:
           - node.role == manager
       labels:
-        - io.simcore.zone=internal_simcore_stack
-        - traefik.enable=true
-        - traefik.docker.network=simcore_default
+        # - io.simcore.zone=internal_simcore_stack
+        # - traefik.enable=true
+        # - traefik.docker.network=simcore_default
         # gzip compression
-        - traefik.http.middlewares.gzip.compress=true
+        # - traefik.http.middlewares.gzip.compress=true
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
-        - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+        # - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         # traefik UI
-        - traefik.http.routers.api_internal.service=api@internal
-        - traefik.http.routers.api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
-        - traefik.http.routers.api_internal.entrypoints=traefik_dashboard
-        - traefik.http.routers.api_internal.middlewares=gzip@docker
-        - traefik.http.services.api_internal.loadbalancer.server.port=8080
+        # - traefik.http.routers.api_internal.service=api@internal
+        # - traefik.http.routers.api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        # - traefik.http.routers.api_internal.entrypoints=traefik_dashboard
+        # - traefik.http.routers.api_internal.middlewares=gzip@docker
+        # - traefik.http.services.api_internal.loadbalancer.server.port=8080
     networks:
       - default
       - interactive_services_subnet
