@@ -149,6 +149,12 @@ async def _create_docker_service_params(app: web.Application,
         },
         "networks": [internal_network_id] if internal_network_id else []
     }
+    if "3d-viewer" in service_name:
+        # HACK: Paraview visualizer needs a strip prefix here, this should be removed once dy-sidecar is in or that
+        # all dynamic services are converted to using traefik as reverse proxy instead of webserver
+        docker_params["labels"][f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"] = f"^/x/{node_uuid}"
+        docker_params["labels"][f"traefik.http.routers.{service_name}.middlewares"] += f", {service_name}_stripprefixregex"
+
     for param in service_parameters_labels:
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
@@ -670,7 +676,7 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         service_details = await get_service_details(app, node_uuid)
         service_host_name = "{}:{}{}".format(service_details["service_host"],
                                             service_details["service_port"] if service_details["service_port"] else "80",
-                                            service_details["service_basepath"])
+                                            service_details["service_basepath"] if not "3d-viewer" in service_details["service_host"] else "")
         log.debug("saving state of service %s...", service_host_name)
         try:
             session = app[APP_CLIENT_SESSION_KEY]
