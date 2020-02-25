@@ -253,7 +253,7 @@ services:
       placement:
         constraints:
           - node.role == manager
-      labels:
+      # labels:
         # - io.simcore.zone=internal_simcore_stack
         # - traefik.enable=true
         # - traefik.docker.network=simcore_default
