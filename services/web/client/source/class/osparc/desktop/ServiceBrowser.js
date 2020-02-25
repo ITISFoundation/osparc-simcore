@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       // button for refetching services
       const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/sync-alt/16",
+        icon: "@FontAwesome5Solid/sync-alt/14",
         allowGrowX: false
       });
       reloadBtn.addListener("execute", function() {
