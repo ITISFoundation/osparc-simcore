@@ -84,13 +84,13 @@ services:
         # gzip compression
         - traefik.http.middlewares.gzip.compress=true
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
-        - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+        - traefik.http.middlewares.simcore_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
         - traefik.docker.network=simcore_default
         - traefik.http.services.webserver.loadbalancer.server.port=8080
         - traefik.http.routers.webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.webserver.entrypoints=http
-        - traefik.http.routers.webserver.middlewares=gzip@docker, sslheader@docker
+        - traefik.http.routers.webserver.middlewares=gzip@docker, simcore_sslheader@docker
     networks:
       - default
       - interactive_services_subnet
