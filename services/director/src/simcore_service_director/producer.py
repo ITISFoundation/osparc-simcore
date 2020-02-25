@@ -149,7 +149,8 @@ async def _create_docker_service_params(app: web.Application,
         "networks": [internal_network_id] if internal_network_id else []
     }
     if "3d-viewer" in service_name:
-        # HACK: Paraview visualizer needs a strip prefix here, this should be removed once dy-sidecar is in or that
+        # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
+        # Paraview visualizer needs a strip prefix here, this should be removed once dy-sidecar is in or that
         # all dynamic services are converted to using traefik as reverse proxy instead of webserver
         docker_params["labels"][f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"] = f"^/x/{node_uuid}"
         docker_params["labels"][f"traefik.http.routers.{service_name}.middlewares"] += f", {service_name}_stripprefixregex"
@@ -673,6 +674,7 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
+        # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
         service_host_name = "{}:{}{}".format(service_details["service_host"],
                                             service_details["service_port"] if service_details["service_port"] else "80",
                                             service_details["service_basepath"] if not "3d-viewer" in service_details["service_host"] else "")
