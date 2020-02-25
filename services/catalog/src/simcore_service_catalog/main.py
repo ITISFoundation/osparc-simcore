@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 from fastapi import FastAPI
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from . import config as cfg
 from .__version__ import api_version, api_version_prefix
@@ -49,22 +49,22 @@ def startup_event():
 async def start_db():
     log.info("Initializing db")
 
-    retry_policy = dict(
+    @retry(
         wait=wait_fixed(5),
         stop=stop_after_attempt(20),
         before_sleep=before_sleep_log(log, logging.WARNING),
         reraise=True,
     )
-    for attempt in Retrying(**retry_policy):
-        with attempt:
-            engine = await setup_engine()
-            assert engine  # nosec
+    async def go():
+        engine = await setup_engine()
+        assert engine  # nosec
 
-            if cfg.init_tables:
-                log.info("Creating db tables (testing mode)")
-                async with engine.acquire() as conn:
-                    await create_tables(conn)
+        if cfg.init_tables:
+            log.info("Creating db tables (testing mode)")
+            async with engine.acquire() as conn:
+                await create_tables(conn)
 
+    await go() # NOTE: non-blocking this way
 
 @app.on_event("shutdown")
 def shutdown_event():
