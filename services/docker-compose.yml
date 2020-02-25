@@ -101,7 +101,7 @@ services:
       mode: replicated
       replicas: 4
       endpoint_mode: dnsrr
-      replicas: 10
+      replicas: 8
       resources:
         reservations:
           cpus: "0.1"
