@@ -28,7 +28,6 @@ qx.Class.define("osparc.component.filter.Organizations", {
    */
   construct: function(groupId) {
     this.base(arguments, this.tr("My Organizations"), "organizations", groupId);
-    this._setLayout(new qx.ui.layout.HBox());
 
     this.__buildMenu();
   },
