@@ -37,7 +37,7 @@ postgres_dsn: str = "postgresql://{user}:{password}@{host}:{port}/{database}".fo
     **postgres_cfg
 )
 postgres_cfg: dict = {**postgres_cfg, "uri": postgres_dsn}
-
+init_tables: bool = cast_to_bool(os.environ.get("POSTGRES_INIT_TABLES", "false"))
 
 # SERVER
 # NOTE: https://www.uvicorn.org/settings/

@@ -7,8 +7,8 @@ import yaml
 from fastapi import FastAPI
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
+from . import config as cfg
 from .__version__ import api_version, api_version_prefix
-from .config import is_testing_enabled
 from .db import create_tables, setup_engine, teardown_engine
 from .endpoints import dags, diagnostics
 from .utils.remote_debug import setup_remote_debugging
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 pid = os.getpid()
 
 app = FastAPI(
-    debug=is_testing_enabled,
+    debug=cfg.is_testing_enabled,
     title="Components Catalog Service",
     # TODO: get here extended description from setup
     description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
@@ -60,7 +60,7 @@ async def start_db():
             engine = await setup_engine()
             assert engine  # nosec
 
-            if is_testing_enabled:
+            if cfg.init_tables:
                 log.info("Creating db tables (testing mode)")
                 async with engine.acquire() as conn:
                     await create_tables(conn)
