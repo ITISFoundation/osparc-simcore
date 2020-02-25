@@ -34,6 +34,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     this._add(this._dropdown);
   },
 
+  statics: {
+    ActiveTagIcon: "@FontAwesome5Solid/check/12"
+  },
+
   members: {
     _dropdown: null,
     __activeTags: null,
@@ -69,7 +73,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         // Save previous icon
         menuButton.prevIcon = menuButton.getIcon();
         // Add tick
-        menuButton.setIcon("@FontAwesome5Solid/check/12");
+        menuButton.setIcon(this.self().ActiveTagIcon);
         // Add tag
         const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
         this._add(tagButton);
@@ -97,6 +101,11 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     _getMenuButtons: function() {
       return this._dropdown.getMenu().getChildren()
         .filter(child => child instanceof qx.ui.menu.Button);
+    },
+
+    _getActiveMenuButtons: function() {
+      const menuButtons = this._getMenuButtons();
+      return menuButtons.filter(menuButton => menuButton.getIcon() === this.self().ActiveTagIcon);
     },
 
     _addOption: function(tagName) {
