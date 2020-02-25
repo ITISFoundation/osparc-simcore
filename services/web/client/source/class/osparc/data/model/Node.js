@@ -954,7 +954,7 @@ qx.Class.define("osparc.data.model.Node", {
           if (servicePath) {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
             const srvUrl = servicePath + entryPoint;
-            this.__serviceReadyIn(srvUrl);
+            this.__wait_for_service_ready(srvUrl);
           }
           break;
         }
@@ -1019,7 +1019,21 @@ qx.Class.define("osparc.data.model.Node", {
 
       this.__nodeState();
     },
-
+    __wait_for_service_ready: function(srvUrl) {
+      // ping for some time until it is really ready
+      const pingRequest = new qx.io.request.Xhr(srvUrl);
+      pingRequest.addListenerOnce("success", function(e) {
+        console.log("service ready now");
+        this.__serviceReadyIn(srvUrl);
+      }, this);
+      pingRequest.addListenerOnce("fail", e => {
+        const error = e.getTarget().getResponse();
+        console.log("service not ready yet, waiting... " + error);
+        const interval = 1000;
+        qx.event.Timer.once(() => this.__wait_for_service_ready(srvUrl), this, interval);
+      });
+      pingRequest.send();
+    },
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
       this.setInteractiveStatus("ready");
@@ -1034,7 +1048,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
-      const waitFor = 4000;
+      // ping the service until it is accessible through the platform
+
+      const waitFor = 500;
       qx.event.Timer.once(ev => {
         this.__restartIFrame();
       }, this, waitFor);
