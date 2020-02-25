@@ -258,11 +258,11 @@ services:
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
         - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         # traefik UI
-        - traefik.http.routers.api.service=api@internal
-        - traefik.http.routers.api.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
-        - traefik.http.routers.api.entrypoints=traefik_dashboard
-        - traefik.http.routers.api.middlewares=gzip@docker
-        - traefik.http.services.api.loadbalancer.server.port=8080
+        - traefik.http.routers.api_internal.service=api@internal
+        - traefik.http.routers.api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        - traefik.http.routers.api_internal.entrypoints=traefik_dashboard
+        - traefik.http.routers.api_internal.middlewares=gzip@docker
+        - traefik.http.services.api_internal.loadbalancer.server.port=8080
     networks:
       - default
       - interactive_services_subnet
