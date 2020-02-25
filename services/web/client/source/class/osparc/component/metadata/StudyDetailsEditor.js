@@ -276,8 +276,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
         contentPadding: 0,
-        width: 500,
-        height: 400,
+        width: 400,
+        height: 300,
         showMinimize: false,
         modal: true
       });

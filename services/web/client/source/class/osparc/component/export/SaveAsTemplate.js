@@ -40,9 +40,10 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
   members: {
     __studyId: null,
     __formData: null,
+    __shareWith: null,
 
     __buildLayout: function() {
-      const shareWith = new osparc.component.export.ShareWith();
+      const shareWith = this.__shareWith = new osparc.component.export.ShareWith("template");
       this._add(shareWith, {
         flex: 1
       });
@@ -61,6 +62,11 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __saveAsTemplate: function(btn) {
       btn.setFetching(true);
 
+      const shareWithId = this.__shareWith.getShareWithId();
+      const selectedOrganizationIDs = this.__shareWith.getSelectedOrganizationIDs();
+      console.log(shareWithId);
+      console.log(selectedOrganizationIDs);
+
       const params = {
         url: {
           "study_url": this.__studyId
@@ -70,7 +76,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
       osparc.data.Resources.fetch("templates", "postToTemplate", params)
         .then(template => {
           this.fireDataEvent("finished", template);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Study successfully saved as template."), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Study successfully saved as template."), "INFO");
         })
         .catch(err => {
           console.error(err);
