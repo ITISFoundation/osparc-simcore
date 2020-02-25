@@ -85,7 +85,7 @@ async def _create_docker_service_params(app: web.Application,
                                         internal_network_id: Optional[str]) -> Dict:
 
     service_parameters_labels = await _read_service_settings(app, service_key, service_tag)
-
+    service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
     container_spec = {
         "Image": "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag),
@@ -95,7 +95,7 @@ async def _create_docker_service_params(app: web.Application,
             "SIMCORE_NODE_UUID": node_uuid,
             "SIMCORE_PROJECT_ID": project_id,
             "SIMCORE_NODE_BASEPATH": node_base_path or "",
-            "SIMCORE_HOST_NAME": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
+            "SIMCORE_HOST_NAME": service_name
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
         "Init": True,
@@ -105,10 +105,11 @@ async def _create_docker_service_params(app: web.Application,
             "node_id": node_uuid
         }
     }
+
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
         "registry": config.REGISTRY_URL if config.REGISTRY_AUTH else "",
-        "name": registry_proxy.get_service_last_names(service_key) + "_" + node_uuid,
+        "name": service_name,
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
@@ -141,10 +142,10 @@ async def _create_docker_service_params(app: web.Application,
             "io.simcore.zone": "internal_simcore_stack",
             "traefik.enable": "true",
             "traefik.docker.network": "simcore_default",
-            f"traefik.http.services.{node_uuid}.loadbalancer.server.port": 8080,
-            f"traefik.http.routers.{node_uuid}.rule": f"PathPrefix(`/x/{node_uuid}`)",
-            f"traefik.http.routers.{node_uuid}.entrypoints": "http",
-            f"traefik.http.routers.{node_uuid}.middlewares": "gzip@docker, sslheader@docker",
+            f"traefik.http.services.{service_name}.loadbalancer.server.port": 8080,
+            f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
+            f"traefik.http.routers.{service_name}.entrypoints": "http",
+            f"traefik.http.routers.{service_name}.middlewares": f"gzip@docker, sslheader@docker",
         },
         "networks": [internal_network_id] if internal_network_id else []
     }
@@ -172,7 +173,7 @@ async def _create_docker_service_params(app: web.Application,
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int": # backward comp
-            docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{node_uuid}.loadbalancer.server.port"] = str(param["value"])
+            docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{service_name}.loadbalancer.server.port"] = str(param["value"])
             if config.DEBUG_MODE:
                 # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
                 docker_params["endpoint_spec"]["Ports"] = [
@@ -184,7 +185,7 @@ async def _create_docker_service_params(app: web.Application,
         elif config.DEBUG_MODE and param["type"] == "EndpointSpec": # REST-API compatible
             if "Ports" in param["value"]:
                 if isinstance(param["value"]["Ports"], list) and "TargetPort" in param["value"]["Ports"][0]:
-                    docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{node_uuid}.loadbalancer.server.port"] = str(param["value"]["Ports"][0]["TargetPort"])
+                    docker_params["labels"]["port"] = docker_params["labels"][f"traefik.http.services.{service_name}.loadbalancer.server.port"] = str(param["value"]["Ports"][0]["TargetPort"])
             if config.DEBUG_MODE:
                 docker_params["endpoint_spec"] = param["value"]
 
