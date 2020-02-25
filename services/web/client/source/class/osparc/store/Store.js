@@ -184,6 +184,31 @@ qx.Class.define("osparc.store.Store", {
       return osparc.utils.Services.servicesCached;
     },
 
+    getMyOrganizations: function() {
+      return [{
+        orgId: 0,
+        label: "IT'IS Foundation"
+      }, {
+        orgId: 1,
+        label: "Speag"
+      }, {
+        orgId: 2,
+        label: "Zurich Med Tech"
+      }, {
+        orgId: 3,
+        label: "Sim-core"
+      }, {
+        orgId: 4,
+        label: "Dat-core"
+      }, {
+        orgId: 5,
+        label: "Map-core"
+      }, {
+        orgId: 6,
+        label: "NIH"
+      }];
+    },
+
     /**
      * Invalidates the cache for the given resources.
      * If resource is a string, it will invalidate that resource.
