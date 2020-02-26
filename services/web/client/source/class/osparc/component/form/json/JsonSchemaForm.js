@@ -13,7 +13,7 @@
  * @ignore(objectPath)
  * @ignore(fetch)
  */
-qx.Class.define("osparc.component.form.JsonSchemaForm", {
+qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   extend: qx.ui.core.Widget,
   construct: function(schemaUrl) {
     this.base(arguments);
@@ -104,23 +104,35 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
         } else if (schema.type === "array") {
           // Arrays allow to create new items with a button
           let pos = 0;
-          container.setAppearance("form-array-container");
-          const addButton = new qx.ui.form.Button(`Add ${key}`, "@FontAwesome5Solid/plus-circle/14");
-          addButton.addListener("execute", () => container.add(this.__expand(pos, schema.items, depth+1, `${path}.${pos++}`)), this);
+          const arrayContainer = new osparc.component.form.json.JsonSchemaFormArray();
+          container.add(arrayContainer);
+          const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
+          addButton.addListener("execute", () => {
+            arrayContainer.add(this.__expand(pos, schema.items, depth+1, `${path}.${pos++}`));
+          }, this);
           header.add(addButton);
         }
       } else {
         // Leaf (render input depending on type)
-        container.add(new qx.ui.basic.Label(key)); // Input label
-        const fixedPath = path.substring(1); // Removes starting point from path
         const input = this.__getInput(schema.type);
-        this.__inputsMap[fixedPath] = input; // Keeps a map of the inputs with their paths for later use
+        // Input label
+        container.add(new qx.ui.basic.Label(schema.title || key).set({
+          buddy: input
+        }));
+        const fixedPath = path.substring(1); // Removes starting dot from path
+        this.__inputsMap[fixedPath] = input; // Keeps a map of the inputs with their paths to retrieve their values later
         container.add(input);
+        if (schema.description) {
+          container.add(new qx.ui.basic.Label(schema.description).set({
+            font: "text-12-italic",
+            marginTop: 3
+          }));
+        }
       }
       return container;
     },
     /**
-     * Expands and object property changing its style depending on certain parameters.
+     * Expands an object property changing its style depending on certain parameters.
      * 
      * @param {Object} properties Object's properties to be expanded.
      * @param {Integer} depth Current depth into the schema.
@@ -128,16 +140,15 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
      * @param {Boolean} isArrayItem Used for different styling.
      */
     __expandObject: function(properties, depth, path, isArrayItem) {
-      let container = new qx.ui.container.Composite()
+      const container = new qx.ui.container.Composite();
+      const layoutOptions = {};
       if (isArrayItem) {
-        container.setLayout(new qx.ui.layout.HBox(10));
-        Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`), {
-          flex: 1
-        }));
+        container.setLayout(new qx.ui.layout.Flow(10));
+        layoutOptions.flex = 1;
       } else {
         container.setLayout(new qx.ui.layout.VBox());
-        Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
       }
+      Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
       return container;
     },
     /**
@@ -162,7 +173,7 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
       })).set({
         marginBottom: 10
       });
-      const labelText = schema.title || (isArrayItem ? "#" + key : key);
+      const labelText = this.__getHeaderText(key, schema, isArrayItem);
       const label = new qx.ui.basic.Label(labelText).set({
         font: depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14",
         allowStretchX: true
@@ -195,6 +206,17 @@ qx.Class.define("osparc.component.form.JsonSchemaForm", {
           input = new qx.ui.form.TextField();
       }
       return input;
+    },
+    /**
+     * Method that returns an appropriate text for a label.
+     */
+    __getHeaderText: function(key, schema, isArrayItem) {
+      let title = schema.title || key;
+      if (isArrayItem) {
+        title = schema.title ? `${schema.title} ` : "";
+        return title + `#${key}`;
+      }
+      return title;
     }
   }
 });

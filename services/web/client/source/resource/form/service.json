@@ -56,10 +56,11 @@
             "title": "Service inputs and outputs",
             "properties": {
                 "inputs": {
+                    "title": "Inputs",
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "title": "Input",
+                        "title": "input",
                         "required": [
                             "name",
                             "type",
@@ -95,10 +96,11 @@
                     }
                 },
                 "outputs": {
+                    "title": "Outputs",
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "title": "Output",
+                        "title": "output",
                         "required": [
                             "name",
                             "type",
@@ -136,8 +138,10 @@
             }
         },
         "authors": {
+            "title": "Authors",
             "type": "array",
             "items": {
+                "title": "author",
                 "type": "object",
                 "required": [
                     "name",

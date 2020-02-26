@@ -232,7 +232,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         });
         const scroll = new qx.ui.container.Scroll();
         addServiceWindow.add(scroll);
-        const form = new osparc.component.form.JsonSchemaForm("/resource/form/service.json");
+        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json");
         form.addListener("ready", () => {
           addServiceWindow.open();
           addServiceWindow.maximize();
