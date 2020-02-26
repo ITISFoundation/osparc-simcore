@@ -128,7 +128,7 @@
                             "description": {
                                 "type": "string",
                                 "title": "Description",
-                                "description": "Text help to understand the input and it's effects on the results."
+                                "description": "Help text to understand the input and it's effects on the results."
                             }
                         }
                     }
