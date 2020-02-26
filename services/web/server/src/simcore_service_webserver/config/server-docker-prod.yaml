@@ -17,11 +17,7 @@ tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 socketio:
-  message_queue:
-    host: ${RABBIT_HOST}
-    port: ${RABBIT_PORT}
-    user: ${RABBIT_USER}
-    password: ${RABBIT_PASSWORD}
+  enabled: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
