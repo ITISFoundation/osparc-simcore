@@ -139,6 +139,7 @@ async def _create_docker_service_params(app: web.Application,
             "study_id": project_id,
             "user_id": user_id,
             "type": "main" if main_service else "dependency",
+            #FIXME: the zone must be prefixed with the stack name!!!
             "io.simcore.zone": "internal_simcore_stack",
             "traefik.enable": "true",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": 8080,

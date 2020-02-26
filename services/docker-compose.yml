@@ -239,6 +239,7 @@ services:
           - '--providers.docker.swarmMode=true'
           - '--providers.docker.network=simcore_default'
           - '--providers.docker.exposedByDefault=false'
+          #FIXME: the zone must be prefixed with the stack name!!!
           - '--providers.docker.constraints=Label(`io.simcore.zone`, `internal_simcore_stack`)'
           - '--tracing=true'
           - '--tracing.jaeger=true'
