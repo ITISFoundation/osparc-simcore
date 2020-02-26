@@ -1,6 +1,5 @@
 import logging
 
-import passwordmeter
 from aiohttp import web
 from yarl import URL
 
@@ -374,36 +373,3 @@ async def reset_password_allowed(request: web.Request):
 
     raise web.HTTPUnauthorized(reason="Cannot reset password. Invalid token or user",
                                content_type='application/json') # 401
-
-
-async def check_password_strength(request: web.Request):
-    """ evaluates password strength and suggests some recommendations
-
-        The strength of the password in the range from 0 (extremely weak) and 1 (extremely strong).
-
-        The recommendations is a dictionary of ways the password could be improved.
-        The keys of the dict are general "categories" of ways to improve the password (e.g. "length")
-        that are fixed strings, and the values are internationalizable strings that are human-friendly descriptions
-        and possibly tailored to the specific password
-    """
-    params, _, _ = await extract_and_validate(request)
-    password = params['password']
-
-    strength, improvements = passwordmeter.test(password)
-    ratings = (
-        'Infinitely weak',
-        'Extremely weak',
-        'Very weak',
-        'Weak',
-        'Moderately strong',
-        'Strong',
-        'Very strong'
-    )
-
-    data = {
-        'strength': strength,
-        'rating': ratings[min(len(ratings) - 1, int(strength * len(ratings)))]
-        }
-    if improvements:
-        data['improvements'] = improvements
-    return data

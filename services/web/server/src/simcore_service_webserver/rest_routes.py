@@ -37,4 +37,9 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(base_path+path, handle, name=operation_id) )
 
+    # NOTE: Internal. Not shown in api/docs
+    path, handle = '/diagnostics', rest_handlers.get_diagnostics
+    operation_id =  'get_diagnotics' # specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(base_path+path, handle, name=operation_id) )
+
     return routes
