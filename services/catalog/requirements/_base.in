@@ -4,6 +4,8 @@
 # NOTE: ALL version constraints MUST be commented
 -r ../../../packages/postgres-database/requirements/_base.in
 
+pyyaml>=5.3         # Vulnerable
+
 fastapi[all]
 aiopg[sa]
 tenacity

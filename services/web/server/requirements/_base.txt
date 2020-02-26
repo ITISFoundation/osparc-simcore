@@ -52,7 +52,7 @@ pyrsistent==0.15.6        # via jsonschema
 python-engineio==3.9.3    # via python-socketio
 python-socketio==4.3.1
 pytz==2019.1              # via celery
-pyyaml==5.1
+pyyaml==5.3
 semantic-version==2.6.0
 shortuuid==0.5.0          # via aio-pika
 six==1.12.0               # via cryptography, isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, python-engineio, python-socketio, tenacity
