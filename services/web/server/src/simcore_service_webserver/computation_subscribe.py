@@ -78,9 +78,6 @@ async def subscribe(app: web.Application) -> None:
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
 
-    # FIXME: This tmp resolves ``aio pika 169: IncompatibleProtocolError`` upon apio_pika.connect
-    await asyncio.sleep(5)
-
     # TODO: connection attempts should be configurable??
     # TODO: A contingency plan or connection policy should be defined per service! E.g. critical, lazy, partial (i.e. some parts of the service cannot run now)
     connection = await aio_pika.connect(rabbit_broker, connection_attempts=100)
