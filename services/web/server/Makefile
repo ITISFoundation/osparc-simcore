@@ -75,6 +75,12 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-sp
 	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
+.PHONY: tail
+tail: ## tails log of $(APP_NAME) container
+	docker logs -f $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) > $(APP_NAME).log 2>&1
+
+
+
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
 	# auto formatting with black
