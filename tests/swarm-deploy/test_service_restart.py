@@ -24,7 +24,7 @@ current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 
 # time measured from command 'up' finished until *all* tasks are running
 MAX_TIME_TO_DEPLOY_SECS = 60
-MAX_TIME_TO_RESTART_SERVICE = 5
+MAX_TIME_TO_RESTART_SERVICE = 10
 
 
 @pytest.fixture("module")
