@@ -111,6 +111,7 @@ def main(args: Optional[List]=None):
     logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    logging.getLogger('engineio').setLevel(logging.WARNING)
 
     # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
     slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.1))
