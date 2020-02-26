@@ -109,6 +109,29 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/webserver after_failure
 
+    # test python, catalog ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: catalog
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/catalog before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/catalog install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/catalog before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/catalog script
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/catalog after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/catalog after_failure
+
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: director

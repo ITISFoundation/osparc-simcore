@@ -146,6 +146,11 @@ qx.Class.define("osparc.ui.form.EditLabel", {
               this.setMode(this.self().modes.DISPLAY);
               this.fireDataEvent("editValue", evt.getData());
             }, this);
+            this.__input.addListener("keydown", e => {
+              if (e.getKeyIdentifier() === "Enter") {
+                this.setMode(this.self().modes.DISPLAY);
+              }
+            }, this);
             this._add(this.__input);
           }
           control = this.__input;

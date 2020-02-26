@@ -21,10 +21,16 @@ def docker_client():
 
 @pytest.fixture(scope='module')
 def docker_swarm(docker_client):
-    docker_client.swarm.init()
-    yield
-    # teardown
-    assert docker_client.swarm.leave(force=True)
+    try:
+        docker_client.swarm.reload()
+        print("CAUTION: Already part of a swarm")
+        yield
+    except docker.errors.APIError:
+        docker_client.swarm.init()
+        yield
+        # teardown
+        assert docker_client.swarm.leave(force=True)
+    
 
 
 @pytest.fixture(scope='module')

@@ -12,7 +12,7 @@ Makefile                                  @pcrespov, @sanderegg
 /scripts/demo                             @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects                @odeimaiz, @pcrespov
-/services/dy*                             @sanderegg
+/services/catalog                         @pcrespov
 /services/sidecar                         @pcrespov, @mguidon
 /services/web/client                      @odeimaiz, @oetiker, @ignapas
 /services/web/server                      @pcrespov

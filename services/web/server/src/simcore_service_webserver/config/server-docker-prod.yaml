@@ -1,4 +1,8 @@
-# Runs insides a container
+#
+# The environment variables in this context are those defined in the production container
+#
+# NOTE: Trafaret does not handle defaults as ${WEBSERVER_LOGLEVEL:-info}
+#       To define defaults, see services/web/server/src/simcore_service_webserver/cli.py::create_environ
 ---
 version: "1.0"
 main:
@@ -57,12 +61,16 @@ smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  tls: False
-  username: Null
-  password: Null
+  tls: ${SMTP_TLS_ENABLED}
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
+  version: v0
+catalog:
+  host: catalog
+  port: 8000
   version: v0
 rest:
   version: v0

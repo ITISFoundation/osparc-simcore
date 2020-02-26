@@ -191,10 +191,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __initResources: function() {
-      osparc.data.Resources.get("tags")
-        .then(() => {
-          this.__userReady = true;
-        });
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        osparc.data.Resources.get("tags")
+          .catch(console.error)
+          .finally(() => this.__userReady = true);
+      } else {
+        this.__userReady = true;
+      }
       this.__getServicesPreload();
     },
 
@@ -382,8 +385,9 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
 
     __loadStudy: function(studyData) {
       const study = new osparc.data.model.Study(studyData);
-      const studyEditor = new osparc.desktop.StudyEditor(study);
-      this.fireDataEvent("startStudy", studyEditor);
+      this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
+      this.__studyEditor.setStudy(study);
+      this.fireDataEvent("startStudy", this.__studyEditor);
     },
 
     __showChildren: function(show) {

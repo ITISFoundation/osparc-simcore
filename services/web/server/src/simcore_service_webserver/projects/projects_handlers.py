@@ -202,17 +202,6 @@ async def replace_project(request: web.Request):
 
     return {'data': new_project}
 
-
-# TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-#@login_required
-#async def patch_project(_request: web.Request):
-#    """
-#        Client sends a patch and return updated project
-#        PATCH
-#    """
-#    # TODO: implement patch with diff as body!
-#    raise NotImplementedError()
-
 @login_required
 async def delete_project(request: web.Request):
     # TODO: replace by decorator since it checks again authentication
@@ -389,6 +378,7 @@ async def delete_node(request: web.Request) -> web.Response:
 
 @login_required
 async def add_tag(request: web.Request):
+    await check_permission(request, 'project.tag.*')
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
     return await db.add_tag(
@@ -400,6 +390,7 @@ async def add_tag(request: web.Request):
 
 @login_required
 async def remove_tag(request: web.Request):
+    await check_permission(request, 'project.tag.*')
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = request.match_info.get('tag_id'), request.match_info.get('study_uuid')
     return await db.remove_tag(

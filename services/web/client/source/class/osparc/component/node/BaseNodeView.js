@@ -120,7 +120,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const title = this._title = new osparc.ui.form.EditLabel().set({
         labelFont: "title-18",
-        inputFont: "text-18"
+        inputFont: "text-18",
+        editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
       titlePart.add(title);
 
@@ -142,10 +143,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
             node.renameNode(evt.getData());
           }
           const study = osparc.store.Store.getInstance().getCurrentStudy();
-          qx.event.message.Bus.getInstance().dispatchByName(
-            "updateStudy",
-            study.serializeStudy()
-          );
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serializeStudy());
         }
       }, this);
 

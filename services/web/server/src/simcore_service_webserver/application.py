@@ -6,13 +6,13 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-
 from servicelib.application import create_safe_application
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.monitoring import setup_monitoring
 
 from .activity import setup_activity
 from .application_proxy import setup_app_proxy
+from .catalog import setup_catalog
 from .computation import setup_computation
 from .db import setup_db
 from .director import setup_director
@@ -27,9 +27,9 @@ from .socketio import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
+from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .tags import setup_tags
 
 log = logging.getLogger(__name__)
 
@@ -38,9 +38,8 @@ log = logging.getLogger(__name__)
     config_enabled="main.monitoring_enabled",
     logger=log)
 def setup_app_monitoring(app: web.Application):
-    # TODO: distinguish between different replicas {simcore_service_webserver, replica=1}?
-    # TODO: move option to section?
     return setup_monitoring(app, "simcore_service_webserver")
+
 
 def create_application(config: Dict) -> web.Application:
     """
@@ -51,9 +50,8 @@ def create_application(config: Dict) -> web.Application:
 
     app = create_safe_application(config)
 
-    # testing = config["main"].get("testing", False)
-
-    # TODO: create dependency mechanism and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+    # TODO: create dependency mechanism
+    # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     setup_app_monitoring(app)
     setup_app_tracing(app)
     setup_statics(app)
@@ -71,9 +69,10 @@ def create_application(config: Dict) -> web.Application:
     setup_projects(app) # needs storage
     setup_studies_access(app)
     setup_activity(app)
-    setup_app_proxy(app) # TODO: under development!!!
+    setup_app_proxy(app)
     setup_resource_manager(app)
     setup_tags(app)
+    setup_catalog(app)
 
     return app
 
