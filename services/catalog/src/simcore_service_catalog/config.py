@@ -10,6 +10,9 @@ from .utils.helpers import cast_to_bool
 
 # DOCKER
 is_container_environ: bool = "SC_BOOT_MODE" in os.environ
+is_devel = os.environ.get("SC_BUILD_TARGET") == "development"
+is_prod  = os.environ.get("SC_BUILD_TARGET") == "production"
+
 
 # LOGGING
 log_level_name = os.environ.get("LOGLEVEL", "debug").upper()
@@ -37,7 +40,7 @@ postgres_dsn: str = "postgresql://{user}:{password}@{host}:{port}/{database}".fo
     **postgres_cfg
 )
 postgres_cfg: dict = {**postgres_cfg, "uri": postgres_dsn}
-
+init_tables: bool = cast_to_bool(os.environ.get("POSTGRES_INIT_TABLES", "true" if is_devel else "false"))
 
 # SERVER
 # NOTE: https://www.uvicorn.org/settings/

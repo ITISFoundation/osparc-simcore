@@ -30,7 +30,7 @@ promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.4    # via aiopg, sqlalchemy
 pydantic==1.4             # via fastapi
 python-multipart==0.0.5   # via fastapi
-pyyaml==5.3               # via fastapi
+pyyaml==5.3
 requests==2.22.0          # via fastapi
 rx==1.6.1                 # via graphql-core
 six==1.14.0               # via graphene, graphql-core, graphql-relay, promise, python-multipart, tenacity

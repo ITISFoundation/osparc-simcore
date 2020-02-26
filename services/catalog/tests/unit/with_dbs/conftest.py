@@ -2,12 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import pytest
-from pathlib import Path
+import importlib
 import os
 import sys
+from pathlib import Path
 
+import pytest
 import sqlalchemy as sa
+
+import simcore_service_catalog.config
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -22,8 +25,12 @@ def environ_context():
     os.environ["POSTGRES_PASSWORD"] = "test"
     os.environ["POSTGRES_HOST"] = "127.0.0.1"
     os.environ["POSTGRES_PORT"] = "5432"
+    os.environ["POSTGRES_INIT_TABLES"] = "True"
 
     os.environ["TESTING"] = "True"
+
+    # FIXME: dirty trick to update configuration with these environs! WARNING: might have side effects
+    importlib.reload(simcore_service_catalog.config)
 
     yield
 
