@@ -1,6 +1,7 @@
 #
 # Specifies third-party dependencies for 'director'
 #
+pyyaml>=5.3         # Vulnerable
 
 aiohttp
 aiodocker

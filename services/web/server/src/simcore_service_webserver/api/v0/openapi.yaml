@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore RESTful API
-  version: 0.3.1
+  version: 0.4.0
   description: RESTful API designed for web clients
   contact:
     name: IT'IS Foundation
@@ -1888,54 +1888,6 @@ paths:
       responses:
         3XX:
           description: redirection to specific ui application page
-  '/auth/check-password/{password}':
-    get:
-      summary: checks password strenght and provides recommendations to improve it
-      tags:
-        - authentication
-      operationId: auth_check_password_strength
-      parameters:
-        - name: password
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 'evaluates password strength, gives a rating and suggests some improvements'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - strength
-                    properties:
-                      strength:
-                        description: The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)
-                        type: number
-                        format: float
-                        minimum: 0
-                        maximum: 1
-                      rating:
-                        description: Human readable rating from infinitely weak to very strong
-                        type: string
-                      improvements:
-                        additionalProperties:
-                          type: string
-                    example:
-                      strength: 0.202
-                      rating: Extremely weak
-                      improvements:
-                        mixin: 'Use a good mix of numbers, letters and symbols'
-                        duplications: Minimize character duplicates and repetitions
-                  error:
-                    nullable: true
-                    default: null
   /me:
     get:
       operationId: get_my_profile

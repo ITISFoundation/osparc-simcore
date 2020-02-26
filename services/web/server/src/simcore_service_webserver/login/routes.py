@@ -44,7 +44,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
         'auth_change_email': login_handlers.change_email,
         'auth_change_password': login_handlers.change_password,
         'auth_confirmation': login_handlers.email_confirmation,
-        'auth_check_password_strength': login_handlers.check_password_strength
     }
 
     routes = map_handlers_with_operations(

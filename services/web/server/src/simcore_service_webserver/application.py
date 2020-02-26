@@ -83,6 +83,7 @@ def run_service(config: dict):
     log.debug("Serving app ... ")
 
     app = create_application(config)
+
     web.run_app(app,
                 host=config["main"]["host"],
                 port=config["main"]["port"])

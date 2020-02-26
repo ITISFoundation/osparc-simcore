@@ -6,4 +6,4 @@ pytest-aiohttp
 
 docker
 tenacity
-pyyaml
+pyyaml>=5.3         # Vulnerable
