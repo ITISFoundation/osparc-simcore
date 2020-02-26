@@ -78,16 +78,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__desktopCanvas.add(this.__startHint);
 
     this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
-    // this gets fired once the widget has appeared and the library has been loaded
-    // due to the qx rendering, this will always happen after setup, so we are
-    // sure to catch this event
-    this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
-      // Will be called only the first time Svg lib is loaded
-      this.loadModel(workbench);
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      this.__nodeSelected(study.getUuid());
-    });
-
     this.__desktop.add(this.__svgWidgetLinks, {
       left: 0,
       top: 0,
@@ -761,6 +751,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     loadModel: function(model) {
+      if (this.__svgWidgetLinks.getReady()) {
+        this.__loadModel(model);
+      } else {
+        this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
+          this.__loadModel(model);
+        }, this);
+      }
+    },
+
+    __loadModel: function(model) {
       this.clearAll();
       this.resetSelectedNodes();
       this.__currentModel = model;
