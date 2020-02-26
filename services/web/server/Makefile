@@ -13,11 +13,6 @@ VENV_DIR      ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE) --directory ${REPO_BASE_DIR} $@
-
-
-.PHONY: devenv
-devenv: ## build development environment (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} $@
 
 

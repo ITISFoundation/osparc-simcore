@@ -108,15 +108,16 @@ def main(args: Optional[List]=None):
     aiohttp.log.access_logger.setLevel(log_level)
 
     # mute noisy loggers
+    LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+    logging.getLogger('engineio').setLevel( min(log_level + LOG_LEVEL_STEP,logging.CRITICAL) )
+
     logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-    logging.getLogger('engineio').setLevel(logging.WARNING)
 
     # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
     slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.1))
     log_slow_callbacks.enable(slow_duration)
-
 
     # run
     run_service(config)
