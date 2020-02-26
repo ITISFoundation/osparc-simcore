@@ -82,9 +82,10 @@ services:
 
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
-    init: true
+    init: true    
     deploy:
       mode: replicated
+      replicas: 4
       endpoint_mode: dnsrr
       resources:
         reservations:
