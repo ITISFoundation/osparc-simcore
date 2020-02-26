@@ -3,7 +3,7 @@ import json
 import logging
 from functools import wraps
 from pprint import pprint
-from typing import Callable, Coroutine, Dict
+from typing import Callable, Coroutine, Dict, Optional
 
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
@@ -21,6 +21,22 @@ from .projects.projects_exceptions import (NodeNotFoundError,
 from .socketio.events import post_messages
 
 log = logging.getLogger(__file__)
+
+class RabbitMQRetryPolicyUponInitialization:
+    """ Retry policy upon service initialization
+    """
+    WAIT_SECS = 2
+    ATTEMPTS_COUNT = 20
+
+    def __init__(self, logger: Optional[logging.Logger]=None):
+        logger = logger or log
+
+        self.kwargs = dict(
+            wait=wait_fixed(self.WAIT_SECS),
+            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
+            before_sleep=before_sleep_log(logger, logging.INFO),
+            reraise=True
+        )
 
 
 def rabbit_adapter(app: web.Application) -> Callable:
@@ -112,24 +128,8 @@ async def subscribe(app: web.Application) -> None:
     await queue.consume(partial_rabbit_message_handler, exclusive=True, no_ack=True)
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def wait_till_rabbitmq_responsive(url):
+async def wait_till_rabbitmq_responsive(url: str) -> bool:
     """Check if something responds to ``url`` """
     connection = await aio_pika.connect(url)
     await connection.close()
     return True
-
-class RabbitMQRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
-    WAIT_SECS = 2
-    ATTEMPTS_COUNT = 20
-
-    def __init__(self, logger: Optional[logging.Logger]=None):
-        logger = logger or log
-
-        self.kwargs = dict(
-            wait=wait_fixed(self.WAIT_SECS),
-            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            before_sleep=before_sleep_log(logger, logging.INFO),
-            reraise=True
-        )
