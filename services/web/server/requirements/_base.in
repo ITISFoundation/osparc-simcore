@@ -9,7 +9,7 @@ psycopg2-binary     # enforces binary version
 sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 
 
-aio-pika==2.9.0     # TODO: upgrade code before !!
+aio-pika
 aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
