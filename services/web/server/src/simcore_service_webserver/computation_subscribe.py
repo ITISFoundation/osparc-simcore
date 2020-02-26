@@ -64,11 +64,10 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
 
 
 async def rabbit_message_handler(message: aio_pika.IncomingMessage, app: web.Application) -> None:
-    with message.process():
-        data = json.loads(message.body)
-        await parse_rabbit_message_data(app, data)
-        # NOTE: this allows the webserver to breath if a lot of messages are entering
-        await asyncio.sleep(2)
+    data = json.loads(message.body)
+    await parse_rabbit_message_data(app, data)
+    # NOTE: this allows the webserver to breath if a lot of messages are entering
+    await asyncio.sleep(1)
 
 async def subscribe(app: web.Application) -> None:
     # TODO: catch and deal with missing connections:
@@ -80,7 +79,10 @@ async def subscribe(app: web.Application) -> None:
 
     # TODO: connection attempts should be configurable??
     # TODO: A contingency plan or connection policy should be defined per service! E.g. critical, lazy, partial (i.e. some parts of the service cannot run now)
-    connection = await aio_pika.connect(rabbit_broker, connection_attempts=100)
+    connection = await aio_pika.connect_robust(rabbit_broker,
+    client_properties={
+        "connection_name": "webserver read connection"
+    }, connection_attempts=100)
 
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
