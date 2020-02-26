@@ -3,8 +3,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ .travis.yml)
-
 install() {
     bash ci/helpers/ensure_python_pip
     pip3 install --requirement api/tests/requirements.txt
