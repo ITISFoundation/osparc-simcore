@@ -89,14 +89,12 @@ async def subscribe(app: web.Application) -> None:
 
     pika_log_channel = rb_config["channels"]["log"]
     logs_exchange = await channel.declare_exchange(
-        pika_log_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
+        pika_log_channel, aio_pika.ExchangeType.FANOUT
     )
 
     pika_progress_channel = rb_config["channels"]["progress"]
     progress_exchange = await channel.declare_exchange(
-        pika_progress_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
+        pika_progress_channel, aio_pika.ExchangeType.FANOUT
     )
 
     # Declaring queue
