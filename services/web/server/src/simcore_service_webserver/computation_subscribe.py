@@ -111,7 +111,7 @@ async def subscribe(app: web.Application) -> None:
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
     await queue.consume(partial_rabbit_message_handler, exclusive=True, no_ack=True)
 
-@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
+@retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url):
     """Check if something responds to ``url`` """
     connection = await aio_pika.connect(url)
