@@ -27,7 +27,6 @@ expiringdict
 jinja_app_loader
 jsondiff
 passlib
-passwordmeter
 python-socketio
 semantic_version
 tenacity

@@ -4,7 +4,6 @@
 #
 #    pip-compile --output-file=_test.txt _test.in
 #
-aadict==0.2.3
 aio-pika==2.9.0
 aiodebug==1.1.2
 aiohttp-jinja2==1.1.1
@@ -18,7 +17,6 @@ aiosmtplib==1.0.5
 aiozipkin==0.6.0
 amqp==2.4.2
 asn1crypto==0.24.0
-asset==0.6.12
 astroid==2.3.3            # via pylint
 async-timeout==3.0.1
 asyncpg==0.18.3
@@ -37,7 +35,6 @@ docker==4.1.0
 docopt==0.6.2             # via coveralls
 expiringdict==1.2.0
 faker==3.0.0
-globre==0.1.5
 hiredis==1.0.1
 idna-ssl==1.1.0
 idna==2.8
@@ -59,7 +56,6 @@ openapi-core==0.12.0
 openapi-spec-validator==0.2.8
 packaging==20.0           # via pytest, pytest-sugar
 passlib==1.7.1
-passwordmeter==0.1.8
 pika==0.10.0
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1

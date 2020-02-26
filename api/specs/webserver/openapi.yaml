@@ -82,9 +82,6 @@ paths:
   /auth/confirmation/{code}:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}"
 
-  /auth/check-password/{password}:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1check-password~1{password}"
-
   # USER SETTINGS ------------------------------------------------------------------
 
   /me:
