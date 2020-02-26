@@ -15,7 +15,7 @@ director:
   port: 8001
   version: v0
 socketio:
-  enabled: True  
+  enabled: True
 db:
   init_tables: False
   postgres:
