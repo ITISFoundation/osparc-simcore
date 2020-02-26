@@ -5,9 +5,10 @@ from functools import wraps
 from pprint import pprint
 from typing import Callable, Coroutine, Dict
 
-import aio_pika
 from aiohttp import web
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
+import aio_pika
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
@@ -15,7 +16,8 @@ from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
 from .projects import projects_api
-from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .projects.projects_exceptions import (NodeNotFoundError,
+                                           ProjectNotFoundError)
 from .socketio.events import post_messages
 
 log = logging.getLogger(__file__)
@@ -76,13 +78,13 @@ async def subscribe(app: web.Application) -> None:
 
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
-
-    # TODO: connection attempts should be configurable??
-    # TODO: A contingency plan or connection policy should be defined per service! E.g. critical, lazy, partial (i.e. some parts of the service cannot run now)
+    
+    log.info("Creating pika connection for %s", rabbit_broker)
+    await wait_till_rabbitmq_responsive(rabbit_broker)
     connection = await aio_pika.connect_robust(rabbit_broker,
-    client_properties={
-        "connection_name": "webserver read connection"
-    }, connection_attempts=100)
+        client_properties={
+            "connection_name": "webserver read connection"
+        })
 
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
@@ -108,3 +110,26 @@ async def subscribe(app: web.Application) -> None:
     partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
     await queue.consume(partial_rabbit_message_handler, exclusive=True, no_ack=True)
+
+@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
+async def wait_till_rabbitmq_responsive(url):
+    """Check if something responds to ``url`` """
+    connection = await aio_pika.connect(url)
+    await connection.close()
+    return True
+
+class RabbitMQRetryPolicyUponInitialization:
+    """ Retry policy upon service initialization
+    """
+    WAIT_SECS = 2
+    ATTEMPTS_COUNT = 20
+
+    def __init__(self, logger: Optional[logging.Logger]=None):
+        logger = logger or log
+
+        self.kwargs = dict(
+            wait=wait_fixed(self.WAIT_SECS),
+            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
+            before_sleep=before_sleep_log(logger, logging.INFO),
+            reraise=True
+        )
