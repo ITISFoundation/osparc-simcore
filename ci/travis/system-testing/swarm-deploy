@@ -10,7 +10,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG
 
 before_install() {
     bash ci/travis/helpers/update_docker
@@ -21,7 +22,7 @@ before_install() {
 install() {
     bash ci/helpers/ensure_python_pip
     pip3 install -r tests/swarm-deploy/requirements.txt
-    make pull-version || ((make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build tag-version)
     make .env
     echo WEBSERVER_DB_INITTABLES=1 >> .env
 }
