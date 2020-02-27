@@ -6,6 +6,7 @@ import logging
 from pprint import pformat
 from typing import Dict, Optional
 
+import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
@@ -231,19 +232,7 @@ async def _set_tasks_in_tasks_db(
 
         internal_id = 1
         for node_id, task in tasks.items():
-            # READ
-            # get task
-            query = sa.select([comp_tasks]).where(
-                and_(
-                    comp_tasks.c.project_id == project_id,
-                    comp_tasks.c.node_id == node_id,
-                )
-            )
-            result = await conn.execute(query)
-            task_row = await result.fetchone()
-
-            # WRITE
-            if task_row is None:
+            try:
                 # create task
                 query = comp_tasks.insert().values(
                     project_id=project_id,
@@ -258,7 +247,8 @@ async def _set_tasks_in_tasks_db(
 
                 await conn.execute(query)
                 internal_id = internal_id + 1
-            else:
+
+            except psycopg2.errors.UniqueViolation: # pylint: disable=no-member
                 if replace_pipeline:
                     # replace task
                     query = (
@@ -282,8 +272,17 @@ async def _set_tasks_in_tasks_db(
                     await conn.execute(query)
                 else:
                     # update task
+                    task_inputs: str = await conn.scalar(
+                        sa.select([comp_tasks.c.inputs]).where(
+                            and_(
+                                comp_tasks.c.project_id == project_id,
+                                comp_tasks.c.node_id == node_id,
+                            )
+                        )
+                    )
+
                     cols_to_update = {}
-                    if task_row["inputs"] != task["inputs"]:
+                    if task_inputs != task["inputs"]:
                         cols_to_update["inputs"] = task["inputs"]
                     if task["outputs"]:
                         cols_to_update["outputs"] = task["outputs"]
