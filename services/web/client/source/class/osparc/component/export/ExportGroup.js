@@ -158,8 +158,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           nodeEntry.inputs[portId] = portValue;
         }
       }
-
-      osparc.store.Store.getInstance().addGroupToCatalog(nodesGroupService)
+      osparc.data.Resources.fetch("groups", "post", {data: nodesGroupService})
         .then(data => {
           const text = this.tr("Group added to the Service catalog");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");

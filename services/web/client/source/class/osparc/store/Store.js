@@ -207,13 +207,6 @@ qx.Class.define("osparc.store.Store", {
       } else {
         this.setCurrentStudyId(null);
       }
-    },
-
-    addGroupToCatalog: function(group) {
-      const params = {
-        data: group
-      };
-      return osparc.data.Resources.fetch("groups", "post", params);
     }
   }
 });
