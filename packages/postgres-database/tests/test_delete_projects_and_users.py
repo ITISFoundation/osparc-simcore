@@ -4,14 +4,17 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=wildcard-import
 
+from typing import List
 from uuid import uuid4
 
 import faker
 import pytest
+from aiopg.sa.result import ResultProxy, RowProxy
 
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (UserStatus, projects,
-                                                        user_to_projects, users)
+                                                        user_to_projects,
+                                                        users)
 
 fake = faker.Faker()
 
@@ -63,9 +66,6 @@ def engine(make_engine, loop):
         return engine
 
     return loop.run_until_complete(start())
-
-from aiopg.sa.result import ResultProxy, RowProxy
-from typing import List
 
 
 async def test_view(engine):
