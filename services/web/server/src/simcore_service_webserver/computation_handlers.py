@@ -70,7 +70,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
     # commit the tasks to celery
     _ = get_celery(request.app).send_task("comp.task", args=(user_id, project_id,), kwargs={})
 
-    log.debug("Task commited")
+    log.debug("Task (user_id=%s, project_id=%s) submitted for execution.", user_id, project_id)
 
     # answer the client while task has been spawned
     data = {
@@ -78,5 +78,4 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "pipeline_name":"request_data",
         "project_id": project_id
     }
-    log.debug("END OF ROUTINE. Response %s", data)
     return data
