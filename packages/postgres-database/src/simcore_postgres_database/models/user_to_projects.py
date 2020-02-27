@@ -11,13 +11,13 @@ user_to_projects = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        sa.ForeignKey(users.c.id), # FIXME:, ondelete="CASCADE"),
+        sa.ForeignKey(users.c.id, ondelete="CASCADE"),
         nullable=False,
     ),
     sa.Column(
         "project_id",
         sa.BigInteger,
-        sa.ForeignKey(projects.c.id), # FIXME: ondelete="CASCADE"),
+        sa.ForeignKey(projects.c.id, ondelete="CASCADE"),
         nullable=False,
     ),
 )
