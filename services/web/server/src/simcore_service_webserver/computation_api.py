@@ -1,6 +1,8 @@
 """ API of computation subsystem within this application
 
 """
+# pylint: disable=too-many-arguments
+
 import datetime
 import logging
 from pprint import pformat
@@ -75,7 +77,7 @@ async def _build_adjacency_list(
     pipeline_data: Dict,
     dag_adjacency_list: Dict,
     app: web.Application,
-) -> Dict:  # pylint: disable=too-many-arguments
+) -> Dict:
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 
