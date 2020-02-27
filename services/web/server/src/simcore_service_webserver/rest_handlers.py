@@ -11,7 +11,7 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
-from .utils import get_coro_info, get_top_tracemalloc_info
+from .utils import get_task_info, get_tracemalloc_info
 
 
 async def check_health(request: web.Request):
@@ -77,11 +77,11 @@ async def get_diagnostics(request: web.Request):
             /v0/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
-    data = {"loop_tasks": [get_coro_info(coro) for coro in asyncio.Task.all_tasks()]}
+    data = {"loop_tasks": [get_task_info(task) for task in asyncio.Task.all_tasks()]}
 
     # allocated memory
     if request.query.get("top_tracemalloc", False):
         top = int(request.query["top_tracemalloc"])
-        data.update({"top_tracemalloc": get_top_tracemalloc_info(top)})
+        data.update({"top_tracemalloc": get_tracemalloc_info(top)})
 
     return web.json_response(data)
