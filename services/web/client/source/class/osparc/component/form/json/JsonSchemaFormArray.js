@@ -12,24 +12,25 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormArray", {
   extend: qx.ui.container.Composite,
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
-    this.__children = new qx.type.Array();
   },
   members: {
-    __children: null,
     // overwritten
     add: function(child, options) {
       this.base(arguments, child, options);
-      this.__children.push(child);
       if (this.getChildren().length === 1) {
         this.setAppearance("form-array-container");
       }
+      child.setKey(this.getChildren().length - 1);
     },
     // overwritten
     remove(child) {
       this.base(arguments, child);
-      this.__children.remove(child);
       if (!this.hasChildren()) {
         this.resetAppearance();
+      }
+      const children = this.getChildren();
+      for (let i=0; i<children.length; i++) {
+        children[i].setKey(i);
       }
     }
   }

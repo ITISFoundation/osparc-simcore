@@ -39,14 +39,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     "ready": "qx.event.type.Event"
   },
   members: {
-    __schema: null,
-    __inputsMap: null,
+    __inputItems: null,
+    __data: null,
     __render: function(schema) {
       this._removeAll();
-      this.__inputsMap = {};
       if (schema) {
-        this.__schema = schema;
         // Render function
+        this.__inputItems = new qx.type.Array();
         this._add(this.__expand(null, schema));
         // Buttons
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -81,53 +80,30 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     /**
      * Function in charge of recursively building the form.
      * 
-     * @param {String} key Key of the entry in the schema.
+     * @param {String} key Key of the entry in the schema. == null -> root / == -1 -> array item
      * @param {Object} schema Current schema being expanded.
      * @param {Integer} depth Increases as we go deeper into the schema.
-     * @param {String} path Constructs the input path.
      */
-    __expand: function(key, schema, depth=0, path="") {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        marginBottom: 10
-      });
-      const isArrayItem = Number.isInteger(key);
-      if (schema.type === "object" || schema.type === "array") {
-        // Objects and arrays have a section with a header and some hierarchical distinction
-        const header = this.__getHeader(key, schema, depth, isArrayItem);
-        container.add(header);
-        
-        if (schema.type === "object" && schema.properties) {
-          // Expanding object's properties
-          const content = this.__expandObject(schema.properties, depth, path, isArrayItem);
-          container.add(content);
-          // Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
-        } else if (schema.type === "array") {
-          // Arrays allow to create new items with a button
-          let pos = 0;
-          const arrayContainer = new osparc.component.form.json.JsonSchemaFormArray();
-          container.add(arrayContainer);
-          const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
-          addButton.addListener("execute", () => {
-            arrayContainer.add(this.__expand(pos, schema.items, depth+1, `${path}.${pos++}`));
-          }, this);
-          header.add(addButton);
-        }
+    __expand: function(key, schema, depth=0) {
+      const isArrayItem = key === -1;
+      const container = new osparc.component.form.json.JsonSchemaFormItem(key, schema, depth);
+      if (schema.type === "object" && schema.properties) {
+        // Expanding object's properties
+        container.add(this.__expandObject(schema.properties, depth, isArrayItem));
+      } else if (schema.type === "array") {
+        // Arrays allow to create new items with a button
+        const arrayContainer = new osparc.component.form.json.JsonSchemaFormArray();
+        container.add(arrayContainer);
+        const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
+        addButton.addListener("execute", () => {
+          // key = -1 for an array item. we let JsonSchemaFormArray manage the array keys
+          arrayContainer.add(this.__expand(-1, schema.items, depth+1));
+        }, this);
+        container.getHeader().add(addButton);
       } else {
-        // Leaf (render input depending on type)
-        const input = this.__getInput(schema.type);
-        // Input label
-        container.add(new qx.ui.basic.Label(schema.title || key).set({
-          buddy: input
-        }));
-        const fixedPath = path.substring(1); // Removes starting dot from path
-        this.__inputsMap[fixedPath] = input; // Keeps a map of the inputs with their paths to retrieve their values later
-        container.add(input);
-        if (schema.description) {
-          container.add(new qx.ui.basic.Label(schema.description).set({
-            font: "text-12-italic",
-            marginTop: 3
-          }));
-        }
+        // Leaf
+        container.addInput();
+        this.__inputItems.push(container);
       }
       return container;
     },
@@ -136,10 +112,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      * 
      * @param {Object} properties Object's properties to be expanded.
      * @param {Integer} depth Current depth into the schema.
-     * @param {String} path Current result object path.
      * @param {Boolean} isArrayItem Used for different styling.
      */
-    __expandObject: function(properties, depth, path, isArrayItem) {
+    __expandObject: function(properties, depth, isArrayItem) {
       const container = new qx.ui.container.Composite();
       const layoutOptions = {};
       if (isArrayItem) {
@@ -148,7 +123,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       } else {
         container.setLayout(new qx.ui.layout.VBox());
       }
-      Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1, `${path}.${key}`)));
+      Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, depth+1)));
       return container;
     },
     /**
@@ -156,43 +131,20 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      */
     toObject: function() {
       const obj = {};
-      Object.entries(this.__inputsMap).forEach(([path, input]) => objectPath.set(obj, path, input.getValue()));
+      const inputMap = {};
+      // Retrieve paths
+      this.__inputItems.forEach(item => {
+        const path = item.getPath();
+        if (!path.includes("orphan.osparc.form")) {
+          // Don't add orphans (from deleted array items)
+          inputMap[path] = item;
+        }
+      });
+      // Clean orphans
+      this.__inputItems = this.__inputItems.filter(item => Object.values(inputMap).includes(item));
+      // Construct object
+      Object.entries(inputMap).forEach(([path, item]) => objectPath.set(obj, path, item.getInput().getValue()));
       return obj;
-    },
-    /**
-     * Generates a non-leaf form item.
-     * 
-     * @param {String} key Current object's key.
-     * @param {Object} schema Current schema.
-     * @param {Integer} depth Current depth into the schema.
-     * @param {Boolean} isArrayItem Used for styling.
-     */
-    __getHeader: function(key, schema, depth, isArrayItem) {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignY: "middle"
-      })).set({
-        marginBottom: 10
-      });
-      const labelText = this.__getHeaderText(key, schema, isArrayItem);
-      const label = new qx.ui.basic.Label(labelText).set({
-        font: depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14",
-        allowStretchX: true
-      });
-      header.add(label, {
-        flex: isArrayItem ? 0 : 1
-      });
-      if (isArrayItem) {
-        const deleteButton = new qx.ui.form.Button(this.tr("Remove")).set({
-          appearance: "link-button"
-        });
-        header.add(deleteButton);
-        deleteButton.addListener("execute", () => {
-          const container = header.getLayoutParent();
-          const parent = container.getLayoutParent();
-          parent.remove(container);
-        }, this);
-      }
-      return header;
     },
     /**
      * Function that returns an appropriate widget fot the given type.
@@ -206,17 +158,6 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
           input = new qx.ui.form.TextField();
       }
       return input;
-    },
-    /**
-     * Method that returns an appropriate text for a label.
-     */
-    __getHeaderText: function(key, schema, isArrayItem) {
-      let title = schema.title || key;
-      if (isArrayItem) {
-        title = schema.title ? `${schema.title} ` : "";
-        return title + `#${key}`;
-      }
-      return title;
     }
   }
 });
