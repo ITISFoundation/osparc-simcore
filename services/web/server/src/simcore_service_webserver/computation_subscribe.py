@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from functools import wraps
-from pprint import pprint
+from pprint import pformat
 from typing import Callable, Coroutine, Dict, Optional
 
 from aiohttp import web
@@ -52,7 +52,7 @@ def rabbit_adapter(app: web.Application) -> Callable:
     return decorator
 
 async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
-    log.debug("parsing message data:\n%s", pprint(data))
+    log.debug("parsing message data:\n%s", pformat(data, depth=3))
     # get common data
     user_id = data["user_id"]
     project_id = data["project_id"]
@@ -94,7 +94,7 @@ async def subscribe(app: web.Application) -> None:
 
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
-    
+
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)
     connection = await aio_pika.connect_robust(rabbit_broker,
