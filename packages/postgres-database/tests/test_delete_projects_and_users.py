@@ -68,6 +68,7 @@ def engine(make_engine, loop):
     return loop.run_until_complete(start())
 
 
+@pytest.mark.skip(reason="UNDER DEV")
 async def test_view(engine):
     async with engine.acquire() as conn:
         async for row in conn.execute(users.select()):
