@@ -11,11 +11,6 @@ main:
   monitoring_enabled: True
 socketio:
   enabled: True
-  message_queue:
-    host: ${RABBIT_HOST}
-    port: ${RABBIT_PORT}
-    user: ${RABBIT_USER}
-    password: ${RABBIT_PASSWORD}
 tracing:
   enabled: True
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
