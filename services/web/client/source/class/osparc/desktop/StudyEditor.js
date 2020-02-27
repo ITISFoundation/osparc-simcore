@@ -90,7 +90,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
 
-      if (validNodeIds.length === 1) {
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
         this.nodeSelected(validNodeIds[0]);
       } else {
         this.nodeSelected(this.getStudy().getUuid());
