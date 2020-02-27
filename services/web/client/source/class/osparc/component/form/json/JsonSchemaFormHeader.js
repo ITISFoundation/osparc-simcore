@@ -6,7 +6,7 @@
  */
 
 /**
- * A Qooxdoo generated form array to be used inside JsonSchemaForm.
+ * A Qooxdoo generated item header to be used inside JsonSchemaForm.
  */
 qx.Class.define("osparc.component.form.json.JsonSchemaFormHeader", {
   extend: qx.ui.container.Composite,
@@ -61,10 +61,10 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormHeader", {
       return title;
     },
     /**
-     * Method that sets another widget as the buddy of the label.
+     * Method that returns the label.
      */
-    setLabelBuddy: function(widget) {
-      this.__label.setBuddy(widget);
+    getLabel: function() {
+      return this.__label;
     }
   }
 });

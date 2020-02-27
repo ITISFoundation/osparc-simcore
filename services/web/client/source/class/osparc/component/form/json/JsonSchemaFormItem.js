@@ -40,7 +40,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
      */
     addInput: function() {
       const input = this.__input = this.__getInputElement();
-      this.__header.setLabelBuddy(input);
+      this.__header.getLabel().setBuddy(input);
       this.add(input);
       if (this.__schema.description) {
         this.add(new qx.ui.basic.Label(this.__schema.description).set({
