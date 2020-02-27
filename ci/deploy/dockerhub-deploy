@@ -12,7 +12,8 @@ if [ ! -v TAG_PREFIX ]; then
 fi
 
 # pull the current tested build
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG
 make pull-version tag-local
 
 # show current images on system
@@ -20,11 +21,13 @@ echo "## Before push"
 make info-images
 
 # re-tag build
-export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
+DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
+export DOCKER_IMAGE_TAG
 make push-version
 
 # re-tag build to master-github-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
+DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
+export DOCKER_IMAGE_TAG
 make push-version
 
 # show update of images on system

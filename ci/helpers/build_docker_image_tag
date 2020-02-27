@@ -28,6 +28,6 @@ else
     image_tag=$(git rev-parse --abbrev-ref HEAD)
 fi
 
-slugified_name=$(exec ci/helpers/slugify_name $image_tag)
+slugified_name=$(exec ci/helpers/slugify_name "$image_tag")
 
 echo "$slugified_name-testbuild-latest"
