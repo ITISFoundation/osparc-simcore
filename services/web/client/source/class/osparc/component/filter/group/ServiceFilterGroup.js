@@ -49,6 +49,14 @@ qx.Class.define("osparc.component.filter.group.ServiceFilterGroup", {
     },
 
     /**
+     * Resets the text and active tags.
+     */
+    reapply: function() {
+      this.__textFilter.reapply();
+      this.__tagsFilter.reapply();
+    },
+
+    /**
      * Returns the text filter widget.
      */
     getTextFilter: function() {

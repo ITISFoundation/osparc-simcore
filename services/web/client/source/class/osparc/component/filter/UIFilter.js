@@ -52,6 +52,8 @@ qx.Class.define("osparc.component.filter.UIFilter", {
   },
 
   members: {
+    __lastData: null,
+
     /**
      * Function that returns the name of the dispatched message when a filter changes.
      *
@@ -73,6 +75,14 @@ qx.Class.define("osparc.component.filter.UIFilter", {
         data
       };
       osparc.component.filter.UIFilterController.getInstance().publish(filterData);
+
+      this.__lastData = data;
+    },
+
+    reapply: function() {
+      if (this.__lastData !== null) {
+        this._filterChange(this.__lastData);
+      }
     }
   }
 });

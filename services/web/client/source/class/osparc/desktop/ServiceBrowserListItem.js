@@ -214,7 +214,7 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
     },
 
     _shouldApplyFilter: function(data) {
-      if (data.text) {
+      if (data.text && this.getTitle()) {
         const label = this.getTitle()
           .trim()
           .toLowerCase();
@@ -222,7 +222,7 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
           return true;
         }
       }
-      if (data.tags && data.tags.length) {
+      if (data.tags && data.tags.length && this.getCategory()) {
         const category = this.getCategory() || "";
         const type = this.getType() || "";
         if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
