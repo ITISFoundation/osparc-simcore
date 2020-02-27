@@ -164,11 +164,11 @@ qx.Class.define("osparc.store.Store", {
         const servicesPromise = osparc.data.Resources.get("servicesTodo", null, !reload);
         const groupsPromise = osparc.data.Resources.get("groups", null, !reload);
         Promise.all([servicesPromise, groupsPromise])
-          .catch(err => {
-            console.error("getServices failed", err);
-          })
           .then(values => {
             allServices.push(...values[0], ...values[1]);
+          })
+          .catch(err => {
+            console.error("getServices failed", err);
           })
           .finally(() => {
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
