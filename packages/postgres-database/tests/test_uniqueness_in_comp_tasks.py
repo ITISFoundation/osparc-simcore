@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import faker
 import pytest
+import sqlalchemy as sa
 
 # from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
@@ -100,6 +101,13 @@ async def test_unique_project_node_pairs(engine):
             )
             == 3
         )
+
+        task_inputs = await conn.scalar(
+            sa.select([comp_tasks.c.inputs]).where(
+                sa.and_(comp_tasks.c.project_id == "PB", comp_tasks.c.node_id == "N2",)
+            )
+        )
+        assert json.loads(task_inputs) == {}
 
         with pytest.raises(UniqueViolation, match="project_node_uniqueness"):
             #
