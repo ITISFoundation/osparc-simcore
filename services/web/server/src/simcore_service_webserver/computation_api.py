@@ -12,6 +12,7 @@ from aiopg.sa import Engine
 from sqlalchemy import and_
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.comp_pipeline import UNKNOWN
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 
 from .director import director_api
@@ -111,9 +112,7 @@ async def _build_adjacency_list(
     return dag_adjacency_list
 
 
-async def _parse_project_data(
-    pipeline_data: Dict, app: web.Application
-):
+async def _parse_project_data(pipeline_data: Dict, app: web.Application):
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -178,17 +177,22 @@ async def _set_adjacency_in_pipeline_db(
 ):
     # pylint: disable=no-value-for-parameter
     async with db_engine.acquire() as conn:
+        # READ
+        # get pipeline
         query = sa.select([comp_pipeline]).where(
             comp_pipeline.c.project_id == project_id
         )
         result = await conn.execute(query)
         pipeline = await result.first()
 
+        # WRITE
         if pipeline is None:
             # create pipeline
             log.debug("No pipeline for project %s, creating one", project_id)
             query = comp_pipeline.insert().values(
-                project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0
+                project_id=project_id,
+                dag_adjacency_list=dag_adjacency_list,
+                state=UNKNOWN,
             )
         else:
             # update pipeline
@@ -196,7 +200,7 @@ async def _set_adjacency_in_pipeline_db(
             query = (
                 comp_pipeline.update()
                 .where(comp_pipeline.c.project_id == project_id)
-                .values(state=0, dag_adjacency_list=dag_adjacency_list)
+                .values(dag_adjacency_list=dag_adjacency_list, state=UNKNOWN)
             )
 
         await conn.execute(query)
@@ -267,7 +271,7 @@ async def _set_tasks_in_tasks_db(
                         )
                         .values(
                             job_id=None,
-                            state=0,
+                            state=UNKNOWN,
                             image=task["image"],
                             schema=task["schema"],
                             inputs=task["inputs"],
@@ -298,9 +302,11 @@ async def _set_tasks_in_tasks_db(
 
                         await conn.execute(query)
 
+
 #
 # API ------------------------------------------
 #
+
 
 async def update_pipeline_db(
     app: web.Application,
