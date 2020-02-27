@@ -6,7 +6,8 @@ IFS=$'\n\t'
 bash ci/helpers/dockerhub_login
 
 # define the local image tag
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG
 
 # push the local cache
 make push-cache
