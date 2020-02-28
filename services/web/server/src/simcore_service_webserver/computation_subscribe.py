@@ -12,7 +12,6 @@ import aio_pika
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
-from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
 from .projects import projects_api
@@ -66,13 +65,6 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
             messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
         elif data["Channel"] == "Log":
             messages["logger"] = data
-            if "...postprocessing end" in data["Messages"]:
-                # the computational service completed
-                # pass comp_task payload to project
-                task_output = await get_task_output(app, project_id, node_id)
-                node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
-                messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
-
         if messages:
             await post_messages(app, user_id, messages)
     except ProjectNotFoundError:
