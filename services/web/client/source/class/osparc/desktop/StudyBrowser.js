@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         });
         const scroll = new qx.ui.container.Scroll();
         addServiceWindow.add(scroll);
-        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", data);
+        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json");
         form.addListener("ready", () => {
           addServiceWindow.open();
         });

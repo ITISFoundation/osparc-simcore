@@ -162,6 +162,12 @@
                     }
                 }
             }
+        },
+        "members": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
         }
     }
 }
