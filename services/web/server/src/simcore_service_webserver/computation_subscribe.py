@@ -66,13 +66,6 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
             messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
         elif data["Channel"] == "Log":
             messages["logger"] = data
-            if "...postprocessing end" in data["Messages"]:
-                # the computational service completed
-                # pass comp_task payload to project
-                task_output = await get_task_output(app, project_id, node_id)
-                node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
-                messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
-
         if messages:
             await post_messages(app, user_id, messages)
     except ProjectNotFoundError:
