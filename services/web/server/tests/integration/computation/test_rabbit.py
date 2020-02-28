@@ -93,8 +93,7 @@ async def rabbit_channels(loop, pika_connection, rabbit_config: Dict) -> Dict[st
         channel = await pika_connection.channel()
         pika_channel = rabbit_config["channels"][channel_name]
         pika_exchange = await channel.declare_exchange(
-            pika_channel, aio_pika.ExchangeType.FANOUT,
-            auto_delete=True
+            pika_channel, aio_pika.ExchangeType.FANOUT
         )
         return pika_exchange
 

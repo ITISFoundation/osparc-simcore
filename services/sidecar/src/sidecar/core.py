@@ -23,7 +23,8 @@ from sqlalchemy import and_, exc
 from . import config
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
-                    find_entry_point, is_node_ready, wrap_async_call)
+                    find_entry_point, is_node_ready, safe_channel,
+                    wrap_async_call)
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -146,7 +147,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             log.exception(msg)
             raise docker.errors.APIError(msg)
 
-    def _log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
+    def _post_log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
         log_data = {
             "Channel" : "Log",
             "Node": self._task.node_id,
@@ -157,7 +158,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         log_body = json.dumps(log_data)
         channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
-    def _progress(self, channel, progress):
+    def _post_progress(self, channel, progress):
         prog_data = {
             "Channel" : "Progress",
             "Node": self._task.node_id,
@@ -169,70 +170,65 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
     def _bg_job(self, log_file):
-        connection = pika.BlockingConnection(self._pika.parameters)
+        with safe_channel(self._pika) as channel:
 
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
-        channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout', auto_delete=True)
+            def _follow(thefile):
+                thefile.seek(0,2)
+                while self._executor.run_pool:
+                    line = thefile.readline()
+                    if not line:
+                        time.sleep(1)
+                        continue
+                    yield line
 
-        def _follow(thefile):
-            thefile.seek(0,2)
-            while self._executor.run_pool:
-                line = thefile.readline()
-                if not line:
-                    time.sleep(1)
-                    continue
-                yield line
-
-        def _parse_progress(line: str):
-            # TODO: This should be 'settings', a regex for every service
-            if line.lower().startswith("[progress]"):
-                progress = line.lower().lstrip("[progress]").rstrip("%").strip()
-                self._progress(channel, progress)
-                log.debug('PROGRESS %s', progress)
-            elif "percent done" in line.lower():
-                progress = line.lower().rstrip("percent done")
-                try:
-                    float_progress = float(progress) / 100.0
-                    progress = str(float_progress)
-                    self._progress(channel, progress)
+            def _parse_progress(line: str):
+                # TODO: This should be 'settings', a regex for every service
+                if line.lower().startswith("[progress]"):
+                    progress = line.lower().lstrip("[progress]").rstrip("%").strip()
+                    self._post_progress(channel, progress)
                     log.debug('PROGRESS %s', progress)
-                except ValueError:
-                    log.exception("Could not extract progress from solver")
-                    self._log(channel, line)
+                elif "percent done" in line.lower():
+                    progress = line.lower().rstrip("percent done")
+                    try:
+                        float_progress = float(progress) / 100.0
+                        progress = str(float_progress)
+                        self._post_progress(channel, progress)
+                        log.debug('PROGRESS %s', progress)
+                    except ValueError:
+                        log.exception("Could not extract progress from solver")
+                        self._post_log(channel, line)
 
-        def _log_accumulated_logs(new_log: str, acc_logs: List[str], time_logs_sent: float):
-            # do not overload broker with messages, we log once every 1sec
-            TIME_BETWEEN_LOGS_S = 2.0
-            acc_logs.append(new_log)
-            now = time.monotonic()
-            if (now - time_logs_sent) > TIME_BETWEEN_LOGS_S:
-                self._log(channel, acc_logs)
+            def _log_accumulated_logs(new_log: str, acc_logs: List[str], time_logs_sent: float):
+                # do not overload broker with messages, we log once every 1sec
+                TIME_BETWEEN_LOGS_S = 2.0
+                acc_logs.append(new_log)
+                now = time.monotonic()
+                if (now - time_logs_sent) > TIME_BETWEEN_LOGS_S:
+                    self._post_log(channel, acc_logs)
+                    log.debug('LOG %s', acc_logs)
+                    # empty the logs
+                    acc_logs = []
+                    time_logs_sent = now
+                return acc_logs,time_logs_sent
+
+
+            acc_logs = []
+            time_logs_sent = time.monotonic()
+            file_path = Path(log_file)
+            with file_path.open() as fp:
+                for line in _follow(fp):
+                    if not self._executor.run_pool:
+                        break
+                    _parse_progress(line)
+                    acc_logs, time_logs_sent = _log_accumulated_logs(line, acc_logs, time_logs_sent)
+            if acc_logs:
+                # send the remaining logs
+                self._post_log(channel, acc_logs)
                 log.debug('LOG %s', acc_logs)
-                # empty the logs
-                acc_logs = []
-                time_logs_sent = now
-            return acc_logs,time_logs_sent
 
-
-        acc_logs = []
-        time_logs_sent = time.monotonic()
-        file_path = Path(log_file)
-        with file_path.open() as fp:
-            for line in _follow(fp):
-                if not self._executor.run_pool:
-                    break
-                _parse_progress(line)
-                acc_logs, time_logs_sent = _log_accumulated_logs(line, acc_logs, time_logs_sent)
-        if acc_logs:
-            # send the remaining logs
-            self._log(channel, acc_logs)
-            log.debug('LOG %s', acc_logs)
-
-        # set progress to 1.0 at the end, ignore failures
-        progress = "1.0"
-        self._progress(channel, progress)
-        connection.close()
+            # set progress to 1.0 at the end, ignore failures
+            progress = "1.0"
+            self._post_progress(channel, progress)
 
     def _process_task_output(self):
         # pylint: disable=too-many-branches
@@ -383,44 +379,20 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         log.debug('DONE Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
-
-    @contextmanager
-    def safe_log_channel(self):
-        connection = pika.BlockingConnection(self._pika.parameters)
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
-        try:
-            yield channel
-        finally:
-            connection.close()
-
-
     def run(self):
-        with self.safe_log_channel() as channel:
-            msg = "Preprocessing start..."
-            self._log(channel, msg)
+        with safe_channel(self._pika) as channel:
+            self._post_log(channel, msg = "Preprocessing start...")
+            self.preprocess()
+            self._post_log(channel, msg = "...preprocessing end")
 
-        self.preprocess()
+            self._post_log(channel, msg = "Processing start...")
+            self.process()
+            self._post_log(channel, msg = "...processing end")
 
-        with self.safe_log_channel() as channel:
-            msg = "...preprocessing end"
-            self._log(channel, msg)
-            msg = "Processing start..."
-            self._log(channel, msg)
-
-        self.process()
-
-        with self.safe_log_channel() as channel:
-            msg = "...processing end"
-            self._log(channel, msg)
-            msg = "Postprocessing start..."
-            self._log(channel, msg)
-
-        self.postprocess()
-
-        with self.safe_log_channel() as channel:
-            msg = "...postprocessing end"
-            self._log(channel, msg)
+            
+            self._post_log(channel, msg = "Postprocessing start...")
+            self.postprocess()
+            self._post_log(channel, msg = "...postprocessing end")
 
 
     def postprocess(self):

@@ -3,8 +3,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ catalog packages/ .travis.yml)
-
 install() {
     bash ci/helpers/ensure_python_pip
     pushd services/catalog; pip3 install -r requirements/ci.txt; popd

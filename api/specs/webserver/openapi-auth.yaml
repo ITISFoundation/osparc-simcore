@@ -210,27 +210,6 @@ paths:
         "3XX":
           description: redirection to specific ui application page
 
-  /auth/check-password/{password}:
-    get:
-      summary: checks password strenght and provides recommendations to improve it
-      tags:
-        - authentication
-      operationId: auth_check_password_strength
-      parameters:
-        - name: password
-          in: path
-          required: true
-          schema:
-            type: string
-            # FIXME: openapi-core limitation. format: password
-      responses:
-        "200":
-          description: evaluates password strength, gives a rating and suggests some improvements
-          content:
-            application/json:
-              schema:
-                $ref: "./components/schemas/auth.yaml#/PasswordCheckEnveloped"
-
 components:
   responses:
     DefaultErrorResponse:

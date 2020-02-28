@@ -89,22 +89,6 @@ async def test_success(client):
 
 
 
-async def test_password_strength(client):
-    cfg = client.app[APP_LOGIN_CONFIG]
-    route = client.app.router['auth_check_password_strength']
-
-    async with LoggedUser(client) as user:
-        url = route.url_for(password=NEW_PASSWORD)
-        rsp = await client.get(url)
-
-        assert rsp.url_obj.path == url.path
-        data, error = await assert_status(rsp, web.HTTPOk)
-
-        assert data["strength"]>0.9
-        assert data["rating"] == "Very strong"
-        assert data["improvements"]
-
-
 if __name__ == '__main__':
     import pytest
     pytest.main([__file__, '--maxfail=1'])

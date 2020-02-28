@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -15,6 +16,18 @@ import yaml
 from docker import DockerClient
 
 current_dir = Path( sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+def _get_ip()->str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception: #pylint: disable=W0703
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 
 @pytest.fixture(scope='session')
@@ -42,7 +55,7 @@ def docker_client() -> DockerClient:
 @pytest.fixture(scope='session')
 def docker_swarm_node(docker_client: DockerClient) -> None:
     # SAME node along ALL session
-    docker_client.swarm.init()
+    docker_client.swarm.init(advertise_addr=_get_ip())
     yield  #--------------------
     assert docker_client.swarm.leave(force=True)
 

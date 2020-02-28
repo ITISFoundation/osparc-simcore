@@ -167,6 +167,7 @@ async def access_study(request: web.Request) -> web.Response:
     try:
         redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment("/study/{}".format(copied_project_id))
     except KeyError:
+        log.error("Cannot redirect to website because route was not registered. Probably qx output was not ready and it was disabled (see statics.py)")
         raise RuntimeError("Unable to serve front-end. Study has been anyway copied over to user.")
 
     response = web.HTTPFound(location=redirect_url)

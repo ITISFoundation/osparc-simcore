@@ -17,7 +17,8 @@ export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
 # staging-github-DATE.GIT_SHA
 export TAG_PATTERN="^${TAG_PREFIX}-.+\..+"
-export DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
+DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
+export DOCKER_IMAGE_TAG
 make pull-version tag-local
 
 # show current images on system
@@ -25,7 +26,8 @@ echo "## Before push"
 make info-images
 
 # re-tag staging to {GIT_TAG}-DATE.GIT_SHA
-export DOCKER_IMAGE_TAG=${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
+DOCKER_IMAGE_TAG=${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
+export DOCKER_IMAGE_TAG
 make push-version push-latest
 
 echo "## After push"

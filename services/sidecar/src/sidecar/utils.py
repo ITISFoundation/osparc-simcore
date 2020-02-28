@@ -3,8 +3,10 @@ import logging
 import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 
 import docker
+import pika
 import tenacity
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
@@ -110,3 +112,14 @@ class ExecutorSettings:
         self.in_dir = ""
         self.out_dir = ""
         self.log_dir = ""
+
+@contextmanager
+def safe_channel(rabbit_settings: RabbitSettings) -> pika.channel.Channel:
+    try:
+        connection = pika.BlockingConnection(rabbit_settings.parameters)
+        channel = connection.channel()
+        channel.exchange_declare(exchange=rabbit_settings.log_channel, exchange_type='fanout')
+        channel.exchange_declare(exchange=rabbit_settings.progress_channel, exchange_type='fanout')
+        yield channel
+    finally:
+        connection.close()

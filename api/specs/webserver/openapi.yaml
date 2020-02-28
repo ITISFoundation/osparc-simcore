@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore RESTful API"
-  version: 0.3.1
+  version: 0.4.0
   description: "RESTful API designed for web clients"
   contact:
     name: IT'IS Foundation
@@ -81,9 +81,6 @@ paths:
 
   /auth/confirmation/{code}:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}"
-
-  /auth/check-password/{password}:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1check-password~1{password}"
 
   # USER SETTINGS ------------------------------------------------------------------
 
