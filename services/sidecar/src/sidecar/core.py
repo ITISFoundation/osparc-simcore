@@ -445,7 +445,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                 )
                 # Use SELECT FOR UPDATE TO lock the row
                 query.with_for_update()
-                task = query.one()
+                task = query.one_or_none()
 
                 if task == None:
                     return next_task_nodes
