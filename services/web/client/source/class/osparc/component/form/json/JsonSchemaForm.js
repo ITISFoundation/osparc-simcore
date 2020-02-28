@@ -9,6 +9,7 @@
  * A Qooxdoo generated form using JSONSchema specification.
  *
  * @asset(object-path/object-path-0-11-4.min.js)
+ * @asset(ajv/ajv.min.js)
  * @ignore(Ajv)
  * @ignore(objectPath)
  * @ignore(fetch)
@@ -19,7 +20,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox());
     const ajvLoader = new qx.util.DynamicScriptLoader([
-      "https://cdnjs.cloudflare.com/ajax/libs/ajv/6.11.0/ajv.min.js",
+      "/resource/ajv/ajv.min.js",
       "/resource/object-path/object-path-0-11-4.min.js"
     ]);
     ajvLoader.addListener("ready", e => {
