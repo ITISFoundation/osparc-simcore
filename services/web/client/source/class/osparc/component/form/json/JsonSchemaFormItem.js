@@ -38,8 +38,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
     /**
      * Makes this item a final input (leaf).
      */
-    addInput: function() {
-      const input = this.__input = this.__getInputElement();
+    addInput: function(validation) {
+      const input = this.__input = this.__getInputElement(validation);
       this.__header.getLabel().setBuddy(input);
       this.add(input);
       if (this.__schema.description) {
@@ -67,11 +67,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
      * 
      * @param {String} type Type of the input that will be used to determine the render behavior
      */
-    __getInputElement: function() {
+    __getInputElement: function(validation) {
       let input;
       switch (this.__schema.type) {
         default:
-          input = new qx.ui.form.TextField();
+          input = new qx.ui.form.TextField().set({
+            required: validation && validation.required
+          });
       }
       return input;
     },

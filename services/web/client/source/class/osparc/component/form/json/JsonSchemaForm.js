@@ -52,16 +52,22 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   members: {
     __inputItems: null,
     __data: null,
+    __validationManager: null,
     __render: function(schema) {
       this._removeAll();
       if (schema) {
         // Render function
         this.__inputItems = [];
+        this.__validationManager = new qx.ui.form.validation.Manager();
         this._add(this.__expand(null, schema, this.__data));
         // Buttons
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
         const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
-        submitBtn.addListener("execute", () => console.log(this.toObject()), this);
+        submitBtn.addListener("execute", () => {
+          if (this.__validationManager.validate()) {
+            console.log(this.toObject());
+          }
+        });
         buttonContainer.add(submitBtn);
         this._add(buttonContainer);
       } else {
@@ -94,15 +100,15 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      * @param {Object} schema Current schema being expanded.
      * @param {Integer} depth Increases as we go deeper into the schema.
      */
-    __expand: function(key, schema, data, depth=0) {
+    __expand: function(key, schema, data, depth=0, validation) {
       const isArrayItem = key === -1;
       const container = new osparc.component.form.json.JsonSchemaFormItem(key, schema, depth);
       if (schema.type === "object" && schema.properties) {
         // Expanding object's properties
-        container.add(this.__expandObject(schema.properties, data, depth, isArrayItem));
+        container.add(this.__expandObject(schema, data, depth, isArrayItem));
       } else if (schema.type === "array") {
         // Arrays allow to create new items with a button
-        const arrayContainer = this.__expandArray(schema.items, data, depth);
+        const arrayContainer = this.__expandArray(schema, data, depth);
         container.add(arrayContainer);
         const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
         addButton.addListener("execute", () => {
@@ -112,9 +118,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         container.getHeader().add(addButton);
       } else {
         // Leaf
-        const input = container.addInput();
+        const input = container.addInput(validation);
         if (data) {
           input.setValue(data);
+        }
+        if (validation) {
+          this.__validationManager.add(input);
         }
         this.__inputItems.push(container);
       }
@@ -123,26 +132,26 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     /**
      * Function that expands an array if any data was provided.
      * 
-     * @param {Object} items Schema for the array's items.
+     * @param {Object} schema Schema for the array.
      * @param {Object} data Array's given data.
      * @param {Integer} depth Current depth into the schema (could be used for styling purposes).
      */
-    __expandArray(items, data, depth) {
+    __expandArray(schema, data, depth) {
       const container = new osparc.component.form.json.JsonSchemaFormArray();
       // Add array items
       if (data) {
-        data.forEach(item => container.add(this.__expand(-1, items, item, depth+1)));
+        data.forEach(item => container.add(this.__expand(-1, schema.items, item, depth+1)));
       }
       return container;
     },
     /**
      * Expands an object property changing its style depending on certain parameters.
      * 
-     * @param {Object} properties Object's properties to be expanded.
+     * @param {Object} schema Object's schema to be expanded.
      * @param {Integer} depth Current depth into the schema.
      * @param {Boolean} isArrayItem Used for different styling.
      */
-    __expandObject: function(properties, data, depth, isArrayItem) {
+    __expandObject: function(schema, data, depth, isArrayItem) {
       const container = new qx.ui.container.Composite();
       const layoutOptions = {};
       if (isArrayItem) {
@@ -151,7 +160,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       } else {
         container.setLayout(new qx.ui.layout.VBox());
       }
-      Object.entries(properties).forEach(([key, value]) => container.add(this.__expand(key, value, data ? data[key] : data, depth+1)));
+      Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
+        required: schema.required && schema.required.includes(key)
+      })));
       return container;
     },
     /**
