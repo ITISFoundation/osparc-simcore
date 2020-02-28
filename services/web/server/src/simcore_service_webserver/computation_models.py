@@ -9,7 +9,7 @@ from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 
 # TODO: has to sync with /api/v0/schemas/project-v0.0.1.json
 # TODO:  test agains all names in registry/fake projects??
-node_key_re = re.compile(r"^simcore/services/(comp|dynamic|frontend)/[^\s/]+$")
+node_key_re = re.compile(r"^simcore/services/(comp|dynamic|frontend)(/[^\s/]+)+$")
 str_to_nodeclass = {
     'comp': NodeClass.COMPUTATIONAL,
     'dynamic': NodeClass.INTERACTIVE,
