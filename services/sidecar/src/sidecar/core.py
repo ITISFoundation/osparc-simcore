@@ -380,18 +380,25 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         log.debug('DONE Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
     def run(self):
+
+        #NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
+
         with safe_channel(self._pika) as channel:
             self._post_log(channel, msg = "Preprocessing start...")
-            self.preprocess()
+
+        self.preprocess()
+
+        with safe_channel(self._pika) as channel:
             self._post_log(channel, msg = "...preprocessing end")
-
             self._post_log(channel, msg = "Processing start...")
-            self.process()
-            self._post_log(channel, msg = "...processing end")
+        self.process()
 
-            
+        with safe_channel(self._pika) as channel:
+            self._post_log(channel, msg = "...processing end")
             self._post_log(channel, msg = "Postprocessing start...")
-            self.postprocess()
+        self.postprocess()
+
+        with safe_channel(self._pika) as channel:
             self._post_log(channel, msg = "...postprocessing end")
 
 
