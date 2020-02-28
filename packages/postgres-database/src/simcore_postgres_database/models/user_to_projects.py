@@ -11,13 +11,17 @@ user_to_projects = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        sa.ForeignKey(users.c.id), # FIXME:, ondelete="CASCADE"),
+        sa.ForeignKey(users.c.id),  # TODO: , ondelete="CASCADE"),
         nullable=False,
     ),
     sa.Column(
         "project_id",
         sa.BigInteger,
-        sa.ForeignKey(projects.c.id), # FIXME: ondelete="CASCADE"),
+        sa.ForeignKey(projects.c.id),
         nullable=False,
     ),
+
+    # TODO: do not ondelete=cascase for project_id or it will delete SHARED PROJECT
+    # add instead sa.UniqueConstraint('user_id', 'project_id', name='user_project_uniqueness'),
+    #
 )

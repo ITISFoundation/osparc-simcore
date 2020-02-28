@@ -3,11 +3,11 @@ services:
   postgres:
     image: postgres:10.11
     environment:
-      - POSTGRES_USER=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_DB=test
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
     # NOTE: DO NOT ADD PERSISTENCE!
     ports:
       - "5432:5432"

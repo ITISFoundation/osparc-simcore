@@ -25,23 +25,27 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from ..db_models import study_tags, users
 from ..utils import format_datetime, now_str
-from .projects_exceptions import (ProjectInvalidRightsError,
-                                  ProjectNotFoundError, ProjectsException)
+from .projects_exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+    ProjectsException,
+)
 from .projects_fakes import Fake
 from .projects_models import ProjectType, projects, user_to_projects
 
 log = logging.getLogger(__name__)
 
-APP_PROJECT_DBAPI  = __name__ + '.ProjectDBAPI'
+APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
     for key, value in project_document_data.items():
-        if key != 'tags': # No column for tags
+        if key != "tags":  # No column for tags
             converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
+
 
 def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
     converted_args = {}
@@ -61,6 +65,7 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
 # TODO: rename add_projects by create_projects
 # FIXME: not clear when data is schema-compliant and db-compliant
 
+
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
         # TODO: shall be a weak pointer since it is also contained by app??
@@ -70,14 +75,14 @@ class ProjectDBAPI:
     @classmethod
     def init_from_engine(cls, engine: Engine):
         db_api = ProjectDBAPI({})
-        db_api._engine = engine #pylint: disable=protected-access
+        db_api._engine = engine  # pylint: disable=protected-access
         return db_api
 
     def _init_engine(self):
         # Delays creation of engine because it setup_db does it on_startup
         self._engine = self._app.get(APP_DB_ENGINE_KEY)
         if self._engine is None:
-            raise ValueError("Postgres engine still not initialized ({}). Check setup_db".format(APP_DB_ENGINE_KEY))
+            raise ValueError("Database subsystem was not initialized")
 
     @property
     def engine(self) -> Engine:
@@ -99,7 +104,14 @@ class ProjectDBAPI:
             uuids.append(prj_uuid)
         return uuids
 
-    async def add_project(self, prj: Dict, user_id: str, *, force_project_uuid=False, force_as_template=False) -> str:
+    async def add_project(
+        self,
+        prj: Dict,
+        user_id: str,
+        *,
+        force_project_uuid=False,
+        force_as_template=False
+    ) -> str:
         """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
@@ -117,7 +129,7 @@ class ProjectDBAPI:
         :return: newly assigned project UUID
         :rtype: str
         """
-        #pylint: disable=no-value-for-parameter
+        # pylint: disable=no-value-for-parameter
 
         async with self.engine.acquire() as conn:
             user_email = await self._get_user_email(conn, user_id)
@@ -125,19 +137,25 @@ class ProjectDBAPI:
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
-            prj.update({
-                "creationDate": now_str(),
-                "lastChangeDate": now_str(),
-                "prjOwner":user_email
-            })
+            prj.update(
+                {
+                    "creationDate": now_str(),
+                    "lastChangeDate": now_str(),
+                    "prjOwner": user_email,
+                }
+            )
             kargs = _convert_to_db_names(prj)
-            kargs.update({
-                "type": ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD,
-            })
+            kargs.update(
+                {
+                    "type": ProjectType.TEMPLATE
+                    if (force_as_template or user_id is None)
+                    else ProjectType.STANDARD,
+                }
+            )
 
             # must be valid uuid
             try:
-                uuidlib.UUID(kargs.get('uuid'))
+                uuidlib.UUID(kargs.get("uuid"))
             except ValueError:
                 if force_project_uuid:
                     raise
@@ -154,7 +172,10 @@ class ProjectDBAPI:
                     project_id = row[projects.c.id]
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
-                    if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
+                    if (
+                        err.diag.constraint_name != "projects_uuid_key"
+                        or force_project_uuid
+                    ):
                         raise
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
@@ -162,16 +183,14 @@ class ProjectDBAPI:
             if user_id is not None:
                 try:
                     query = user_to_projects.insert().values(
-                        user_id=user_id,
-                        project_id=project_id
+                        user_id=user_id, project_id=project_id
                     )
                     await conn.execute(query)
                 except IntegrityError as exc:
                     log.exception("Unregistered user trying to add project")
 
                     # rollback projects database
-                    query = projects.delete().\
-                        where(projects.c.id == project_id)
+                    query = projects.delete().where(projects.c.id == project_id)
                     await conn.execute(query)
 
                     raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
@@ -180,12 +199,14 @@ class ProjectDBAPI:
             prj["uuid"] = kargs["uuid"]
             return prj["uuid"]
 
-    async def load_user_projects(self, user_id: str, *, exclude_templates=True) -> List[Dict]:
+    async def load_user_projects(
+        self, user_id: str, *, exclude_templates=True
+    ) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
 
         condition = user_to_projects.c.user_id == user_id
         if exclude_templates:
-            condition = and_(condition,  projects.c.type != ProjectType.TEMPLATE )
+            condition = and_(condition, projects.c.type != ProjectType.TEMPLATE)
 
         joint_table = user_to_projects.join(projects)
         query = select([projects]).select_from(joint_table).where(condition)
@@ -203,18 +224,21 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             if only_published:
-                expression = and_( projects.c.type == ProjectType.TEMPLATE, projects.c.published == True)
+                expression = and_(
+                    projects.c.type == ProjectType.TEMPLATE,
+                    projects.c.published == True,
+                )
             else:
                 expression = projects.c.type == ProjectType.TEMPLATE
 
             query = select([projects]).where(expression)
-            projects_list.extend( await self.__load_projects(conn, query) )
+            projects_list.extend(await self.__load_projects(conn, query))
 
         return projects_list
 
     async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
-        api_projects: List[Dict] = [] # API model-compatible projects
-        db_projects: List[Dict] = []  # DB model-compatible projects
+        api_projects: List[Dict] = []  # API model-compatible projects
+        db_projects: List[Dict] = []   # DB model-compatible projects
         async for row in conn.execute(query):
             prj = dict(row.items())
             log.debug("found project: %s", prj)
@@ -223,18 +247,28 @@ class ProjectDBAPI:
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
         # FIXME: temporary avoids inner async loops issue https://github.com/aio-libs/aiopg/issues/535
         for db_prj in db_projects:
-            db_prj['tags'] = await self._get_tags_by_project(conn, project_id=db_prj['id'])
+            db_prj["tags"] = await self._get_tags_by_project(
+                conn, project_id=db_prj["id"]
+            )
             api_projects.append(_convert_to_schema_names(db_prj))
 
         return api_projects
 
-    async def _get_project(self, user_id: str, project_uuid: str, exclude_foreign: Optional[List]=None) -> Dict:
+    async def _get_project(
+        self, user_id: str, project_uuid: str, exclude_foreign: Optional[List] = None
+    ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects]).select_from(joint_table).where(
-                and_(projects.c.uuid == project_uuid,
-                     user_to_projects.c.user_id == user_id)
+            query = (
+                select([projects])
+                .select_from(joint_table)
+                .where(
+                    and_(
+                        projects.c.uuid == project_uuid,
+                        user_to_projects.c.user_id == user_id,
+                    )
+                )
             )
             result = await conn.execute(query)
             project_row = await result.first()
@@ -244,9 +278,9 @@ class ProjectDBAPI:
 
             project = dict(project_row.items())
 
-            if 'tags' not in exclude_foreign:
+            if "tags" not in exclude_foreign:
                 tags = await self._get_tags_by_project(conn, project_id=project_row.id)
-                project['tags'] = tags
+                project["tags"] = tags
 
             return project
 
@@ -254,13 +288,10 @@ class ProjectDBAPI:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
-            query = study_tags.insert().values(
-                study_id=project['id'],
-                tag_id=tag_id
-            )
+            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
-                    project['tags'].append(tag_id)
+                    project["tags"].append(tag_id)
                     return _convert_to_schema_names(project)
                 raise ProjectsException()
 
@@ -269,11 +300,14 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
-                and_(study_tags.c.study_id == project['id'], study_tags.c.tag_id == tag_id)
+                and_(
+                    study_tags.c.study_id == project["id"],
+                    study_tags.c.tag_id == tag_id,
+                )
             )
             async with conn.execute(query):
-                if tag_id in project['tags']:
-                    project['tags'].remove(tag_id)
+                if tag_id in project["tags"]:
+                    project["tags"].remove(tag_id)
                 return _convert_to_schema_names(project)
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
@@ -295,7 +329,9 @@ class ProjectDBAPI:
         project = await self._get_project(user_id, project_uuid)
         return _convert_to_schema_names(project)
 
-    async def get_template_project(self, project_uuid: str, *, only_published=False) -> Dict:
+    async def get_template_project(
+        self, project_uuid: str, *, only_published=False
+    ) -> Dict:
         # TODO: eliminate this and use mock to replace get_user_project instead
         prj = Fake.projects.get(project_uuid)
         if prj and prj.template:
@@ -307,11 +343,13 @@ class ProjectDBAPI:
                 condition = and_(
                     projects.c.type == ProjectType.TEMPLATE,
                     projects.c.uuid == project_uuid,
-                    projects.c.published==True)
+                    projects.c.published == True,
+                )
             else:
                 condition = and_(
                     projects.c.type == ProjectType.TEMPLATE,
-                    projects.c.uuid == project_uuid)
+                    projects.c.uuid == project_uuid,
+                )
 
             query = select([projects]).where(condition)
 
@@ -320,29 +358,33 @@ class ProjectDBAPI:
             if row:
                 template_prj = _convert_to_schema_names(row)
                 tags = await self._get_tags_by_project(conn, project_id=row.id)
-                template_prj['tags'] = tags
+                template_prj["tags"] = tags
 
         return template_prj
 
     async def get_project_workbench(self, project_uuid: str):
         async with self.engine.acquire() as conn:
             query = select([projects.c.workbench]).where(
-                    projects.c.uuid == project_uuid
-                    )
+                projects.c.uuid == project_uuid
+            )
             result = await conn.execute(query)
             row = await result.first()
             if row:
                 return row[projects.c.workbench]
         return {}
 
-    async def update_user_project(self, project_data: Dict, user_id: str, project_uuid: str):
+    async def update_user_project(
+        self, project_data: Dict, user_id: str, project_uuid: str
+    ):
         """ updates a project from a user
 
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            row = await self._get_project(user_id, project_uuid, exclude_foreign=['tags'])
+            row = await self._get_project(
+                user_id, project_uuid, exclude_foreign=["tags"]
+            )
 
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
@@ -354,27 +396,30 @@ class ProjectDBAPI:
             project_data["lastChangeDate"] = now_str()
 
             # now update it
-            #FIXME: E1120:No value for argument 'dml' in method call
+            # FIXME: E1120:No value for argument 'dml' in method call
             # pylint: disable=E1120
-            query = projects.update().\
-                values(**_convert_to_db_names(project_data)).\
-                    where(projects.c.id == row[projects.c.id.key])
+            query = (
+                projects.update()
+                .values(**_convert_to_db_names(project_data))
+                .where(projects.c.id == row[projects.c.id.key])
+            )
             await conn.execute(query)
 
-    async def pop_project(self, project_uuid) -> Dict:
-        # TODO: delete projects and returns a copy
-        pass
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
-        """ deletes a project from a user
-
-        """
         log.info("Deleting project %s for user %s", project_uuid, user_id)
         async with self.engine.acquire() as conn:
             joint_table = user_to_projects.join(projects)
-            query = select([projects.c.id, user_to_projects.c.id], use_labels=True).\
-                select_from(joint_table).\
-                    where(and_(projects.c.uuid == project_uuid, user_to_projects.c.user_id == user_id))
+            query = (
+                select([projects.c.id, user_to_projects.c.id], use_labels=True)
+                .select_from(joint_table)
+                .where(
+                    and_(
+                        projects.c.uuid == project_uuid,
+                        user_to_projects.c.user_id == user_id,
+                    )
+                )
+            )
             result = await conn.execute(query)
             # ensure we have found one
             rows = await result.fetchall()
@@ -386,22 +431,23 @@ class ProjectDBAPI:
             if len(rows) == 1:
                 row = rows[0]
                 # now let's delete the link to the user
-                #FIXME: E1120:No value for argument 'dml' in method call
+                # FIXME: E1120:No value for argument 'dml' in method call
                 # pylint: disable=E1120
                 project_id = row[user_to_projects.c.id]
                 log.info("will delete row with project_id %s", project_id)
-                query = user_to_projects.delete().\
-                    where(user_to_projects.c.id == project_id)
+                query = user_to_projects.delete().where(
+                    user_to_projects.c.id == project_id
+                )
                 await conn.execute(query)
 
-                query = user_to_projects.select().\
-                    where(user_to_projects.c.project_id == row[projects.c.id])
+                query = user_to_projects.select().where(
+                    user_to_projects.c.project_id == row[projects.c.id]
+                )
                 result = await conn.execute(query)
                 remaining_users = await result.fetchall()
                 if not remaining_users:
                     # only delete project if there are no other user mapped
-                    query = projects.delete().\
-                        where(projects.c.id == row[projects.c.id])
+                    query = projects.delete().where(projects.c.id == row[projects.c.id])
                     await conn.execute(query)
 
     async def make_unique_project_uuid(self) -> str:
@@ -418,8 +464,7 @@ class ProjectDBAPI:
             while True:
                 project_uuid = str(uuidlib.uuid1())
                 result = await conn.execute(
-                    select([projects])\
-                        .where(projects.c.uuid==project_uuid)
+                    select([projects]).where(projects.c.uuid == project_uuid)
                 )
                 found = await result.first()
                 if not found:
@@ -433,9 +478,11 @@ class ProjectDBAPI:
         return row[users.c.email] if row else "Unknown"
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
-        query = sa.select([study_tags.c.tag_id]).where(study_tags.c.study_id == project_id)
+        query = sa.select([study_tags.c.tag_id]).where(
+            study_tags.c.study_id == project_id
+        )
         rows = await (await conn.execute(query)).fetchall()
-        return [ row.tag_id for row in rows ]
+        return [row.tag_id for row in rows]
 
 
 def setup_projects_db(app: web.Application):

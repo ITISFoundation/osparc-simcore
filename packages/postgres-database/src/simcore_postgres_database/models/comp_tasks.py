@@ -27,4 +27,6 @@ comp_tasks = sa.Table(
     sa.Column("submit", sa.DateTime),
     sa.Column("start", sa.DateTime),
     sa.Column("end", sa.DateTime),
+
+    sa.UniqueConstraint('project_id', 'node_id', name='project_node_uniqueness'),
 )
