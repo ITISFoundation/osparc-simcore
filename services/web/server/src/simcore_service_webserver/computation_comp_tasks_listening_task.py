@@ -55,7 +55,7 @@ async def register_trigger_function(app: web.Application):
     CREATE TRIGGER {DB_TRIGGER_NAME}
     AFTER UPDATE OF outputs ON comp_tasks
         FOR EACH ROW
-        WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class != 'FRONTEND')
+        WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
         EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
     """
 
@@ -66,11 +66,11 @@ async def register_trigger_function(app: web.Application):
             await conn.execute(trigger_registration_query)
 
 async def listen(app: web.Application):
-    listen_query = f"LISTEN {DB_CHANNEL_NAME}"
+    listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     db_engine: Engine = app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
-        async with conn.begin():
-            await conn.execute(listen_query)
+        await conn.execute(listen_query)
+        while True:
             msg = await conn.connection.notifies.get()
             log.debug("DB comp_tasks.outputs Update: <- %s", msg.payload)
             node = json.loads(msg.payload)
@@ -93,8 +93,7 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
     try:
         await register_trigger_function(app)
         log.info("listening to comp_task events...")
-        while True:
-            await listen(app)
+        await listen(app)
     except asyncio.CancelledError:
         pass
     finally:
