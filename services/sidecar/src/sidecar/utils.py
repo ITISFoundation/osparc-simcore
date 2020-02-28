@@ -4,18 +4,20 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from typing import Tuple
 
 import docker
 import pika
 import tenacity
+from sqlalchemy import and_, create_engine
+from sqlalchemy.orm import sessionmaker
+
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
-from sqlalchemy import and_, create_engine
-from sqlalchemy.orm import sessionmaker
 
 
 def wrap_async_call(fct: asyncio.coroutine):
@@ -114,12 +116,12 @@ class ExecutorSettings:
         self.log_dir = ""
 
 @contextmanager
-def safe_channel(rabbit_settings: RabbitSettings) -> pika.channel.Channel:
+def safe_channel(rabbit_settings: RabbitSettings) -> Tuple[pika.channel.Channel, pika.adapters.BlockingConnection]:
     try:
         connection = pika.BlockingConnection(rabbit_settings.parameters)
         channel = connection.channel()
         channel.exchange_declare(exchange=rabbit_settings.log_channel, exchange_type='fanout')
         channel.exchange_declare(exchange=rabbit_settings.progress_channel, exchange_type='fanout')
-        yield channel
+        yield channel, connection
     finally:
         connection.close()

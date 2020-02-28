@@ -170,7 +170,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
     def _bg_job(self, log_file):
-        with safe_channel(self._pika) as channel:
+        with safe_channel(self._pika) as (channel, blocking_connection):
 
             def _follow(thefile):
                 thefile.seek(0,2)
@@ -178,6 +178,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                     line = thefile.readline()
                     if not line:
                         time.sleep(1)
+                        blocking_connection.process_data_events()
                         continue
                     yield line
 
@@ -383,22 +384,22 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         #NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
 
-        with safe_channel(self._pika) as channel:
+        with safe_channel(self._pika) as (channel,_):
             self._post_log(channel, msg = "Preprocessing start...")
 
         self.preprocess()
 
-        with safe_channel(self._pika) as channel:
+        with safe_channel(self._pika) as (channel,_):
             self._post_log(channel, msg = "...preprocessing end")
             self._post_log(channel, msg = "Processing start...")
         self.process()
 
-        with safe_channel(self._pika) as channel:
+        with safe_channel(self._pika) as (channel,_):
             self._post_log(channel, msg = "...processing end")
             self._post_log(channel, msg = "Postprocessing start...")
         self.postprocess()
 
-        with safe_channel(self._pika) as channel:
+        with safe_channel(self._pika) as (channel,_):
             self._post_log(channel, msg = "...postprocessing end")
 
 
