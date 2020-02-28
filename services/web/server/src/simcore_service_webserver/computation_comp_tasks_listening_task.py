@@ -55,9 +55,11 @@ async def register_trigger_function(app: web.Application):
     CREATE TRIGGER {DB_TRIGGER_NAME}
     AFTER UPDATE OF outputs ON comp_tasks
         FOR EACH ROW
-        WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb)
+        WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class != 'FRONTEND')
         EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
     """
+
+
     async with db_engine.acquire() as conn:
         async with conn.begin():
             await conn.execute(notification_fct_query)
