@@ -9,14 +9,14 @@
  * A Qooxdoo generated form using JSONSchema specification.
  *
  * @asset(object-path/object-path-0-11-4.min.js)
- * @asset(ajv/ajv.min.js)
+ * @asset(ajv/ajv-6-11-0.min.js)
  * @ignore(Ajv)
  * @ignore(objectPath)
  * @ignore(fetch)
  */
 qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   extend: qx.ui.core.Widget,
-  construct: function(schemaUrl) {
+  construct: function(schemaUrl, data) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox());
     const ajvLoader = new qx.util.DynamicScriptLoader([
@@ -25,15 +25,25 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ]);
     ajvLoader.addListener("ready", e => {
       osparc.utils.Utils.fetchJSON(schemaUrl)
-        .then(this.__validateSchema)
+        .then(schema => {
+          if (this.__validate(schema.$schema, schema)) {
+            // If schema is valid
+            if (data && this.__validate(schema, data)) {
+              // Validate data if present
+              this.__data = data;
+            }
+            return schema;
+          }
+          return null;
+        })
         .then(this.__render)
         .catch(err => {
           console.error(err);
           this.__render(null);
         });
     }, this);
+    ajvLoader.addListener("failed", console.error, this);
     this.__render = this.__render.bind(this);
-    this.__validateSchema = this.__validateSchema.bind(this);
     ajvLoader.start();
   },
   events: {
@@ -68,15 +78,14 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       }
       this.fireEvent("ready");
     },
-    __validateSchema: function(schema) {
-      return new Promise((resolve, reject) => {
-        const ajv = new Ajv();
-        ajv.validate(schema.$schema, schema)
-        if (ajv.errors) {
-          reject(ajv.errors);
-        }
-        resolve(schema);
-      });
+    __validate: function(schema, data) {
+      const ajv = new Ajv();
+      ajv.validate(schema, data)
+      if (ajv.errors) {
+        console.error(ajv.errors);
+        return false;
+      }
+      return true;
     },
     /**
      * Function in charge of recursively building the form.
