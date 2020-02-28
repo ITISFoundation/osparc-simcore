@@ -3,9 +3,7 @@
 """
 import re
 
-from simcore_postgres_database.models.comp_pipeline import (UNKNOWN,
-                                                            comp_pipeline)
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass
 
 # TODO: has to sync with /api/v0/schemas/project-v0.0.1.json
 # TODO:  test agains all names in registry/fake projects??
@@ -21,3 +19,4 @@ def to_node_class(node_key: str) -> NodeClass:
     if match:
         return str_to_nodeclass.get(match.group(1))
     return None
+

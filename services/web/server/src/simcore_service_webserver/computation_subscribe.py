@@ -12,7 +12,6 @@ import aio_pika
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
-from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
 from .projects import projects_api
