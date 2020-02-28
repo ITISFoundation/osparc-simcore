@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       this.add(input);
       if (this.__schema.description) {
         this.add(new qx.ui.basic.Label(this.__schema.description).set({
-          font: "text-12-italic",
+          font: "text-11-italic",
           marginTop: 3
         }));
       }
@@ -57,7 +57,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       return this.__header;
     },
     /**
-     * Gets the generated header
+     * Gets the input field
      */
     getInput: function() {
       return this.__input;

@@ -83,7 +83,7 @@
                                 "title": "Label",
                                 "description": "Short and human-readable."
                             },
-                            "default": {
+                            "defaultValue": {
                                 "type": "string",
                                 "title": "Default value"
                             },

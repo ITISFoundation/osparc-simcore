@@ -15,7 +15,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormHeader", {
       alignY: "middle"
     }));
     this.__label = new qx.ui.basic.Label().set({
-      allowStretchX: true
+      allowStretchX: true,
+      font: "title-12"
     });
     if (schema.type === "object" || schema.type === "array") {
       this.__label.setFont(depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14");

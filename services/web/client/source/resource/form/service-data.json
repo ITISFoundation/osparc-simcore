@@ -1,0 +1,48 @@
+{
+    "contributor": {
+        "firstName": "Ignacio",
+        "lastName": "Pascual",
+        "email": "pascual@itis.swiss",
+        "affiliation": "Universidad Politécnica de Valencia"
+    },
+    "serviceInfo": {
+        "description": "Universal solver that solves everything and even cooks for you",
+        "url": "keep.dreaming.com"
+    },
+    "serviceInterface": {
+        "inputs": [
+            {
+                "name": "input1",
+                "type": "complex",
+                "defaultValue": "null",
+                "label": "input #1",
+                "description": "Input number one"
+            }, {
+                "name": "input2",
+                "type": "complex",
+                "defaultValue": "null",
+                "label": "input #2",
+                "description": "Input number two"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output1",
+                "type": "complex",
+                "defaultValue": "null",
+                "label": "Output #1",
+                "description": "Output number one"
+            }
+        ]
+    },
+    "authors": [
+        {
+            "name": "Ignacio Pascual",
+            "email": "pascual@itis.swiss"
+        }, {
+            "name": "Katie Zhuang",
+            "email": "zhuang@itis.swiss",
+            "affiliation": "University of Great America"
+        }
+    ]
+}

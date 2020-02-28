@@ -33,6 +33,9 @@
  *   let prjBrowser = this.__serviceBrowser = new osparc.desktop.StudyBrowser();
  *   this.getRoot().add(prjBrowser);
  * </pre>
+ * 
+ * @asset(form/service.json)
+ * @asset(form/service-data.json)
  */
 
 qx.Class.define("osparc.desktop.StudyBrowser", {
@@ -101,25 +104,29 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     userTimer.start();
 
     this.__initResources();
-      
-    const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
-      appearance: "service-window",
-      modal: true,
-      autoDestroy: true,
-      showMinimize: false,
-      allowMinimize: false,
-      centerOnAppear: true,
-      layout: new qx.ui.layout.Grow(),
-      width: 600,
-      height: 660
-    });
-    const scroll = new qx.ui.container.Scroll();
-    addServiceWindow.add(scroll);
-    const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json");
-    form.addListener("ready", () => {
-      addServiceWindow.open();
-    });
-    scroll.add(form);
+
+    osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+      .then(data => {
+        const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
+          appearance: "service-window",
+          modal: true,
+          autoDestroy: true,
+          showMinimize: false,
+          allowMinimize: false,
+          centerOnAppear: true,
+          layout: new qx.ui.layout.Grow(),
+          width: 600,
+          height: 660
+        });
+        const scroll = new qx.ui.container.Scroll();
+        addServiceWindow.add(scroll);
+        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", data);
+        form.addListener("ready", () => {
+          addServiceWindow.open();
+        });
+        scroll.add(form);
+      })
+      .catch(console.error);
   },
 
   events: {
