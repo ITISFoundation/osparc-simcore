@@ -122,10 +122,9 @@ def client_session_id():
     return str(uuid4())
 
 
-async def _publish_messages(num_messages: int, node_uuid: str, user_id: str, project_id: str, rabbit_channels: Dict[str, aio_pika.Exchange]) -> Tuple[Dict, Dict, Dict]:
+async def _publish_messages(num_messages: int, node_uuid: str, user_id: str, project_id: str, rabbit_channels: Dict[str, aio_pika.Exchange]) -> Tuple[Dict, Dict]:
     log_messages = [_create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}") for n in range(num_messages)]
     progress_messages = [_create_rabbit_message("progress", node_uuid, user_id, project_id, n/num_messages) for n in range(num_messages)]
-    final_log_message = _create_rabbit_message("log", node_uuid, user_id, project_id, f"...postprocessing end")
 
     # send the messages over rabbit
     for n in range(num_messages):
@@ -139,13 +138,8 @@ async def _publish_messages(num_messages: int, node_uuid: str, user_id: str, pro
                 body=json.dumps(progress_messages[n]).encode(),
                 content_type="text/json"), routing_key = ""
         )
-    await rabbit_channels["log"].publish(
-        aio_pika.Message(
-            body=json.dumps(final_log_message).encode(),
-            content_type="text/json"), routing_key = ""
-    )
 
-    return (log_messages, progress_messages, final_log_message)
+    return (log_messages, progress_messages)
 
 
 async def _wait_until(pred: Callable, timeout: int):
@@ -185,7 +179,7 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     mock_node_update_handler_fct.assert_not_called()
 
     # publish messages with correct user id, but no project
-    log_messages, _, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_channels)
+    log_messages, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_channels)
     def predicate() -> bool:
         return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES)
     await _wait_until(predicate, TIMEOUT_S)
@@ -194,7 +188,7 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     mock_node_update_handler_fct.assert_not_called()
     # publish message with correct user id, project but not node
     mock_log_handler_fct.reset_mock()
-    log_messages, _, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    log_messages, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
     await _wait_until(predicate, TIMEOUT_S)
     log_calls = [call(json.dumps(message)) for message in log_messages]
     mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
@@ -204,13 +198,12 @@ async def test_rabbit_websocket_computation(loop, logged_user, user_project,
     # publish message with correct user id, project node
     mock_log_handler_fct.reset_mock()
     node_uuid = list(user_project["workbench"])[0]
-    log_messages, progress_messages, final_log_message = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    log_messages, progress_messages = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
     def predicate2() -> bool:
-        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES+1) and \
-            mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES) and \
+            mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)
     await _wait_until(predicate2, TIMEOUT_S)
-    log_messages.append(final_log_message)
     log_calls = [call(json.dumps(message)) for message in log_messages]
     mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler_fct.assert_called()
-    assert mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES+1)
+    assert mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)
