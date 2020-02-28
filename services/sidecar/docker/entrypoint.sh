@@ -58,12 +58,13 @@ fi
 DOCKER_MOUNT=/var/run/docker.sock
 
 
-if [ "$(stat $DOCKER_MOUNT > /dev/null 2>&1)" -eq 0 ]
+if stat $DOCKER_MOUNT > /dev/null 2>&1
 then
     GROUPID=$(stat -c %g $DOCKER_MOUNT)
     GROUPNAME=scdocker
 
-    if [ "$(addgroup -g "$GROUPID" $GROUPNAME > /dev/null 2>&1)" -gt 0 ]
+
+    if ! addgroup -g "$GROUPID" $GROUPNAME > /dev/null 2>&1
     then
         # if group already exists in container, then reuse name
         GROUPNAME=$(getent group "${GROUPID}" | cut -d: -f1)

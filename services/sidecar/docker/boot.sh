@@ -20,7 +20,7 @@ then
   #--------------------
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
-  which python | sed 's/^/    /'
+  command -v python | sed 's/^/    /'
   echo "$INFO" "PIP :"
   $SC_PIP list | sed 's/^/    /'
 fi
