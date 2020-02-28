@@ -5,15 +5,15 @@ import re
 
 from simcore_postgres_database.models.comp_pipeline import (UNKNOWN,
                                                             comp_pipeline)
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks.
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 
 # TODO: has to sync with /api/v0/schemas/project-v0.0.1.json
 # TODO:  test agains all names in registry/fake projects??
 node_key_re = re.compile(r"^simcore/services/(comp|dynamic|frontend)/[^\s/]+$")
 str_to_nodeclass = {
-    'comp': NodeClass.COMPUTATIONAL
-    'dynamic': NodeClass.INTERACTIVE
-    'frontend': NodeClass.FRONTEND
+    'comp': NodeClass.COMPUTATIONAL,
+    'dynamic': NodeClass.INTERACTIVE,
+    'frontend': NodeClass.FRONTEND,
 }
 
 def to_node_class(node_key: str) -> NodeClass:
