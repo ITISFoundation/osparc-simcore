@@ -20,7 +20,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox());
     const ajvLoader = new qx.util.DynamicScriptLoader([
-      "/resource/ajv/ajv.min.js",
+      "/resource/ajv/ajv-6-11-0.min.js",
       "/resource/object-path/object-path-0-11-4.min.js"
     ]);
     ajvLoader.addListener("ready", e => {
