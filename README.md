@@ -80,7 +80,7 @@ This project works and is developed mainly under **linux** but, with some adjust
 
 ##### Setup for **windows**
 
-In windows, this project also works under [WSL] (windows subsystem for linux). Recommended setups t
+In windows, it works under [WSL] (windows subsystem for linux). Some details on the setup:
 
 - [Install](https://chocolatey.org/docs/installation) [chocolatey] package manager
   - ``choco install docker-for-windows``
