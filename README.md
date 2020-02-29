@@ -74,6 +74,7 @@ To build and run:
 To develop, in addition:
 
 - python 3.6 (this dependency will be deprecated soon)
+- nodejs for client part (this dependency will be deprecated soon)
 - [vscode] (highly recommended)
 
 This project works and is developed mainly under **linux** but, with some adjustments, it can also be done under windows (see notes below).
