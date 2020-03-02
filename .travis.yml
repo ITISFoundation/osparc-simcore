@@ -31,17 +31,17 @@ jobs:
       env:
         - OWNER=${TRAVIS_REPO_SLUG%/*}
       before_install:
-        - sudo bash ci/travis/build/test-images before_install
+        - sudo bash ci/travis/build/test-images.bash before_install
       install:
-        - unbuffer bash ci/travis/build/test-images install
+        - unbuffer bash ci/travis/build/test-images.bash install
       before_script:
-        - unbuffer bash ci/travis/build/test-images before_script
+        - unbuffer bash ci/travis/build/test-images.bash before_script
       script:
-        - unbuffer bash ci/travis/build/test-images script
+        - unbuffer bash ci/travis/build/test-images.bash script
       after_success:
-        - unbuffer bash ci/travis/build/test-images after_success
+        - unbuffer bash ci/travis/build/test-images.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/build/test-images after_failure
+        - unbuffer bash ci/travis/build/test-images.bash after_failure
       deploy:
         - provider: script
           skip_cleanup: true

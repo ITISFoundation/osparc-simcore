@@ -403,9 +403,9 @@ jobs:
     - name: show system environs
       run: ./ci/helpers/show_system_version.bashs
     - name: pull images
-      run: ./ci/build/test-images pull_images
+      run: ./ci/build/test-images.bash pull_images
     - name: build images
-      run: ./ci/build/test-images build_images
+      run: ./ci/build/test-images.bash build_images
     - name: set owner variable
       run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
     - name: push images
