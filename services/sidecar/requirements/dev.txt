@@ -6,6 +6,8 @@
 #   pip install -r requirements/dev.txt
 #
 
+watchdog[watchmedo]
+
 # installs base + tests requirements
 -r _test.txt
 
