@@ -4,32 +4,30 @@
 #
 #    pip-compile --output-file=_base.txt _base.in
 #
-aiohttp==3.6.2
-aiopg[sa]==1.0.0
-aiozipkin==0.6.0
+aiohttp==3.6.2            # via -r requirements/_base.in (line 10), aiozipkin
+aiopg[sa]==1.0.0          # via -r requirements/_base.in (line 11)
+aiozipkin==0.6.0          # via -r requirements/_base.in (line 12)
 async-timeout==3.0.1      # via aiohttp
-attrs==19.1.0
+attrs==19.1.0             # via -r requirements/_base.in (line 19), aiohttp, jsonschema, openapi-core
 chardet==3.0.4            # via aiohttp
-idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, yarl
+idna==2.8                 # via yarl
 isodate==0.6.0            # via openapi-core
-jsonschema==3.0.1
+jsonschema==3.0.1         # via -r requirements/_base.in (line 15), openapi-spec-validator
 lazy-object-proxy==1.4.1  # via openapi-core
 multidict==4.5.2          # via aiohttp, yarl
-openapi-core==0.12.0
+openapi-core==0.12.0      # via -r requirements/_base.in (line 16)
 openapi-spec-validator==0.2.7  # via openapi-core
-prometheus-client==0.7.1
-psycopg2-binary==2.8.4
+prometheus-client==0.7.1  # via -r requirements/_base.in (line 17)
+psycopg2-binary==2.8.4    # via -r requirements/_base.in (line 7), aiopg, sqlalchemy
 pyrsistent==0.15.2        # via jsonschema
-pyyaml==5.3
+pyyaml==5.3               # via -r requirements/_base.in (line 6), openapi-spec-validator
 six==1.12.0               # via isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, tenacity
-sqlalchemy[postgresql_psycopg2binary]==1.3.4
+sqlalchemy[postgresql_psycopg2binary]==1.3.4  # via -r requirements/_base.in (line 5), aiopg
 strict-rfc3339==0.7       # via openapi-core
-tenacity==6.0.0
-trafaret==2.0.0
-typing-extensions==3.7.2  # via aiohttp
-ujson==1.35
-werkzeug==0.15.4
+tenacity==6.1.0           # via -r requirements/_base.in (line 18)
+trafaret==2.0.0           # via -r requirements/_base.in (line 20)
+ujson==1.35               # via -r requirements/_base.in (line 13)
+werkzeug==0.15.4          # via -r requirements/_base.in (line 14)
 yarl==1.3.0               # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
