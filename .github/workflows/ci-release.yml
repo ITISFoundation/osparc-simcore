@@ -2,8 +2,6 @@ name: Github-CI-Release
 
 on:
   push:
-    branches:
-      - staging
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
@@ -15,6 +13,8 @@ env:
 
 jobs:
   deploy:
+    # only run on staging branch
+    if: github.event.base_ref == 'ref/heads/staging'
     name: deploy release
     runs-on: ubuntu-latest
     env:
