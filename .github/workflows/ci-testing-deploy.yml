@@ -409,7 +409,7 @@ jobs:
     - name: set owner variable
       run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
     - name: push images
-      run: ./ci/deploy/dockerhub-test-images
+      run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver:
     name: Integration-testing webserver
@@ -701,12 +701,12 @@ jobs:
         if: github.ref == 'refs/heads/master'
         env:
           TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy
+        run: ./ci/deploy/dockerhub-deploy.bash
       - name: deploy staging
         if: github.ref == 'refs/heads/staging'
         env:
           TAG_PREFIX: staging-github
-        run: ./ci/deploy/dockerhub-deploy
+        run: ./ci/deploy/dockerhub-deploy.bash
       # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
       # - name: mattermost notification
       #   uses: tferreira/matterfy@releases/v1

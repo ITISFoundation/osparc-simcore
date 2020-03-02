@@ -30,4 +30,4 @@ jobs:
       - name: set git tag
         run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
       - name: deploy
-        run: ./ci/deploy/dockerhub-release
+        run: ./ci/deploy/dockerhub-release.bash

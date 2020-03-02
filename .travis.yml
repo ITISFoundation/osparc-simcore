@@ -45,7 +45,7 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: unbuffer bash ci/deploy/dockerhub-test-images
+          script: unbuffer bash ci/deploy/dockerhub-test-images.bash
           on:
             all_branches: true
 
@@ -390,7 +390,7 @@ jobs:
       script: echo "Deploy master"
       deploy:
         - provider: script
-          script: unbuffer bash ci/deploy/dockerhub-deploy
+          script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: master
     - stage: deployment
@@ -404,7 +404,7 @@ jobs:
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: unbuffer bash ci/deploy/dockerhub-deploy
+          script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: staging
     - stage: deployment
@@ -418,7 +418,7 @@ jobs:
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: unbuffer bash ci/deploy/dockerhub-release
+          script: unbuffer bash ci/deploy/dockerhub-release.bash
           on:
             all_branches: true
             tags: true
