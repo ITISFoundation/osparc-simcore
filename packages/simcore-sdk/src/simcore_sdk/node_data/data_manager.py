@@ -15,7 +15,7 @@ def _create_s3_object(file_path: Union[Path, str]) -> str:
 
 async def _push_file(file_path: Path, rename_to: Optional[str]):
     store_id = 0 # this is for simcore.s3
-    s3_object = _create_s3_object(file_path)
+    s3_object = _create_s3_object(rename_to if rename_to else file_path)
     log.info("uploading %s to S3 to %s...", file_path.name, s3_object)
     await filemanager.upload_file(store_id=store_id,
                                 s3_object=s3_object,
@@ -31,7 +31,7 @@ async def push(file_or_folder: Path, rename_to: Optional[str] = None):
         # compress the files
         compressed_file_wo_ext = Path(tmp_dir_name) / (rename_to if rename_to else file_or_folder.stem)
         archive_file = Path(make_archive(str(compressed_file_wo_ext), 'zip', root_dir=file_or_folder)) #, base_dir=folder))
-        return await _push_file(archive_file, rename_to)
+        return await _push_file(archive_file, None)
 
 async def _pull_file(file_path: Path):
     s3_object = _create_s3_object(file_path)
