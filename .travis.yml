@@ -367,17 +367,17 @@ jobs:
         directories:
           - node_modules
       before_install:
-        - sudo bash ci/travis/system-testing/e2e before_install
+        - sudo bash ci/travis/system-testing/e2e.bash before_install
       install:
-        - unbuffer bash ci/travis/system-testing/e2e install
+        - unbuffer bash ci/travis/system-testing/e2e.bash install
       before_script:
-        - unbuffer bash ci/travis/system-testing/e2e before_script
+        - unbuffer bash ci/travis/system-testing/e2e.bash before_script
       script:
-        - unbuffer bash ci/travis/system-testing/e2e script
+        - unbuffer bash ci/travis/system-testing/e2e.bash script
       after_success:
-        - unbuffer bash ci/travis/system-testing/e2e after_success
+        - unbuffer bash ci/travis/system-testing/e2e.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/system-testing/e2e after_failure
+        - unbuffer bash ci/travis/system-testing/e2e.bash after_failure
 
     - stage: deployment
       name: master

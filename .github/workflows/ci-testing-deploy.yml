@@ -587,13 +587,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: install
-      run: ./ci/github/system-testing/e2e install
+      run: ./ci/github/system-testing/e2e.bash install
     - name: test
-      run: ./ci/github/system-testing/e2e test
+      run: ./ci/github/system-testing/e2e.bash test
     - name: recover docker logs
       id: logs_recovery
       if: always()
-      run: ./ci/github/system-testing/e2e recover_artifacts
+      run: ./ci/github/system-testing/e2e.bash recover_artifacts
     - name: upload docker logs
       if: always()
       uses: actions/upload-artifact@v1
