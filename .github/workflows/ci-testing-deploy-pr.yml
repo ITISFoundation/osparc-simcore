@@ -374,9 +374,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install webserver
-      run: ./ci/github/unit-testing/webserver install
+      run: ./ci/github/unit-testing/webserver.bash install
     - name: test
-      run: ./ci/github/unit-testing/webserver test
+      run: ./ci/github/unit-testing/webserver.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
@@ -420,12 +420,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/integration-testing/webserver install
+      run: ./ci/github/integration-testing/webserver.bash install
     - name: test
-      run: ./ci/github/integration-testing/webserver test
+      run: ./ci/github/integration-testing/webserver.bash test
     - name: cleanup
       if: always()
-      run: ./ci/github/integration-testing/webserver clean_up
+      run: ./ci/github/integration-testing/webserver.bash clean_up
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required

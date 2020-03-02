@@ -97,17 +97,17 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/webserver before_install
+        - sudo bash ci/travis/unit-testing/webserver.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/webserver install
+        - unbuffer bash ci/travis/unit-testing/webserver.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/webserver before_script
+        - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/webserver script
+        - unbuffer bash ci/travis/unit-testing/webserver.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/webserver after_success
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/webserver after_failure
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
     # test python, catalog ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -290,17 +290,17 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/integration-testing/webserver before_install
+        - sudo bash ci/travis/integration-testing/webserver.bash before_install
       install:
-        - unbuffer bash ci/travis/integration-testing/webserver install
+        - unbuffer bash ci/travis/integration-testing/webserver.bash install
       before_script:
-        - unbuffer bash ci/travis/integration-testing/webserver before_script
+        - unbuffer bash ci/travis/integration-testing/webserver.bash before_script
       script:
-        - unbuffer bash ci/travis/integration-testing/webserver script
+        - unbuffer bash ci/travis/integration-testing/webserver.bash script
       after_success:
-        - unbuffer bash ci/travis/integration-testing/webserver after_success
+        - unbuffer bash ci/travis/integration-testing/webserver.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/integration-testing/webserver after_failure
+        - unbuffer bash ci/travis/integration-testing/webserver.bash after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
