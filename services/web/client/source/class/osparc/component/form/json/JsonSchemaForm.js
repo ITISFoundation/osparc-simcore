@@ -138,12 +138,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         container.getHeader().add(addButton);
       } else {
         // Leaf
-        const input = container.addInput(validation);
+        const input = container.addInput(validation, this.__validationManager);
         if (data) {
           input.setValue(data);
-        }
-        if (validation) {
-          this.__validationManager.add(input);
         }
         this.__inputItems.push(container);
       }
