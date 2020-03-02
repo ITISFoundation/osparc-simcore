@@ -54,6 +54,11 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     __inputItems: null,
     __data: null,
     __validationManager: null,
+    /**
+     * Main function to render a form. It uses the data to prefill the form if it is present.
+     * 
+     * @param {Object} schema JSONSchema used for this form
+     */
     __render: function(schema) {
       this._removeAll();
       if (schema) {
@@ -88,6 +93,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       }
       this.fireEvent("ready");
     },
+    /**
+     * Uses Ajv library to validate data against a schema.
+     * 
+     * @param {Object} schema JSONSchema to validate against
+     * @param {Object} data Data to be validated
+     * @param {Boolean} showMessage Determines whether an error message is displayed to the user
+     */
     __validate: function(schema, data, showMessage=true) {
       this.__ajv.validate(schema, data)
       const errors = this.__ajv.errors;
@@ -174,7 +186,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       return container;
     },
     /**
-     * Uses objectPath library to construct a JS object with the values of the inputs.
+     * Uses objectPath library to construct a JS object with the values from the inputs.
      */
     toObject: function() {
       const obj = {};
