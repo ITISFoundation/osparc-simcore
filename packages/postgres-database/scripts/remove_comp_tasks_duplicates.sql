@@ -4,7 +4,8 @@ ORDER BY
   node_id
 
 
-CREATE TABLE comp_tasks_temp;
+CREATE TABLE comp_tasks_temp (LIKE comp_tasks INCLUDING ALL);
+ALTER TABLE comp_tasks_temp ADD FOREIGN KEY ("project_id") REFERENCES "comp_pipeline" ("project_id");
 INSERT INTO comp_tasks_temp
 SELECT
   DISTINCT ON (project_id, node_id) *
