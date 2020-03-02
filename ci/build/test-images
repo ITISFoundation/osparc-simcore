@@ -3,7 +3,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG
 
 pull_images() {
     {

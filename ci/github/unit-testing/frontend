@@ -3,8 +3,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(js eslintrc json .travis.yml)
-
 install() {
     npm install
     make -C services/web/client clean

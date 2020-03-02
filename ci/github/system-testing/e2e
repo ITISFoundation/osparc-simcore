@@ -5,13 +5,14 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG
 
 install() {
     echo "--------------- installing psql client..."
-    sudo apt install -y postgresql-client
+    /bin/bash -c 'sudo apt install -y postgresql-client'
     echo "--------------- getting simcore docker images..."
-    make pull-version || ((make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build tag-version)
     make info-images
     # configure simcore for testing with a private registry
     bash tests/e2e/setup_env_insecure_registry
@@ -21,6 +22,7 @@ install() {
     echo "-------------- installing test framework..."
     # create a python venv and activate
     make .venv
+    # shellcheck disable=SC1091
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip
     pushd tests/e2e;
@@ -46,10 +48,11 @@ recover_artifacts() {
 
     # get docker logs
     mkdir simcore_logs
-    (docker service logs simcore_webserver > simcore_logs/webserver.log) || true
-    (docker service logs simcore_director > simcore_logs/director.log ) || true
-    (docker service logs simcore_storage > simcore_logs/storage.log) || true
-    (docker service logs simcore_sidecar > simcore_logs/sidecar.log) || true
+    (docker service logs --timestamps simcore_webserver > simcore_logs/webserver.log) || true
+    (docker service logs --timestamps simcore_director > simcore_logs/director.log ) || true
+    (docker service logs --timestamps simcore_storage > simcore_logs/storage.log) || true
+    (docker service logs --timestamps simcore_sidecar > simcore_logs/sidecar.log) || true
+    (docker service logs --timestamps simcore_catalog > simcore_logs/catalog.log) || true
 }
 
 clean_up() {

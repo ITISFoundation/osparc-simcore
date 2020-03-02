@@ -19,7 +19,6 @@ pytest-sugar
 
 # fixtures
 virtualenv
-pyyaml>=4.2b1
 
 
 # tools for CI

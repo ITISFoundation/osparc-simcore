@@ -92,7 +92,6 @@ async def fake_tokens(logged_user, tokens_db):
     fake = faker.Factory.create()
     fake.seed(4567) # Always the same fakes
     fake.add_provider(lorem)
-    fake.add_provider(lorem)
 
     all_tokens = []
 

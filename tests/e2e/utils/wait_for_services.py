@@ -106,12 +106,13 @@ def wait_for_services() -> bool:
     # now check they are in running mode
     for service in running_services:
         for n in range(RETRY_COUNT):
-            task = service.tasks()[-1]
+            task = service.tasks()[0]
             if task['Status']['State'].upper() in pre_states:
-                print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(service.tasks())))
+                print("Waiting [{}/{}] for {}...\n{}".format(n, RETRY_COUNT, service.name, get_tasks_summary(service.tasks())))
                 time.sleep(WAIT_TIME_SECS)
             elif task['Status']['State'].upper() in failed_states:
-                print(f"Waiting [{n}/{RETRY_COUNT}] Service failed once...\n{get_tasks_summary(service.tasks())}")
+                print(f"Waiting [{n}/{RETRY_COUNT}] Service {service.name} failed once...\n{get_tasks_summary(service.tasks())}")
+                time.sleep(WAIT_TIME_SECS)
             else:
                 break
         assert task['Status']['State'].upper() == "RUNNING",\

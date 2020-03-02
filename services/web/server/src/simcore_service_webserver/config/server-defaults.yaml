@@ -16,9 +16,6 @@ director:
   version: v0
 socketio:
   enabled: True
-  message_queue:
-    user: simcore
-    password: simcore
 db:
   init_tables: False
   postgres:
