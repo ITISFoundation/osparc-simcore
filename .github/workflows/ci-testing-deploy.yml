@@ -28,7 +28,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -60,7 +60,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -106,7 +106,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -152,7 +152,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node }}
@@ -188,7 +188,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -220,7 +220,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -266,7 +266,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -312,7 +312,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -358,7 +358,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -399,7 +399,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: show system environs
       run: ./ci/helpers/show_system_versions
     - name: pull images
@@ -425,7 +425,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -475,7 +475,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -525,7 +525,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -562,7 +562,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
     - name: setup docker-compose
-      run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: setup python environment
       uses: actions/setup-python@v1.1.1
       with:
@@ -694,7 +694,7 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.sh
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: deploy master

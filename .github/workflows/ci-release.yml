@@ -24,7 +24,7 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.sh
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: set git tag
