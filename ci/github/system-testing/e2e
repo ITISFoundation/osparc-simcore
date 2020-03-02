@@ -5,7 +5,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
@@ -24,7 +24,7 @@ install() {
     make .venv
     # shellcheck disable=SC1091
     source .venv/bin/activate
-    bash ci/helpers/ensure_python_pip
+    bash ci/helpers/ensure_python_pip.bash
     pushd tests/e2e;
     make install
     echo "--------------- deploying the registry..."

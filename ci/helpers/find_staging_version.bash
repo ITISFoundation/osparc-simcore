@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: find_staging_version
+# Usage: find_staging_version.bash
 #
 # returns the full image tag corresponding to the git tag name that shall be used
 

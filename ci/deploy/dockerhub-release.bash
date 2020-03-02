@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-bash ci/helpers/dockerhub_login
+bash ci/helpers/dockerhub_login.bash
 
 # check script needed variables
 if [ ! -v TAG_PREFIX ] || [ ! -v GIT_TAG ]; then
@@ -17,7 +17,7 @@ export ORG=${DOCKER_REGISTRY}
 export REPO="webserver"
 # staging-github-DATE.GIT_SHA
 export TAG_PATTERN="^${TAG_PREFIX}-.+\..+"
-DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version | awk 'END{print}') || exit $?
+DOCKER_IMAGE_TAG=$(./ci/helpers/find_staging_version.bash | awk 'END{print}') || exit $?
 export DOCKER_IMAGE_TAG
 make pull-version tag-local
 

@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag)
+export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk .travis.yml)
 
@@ -12,14 +12,14 @@ before_install() {
     then
         bash ci/travis/helpers/update_docker
         bash ci/travis/helpers/install_docker_compose
-        bash ci/helpers/show_system_versions
+        bash ci/helpers/show_system_version.bashs
     fi
 }
 
 install() {
     if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        bash ci/helpers/ensure_python_pip
+        bash ci/helpers/ensure_python_pip.bash
         pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
     fi
 }
