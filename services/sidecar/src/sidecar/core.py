@@ -14,7 +14,7 @@ from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 
 import pika
-from simcore_sdk import node_ports
+from simcore_sdk import node_ports, node_data
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
@@ -276,9 +276,10 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
                 - put them all into S3 /logg
         """
-        return
-        #directory = self._executor.log_dir
-        #if os.path.exists(directory):
+        directory = Path(self._executor.log_dir)
+
+        if directory.exists():
+            wrap_async_call(node_data.data_manager.push(directory, rename_to="logs"))
         #    for root, _dirs, files in os.walk(directory):
         #        for name in files:
         #            filepath = os.path.join(root, name)
