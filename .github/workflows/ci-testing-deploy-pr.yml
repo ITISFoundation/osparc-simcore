@@ -518,12 +518,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/system-testing/swarm-deploy install
+      run: ./ci/github/system-testing/swarm-deploy.bash install
     - name: test
-      run: ./ci/github/system-testing/swarm-deploy test
+      run: ./ci/github/system-testing/swarm-deploy.bash test
     - name: cleanup
       if: always()
-      run: ./ci/github/system-testing/swarm-deploy clean_up
+      run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
     name: System-testing e2e
@@ -585,7 +585,7 @@ jobs:
         path: tests/e2e/screenshots
     - name: cleanup
       if: always()
-      run: ./ci/github/system-testing/swarm-deploy clean_up
+      run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   coverage:
     needs: [
