@@ -203,7 +203,7 @@ async def update_project_node_outputs(app: web.Application, user_id: str, projec
         raise NodeNotFoundError(project_id, node_id)
     node_description = project["workbench"][node_id]
     node_description["outputs"] = data
-    # update outputs if necessary
+    # NOTE: update outputs if necessary as the UI expects a dataset/label field that is missing
     if node_description["outputs"]:
         for output_key in node_description["outputs"].keys():
             if not isinstance(node_description["outputs"][output_key], dict):

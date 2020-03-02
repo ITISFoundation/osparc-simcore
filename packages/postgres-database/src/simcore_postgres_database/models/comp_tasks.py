@@ -1,10 +1,19 @@
 """ Computational Tasks Table
 
 """
+import enum
+
 import sqlalchemy as sa
 
 from .base import metadata
 from .comp_pipeline import UNKNOWN
+
+
+class NodeClass(enum.Enum):
+    COMPUTATIONAL="COMPUTATIONAL"
+    INTERACTIVE="INTERACTIVE"
+    FRONTEND="FRONTEND"
+
 
 comp_tasks = sa.Table(
     "comp_tasks",
@@ -12,8 +21,9 @@ comp_tasks = sa.Table(
     # this task db id
     sa.Column("task_id", sa.Integer, primary_key=True),
     sa.Column("project_id", sa.String, sa.ForeignKey("comp_pipeline.project_id")),
-    # dag node id
+    # dag node id and class
     sa.Column("node_id", sa.String),
+    sa.Column("node_class", sa.Enum(NodeClass)),
     # celery task id
     sa.Column("job_id", sa.String),
     # internal id (better for debugging, nodes from 1 to N)

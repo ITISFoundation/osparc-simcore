@@ -16,6 +16,7 @@ from sqlalchemy import and_
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import UNKNOWN
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 
 from .director import director_api
@@ -116,6 +117,9 @@ async def _build_adjacency_list(
 
 
 async def _parse_project_data(pipeline_data: Dict, app: web.Application):
+    # TODO: move this to computation_models
+    from .computation_models import to_node_class
+
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -167,6 +171,7 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
             "inputs": node_inputs,
             "outputs": node_outputs,
             "image": {"name": node_key, "tag": node_version},
+            "node_class": to_node_class(node_key)
         }
 
         log.debug("storing task for node %s: %s", node_uuid, task)
@@ -239,6 +244,7 @@ async def _set_tasks_in_tasks_db(
                 query = comp_tasks.insert().values(
                     project_id=project_id,
                     node_id=node_id,
+                    node_class=task["node_class"],
                     internal_id=internal_id,
                     image=task["image"],
                     schema=task["schema"],
@@ -264,6 +270,7 @@ async def _set_tasks_in_tasks_db(
                         .values(
                             job_id=None,
                             state=UNKNOWN,
+                            node_class=task["node_class"],
                             image=task["image"],
                             schema=task["schema"],
                             inputs=task["inputs"],
@@ -273,7 +280,8 @@ async def _set_tasks_in_tasks_db(
                     )
                     await conn.execute(query)
                 else:
-                    # update task
+                    # update task's inputs/outputs
+                    io_update = {}
                     task_inputs: str = await conn.scalar(
                         sa.select([comp_tasks.c.inputs]).where(
                             and_(
@@ -282,14 +290,17 @@ async def _set_tasks_in_tasks_db(
                             )
                         )
                     )
-
-                    cols_to_update = {}
+                    # updates inputs
                     if task_inputs != task["inputs"]:
-                        cols_to_update["inputs"] = task["inputs"]
-                    if task["outputs"]:
-                        cols_to_update["outputs"] = task["outputs"]
+                        io_update["inputs"] = task["inputs"]
 
-                    if cols_to_update:
+                    # update outputs
+                    #  NOTE: update ONLY outputs of front-end nodes. The rest are
+                    #  updated by backend services (e.g. workers, interactive services)
+                    if task["outputs"] and task["node_class"] == NodeClass.FRONTEND:
+                        io_update["outputs"] = task["outputs"]
+
+                    if io_update:
                         query = (
                             comp_tasks.update()
                             .where(
@@ -298,7 +309,7 @@ async def _set_tasks_in_tasks_db(
                                     comp_tasks.c.node_id == node_id,
                                 )
                             )
-                            .values(**cols_to_update)
+                            .values(**io_update)
                         )
 
                         await conn.execute(query)
