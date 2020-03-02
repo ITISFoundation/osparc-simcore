@@ -8,7 +8,7 @@ aiohttp==3.6.2            # via -r requirements/_base.in (line 10), aiozipkin
 aiopg[sa]==1.0.0          # via -r requirements/_base.in (line 11)
 aiozipkin==0.6.0          # via -r requirements/_base.in (line 12)
 async-timeout==3.0.1      # via aiohttp
-attrs==19.1.0             # via -r requirements/_base.in (line 19), aiohttp, jsonschema, openapi-core
+attrs==19.3.0             # via -r requirements/_base.in (line 19), aiohttp, jsonschema, openapi-core
 chardet==3.0.4            # via aiohttp
 idna==2.8                 # via yarl
 isodate==0.6.0            # via openapi-core
