@@ -6,14 +6,14 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(js eslintrc json .travis.yml)
 
 before_install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/show_system_version.bashs
     fi
 }
 
 install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         npm install
         make -C services/web/client clean
@@ -21,7 +21,7 @@ install() {
 }
 
 before_script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         npx eslint --version
         make -C services/web/client info
@@ -29,7 +29,7 @@ before_script() {
 }
 
 script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         echo "# Running Linter"
         npm run linter

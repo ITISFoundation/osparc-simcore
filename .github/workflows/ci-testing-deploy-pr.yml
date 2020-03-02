@@ -44,9 +44,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install api
-      run: ./ci/github/unit-testing/api install
+      run: ./ci/github/unit-testing/api.bash install
     - name: test
-      run: ./ci/github/unit-testing/api test
+      run: ./ci/github/unit-testing/api.bash test
 
   unit-test-catalog:
     name: Unit-testing catalog
@@ -76,9 +76,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/catalog install
+      run: ./ci/github/unit-testing/catalog.bash install
     - name: test
-      run: ./ci/github/unit-testing/catalog test
+      run: ./ci/github/unit-testing/catalog.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
@@ -122,9 +122,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/director install
+      run: ./ci/github/unit-testing/director.bash install
     - name: test
-      run: ./ci/github/unit-testing/director test
+      run: ./ci/github/unit-testing/director.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
@@ -167,9 +167,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/frontend install
+      run: ./ci/github/unit-testing/frontend.bash install
     - name: test
-      run: ./ci/github/unit-testing/frontend test
+      run: ./ci/github/unit-testing/frontend.bash test
     # no coverage here??
     # - uses: codecov/codecov-action@v1
     #   with:
@@ -204,9 +204,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/python-linting install
+      run: ./ci/github/unit-testing/python-linting.bashg install
     - name: test
-      run: ./ci/github/unit-testing/python-linting test
+      run: ./ci/github/unit-testing/python-linting.bashg test
 
   unit-test-service-library:
     name: Unit-testing service-library
@@ -236,9 +236,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/service-library install
+      run: ./ci/github/unit-testing/service-library.bash install
     - name: test
-      run: ./ci/github/unit-testing/service-library test
+      run: ./ci/github/unit-testing/service-library.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
@@ -328,9 +328,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/storage install
+      run: ./ci/github/unit-testing/storage.bash install
     - name: test
-      run: ./ci/github/unit-testing/storage test
+      run: ./ci/github/unit-testing/storage.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required

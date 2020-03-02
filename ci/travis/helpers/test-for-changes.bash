@@ -4,7 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Usage:
-# test_for_changes ^web/server webserver blah
+# test-for-changes.bash ^web/server webserver blah
 # this will test if these regexp are part of the modified files since the branching,
 # or on the push commit range if running on travis
 

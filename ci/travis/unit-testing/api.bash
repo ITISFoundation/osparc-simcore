@@ -6,16 +6,16 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(api/ .travis.yml)
 
 before_install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/update_docker
-        bash ci/travis/helpers/install_docker_compose
+        bash ci/travis/helpers/update-docker.bash
+        bash ci/travis/helpers/install-docker-compose.bash
         bash ci/helpers/show_system_version.bashs
     fi
 }
 
 install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/ensure_python_pip.bash
         pip3 install --requirement api/tests/requirements.txt
@@ -23,14 +23,14 @@ install() {
 }
 
 before_script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         pip list --verbose
     fi
 }
 
 script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=api --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
@@ -41,7 +41,7 @@ script() {
 }
 
 after_success() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         coveralls
     fi

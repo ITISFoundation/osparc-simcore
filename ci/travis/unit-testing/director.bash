@@ -3,45 +3,45 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ storage packages/ .travis.yml)
+FOLDER_CHECKS=(api/ director packages/ .travis.yml)
 
 before_install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        bash ci/travis/helpers/update_docker
+        bash ci/travis/helpers/update-docker.bash
+        bash ci/travis/helpers/install-docker-compose.bash
         bash ci/helpers/show_system_version.bashs
-        bash ci/travis/helpers/install_docker_compose
     fi
 }
 
 install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/ensure_python_pip.bash
-        pushd services/storage; pip3 install -r requirements/ci.txt; popd
+        pushd services/director; pip3 install -r requirements/ci.txt; popd
     fi
 }
 
 before_script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         pip list -v
     fi
 }
 
 script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_service_storage --durations=10 --cov-append \
+        pytest --cov=simcore_service_director --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/storage/tests
+          -v -m "not travis" services/director/tests
     else
-        echo "No changes detected. Skipping unit-testing of storage."
+        echo "No changes detected. Skipping unit-testing of director."
     fi
 }
 
 after_success() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         coveralls
     fi

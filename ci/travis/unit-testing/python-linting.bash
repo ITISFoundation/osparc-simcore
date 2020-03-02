@@ -6,14 +6,14 @@ IFS=$'\n\t'
 FOLDER_CHECKS=(.py .pylintrc .travis.yml)
 
 before_install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/show_system_version.bashs
     fi
 }
 
 install() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/ensure_python_pip.bash
         pip3 install pylint~=2.0
@@ -23,7 +23,7 @@ install() {
 }
 
 before_script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         pip list -v
         pylint --version
@@ -31,7 +31,7 @@ before_script() {
 }
 
 script() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         make pylint
     else
@@ -40,7 +40,7 @@ script() {
 }
 
 after_success() {
-    if bash ci/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
+    if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         echo "linting successful"
     fi
