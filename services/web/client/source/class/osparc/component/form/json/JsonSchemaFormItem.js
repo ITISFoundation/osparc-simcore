@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       switch (this.__schema.type) {
         default:
           input = new qx.ui.form.TextField().set({
-            required: validation && validation.required
+            required: validation && validation.required ? true : false
           });
       }
       return input;

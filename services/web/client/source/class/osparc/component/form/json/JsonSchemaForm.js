@@ -24,6 +24,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       "/resource/object-path/object-path-0-11-4.min.js"
     ]);
     ajvLoader.addListener("ready", e => {
+      this.__ajv = new Ajv();
       osparc.utils.Utils.fetchJSON(schemaUrl)
         .then(schema => {
           if (this.__validate(schema.$schema, schema)) {
@@ -65,7 +66,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
         submitBtn.addListener("execute", () => {
           if (this.__validationManager.validate()) {
-            console.log(this.toObject());
+            const formData = this.toObject();
+            this.__ajv.validate(schema, formData);
+            if (this.__ajv.errors) {
+              console.error(this.__ajv.errors, formData);
+            } else {
+              console.log(formData);
+            }
           }
         });
         buttonContainer.add(submitBtn);
@@ -85,10 +92,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       this.fireEvent("ready");
     },
     __validate: function(schema, data) {
-      const ajv = new Ajv();
-      ajv.validate(schema, data)
-      if (ajv.errors) {
-        console.error(ajv.errors);
+      this.__ajv.validate(schema, data)
+      if (this.__ajv.errors) {
+        console.error(this.__ajv.errors);
         return false;
       }
       return true;
@@ -182,7 +188,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       // Clean orphans
       this.__inputItems = this.__inputItems.filter(item => Object.values(inputMap).includes(item));
       // Construct object
-      Object.entries(inputMap).forEach(([path, item]) => objectPath.set(obj, path, item.getInput().getValue()));
+      Object.entries(inputMap).forEach(([path, item]) => {
+        const value = item.getInput().getValue();
+        if (typeof value !== "undefined" && value !== null) {
+          objectPath.set(obj, path, item.getInput().getValue());
+        }
+      });
       return obj;
     },
     /**
