@@ -35,7 +35,7 @@ pyparsing==2.4.6          # via packaging
 pyrsistent==0.15.2        # via -r requirements/_base.txt (line 22), jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in (line 12)
 pytest-cov==2.8.1         # via -r requirements/_test.in (line 13)
-pytest-docker==0.6.1      # via -r requirements/_test.in (line 16)
+pytest-docker==0.7.2      # via -r requirements/_test.in (line 16)
 pytest-instafail==0.4.1.post0  # via -r requirements/_test.in (line 14)
 pytest-mock==2.0.0        # via -r requirements/_test.in (line 17)
 pytest-runner==5.2        # via -r requirements/_test.in (line 15)
