@@ -4,7 +4,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+export DOCKER_IMAGE_TAG
 
 before_install() {
     bash ci/travis/helpers/update_docker
@@ -19,7 +20,7 @@ install() {
 
 before_script() {
     pip list -v
-    make pull-version || ((make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build tag-version)
     make info-images
 }
 
