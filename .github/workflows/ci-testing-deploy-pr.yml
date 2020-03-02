@@ -282,9 +282,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/simcore-sdk install
+      run: ./ci/github/unit-testing/simcore-sdk.bash install
     - name: test
-      run: ./ci/github/unit-testing/simcore-sdk test
+      run: ./ci/github/unit-testing/simcore-sdk.bash test
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required
@@ -469,12 +469,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/integration-testing/simcore-sdk install
+      run: ./ci/github/integration-testing/simcore-sdk.bash install
     - name: test
-      run: ./ci/github/integration-testing/simcore-sdk test
+      run: ./ci/github/integration-testing/simcore-sdk.bash test
     - name: cleanup
       if: always()
-      run: ./ci/github/integration-testing/simcore-sdk clean_up
+      run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ env.CODECOV_TOKEN }} #required

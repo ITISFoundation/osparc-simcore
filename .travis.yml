@@ -205,17 +205,17 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/simcore-sdk before_install
+        - sudo bash ci/travis/unit-testing/simcore-sdk.bash. before_install
       install:
-        - bash ci/travis/unit-testing/simcore-sdk install
+        - bash ci/travis/unit-testing/simcore-sdk.bash install
       before_script:
-        - bash ci/travis/unit-testing/simcore-sdk before_script
+        - bash ci/travis/unit-testing/simcore-sdk.bash before_script
       script:
-        - bash ci/travis/unit-testing/simcore-sdk script
+        - bash ci/travis/unit-testing/simcore-sdk.bash script
       after_success:
-        - bash ci/travis/unit-testing/simcore-sdk after_success
+        - bash ci/travis/unit-testing/simcore-sdk.bash after_success
       after_failure:
-        - bash ci/travis/unit-testing/simcore-sdk after_failure
+        - bash ci/travis/unit-testing/simcore-sdk.bash after_failure
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -311,17 +311,17 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/integration-testing/simcore-sdk before_install
+        - sudo bash ci/travis/integration-testing/simcore-sdk.bash before_install
       install:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk install
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash install
       before_script:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk before_script
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash before_script
       script:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk script
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash script
       after_success:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk after_success
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk after_failure
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash after_failure
 
     # system testing swarm deploy ----------------------------------------------------------------
     - stage: integration-testing / system-testing
