@@ -140,6 +140,7 @@
         "authors": {
             "title": "Authors",
             "type": "array",
+            "maxItems": 2,
             "items": {
                 "title": "author",
                 "type": "object",
@@ -165,6 +166,7 @@
         },
         "members": {
             "type": "array",
+            "maxItems": 1,
             "items": {
                 "type": "string"
             }

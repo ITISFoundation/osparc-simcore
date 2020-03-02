@@ -67,14 +67,11 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         submitBtn.addListener("execute", () => {
           if (this.__validationManager.validate()) {
             const formData = this.toObject();
-            this.__ajv.validate(schema, formData);
-            if (this.__ajv.errors) {
-              console.error(this.__ajv.errors, formData);
-            } else {
+            if (this.__validate(schema, formData)) {
               console.log(formData);
             }
           }
-        });
+        }, this);
         buttonContainer.add(submitBtn);
         this._add(buttonContainer);
       } else {
@@ -91,10 +88,15 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       }
       this.fireEvent("ready");
     },
-    __validate: function(schema, data) {
+    __validate: function(schema, data, showMessage=true) {
       this.__ajv.validate(schema, data)
-      if (this.__ajv.errors) {
-        console.error(this.__ajv.errors);
+      const errors = this.__ajv.errors;
+      if (errors) {
+        console.error(errors);
+        if (showMessage) {
+          let message = `${errors[0].dataPath} ${errors[0].message}`;
+          osparc.component.message.FlashMessenger.logAs(message, "ERROR");
+        }
         return false;
       }
       return true;
@@ -119,7 +121,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
         addButton.addListener("execute", () => {
           // key = -1 for an array item. we let JsonSchemaFormArray manage the array keys
-          arrayContainer.add(this.__expand(-1, schema.items, data, depth+1));
+          arrayContainer.add(this.__expand(-1, schema.items, null, depth+1));
         }, this);
         container.getHeader().add(addButton);
       } else {
