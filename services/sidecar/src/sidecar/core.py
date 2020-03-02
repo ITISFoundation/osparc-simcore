@@ -4,14 +4,16 @@ import os
 import shutil
 import time
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Union
 
 import docker
-import pika
 import requests
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
+
+import pika
 from simcore_sdk import node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
@@ -410,6 +412,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         self._process_task_log()
 
         self._task.state = SUCCESS
+        self._task.end = datetime.utcnow()
         _session = self._db.Session()
         try:
             _session.add(self._task)
@@ -474,6 +477,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                         pass
                     else:
                         task.state = RUNNING
+                        task.start = datetime.utcnow()
                         _session.add(task)
                         _session.commit()
 
