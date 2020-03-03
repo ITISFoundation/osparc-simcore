@@ -1,6 +1,7 @@
 #
 # Specifies third-party dependencies for 'simcore-sdk'
 #
+pyyaml >=5.3 # Vulnerability
 
 aiohttp
 networkx
