@@ -36,10 +36,18 @@ then
   # NOTE: in this case, remote debugging is only available in development mode!
   # FIXME: workaround since PTVSD does not support prefork subprocess debugging: https://github.com/microsoft/ptvsd/issues/943
   POOL=solo
+  watchmedo auto-restart --recursive --pattern="*.py" -- \
+    celery worker \
+      --app sidecar.celery:app \
+      --concurrency ${CONCURRENCY} \
+      --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
+      --pool=${POOL}
+else
+  exec celery worker \
+      --app sidecar.celery:app \
+      --concurrency ${CONCURRENCY} \
+      --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
+      --pool=${POOL}
 fi
 
-exec celery worker \
-    --app sidecar.celery:app \
-    --concurrency ${CONCURRENCY} \
-    --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
-    --pool=${POOL}
+
