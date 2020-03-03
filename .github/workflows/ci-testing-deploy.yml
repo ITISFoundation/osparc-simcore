@@ -427,7 +427,7 @@ jobs:
     - name: set PR default variables
       # only pushes have access to the docker credentials, use a default
       if: github.event_name == 'pull_request'
-      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*}
+      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*,,}
     - uses: actions/checkout@v1
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
@@ -481,7 +481,7 @@ jobs:
     - name: set PR default variables
       # only pushes have access to the docker credentials, use a default
       if: github.event_name == 'pull_request'
-      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*}
+      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*,,}
     - uses: actions/checkout@v1
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
@@ -535,7 +535,7 @@ jobs:
     - name: set PR default variables
       # only pushes have access to the docker credentials, use a default
       if: github.event_name == 'pull_request'
-      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*}
+      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*,,}
     - uses: actions/checkout@v1
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
@@ -576,7 +576,7 @@ jobs:
     - name: set PR default variables
       # only pushes have access to the docker credentials, use a default
       if: github.event_name == 'pull_request'
-      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*}
+      run: echo ::set-env name=DOCKER_REGISTRY::${GITHUB_REPOSITORY%/*,,}
     - uses: actions/checkout@v1
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
