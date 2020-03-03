@@ -34,7 +34,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -66,7 +66,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -112,7 +112,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -157,7 +157,7 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -194,7 +194,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -226,7 +226,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -272,7 +272,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -318,7 +318,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -364,7 +364,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -401,7 +401,7 @@ jobs:
     - name: setup docker-compose
       run: sudo ./ci/github/helpers/setup_docker_compose.bash
     - name: show system environs
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - name: pull images
       run: ./ci/build/test-images.bash pull_images
     - name: build images
@@ -431,7 +431,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -481,7 +481,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -531,7 +531,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data
       with:
@@ -571,7 +571,7 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
     - name: show system version
-      run: ./ci/helpers/show_system_version.bash
+      run: ./ci/helpers/show_system_versions.bash
     - uses: actions/cache@v1
       name: getting cached data python
       with:

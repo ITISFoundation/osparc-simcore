@@ -9,7 +9,7 @@ before_install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/travis/helpers/update-docker.bash
-        bash ci/helpers/show_system_version.bash
+        bash ci/helpers/show_system_versions.bash
         bash ci/travis/helpers/install-docker-compose.bash
     fi
 }

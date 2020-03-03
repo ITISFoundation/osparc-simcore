@@ -10,7 +10,7 @@ before_install() {
     then
         bash ci/travis/helpers/update-docker.bash
         bash ci/travis/helpers/install-docker-compose.bash
-        bash ci/helpers/show_system_version.bash
+        bash ci/helpers/show_system_versions.bash
     fi
 }
 
