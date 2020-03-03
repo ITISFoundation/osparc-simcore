@@ -2,14 +2,12 @@ from aiohttp import web
 from openapi_core.validation.request.validators import RequestValidator
 from openapi_core.validation.response.validators import ResponseValidator
 
-from .openapi_wrappers import (
-    PATH_KEY,
-    QUERY_KEY,
-    AiohttpOpenAPIRequest,
-    AiohttpOpenAPIResponse,
-)
+from .openapi_aiohttp_reponse import AiohttpOpenAPIResponseFactory
+from .openapi_aiohttp_request import AiohttpOpenAPIRequestFactory
 from .rest_oas import OpenApiSpec, get_specs
 from .rest_responses import create_error_response
+
+PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = "path query header cookie".split()
 
 
 class OpenApiValidator:
@@ -33,7 +31,7 @@ class OpenApiValidator:
     async def check_request(self, request: web.Request):
         self.current_request = None
 
-        rq = await AiohttpOpenAPIRequest.create(request)
+        rq = await AiohttpOpenAPIRequestFactory.create(request)
         result = self._reqvtor.validate(rq)
 
         # keeps current request and reuses in response
@@ -51,11 +49,10 @@ class OpenApiValidator:
 
         return path, query, result.body
 
-    def check_response(self, response: web.Response):
+    async def check_response(self, response: web.Response):
         req = self.current_request
-        res = AiohttpOpenAPIResponse(
-            response, response.text
-        )  # FIXME:ONLY IN SERVER side. Async in client!
+        res = await AiohttpOpenAPIResponseFactory.create(response)
+        # FIXME:ONLY IN SERVER side. Async in client!
 
         result = self._resvtor.validate(req, res)
         if result.errors:

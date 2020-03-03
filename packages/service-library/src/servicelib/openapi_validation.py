@@ -11,16 +11,13 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpec
 from openapi_core.validation.request.validators import RequestValidator
 from openapi_core.validation.response.validators import ResponseValidator
 
-from .openapi_wrappers import (
-    PARAMETERS_KEYS,
-    AiohttpOpenAPIRequest,
-    AiohttpOpenAPIResponse,
-)
+from .openapi_aiohttp_reponse import AiohttpOpenAPIResponseFactory
+from .openapi_aiohttp_request import AiohttpOpenAPIRequestFactory
 
 logger = logging.getLogger(__name__)
 
 
-PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
+PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = "path query header cookie".split()
 
 
 async def validate_request(request: web.Request, spec: OpenApiSpec):
@@ -28,7 +25,7 @@ async def validate_request(request: web.Request, spec: OpenApiSpec):
 
     Returns parameters dict, body object and list of errors (exceptions objects)
     """
-    req = await AiohttpOpenAPIRequest.create(request)
+    req = await AiohttpOpenAPIRequestFactory.create(request)
 
     validator = RequestValidator(spec)
     result = validator.validate(req)
@@ -37,19 +34,19 @@ async def validate_request(request: web.Request, spec: OpenApiSpec):
 
 
 async def validate_parameters(spec: OpenApiSpec, request: web.Request):
-    req = await AiohttpOpenAPIRequest.create(request)
+    req = await AiohttpOpenAPIRequestFactory.create(request)
     return shortcuts.validate_parameters(spec, req)
 
 
 async def validate_body(spec: OpenApiSpec, request: web.Request):
-    req = await AiohttpOpenAPIRequest.create(request)
+    req = await AiohttpOpenAPIRequestFactory.create(request)
     return shortcuts.validate_body(spec, req)
 
 
 async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
     if isinstance(request, web.Request):
-        req = await AiohttpOpenAPIRequest.create(request)
+        req = await AiohttpOpenAPIRequestFactory.create(request)
     else:
         # TODO: alternative MockRequest
         # params = ['host_url', 'method', 'path']
@@ -61,7 +58,7 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
         req = request
 
-    res = await AiohttpOpenAPIResponse.create(response)
+    res = await AiohttpOpenAPIResponseFactory.create(response)
 
     validator = ResponseValidator(spec)
     result = validator.validate(req, res)
@@ -81,10 +78,9 @@ async def validate_response(
     """
     validator = ResponseValidator(spec)
 
-    req = await AiohttpOpenAPIRequest.create(request)
-    res = AiohttpOpenAPIResponse(
-        response, response.text
-    )  # FIXME:ONLY IN SERVER side. Async in client!
+    req = await AiohttpOpenAPIRequestFactory.create(request)
+    res = await AiohttpOpenAPIResponseFactory.create(response)
+    # FIXME:ONLY IN SERVER side. Async in client!
     result = validator.validate(req, res)
     result.raise_for_errors()
 
