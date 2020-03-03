@@ -133,7 +133,7 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             response = await handler(request)
 
             # FIXME:  openapi-core fails to validate response when specs are in separate files!
-            await validator.check_response(response)
+            validator.check_response(response)
 
         finally:
             for k in RQ_VALIDATED_DATA_KEYS:

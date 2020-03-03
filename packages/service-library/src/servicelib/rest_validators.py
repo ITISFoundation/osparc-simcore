@@ -49,9 +49,9 @@ class OpenApiValidator:
 
         return path, query, result.body
 
-    async def check_response(self, response: web.Response):
+    def check_response(self, response: web.Response) -> None:
         req = self.current_request
-        res = await AiohttpOpenAPIResponseFactory.create(response)
+        res = AiohttpOpenAPIResponseFactory.create(response)
         # FIXME:ONLY IN SERVER side. Async in client!
 
         result = self._resvtor.validate(req, res)
