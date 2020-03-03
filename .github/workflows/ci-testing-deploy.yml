@@ -6,7 +6,7 @@ on:
 
 env:
   # secrets can be set in settings/secrets on github
-  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY || itisfoundation}}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   CODECOV_TOKEN: 0e81ae5f-1909-4035-921c-571693fdafd1
