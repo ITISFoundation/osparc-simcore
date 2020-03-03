@@ -6,9 +6,9 @@ IFS=$'\n\t'
 export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag.bash)
 
 before_install() {
-    bash ci/travis/helpers/update_docker;
-    bash ci/travis/helpers/install_docker_compose;
-    bash ci/helpers/show_system_versions;
+    bash ci/travis/helpers/update_docker.bash;
+    bash ci/travis/helpers/install_docker_compose.bash;
+    bash ci/helpers/show_system_versions.bash;
     env
 }
 
@@ -17,11 +17,11 @@ install() {
 }
 
 before_script() {
-    bash ci/build/test-images pull_images
+    bash ci/build/test-images.bash pull_images
 }
 
 script() {
-    bash ci/build/test-images build_images
+    bash ci/build/test-images.bash build_images
 }
 
 after_success() {
