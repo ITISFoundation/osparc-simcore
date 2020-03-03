@@ -395,8 +395,6 @@ jobs:
   build-test-images:
     runs-on: ubuntu-18.04
     name: build docker test images
-    # only pushes have access to the docker credentials
-    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v1
     - name: setup-docker
@@ -412,6 +410,8 @@ jobs:
     - name: set owner variable
       run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
     - name: push images
+      # only pushes have access to the docker credentials
+      if: github.event_name == 'push'
       run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver:
