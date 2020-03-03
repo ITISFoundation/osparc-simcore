@@ -11,7 +11,7 @@ export DOCKER_IMAGE_TAG
 before_install() {
     bash ci/travis/helpers/update-docker.bash
     bash ci/travis/helpers/install-docker-compose.bash
-    bash ci/helpers/show_system_version.bashs
+    bash ci/helpers/show_system_version.bash
     sudo apt install -y postgresql-client
 }
 

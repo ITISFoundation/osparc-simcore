@@ -8,7 +8,7 @@ FOLDER_CHECKS=(.py .pylintrc .travis.yml)
 before_install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        bash ci/helpers/show_system_version.bashs
+        bash ci/helpers/show_system_version.bash
     fi
 }
 
