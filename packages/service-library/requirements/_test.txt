@@ -18,7 +18,7 @@ docopt==0.6.2             # via coveralls
 idna==2.8                 # via -r requirements/_base.txt (line 13), requests, yarl
 isodate==0.6.0            # via -r requirements/_base.txt (line 14), openapi-core
 isort==4.3.21             # via pylint
-jsonschema==3.0.1         # via -r requirements/_base.txt (line 15), openapi-spec-validator
+jsonschema==3.2.0         # via -r requirements/_base.txt (line 15), openapi-spec-validator
 lazy-object-proxy==1.4.1  # via -r requirements/_base.txt (line 16), astroid, openapi-core
 mccabe==0.6.1             # via pylint
 more-itertools==8.0.2     # via pytest
