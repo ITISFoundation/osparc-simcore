@@ -3,6 +3,13 @@ name: Github-CI Push/PR
 on:
   push:
   pull_request:
+    paths-ignore:
+    - '*.md'
+    - '*.png'
+    - '*.svg'
+    - 'docs/**'
+    - '.vscode/**'
+    - '.vscode-template/**'
 
 env:
   # secrets can be set in settings/secrets on github
