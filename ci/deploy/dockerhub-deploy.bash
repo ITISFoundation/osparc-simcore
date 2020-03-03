@@ -12,7 +12,7 @@ if [ ! -v TAG_PREFIX ]; then
 fi
 
 # pull the current tested build
-DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash.bash)
 export DOCKER_IMAGE_TAG
 make pull-version tag-local
 

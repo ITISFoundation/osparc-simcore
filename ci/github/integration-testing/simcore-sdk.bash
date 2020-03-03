@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
