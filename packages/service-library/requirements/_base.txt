@@ -12,7 +12,7 @@ attrs==19.3.0             # via -r requirements/_base.in (line 19), aiohttp, jso
 chardet==3.0.4            # via aiohttp
 idna==2.8                 # via yarl
 isodate==0.6.0            # via openapi-core
-jsonschema==3.0.1         # via -r requirements/_base.in (line 15), openapi-spec-validator
+jsonschema==3.2.0         # via -r requirements/_base.in (line 15), openapi-spec-validator
 lazy-object-proxy==1.4.1  # via openapi-core
 multidict==4.5.2          # via aiohttp, yarl
 openapi-core==0.12.0      # via -r requirements/_base.in (line 16)
