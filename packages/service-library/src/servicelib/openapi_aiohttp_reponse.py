@@ -6,8 +6,9 @@ from openapi_core.validation.response.datatypes import OpenAPIResponse
 
 class AiohttpOpenAPIResponseFactory(object):
     @classmethod
-    async def create(cls, response: Response) -> OpenAPIResponse:
-        body: str = await response.text()
+    def create(cls, response: Response) -> OpenAPIResponse:
         return OpenAPIResponse(
-            data=body, status_code=response.status, mimetype=response.content_type,
+            data=response.text,
+            status_code=response.status,
+            mimetype=response.content_type,
         )

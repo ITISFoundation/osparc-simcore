@@ -58,7 +58,7 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
         req = request
 
-    res = await AiohttpOpenAPIResponseFactory.create(response)
+    res = AiohttpOpenAPIResponseFactory.create(response)
 
     validator = ResponseValidator(spec)
     result = validator.validate(req, res)
@@ -79,7 +79,7 @@ async def validate_response(
     validator = ResponseValidator(spec)
 
     req = await AiohttpOpenAPIRequestFactory.create(request)
-    res = await AiohttpOpenAPIResponseFactory.create(response)
+    res = AiohttpOpenAPIResponseFactory.create(response)
     # FIXME:ONLY IN SERVER side. Async in client!
     result = validator.validate(req, res)
     result.raise_for_errors()
