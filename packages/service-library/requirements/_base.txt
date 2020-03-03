@@ -25,7 +25,7 @@ six==1.12.0               # via isodate, jsonschema, openapi-core, openapi-spec-
 sqlalchemy[postgresql_psycopg2binary]==1.3.4  # via -r requirements/_base.in (line 5), aiopg
 strict-rfc3339==0.7       # via openapi-core
 tenacity==6.1.0           # via -r requirements/_base.in (line 18)
-trafaret==2.0.0           # via -r requirements/_base.in (line 20)
+trafaret==2.0.2           # via -r requirements/_base.in (line 20)
 ujson==1.35               # via -r requirements/_base.in (line 13)
 werkzeug==1.0.0           # via -r requirements/_base.in (line 14)
 yarl==1.3.0               # via aiohttp
