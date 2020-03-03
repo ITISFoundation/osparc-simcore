@@ -203,9 +203,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: install
-      run: ./ci/github/unit-testing/python-linting.bashg install
+      run: ./ci/github/unit-testing/python-linting.bash install
     - name: test
-      run: ./ci/github/unit-testing/python-linting.bashg test
+      run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-service-library:
     name: Unit-testing service-library

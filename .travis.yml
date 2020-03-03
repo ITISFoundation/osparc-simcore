@@ -269,17 +269,17 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/python-linting.bashg before_install
+        - sudo bash ci/travis/unit-testing/python-linting.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/python-linting.bashg install
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/python-linting.bashg before_script
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/python-linting.bashg script
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/python-linting.bashg after_success
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/python-linting.bashg after_failure
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash after_failure
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
