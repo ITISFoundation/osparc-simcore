@@ -2,6 +2,7 @@ name: Github-CI-Push
 
 on:
   push:
+  pull_request:
 
 env:
   # secrets can be set in settings/secrets on github
@@ -394,6 +395,8 @@ jobs:
   build-test-images:
     runs-on: ubuntu-18.04
     name: build docker test images
+    # only pushes have access to the docker credentials
+    if: github.event.name == 'push'
     steps:
     - uses: actions/checkout@v1
     - name: setup-docker
@@ -673,6 +676,7 @@ jobs:
 
   deploy:
     name: deploy to dockerhub
+    if: github.event.name == 'push'
     needs: [
       unit-test-api,
       unit-test-catalog,
