@@ -13,7 +13,7 @@ attrs==19.3.0             # via -r requirements/_base.txt (line 11), aiohttp, js
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via -r requirements/_base.txt (line 12), aiohttp, requests
 coverage==4.5.1           # via -r requirements/_test.in (line 9), coveralls, pytest-cov
-coveralls==1.10.0         # via -r requirements/_test.in (line 22)
+coveralls==1.11.1         # via -r requirements/_test.in (line 22)
 docopt==0.6.2             # via coveralls
 idna==2.8                 # via -r requirements/_base.txt (line 13), requests, yarl
 isodate==0.6.0            # via -r requirements/_base.txt (line 14), openapi-core
