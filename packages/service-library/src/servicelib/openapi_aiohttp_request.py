@@ -51,15 +51,15 @@ class AiohttpOpenAPIRequestFactory(object):
 
         # a dict view of arguments that matched the request
         # TODO: not sure
-        view_args = list(request.match_info)
+        path_args = dict(request.match_info) or {}
 
         # The parsed URL parameters (the part in the URL after the question mark).
         # a multidict proxy that is conterted into list of (key,value) tuples
-        args = list(request.query.items())
+        query = ImmutableMultiDict( list(request.query.items()) or [] )
 
         parameters = RequestParameters(
-            path=path,
-            query=ImmutableMultiDict(args or []),
+            path=path_args,
+            query=query,
             header=request.headers or {}, # case-insensitive multidict proxy with all headers
             cookie=request.cookies or {}, # A multidict of all request's cookies
         )
