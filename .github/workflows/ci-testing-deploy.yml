@@ -1,4 +1,4 @@
-name: Github-CI-Push
+name: Github-CI Push/PR
 
 on:
   push:
