@@ -9,7 +9,7 @@ aiopg[sa]==1.0.0          # via -r requirements/_base.txt (line 8)
 aiozipkin==0.6.0          # via -r requirements/_base.txt (line 9)
 astroid==2.3.3            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt (line 10), aiohttp
-attrs==19.1.0             # via -r requirements/_base.txt (line 11), aiohttp, jsonschema, openapi-core, pytest, pytest-docker
+attrs==19.3.0             # via -r requirements/_base.txt (line 11), aiohttp, jsonschema, openapi-core, pytest, pytest-docker
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via -r requirements/_base.txt (line 12), aiohttp, requests
 coverage==4.5.1           # via -r requirements/_test.in (line 9), coveralls, pytest-cov
@@ -52,7 +52,7 @@ trafaret==2.0.0           # via -r requirements/_base.txt (line 28)
 ujson==1.35               # via -r requirements/_base.txt (line 29)
 urllib3==1.25.7           # via requests
 wcwidth==0.1.8            # via pytest
-werkzeug==0.15.4          # via -r requirements/_base.txt (line 30)
+werkzeug==1.0.0           # via -r requirements/_base.txt (line 30)
 wrapt==1.11.2             # via astroid
 yarl==1.3.0               # via -r requirements/_base.txt (line 31), aiohttp
 
