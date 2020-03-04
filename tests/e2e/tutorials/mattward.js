@@ -32,7 +32,17 @@ async function runTutorial () {
   await tutorial.waitFor(60000);
 
   await tutorial.openNodeFiles(0);
-  await tutorial.checkResults();
+  const outFiles = [
+    "CAP_plot.csv",
+    "CV_plot.csv",
+    "Lpred_plot.csv",
+    "V_pred_plot.csv",
+    "input.csv",
+    "t_plot.csv",
+    "tst_plot.csv"
+  ];
+  await tutorial.checkResults(outFiles.length);
+
   await tutorial.removeStudy();
   await tutorial.logOut();
   await tutorial.close();
