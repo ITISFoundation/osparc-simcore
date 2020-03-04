@@ -28,7 +28,7 @@
   },
   "python.testing.pyTestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
-  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck",
+  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true
 }
