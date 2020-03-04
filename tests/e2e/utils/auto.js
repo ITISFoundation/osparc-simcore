@@ -318,8 +318,8 @@ async function openNodeFiles(page) {
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 }
 
-async function checkDataProducedByNode(page) {
-  console.log("checking Data produced by Node");
+async function checkDataProducedByNode(page, nFiles = 1) {
+  console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
   const tries = 3;
   let children = [];
   for (let i=0; i<tries && children.length === 0; i++) {
@@ -328,8 +328,9 @@ async function checkDataProducedByNode(page) {
     children = await utils.getFileTreeItemIDs(page, "NodeFiles");
     console.log(i+1, 'try: ', children);
   }
-  if (children.length < 4) { // 4 = location + study + node + file
-    throw("file items not found");
+  const nFolders = 3;
+  if (children.length < (nFolders+nFiles)) { // 4 = location + study + node + file
+    throw("Expected files not found");
   }
 
   const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
