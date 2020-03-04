@@ -7,8 +7,8 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 before_install() {
-    bash ci/travis/helpers/update_docker.bash;
-    bash ci/travis/helpers/install_docker_compose.bash;
+    bash ci/travis/helpers/update-docker.bash;
+    bash ci/travis/helpers/install-docker-compose.bash;
     bash ci/helpers/show_system_versions.bash;
     env
 }
