@@ -19,7 +19,8 @@ docker run \
   codeclimate/codeclimate "$@"
 
 
-if [ -z "$@" ];then
+if test -z "$@"
+then
   echo "----"
   echo "Listing other engines (in dockers)"
   docker images codeclimate/*
