@@ -3,7 +3,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-export DOCKER_IMAGE_TAG=$(exec ci/travis/helpers/build_docker_image_tag.bash)
+DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+export DOCKER_IMAGE_TAG
 
 before_install() {
     bash ci/travis/helpers/update_docker.bash;
