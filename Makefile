@@ -279,6 +279,7 @@ pylint: ## Runs python linter framework's wide
 	# TODO: NOT windows friendly
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
+											-not -path "*migration*" \
 											-not -path "*contrib*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \

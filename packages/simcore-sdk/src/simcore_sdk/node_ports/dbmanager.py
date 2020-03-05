@@ -45,7 +45,7 @@ class _NodeModelEncoder(json.JSONEncoder):
     def default(self, o): # pylint: disable=E0202
         log.debug("Encoding object: %s", o)
         if isinstance(o, NodeModel):
-            log.debug("Encoding Node object")
+            log.debug("Encoding Node object %s", o)
             return {
                     "version": "0.1",
                     "schema": o.schema,
