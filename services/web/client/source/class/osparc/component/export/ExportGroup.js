@@ -6,14 +6,17 @@
  */
 
 /**
- *
+ * Widget for exporting nodes-group:
+ * - Creates a copy of the inner nodes, so that values and access levels can be modified
+ * - If any of the inner nodes was connected to a non inner node, that connection is removed
+ * - The exported group is added to the catalog
  */
 
 qx.Class.define("osparc.component.export.ExportGroup", {
   extend: qx.ui.core.Widget,
 
   /**
-   * @param node {osparc.data.model.Node} Node owning the widget
+   * @param node {osparc.data.model.Node} Group Node to be exported
    */
   construct: function(node) {
     this.base(arguments);
