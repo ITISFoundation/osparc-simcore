@@ -1,6 +1,7 @@
 """
     General utilities and helper functions
 """
+import asyncio
 import hashlib
 import logging
 import os
@@ -11,7 +12,7 @@ from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 from secrets import choice
-from typing import Coroutine, Dict, Iterable, List
+from typing import Dict, Iterable, List
 
 from yarl import URL
 
@@ -151,31 +152,33 @@ def to_datetime(snapshot: str) -> datetime:
 #   - https://tech.gadventures.com/hunting-for-memory-leaks-in-asyncio-applications-3614182efaf7
 
 
-def get_coro_info(coro: Coroutine) -> Dict:
+def get_task_info(task: asyncio.Task) -> Dict:
     def _format_frame(f):
         keys = ["f_code", "f_lineno"]
         return OrderedDict([(k, str(getattr(f, k))) for k in keys])
 
     info = OrderedDict(
-        txt=str(coro),
-        type=str(type(coro)),
-        done=coro.done(),
+        txt=str(task),
+        type=str(type(task)),
+        done=task.done(),
         cancelled=False,
         stack=None,
         exception=None,
     )
 
-    if not coro.done():
-        info["stack"] = [_format_frame(x) for x in coro.get_stack()]
+    if not task.done():
+        info["stack"] = [_format_frame(x) for x in task.get_stack()]
     else:
-        if coro.cancelled():
+        if task.cancelled():
             info["cancelled"] = True
         else:
-            info["exception"] = str(coro.exception())
+            # WARNING: raise if not done or cancelled
+            exc = task.exception()
+            info["exception"] = f"{type(exc)}: {str(exc)}" if exc else None
     return info
 
 
-def get_top_tracemalloc_info(top=10) -> List[str]:
+def get_tracemalloc_info(top=10) -> List[str]:
     # Set PYTHONTRACEMALLOC=1 to start tracing
     #
     #

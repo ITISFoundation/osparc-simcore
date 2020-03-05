@@ -54,7 +54,7 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	sc-pg upgrade
 	# some info
 	sc-pg info
-	@echo "To add new commit, sc-pg review -m "Some message" "
+	@echo "To add new commit, sc-pg review -m \"Some message\" "
 
 
 _docker_compose_config := tests/docker-compose.yml

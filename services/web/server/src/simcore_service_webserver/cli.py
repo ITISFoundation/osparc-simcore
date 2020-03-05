@@ -18,7 +18,7 @@ import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
 
-import aiohttp
+from aiohttp.log import access_logger
 from aiodebug import log_slow_callbacks
 
 from .application import run_service
@@ -26,16 +26,18 @@ from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
 from .cli_config import add_cli_options, config_from_options
 from .utils import search_osparc_repo_dir
 
+LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+
 log = logging.getLogger(__name__)
 
 
 def create_default_parser() -> ArgumentParser:
-    return ArgumentParser(description='Service to manage data webserver in simcore.')
+    return ArgumentParser(description="Service to manage data webserver in simcore.")
 
 
 def setup_parser(parser: ArgumentParser) -> ArgumentParser:
     """ Adds all options to a parser"""
-    #parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
+    # parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
     #                help="A name of something.")
 
     add_cli_options(parser, CLI_DEFAULT_CONFIGFILE)
@@ -45,7 +47,7 @@ def setup_parser(parser: ArgumentParser) -> ArgumentParser:
     return parser
 
 
-def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
+def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
     """ Build environment with substitutable variables
 
 
@@ -61,9 +63,9 @@ def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
     # project-related environment variables
     rootdir = search_osparc_repo_dir()
     if rootdir is not None:
-        environ.update({
-            'OSPARC_SIMCORE_REPO_ROOTDIR': str(rootdir),
-        })
+        environ.update(
+            {"OSPARC_SIMCORE_REPO_ROOTDIR": str(rootdir),}
+        )
 
     # DEFAULTS if not defined in environ
     # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yamla
@@ -74,9 +76,9 @@ def create_environ(*, skip_host_environ: bool=False) -> Dict[str, str]:
     environ.setdefault("SMTP_USERNAME", "None")
     environ.setdefault("SMTP_PASSWORD", "None")
     environ.setdefault("SMTP_TLS_ENABLED", "0")
-    environ.setdefault("WEBSERVER_LOGLEVEL","WARNING")
+    environ.setdefault("WEBSERVER_LOGLEVEL", "WARNING")
 
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
 
     return environ
 
@@ -93,10 +95,9 @@ def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
     return config
 
 
-def main(args: Optional[List]=None):
-
+def main(args: Optional[List] = None):
     # parse & config file
-    parser = ArgumentParser(description='Service to manage data webserver in simcore.')
+    parser = ArgumentParser(description="Service to manage data webserver in simcore.")
     setup_parser(parser)
     config = parse(args, parser)
 
@@ -105,15 +106,14 @@ def main(args: Optional[List]=None):
     logging.basicConfig(level=log_level)
     logging.root.setLevel(log_level)
 
-    aiohttp.log.access_logger.setLevel(log_level)
-
     # mute noisy loggers
-    LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-    logging.getLogger('engineio').setLevel( min(log_level + LOG_LEVEL_STEP,logging.CRITICAL) )
-
+    logging.getLogger("engineio").setLevel(
+        min(log_level + LOG_LEVEL_STEP, logging.CRITICAL)
+    )
+    access_logger.setLevel(max(log_level - LOG_LEVEL_STEP, logging.DEBUG))
     logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
     # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
     slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.1))

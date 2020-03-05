@@ -105,10 +105,10 @@ class TutorialBase {
     await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkResults() {
+  async checkResults(expecedNFiles = 1) {
     await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_before");
     try {
-      await auto.checkDataProducedByNode(this.__page);
+      await auto.checkDataProducedByNode(this.__page, expecedNFiles);
     }
     catch(err) {
       console.error("Failed checking Data Produced By Node", err);

@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from functools import wraps
-from pprint import pprint
+from pprint import pformat
 from typing import Callable, Coroutine, Dict, Optional
 
 from aiohttp import web
@@ -12,7 +12,6 @@ import aio_pika
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
-from .computation_api import get_task_output
 from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
                                  CONFIG_SECTION_NAME)
 from .projects import projects_api
@@ -52,7 +51,7 @@ def rabbit_adapter(app: web.Application) -> Callable:
     return decorator
 
 async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
-    log.debug("parsing message data:\n%s", pprint(data))
+    log.debug("parsing message data:\n%s", pformat(data, depth=3))
     # get common data
     user_id = data["user_id"]
     project_id = data["project_id"]
@@ -66,13 +65,6 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
             messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
         elif data["Channel"] == "Log":
             messages["logger"] = data
-            if "...postprocessing end" in data["Messages"]:
-                # the computational service completed
-                # pass comp_task payload to project
-                task_output = await get_task_output(app, project_id, node_id)
-                node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
-                messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
-
         if messages:
             await post_messages(app, user_id, messages)
     except ProjectNotFoundError:
@@ -94,7 +86,7 @@ async def subscribe(app: web.Application) -> None:
 
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
-    
+
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)
     connection = await aio_pika.connect_robust(rabbit_broker,
