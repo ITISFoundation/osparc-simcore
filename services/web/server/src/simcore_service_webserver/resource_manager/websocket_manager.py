@@ -90,4 +90,10 @@ class WebsocketRegistry:
 @contextmanager
 def managed_resource(user_id: str, client_session_id: str, app: web.Application) -> WebsocketRegistry:
     registry = WebsocketRegistry(user_id, client_session_id, app)
-    yield registry
+    try:
+        yield registry
+    except Exception:
+        log.exception("Error in web-socket for user:%s, session:%s", user_id, client_session_id)
+        raise
+
+    # TODO: PC->SAN?? exception handling? e.g. remove resource from registry?
