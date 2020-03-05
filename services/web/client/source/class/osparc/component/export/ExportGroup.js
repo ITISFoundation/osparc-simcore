@@ -88,7 +88,10 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __buildLayout: function() {
-      const formRenderer = this.__buildMetaDataForm();
+      const {
+        formRenderer,
+        manager
+      } = this.__buildMetaDataForm();
       this._add(formRenderer);
 
       const scroll = new qx.ui.container.Scroll();
@@ -107,16 +110,20 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         alignX: "right"
       });
       exportBtn.addListener("execute", () => {
-        this.__exportAsMacroService(exportBtn);
+        if (manager.validate()) {
+          this.__exportAsMacroService(exportBtn);
+        }
       }, this);
       this._add(exportBtn);
     },
 
     __buildMetaDataForm: function() {
+      const manager = new qx.ui.form.validation.Manager();
       const metaDataForm = new qx.ui.form.Form();
 
       const groupName = this.__groupName = new qx.ui.form.TextField(this.getInputNode().getLabel());
       groupName.setRequired(true);
+      manager.add(groupName);
       metaDataForm.add(groupName, this.tr("Name"));
 
       const groupDesc = this.__groupDesc = new qx.ui.form.TextField();
@@ -125,7 +132,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       const formRenderer = new qx.ui.form.renderer.Single(metaDataForm).set({
         padding: 10
       });
-      return formRenderer;
+
+      return {
+        formRenderer,
+        manager
+      };
     },
 
     __buildOutputSettings: function() {
