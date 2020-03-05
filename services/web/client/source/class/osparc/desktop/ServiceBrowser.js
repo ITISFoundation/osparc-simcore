@@ -226,14 +226,15 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
           showMinimize: false,
           allowMinimize: false,
           centerOnAppear: true,
-          layout: new qx.ui.layout.Grow()
+          layout: new qx.ui.layout.Grow(),
+          width: 600,
+          height: 660
         });
         const scroll = new qx.ui.container.Scroll();
         addServiceWindow.add(scroll);
         const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json");
         form.addListener("ready", () => {
           addServiceWindow.open();
-          addServiceWindow.maximize();
         });
         scroll.add(form);
       });
