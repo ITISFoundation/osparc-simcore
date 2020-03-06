@@ -162,6 +162,13 @@ paths:
   /activity/status:
     $ref: "./openapi-activity.yaml#/paths/~1activity~1status"
 
+  # SHARE
+  /projects/{project_id}/token:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1token"
+
+  /shared/study/{token_id}:
+    $ref: "./openapi-share.yaml#/paths/~1shared~1study~1{token_id}"
+
   # TAGS -------------------------------------------------------------------------
   /tags:
     $ref: './openapi-tags.yaml#/paths/~1tags'

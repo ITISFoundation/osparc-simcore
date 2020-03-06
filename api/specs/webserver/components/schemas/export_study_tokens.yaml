@@ -1,0 +1,48 @@
+ExportStudyTokens:
+  description: tokens for doing exporting operations on a study
+  type: object
+  properties:
+    copyLink:
+      description: link for creating a deep copy with data of the given study
+      type: string
+    copyToken:
+      description: token for creating a deep copy with data of the given study
+      type: string
+    copyObject:
+      description: workbench copy without data with the node uuids replaced
+      type: object
+  required:
+    - copyLink
+    - copyToken
+    - copyObject
+  example:
+    copyLink: 'https://osparc.io/study/share/d2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+    copyToken: 'd2091ac2-dfbc-48e3-a5e9-80d6139199c9'
+    copyObject: '{}'
+
+ExportStudyTokensEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/ExportStudyTokens'
+    error:
+      nullable: true
+      default: null
+
+
+ExportStudyId:
+  description: study id of the generated study
+  type: string
+
+ExportStudyIdEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/ExportStudyId'
+    error:
+      nullable: true
+      default: null
