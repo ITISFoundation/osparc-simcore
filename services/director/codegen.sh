@@ -5,7 +5,7 @@
 # /src/package-name/rest/generated_code            -- this is the output directory
 SOURCE_DIR=./src/simcore_service_director
 API_VERSION=v0
-INPUT_SPEC=${SOURCE_DIR}/oas3/${API_VERSION}/openapi.yaml
+INPUT_SPEC=${SOURCE_DIR}/api/${API_VERSION}/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
@@ -20,8 +20,9 @@ ABSOLUTE_OUTPUT_DIR=$(realpath "${OUTPUT_DIR}")
 ABSOLUTE_OUTPUT_DIR_GEN=$(realpath "${OUTPUT_DIR_GEN}")
 ../../scripts/openapi/openapi_python_server_codegen.sh -i ${ABSOLUTE_INPUT_PATH} -o ${ABSOLUTE_OUTPUT_DIR_GEN}
 # replace import entries in python code
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server.models././g' {} \;
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server/../g' {} \;
+find ${OUTPUT_DIR_GEN}/models -type f -exec sed -i 's/openapi_server.models././g' {} \;
+find ${OUTPUT_DIR_GEN}/models -type f -exec sed -i 's/openapi_server/../g' {} \;
+find ${OUTPUT_DIR_GEN} -maxdepth 1 -type f -exec sed -i 's/openapi_server/./g' {} \;
 # create __init__.py if always
 cat > "${INIT_FILE_PATH}" << EOF
 """GENERATED CODE from codegen.sh
@@ -93,12 +94,12 @@ async def __handle_errors(request, handler):
         # aiohttp apiset errors
         log.exception("error happened in handling route")
         error = dict(status=ex.status, message=ex.to_tree())
-        error_enveloped = dict(error=error)        
+        error_enveloped = dict(error=error)
         return web.json_response(error_enveloped, status=ex.status)
     except web.HTTPError as ex:
         log.exception("error happened in handling route")
         error = dict(status=ex.status, message=str(ex.reason))
-        error_enveloped = dict(data=error)        
+        error_enveloped = dict(data=error)
         return web.json_response(error_enveloped, status=ex.status)
 
 

@@ -2,31 +2,33 @@
 # Specifies third-party dependencies for 'services/web/server/src'
 #
 
+-r ../../../../packages/postgres-database/requirements/_base.in
+-r ../../../../packages/service-library/requirements/_base.in
+
 psycopg2-binary     # enforces binary version
-pyyaml>=4.2b1       # https://nvd.nist.gov/vuln/detail/CVE-2017-18342
 sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 
 
-openapi-core~=0.8.0 # there is an issue validating "number" type 3 is considered wrong
-jsonschema<3        # FIXME: openapi-spec-validator==0.2.6 (used in tests) requires jsonschema<3
-
-aio-pika==2.9.0     # TODO: upgrade code before !!
+aio-pika
 aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
+aiohttp-swagger[performance]
 aiopg[sa]
+aioredis
 aiosmtplib
 asyncpg
 celery
 cryptography
 change_case
+expiringdict
 jinja_app_loader
+jsondiff
 passlib
-passwordmeter
+python-socketio
 semantic_version
 tenacity
 trafaret
 trafaret_config
-python-socketio
-jsondiff
+aiodebug

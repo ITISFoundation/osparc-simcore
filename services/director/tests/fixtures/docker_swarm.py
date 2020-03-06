@@ -1,7 +1,7 @@
 import docker
 import pytest
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def docker_swarm(): #pylint: disable=W0613, W0621
     client = docker.from_env()
     assert client is not None

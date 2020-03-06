@@ -50,10 +50,6 @@ qx.Class.define("osparc.data.Permissions", {
     }
   },
 
-  events: {
-    "userProfileRecieved": "qx.event.type.Event"
-  },
-
   statics: {
     ACTIONS: {},
 
@@ -83,21 +79,21 @@ qx.Class.define("osparc.data.Permissions", {
 
   members: {
     __userRole: null,
-    __userLogin: null,
 
     getRole() {
       return this.__userRole;
     },
 
     setRole(role) {
+      role = role.toLowerCase();
       if (!this.self().ROLES[role]) {
         return;
       }
       this.__userRole = role;
     },
 
-    getLogin() {
-      return this.__userLogin;
+    arePermissionsReady() {
+      return this.getRole() !== null;
     },
 
     getChildrenRoles(role) {
@@ -142,14 +138,18 @@ qx.Class.define("osparc.data.Permissions", {
           "preferences.user.update",
           "preferences.token.create",
           "preferences.token.delete",
+          "preferences.tag",
           "study.node.create",
           "study.node.delete",
           "study.node.rename",
           "study.node.start",
           "study.node.data.push",
           "study.node.data.delete",
+          "study.node.grouping",
+          "study.node.export",
           "study.edge.create",
-          "study.edge.delete"
+          "study.edge.delete",
+          "study.tag"
         ],
         "tester": [
           "services.all.read",
@@ -214,16 +214,6 @@ qx.Class.define("osparc.data.Permissions", {
         osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
-    },
-
-    loadUserRoleFromBackend: function() {
-      osparc.data.Resources.getOne("profile")
-        .then(profileData => {
-          this.__userRole = profileData.role;
-          this.__userLogin = profileData.login;
-          this.fireDataEvent("userProfileRecieved", true);
-        })
-        .catch(err => console.error(err));
     }
   }
 });

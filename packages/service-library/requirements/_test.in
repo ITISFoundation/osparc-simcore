@@ -6,10 +6,16 @@
 -r _base.txt
 
 # testing
+coverage==5.0.3 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
+
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
+pytest-instafail
 pytest-runner
+pytest-docker
+pytest-mock
+pytest-sugar
 
 # tools
 pylint

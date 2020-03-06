@@ -93,16 +93,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputListIcon", {
         // Register supported actions
         e.addAction("copy");
 
-        // HACK
-        if (this.getNode().getKey() === "simcore/services/demodec/dynamic/itis/s4l/neuroman") {
-          // Register supported types
-          e.addType("osparc-port-link");
-          item.nodeId = this.getNode().getNodeId();
-          item.portId = item.getLabel();
-        } else {
-          // Register supported types
-          e.addType("osparc-mapping");
-        }
+        // Register supported types
+        e.addType("osparc-mapping");
       }, this);
     },
 

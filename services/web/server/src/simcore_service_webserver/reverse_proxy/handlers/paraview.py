@@ -31,8 +31,6 @@ def check_ws_in_headers(request):
            request.method == 'GET'
 
 async def handle_websocket_requests(ws_server, request: web.Request, target_url: URL):
-    client_session = aiohttp.ClientSession(cookies=request.cookies)
-
     async def _ws_forward(ws_from, ws_to):
         async for msg in ws_from:
             mt = msg.type
@@ -51,12 +49,14 @@ async def handle_websocket_requests(ws_server, request: web.Request, target_url:
                 raise ValueError(
                     'unexpected message type: %s' % pprint.pformat(msg))
 
-    async with client_session.ws_connect(target_url) as ws_client:
-        await asyncio.wait([_ws_forward(ws_server, ws_client),
-                            _ws_forward(ws_client, ws_server)],
-                            return_when=asyncio.FIRST_COMPLETED)
+    async with aiohttp.ClientSession(cookies=request.cookies) as session:
+        # websocket connection with backend services
+        async with session.ws_connect(target_url) as ws_client:
+            await asyncio.wait([_ws_forward(ws_server, ws_client),
+                                _ws_forward(ws_client, ws_server)],
+                                return_when=asyncio.FIRST_COMPLETED)
 
-        return ws_server
+            return ws_server
 
 async def handle_web_request(request: web.Request, target_url: URL, mount_point:str, proxy_path: str):
     async with client.request(

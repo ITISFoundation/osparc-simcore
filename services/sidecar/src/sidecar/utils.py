@@ -3,12 +3,15 @@ import logging
 import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from typing import Tuple
 
+import docker
+import pika
 import tenacity
 from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
-import docker
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
@@ -94,7 +97,10 @@ class RabbitSettings:
 class DbSettings:
     def __init__(self):
         self._db_config = db_config()
-        self.db = create_engine(self._db_config.endpoint, client_encoding='utf8', pool_pre_ping=True)
+        self.db = create_engine(
+            self._db_config.endpoint + f"?application_name={__name__}_{id(self)}",
+            client_encoding='utf8',
+            pool_pre_ping=True)
         self.Session = sessionmaker(self.db, expire_on_commit=False)
         #self.session = self.Session()
 
@@ -108,3 +114,14 @@ class ExecutorSettings:
         self.in_dir = ""
         self.out_dir = ""
         self.log_dir = ""
+
+@contextmanager
+def safe_channel(rabbit_settings: RabbitSettings) -> Tuple[pika.channel.Channel, pika.adapters.BlockingConnection]:
+    try:
+        connection = pika.BlockingConnection(rabbit_settings.parameters)
+        channel = connection.channel()
+        channel.exchange_declare(exchange=rabbit_settings.log_channel, exchange_type='fanout')
+        channel.exchange_declare(exchange=rabbit_settings.progress_channel, exchange_type='fanout')
+        yield channel, connection
+    finally:
+        connection.close()

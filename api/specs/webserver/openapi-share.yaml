@@ -1,0 +1,24 @@
+paths:
+  /shared/study/{token_id}:
+    parameters:
+      - name: token_id
+        in: path
+        required: true
+        description: the token id that will provide access to copied/shared study
+        schema:
+          type: string
+          example: copy-123e4567-e89b-12d3-a456-426655440000
+    get:
+      summary: Gets shared study for the given token_id
+      operationId: get_shared_study
+      responses:
+        '200':
+          description: new study_id
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/export_study_tokens.yaml#/ExportStudyIdEnveloped'
+        '302':
+          description: url to be redirected to containing the study ID that was copied/shared
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'

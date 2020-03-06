@@ -46,7 +46,7 @@ def iter_path_operations(specs: OpenApiSpec) -> Generator:
 
     for url, path in specs.paths.items():
         for method, operation in path.operations.items():
-            yield method.upper(), base_path+url, operation.operation_id
+            yield method.upper(), base_path+url, operation.operation_id, operation.tags
 
 
 def map_handlers_with_operations(
@@ -68,8 +68,8 @@ def map_handlers_with_operations(
     """
 
     handlers = dict(handlers_map)
-    routes = [ ]
-    for method, path, operation_id in operations_it:
+    routes = []
+    for method, path, operation_id, _tags in operations_it:
         handler = handlers.pop(operation_id, None)
         if handler:
             routes.append( web.route(method.upper(), path, handler, name=operation_id) )

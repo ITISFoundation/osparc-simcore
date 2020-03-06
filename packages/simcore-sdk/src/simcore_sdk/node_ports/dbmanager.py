@@ -32,15 +32,20 @@ def session_scope(session_factory):
 class DbSettings:
     def __init__(self):
         self._db_settings_config = db_config()
-        self.db = create_engine(self._db_settings_config.endpoint, client_encoding='utf8')
+        # FIXME: this is a SYNCRONOUS engine! And not disposed!?
+        self.db = create_engine(
+            self._db_settings_config.endpoint + f"?application_name={__name__}_{id(self)}",
+            pool_pre_ping=True,
+            client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         # self.session = self.Session()
+
 
 class _NodeModelEncoder(json.JSONEncoder):
     def default(self, o): # pylint: disable=E0202
         log.debug("Encoding object: %s", o)
         if isinstance(o, NodeModel):
-            log.debug("Encoding Node object")
+            log.debug("Encoding Node object %s", o)
             return {
                     "version": "0.1",
                     "schema": o.schema,
@@ -69,7 +74,10 @@ class DBManager:
         with session_scope(self._db_settings.Session) as session:
             # pylint: disable=no-member
             # project id should be also defined but was not the case before
-            criteria = (NodeModel.node_id == config.NODE_UUID if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID))
+            criteria = (NodeModel.node_id == config.NODE_UUID
+                if config.PROJECT_ID == 'undefined'
+                else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID)
+            )
             node = session.query(NodeModel).filter(criteria).one()
             if config.PROJECT_ID == 'undefined':
                 config.PROJECT_ID = node.project_id

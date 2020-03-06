@@ -63,7 +63,6 @@ APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY # app-storage-key
 
 # DATABASE ----------------------------
 APP_DB_ENGINE_KEY  = __name__ + '.db_engine'
-APP_DB_SESSION_KEY = __name__ + '.db_session'
 
 
 # DATA STORAGE MANAGER ----------------------------------

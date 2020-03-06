@@ -4,7 +4,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 def read_reqs( reqs_path: Path):
@@ -13,18 +13,17 @@ def read_reqs( reqs_path: Path):
 
 #-----------------------------------------------------------------
 
-install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
+install_requirements = read_reqs( current_dir / "requirements" / "_base.txt" ) + [
     "s3wrapper==0.1.0",
-    "simcore-postgres-database==0.1.0",
+    "simcore-postgres-database",
     "simcore-sdk==0.1.0",
-    "simcore-service-library==0.1.0",
-    "simcore-director-sdk==1.0.0"  # FIXME: notice that this is version 1 while the others are 0!
+    "simcore-service-library",
 ]
-test_requirements = read_reqs( here / "requirements" / "_test.txt" )
+test_requirements = read_reqs( current_dir / "requirements" / "_test.txt" )
 
 setup(
     name='simcore-service-webserver',
-    version="0.1.0",
+    version="0.4.0",
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',
@@ -32,6 +31,8 @@ setup(
     include_package_data=True,
     package_data={
         '': [
+            'api/v0/openapi.yaml',
+            'api/v0/schemas/*.json',
             'config/*.y*ml',
             'data/*.json',
             'templates/**/*.html',

@@ -1,13 +1,18 @@
 version: '3.7'
 services:
-
-  apihub:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/apihub:${DOCKER_IMAGE_TAG:-latest}
+  catalog:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    deploy:
-      placement:
-       constraints:
-          - node.platform.os == linux
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - TESTING=false
+      - LOGLEVEL=WARNING
+    depends_on:
+      - postgres
     networks:
       - default
 
@@ -20,6 +25,8 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - REGISTRY_SSL=${REGISTRY_SSL}
+      - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
+      - DIRECTOR_REGISTRY_CACHING_TTL=${DIRECTOR_REGISTRY_CACHING_TTL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -33,6 +40,8 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
     deploy:
@@ -48,20 +57,20 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
+      - BUILD_DATE=${BUILD_DATE:-1970-01-01T01:00:00Z}
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
-      - WEBSERVER_LOGLEVEL=INFO
+      - WEBSERVER_LOGLEVEL=WARNING
     env_file:
       - ../.env
     depends_on:
-      - apihub
       - postgres
       - rabbit
+      - redis
     deploy:
       placement:
         constraints:
@@ -76,6 +85,7 @@ services:
     init: true
     deploy:
       mode: replicated
+      replicas: 4
       endpoint_mode: dnsrr
       resources:
         reservations:
@@ -87,10 +97,12 @@ services:
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - RABBITMQ_USER=${RABBITMQ_USER}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - RABBITMQ_LOG_CHANNEL=${RABBITMQ_LOG_CHANNEL}
-      - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_USER=${RABBIT_USER}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_LOG_CHANNEL=${RABBIT_LOG_CHANNEL}
+      - RABBIT_PROGRESS_CHANNEL=${RABBIT_PROGRESS_CHANNEL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -106,6 +118,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_LOGLEVEL=WARNING
     depends_on:
       - rabbit
       - postgres
@@ -116,15 +129,13 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - APIHUB_HOST=apihub
-      - APIHUB_PORT=8043
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - STORAGE_LOGLEVEL=INFO
+      - STORAGE_LOGLEVEL=WARNING
       - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -133,9 +144,10 @@ services:
       - S3_SECURE=${S3_SECURE}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
+      - TRACING_ENABLED=${TRACING_ENABLED:-True}
+      - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     depends_on:
       - postgres
-      - apihub
     deploy:
       placement:
         constraints:
@@ -149,14 +161,14 @@ services:
     image: itisfoundation/rabbitmq:3.8.0-management
     init: true
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
     networks:
       - default
       - computational_services_subnet
 
   postgres:
-    image: postgres:10.10
+    image: postgres:10.11
     init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -168,6 +180,28 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+    # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
+    # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
+    # in the meantime postgres allows to set a configuration through CLI.
+    # sysctls:
+    #   # NOTES: these values are needed here because docker swarm kills long running idle
+    #   # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
+    #   # info about these values are here https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
+    #   - net.ipv4.tcp_keepalive_intvl=600
+    #   - net.ipv4.tcp_keepalive_probes=9
+    #   - net.ipv4.tcp_keepalive_time=600
+    command:
+      [
+        "postgres",
+        "-c", "tcp_keepalives_idle=600",
+        "-c", "tcp_keepalives_interval=600",
+        "-c", "tcp_keepalives_count=5"
+      ]
+  redis:
+    image: redis:5.0-alpine
+    init: true
+    networks:
+      - default
 
 volumes:
   input: {}
@@ -176,6 +210,8 @@ volumes:
   postgres_data: {}
 
 networks:
+  default:
+    attachable: true
   interactive_services_subnet:
     driver: overlay
     attachable: true

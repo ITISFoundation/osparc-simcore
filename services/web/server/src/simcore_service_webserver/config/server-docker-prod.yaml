@@ -1,4 +1,8 @@
-# Runs insides a container
+#
+# The environment variables in this context are those defined in the production container
+#
+# NOTE: Trafaret does not handle defaults as ${WEBSERVER_LOGLEVEL:-info}
+#       To define defaults, see services/web/server/src/simcore_service_webserver/cli.py::create_environ
 ---
 version: "1.0"
 main:
@@ -9,12 +13,18 @@ main:
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}
   monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
+tracing:
+  enabled: ${TRACING_ENABLED}
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
+socketio:
+  enabled: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: v0
 db:
-  init_tables: True
+  # Default for WEBSERVER_DB_INITTABLES set in cli.py
+  init_tables: ${WEBSERVER_DB_INITTABLES}
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -22,17 +32,23 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+    minsize: 4
+    maxsize: 4
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 rabbit:
-  user: ${RABBITMQ_USER}
-  password: ${RABBITMQ_PASSWORD}
+  host: ${RABBIT_HOST}
+  port: ${RABBIT_PORT}
+  user: ${RABBIT_USER}
+  password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBITMQ_PROGRESS_CHANNEL}
-    log: ${RABBITMQ_LOG_CHANNEL}
-# s3:
-#   endpoint: ${S3_ENDPOINT}
-#   access_key: ${S3_ACCESS_KEY}
-#   secret_key: ${S3_SECRET_KEY}
-#   bucket_name: ${S3_BUCKET_NAME}
+    progress: ${RABBIT_PROGRESS_CHANNEL}
+    log: ${RABBIT_LOG_CHANNEL}
 login:
   enabled: True
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
@@ -41,19 +57,27 @@ smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  tls: False
-  username: Null
-  password: Null
+  tls: ${SMTP_TLS_ENABLED}
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
   version: v0
+catalog:
+  host: catalog
+  port: 8000
+  version: v0
 rest:
   version: v0
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+  enabled: True
 session:
   # python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+activity:
+  enabled: True
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
 ...

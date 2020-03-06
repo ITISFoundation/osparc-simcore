@@ -1,24 +1,36 @@
 import json
 import sys
 from pathlib import Path
+from typing import List
 
 import yaml
 
 # Conventions
 CONVERTED_SUFFIX = "-converted.yaml"
 
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+def find_current_repo_folder():
+    cpath = Path(current_dir)
+    while not any(cpath.glob(".git")):
+        cpath = cpath.parent
+        assert cpath!=cpath.parent
+    assert cpath.glob("services")
+    return cpath
+
+current_repo_dir = find_current_repo_folder()
+
+
 
 def specs_folder():
-    here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-    return here.parent / "specs"
+    return current_dir.parent / "specs"
 
-
-def list_files_in_api_specs(wildcard):
+def list_files_in_api_specs(wildcard: str) -> List[str]:
     """ Helper function to parameterize tests with list of files
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
 
-    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[/home/crespo/devp/osparc-simcore/api/specs/shared/schemas/node-meta-v0.0.1.json] PASSED
+    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[/home/crespo/devp/osparc-simcore/api/specs/common/schemas/node-meta-v0.0.1.json] PASSED
     """
     specs_dir = specs_folder()
 
@@ -26,11 +38,11 @@ def list_files_in_api_specs(wildcard):
     return list(str(p) for p in specs_dir.rglob(wildcard))
 
 
-def list_all_openapi():
-    """ Lists str paths for all openapi.yaml in api/specs
+def list_all_openapi() -> List[str]:
+    """ Lists paths to all 'services/**/api/v*/openapi.y*ml'
+        These are single documents that bundles all parts
     """
-    return [ pathstr for pathstr in list_files_in_api_specs("openapi.y*ml")
-                        if not pathstr.endswith(CONVERTED_SUFFIX) ]  # skip converted schemas
+    return [str(p) for p in current_repo_dir.rglob("api/v*/openapi.y*ml") ]
 
 
 def load_specs(spec_file_path: Path) -> dict:

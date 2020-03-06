@@ -57,6 +57,8 @@ qx.Class.define("osparc.file.FilesTree", {
         this.__itemSelected();
       }
     }, this);
+
+    this.__loadPaths = {};
   },
 
   properties: {
@@ -120,6 +122,7 @@ qx.Class.define("osparc.file.FilesTree", {
   members: {
     __locations: null,
     __datasets: null,
+    __loadPaths: null,
 
     resetChecks: function() {
       this.__locations = new Set();
@@ -129,25 +132,73 @@ qx.Class.define("osparc.file.FilesTree", {
     resetCache: function() {
       this.resetChecks();
 
-      const filesStore = osparc.store.Data.getInstance();
-      filesStore.resetCache();
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.resetCache();
     },
 
-    populateTree: function(nodeId = null, locationId = null) {
+    populateNodeTree(nodeId) {
       if (nodeId) {
         this.__populateNodeFiles(nodeId);
-      } else if (locationId) {
-        this.__populateMyLocation(locationId);
-      } else {
-        this.__populateMyData();
       }
+    },
 
-      this.getDelegate().configureItem = item => {
-        item.addListener("dbltap", e => {
-          this.__itemSelected();
-        }, this);
-        this.__addDragAndDropMechanisms(item);
-      };
+    populateTree: function(locationId = null) {
+      if (locationId) {
+        this.__populateLocation(locationId);
+      } else {
+        this.__populateLocations();
+      }
+    },
+
+    loadFilePath: function(outFileVal) {
+      const locationId = outFileVal.store;
+      let datasetId = "dataset" in outFileVal ? outFileVal.dataset : null;
+      const pathId = outFileVal.path;
+      if (datasetId === null) {
+        const splitted = pathId.split("/");
+        if (splitted.length === 3) {
+          // simcore.s3
+          datasetId = splitted[0];
+        }
+      }
+      this.__addToLoadFilePath(locationId, datasetId, pathId);
+      this.__populateLocations();
+    },
+
+    __addToLoadFilePath: function(locationId, datasetId, pathId) {
+      if (datasetId) {
+        if (!(locationId in this.__loadPaths)) {
+          this.__loadPaths[locationId] = {};
+        }
+        if (!(datasetId in this.__loadPaths[locationId])) {
+          this.__loadPaths[locationId][datasetId] = new Set();
+        }
+        this.__loadPaths[locationId][datasetId].add(pathId);
+      }
+    },
+
+    __hasLocationNeedToBeLoaded: function(locationId) {
+      return (locationId in this.__loadPaths) && (Object.keys(this.__loadPaths[locationId]).length > 0);
+    },
+
+    __hasDatasetNeedToBeLoaded: function(locationId, datasetId) {
+      return (locationId in this.__loadPaths) && (datasetId in this.__loadPaths[locationId]) && (this.__loadPaths[locationId][datasetId].size > 0);
+    },
+
+    __filesReceived: function(locationId, datasetId, files) {
+      if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
+        const paths = Array.from(this.__loadPaths[locationId][datasetId]);
+        for (let i=0; i<paths.length; i++) {
+          const path = paths[i];
+          for (let j=0; j<files.length; j++) {
+            const file = files[j];
+            if (file === path) {
+              this.__loadPaths[locationId].delete(datasetId);
+              return;
+            }
+          }
+        }
+      }
     },
 
     __populateNodeFiles: function(nodeId) {
@@ -156,24 +207,20 @@ qx.Class.define("osparc.file.FilesTree", {
       const rootModel = this.getModel();
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
-      const filesStore = osparc.store.Data.getInstance();
-      if (filesStore.hasListener("nodeFiles")) {
-        filesStore.removeListener("nodeFiles");
-      }
-      filesStore.addListenerOnce("nodeFiles", e => {
-        const files = e.getData();
-        const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__filesToRoot(newChildren);
-        let filesInTree = [];
-        this.__getFilesInTree(rootModel, filesInTree);
-        for (let i=0; i<filesInTree.length; i++) {
-          this.openNodeAndParents(filesInTree[i]);
-        }
-      }, this);
-      filesStore.getNodeFiles(nodeId);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getNodeFiles(nodeId)
+        .then(files => {
+          const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
+          this.__filesToRoot(newChildren);
+          let filesInTree = [];
+          this.__getFilesInTree(rootModel, filesInTree);
+          for (let i=0; i<filesInTree.length; i++) {
+            this.openNodeAndParents(filesInTree[i]);
+          }
+        });
     },
 
-    __populateMyData: function() {
+    __populateLocations: function() {
       this.resetChecks();
 
       const treeName = "My Data";
@@ -182,26 +229,21 @@ qx.Class.define("osparc.file.FilesTree", {
       rootModel.getChildren().removeAll();
       osparc.file.FilesTree.addLoadingChild(rootModel);
 
-      const filesStore = osparc.store.Data.getInstance();
-      // OM: ??? Somehow this check avoids duplicated code.
-      filesStore.hasListener("myLocations");
-      filesStore.addListenerOnce("myLocations", e => {
-        const locations = e.getData();
-        if (this.__locations.size === 0) {
-          this.resetChecks();
-
-          this.__locationsToRoot(locations);
-
-          for (let i=0; i<locations.length; i++) {
-            const locationId = locations[i]["id"];
-            this.__populateMyLocation(locationId);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getLocations()
+        .then(locations => {
+          if (this.__locations.size === 0) {
+            this.resetChecks();
+            this.__locationsToRoot(locations);
+            for (let i=0; i<locations.length; i++) {
+              const locationId = locations[i]["id"];
+              this.__populateLocation(locationId);
+            }
           }
-        }
-      }, this);
-      filesStore.getLocations();
+        });
     },
 
-    __populateMyLocation: function(locationId = null) {
+    __populateLocation: function(locationId = null) {
       if (locationId !== null) {
         const locationModel = this.__getLocationModel(locationId);
         if (locationModel) {
@@ -210,17 +252,17 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       }
 
-      const filesStore = osparc.store.Data.getInstance();
-      filesStore.addListener("myDatasets", ev => {
-        const {
-          location,
-          datasets
-        } = ev.getData();
-        if (location === locationId && !this.__locations.has(locationId)) {
-          this.__datasetsToLocation(location, datasets);
-        }
-      }, this);
-      filesStore.getDatasetsByLocation(locationId);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getDatasetsByLocation(locationId)
+        .then(data => {
+          const {
+            location,
+            datasets
+          } = data;
+          if (location === locationId && !this.__locations.has(locationId)) {
+            this.__datasetsToLocation(location, datasets);
+          }
+        });
     },
 
     __resetTree: function(treeName) {
@@ -237,44 +279,53 @@ qx.Class.define("osparc.file.FilesTree", {
 
       this.setModel(root);
       this.setDelegate({
-        createItem: () => {
-          const fileTreeItem = new osparc.file.FileTreeItem();
-          fileTreeItem.addListener("requestFiles", e => {
-            const {
-              locationId,
-              datasetId
-            } = e.getData();
-
-            if (this.__datasets.has(datasetId)) {
-              return;
-            }
-
-            const filesStore = osparc.store.Data.getInstance();
-            filesStore.addListener("myDocuments", ev => {
-              const {
-                location,
-                dataset,
-                files
-              } = ev.getData();
-              this.__filesToDataset(location, dataset, files);
-            }, this);
-            filesStore.getFilesByLocationAndDataset(locationId, datasetId);
-          }, this);
-          return fileTreeItem;
-        },
+        createItem: () => new osparc.file.FileTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("itemId", "itemId", null, item, id);
           c.bindProperty("fileId", "fileId", null, item, id);
           c.bindProperty("location", "location", null, item, id);
           c.bindProperty("isDataset", "isDataset", null, item, id);
+          c.bindProperty("datasetId", "datasetId", null, item, id);
           c.bindProperty("loaded", "loaded", null, item, id);
           c.bindProperty("path", "path", null, item, id);
           c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
+        },
+        configureItem: item => {
+          const openButton = item.getChildControl("open");
+          openButton.addListener("tap", e => {
+            if (item.isOpen() && !item.getLoaded() && item.getIsDataset()) {
+              item.setLoaded(true);
+              const locationId = item.getLocation();
+              const datasetId = item.getPath();
+              this.__requestDatasetFiles(locationId, datasetId);
+            }
+          }, this);
+          item.addListener("dbltap", e => {
+            this.__itemSelected();
+          }, this);
+          this.__addDragAndDropMechanisms(item);
         }
       });
+    },
+
+    __requestDatasetFiles: function(locationId, datasetId) {
+      if (this.__datasets.has(datasetId)) {
+        return;
+      }
+
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getFilesByLocationAndDataset(locationId, datasetId)
+        .then(data => {
+          const {
+            location,
+            dataset,
+            files
+          } = data;
+          this.__filesToDataset(location, dataset, files);
+        });
     },
 
     __getLocationModel: function(locationId) {
@@ -304,6 +355,7 @@ qx.Class.define("osparc.file.FilesTree", {
     __locationsToRoot: function(locations) {
       const rootModel = this.getModel();
       rootModel.getChildren().removeAll();
+      let openThis = null;
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
         const locationData = osparc.data.Converters.createDirEntry(
@@ -313,11 +365,17 @@ qx.Class.define("osparc.file.FilesTree", {
         );
         const locationModel = qx.data.marshal.Json.createModel(locationData, true);
         rootModel.getChildren().append(locationModel);
+        if (this.__hasLocationNeedToBeLoaded(location.id)) {
+          openThis = locationModel;
+        }
+      }
+      if (openThis) {
+        this.openNodeAndParents(openThis);
       }
     },
 
     __datasetsToLocation: function(locationId, datasets) {
-      const filesStore = osparc.store.Data.getInstance();
+      const dataStore = osparc.store.Data.getInstance();
 
       const locationModel = this.__getLocationModel(locationId);
       if (!locationModel) {
@@ -325,6 +383,7 @@ qx.Class.define("osparc.file.FilesTree", {
       }
       this.__locations.add(locationId);
       locationModel.getChildren().removeAll();
+      let openThis = null;
       for (let i=0; i<datasets.length; i++) {
         const dataset = datasets[i];
         const datasetData = osparc.data.Converters.createDirEntry(
@@ -340,10 +399,19 @@ qx.Class.define("osparc.file.FilesTree", {
 
         // add cached files
         const datasetId = dataset.dataset_id;
-        const cachedData = filesStore.getFilesByLocationAndDatasetCached(locationId, datasetId);
+        const cachedData = dataStore.getFilesByLocationAndDatasetCached(locationId, datasetId);
         if (cachedData) {
           this.__filesToDataset(cachedData.location, cachedData.dataset, cachedData.files);
         }
+
+        if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
+          openThis = datasetModel;
+        }
+      }
+      if (openThis) {
+        const datasetId = openThis.getItemId();
+        this.openNodeAndParents(openThis);
+        this.__requestDatasetFiles(locationId, datasetId);
       }
     },
 
@@ -356,7 +424,7 @@ qx.Class.define("osparc.file.FilesTree", {
       if (datasetModel) {
         datasetModel.getChildren().removeAll();
         if (files.length>0) {
-          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(files);
+          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
           const datasetData = locationData[0].children;
           for (let i=0; i<datasetData[0].children.length; i++) {
             const filesModel = qx.data.marshal.Json.createModel(datasetData[0].children[i], true);
@@ -367,6 +435,8 @@ qx.Class.define("osparc.file.FilesTree", {
         this.__datasets.add(datasetId);
         this.fireEvent("filesAddedToTree");
       }
+
+      this.__filesReceived(locationId, datasetId, files);
     },
 
     __filesToRoot: function(data) {
@@ -392,10 +462,6 @@ qx.Class.define("osparc.file.FilesTree", {
         return data;
       }
       return null;
-    },
-
-    addFileEntry: function(fileMetadata) {
-      console.log("file copied", fileMetadata);
     },
 
     __getFilesInTree: function(item, leaves) {

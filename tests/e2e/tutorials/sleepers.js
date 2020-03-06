@@ -1,85 +1,50 @@
-// node sleepers.js [user] [password]
+// node sleepers.js [url] [user] [password]
 
-const startBrowser = require('../utils/startBrowser');
-const auto = require('../utils/auto');
 const utils = require('../utils/utils');
-const responses = require('../utils/responsesQueue');
 
-const demo = false;
+const tutorialBase = require('./tutorialBase');
 
-let user = null;
-let pass = null;
-let newUser = true;
 const args = process.argv.slice(2);
-if (args.length === 2) {
-  user = args[0];
-  pass = args[1];
-  newUser = false;
+if (args.length < 1) {
+  process.exit(1);
+}
+const url = args[0];
+const {
+  user,
+  pass,
+  newUser
+} = utils.getUserAndPass(args);
+const templateName = "Sleepers";
+
+async function runTutorial () {
+  const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName);
+
+  tutorial.init();
+  await tutorial.beforeScript();
+  await tutorial.goTo();
+
+  await tutorial.registerIfNeeded();
+  await tutorial.login();
+  await tutorial.openTemplate(1000);
+
+  // Some time for loading the workbench
+  await tutorial.waitFor(5000);
+
+  await tutorial.runPipeline(25000);
+  await tutorial.openNodeFiles(0);
+  const outFiles = [
+    "logs.zip",
+    "out_1"
+  ];
+  await tutorial.checkResults(outFiles.length);
+
+  await tutorial.removeStudy();
+  await tutorial.logOut();
+  await tutorial.close();
 }
 
-if (newUser) {
-  const userPass = utils.getRandUserAndPass();
-  user = userPass.user;
-  pass = userPass.pass;
-}
-
-async function runTutorial (url) {
-  console.log("Running tutorial on", url);
-  const browser = await startBrowser.launch(demo);
-  const page = await browser.newPage();
-  await page.goto(url);
-
-  const responsesQueue = new responses.ResponsesQueue(page);
-
-  if (newUser) {
-    await auto.register(page, user, pass);
-  }
-  // Login
-  responsesQueue.addResponseListener("projects?type=template");
-  await auto.logIn(page, user, pass);
-
-  // Use template to create Sleepers study
-  await responsesQueue.waitUntilResponse("projects?type=template");
-
-  // Run pipeline
-  const templateName = "Sleepers";
-  await auto.dashboardOpenFirstTemplate(page, templateName);
-  const timeForFirstNodeToFinish = 20000;
-  await auto.runStudy(page, timeForFirstNodeToFinish);
-
-  // Check results are there
-  await auto.openNode(page, 0);
-
-  try {
-    await auto.checkDataProducedByNode(page);
-  }
-  catch(err) {
-    console.log("Failed checking Data Produced By Node", err);
-  }
-
-  // Remove Study
-  await auto.toDashboard(page);
-  await auto.dashboardDeleteFirstStudy(page);
-
-  // Make sure data was deleted
-
-  // Log Out
-  await auto.logOut(page);
-
-  await browser.close();
-}
-
-const urls = [
-  // "http://localhost:9081/",
-  "https://osparc01.speag.com/",
-  // "https://staging.osparc.io/",
-  // "https://osparc.io/",
-];
-
-urls.forEach((url) => {
-  runTutorial(url)
-    .catch((e) => {
-      console.log('Puppeteer error: ' + e);
-      process.exit(1);
-    });
-});
+runTutorial()
+  .catch(error => {
+    console.log('Puppeteer error: ' + error);
+    process.exit(1);
+  });

@@ -16,9 +16,9 @@ def read_reqs( reqs_path: Path):
 
 install_requirements = read_reqs( here / "requirements" / "_base.txt" ) + [
     "s3wrapper==0.1.0",
-    "simcore-postgres-database==0.1.0",
+    "simcore-postgres-database",
     "simcore-sdk==0.1.0",
-    "simcore-service-library==0.1.0"
+    "simcore-service-library"
 ]
 
 test_requirements = read_reqs( here / "requirements" / "_test.txt" )
@@ -26,7 +26,7 @@ test_requirements = read_reqs( here / "requirements" / "_test.txt" )
 
 setup_config = dict(
     name='simcore-service-storage',
-    version='0.1.0',
+    version='0.2.1',
     description='Service to manage data storage in simcore',
     author='Manuel Guidon (mguidon)',
     python_requires='>3.6, <3.7',
@@ -37,9 +37,11 @@ setup_config = dict(
     tests_require=test_requirements,
     package_data={
         '': [
+            'api/v0/openapi.yaml',
+            'api/v0/schemas/*.json',
             'data/*.json',
             'data/*.yml',
-            'data/*.yaml'
+            'data/*.yaml',
             ],
     },
     entry_points={

@@ -3,17 +3,22 @@
 #
 -r python-with-pandas_89f709.txt # TODO: add reference to git@github.com:ITISFoundation/dockerfiles.git/requirements
 
-urllib3~=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
-psycopg2-binary~=2.7.5  # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
-sqlalchemy~=1.3.3       # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
-jsonschema<3            # openapi-spec-validator from service-libs has requirement jsonschema<3
-boto3==1.9.91           # do not use lastest version, this would require botocore<1.13.0,>=1.12.179 but aiobotocore[boto3]==0.10.2 hardcodes boto3==1.9.91 that requires botocore<1.12.92,>=1.12.91
+-r ../../../packages/postgres-database/requirements/_base.in
+-r ../../../packages/service-library/requirements/_base.in
 
-aioboto3
+
+urllib3~=1.24.2         # See https://nvd.nist.gov/vuln/detail/CVE-2019-11324
+psycopg2-binary~=2.8.4  # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
+sqlalchemy~=1.3.3       # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
+boto3==1.9.252           # do not use lastest version, this would require botocore<1.13.0,>=1.12.179 but aiobotocore[boto3]==0.10.2 hardcodes boto3==1.9.91 that requires botocore<1.12.92,>=1.12.91
+aioboto3==6.4.1
+# boto3==1.9.252 (from aiobotocore[boto3]==0.10.4->aioboto3==6.4.1->-r _base.in (line 15))
+# boto3>=1.4 (from blackfynn==3.1.0->-r _base.in (line 19))
+
 aiohttp
 aiofiles
-aiopg[sa]~=0.15.0     # Fixes 0.16.0 https://github.com/aio-libs/aiopg/issues/535
-blackfynn
+aiopg[sa]
+blackfynn==2.11.1
 execnet
 marshmallow
 trafaret

@@ -5,14 +5,23 @@ main:
   host: 0.0.0.0
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}
-  log_level: DEBUG
+  log_level: ${WEBSERVER_LOGLEVEL}
   testing: True
   studies_access_enabled: True
   monitoring_enabled: True
+socketio:
+  enabled: True
+tracing:
+  enabled: True
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: "v0"
+catalog:
+  host: catalog
+  port: 8000
+  version: v0
 db:
   init_tables: True
   postgres:
@@ -22,19 +31,28 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
+    minsize: 4
+    maxsize: 4
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds:  ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 rabbit:
   host: ${RABBIT_HOST}
   port: ${RABBIT_PORT}
-  user: ${RABBITMQ_USER}
-  password: ${RABBITMQ_PASSWORD}
+  user: ${RABBIT_USER}
+  password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBITMQ_PROGRESS_CHANNEL}
-    log: ${RABBITMQ_LOG_CHANNEL}
-# s3:
-#   endpoint: ${S3_ENDPOINT}
-#   access_key: ${S3_ACCESS_KEY}
-#   secret_key: ${S3_SECRET_KEY}
-#   bucket_name: ${S3_BUCKET_NAME}
+    progress: ${RABBIT_PROGRESS_CHANNEL}
+    log: ${RABBIT_LOG_CHANNEL}
+activity:
+  enabled: True
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
 login:
   enabled: True
   registration_invitation_required: False
@@ -48,10 +66,8 @@ smtp:
   password: Null
 rest:
   version: v0
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
 projects:
-  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-
+  enabled: True
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}

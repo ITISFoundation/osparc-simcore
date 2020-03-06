@@ -20,13 +20,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form, workbench, node) {
-    // workbench and node are necessary for creating links
-    if (workbench) {
-      this.setWorkbench(workbench);
-    } else {
-      this.setWorkbench(null);
-    }
+  construct: function(form, node) {
     if (node) {
       this.setNode(node);
     } else {
@@ -51,11 +45,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
-      nullable: true
-    },
-
     node: {
       check: "osparc.data.model.Node",
       nullable: true
@@ -70,6 +59,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     getRetrievedAtom: function(success) {
       const icon = success ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/times/12";
       return new qx.ui.basic.Atom("", icon);
+    },
+
+    getRetrievedEmpty: function() {
+      const icon = "@FontAwesome5Solid/dot-circle/10";
+      return new qx.ui.basic.Atom("", icon);
     }
   },
 
@@ -81,7 +75,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       retrieveStatus: 2
     },
     _retrieveStatus: {
-      failed: 0,
+      failed: -1,
+      empty: 0,
       retrieving: 1,
       succeed: 2
     },
@@ -147,13 +142,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
         if (ctrl && ctrl.link) {
-          if (this.getNode().getKey()
-            .includes("/neuroman")) {
-            // HACK: Only Neuroman should enter here
-            data[portId] = ctrl.link["output"];
-          } else {
-            data[portId] = ctrl.link;
-          }
+          data[portId] = ctrl.link;
         }
         // FIXME: "null" should be a valid input
         if (data[portId] === "null") {
@@ -277,15 +266,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    retrievedPortData: function(portId, succeed) {
-      const status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+    retrievedPortData: function(portId, succeed, dataSize = -1) {
+      let status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+      if (parseInt(dataSize) === 0) {
+        status = this._retrieveStatus.empty;
+      }
       if (portId) {
         let data = this.__getEntryFieldChild(portId);
         if (data) {
           let child = data.child;
           let idx = data.idx;
           const layoutProps = child.getLayoutProperties();
-          // this._remove(child);
           this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
         }
       } else {
@@ -294,7 +285,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           let child = children[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this._gridPos.retrieveStatus) {
-            // this._remove(child);
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -306,6 +296,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       switch (status) {
         case this._retrieveStatus.failed:
           icon = osparc.component.form.renderer.PropForm.getRetrievedAtom(false);
+          break;
+        case this._retrieveStatus.empty:
+          icon = osparc.component.form.renderer.PropForm.getRetrievedEmpty();
           break;
         case this._retrieveStatus.retrieving:
           icon = osparc.component.form.renderer.PropForm.getRetrievingAtom();
@@ -342,13 +335,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      if (this.getWorkbench() && node1Id && node2Id) {
-        const node1 = this.getWorkbench().getNode(node1Id);
-        const node2 = this.getWorkbench().getNode(node2Id);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const workbench = study.getWorkbench();
+      if (workbench && node1Id && node2Id) {
+        const node1 = workbench.getNode(node1Id);
+        const node2 = workbench.getNode(node2Id);
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);
-          return osparc.utils.Services.arePortsCompatible(port1, port2);
+          return osparc.utils.Ports.arePortsCompatible(port1, port2);
         }
       }
       return false;

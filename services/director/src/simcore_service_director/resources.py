@@ -4,9 +4,10 @@ from pathlib import Path
 import pkg_resources
 from simcore_service_director import config
 
-RESOURCE_OPENAPI_ROOT = "oas3"
-RESOURCE_OPEN_API = "{root}/{version}/openapi.yaml".format(root=RESOURCE_OPENAPI_ROOT, version=config.API_VERSION)
-RESOURCE_NODE_SCHEMA = config.NODE_SCHEMA_LOCATION
+
+RESOURCE_OPENAPI_ROOT: str = "api"
+RESOURCE_OPEN_API: str = f"{RESOURCE_OPENAPI_ROOT}/{config.API_VERSION}/openapi.yaml"
+RESOURCE_NODE_SCHEMA: str = config.NODE_SCHEMA_LOCATION
 
 """
  List of pkg_resources functions *bound* to current package with the following signature
@@ -25,7 +26,7 @@ listdir = functools.partial(pkg_resources.resource_listdir, __name__)
 isdir = functools.partial(pkg_resources.resource_isdir, __name__)
 
 
-def get_path(resource_name):
+def get_path(resource_name: str) -> Path:
     """ Returns a path to a resource
 
         WARNING: existence of file is not guaranteed. Use resources.exists

@@ -38,8 +38,9 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-  */
-  construct: function(node) {
+    * @param showUsersTree {Boolean} Show the user's tree on the right side. True by default
+    */
+  construct: function(node, showUsersTree = true) {
     this.base(arguments);
 
     this.set({
@@ -75,31 +76,33 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       flex: 1
     });
 
-    const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    const userReloadBtn = this._createChildControlImpl("reloadButton");
-    userReloadBtn.addListener("execute", function() {
-      this.__userFilesTree.resetCache();
-      this.__reloadUserTree();
-    }, this);
-    userTreeLayout.add(userReloadBtn);
-    const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
-    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
-    userFilesTree.setDropMechnism(true);
-    userFilesTree.addListener("selectionChanged", () => {
-      this.__selectionChanged("user");
-    }, this);
-    userFilesTree.addListener("fileCopied", e => {
-      const fileMetadata = e.getData();
-      if (fileMetadata) {
-        this.__userFilesTree.addFileEntry(fileMetadata);
-      }
-    }, this);
-    userTreeLayout.add(userFilesTree, {
-      flex: 1
-    });
-    treesLayout.add(userTreeLayout, {
-      flex: 1
-    });
+    if (showUsersTree) {
+      const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const userReloadBtn = this._createChildControlImpl("reloadButton");
+      userReloadBtn.addListener("execute", function() {
+        this.__userFilesTree.resetCache();
+        this.__reloadUserTree();
+      }, this);
+      userTreeLayout.add(userReloadBtn);
+      const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
+      osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
+      userFilesTree.setDropMechnism(true);
+      userFilesTree.addListener("selectionChanged", () => {
+        this.__selectionChanged("user");
+      }, this);
+      userFilesTree.addListener("fileCopied", e => {
+        const fileMetadata = e.getData();
+        if (fileMetadata) {
+          console.log("file copied", fileMetadata);
+        }
+      }, this);
+      userTreeLayout.add(userFilesTree, {
+        flex: 1
+      });
+      treesLayout.add(userTreeLayout, {
+        flex: 1
+      });
+    }
 
     const selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     selectedFileLayout.addListener("fileDeleted", e => {
@@ -148,12 +151,34 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       return control || this.base(arguments, id);
     },
 
+    getWindow: function() {
+      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 0,
+        height: 600,
+        modal: true,
+        showMinimize: false,
+        width: 900
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
+      win.add(this);
+      win.center();
+      return win;
+    },
+
     __reloadNodeTree: function() {
-      this.__nodeFilesTree.populateTree(this.getNode().getNodeId());
+      if (this.__nodeFilesTree) {
+        this.__nodeFilesTree.populateNodeTree(this.getNode().getNodeId());
+      }
     },
 
     __reloadUserTree: function(locationId = null) {
-      this.__userFilesTree.populateTree(null, locationId);
+      if (this.__userFilesTree) {
+        this.__userFilesTree.populateTree(locationId);
+      }
     },
 
     __selectionChanged: function(selectedTree) {
@@ -162,7 +187,9 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
         this.__nodeFilesTree.resetSelection();
         selectionData = this.__userFilesTree.getSelectedFile();
       } else {
-        this.__userFilesTree.resetSelection();
+        if (this.__userFilesTree) {
+          this.__userFilesTree.resetSelection();
+        }
         selectionData = this.__nodeFilesTree.getSelectedFile();
       }
       if (selectionData) {

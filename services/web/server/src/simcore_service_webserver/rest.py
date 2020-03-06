@@ -5,70 +5,78 @@
     - Activates middlewares
 
 """
-import asyncio
 import logging
+from pathlib import Path
+from typing import Optional
 
+import openapi_core
+import yaml
 from aiohttp import web
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+from aiohttp_swagger import setup_swagger
+from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 
 from servicelib import openapi
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.client_session import get_client_session
-from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
+from simcore_service_webserver.resources import resources
 
 from . import rest_routes
-from .rest_config import APP_OPENAPI_SPECS_KEY, CONFIG_SECTION_NAME
+from .__version__ import api_version_prefix
+from .rest_config import APP_OPENAPI_SPECS_KEY, get_rest_config
 
 log = logging.getLogger(__name__)
 
 
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
+def get_openapi_specs_path(api_version_dir: Optional[str]=None) -> Path:
+    if api_version_dir is None:
+        api_version_dir = api_version_prefix
+
+    return resources.get_path(f'api/{api_version_dir}/openapi.yaml')
 
 
-@retry( wait=wait_fixed(RETRY_WAIT_SECS),
-        stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(log, logging.INFO) )
-async def get_specs(app, location):
-    session = get_client_session(app)
-    specs = await create_openapi_specs(location, session)
+def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
+    if spec_path is None:
+        spec_path = get_openapi_specs_path()
+
+    with spec_path.open() as fh:
+        spec_dict = yaml.safe_load(fh)
+    specs: OpenApiSpecs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
+
     return specs
-
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON,
     depends=['simcore_service_webserver.security'],
     logger=log)
 def setup(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    cfg = get_rest_config(app)
+    api_version_dir = cfg["version"]
+    spec_path = get_openapi_specs_path(api_version_dir)
 
-    try:
-        loop = asyncio.get_event_loop()
-        location = cfg["location"]
-        specs = loop.run_until_complete( get_specs(app, location) )
+    # validated openapi specs
+    app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
 
-        # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
-        # TODO: should freeze specs here??
-        app[APP_OPENAPI_SPECS_KEY] = specs # validated openapi specs
+    # version check
+    base_path = openapi.get_base_path(specs)
+    major, *_ = specs.info.version
 
-        # diagnostics routes
-        routes = rest_routes.create(specs)
-        app.router.add_routes(routes)
+    if f"/v{major}" != base_path:
+        raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
 
-        # middlewares
-        base_path = openapi.get_base_path(specs)
-        version  = cfg["version"]
-        assert "/"+version == base_path, "Expected %s, got %s" %(version, base_path)
-        append_rest_middlewares(app, base_path)
+    # diagnostics routes
+    routes = rest_routes.create(specs)
+    app.router.add_routes(routes)
 
-    except openapi.OpenAPIError:
-        # TODO: protocol when some parts are unavailable because of failure
-        # Define whether it is critical or this server can still
-        # continue working offering partial services
-        log.exception("Invalid rest API specs. Rest API is DISABLED")
+    # middlewares
+    append_rest_middlewares(app, base_path)
+
+    # rest API doc at /api/doc
+    log.debug("OAS loaded from %s ", spec_path)
+    setup_swagger(app,
+        swagger_from_file=str(spec_path),
+        ui_version=3)
+
+
 
 # alias
 setup_rest = setup

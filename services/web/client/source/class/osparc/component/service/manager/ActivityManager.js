@@ -22,14 +22,24 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
 
     this.__createFiltersBar();
     this.__createActivityTree();
+    this.__createFetchingView();
     this.__createActionsBar();
 
-    this.__updateTree();
+    this.__reloadButton.fireEvent("execute");
+  },
+
+  statics: {
+    itemTypes: {
+      STUDY: "study",
+      SERVICE: "service"
+    }
   },
 
   members: {
     __tree: null,
     __studyFilter: null,
+    __fetchingView: null,
+    __reloadButton: null,
     /**
      * Creates the top bar that holds the filtering widgets.
      */
@@ -41,55 +51,45 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const nameFilter = new osparc.component.filter.TextFilter("name", "activityMonitor");
       const studyFilter = this.__studyFilter = new osparc.component.filter.StudyFilter("study", "activityMonitor");
-      const serviceFilter = new osparc.component.filter.ServiceFilter("service", "activityMonitor");
       filtersContainer.add(nameFilter);
       filtersContainer.add(studyFilter);
-      filtersContainer.add(serviceFilter);
       filtersPart.add(filtersContainer);
 
       this._add(toolbar);
       nameFilter.getChildControl("textfield").setPlaceholder(this.tr("Filter by name"));
 
-      // React to filter changes
-      const msgName = osparc.utils.Utils.capitalize("activityMonitor", "filter");
-      qx.event.message.Bus.getInstance().subscribe(msgName, msg => {
-        const model = this.__tree.getDataModel();
-        const filterText = msg.getData().name;
-        const filterStudy = msg.getData().study;
-        const filter = targetNode => {
-          const nameFilterFn = node => {
-            if (filterText && filterText.length) {
-              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.BRANCH) {
-                return true;
-              } else if (node.label.indexOf(filterText) === -1) {
-                return false;
-              }
-            }
-            return true;
-          };
-          const studyFilterFn = node => {
-            if (filterStudy && filterStudy.length) {
-              if (node.type === qx.ui.treevirtual.MTreePrimitive.Type.LEAF) {
-                return true;
-              } else if (filterStudy.includes(node.label)) {
-                return true;
-              }
-              return false;
-            }
-            return true;
-          };
-          return nameFilterFn(targetNode) && studyFilterFn(targetNode);
-        };
-        model.setFilter(filter);
-      }, this);
+      osparc.data.Resources.get("studies")
+        .then(studies => studyFilter.buildMenu(studies));
     },
 
     /**
      * Creates the main view, holding an instance of {osparc.component.service.manager.ActivityTree}.
      */
     __createActivityTree: function() {
-      const tree = this.__tree = new osparc.component.service.manager.ActivityTree();
-      this._add(tree, {
+      this.__tree = new osparc.component.service.manager.ActivityTree();
+      this._add(this.__tree, {
+        flex: 1
+      });
+      this.__tree.addListener("treeUpdated", () => {
+        osparc.data.Resources.get("studies")
+          .then(studies => this.__studyFilter.buildMenu(studies));
+      }, this);
+    },
+
+    /**
+     * Creates a simple view with a fetching icon.
+     */
+    __createFetchingView: function() {
+      this.__fetchingView = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center",
+        alignY: "middle"
+      })).set({
+        visibility: "excluded"
+      });
+      const image = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26");
+      image.getContentElement().addClass("rotate");
+      this.__fetchingView.add(image);
+      this._add(this.__fetchingView, {
         flex: 1
       });
     },
@@ -99,52 +99,42 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
      */
     __createActionsBar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
-      const actionsPart = new qx.ui.toolbar.Part();
-      toolbar.addSpacer();
-      toolbar.add(actionsPart);
+      const tablePart = new qx.ui.toolbar.Part();
+      // const actionsPart = new qx.ui.toolbar.Part();
+      toolbar.add(tablePart);
+      // toolbar.addSpacer();
+      // toolbar.add(actionsPart);
 
+      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
+      tablePart.add(reloadButton);
+      reloadButton.addListener("execute", () => {
+        this.__tree.exclude();
+        this.__fetchingView.show();
+        this.__tree.reset().then(() => {
+          this.__tree.show();
+          this.__fetchingView.exclude();
+        });
+      }, this);
+
+      /*
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
+      runButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
 
       const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
       actionsPart.add(stopButton);
+      stopButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
 
       const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info/14");
       actionsPart.add(infoButton);
+      infoButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
+
+      [runButton, stopButton, infoButton].map(button => this.__tree.bind("selected", button, "enabled", {
+        converter: data => data.length > 0
+      }));
+      */
 
       this._add(toolbar);
-    },
-
-    /**
-     * This functions updates the tree with the most recent data.
-     */
-    __updateTree: function() {
-      const call = osparc.data.Resources.get("studies");
-      call.then(studies => {
-        const model = this.__tree.getDataModel();
-        model.clearData();
-        studies.forEach(study => {
-          let parent = null;
-          for (let key in study.workbench) {
-            const node = study.workbench[key];
-            const metadata = osparc.utils.Services.getNodeMetaData(node.key, node.version);
-            if (metadata && metadata.type === "computational") {
-              if (parent === null) {
-                parent = model.addBranch(null, study.name, true);
-              }
-              const rowId = model.addLeaf(parent, node.label);
-              if (metadata.key && metadata.key.length) {
-                const splitted = metadata.key.split("/");
-                model.setColumnData(rowId, 1, splitted[splitted.length-1]);
-              }
-            }
-          }
-        });
-        model.setData();
-        this.__studyFilter.buildMenu(studies);
-      }).catch(e => {
-        console.error(e);
-      });
     }
   }
 });

@@ -149,3 +149,4 @@ prof/
 
 # outputs from make
 .stack-*.yml
+services/catalog/log.txt

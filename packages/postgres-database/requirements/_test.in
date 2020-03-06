@@ -3,12 +3,23 @@
 #
 
 # frozen specs
--r _base.txt
+-r _migration.txt
+
+# fixtures
+pyaml
+aiopg[sa]
+faker
 
 # testing
+coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
 pytest
 pytest-cov
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-instafail
+pytest-runner
+pytest-docker
 
 # tools
+-r ../../../requirements.txt
 pylint
 coveralls

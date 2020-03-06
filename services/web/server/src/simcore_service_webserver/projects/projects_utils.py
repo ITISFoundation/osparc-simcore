@@ -18,7 +18,7 @@ def clone_project_document(project: Dict, forced_copy_project_id: str ="") -> Tu
         project_copy_uuid = uuidlib.UUID(forced_copy_project_id)
     else:
         project_copy_uuid = uuidlib.uuid1() # random project id
-        
+
     project_copy['uuid'] = str(project_copy_uuid)
 
     # Workbench nodes shall be unique within the project context
@@ -95,20 +95,23 @@ def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
         and the ports at each node have same values/connections
     """
     try:
-        assert set(rhs_workbench.keys()) == set(lhs_workbench.keys())
+        if not set(rhs_workbench.keys()) == set(lhs_workbench.keys()):
+            raise ValueError()
+
         for node_id, node in rhs_workbench.items():
             # same nodes
-            assert all(node.get(k) == lhs_workbench[node_id].get(k)
-                for k in ['key', 'version']
-            )
+            if not all(node.get(k) == lhs_workbench[node_id].get(k) for k in ['key', 'version'] ):
+                raise ValueError()
 
             # same connectivity (edges)
-            assert set(node.get('inputNodes')) == set(lhs_workbench[node_id].get('inputNodes'))
+            if not set(node.get('inputNodes')) == set(lhs_workbench[node_id].get('inputNodes')):
+                raise ValueError()
 
             # same input values
             for port_id, port in node.get("inputs", {}).items():
-                assert port == lhs_workbench[node_id].get("inputs", {}).get(port_id)
+                if port != lhs_workbench[node_id].get("inputs", {}).get(port_id):
+                    raise ValueError()
 
-    except (AssertionError, TypeError, AttributeError):
+    except (ValueError, TypeError, AttributeError):
         return False
     return True

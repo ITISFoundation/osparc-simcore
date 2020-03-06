@@ -16,5 +16,5 @@ __all__ = [
     "metadata",
     "projects",
     "user_to_projects",
-    "users"
+    "users",
 ]

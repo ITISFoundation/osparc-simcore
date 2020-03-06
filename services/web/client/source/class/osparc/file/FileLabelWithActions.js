@@ -108,20 +108,18 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
-        let dataStore = osparc.store.Data.getInstance();
-        dataStore.addListenerOnce("presignedLink", e => {
-          const presignedLinkData = e.getData();
-          console.log(presignedLinkData.presignedLink);
-          if (presignedLinkData.presignedLink) {
-            const link = presignedLinkData.presignedLink.link;
-            const fileNameFromLink = osparc.utils.Utils.fileNameFromPresignedLink(link);
-            fileName = fileNameFromLink ? fileNameFromLink : fileName;
-            osparc.utils.Utils.downloadLink(link, fileName);
-          }
-        }, this);
         const download = true;
         const locationId = selection.getLocation();
-        dataStore.getPresignedLink(download, locationId, fileId);
+        const dataStore = osparc.store.Data.getInstance();
+        dataStore.getPresignedLink(download, locationId, fileId)
+          .then(presignedLinkData => {
+            if (presignedLinkData.presignedLink) {
+              const link = presignedLinkData.presignedLink.link;
+              const fileNameFromLink = osparc.utils.Utils.fileNameFromPresignedLink(link);
+              fileName = fileNameFromLink ? fileNameFromLink : fileName;
+              osparc.utils.Utils.downloadLink(link, fileName);
+            }
+          });
       }
     },
 
@@ -135,7 +133,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
           return false;
         }
-        let dataStore = osparc.store.Data.getInstance();
+        const dataStore = osparc.store.Data.getInstance();
         dataStore.addListenerOnce("deleteFile", e => {
           if (e) {
             this.fireDataEvent("fileDeleted", e.getData());

@@ -1,0 +1,3 @@
+docker
+tenacity
+pyyaml>=5.3         # Vulnerable

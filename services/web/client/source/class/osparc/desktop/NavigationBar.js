@@ -62,7 +62,24 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     };
 
     let logo = osparc.component.widget.LogoOnOff.getInstance();
-    this._add(logo);
+    const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      alignY: "middle"
+    }));
+    logoContainer.add(logo);
+    const wrapperContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    wrapperContainer.add(logoContainer, {
+      height: "100%"
+    });
+    const platformLabel = new qx.ui.basic.Label().set({
+      font: "text-9"
+    });
+    osparc.utils.LibVersions.getPlatformName()
+      .then(platformName => platformLabel.setValue(platformName.toUpperCase()));
+    wrapperContainer.add(platformLabel, {
+      bottom: 3,
+      right: 0
+    });
+    this._add(wrapperContainer);
     this._add(new qx.ui.toolbar.Separator());
 
     let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({
@@ -77,6 +94,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     this._add(dashboardBtn);
 
     this._add(new qx.ui.toolbar.Separator());
+
+    this.__studyTitle = this.__createStudyTitle();
+    this._add(this.__studyTitle);
 
     let hBox = new qx.ui.layout.HBox(5).set({
       alignY: "middle"
@@ -110,14 +130,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "dashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      nullable: true
+      nullable: true,
+      apply: "_applyStudy"
     }
   },
 
@@ -134,24 +155,28 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
+      } else if (nodeIds.length === 1) {
+        this.__studyTitle.show();
+        return;
       }
+      this.__studyTitle.exclude();
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
           rich: true,
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
+        const study = this.getStudy();
         const nodeId = nodeIds[i];
-        if (nodeId === "root") {
-          this.getStudy().bind("name", btn, "label");
+        if (nodeId === study.getUuid()) {
+          study.bind("name", btn, "label");
         } else {
-          const node = this.getStudy().getWorkbench()
-            .getNode(nodeId);
+          const node = study.getWorkbench().getNode(nodeId);
           if (node) {
             node.bind("label", btn, "label");
           }
         }
         btn.addListener("execute", function() {
-          this.fireDataEvent("nodeDoubleClicked", nodeId);
+          this.fireDataEvent("nodeSelected", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 
@@ -190,10 +215,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createUserBtn: function() {
       const menu = new qx.ui.menu.Menu();
 
-      // Feature OFF
-      // const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
-      // activityManager.addListener("execute", this.__openActivityManager, this);
-      // menu.add(activityManager);
+      const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
+      activityManager.addListener("execute", this.__openActivityManager, this);
+      menu.add(activityManager);
 
       const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
@@ -208,7 +232,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       menu.add(helpBtn);
 
       const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()));
+      newIssueBtn.addListener("execute", this.__openIssueInfoDialog, this);
       osparc.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
       menu.add(newIssueBtn);
 
@@ -237,30 +261,71 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __onOpenAccountSettings: function() {
-      if (!this.__preferencesWin) {
-        this.__preferencesWin = new osparc.desktop.preferences.Preferences();
-      }
+      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
+      preferencesWindow.center();
+      preferencesWindow.open();
+    },
 
-      let win = this.__preferencesWin;
-      if (win) {
-        win.center();
-        win.open();
+    __openActivityManager: function() {
+      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
+        height: 600,
+        width: 800,
+        layout: new qx.ui.layout.Grow(),
+        appearance: "service-window",
+        showMinimize: false,
+        contentPadding: 0
+      });
+      activityWindow.add(new osparc.component.service.manager.ActivityManager());
+      activityWindow.center();
+      activityWindow.open();
+    },
+
+    __openIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()), this);
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
+    },
+
+    _applyStudy: function(study) {
+      if (study) {
+        study.bind("name", this.__studyTitle, "value");
       }
+      this.__studyTitle.show();
+    },
+
+    __createStudyTitle: function() {
+      const studyTitle = new osparc.ui.form.EditLabel().set({
+        visibility: "excluded",
+        labelFont: "title-16",
+        inputFont: "text-16",
+        editable: osparc.data.Permissions.getInstance().canDo("study.update")
+      });
+      studyTitle.addListener("editValue", evt => {
+        if (evt.getData() !== this.__studyTitle.getValue()) {
+          this.__studyTitle.setFetching(true);
+          const params = {
+            name: evt.getData()
+          };
+          this.getStudy().updateStudy(params)
+            .then(() => {
+              this.__studyTitle.setFetching(false);
+            })
+            .catch(err => {
+              this.__studyTitle.setFetching(false);
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+            });
+        }
+      }, this);
+      return studyTitle;
     }
-
-    // FEATURE OFF
-    // __openActivityManager: function() {
-    //   const activityWindow = new qx.ui.window.Window(this.tr("Activity manager")).set({
-    //     height: 480,
-    //     width: 600,
-    //     layout: new qx.ui.layout.Grow(),
-    //     appearance: "service-window",
-    //     showMinimize: false,
-    //     contentPadding: 0
-    //   });
-    //   activityWindow.add(new osparc.component.service.manager.ActivityManager());
-    //   activityWindow.center();
-    //   activityWindow.open();
-    // }
   }
 });

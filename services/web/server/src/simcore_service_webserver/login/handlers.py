@@ -1,9 +1,9 @@
 import logging
 
-import passwordmeter
 from aiohttp import web
 from yarl import URL
 
+from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
@@ -11,7 +11,7 @@ from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .config import get_login_config
 from .confirmation import (is_confirmation_allowed, make_confirmation_link,
-                            validate_confirmation_code)
+                           validate_confirmation_code)
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
 from .utils import (common_themed, flash_response, get_client_ip,
@@ -101,8 +101,6 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    # TODO: ANONYMOUS user cannot login!!
-
     db = get_storage(request.app)
     email = body.email
     password = body.password
@@ -123,8 +121,9 @@ async def login(request: web.Request):
     if user['status'] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
                 content_type='application/json')
-    assert user['status'] == ACTIVE, "db corrupted. Invalid status"
-    assert user['email'] == email, "db corrupted. Invalid email"
+
+    assert user['status'] == ACTIVE, "db corrupted. Invalid status" # nosec
+    assert user['email'] == email, "db corrupted. Invalid email"    # nosec
 
     # user logs in
     identity = user['email']
@@ -133,8 +132,15 @@ async def login(request: web.Request):
     return response
 
 
-async def logout(request: web.Request):
+@login_required
+async def logout(request: web.Request) -> web.Response:
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
+    user_id = request.get(RQT_USERID_KEY, -1)
+    client_session_id = None
+    if request.can_read_body:
+        body = await request.json()
+        client_session_id = body.get("client_session_id", None)
+    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app)
     await forget(request, response)
     return response
 
@@ -171,8 +177,8 @@ async def reset_password(request: web.Request):
             raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
                     content_type='application/json') # 401
 
-        assert user['status'] == ACTIVE
-        assert user['email'] == email
+        assert user['status'] == ACTIVE # nosec
+        assert user['email'] == email   # nosec
 
         if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(reason=cfg.MSG_OFTEN_RESET_PASSWORD,
@@ -223,7 +229,7 @@ async def change_email(request: web.Request):
     email = body.email
 
     user = await db.get_user({'id': request[RQT_USERID_KEY]})
-    assert user, "Cannot identify user"
+    assert user # nosec
 
     if user['email'] == email:
         return flash_response("Email changed")
@@ -231,8 +237,6 @@ async def change_email(request: web.Request):
     other = await db.get_user({'email': email})
     if other:
         raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
-
-    # TODO: validate new email!!! User marshmallow
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({
@@ -269,7 +273,7 @@ async def change_password(request: web.Request):
     db = get_storage(request.app)
 
     user = await db.get_user({'id': request[RQT_USERID_KEY]})
-    assert user, "Cannot identify user"
+    assert user # nosec
 
     _, _, body = await extract_and_validate(request)
 
@@ -287,7 +291,6 @@ async def change_password(request: web.Request):
 
     await db.update_user(user, {'password_hash': encrypt_password(new_password)})
 
-    # TODO: inform activity via email. Somebody has changed your password!
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
     return response
 
@@ -324,22 +327,18 @@ async def email_confirmation(request: web.Request):
             await db.delete_confirmation(confirmation)
             log.debug("User %s registered", user)
             redirect_url = redirect_url.with_fragment("?registered=true")
-            #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'email': confirmation['data']})
             await db.delete_confirmation(confirmation)
             log.debug("User %s changed email", user)
-            #TODO:  flash_response(cfg.MSG_EMAIL_CHANGED)
 
         elif action == RESET_PASSWORD:
             # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
             redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code )
             log.debug("Reset password requested %s", confirmation)
 
-
-    # TODO: inject flash messages to be shown by main website
     raise web.HTTPFound(location=redirect_url)
 
 
@@ -354,7 +353,6 @@ async def reset_password_allowed(request: web.Request):
     password = body.password
     confirm = body.confirm
 
-    # TODO validate good password
     if password != confirm:
         raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
                                content_type='application/json') # 409
@@ -363,7 +361,7 @@ async def reset_password_allowed(request: web.Request):
 
     if confirmation:
         user = await db.get_user({'id': confirmation['user_id']})
-        assert user
+        assert user # nosec
 
         await db.update_user(user, {
             'password_hash': encrypt_password(password)
@@ -375,37 +373,3 @@ async def reset_password_allowed(request: web.Request):
 
     raise web.HTTPUnauthorized(reason="Cannot reset password. Invalid token or user",
                                content_type='application/json') # 401
-
-
-async def check_password_strength(request: web.Request):
-    """ evaluates password strength and suggests some recommendations
-
-        The strength of the password in the range from 0 (extremely weak) and 1 (extremely strong).
-
-        The recommendations is a dictionary of ways the password could be improved.
-        The keys of the dict are general "categories" of ways to improve the password (e.g. "length")
-        that are fixed strings, and the values are internationalizable strings that are human-friendly descriptions
-        and possibly tailored to the specific password
-    """
-    params, _, _ = await extract_and_validate(request)
-    password = params['password']
-
-    #TODO: locale = params.get('locale') and translate message accordingly
-    strength, improvements = passwordmeter.test(password)
-    ratings = (
-        'Infinitely weak',
-        'Extremely weak',
-        'Very weak',
-        'Weak',
-        'Moderately strong',
-        'Strong',
-        'Very strong'
-    )
-
-    data = {
-        'strength': strength,
-        'rating': ratings[min(len(ratings) - 1, int(strength * len(ratings)))]
-        }
-    if improvements:
-        data['improvements'] = improvements
-    return data

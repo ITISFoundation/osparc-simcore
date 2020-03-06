@@ -7,6 +7,8 @@ import asyncio
 import logging
 from pprint import pformat
 
+import jsonschema
+import json
 from aiohttp import ClientSession, web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
@@ -19,6 +21,7 @@ from servicelib.rest_routing import (get_handlers_from_namespace,
                                      iter_path_operations,
                                      map_handlers_with_operations)
 
+from ..resources import resources
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import nodes_handlers, projects_handlers
 from .config import CONFIG_SECTION_NAME
@@ -26,14 +29,11 @@ from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
 from .projects_fakes import Fake
 
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
-
 logger = logging.getLogger(__name__)
 module_name = __name__.replace(".__init__", "")
 
-def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
+
+def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
@@ -45,22 +45,15 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
 
     routes = map_handlers_with_operations(
             handlers,
-            filter(lambda o: prefix in o[1],  iter_path_operations(specs)),
+            filter(lambda o: tag in o[3],  iter_path_operations(specs)),
             strict=True
     )
 
     if disable_login:
-        logger.debug("%s-%s:\n%s", CONFIG_SECTION_NAME, prefix, pformat(routes))
+        logger.debug("%s:\n%s", CONFIG_SECTION_NAME, pformat(routes))
 
     return routes
 
-@retry( wait=wait_fixed(RETRY_WAIT_SECS),
-        stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(logger, logging.INFO) )
-async def _get_specs(app, location):
-    session = get_client_session(app)
-    specs = await create_jsonschema_specs(location, session)
-    return specs
 
 
 @app_module_setup(module_name, ModuleCategory.ADDON,
@@ -76,7 +69,6 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     :return: False if setup skips (e.g. explicitly disabled in config), otherwise True
     :rtype: bool
     """
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -87,21 +79,22 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     # database API
     setup_projects_db(app)
 
-    routes = _create_routes("/projects", projects_handlers, specs)
+    routes = _create_routes("project", projects_handlers, specs)
     app.router.add_routes(routes)
 
-    routes = _create_routes("/nodes", nodes_handlers, specs)
-    app.router.add_routes(routes)
+    # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
+    # routes = _create_routes("node", nodes_handlers, specs)
+    # app.router.add_routes(routes)
 
     # json-schemas for projects datasets
-    project_schema_location = cfg['location']
-    loop = asyncio.get_event_loop()
-    specs = loop.run_until_complete( _get_specs(app, project_schema_location) )
+    # FIXME: schemas are hard-coded to api/V0!!!
+    with resources.stream("api/v0/schemas/project-v0.0.1.json") as fh:
+        project_schema = json.load(fh)
 
     if APP_JSONSCHEMA_SPECS_KEY in app:
-        app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = specs
+        app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = project_schema
     else:
-        app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: specs}
+        app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: project_schema}
 
     if enable_fake_data:
         Fake.load_template_projects()

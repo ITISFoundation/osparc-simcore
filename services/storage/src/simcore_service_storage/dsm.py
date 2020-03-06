@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import aiobotocore
 import aiofiles
@@ -15,11 +15,13 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
-from s3wrapper.s3_client import S3Client
-from servicelib.aiopg_utils import DBAPIError
-from servicelib.client_session import get_client_session
 from sqlalchemy.sql import and_
+from tenacity import retry
 from yarl import URL
+
+from s3wrapper.s3_client import S3Client
+from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
+from servicelib.client_session import get_client_session
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (DatasetMetaData, FileMetaData, FileMetaDataEx,
@@ -30,14 +32,17 @@ from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
                        APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
                        SIMCORE_S3_STR)
 
-#pylint: disable=W0212
-#FIXME: W0212:Access to a protected member _result_proxy of a client class
 
-#pylint: disable=E1120
-##FIXME: E1120:No value for argument 'dml' in method call
+# pylint: disable=no-value-for-parameter
+# FIXME: E1120:No value for argument 'dml' in method call
+
+# pylint: disable=protected-access
+# FIXME: Access to a protected member _result_proxy of a client class
+
 
 logger = logging.getLogger(__name__)
 
+postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).kwargs
 
 FileMetaDataVec = List[FileMetaData]
 FileMetaDataExVec = List[FileMetaDataEx]
@@ -394,18 +399,25 @@ class DataStorageManager:
         await dcw.upload_file_to_id(destination_id, local_file_path)
 
         # actually we have to query the master db
+
+
     async def upload_link(self, user_id: str, file_uuid: str):
-        async with self.engine.acquire() as conn:
-            fmd = FileMetaData()
-            fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
-            fmd.user_id = user_id
-            query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
-            # if file already exists, we might want to update a time-stamp
-            rows = await conn.execute(query)
-            exists = await rows.scalar()
-            if exists is None:
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
+
+        @retry(**postgres_service_retry_policy_kwargs)
+        async def _execute_query():
+            async with self.engine.acquire() as conn:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
+                fmd.user_id = user_id
+                query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
+                # if file already exists, we might want to update a time-stamp
+                rows = await conn.execute(query)
+                exists = await rows.scalar()
+                if exists is None:
+                    ins = file_meta_data.insert().values(**vars(fmd))
+                    await conn.execute(ins)
+
+        await _execute_query()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -604,20 +616,27 @@ class DataStorageManager:
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
 
-    async def delete_project_simcore_s3(self, user_id: str, project_id):
-        """ Deletes all files from a given project in simcore.s3 and updated db accordingly
+    async def delete_project_simcore_s3(self, user_id: str, project_id: str, node_id: Optional[str]) -> web.Response:
+        """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
+            If node_id is not given, then all the project files db entries are deleted.
         """
 
         async with self.engine.acquire() as conn:
-            delete_me = file_meta_data.delete().where(and_(file_meta_data.c.user_id == user_id,
-                file_meta_data.c.project_id == project_id))
+            delete_me = file_meta_data.delete().where(
+                and_(file_meta_data.c.user_id == user_id,
+                    file_meta_data.c.project_id == project_id
+                    ))
+            if node_id:
+                delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
         _loop = asyncio.get_event_loop()
         session = aiobotocore.get_session(loop=_loop)
         async with session.create_client('s3', endpoint_url=self.s3_client.endpoint_url, aws_access_key_id=self.s3_client.access_key,
             aws_secret_access_key=self.s3_client.secret_key) as client:
-            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name, Prefix=project_id+"/")
+            response = await client.list_objects_v2(Bucket=self.simcore_bucket_name,
+                                                    Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/"
+                                                    )
             if "Contents" in response:
                 objects_to_delete = []
                 for f in response['Contents']:

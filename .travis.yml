@@ -1,7 +1,10 @@
-dist: xenial
+dist: bionic
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.23.2
+    - DOCKER_COMPOSE_VERSION=1.25.0
+    - DOCKER_VERSION=5:19.03.5~3-0~ubuntu-bionic
+    # - DOCKER_BUILDKIT=1
+    # - COMPOSE_DOCKER_CLI_BUILD=1
 services:
   - docker
 addons:
@@ -13,9 +16,7 @@ addons:
 stages:
   - name: build / unit-testing
     if: tag IS blank
-  - name: integration-testing
-    if: tag IS blank
-  - name: system-testing
+  - name: integration-testing / system-testing
     if: tag IS blank
   - deployment
 
@@ -27,22 +28,24 @@ jobs:
       if: NOT type = pull_request AND tag IS blank
       name: build simcore images
       sudo: required
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
       before_install:
-        - sudo bash ci/travis/build/test-images before_install
+        - sudo bash ci/travis/build/test-images.bash before_install
       install:
-        - unbuffer bash ci/travis/build/test-images install
+        - unbuffer bash ci/travis/build/test-images.bash install
       before_script:
-        - unbuffer bash ci/travis/build/test-images before_script
+        - unbuffer bash ci/travis/build/test-images.bash before_script
       script:
-        - unbuffer bash ci/travis/build/test-images script
+        - unbuffer bash ci/travis/build/test-images.bash script
       after_success:
-        - unbuffer bash ci/travis/build/test-images after_success
+        - unbuffer bash ci/travis/build/test-images.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/build/test-images after_failure
+        - unbuffer bash ci/travis/build/test-images.bash after_failure
       deploy:
         - provider: script
           skip_cleanup: true
-          script: unbuffer bash ci/travis/deploy/test-images
+          script: unbuffer bash ci/deploy/dockerhub-test-images.bash
           on:
             all_branches: true
 
@@ -58,17 +61,17 @@ jobs:
             - libgconf-2-4
 
       before_install:
-        - bash ci/travis/unit-testing/frontend before_install
+        - bash ci/travis/unit-testing/frontend.bash before_install
       install:
-        - bash ci/travis/unit-testing/frontend install
+        - bash ci/travis/unit-testing/frontend.bash install
       before_script:
-        - bash ci/travis/unit-testing/frontend before_script
+        - bash ci/travis/unit-testing/frontend.bash before_script
       script:
-        - bash ci/travis/unit-testing/frontend script
+        - bash ci/travis/unit-testing/frontend.bash script
       after_success:
-        - bash ci/travis/unit-testing/frontend after_success
+        - bash ci/travis/unit-testing/frontend.bash after_success
       after_failure:
-        - bash ci/travis/unit-testing/frontend after_failure
+        - bash ci/travis/unit-testing/frontend.bash after_failure
 
       deploy:
         # https://docs.travis-ci.com/user/deployment/pages/
@@ -94,17 +97,40 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/webserver before_install
+        - sudo bash ci/travis/unit-testing/webserver.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/webserver install
+        - unbuffer bash ci/travis/unit-testing/webserver.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/webserver before_script
+        - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/webserver script
+        - unbuffer bash ci/travis/unit-testing/webserver.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/webserver after_success
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/webserver after_failure
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
+
+    # test python, catalog ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: catalog
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/catalog.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/catalog.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/catalog.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/catalog.bash script
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/catalog.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/catalog.bash after_failure
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -115,17 +141,17 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/director before_install
+        - sudo bash ci/travis/unit-testing/director.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/director install
+        - unbuffer bash ci/travis/unit-testing/director.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/director before_script
+        - unbuffer bash ci/travis/unit-testing/director.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/director script
+        - unbuffer bash ci/travis/unit-testing/director.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/director after_success
+        - unbuffer bash ci/travis/unit-testing/director.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/director after_failure
+        - unbuffer bash ci/travis/unit-testing/director.bash after_failure
 
     # test python, sidecar ----------------------------------------------------------------------
     # TODO: activate when sidecar tests are READY!
@@ -137,17 +163,17 @@ jobs:
     #   sudo: required
     #   cache: pip
     #   before_install:
-    #     - sudo bash ci/travis/unit-testing/sidecar before_install
+    #     - sudo bash ci/travis/unit-testing/sidecar.bash before_install
     #   install:
-    #     - bash ci/travis/unit-testing/sidecar install
+    #     - bash ci/travis/unit-testing/sidecar.bash install
     #   before_script:
-    #     - bash ci/travis/unit-testing/sidecar before_script
+    #     - bash ci/travis/unit-testing/sidecar.bash before_script
     #   script:
-    #     - bash ci/travis/unit-testing/sidecar script
+    #     - bash ci/travis/unit-testing/sidecar.bash script
     #   after_success:
-    #     - bash ci/travis/unit-testing/sidecar after_success
+    #     - bash ci/travis/unit-testing/sidecar.bash after_success
     #   after_failure:
-    #     - bash ci/travis/unit-testing/sidecar after_failure
+    #     - bash ci/travis/unit-testing/sidecar.bash after_failure
 
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -158,17 +184,38 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/service-library before_install
+        - sudo bash ci/travis/unit-testing/service-library.bash before_install
       install:
-        - bash ci/travis/unit-testing/service-library install
+        - bash ci/travis/unit-testing/service-library.bash install
       before_script:
-        - bash ci/travis/unit-testing/service-library before_script
+        - bash ci/travis/unit-testing/service-library.bash before_script
       script:
-        - bash ci/travis/unit-testing/service-library script
+        - bash ci/travis/unit-testing/service-library.bash script
       after_success:
-        - bash ci/travis/unit-testing/service-library after_success
+        - bash ci/travis/unit-testing/service-library.bash after_success
       after_failure:
-        - bash ci/travis/unit-testing/service-library after_failure
+        - bash ci/travis/unit-testing/service-library.bash after_failure
+
+    # test python, service-library ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: simcore-sdk
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/simcore-sdk.bash before_install
+      install:
+        - bash ci/travis/unit-testing/simcore-sdk.bash install
+      before_script:
+        - bash ci/travis/unit-testing/simcore-sdk.bash before_script
+      script:
+        - bash ci/travis/unit-testing/simcore-sdk.bash script
+      after_success:
+        - bash ci/travis/unit-testing/simcore-sdk.bash after_success
+      after_failure:
+        - bash ci/travis/unit-testing/simcore-sdk.bash after_failure
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -181,38 +228,38 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/storage before_install
+        - sudo bash ci/travis/unit-testing/storage.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/storage install
+        - unbuffer bash ci/travis/unit-testing/storage.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/storage before_script
+        - unbuffer bash ci/travis/unit-testing/storage.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/storage script
+        - unbuffer bash ci/travis/unit-testing/storage.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/storage after_success
+        - unbuffer bash ci/travis/unit-testing/storage.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/storage after_failure
+        - unbuffer bash ci/travis/unit-testing/storage.bash after_failure
 
-    # test python, apihub ----------------------------------------------------------------------
+    # test python, api ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: apihub
+      name: api
       language: python
       python:
         - "3.6"
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/apihub before_install
+        - sudo bash ci/travis/unit-testing/api.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/apihub install
+        - unbuffer bash ci/travis/unit-testing/api.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/apihub before_script
+        - unbuffer bash ci/travis/unit-testing/api.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/apihub script
+        - unbuffer bash ci/travis/unit-testing/api.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/apihub after_success
+        - unbuffer bash ci/travis/unit-testing/api.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/apihub after_failure
+        - unbuffer bash ci/travis/unit-testing/api.bash after_failure
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -222,20 +269,20 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/python-linting before_install
+        - sudo bash ci/travis/unit-testing/python-linting.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/python-linting install
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/python-linting before_script
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/python-linting script
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/python-linting after_success
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/python-linting after_failure
+        - unbuffer bash ci/travis/unit-testing/python-linting.bash after_failure
 
     # integrate webserver in swarm -------------------------------------------------------------
-    - stage: integration-testing
+    - stage: integration-testing / system-testing
       name: webserver in swarm
       language: python
       python:
@@ -243,20 +290,20 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/integration-testing/webserver before_install
+        - sudo bash ci/travis/integration-testing/webserver.bash before_install
       install:
-        - unbuffer bash ci/travis/integration-testing/webserver install
+        - unbuffer bash ci/travis/integration-testing/webserver.bash install
       before_script:
-        - unbuffer bash ci/travis/integration-testing/webserver before_script
+        - unbuffer bash ci/travis/integration-testing/webserver.bash before_script
       script:
-        - unbuffer bash ci/travis/integration-testing/webserver script
+        - unbuffer bash ci/travis/integration-testing/webserver.bash script
       after_success:
-        - unbuffer bash ci/travis/integration-testing/webserver after_success
+        - unbuffer bash ci/travis/integration-testing/webserver.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/integration-testing/webserver after_failure
+        - unbuffer bash ci/travis/integration-testing/webserver.bash after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
-    - stage: integration-testing
+    - stage: integration-testing / system-testing
       name: simcore-sdk in swarm
       language: python
       python:
@@ -264,20 +311,20 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/integration-testing/simcore-sdk before_install
+        - sudo bash ci/travis/integration-testing/simcore-sdk.bash before_install
       install:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk install
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash install
       before_script:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk before_script
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash before_script
       script:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk script
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash script
       after_success:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk after_success
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/integration-testing/simcore-sdk after_failure
+        - unbuffer bash ci/travis/integration-testing/simcore-sdk.bash after_failure
 
     # system testing swarm deploy ----------------------------------------------------------------
-    - stage: system-testing
+    - stage: integration-testing / system-testing
       name: swarm deploy
       sudo: required
       language: python
@@ -285,81 +332,93 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - sudo bash ci/travis/system-testing/swarm-deploy before_install
+        - sudo bash ci/travis/system-testing/swarm-deploy.bash before_install
       install:
-        - unbuffer bash ci/travis/system-testing/swarm-deploy install
+        - unbuffer bash ci/travis/system-testing/swarm-deploy.bash install
       before_script:
-        - unbuffer bash ci/travis/system-testing/swarm-deploy before_script
+        - unbuffer bash ci/travis/system-testing/swarm-deploy.bash before_script
       script:
-        - unbuffer bash ci/travis/system-testing/swarm-deploy script
+        - unbuffer bash ci/travis/system-testing/swarm-deploy.bash script
       after_success:
-        - unbuffer bash ci/travis/system-testing/swarm-deploy after_success
+        - unbuffer bash ci/travis/system-testing/swarm-deploy.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/system-testing/swarm-deploy after_failure
+        - unbuffer bash ci/travis/system-testing/swarm-deploy.bash after_failure
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: system-testing
+    - stage: integration-testing / system-testing
       name: e2e testing
-      dist: trusty
       language: node_js
       node_js:
-        - "8.11.3"
+        - "10"
       sudo: required
+      services:
+        - xvfb
       addons:
         apt:
           packages:
             - libnss3 # This is required to run new chrome on old trusty
             - expect-dev # for unbuffer: brings color back into travis logs
             - docker-ce
+            - python3-venv
       notifications:
         email: false
       cache:
         directories:
           - node_modules
       before_install:
-        - sudo bash ci/travis/system-testing/e2e before_install
+        - sudo bash ci/travis/system-testing/e2e.bash before_install
       install:
-        - unbuffer bash ci/travis/system-testing/e2e install
+        - unbuffer bash ci/travis/system-testing/e2e.bash install
       before_script:
-        - unbuffer bash ci/travis/system-testing/e2e before_script
+        - unbuffer bash ci/travis/system-testing/e2e.bash before_script
       script:
-        - unbuffer bash ci/travis/system-testing/e2e script
+        - unbuffer bash ci/travis/system-testing/e2e.bash script
       after_success:
-        - unbuffer bash ci/travis/system-testing/e2e after_success
+        - unbuffer bash ci/travis/system-testing/e2e.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/system-testing/e2e after_failure
+        - unbuffer bash ci/travis/system-testing/e2e.bash after_failure
 
     - stage: deployment
       name: master
       if: branch = master
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=master
       git:
         depth: false
       script: echo "Deploy master"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/master
+          script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: master
     - stage: deployment
       name: staging
       if: branch = staging
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
       git:
         depth: false
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/staging
+          script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: staging
     - stage: deployment
       name: production/release
+      env:
+        - OWNER=${TRAVIS_REPO_SLUG%/*}
+        - TAG_PREFIX=staging
+        - GIT_TAG=${TRAVIS_TAG}
       git:
         depth: false
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: unbuffer bash ci/travis/deploy/production
+          script: unbuffer bash ci/deploy/dockerhub-release.bash
           on:
             all_branches: true
             tags: true

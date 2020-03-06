@@ -81,10 +81,28 @@ qx.Class.define("osparc.wrapper.Svg", {
       return SVG(id);
     },
 
+    __curateControls: function(controls) {
+      [
+        controls[0],
+        controls[1],
+        controls[2],
+        controls[3]
+      ].forEach(control => {
+        if (Number.isNaN(control.x)) {
+          control.x = 0;
+        }
+        if (Number.isNaN(control.y)) {
+          control.y = 0;
+        }
+      });
+    },
+
     drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
       const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
 
-      let path = draw.path()
+      this.__curateControls(controls);
+
+      const path = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
@@ -93,13 +111,12 @@ qx.Class.define("osparc.wrapper.Svg", {
           color: edgeColor
         });
 
-      let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
-        add.circle(portSphereDiameter)
-          .fill(edgeColor);
+      const marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
+        add.circle(portSphereDiameter).fill(edgeColor);
       });
       path.marker("start", marker1);
 
-      let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
+      const marker2 = draw.marker(arrowSize, arrowSize, function(add) {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
           .size(arrowSize, arrowSize);
@@ -127,6 +144,27 @@ qx.Class.define("osparc.wrapper.Svg", {
       if (curve.type === "path") {
         curve.remove();
       }
+    },
+
+    drawDashedRect: function(draw, width, height, x, y) {
+      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+      const rect = draw.rect(width, height)
+        .fill("none")
+        .stroke({
+          // width: 5,
+          color: edgeColor,
+          dasharray: "4, 4"
+        })
+        .move(x, y);
+      return rect;
+    },
+
+    updateRect: function(rect, x, y) {
+      rect.move(x, y);
+    },
+
+    removeRect: function(rect) {
+      rect.remove();
     },
 
     updateColor: function(curve, color) {

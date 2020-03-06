@@ -1,0 +1,88 @@
+{
+  "uuid": "6e6bd905-e380-490d-999d-28ed26721fb0",
+  "name": "ISAN: UCDavis use case: 0D",
+  "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
+  "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+  "prjOwner": "Colleen Clancy",
+  "creationDate": "2018-10-22T09:13:13.360Z",
+  "lastChangeDate": "2018-10-22T09:33:41.858Z",
+  "workbench": {
+    "template-uuid-4674-b758-946151cae351": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "File Picker 0D",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {
+        "outFile": {
+          "store": 1,
+          "path": "Shared Data/initial_WStates"
+        }
+      },
+      "progress": 100,
+      "parent": null,
+      "position": {
+        "x": 50,
+        "y": 150
+      }
+    },
+    "template-uuid-409d-998c-c1f04de67f8b": {
+      "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
+      "version": "1.0.0",
+      "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+      "inputAccess": {
+        "Na": "ReadAndWrite",
+        "Kr": "ReadOnly",
+        "BCL": "ReadAndWrite",
+        "NBeats": "ReadOnly",
+        "Ligand": "Invisible",
+        "cAMKII": "Invisible"
+      },
+      "inputs": {
+        "Na": "{{my_Na}}",
+        "Kr": 0,
+        "BCL": "{{my_BCL}}",
+        "NBeats": 5,
+        "Ligand": 0,
+        "cAMKII": "WT",
+        "initfile": {
+          "nodeUuid": "template-uuid-4674-b758-946151cae351",
+          "output": "outFile"
+        }
+      },
+      "inputNodes": [
+        "template-uuid-4674-b758-946151cae351"
+      ],
+      "outputs": {},
+      "parent": null,
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    "template-uuid-43e7-9fda-cf9625e59986": {
+      "key": "simcore/services/dynamic/cc-0d-viewer",
+      "version": "2.8.0",
+      "label": "cc-0d-viewer",
+      "inputs": {
+        "vm_1Hz": {
+          "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+          "output": "out_4"
+        },
+        "all_results_1Hz": {
+          "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+          "output": "out_1"
+        }
+      },
+      "inputNodes": [
+        "template-uuid-409d-998c-c1f04de67f8b"
+      ],
+      "outputs": {},
+      "parent": null,
+      "position": {
+        "x": 550,
+        "y": 150
+      }
+    }
+  }
+}

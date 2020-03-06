@@ -1,84 +1,76 @@
 import logging
 
-import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import create_engine
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
-
-from servicelib.aiopg_utils import DBAPIError
+from servicelib.aiopg_utils import (DataSourceName,
+                                    PostgresRetryPolicyUponInitialization,
+                                    create_pg_engine, init_pg_tables,
+                                    is_pg_responsive, raise_if_not_responsive)
+from tenacity import Retrying
 
 from .models import metadata
-from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DB_SESSION_KEY
+from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = 'postgres'
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
-# TODO: move to settings?
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
-CONNECT_TIMEOUT_SECS = 30
-
-@retry( wait=wait_fixed(RETRY_WAIT_SECS),
-        stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(log, logging.INFO) )
-async def __create_tables(**params):
-    sa_engine = sa.create_engine(DSN.format(**params))
-    metadata.create_all(sa_engine)
 
 async def pg_engine(app: web.Application):
-    engine = None
-    try:
-        cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
-        params = {k:cfg[k] for k in 'database user password host port'.split()}
-        await __create_tables(**params)
-        engine = await create_engine(**params)
+    pg_cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
+    dsn = DataSourceName(
+            application_name=f'{__name__}_{id(app)}',
+            database=pg_cfg['database'],
+            user=pg_cfg['user'],
+            password=pg_cfg['password'],
+            host=pg_cfg['host'],
+            port=pg_cfg['port']
+        )
 
-    except Exception: # pylint: disable=W0703
-        log.exception("Could not create engine")
+    log.info("Creating pg engine for %s", dsn)
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+        with attempt:
+            engine = await create_pg_engine(dsn,
+                minsize=pg_cfg['minsize'],
+                maxsize=pg_cfg['maxsize']
+            )
+            await raise_if_not_responsive(engine)
 
-    session = None
+    if app[APP_CONFIG_KEY]["main"]["testing"]:
+        log.info("Initializing tables for %s", dsn)
+        init_pg_tables(dsn, schema=metadata)
+
+    assert engine # nosec
     app[APP_DB_ENGINE_KEY] = engine
-    app[APP_DB_SESSION_KEY] = session
 
-    yield
+    yield # ----------
 
-    session = app.get(APP_DB_SESSION_KEY)
-    if session:
-        session.close()
+    if engine is not app.get(APP_DB_ENGINE_KEY):
+        log.critical("app does not hold right db engine. Somebody has changed it??")
 
-    engine = app.get(APP_DB_ENGINE_KEY)
     if engine:
         engine.close()
         await engine.wait_closed()
+        log.debug("engine '%s' after shutdown: closed=%s, size=%d", engine.dsn, engine.closed, engine.size)
+
+
 
 async def is_service_responsive(app:web.Application):
     """ Returns true if the app can connect to db service
 
     """
-    engine = app[APP_DB_ENGINE_KEY]
-    try:
-        async with engine.acquire() as conn:
-            await conn.execute("SELECT 1 as is_alive")
-            log.debug("%s is alive", THIS_SERVICE_NAME)
-            return True
-    except DBAPIError as err:
-        log.debug("%s is NOT responsive: %s", THIS_SERVICE_NAME, err)
-        return False
+    is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
+    return is_responsive
+
 
 def setup_db(app: web.Application):
-
     disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
 
     if THIS_SERVICE_NAME in disable_services:
-        app[APP_DB_ENGINE_KEY] = app[APP_DB_SESSION_KEY] = None
+        app[APP_DB_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
         return
 
     app[APP_DB_ENGINE_KEY] = None
-    app[APP_DB_SESSION_KEY] = None
-
 
     # app is created at this point but not yet started
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)

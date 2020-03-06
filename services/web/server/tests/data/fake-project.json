@@ -6,6 +6,7 @@
   "creationDate": "1865-11-30T04:00:14.000Z",
   "lastChangeDate": "7364-11-30T10:04:52.000Z",
   "thumbnail": "sunt adipisicing enim anim nisi",
+  "tags": [],
   "workbench": {
     "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf": {
       "key": "simcore/services/frontend/file-picker",
@@ -13,7 +14,6 @@
       "label": "File Picker 0D",
       "inputs": {},
       "inputNodes": [],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
@@ -48,13 +48,22 @@
       "inputNodes": [
         "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
       ],
-      "outputNode": false,
       "outputs": {},
       "parent": null,
       "position": {
         "x": 300,
         "y": 150
       }
+    },
+    "351fd505-1ee3-466d-ad6c-ea2915ffd364": {
+      "key": "simcore/services/dynamic/raw-graphs",
+      "version": "2.10.4",
+      "label": "2D plot",
+      "inputs": {},
+      "outputs": {},
+      "position": {"x": 1073, "y": 307},
+      "progress": 100,
+      "thumbnail": ""
     }
   }
 }

@@ -82,6 +82,11 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       check : "Date",
       apply : "_applylastChangeDate",
       nullable : true
+    },
+
+    tags: {
+      check: "Array",
+      apply: "_applyTags"
     }
   },
 
@@ -113,7 +118,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
             scale: true,
             allowStretchX: true,
             allowStretchY: true,
-            maxHeight: 120
+            height: 120
           });
           this._addAt(control, 1);
           break;
@@ -134,6 +139,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
           this._addAt(control, 3);
+          break;
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
+          this._addAt(control, 4);
           break;
       }
 
@@ -173,6 +182,23 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       }
     },
 
+    _applyTags: function(tags) {
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const tagsContainer = this.getChildControl("tags");
+        if (tags.length) {
+          tagsContainer.show();
+          this.getChildControl("creator").exclude();
+          this.getChildControl("lastChangeDate").exclude();
+        } else {
+          tagsContainer.exclude();
+          this.getChildControl("creator").show();
+          this.getChildControl("lastChangeDate").show();
+        }
+        tagsContainer.removeAll();
+        tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
+      }
+    },
+
     /**
      * Event handler for the pointer over event.
      */
@@ -204,19 +230,24 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
           this.getStudyTitle(),
           this.getCreator()
         ];
-        for (let i=0; i<checks.length; i++) {
-          const label = checks[i].trim().toLowerCase();
-          if (label.indexOf(data.text) !== -1) {
-            return false;
-          }
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+          return true;
         }
-        return true;
+      }
+      if (data.tags && data.tags.length) {
+        const tagNames = this.getTags().map(tag => tag.name);
+        if (data.tags.filter(tag => tagNames.includes(tag)).length == 0) {
+          return true;
+        }
       }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
       if (data.text && data.text.length > 1) {
+        return true;
+      }
+      if (data.tags && data.tags.length) {
         return true;
       }
       return false;

@@ -1,64 +1,72 @@
-# pylint:disable=wildcard-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import json
-import sys
-from asyncio import Future
-from pathlib import Path
+import time
+from asyncio import sleep
+from typing import Any, Callable, Dict, Tuple
 from uuid import uuid4
 
 import aio_pika
 import pytest
+from mock import call
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
+from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.socketio import setup_sockets
 
 API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
+    'postgres',
+    'redis',
     'rabbit'
 ]
 
 ops_services = [
 ]
 
-@pytest.fixture(scope='session')
-def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 @pytest.fixture
-def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, rabbit_service):
-    port = app_config["main"]["port"] = aiohttp_unused_port()
-    host = app_config['main']['host'] = '127.0.0.1'
-
+def client(loop, aiohttp_client,
+        app_config,    ## waits until swarm with *_services are up
+        rabbit_service ## waits until rabbit is responsive
+    ):
     assert app_config["rest"]["version"] == API_VERSION
-    assert API_VERSION in app_config["rest"]["location"]
 
     app_config['storage']['enabled'] = False
-
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     # fake config
     app = create_safe_application()
     app[APP_CONFIG_KEY] = app_config
 
+    setup_db(app)
+    setup_session(app)
+    setup_security(app)
+    setup_rest(app)
+    setup_login(app)
+    setup_projects(app)
     setup_computation(app)
+    setup_sockets(app)
+    setup_resource_manager(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=port))
-    yield server
-    # cleanup
-
-
-@pytest.fixture
-def client(loop, webserver_service, aiohttp_client):
-    client = loop.run_until_complete(aiohttp_client(webserver_service))
-    return client
+    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
+        'port': app_config["main"]["port"],
+        'host': app_config['main']['host']
+    }))
 
 @pytest.fixture
 def rabbit_config(app_config):
@@ -76,71 +84,126 @@ async def pika_connection(loop, rabbit_broker):
     yield connection
     await connection.close()
 
-@pytest.fixture
-async def log_channel(loop, rabbit_config, pika_connection):
-    channel = await pika_connection.channel()
-    pika_log_channel = rabbit_config["channels"]["log"]
-    logs_exchange = await channel.declare_exchange(
-        pika_log_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
-    )
-    yield logs_exchange
+# ------------------------------------------
 
 @pytest.fixture
-async def progress_channel(loop, rabbit_config, pika_connection):
-    channel = await pika_connection.channel()
-    pika_progress_channel = rabbit_config["channels"]["log"]
-    progress_exchange = await channel.declare_exchange(
-        pika_progress_channel, aio_pika.ExchangeType.FANOUT,
-        auto_delete=True
-    )
-    yield progress_exchange
+async def rabbit_channels(loop, pika_connection, rabbit_config: Dict) -> Dict[str, aio_pika.Exchange]:
+    async def create(channel_name: str) -> aio_pika.Exchange:
+        # create rabbit pika exchange channel
+        channel = await pika_connection.channel()
+        pika_channel = rabbit_config["channels"][channel_name]
+        pika_exchange = await channel.declare_exchange(
+            pika_channel, aio_pika.ExchangeType.FANOUT
+        )
+        return pika_exchange
 
-@pytest.fixture(scope="session")
-def node_uuid() -> str:
+    return {
+        "log": await create("log"),
+        "progress": await create("progress")
+    }
+
+
+def _create_rabbit_message(message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any) -> Dict:
+    message = {
+        "Channel":message_name.title(),
+        "Node": node_uuid,
+        "user_id": user_id,
+        "project_id": project_id
+    }
+
+    if message_name == "log":
+        message["Messages"] = param
+    if message_name == "progress":
+        message["Progress"] = param
+    return message
+
+@pytest.fixture
+def client_session_id():
     return str(uuid4())
 
-@pytest.fixture(scope="session")
-def fake_log_message(node_uuid: str):
-    yield {
-        "Channel":"Log",
-        "Messages": ["Some fake message"],
-        "Node": node_uuid
-    }
 
-@pytest.fixture(scope="session")
-def fake_progress_message(node_uuid: str):
-    yield {
-        "Channel":"Progress",
-        "Progress": 0.56,
-        "Node": node_uuid
-    }
+async def _publish_messages(num_messages: int, node_uuid: str, user_id: str, project_id: str, rabbit_channels: Dict[str, aio_pika.Exchange]) -> Tuple[Dict, Dict]:
+    log_messages = [_create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}") for n in range(num_messages)]
+    progress_messages = [_create_rabbit_message("progress", node_uuid, user_id, project_id, n/num_messages) for n in range(num_messages)]
 
-# ------------------------------------------
-async def test_rabbit_log_connection(loop, client, log_channel, fake_log_message, mocker):
-    mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
-    mock.return_value.set_result("")
-
-    for i in range(1000):
-        await log_channel.publish(
+    # send the messages over rabbit
+    for n in range(num_messages):
+        await rabbit_channels["log"].publish(
             aio_pika.Message(
-                body=json.dumps(fake_log_message).encode(),
+                body=json.dumps(log_messages[n]).encode(),
                 content_type="text/json"), routing_key = ""
-            )
-
-
-    mock.assert_called_with("logger", data=json.dumps(fake_log_message))
-
-async def test_rabbit_progress_connection(loop, client, progress_channel, fake_progress_message, mocker):
-    mock = mocker.patch('simcore_service_webserver.computation_subscribe.sio.emit', return_value=Future())
-    mock.return_value.set_result("")
-
-    for i in range(1000):
-        await progress_channel.publish(
+        )
+        await rabbit_channels["progress"].publish(
             aio_pika.Message(
-                body=json.dumps(fake_progress_message).encode(),
+                body=json.dumps(progress_messages[n]).encode(),
                 content_type="text/json"), routing_key = ""
-            )
+        )
+
+    return (log_messages, progress_messages)
 
 
-    mock.assert_called_with("progress", data=json.dumps(fake_progress_message))
+async def _wait_until(pred: Callable, timeout: int):
+    max_wait_time = time.time() + timeout
+    while time.time() < max_wait_time:
+        if pred():
+            return
+        await sleep(1)
+    pytest.fail("waited too long for getting websockets events")
+
+@pytest.mark.parametrize("user_role", [
+    (UserRole.GUEST),
+    (UserRole.USER),
+    (UserRole.TESTER),
+])
+async def test_rabbit_websocket_computation(loop, logged_user, user_project,
+                                            socketio_client, client_session_id, mocker,
+                                            rabbit_channels, node_uuid, user_id, project_id):
+
+    # corresponding websocket event names
+    websocket_log_event = "logger"
+    websocket_node_update_event = "nodeUpdated"
+    # connect websocket
+    sio = await socketio_client(client_session_id)
+    # register mock websocket handler functions
+    mock_log_handler_fct = mocker.Mock()
+    mock_node_update_handler_fct = mocker.Mock()
+    sio.on(websocket_log_event, handler=mock_log_handler_fct)
+    sio.on(websocket_node_update_event, handler=mock_node_update_handler_fct)
+    # publish messages with wrong user id
+    NUMBER_OF_MESSAGES = 1
+    TIMEOUT_S = 20
+
+    await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, user_id, project_id, rabbit_channels)
+    await sleep(1)
+    mock_log_handler_fct.assert_not_called()
+    mock_node_update_handler_fct.assert_not_called()
+
+    # publish messages with correct user id, but no project
+    log_messages, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_channels)
+    def predicate() -> bool:
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES)
+    await _wait_until(predicate, TIMEOUT_S)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
+    mock_node_update_handler_fct.assert_not_called()
+    # publish message with correct user id, project but not node
+    mock_log_handler_fct.reset_mock()
+    log_messages, _ = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    await _wait_until(predicate, TIMEOUT_S)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
+    mock_node_update_handler_fct.assert_not_called()
+    mock_log_handler_fct.reset_mock()
+
+    # publish message with correct user id, project node
+    mock_log_handler_fct.reset_mock()
+    node_uuid = list(user_project["workbench"])[0]
+    log_messages, progress_messages = await _publish_messages(NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], user_project["uuid"], rabbit_channels)
+    def predicate2() -> bool:
+        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES) and \
+            mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)
+    await _wait_until(predicate2, TIMEOUT_S)
+    log_calls = [call(json.dumps(message)) for message in log_messages]
+    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
+    mock_node_update_handler_fct.assert_called()
+    assert mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)

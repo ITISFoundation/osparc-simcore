@@ -23,9 +23,10 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 SHELL := /bin/bash
 
 # VARIABLES ----------------------------------------------
-# TODO: read from docker-compose file instead
+# TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
+# or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
-	apihub \
+	catalog \
 	director \
 	sidecar \
 	storage \
@@ -40,6 +41,12 @@ export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/we
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# api-versions
+export CATALOG_API_VERSION  := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
+export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
+export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
+
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
 
@@ -50,9 +57,9 @@ export DOCKER_REGISTRY  ?= itisfoundation
 .PHONY: help
 help: ## help on rule's targets
 ifeq ($(IS_WIN),)
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 else
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
 
@@ -64,58 +71,54 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build
-build: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
+
+define _docker_compose_build
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
+docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
+endef
+
+rebuild: build-nc # alias
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
-ifeq ($(target),)
 	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
 else
-	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
-endif
-
-.PHONY: rebuild build-nc
-rebuild: build-nc
-build-nc: .env ## As build but w/o cache (alias: rebuild)
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client clean compile
-ifeq ($(target),)
-	# Building services
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache
-else
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=production; \
-	docker-compose -f services/docker-compose-build.yml build --parallel --no-cache $(target)
+	$(_docker_compose_build) $(target)
 endif
 
-.PHONY: build-devel
-build-devel: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+ifeq ($(target),)
+	# Building services
+	$(_docker_compose_build) --parallel
+else
+ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client touch compile-dev
-ifeq ($(target),)
-	# Building services
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
-else
+endif
 	# Building service $(target)
-	@export BUILD_TARGET=development; \
-	docker-compose -f services/docker-compose-build.yml build $(target)
+	$(_docker_compose_build) $(target)
 endif
 
 
-.PHONY: build-cache
 # TODO: should download cache if any??
-build-cache: ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
-	@export BUILD_TARGET=cache; \
-	docker-compose -f services/docker-compose-build.yml build --parallel
+	$(_docker_compose_build) --parallel
+else
+	$(_docker_compose_build) $(target)
+endif
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -192,6 +195,8 @@ down: ## Stops and removes stack
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-$(MAKE) -C services/web/client down
+	# Removing generated docker compose configurations, i.e. .stack-*
+	-$(shell rm $(wildcard .stack-*))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -272,27 +277,40 @@ PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
-	/bin/bash -c "pylint --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
+											-not -path "*migration*" \
 											-not -path "*contrib*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
 											-not -path "*datcore.py" \
 											-not -path "*web/server*"))"
 
-devenv: .venv ## creates a python virtual environment with development tools (e.g. pip, pylint, pip-tools, etc ...)
+.PHONY: devenv devenv-all
+
 .venv:
-	$(if $(IS_WIN),python.exe,python3) -m venv .venv
-	$(PY_PIP) install --upgrade pip wheel setuptools
-	$(PY_PIP) install pylint autopep8 virtualenv pip-tools
-	@echo "To activate the venv, execute $(if $(IS_WIN),'./venv/Scripts/activate.bat','source .venv/bin/activate')"
+	python3 -m venv $@
+	$@/bin/pip3 install --upgrade \
+		pip \
+		wheel \
+		setuptools
+
+devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+	$</bin/pip3 install -r requirements.txt
+	@echo "To activate the venv, execute 'source .venv/bin/activate'"
+
+devenv-all: devenv ## sets up extra development tools (everything else besides python)
+	# Upgrading client compiler
+	@$(MAKE) --directory services/web/client upgrade
+	# Building tools
+	@$(MAKE) --directory scripts/json-schema-to-openapi-schema
 
 
 ## MISC -------------------------------
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
-	$(PY_PIP) install cookiecutter
+	$</bin/pip3 install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 # TODO: NOT windows friendly
@@ -307,6 +325,20 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 	@diff -uN $@ $<
 	@false
 
+.PHONY: openapi-specs
+openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
+	@$(MAKE) --directory services/web/server $@
+	@$(MAKE) --directory services/storage $@
+	@$(MAKE) --directory services/director $@
+
+
+.PHONY: code-analysis
+code-analysis: .codeclimate.yml ## runs code-climate analysis
+	# Validates $<
+	./scripts/code-climate.sh validate-config
+	# Running analysis
+	./scripts/code-climate.sh analyze
+
 
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
@@ -320,6 +352,9 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
+	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
+	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
+	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
 	# tools version
 	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
 	@echo ' jq     : $(shell jq --version)'
@@ -362,18 +397,28 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images
+.PHONY: clean clean-images clean-venv clean-all
+
+git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+
 
 .check-clean:
-	@git clean -ndxf -e .vscode/
+	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
+clean-venv: ## Purges .venv into original configuration
+	# Cleaning your venv
+	pip-sync $(CURDIR)/requirements.txt
+	@pip list
+
+clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
-	@git clean -dxf -e .vscode/
+	@git clean $(git_clean_args)
 	# Cleaning web/client
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -381,8 +426,18 @@ clean-images: ## removes all created images
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE) -C services/web/client clean
+	# Cleaning postgres maintenance
+	@$(MAKE) -C packages/postgres-database/docker clean
 
+clean-all: clean clean-images # Deep clean including .venv and produced images
+	-rm -rf .venv
+
+
+.PHONY: postgres-upgrade
+postgres-upgrade: ## initalize or upgrade postgres db to latest state
+	@$(MAKE) -C packages/postgres-database/docker build
+	@$(MAKE) -C packages/postgres-database/docker upgrade
 
 .PHONY: reset
-reset: ## restart docker daemon
+reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker

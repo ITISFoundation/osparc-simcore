@@ -4,6 +4,7 @@
 """
 import logging
 from pathlib import Path
+from typing import Optional
 
 from . import data_items_utils, dbmanager, exceptions, serialization
 from ._data_items_list import DataItemsList
@@ -144,7 +145,10 @@ class Nodeports:
         return serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
 
 
-def ports():
-    _db_manager = dbmanager.DBManager()
+def ports(db_manager: Optional[dbmanager.DBManager]=None) -> Nodeports:
+    # FIXME: warning every dbmanager create a new db engine!
+    if db_manager is None: # NOTE: keeps backwards compatibility
+        db_manager = dbmanager.DBManager()
+
     # create initial Simcore object
-    return serialization.create_from_json(_db_manager, auto_read=True, auto_write=True)
+    return serialization.create_from_json(db_manager, auto_read=True, auto_write=True)

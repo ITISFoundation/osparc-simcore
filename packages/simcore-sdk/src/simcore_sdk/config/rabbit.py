@@ -10,7 +10,7 @@ import trafaret as T
 
 
 # TODO: adapt all data below!
-# TODO: can use venv as defaults? e.g. $RABBITMQ_LOG_CHANNEL
+# TODO: can use venv as defaults? e.g. $RABBIT_LOG_CHANNEL
 CONFIG_SCHEMA = T.Dict({
     T.Key("name", default="tasks", optional=True): T.String(),
     T.Key("enabled", default=True, optional=True): T.Bool(),
@@ -75,12 +75,12 @@ class Config:
         else:
             config = {}
 
-        RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
-        RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
-        RABBITMQ_HOST=env.get('RABBITMQ_HOST','rabbit')
-        RABBITMQ_PORT=int(env.get('RABBITMQ_PORT', 5672))
-        RABBITMQ_LOG_CHANNEL = env.get('RABBITMQ_LOG_CHANNEL','comp.backend.channels.log')
-        RABBITMQ_PROGRESS_CHANNEL = env.get('RABBITMQ_PROGRESS_CHANNEL','comp.backend.channels.progress')
+        RABBIT_USER = env.get('RABBIT_USER','simcore')
+        RABBIT_PASSWORD = env.get('RABBIT_PASSWORD','simcore')
+        RABBIT_HOST=env.get('RABBIT_HOST','rabbit')
+        RABBIT_PORT=int(env.get('RABBIT_PORT', 5672))
+        RABBIT_LOG_CHANNEL = env.get('RABBIT_LOG_CHANNEL','comp.backend.channels.log')
+        RABBIT_PROGRESS_CHANNEL = env.get('RABBIT_PROGRESS_CHANNEL','comp.backend.channels.progress')
         CELERY_RESULT_BACKEND=env.get('CELERY_RESULT_BACKEND','rpc://')
         # FIXME: get variables via config.get('') or
         # rabbit
@@ -88,23 +88,23 @@ class Config:
         try:
             self._broker_url = eval_broker(config)
         except:                                     # pylint: disable=W0702
-            self._broker_url = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBITMQ_USER, pw=RABBITMQ_PASSWORD, url=RABBITMQ_HOST, port=RABBITMQ_PORT)
+            self._broker_url = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBIT_USER, pw=RABBIT_PASSWORD, url=RABBIT_HOST, port=RABBIT_PORT)
 
         self._result_backend = config.get("celery", {}).get("result_backend") or CELERY_RESULT_BACKEND
         self._module_name = config.get("name") or "tasks"
 
         # pika
         self._pika_credentials = pika.PlainCredentials(
-                config.get("user") or RABBITMQ_USER,
-                config.get("password") or RABBITMQ_PASSWORD)
+                config.get("user") or RABBIT_USER,
+                config.get("password") or RABBIT_PASSWORD)
         self._pika_parameters = pika.ConnectionParameters(
-            host=config.get("host") or RABBITMQ_HOST,
-            port=config.get("port") or RABBITMQ_PORT,
+            host=config.get("host") or RABBIT_HOST,
+            port=config.get("port") or RABBIT_PORT,
             credentials=self._pika_credentials,
             connection_attempts=100)
 
-        self._log_channel = config.get("celery", {}).get("result_backend") or RABBITMQ_LOG_CHANNEL
-        self._progress_channel = config.get("celery", {}).get("result_backend") or RABBITMQ_PROGRESS_CHANNEL
+        self._log_channel = config.get("celery", {}).get("result_backend") or RABBIT_LOG_CHANNEL
+        self._progress_channel = config.get("celery", {}).get("result_backend") or RABBIT_PROGRESS_CHANNEL
 
     @property
     def parameters(self):

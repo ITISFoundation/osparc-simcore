@@ -1,7 +1,7 @@
 # DEPRECATED: Use instead postgres-database
+import networkx as nx
 from sqlalchemy.orm import mapper
 
-import networkx as nx
 from simcore_postgres_database.models.comp_pipeline import (FAILED, PENDING,
                                                             RUNNING, SUCCESS,
                                                             UNKNOWN,
@@ -13,15 +13,15 @@ from .base import metadata
 
 # NOTE: All this file ises classical mapping to keep LEGACY
 class Base:
-    metadata = metadata #pylint: disable=self-assigning-variable
+    metadata = metadata
 
 
 class ComputationalPipeline:
     #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():
-            assert key in ComputationalPipeline._sa_class_manager.keys()
-            setattr(self, key, value)
+            if key in ComputationalPipeline._sa_class_manager.keys():
+                setattr(self, key, value)
 
     @property
     def execution_graph(self):
@@ -49,8 +49,8 @@ class ComputationalTask:
     #pylint: disable=no-member
     def __init__(self, **kargs):
         for key, value in kargs.items():
-            assert key in ComputationalTask._sa_class_manager.keys()
-            setattr(self, key, value)
+            if key in ComputationalTask._sa_class_manager.keys():
+                setattr(self, key, value)
 
 
 mapper(ComputationalTask, comp_tasks)

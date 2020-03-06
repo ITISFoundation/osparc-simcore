@@ -5,16 +5,19 @@
 # - Should not introduce a substantial different with respect the configuration deployed
 # - Added ports to enforce they are published in the swarm (e.g. for integration testing).
 # - sidecar cannot publish port with ingress mode since it can't be used with dnsrr mode
+# - Port bindings "800X:8000" reserved for rest apis (e.g. /docs, /redoc)
 # - Port bindings "300X:3000" reserved for remote debugging
 #   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
 #
 version: "3.7"
 services:
-
-  apihub:
+  catalog:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     ports:
-      - "8043"
+      - "8005:8000"
+      - "3005:3000"
 
   director:
     environment:
@@ -43,9 +46,26 @@ services:
   postgres:
     ports:
       - "5432"
+    # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
+    command:
+      [
+        "postgres",
+        "-c", "tcp_keepalives_idle=600",
+        "-c", "tcp_keepalives_interval=600",
+        "-c", "tcp_keepalives_count=5",
+        "-c", "log_statement=all",
+        "-c", "log_connections=true",
+        "-c", "log_disconnections=true",
+        "-c", "log_duration=true",
+        "-c", "log_line_prefix=%m [%p] %q%u@%d/%a "
+      ]
 
   rabbit:
     ports:
       - "5672"
       - "15672"
       - "15692"
+
+  redis:
+    ports:
+      - "6379"

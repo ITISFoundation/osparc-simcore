@@ -3,7 +3,8 @@
 
 # files and folders recursively
 Makefile                                  @pcrespov, @sanderegg
-/.travis.yml                              @sanderegg
+.codeclimate.yml                          @sanderegg, @pcrespov
+.travis.yml                               @sanderegg
 /api/                                     @sanderegg, @pcrespov
 /ci/                                      @sanderegg, @pcrespov
 /docs/                                    @pcrespov
@@ -11,7 +12,7 @@ Makefile                                  @pcrespov, @sanderegg
 /scripts/demo                             @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects                @odeimaiz, @pcrespov
-/services/dy*                             @sanderegg
+/services/catalog                         @pcrespov
 /services/sidecar                         @pcrespov, @mguidon
 /services/web/client                      @odeimaiz, @oetiker, @ignapas
 /services/web/server                      @pcrespov

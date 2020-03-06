@@ -40,8 +40,8 @@ def fake_db():
 
 
 @pytest.fixture
-def mock_parametrized_project(mock_dir):
-    path = mock_dir/"parametrized_project.json"
+def mock_parametrized_project(fake_data_dir):
+    path = fake_data_dir/"parametrized_project.json"
     with path.open() as fh:
         prj = json.load(fh)
 

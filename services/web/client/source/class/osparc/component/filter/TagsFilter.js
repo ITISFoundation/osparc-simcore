@@ -45,8 +45,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
      */
     reset: function() {
       // Remove ticks from menu
-      const menuButtons = this._dropdown.getMenu().getChildren()
-        .filter(child => child instanceof qx.ui.menu.Button);
+      const menuButtons = this._getMenuButtons();
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
       if (this.__activeTags && this.__activeTags.length) {
@@ -61,12 +60,14 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
-    __addTag: function(tagName, menuButton) {
+    _addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
       if (this.__activeTags.includes(tagName)) {
         this.__removeTag(tagName, menuButton);
       } else {
+        // Save previous icon
+        menuButton.prevIcon = menuButton.getIcon();
         // Add tick
         menuButton.setIcon("@FontAwesome5Solid/check/12");
         // Add tag
@@ -83,8 +84,8 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     },
 
     __removeTag: function(tagName, menuButton) {
-      // Remove tick
-      menuButton.resetIcon();
+      // Restore icon
+      menuButton.setIcon(menuButton.prevIcon);
       // Update state
       this.__activeTags.splice(this.__activeTags.indexOf(tagName), 1);
       this._remove(this.__tagButtons[tagName]);
@@ -93,14 +94,31 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
+    _getMenuButtons: function() {
+      return this._dropdown.getMenu().getChildren()
+        .filter(child => child instanceof qx.ui.menu.Button);
+    },
+
     _addOption: function(tagName) {
       if (this.__menu === null) {
         this.__menu = new qx.ui.menu.Menu();
         this._dropdown.setMenu(this.__menu);
       }
+      const existing = this.__menu.getChildren().find(button => button.getLabel && button.getLabel() === tagName);
+      if (existing) {
+        // Don't add repeated options
+        return existing;
+      }
       const button = new qx.ui.menu.Button(tagName);
-      button.addListener("execute", e => this.__addTag(tagName, e.getTarget()));
+      button.addListener("execute", e => this._addTag(tagName, e.getTarget()));
       this.__menu.add(button);
+      return button;
+    },
+
+    _removeAllOptions: function() {
+      if (this.__menu) {
+        this.__menu.removeAll();
+      }
     },
 
     _addSeparator: function() {

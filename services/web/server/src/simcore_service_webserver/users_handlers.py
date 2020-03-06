@@ -6,8 +6,9 @@ import logging
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from aiohttp import web
-
+from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from tenacity import retry
 
 from .db_models import tokens, users
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -20,14 +21,19 @@ logger = logging.getLogger(__name__)
 # me/ -----------------------------------------------------------
 @login_required
 async def get_my_profile(request: web.Request):
-    # ONLY login required to see its profile. E.g. anonymous can never see its profile
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    # NOTE: ONLY login required to see its profile. E.g. anonymous can never see its profile
 
-    async with engine.acquire() as conn:
-        query = sa.select([users.c.email, users.c.role, users.c.name]).where(users.c.id == uid)
-        result = await conn.execute(query)
-        row = await result.first()
+    @retry(**PostgresRetryPolicyUponOperation(logger).kwargs)
+    async def _query_db(uid, engine):
+        async with engine.acquire() as conn:
+            query = sa.select([
+                users.c.email,
+                users.c.role,
+                users.c.name]).where(users.c.id == uid)
+            result = await conn.execute(query)
+            return await result.first()
 
+    row = await _query_db(uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY])
     parts = row['name'].split(".") + [""]
 
     return {
@@ -62,7 +68,7 @@ async def update_my_profile(request: web.Request):
                     .values(name=name)
                 )
         resp = await conn.execute(query)
-        assert resp.rowcount == 1
+        assert resp.rowcount == 1 # nosec
 
     raise web.HTTPNoContent(content_type='application/json')
 
@@ -160,7 +166,7 @@ async def update_token(request: web.Request):
                        .values(token_data=data)
         )
         resp = await conn.execute(query)
-        assert resp.rowcount == 1
+        assert resp.rowcount == 1 # nosec
 
     raise web.HTTPNoContent(content_type='application/json')
 

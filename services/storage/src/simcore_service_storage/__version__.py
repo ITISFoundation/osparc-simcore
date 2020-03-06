@@ -13,9 +13,9 @@ Minor versions are for new features and other backwards-compatible changes to th
 
 Patch versions are for bug fixes and internal code changes that do not affect the API.
 
-Pre-release and development versions are denoted appending a hyphen, i.e. 0.1.0-dev
+Pre-release and development versions are denoted appending a hyphen, i.e. 0.2.1-dev
 
-Build metadata (e.g. git commit id, build id, ...) can be appended with a plus, i.e. 0.1.0-dev+asd21ff
+Build metadata (e.g. git commit id, build id, ...) can be appended with a plus, i.e. 0.2.1-dev+asd21ff
 
 Package version is defined in the setup.py following the principle of single-sourcing (option 5):
 <https://packaging.python.org/guides/single-sourcing-package-version/>
@@ -29,7 +29,7 @@ import semantic_version
 try:
     # access metadata
     __version__ = pkg_resources.get_distribution('simcore_service_storage').version
-    assert __version__=="0.1.0", "Did you install this package?"
+    assert __version__=="0.2.1", "Did you install this package?"
 except AssertionError as ee:
     import logging
     logging.debug(ee)

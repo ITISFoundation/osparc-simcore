@@ -1,15 +1,14 @@
 # pylint: disable=E1120
 
+import json
 import random
 from functools import reduce
 
 import sqlalchemy as sa
+from sqlalchemy import JSON, String, cast
 from sqlalchemy.sql import and_  # , or_, not_
 
-from sqlalchemy import cast, String, JSON
-import json
-
-from simcore_service_webserver.db import DSN
+from servicelib.aiopg_utils import DSN
 from simcore_service_webserver.db_models import metadata, tokens, users
 from simcore_service_webserver.login.utils import get_random_string
 
@@ -18,6 +17,7 @@ def create_db_tables(**kargs):
     url = DSN.format(**kargs)
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     metadata.create_all(bind=engine, tables=[users, tokens], checkfirst=True)
+    engine.dispose()
     return url
 
 

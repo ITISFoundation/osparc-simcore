@@ -31,7 +31,7 @@ def add_cli_options(argument_parser, default_config):
     return argument_parser
 
 
-def config_from_options(options, schema, vars=None): # pylint: disable=W0622
+def config_from_options(options, schema, vars=None): # pylint: disable=redefined-builtin
     if vars is None:
         vars = os.environ
 

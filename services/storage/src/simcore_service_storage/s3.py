@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 _SERVICE_NAME = 's3'
 
-async def _on_startup_and_cleanup(app):
+async def _setup_s3_bucket(app):
     log.debug("setup %s.setup.cleanup_ctx", __name__)
 
     # setup
@@ -76,7 +76,7 @@ def setup(app: web.Application):
     s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key, secure=s3_secure == 1)
     app[APP_S3_KEY] = s3_client
 
-    app.cleanup_ctx.append(_on_startup_and_cleanup)
+    app.cleanup_ctx.append(_setup_s3_bucket)
 
 def get_config(app: web.Application) -> Dict:
     cfg = app[APP_CONFIG_KEY][_SERVICE_NAME]
