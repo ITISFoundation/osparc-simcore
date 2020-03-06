@@ -11,10 +11,9 @@ import logging
 from typing import Dict, List, Optional
 
 from aiohttp import web
+from servicelib.observer import observe
 from socketio.exceptions import \
     ConnectionRefusedError as socket_io_connection_error
-
-from servicelib.observer import observe
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -106,8 +105,12 @@ async def disconnect(sid: str, app: web.Application) -> None:
     log.debug("client in room %s disconnecting", sid)
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
-        user_id = socketio_session["user_id"]
-        client_session_id = socketio_session["client_session_id"]
-        with managed_resource(user_id, client_session_id, app) as rt:
-            log.debug("client %s disconnected from room %s", user_id, sid)
-            await rt.remove_socket_id()
+        if "user_id" in socketio_session:            
+            user_id = socketio_session["user_id"]
+            client_session_id = socketio_session["client_session_id"]
+            with managed_resource(user_id, client_session_id, app) as rt:
+                log.debug("client %s disconnected from room %s", user_id, sid)
+                await rt.remove_socket_id()
+        else:
+            # this should not happen!!
+            log.error("Unknown client diconnected sid: %s, session %s", sid, str(socketio_session))
