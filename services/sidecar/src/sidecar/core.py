@@ -74,19 +74,19 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         # executor options
         self._executor = ExecutorSettings()
 
-    def _get_node_ports(self):
+    async def _get_node_ports(self):
         if self._db_manager is None:
             self._db_manager = DBManager() # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
         return node_ports.ports(self._db_manager)
 
-    def _create_shared_folders(self):
+    async def _create_shared_folders(self):
         for folder in [self._executor.in_dir, self._executor.log_dir, self._executor.out_dir]:
             if not os.path.exists(folder):
                 os.makedirs(folder)
             else:
                 delete_contents(folder)
 
-    def _process_task_input(self, port:node_ports.Port, input_ports:Dict):
+    async def _process_task_input(self, port:node_ports.Port, input_ports:Dict):
         # pylint: disable=too-many-branches
         port_name = port.key
         port_value = wrap_async_call(port.get())
@@ -106,7 +106,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         else:
             input_ports[port_name] = port_value
 
-    def _process_task_inputs(self):
+    async def _process_task_inputs(self):
         """ Writes input key-value pairs into a dictionary
 
             if the value of any port starts with 'link.' the corresponding
@@ -132,7 +132,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         log.debug('DUMPING DONE')
 
-    def _pull_image(self):
+    async def _pull_image(self):
         log.debug('PULLING IMAGE')
         log.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
 
@@ -149,7 +149,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             log.exception(msg)
             raise docker.errors.APIError(msg)
 
-    def _post_log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
+    async def _post_log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
         log_data = {
             "Channel" : "Log",
             "Node": self._task.node_id,
@@ -160,7 +160,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         log_body = json.dumps(log_data)
         channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
-    def _post_progress(self, channel, progress):
+    async def _post_progress(self, channel, progress):
         prog_data = {
             "Channel" : "Progress",
             "Node": self._task.node_id,
@@ -171,7 +171,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         prog_body = json.dumps(prog_data)
         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
-    def _bg_job(self, log_file):
+    async def _bg_job(self, log_file):
         log.debug('Bck job started %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
         with safe_channel(self._pika) as (channel, blocking_connection):
 
@@ -235,7 +235,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             self._post_progress(channel, progress)
             log.debug('Bck job completed %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
-    def _process_task_output(self):
+    async def _process_task_output(self):
         # pylint: disable=too-many-branches
 
         """ There will be some files in the /output
@@ -275,7 +275,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
 
     # pylint: disable=no-self-use
-    def _process_task_log(self):
+    async def _process_task_log(self):
         log.debug('Processing Logs %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
         directory = Path(self._executor.log_dir)
 
@@ -283,7 +283,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             wrap_async_call(node_data.data_manager.push(directory, rename_to="logs"))
         log.debug('Processing Logs DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
-    def initialize(self, task, user_id):
+    async def initialize(self, task, user_id):
         log.debug("TASK %s of user %s FOUND, initializing...", task.internal_id, user_id)
         self._task = task
         self._user_id = user_id
@@ -315,7 +315,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
 
 
-    def preprocess(self):
+    async def preprocess(self):
         log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
         self._create_shared_folders()
         self._process_task_inputs()
@@ -323,7 +323,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         log.debug('Pre-Processing Pipeline DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
 
-    def process(self):
+    async def process(self):
         log.debug('Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
         self._executor.run_pool = True
@@ -382,7 +382,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         log.debug('DONE Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
-    def run(self):
+    async def run(self):
         log.debug('Running Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
         #NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
 
@@ -406,7 +406,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
         log.debug('Running Pipeline DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
-    def postprocess(self):
+    async def postprocess(self):
         log.debug('Post-Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
 
         self._process_task_output()
@@ -427,79 +427,68 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             _session.close()
 
 
-    def inspect(self, celery_task, user_id, project_id, node_id):
+    async def inspect(self, celery_task, user_id: str, project_id: str, node_id: str):
         log.debug("ENTERING inspect with user %s pipeline:node %s: %s", user_id, project_id, node_id)
 
         next_task_nodes = []
-        do_run = False
 
         with session_scope(self._db.Session) as _session:
             _pipeline =_session.query(ComputationalPipeline).filter_by(project_id=project_id).one()
 
             graph = _pipeline.execution_graph
-            if node_id:
-                do_process = True
-                # find the for the current node_id, skip if there is already a job_id around
-                # pylint: disable=assignment-from-no-return
-                # pylint: disable=no-member
-                query =_session.query(ComputationalTask).filter(
-                    and_(   ComputationalTask.node_id==node_id,
-                            ComputationalTask.project_id==project_id,
-                            ComputationalTask.job_id==None )
-                )
-                # Use SELECT FOR UPDATE TO lock the row
-                query.with_for_update()
-                task = query.one_or_none()
-
-                if task == None:
-                    log.debug("No task found")
-                    return next_task_nodes
-
-                # already done or running and happy
-                if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
-                    log.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
-                    do_process = False
-
-                # Check if node's dependecies are there
-                if not is_node_ready(task, graph, _session, log):
-                    log.debug("TASK %s NOT YET READY", task.internal_id)
-                    do_process = False
-
-                if do_process:
-                    task.job_id = celery_task.request.id
-                    _session.add(task)
-                    _session.commit()                    
-
-                    task =_session.query(ComputationalTask).filter(
-                        and_(ComputationalTask.node_id==node_id,ComputationalTask.project_id==project_id)).one()
-
-                    if task.job_id != celery_task.request.id:
-                        # somebody else was faster
-                        # return next_task_nodes
-                        pass
-                    else:
-                        task.state = RUNNING
-                        task.start = datetime.utcnow()
-                        _session.add(task)
-                        _session.commit()
-                        
-                        self.initialize(task, user_id)
-
-                        do_run = True
-            else:
+            if not node_id:
                 log.debug("NODE id was zero")
                 log.debug("graph looks like this %s", graph)
-
                 next_task_nodes = find_entry_point(graph)
                 log.debug("Next task nodes %s", next_task_nodes)
+                return next_task_nodes
 
-            celery_task.update_state(state=CSUCCESS)
+            # find the for the current node_id, skip if there is already a job_id around
+            query =_session.query(ComputationalTask).filter(
+                and_(   ComputationalTask.node_id==node_id, # pylint: disable=no-member
+                        ComputationalTask.project_id==project_id, # pylint: disable=no-member
+                        ComputationalTask.job_id==None ) # pylint: disable=no-member
+            )
+            # Use SELECT FOR UPDATE TO lock the row
+            query.with_for_update()
+            task = query.one_or_none()
+
+            if not task:
+                log.debug("No task found")
+                return next_task_nodes
+
+            # already done or running and happy
+            if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
+                log.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
+                return next_task_nodes
+
+            # Check if node's dependecies are there
+            if not is_node_ready(task, graph, _session, log):
+                log.debug("TASK %s NOT YET READY", task.internal_id)
+                return next_task_nodes
+
+            # the task is ready!
+            task.job_id = celery_task.request.id
+            _session.add(task)
+            _session.commit()                    
+
+            task =_session.query(ComputationalTask).filter(
+                and_(ComputationalTask.node_id==node_id,ComputationalTask.project_id==project_id)).one()  # pylint: disable=no-member
+
+            if task.job_id != celery_task.request.id:
+                # somebody else was faster
+                return next_task_nodes
+            task.state = RUNNING
+            task.start = datetime.utcnow()
+            _session.add(task)
+            _session.commit()
+            
+            self.initialize(task, user_id)
 
         # now proceed actually running the task (we do that after the db session has been closed)
-        if do_run:
-            # try to run the task, return empyt list of next nodes if anything goes wrong
-            self.run()
-            next_task_nodes = list(graph.successors(node_id))
+        # try to run the task, return empyt list of next nodes if anything goes wrong
+        await self.run()
+        next_task_nodes = list(graph.successors(node_id))
 
         return next_task_nodes
 
