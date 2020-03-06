@@ -53,6 +53,7 @@ def create_schema() -> T.Dict:
         Build schema for the configuration's file
         by aggregating all the subsystem configurations
     """
+    # pylint: disable=protected-access
     schema = T.Dict(
         {
             "version": T.String(),
@@ -63,7 +64,7 @@ def create_schema() -> T.Dict:
                     "client_outdir": T.String(),
                     "log_level": T.Enum(
                         *logging._nameToLevel.keys()
-                    ),  # pylint: disable=protected-access
+                    ),
                     "testing": T.Bool(),
                     T.Key("studies_access_enabled", default=False): T.Or(
                         T.Bool(), T.Int

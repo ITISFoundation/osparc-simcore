@@ -6,6 +6,8 @@
         - return data and successful HTTP responses (or raise them)
         - upon failure raise errors that can be also HTTP reponses
 """
+# pylint: disable=too-many-arguments
+
 import logging
 from asyncio import ensure_future, gather
 from pprint import pformat
@@ -29,6 +31,7 @@ from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .projects_utils import clone_project_document
+
 
 log = logging.getLogger(__name__)
 
@@ -197,7 +200,7 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: Optional[str],
-) -> str:  # pylint: disable=too-many-arguments
+) -> str:
     log.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,

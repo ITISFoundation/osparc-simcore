@@ -1,3 +1,5 @@
+ # pylint: disable=too-many-arguments
+
 import asyncio
 import logging
 import urllib
@@ -55,7 +57,7 @@ async def start_service(
     service_key: str,
     service_version: str,
     service_uuid: str,
-) -> Optional[Dict]:  # pylint: disable=too-many-arguments
+) -> Optional[Dict]:
     session, api_endpoint = _get_director_client(app)
 
     params = {
