@@ -73,8 +73,7 @@ async def create_temporary_user(request: web.Request):
     # FIXME: # username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
     username = get_random_string(min_len=5)
     email = username + "@guest-at-osparc.io"
-    # TODO: temporarily while developing, a fixed password
-    password = "guest"  # generate_password()
+    password = get_random_string(min_len=12)
 
     user = await db.create_user(
         {
