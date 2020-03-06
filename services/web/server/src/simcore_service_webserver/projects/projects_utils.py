@@ -2,7 +2,7 @@ import logging
 import re
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict, Tuple
+from typing import AnyStr, Dict, Match, Optional, Tuple
 
 from servicelib.decorators import safe_return
 
@@ -50,7 +50,6 @@ def clone_project_document(
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
     return project_copy, nodes_map
 
-
 @safe_return(if_fails_return=False, logger=log)
 def substitute_parameterized_inputs(
     parameterized_project: Dict, parameters: Dict
@@ -74,27 +73,30 @@ def substitute_parameterized_inputs(
         except ValueError:
             return s
 
+    def _get_param_input_match(name, value, access) -> Optional[Match[AnyStr]]:
+        if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
+            match = variable_pattern.match(value)
+            return match
+        return None
+
     for node in project["workbench"].values():
         inputs = node.get("inputs", {})
         access = node.get("inputAccess", {})
         new_inputs = {}
+
         for name, value in inputs.items():
-            if (
-                isinstance(value, str)
-                and access.get(name, "ReadAndWrite") == "ReadAndWrite"
-            ):
+            match = _get_param_input_match(name, value, access)
+            if match:
                 # TODO: use jinja2 to interpolate expressions?
-                m = variable_pattern.match(value)
-                if m:
-                    value = m.group(1)
-                    if value in parameters:
-                        new_inputs[name] = _normalize_value(parameters[value])
-                    else:
-                        log.warning(
-                            "Could not resolve parameter %s. No value provided in %s",
-                            value,
-                            parameters,
-                        )
+                value = match.group(1)
+                if value in parameters:
+                    new_inputs[name] = _normalize_value(parameters[value])
+                else:
+                    log.warning(
+                        "Could not resolve parameter %s. No value provided in %s",
+                        value,
+                        parameters,
+                    )
         inputs.update(new_inputs)
 
     return project
