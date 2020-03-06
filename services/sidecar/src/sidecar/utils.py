@@ -4,20 +4,20 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Tuple
+from typing import List, Tuple
 
 import docker
+import networkx as nx
 import pika
 import tenacity
-from sqlalchemy import and_, create_engine
-from sqlalchemy.orm import sessionmaker
-
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
+from sqlalchemy import and_, create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def wrap_async_call(fct: asyncio.coroutine):
@@ -34,7 +34,7 @@ def delete_contents(folder):
         except (OSError, IOError):
             logging.exception("Could not delete files")
 
-def find_entry_point(g):
+def find_entry_point(g: nx.DiGraph) -> List:
     result = []
     for node in g.nodes:
         if len(list(g.predecessors(node))) == 0:

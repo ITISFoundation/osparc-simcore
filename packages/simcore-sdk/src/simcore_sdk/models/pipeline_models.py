@@ -24,7 +24,7 @@ class ComputationalPipeline:
                 setattr(self, key, value)
 
     @property
-    def execution_graph(self):
+    def execution_graph(self) -> nx.DiGraph:
         d = self.dag_adjacency_list
         G = nx.DiGraph()
 
