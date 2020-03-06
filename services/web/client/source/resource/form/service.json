@@ -165,11 +165,25 @@
                 }
             }
         },
-        "members": {
+        "enabled": {
+            "title": "Permissions",
+            "description": "Detailed permissions",
             "type": "array",
-            "maxItems": 1,
             "items": {
-                "type": "string"
+                "title": "Property",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Name",
+                        "type":"string",
+                        "description": "Another description"
+                    },
+                    "enabled": {
+                        "title": "Enabled",
+                        "type": "boolean",
+                        "description": "Item's visibility"
+                    }
+                }
             }
         }
     }

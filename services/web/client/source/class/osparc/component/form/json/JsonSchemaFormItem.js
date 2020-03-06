@@ -63,26 +63,6 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       return this.__input;
     },
     /**
-     * Function that returns an appropriate widget fot the given type.
-     * 
-     * @param {String} type Type of the input that will be used to determine the render behavior
-     */
-    __getInputElement: function(validation, validationManager) {
-      let input;
-      switch (this.__schema.type) {
-        default:
-          input = new qx.ui.form.TextField().set({
-            required: validation && validation.required ? true : false
-          });
-          if (this.__schema.pattern) {
-            validationManager.add(input, osparc.utils.Validators.regExp(RegExp(this.__schema.pattern)));
-          } else if (validation) {
-            validationManager.add(input);
-          }
-        }
-      return input;
-    },
-    /**
      * Function that recursively constructs the path of this form item.
      */
     getPath: function() {
@@ -101,6 +81,29 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
         return null;
       }
       return "orphan.osparc.form";
+    },
+    /**
+     * Function that returns an appropriate widget fot the given type.
+     * 
+     * @param {String} type Type of the input that will be used to determine the render behavior
+     */
+    __getInputElement: function(validation, validationManager) {
+      let input;
+      switch (this.__schema.type) {
+        case "boolean":
+          input = new qx.ui.form.CheckBox();
+          break;
+        default:
+          input = new qx.ui.form.TextField().set({
+            required: validation && validation.required ? true : false
+          });
+          if (this.__schema.pattern) {
+            validationManager.add(input, osparc.utils.Validators.regExp(RegExp(this.__schema.pattern)));
+          } else if (validation) {
+            validationManager.add(input);
+          }
+        }
+      return input;
     }
   }
 });
