@@ -18,8 +18,14 @@ IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
 IS_OSX  := $(filter Darwin,$(shell uname -a))
 IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
-
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
+
+# version control
+VCS_URL       := $(shell git config --get remote.origin.url)
+VCS_REF       := $(shell git rev-parse --short HEAD)
+NOW_TIMESTAMP := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+
 $(if $(IS_WIN),\
 $(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
 
@@ -31,19 +37,21 @@ $(error Windows is not supported in all recipes. Use WSL instead. Follow instruc
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
-	@echo "Recipes for '$(notdir $(CURDIR))':"
+help:
+	@echo "usage: make [target] ..."
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "Targets for '$(notdir $(CURDIR))':"
+	@echo ""
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 
 
-deven%: ## build development environment (using main services/docker-compose-build.yml)
+devenv: ## build development environment (using main services/docker-compose-build.yml)
 	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory $@
 
 
 GIT_CLEAN_ARGS = -dxf -e .vscode
-clea%: ## cleans all unversioned files in project and temp files create by this makefile
+clean: ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean -n $(GIT_CLEAN_ARGS)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -51,8 +59,13 @@ clea%: ## cleans all unversioned files in project and temp files create by this 
 	@git clean $(GIT_CLEAN_ARGS)
 
 
-
-inf%: ## displays basic info
+info: ## displays basic info
+	# system
+	@echo ' OS               : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
+	@echo ' CURDIR           : ${CURDIR}'
+	@echo ' NOW_TIMESTAMP    : ${NOW_TIMESTAMP}'
+	@echo ' VCS_URL          : ${VCS_URL}'
+	@echo ' VCS_REF          : ${VCS_REF}'
 	# installed
 	@pip list
 	# version
