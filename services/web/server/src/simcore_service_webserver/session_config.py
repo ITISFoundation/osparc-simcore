@@ -5,8 +5,6 @@
 """
 import trafaret as T
 
-CONFIG_SECTION_NAME = 'session'
+CONFIG_SECTION_NAME = "session"
 
-schema = T.Dict({
-    "secret_key": T.String
-})
+schema = T.Dict({"secret_key": T.String})

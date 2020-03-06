@@ -12,7 +12,6 @@ from ..resource_manager.websocket_manager import managed_resource
 from .config import AsyncServer, get_socket_server
 
 
-
 async def post_messages(
     app: Application, user_id: str, messages: Dict[str, Any]
 ) -> None:

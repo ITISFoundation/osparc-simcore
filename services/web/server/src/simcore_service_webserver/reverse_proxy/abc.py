@@ -1,4 +1,3 @@
-
 import abc
 
 from yarl import URL
@@ -10,6 +9,7 @@ class ServiceResolutionPolicy(metaclass=abc.ABCMeta):
     """ Implements an interface to identify and
         resolve the location of a dynamic backend service
     """
+
     base_mountpoint = PROXY_MOUNTPOINT
 
     @abc.abstractmethod

@@ -21,7 +21,7 @@ log = getLogger(__name__)
 
 
 def encrypt_password(password):
-    #TODO: add settings sha256_crypt.using(**settings).hash(secret)
+    # TODO: add settings sha256_crypt.using(**settings).hash(secret)
     # see https://passlib.readthedocs.io/en/stable/lib/passlib.hash.sha256_crypt.html
     #
     return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
@@ -34,15 +34,15 @@ def check_password(password, password_hash):
 def get_random_string(min_len, max_len=None):
     max_len = max_len or min_len
     size = random.randint(min_len, max_len)
-    return ''.join(random.choice(CHARS) for x in range(size))
+    return "".join(random.choice(CHARS) for x in range(size))
 
 
 def get_client_ip(request):
     try:
-        ips = request.headers['X-Forwarded-For']
+        ips = request.headers["X-Forwarded-For"]
     except KeyError:
-        ips = request.transport.get_extra_info('peername')[0]
-    return ips.split(',')[0]
+        ips = request.transport.get_extra_info("peername")[0]
+    return ips.split(",")[0]
 
 
 async def send_mail(recipient, subject, body):
@@ -55,10 +55,10 @@ async def send_mail(recipient, subject, body):
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
 
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = subject
-    msg['From'] = cfg.SMTP_SENDER
-    msg['To'] = recipient
+    msg = MIMEText(body, "html")
+    msg["Subject"] = subject
+    msg["From"] = cfg.SMTP_SENDER
+    msg["To"] = recipient
 
     if cfg.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly
@@ -81,21 +81,23 @@ async def send_mail(recipient, subject, body):
                 await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
             await smtp.send_message(msg)
 
+
 async def render_and_send_mail(request, to, template, context=None):
     page = render_string(str(template), request, context)
-    subject, body = page.split('\n', 1)
+    subject, body = page.split("\n", 1)
     await send_mail(to, subject.strip(), body)
 
 
 def themed(template):
     return resources.get_path(join(cfg.THEME, template))
 
+
 def common_themed(template):
     return resources.get_path(join(cfg.COMMON_THEME, template))
 
-def flash_response(msg: str, level: str="INFO"):
-    response = web.json_response(data={
-        'data': attr.asdict(LogMessageType(msg, level)),
-        'error': None
-    })
+
+def flash_response(msg: str, level: str = "INFO"):
+    response = web.json_response(
+        data={"data": attr.asdict(LogMessageType(msg, level)), "error": None}
+    )
     return response

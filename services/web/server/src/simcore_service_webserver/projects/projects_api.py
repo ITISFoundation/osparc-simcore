@@ -43,7 +43,11 @@ def validate_project(app: web.Application, project: Dict):
 
 
 async def get_project_for_user(
-    app: web.Application, project_uuid:str, user_id:int, *, include_templates: bool=False
+    app: web.Application,
+    project_uuid: str,
+    user_id: int,
+    *,
+    include_templates: bool = False
 ) -> Dict:
     """ Returns a project accessible to user
 
@@ -72,7 +76,7 @@ async def get_project_for_user(
 
 
 async def clone_project(
-    request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str=""
+    request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str = ""
 ) -> Dict:
     """Clones both document and data folders of a project
 

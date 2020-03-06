@@ -171,7 +171,7 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
             "inputs": node_inputs,
             "outputs": node_outputs,
             "image": {"name": node_key, "tag": node_version},
-            "node_class": to_node_class(node_key)
+            "node_class": to_node_class(node_key),
         }
 
         log.debug("storing task for node %s: %s", node_uuid, task)
@@ -256,7 +256,7 @@ async def _set_tasks_in_tasks_db(
                 await conn.execute(query)
                 internal_id = internal_id + 1
 
-            except psycopg2.errors.UniqueViolation: # pylint: disable=no-member
+            except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
                 if replace_pipeline:
                     # replace task
                     query = (

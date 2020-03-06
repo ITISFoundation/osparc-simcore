@@ -35,27 +35,27 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
-    'director',
-    'postgres',
-    'redis',
+    "director",
+    "postgres",
+    "redis",
 ]
 
 ops_services = [
-#    'adminer'
+    #    'adminer'
 ]
 
 
 @pytest.fixture
-def client(loop, aiohttp_client,
-        app_config,    ## waits until swarm with *_services are up
-    ):
+def client(
+    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
+):
     assert app_config["rest"]["version"] == API_VERSION
 
-    app_config['main']['testing'] = True
-    app_config['db']['init_tables'] = True
+    app_config["main"]["testing"] = True
+    app_config["db"]["init_tables"] = True
 
-    app_config['storage']['enabled'] = False
-    app_config['rabbit']['enabled'] = False
+    app_config["storage"]["enabled"] = False
+    app_config["rabbit"]["enabled"] = False
 
     pprint(app_config)
 
@@ -69,10 +69,15 @@ def client(loop, aiohttp_client,
     setup_resource_manager(app)
     assert setup_projects(app)
 
-    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
-        'port': app_config["main"]["port"],
-        'host': app_config['main']['host']
-    }))
+    yield loop.run_until_complete(
+        aiohttp_client(
+            app,
+            server_kwargs={
+                "port": app_config["main"]["port"],
+                "host": app_config["main"]["host"],
+            },
+        )
+    )
 
 
 @pytest.fixture(scope="session")
@@ -82,12 +87,14 @@ def fake_template_projects(package_dir: Path) -> Dict:
     with projects_file.open() as fp:
         return json.load(fp)
 
+
 @pytest.fixture(scope="session")
 def fake_template_projects_isan(package_dir: Path) -> Dict:
     projects_file = package_dir / "data" / "fake-template-projects.isan.json"
     assert projects_file.exists()
     with projects_file.open() as fp:
         return json.load(fp)
+
 
 @pytest.fixture(scope="session")
 def fake_template_projects_osparc(package_dir: Path) -> Dict:
@@ -96,29 +103,30 @@ def fake_template_projects_osparc(package_dir: Path) -> Dict:
     with projects_file.open() as fp:
         return json.load(fp)
 
+
 @pytest.fixture
 def fake_db():
     Fake.reset()
     yield Fake
     Fake.reset()
 
+
 @pytest.fixture
 def fake_project_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         return json.load(fp)
 
+
 @pytest.fixture
-async def logged_user(client): #, role: UserRole):
+async def logged_user(client):  # , role: UserRole):
     """ adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
-    role = UserRole.USER # TODO: parameterize roles
+    role = UserRole.USER  # TODO: parameterize roles
 
     async with LoggedUser(
-        client,
-        {"role": role.name},
-        check_if_succeeds = role!=UserRole.ANONYMOUS
+        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
     ) as user:
         yield user
         await delete_all_projects(client.app)
@@ -128,9 +136,13 @@ async def logged_user(client): #, role: UserRole):
 def computational_system_mock(mocker):
     # director needs access to service registry which unfortunately cannot be provided for testing. For that reason we need to mock
     # interaction with director
-    mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
+    mock_fun = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
+        return_value=Future(),
+    )
     mock_fun.return_value.set_result("")
     return mock_fun
+
 
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
@@ -140,20 +152,28 @@ async def storage_subsystem_mock(loop, mocker):
         Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
-    mock = mocker.patch('simcore_service_webserver.projects.projects_api.copy_data_folders_from_project')
+    mock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.copy_data_folders_from_project"
+    )
+
     async def _mock_copy_data_from_project(*args):
         return args[2]
 
     mock.side_effect = _mock_copy_data_from_project
 
     # requests storage to delete data
-    #mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
-    mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project', return_value=Future())
+    # mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
+    mock1 = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        return_value=Future(),
+    )
     mock1.return_value.set_result("")
     return mock, mock1
 
+
 # Tests CRUD operations --------------------------------------------
 # TODO: merge both unit/with_postgress/test_projects
+
 
 async def _request_list(client) -> List[Dict]:
     # GET /v0/projects
@@ -164,6 +184,7 @@ async def _request_list(client) -> List[Dict]:
 
     return projects
 
+
 async def _request_get(client, pid) -> Dict:
     url = client.app.router["get_project"].url_for(project_id=pid)
     resp = await client.get(url)
@@ -172,6 +193,7 @@ async def _request_get(client, pid) -> Dict:
 
     return project
 
+
 async def _request_create(client, project):
     url = client.app.router["create_projects"].url_for()
     resp = await client.post(url, json=project)
@@ -179,6 +201,7 @@ async def _request_create(client, project):
     new_project, _ = await assert_status(resp, web.HTTPCreated)
 
     return new_project
+
 
 async def _request_update(client, project, pid):
     # PUT /v0/projects/{project_id}
@@ -189,6 +212,7 @@ async def _request_update(client, project, pid):
 
     return updated_project
 
+
 async def _request_delete(client, pid):
     url = client.app.router["delete_project"].url_for(project_id=pid)
     resp = await client.delete(url)
@@ -196,8 +220,13 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
-
-async def test_workflow(client, fake_project_data, logged_user, computational_system_mock, storage_subsystem_mock):
+async def test_workflow(
+    client,
+    fake_project_data,
+    logged_user,
+    computational_system_mock,
+    storage_subsystem_mock,
+):
     # empty list
     projects = await _request_list(client)
     assert not projects
@@ -209,13 +238,15 @@ async def test_workflow(client, fake_project_data, logged_user, computational_sy
     projects = await _request_list(client)
     assert len(projects) == 1
     for key in projects[0].keys():
-        if key not in ('uuid', 'prjOwner', 'creationDate', 'lastChangeDate'):
+        if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate"):
             assert projects[0][key] == fake_project_data[key]
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
-    modified_project["workbench"]["ReNamed"] =  modified_project["workbench"].pop( list(modified_project["workbench"].keys())[0] )
+    modified_project["workbench"]["ReNamed"] = modified_project["workbench"].pop(
+        list(modified_project["workbench"].keys())[0]
+    )
     modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
     # modify
     pid = modified_project["uuid"]
@@ -226,13 +257,13 @@ async def test_workflow(client, fake_project_data, logged_user, computational_sy
     assert len(projects) == 1
 
     for key in projects[0].keys():
-        if key not in ('lastChangeDate', ):
+        if key not in ("lastChangeDate",):
             assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
     for key in project.keys():
-        if key not in ('lastChangeDate', ):
+        if key not in ("lastChangeDate",):
             assert project[key] == modified_project[key]
 
     # delete
@@ -270,10 +301,13 @@ async def test_delete_invalid_project(client, logged_user):
     await assert_status(resp, web.HTTPNotFound)
 
 
-async def test_list_template_projects(client, logged_user, fake_db,
+async def test_list_template_projects(
+    client,
+    logged_user,
+    fake_db,
     fake_template_projects,
     fake_template_projects_isan,
-    fake_template_projects_osparc
+    fake_template_projects_osparc,
 ):
     fake_db.load_template_projects()
     url = client.app.router["list_projects"].url_for()
@@ -282,6 +316,8 @@ async def test_list_template_projects(client, logged_user, fake_db,
     projects, _ = await assert_status(resp, web.HTTPOk)
 
     # fake-template-projects.json + fake-template-projects.isan.json + fake-template-projects.osparc.json
-    assert len(projects) == (len(fake_template_projects) + \
-                                len(fake_template_projects_isan) + \
-                                len(fake_template_projects_osparc))
+    assert len(projects) == (
+        len(fake_template_projects)
+        + len(fake_template_projects_isan)
+        + len(fake_template_projects_osparc)
+    )

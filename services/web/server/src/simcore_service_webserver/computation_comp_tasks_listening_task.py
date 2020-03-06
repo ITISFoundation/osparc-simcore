@@ -59,11 +59,11 @@ async def register_trigger_function(app: web.Application):
         EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
     """
 
-
     async with db_engine.acquire() as conn:
         async with conn.begin():
             await conn.execute(notification_fct_query)
             await conn.execute(trigger_registration_query)
+
 
 async def listen(app: web.Application):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
@@ -80,10 +80,16 @@ async def listen(app: web.Application):
             project_id = node_data["project_id"]
             # find the user(s) linked to that project
             joint_table = user_to_projects.join(projects)
-            query = select([user_to_projects]).select_from(joint_table).where(projects.c.uuid == project_id)
+            query = (
+                select([user_to_projects])
+                .select_from(joint_table)
+                .where(projects.c.uuid == project_id)
+            )
             async for row in conn.execute(query):
                 user_id = row["user_id"]
-                node_data = await projects_api.update_project_node_outputs(app, user_id, project_id, node_id, data=task_output)
+                node_data = await projects_api.update_project_node_outputs(
+                    app, user_id, project_id, node_id, data=task_output
+                )
                 messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
                 await post_messages(app, user_id, messages)
 
@@ -98,6 +104,7 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
         pass
     finally:
         pass
+
 
 async def setup_comp_tasks_listening_task(app: web.Application):
     task = asyncio.get_event_loop().create_task(comp_tasks_listening_task(app))

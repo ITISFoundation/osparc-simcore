@@ -33,17 +33,14 @@ def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
     """
         Creates compatible config to update login.cfg.cfg object
     """
-    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
+    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {})  # optional!
     smtp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
 
-    config = {
-        "APP": app,
-        "STORAGE": storage
-    }
+    config = {"APP": app, "STORAGE": storage}
 
     def _fmt(val):
         if isinstance(val, str):
-            if val.strip().lower() in ['null', 'none', '']:
+            if val.strip().lower() in ["null", "none", ""]:
                 return None
         return val
 
@@ -55,6 +52,7 @@ def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
 
     return config
 
+
 async def _setup_config_and_pgpool(app: web.Application):
     """
         - gets input configs from different subsystems and initializes cfg (internal configuration)
@@ -63,30 +61,33 @@ async def _setup_config_and_pgpool(app: web.Application):
     :param app: fully setup application on startup
     :type app: web.Application
     """
-    db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
+    db_cfg = app[APP_CONFIG_KEY][DB_SECTION]["postgres"]
 
     # db
     pool = await asyncpg.create_pool(
         dsn=DSN.format(**db_cfg) + f"?application_name={__name__}_{id(app)}",
-        min_size=db_cfg['minsize'],
-        max_size=db_cfg['maxsize'],
-        loop=asyncio.get_event_loop())
+        min_size=db_cfg["minsize"],
+        max_size=db_cfg["maxsize"],
+        loop=asyncio.get_event_loop(),
+    )
 
-    storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
+    storage = AsyncpgStorage(pool)  # NOTE: this key belongs to cfg, not settings!
 
     # config
     config = _create_login_config(app, storage)
     cfg.configure(config)
 
     if INDEX_RESOURCE_NAME in app.router:
-        cfg['LOGIN_REDIRECT'] = app.router[INDEX_RESOURCE_NAME].url_for()
+        cfg["LOGIN_REDIRECT"] = app.router[INDEX_RESOURCE_NAME].url_for()
     else:
-        log.warning("Unknown location for login page. Defaulting redirection to %s",
-                        cfg['LOGIN_REDIRECT'] )
+        log.warning(
+            "Unknown location for login page. Defaulting redirection to %s",
+            cfg["LOGIN_REDIRECT"],
+        )
 
     app[APP_LOGIN_CONFIG] = cfg
 
-    yield # ----------------
+    yield  # ----------------
 
     if config["STORAGE"].pool is not pool:
         log.error("Somebody has changed the db pool")
@@ -96,10 +97,12 @@ async def _setup_config_and_pgpool(app: web.Application):
         log.exception("Failed to close login storage loop")
 
 
-
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
-    logger=log)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
+    logger=log,
+)
 def setup_login(app: web.Application):
     """ Setting up login subsystem in application
 
@@ -114,6 +117,4 @@ def setup_login(app: web.Application):
     return True
 
 
-__all__ = (
-    'setup_login'
-)
+__all__ = "setup_login"
