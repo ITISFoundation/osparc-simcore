@@ -21,7 +21,7 @@ from servicelib import application_keys
 # IMPORTANT: lowest level module
 #   I order to avoid cyclic dependences, please
 #   DO NOT IMPORT ANYTHING from . (except for __version__)
-from .__version__ import get_version_object
+from .__version__ import version
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 ## VERSION-----------------------------
-service_version = get_version_object()
+service_version = version
 
 ## CONFIGURATION FILES------------------
 DEFAULT_CONFIG = "docker-prod-config.yaml"
