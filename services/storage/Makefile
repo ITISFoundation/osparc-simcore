@@ -15,7 +15,7 @@ devenv: ## build development environment (using main services/docker-compose-bui
 autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
 	# auto formatting with black
 	@python3 -m black --verbose \
-		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk)/" \
 		$(CURDIR)
 
 

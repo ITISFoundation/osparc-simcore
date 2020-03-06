@@ -28,10 +28,11 @@ import semantic_version
 
 try:
     # access metadata
-    __version__ = pkg_resources.get_distribution('simcore_service_storage').version
-    assert __version__=="0.2.1", "Did you install this package?"
+    __version__ = pkg_resources.get_distribution("simcore_service_storage").version
+    assert __version__ == "0.2.1", "Did you install this package?"
 except AssertionError as ee:
     import logging
+
     logging.debug(ee)
 
 
