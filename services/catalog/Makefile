@@ -76,8 +76,3 @@ replay: .cookiecutterrc ## re-applies cookiecutter
 		--config-file=$< \
 		--output-dir="$(abspath $(CURDIR)/..)" \
 		"../cookiecutter-simcore-py-fastapi/"
-
-
-.PHONY: info
-info: ## displays information
-	@make --no-print-directory info-super

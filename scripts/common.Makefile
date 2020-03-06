@@ -79,8 +79,13 @@ version-major: ## commits version with backwards-INcompatible addition or change
 
 buil%: ## builds docker image (using main services/docker-compose-build.yml)
 	# building docker image for ${APP_NAME}
-	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory target=${APP_NAME} build
+	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory build target=${APP_NAME}
 
+# FIXME:
+#.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+#build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
+#	# building docker image for ${APP_NAME} ...
+#	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 #
 # SUBTASKS
