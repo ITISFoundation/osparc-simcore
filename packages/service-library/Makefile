@@ -35,6 +35,13 @@ info: ## displays
 	# version
 	@cat setup.py | grep version=
 
+.PHONY: autoformat
+autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
+	# auto formatting with black
+	@python3 -m black --verbose \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		$(CURDIR)
+
 
 .PHONY: clean
 clean: ## cleans all unversioned files in project and temp files create by this makefile
