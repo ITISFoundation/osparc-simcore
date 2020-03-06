@@ -3,18 +3,19 @@
     requires Blackfynn, check Makefile env2
 
 """
-import logging
-
 # pylint: skip-file
+
+import logging
 import os
 import urllib
+from contextlib import suppress
 from pathlib import Path
 from typing import List
 
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
-
-from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
+from simcore_service_storage.models import (DatasetMetaData, FileMetaData,
+                                            FileMetaDataEx)
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 logger = logging.getLogger(__name__)
@@ -237,13 +238,11 @@ class DatcoreClient(object):
         """
 
         ds = None
-        try:
+        with suppress(Exception):
             ds = self.client.get_dataset(ds_name)
             if force_delete:
                 ds.delete()
                 ds = None
-        except Exception:  # pylint: disable=W0703
-            pass
 
         if ds is None:
             ds = self.client.create_dataset(ds_name)
@@ -260,10 +259,8 @@ class DatcoreClient(object):
         """
 
         ds = None
-        try:
+        with suppress(Exception):
             ds = self.client.get_dataset(ds_name)
-        except Exception:  # pylint: disable=W0703
-            pass
 
         if ds is None and create_if_not_exists:
             ds = self.client.create_dataset(ds_name)
