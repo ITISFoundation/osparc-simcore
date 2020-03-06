@@ -57,7 +57,7 @@ qx.Class.define("osparc.component.widget.newStudy.Basic", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "studyTitle":
+        case "title":
           control = new qx.ui.form.TextField().set({
             placeholder: this.tr("Study Title")
           });
@@ -68,7 +68,7 @@ qx.Class.define("osparc.component.widget.newStudy.Basic", {
           });
           this._add(control);
           break;
-        case "studyDescription":
+        case "description":
           control = new qx.ui.form.TextArea().set({
             minHeight: 150,
             placeholder: this.tr("Describe your study...")
@@ -78,14 +78,14 @@ qx.Class.define("osparc.component.widget.newStudy.Basic", {
             flex: 1
           });
           break;
-        case "studyThumbnail":
+        case "thumbnail":
           control = new qx.ui.form.TextField().set({
             placeholder: this.tr("URL to the thumbnail")
           });
           osparc.utils.Utils.setIdToWidget(control, "newStudyThumbnailFld");
           this._add(control);
           break;
-        case "studyWorkbench":
+        case "workbench":
           control = new qx.ui.form.TextArea().set({
             minHeight: 150,
             placeholder: this.tr("Paste a pipeline here")
@@ -105,21 +105,21 @@ qx.Class.define("osparc.component.widget.newStudy.Basic", {
     },
 
     __createForm: function(template, withPipeline) {
-      const studyTitle = this.getChildControl("studyTitle").set({
+      const title = this.getChildControl("title").set({
         value: template ? template.name : ""
       });
 
-      const description = this.getChildControl("studyDescription").set({
+      const description = this.getChildControl("description").set({
         value: template ? template.description : ""
       });
 
-      const thumbnail = this.getChildControl("studyThumbnail").set({
+      const thumbnail = this.getChildControl("thumbnail").set({
         value: template ? template.thumbnail : ""
       });
 
       let workbench = null;
       if (withPipeline) {
-        workbench = this.getChildControl("studyWorkbench");
+        workbench = this.getChildControl("workbench");
       }
 
       if (template) {
@@ -139,23 +139,23 @@ qx.Class.define("osparc.component.widget.newStudy.Basic", {
       const studyTitleValidator = new qx.ui.form.validation.AsyncValidator(
         function(validator, value) {
           if (value === null || value.length === 0) {
-            studyTitle.setValue("Untitled Study");
+            title.setValue("Untitled Study");
           }
           validator.setValid(true);
         }
       );
-      manager.add(studyTitle, studyTitleValidator);
+      manager.add(title, studyTitleValidator);
 
       manager.addListener("complete", function() {
         if (!manager.getValid()) {
           return;
         }
-        const title = studyTitle.getValue();
+        const tit = title.getValue();
         const desc = description.getValue();
         const thumb = thumbnail.getValue();
         const wb = workbench ? workbench.getValue() : null;
         const data = {
-          prjTitle: title,
+          prjTitle: tit,
           prjDescription: desc ? desc : "",
           prjThumbnail: thumb ? thumb : "",
           prjWorkbench: wb ? JSON.parse(wb) : {}
