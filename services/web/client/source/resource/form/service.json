@@ -164,27 +164,6 @@
                     }
                 }
             }
-        },
-        "enabled": {
-            "title": "Permissions",
-            "description": "Detailed permissions",
-            "type": "array",
-            "items": {
-                "title": "Property",
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "title": "Name",
-                        "type":"string",
-                        "description": "Another description"
-                    },
-                    "enabled": {
-                        "title": "Enabled",
-                        "type": "boolean",
-                        "description": "Item's visibility"
-                    }
-                }
-            }
         }
     }
 }
