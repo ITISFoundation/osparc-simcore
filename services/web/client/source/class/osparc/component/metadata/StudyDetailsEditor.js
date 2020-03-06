@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
-          appearance: "md-button"
+          appearance: "lg-button"
         });
         osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {

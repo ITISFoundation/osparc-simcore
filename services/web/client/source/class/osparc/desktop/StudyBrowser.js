@@ -346,7 +346,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __autoloadStudy: function(loadStudyId) {
       const params = {
         url: {
-          "project_id": loadStudyId
+          projectId: loadStudyId
         }
       };
       osparc.data.Resources.getOne("studies", params, loadStudyId)
