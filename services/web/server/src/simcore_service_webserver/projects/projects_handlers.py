@@ -377,8 +377,8 @@ async def delete_node(request: web.Request) -> web.Response:
 
 @login_required
 async def get_export_study_tokens(request: web.Request) -> web.Response:
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user, clone_project
+    # TODO: replace by decorator since it checks again authentication
+    await check_permission(request, "project.export")
 
     user_id = request[RQT_USERID_KEY]
     project_id = request.match_info.get("project_id")
@@ -388,8 +388,9 @@ async def get_export_study_tokens(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest
     log.debug("Creating sharing tokens for %s", project_id)
 
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user, clone_project
     source_project = await get_project_for_user(request, project_id, user_id)
-
     cloned_project = await clone_project(request, source_project, user_id)
     cloned_project_id = cloned_project["uuid"]
     db = request.config_dict[APP_PROJECT_DBAPI]

@@ -52,6 +52,7 @@ ROLES_PERMISSIONS = {
                                  # "study.node.rename",
                                  # "study.edge.create",
                                  # "study.edge.delete"
+          "project.export",      # "study.export"
           "project.node.create",
           "project.node.delete",
           "project.tag.*",       # "study.tag"
