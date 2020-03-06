@@ -35,6 +35,7 @@ info: ## displays
 	# version
 	@cat setup.py | grep version=
 
+
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
 	# auto formatting with black

@@ -6,10 +6,17 @@ VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
 APP_NAME     := $(notdir $(CURDIR))
 
 
-
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} $@
+
+
+.PHONY: autoformat
+autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
+	# auto formatting with black
+	@python3 -m black --verbose \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		$(CURDIR)
 
 
 .PHONY: openapi-specs

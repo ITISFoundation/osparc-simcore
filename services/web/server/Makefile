@@ -75,11 +75,13 @@ tail: ## tails log of $(APP_NAME) container
 	docker logs -f $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) > $(APP_NAME).log 2>&1
 
 
-
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
 	# auto formatting with black
-	@python3 -m black --verbose $(CURDIR)
+	@python3 -m black --verbose \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		$(CURDIR)
+
 
 .PHONY: version-patch version-minor
 version-patch version-minor: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)

@@ -80,7 +80,9 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker 
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
 	# auto formatting with black
-	@python3 -m black --verbose $(CURDIR)
+	@python3 -m black --verbose \
+		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
+		$(CURDIR)
 
 
 .PHONY: openapi-specs
