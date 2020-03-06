@@ -144,9 +144,10 @@ class DataStorageManager:
     # TODO: perhaps can be used a cache? add a lifetime?
 
     def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
+          # pylint: disable=no-member
         token = self.datcore_tokens.get(
             user_id, DatCoreApiToken()
-        )  # pylint: disable=E1101
+        )
         return token.to_tuple()
 
     async def locations(self, user_id: str):
