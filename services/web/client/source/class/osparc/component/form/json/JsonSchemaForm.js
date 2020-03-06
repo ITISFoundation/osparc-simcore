@@ -48,7 +48,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ajvLoader.start();
   },
   events: {
-    "ready": "qx.event.type.Event"
+    "ready": "qx.event.type.Event",
+    "submit": "qx.event.type.Event"
   },
   members: {
     __inputItems: null,
@@ -68,12 +69,19 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         this._add(this.__expand(null, schema, this.__data));
         // Buttons
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-        const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+        const submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
         submitBtn.addListener("execute", () => {
+          submitBtn.setFetching(true);
           if (this.__validationManager.validate()) {
             const formData = this.toObject();
             if (this.__validate(schema, formData)) {
               console.log(formData);
+              setTimeout(() => {
+                this.fireEvent("submit");
+                submitBtn.setFetching(false);
+              }, 2000);
+            } else {
+              submitBtn.setFetching(false);
             }
           }
         }, this);
