@@ -1,10 +1,12 @@
 import asyncio
+from collections import defaultdict
 
 import aiohttp
+from yarl import URL
+
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
-from yarl import URL
 
 from ..computation_handlers import get_celery
 from ..login.decorators import login_required
@@ -73,7 +75,7 @@ async def get_status(request: aiohttp.web.Request):
     metric = get_prometheus_result_or_default(results[3], [])
     celery_inspect = results[2]
 
-    res = {}
+    res = defaultdict(dict)
     for node in cpu_usage:
         node_id = node["metric"]["container_label_node_id"]
         usage = float(node["value"][1])
@@ -104,18 +106,12 @@ async def get_status(request: aiohttp.web.Request):
     if hasattr(celery_inspect, "items"):
         for dummy_worker_id, worker in celery_inspect.items():
             for task in worker:
-                if task["args"][1:-1].split(", ")[0] == str(
-                    user_id
-                ):  # Extracts user_id from task's args
-                    node_id = task["args"][1:-1].split(", ")[2][
-                        1:-1
-                    ]  # Extracts node_id from task's args
-                    if node_id in res:
-                        res[node_id]["queued"] = True
-                    else:
-                        res[node_id] = {"queued": True}
+                values = task["args"][1:-1].split(", ")
+                if values[0] == str(user_id):  # Extracts user_id from task's args
+                    node_id = values[2][1:-1]  # Extracts node_id from task's args
+                    res[node_id]["queued"] = True
 
     if not res:
         raise aiohttp.web.HTTPNoContent
 
-    return res
+    return dict(res)
