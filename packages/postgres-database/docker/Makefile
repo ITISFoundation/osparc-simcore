@@ -53,9 +53,12 @@ upgrade: ## migrate the postgres database
 down: ## stop migration service
 	@docker service rm $(APP_NAME)
 
+
+DOCKER_IMAGES = $(shell docker images */$(APP_NAME):* -q)
+
 .PHONY: clean
 clean: ## clean all created images
-	-@docker image rm -f $(shell docker images */$(APP_NAME):* -q)
+	$(if $(DOCKER_IMAGES),@docker image rm -f $(DOCKER_IMAGES),)
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
