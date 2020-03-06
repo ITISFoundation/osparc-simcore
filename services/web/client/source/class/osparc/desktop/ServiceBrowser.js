@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         })
         .finally(() => {
           this.__reloadBtn.setFetching(false);
-          this.__serviceFilters.reapply();
+          this.__serviceFilters.dispatch();
         });
     },
 
