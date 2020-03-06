@@ -58,7 +58,7 @@ DOCKER_IMAGES = $(shell docker images */$(APP_NAME):* -q)
 
 .PHONY: clean
 clean: ## clean all created images
-	$(if $(DOCKER_IMAGES),@docker image rm -f $(DOCKER_IMAGES),)
+	$(if $(DOCKER_IMAGES),@docker image rm -f $(DOCKER_IMAGES),$(info No image to delete))
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
