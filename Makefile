@@ -126,6 +126,11 @@ $(CLIENT_WEB_OUTPUT):
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
+.PHONY: shell
+shell:
+	docker run -it local/$(target):production /bin/sh
+
+
 ## docker SWARM -------------------------------
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
