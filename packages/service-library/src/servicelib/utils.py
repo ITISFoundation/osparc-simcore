@@ -22,7 +22,7 @@ def search_osparc_repo_dir(start, max_iterations=8):
     max_iterations = max(max_iterations, 1)
     root_dir = Path(start)
     iteration_number = 0
-    while not is_osparc_repo_dir(root_dir) and iteration_number<max_iterations:
+    while not is_osparc_repo_dir(root_dir) and iteration_number < max_iterations:
         root_dir = root_dir.parent
         iteration_number += 1
 

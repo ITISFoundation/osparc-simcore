@@ -19,7 +19,7 @@ def named_permissions() -> List[str]:
     return permissions
 
 
-def split_permission_name(permission:str) -> Tuple[str, str]:
+def split_permission_name(permission: str) -> Tuple[str, str]:
     parts = permission.split(".")
     resource, action = ".".join(parts[:-1]), parts[-1]
     return (resource, action)

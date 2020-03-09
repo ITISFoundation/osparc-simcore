@@ -25,9 +25,10 @@ def middleware_factory(app_name):
     async def middleware_handler(request: web.Request, handler):
         # See https://prometheus.io/docs/concepts/metric_types
         try:
-            request['start_time'] = time.time()
-            request.app['REQUEST_IN_PROGRESS'].labels(
-                app_name, request.path, request.method).inc()
+            request["start_time"] = time.time()
+            request.app["REQUEST_IN_PROGRESS"].labels(
+                app_name, request.path, request.method
+            ).inc()
 
             resp = await handler(request)
 
@@ -35,34 +36,41 @@ def middleware_factory(app_name):
             # Captures raised reponses (success/failures accounted with resp.status)
             resp = exc
             raise
-        except Exception as exc: #pylint: disable=broad-except
+        except Exception as exc:  # pylint: disable=broad-except
             # Prevents issue #1025.
             resp = web.HTTPInternalServerError(reason=str(exc))
-            resp_time = time.time() - request['start_time']
+            resp_time = time.time() - request["start_time"]
 
             # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
-            log.exception('Unexpected server error "%s" from access: %s "%s %s" done in %3.2f secs. Responding with status %s',
+            log.exception(
+                'Unexpected server error "%s" from access: %s "%s %s" done in %3.2f secs. Responding with status %s',
                 type(exc),
-                request.remote, request.method, request.path,
+                request.remote,
+                request.method,
+                request.path,
                 resp_time,
-                resp.status
+                resp.status,
             )
         finally:
             # metrics on the same request
-            resp_time = time.time() - request['start_time']
-            request.app['REQUEST_LATENCY'].labels(
-                app_name, request.path).observe(resp_time)
+            resp_time = time.time() - request["start_time"]
+            request.app["REQUEST_LATENCY"].labels(app_name, request.path).observe(
+                resp_time
+            )
 
-            request.app['REQUEST_IN_PROGRESS'].labels(
-                app_name, request.path, request.method).dec()
+            request.app["REQUEST_IN_PROGRESS"].labels(
+                app_name, request.path, request.method
+            ).dec()
 
-            request.app['REQUEST_COUNT'].labels(
-                app_name, request.method, request.path, resp.status).inc()
+            request.app["REQUEST_COUNT"].labels(
+                app_name, request.method, request.path, resp.status
+            ).inc()
 
         return resp
 
     middleware_handler.__middleware_name__ = __name__
     return middleware_handler
+
 
 async def metrics(_request):
     # TODO: NOT async!
@@ -71,34 +79,39 @@ async def metrics(_request):
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
 
+
 async def check_outermost_middleware(app: web.Application):
     m = app.middlewares[0]
-    ok = m and hasattr(m, "__middleware_name__") and m.__middleware_name__==__name__
+    ok = m and hasattr(m, "__middleware_name__") and m.__middleware_name__ == __name__
     if not ok:
         # TODO: name all middleware and list middleware in log
-        log.critical("Monitoring middleware expected in the outermost layer."
-            "TIP: Check setup order")
+        log.critical(
+            "Monitoring middleware expected in the outermost layer."
+            "TIP: Check setup order"
+        )
+
 
 def setup_monitoring(app: web.Application, app_name: str):
     # NOTE: prometheus_client registers metrics in **globals**. Therefore
     # tests might fail when fixtures get re-created
 
     # Total number of requests processed
-    app['REQUEST_COUNT'] = Counter(
-        'http_requests_total', 'Total Request Count',
-        ['app_name', 'method', 'endpoint', 'http_status']
+    app["REQUEST_COUNT"] = Counter(
+        "http_requests_total",
+        "Total Request Count",
+        ["app_name", "method", "endpoint", "http_status"],
     )
 
     # Latency of a request in seconds
-    app['REQUEST_LATENCY'] = Histogram(
-        'http_request_latency_seconds', 'Request latency',
-        ['app_name', 'endpoint']
+    app["REQUEST_LATENCY"] = Histogram(
+        "http_request_latency_seconds", "Request latency", ["app_name", "endpoint"]
     )
 
     # Number of requests in progress
-    app['REQUEST_IN_PROGRESS']=Gauge(
-        'http_requests_in_progress_total', 'Requests in progress',
-        ['app_name', 'endpoint', 'method']
+    app["REQUEST_IN_PROGRESS"] = Gauge(
+        "http_requests_in_progress_total",
+        "Requests in progress",
+        ["app_name", "endpoint", "method"],
     )
 
     # ensures is first layer but cannot guarantee the order setup is applied

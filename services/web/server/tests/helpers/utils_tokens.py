@@ -29,7 +29,7 @@ async def create_token_in_db(engine, **data):
         "token_data": {
             "token_secret": get_random_string(3),
             "token_key": get_random_string(4),
-        }
+        },
     }
     params.update(data)
 
@@ -40,11 +40,17 @@ async def create_token_in_db(engine, **data):
         return dict(row)
 
 
-async def get_token_from_db(engine, *, token_id=None, user_id=None, token_service=None, token_data=None):
+async def get_token_from_db(
+    engine, *, token_id=None, user_id=None, token_service=None, token_data=None
+):
     async with engine.acquire() as conn:
-        expr = to_expression(token_id=token_id, user_id=user_id,
-                             token_service=token_service, token_data=token_data)
-        stmt = sa.select([tokens, ]).where(expr)
+        expr = to_expression(
+            token_id=token_id,
+            user_id=user_id,
+            token_service=token_service,
+            token_data=token_data,
+        )
+        stmt = sa.select([tokens,]).where(expr)
         result = await conn.execute(stmt)
         row = await result.first()
         return dict(row) if row else None
@@ -66,8 +72,10 @@ def to_expression(**params):
     expressions = []
     for key, value in params.items():
         if value is not None:
-            statement = (cast(getattr(tokens.c, key), String) == json.dumps(value)) \
-                if isinstance(getattr(tokens.c, key).type, JSON) \
+            statement = (
+                (cast(getattr(tokens.c, key), String) == json.dumps(value))
+                if isinstance(getattr(tokens.c, key).type, JSON)
                 else (getattr(tokens.c, key) == value)
+            )
             expressions.append(statement)
     return reduce(and_, expressions)

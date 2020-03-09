@@ -12,7 +12,7 @@ import tenacity
 from yarl import URL
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 async def redis_service(loop, _webserver_dev_config, webserver_environ, docker_stack):
     cfg = deepcopy(_webserver_dev_config["resource_manager"]["redis"])
 
@@ -32,7 +32,8 @@ async def wait_till_redis_responsive(redis_url: URL) -> bool:
     await client.wait_closed()
     return True
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 async def redis_client(loop, redis_service):
     client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
     yield client

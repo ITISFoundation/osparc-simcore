@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 def has_handler_signature(fun) -> bool:
     # TODO: last parameter is web.Request or called request?
-    return any(param.annotation == web.Request
-        for name, param in inspect.signature(fun).parameters.items())
+    return any(
+        param.annotation == web.Request
+        for name, param in inspect.signature(fun).parameters.items()
+    )
 
 
 def get_handlers_from_namespace(handlers_nsp) -> Dict:
@@ -31,7 +33,9 @@ def get_handlers_from_namespace(handlers_nsp) -> Dict:
     elif hasattr(handlers_nsp, "__class__"):
         predicate = lambda obj: inspect.ismethod(obj) and has_handler_signature(obj)
     else:
-        raise ValueError("Expected module or class as namespace, got %s" % type(handlers_nsp))
+        raise ValueError(
+            "Expected module or class as namespace, got %s" % type(handlers_nsp)
+        )
 
     name_to_handler_map = dict(inspect.getmembers(handlers_nsp, predicate))
     return name_to_handler_map
@@ -46,14 +50,15 @@ def iter_path_operations(specs: OpenApiSpec) -> Generator:
 
     for url, path in specs.paths.items():
         for method, operation in path.operations.items():
-            yield method.upper(), base_path+url, operation.operation_id, operation.tags
+            yield method.upper(), base_path + url, operation.operation_id, operation.tags
 
 
 def map_handlers_with_operations(
-        handlers_map: Mapping[str, Callable],
-        operations_it: Generator,
-        * ,
-        strict: bool=True) -> List[web.RouteDef]:
+    handlers_map: Mapping[str, Callable],
+    operations_it: Generator,
+    *,
+    strict: bool = True
+) -> List[web.RouteDef]:
     """ Matches operation ids with handler names and returns a list of routes
 
     :param handlers_map: .See get_handlers_from_namespace
@@ -72,24 +77,23 @@ def map_handlers_with_operations(
     for method, path, operation_id, _tags in operations_it:
         handler = handlers.pop(operation_id, None)
         if handler:
-            routes.append( web.route(method.upper(), path, handler, name=operation_id) )
+            routes.append(web.route(method.upper(), path, handler, name=operation_id))
         elif strict:
             raise ValueError("Cannot find any handler named {} ".format(operation_id))
 
     if handlers and strict:
-        raise RuntimeError("{} handlers were not mapped to routes: {}".format(
-                len(handlers),
-                handlers.keys())
+        raise RuntimeError(
+            "{} handlers were not mapped to routes: {}".format(
+                len(handlers), handlers.keys()
             )
+        )
 
     return routes
 
 
 def create_routes_from_namespace(
-        specs: OpenApiSpec,
-        handlers_nsp,
-         *,
-        strict: bool=True) -> List[web.RouteDef]:
+    specs: OpenApiSpec, handlers_nsp, *, strict: bool = True
+) -> List[web.RouteDef]:
     """ Gets *all* available handlers and maps one-to-one to *all* specs routes
 
     :param specs: openapi spec object
@@ -104,6 +108,8 @@ def create_routes_from_namespace(
     if not handlers and strict:
         raise ValueError("No handlers found in %s" % handlers_nsp)
 
-    routes = map_handlers_with_operations(handlers, iter_path_operations(specs), strict=strict)
+    routes = map_handlers_with_operations(
+        handlers, iter_path_operations(specs), strict=strict
+    )
 
     return routes

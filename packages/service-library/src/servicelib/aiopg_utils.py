@@ -22,24 +22,32 @@ from aiohttp import web
 from aiopg.sa import Engine, create_engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import (RetryCallState, after_log, before_sleep_log, retry,
-                      retry_if_exception_type, stop_after_attempt, wait_fixed)
+from tenacity import (
+    RetryCallState,
+    after_log,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 log = logging.getLogger(__name__)
 
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
+
 @attr.s(auto_attribs=True)
 class DataSourceName:
     # Attributes for postgres db
     user: str
-    password: str=attr.ib(repr=False)
+    password: str = attr.ib(repr=False)
     database: str
-    host: str='localhost'
-    port: int=5432
+    host: str = "localhost"
+    port: int = 5432
 
     # Attributes about the caller
-    application_name: Optional[str]=None
+    application_name: Optional[str] = None
 
     def asdict(self) -> Dict:
         return attr.asdict(self)
@@ -51,8 +59,7 @@ class DataSourceName:
         return uri
 
 
-
-def create_pg_engine(dsn: DataSourceName, minsize:int=1, maxsize:int=4):
+def create_pg_engine(dsn: DataSourceName, minsize: int = 1, maxsize: int = 4):
     """ Adapts the arguments of aiopg.sa.create_engine
 
         Returns a coroutine that is awaitable, i.e.
@@ -62,10 +69,11 @@ def create_pg_engine(dsn: DataSourceName, minsize:int=1, maxsize:int=4):
 
         assert engine.closed
     """
-    awaitable_engine_coro = create_engine(dsn.to_uri(),
+    awaitable_engine_coro = create_engine(
+        dsn.to_uri(),
         application_name=dsn.application_name,
         minsize=minsize,
-        maxsize=maxsize
+        maxsize=maxsize,
     )
     return awaitable_engine_coro
 
@@ -115,11 +123,10 @@ def is_postgres_responsive(dsn: DataSourceName) -> bool:
     return ok
 
 
-
 def raise_http_unavailable_error(retry_state: RetryCallState):
     # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop. TIP: obj, query = retry_state.args; obj.app.register_incidents
 
-    exc :DatabaseError  = retry_state.outcome.exception()
+    exc: DatabaseError = retry_state.outcome.exception()
     # StandardError
     # |__ Warning
     # |__ Error
@@ -136,7 +143,6 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     # SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
     # SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
 
-
     # TODO: add header with Retry-After https://tools.ietf.org/html/rfc7231#section-7.1.3
     resp = web.HTTPServiceUnavailable()
 
@@ -150,26 +156,29 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
 class PostgresRetryPolicyUponInitialization:
     """ Retry policy upon service initialization
     """
+
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 20
 
-    def __init__(self, logger: Optional[logging.Logger]=None):
+    def __init__(self, logger: Optional[logging.Logger] = None):
         logger = logger or log
 
         self.kwargs = dict(
             wait=wait_fixed(self.WAIT_SECS),
             stop=stop_after_attempt(self.ATTEMPTS_COUNT),
             before_sleep=before_sleep_log(logger, logging.INFO),
-            reraise=True
+            reraise=True,
         )
+
 
 class PostgresRetryPolicyUponOperation:
     """ Retry policy upon service operation
     """
+
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 3
 
-    def __init__(self, logger: Optional[logging.Logger]=None):
+    def __init__(self, logger: Optional[logging.Logger] = None):
         logger = logger or log
 
         self.kwargs = dict(
@@ -177,8 +186,9 @@ class PostgresRetryPolicyUponOperation:
             wait=wait_fixed(self.WAIT_SECS),
             stop=stop_after_attempt(self.ATTEMPTS_COUNT),
             after=after_log(logger, logging.WARNING),
-            retry_error_callback=raise_http_unavailable_error
+            retry_error_callback=raise_http_unavailable_error,
         )
+
 
 # alias
 postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation().kwargs
@@ -199,7 +209,7 @@ def retry_pg_api(func):
             result = await _deco_func(*args, **kargs)
         finally:
             stats = _deco_func.retry.statistics
-            _total_retry_count  += int(stats.get('attempt_number', 0))
+            _total_retry_count += int(stats.get("attempt_number", 0))
         return result
 
     def total_retry_count():
@@ -210,9 +220,8 @@ def retry_pg_api(func):
     return wrapper
 
 
-
 __all__ = [
-    'DBAPIError',
-    'PostgresRetryPolicyUponInitialization',
-    'PostgresRetryPolicyUponOperation'
+    "DBAPIError",
+    "PostgresRetryPolicyUponInitialization",
+    "PostgresRetryPolicyUponOperation",
 ]

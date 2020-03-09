@@ -1,6 +1,3 @@
-
-
-
 def get_server(servers, url):
     # Development server: http://{host}:{port}/{basePath}
     for server in servers:

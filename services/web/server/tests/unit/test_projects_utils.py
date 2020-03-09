@@ -11,17 +11,18 @@ import jsonschema
 import pytest
 from jsonschema import ValidationError
 
-from simcore_service_webserver.projects.projects_utils import \
-    clone_project_document
+from simcore_service_webserver.projects.projects_utils import clone_project_document
 from simcore_service_webserver.resources import resources
 
 
 def load_template_projects():
     projects = []
-    projects_names = [name for name in resources.listdir('data') if 'template-projects' in name]
+    projects_names = [
+        name for name in resources.listdir("data") if "template-projects" in name
+    ]
     for name in projects_names:
-        with resources.stream(f'data/{name}') as fp:
-            projects.extend( json.load(fp) )
+        with resources.stream(f"data/{name}") as fp:
+            projects.extend(json.load(fp))
     return projects
 
 
@@ -31,8 +32,10 @@ def project_schema(project_schema_file):
         schema = json.load(fh)
     return schema
 
-@pytest.mark.parametrize("name,project",
-    [(p['name'], p) for p in load_template_projects()] )
+
+@pytest.mark.parametrize(
+    "name,project", [(p["name"], p) for p in load_template_projects()]
+)
 def test_clone_project_document(name, project, project_schema):
 
     source = deepcopy(project)
@@ -42,10 +45,10 @@ def test_clone_project_document(name, project, project_schema):
     assert source == project
 
     # valid clone
-    assert clone['uuid'] != project['uuid']
+    assert clone["uuid"] != project["uuid"]
 
-    node_ids = project['workbench'].keys()
-    for clone_node_id in clone['workbench']:
+    node_ids = project["workbench"].keys()
+    for clone_node_id in clone["workbench"]:
         assert clone_node_id not in node_ids
 
     try:

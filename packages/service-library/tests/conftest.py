@@ -24,11 +24,13 @@ def package_dir():
     return pdir
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def osparc_simcore_root_dir(here):
     root_dir = here.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("packages/service-library")), "%s not look like rootdir" % root_dir
+    assert any(root_dir.glob("packages/service-library")), (
+        "%s not look like rootdir" % root_dir
+    )
     return root_dir
 
 

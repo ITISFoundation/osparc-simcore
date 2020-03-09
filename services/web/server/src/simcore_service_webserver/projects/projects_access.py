@@ -1,4 +1,3 @@
-
 import jsondiff
 from aiohttp import web
 
@@ -10,10 +9,10 @@ async def can_update_node_inputs(context):
 
         Returns True if user has permission to update inputs
     """
-    db = context['dbapi']
-    project_uuid = context['project_id']
-    user_id = context['user_id']
-    updated_project = context['new_data']
+    db = context["dbapi"]
+    project_uuid = context["project_id"]
+    user_id = context["user_id"]
+    updated_project = context["new_data"]
 
     if project_uuid is None or user_id is None:
         return False
@@ -28,8 +27,8 @@ async def can_update_node_inputs(context):
         try:
             for node in diffs["workbench"]:
                 # can ONLY modify `inputs` fields set as ReadAndWrite
-                access = current_project['workbench'][node]["inputAccess"]
-                inputs = diffs["workbench"][node]['inputs']
+                access = current_project["workbench"][node]["inputAccess"]
+                inputs = diffs["workbench"][node]["inputs"]
                 for key in inputs:
                     if access.get(key) != "ReadAndWrite":
                         return False
@@ -38,8 +37,7 @@ async def can_update_node_inputs(context):
             pass
         return False
 
-    return len(diffs)==0 # no changes
-
+    return len(diffs) == 0  # no changes
 
 
 def setup_projects_access(app: web.Application):
@@ -49,4 +47,6 @@ def setup_projects_access(app: web.Application):
     hrba = get_access_model(app)
 
     # TODO: add here also named permissions, i.e. all project.* operations
-    hrba.roles[UserRole.GUEST].check["project.workbench.node.inputs.update"] = can_update_node_inputs
+    hrba.roles[UserRole.GUEST].check[
+        "project.workbench.node.inputs.update"
+    ] = can_update_node_inputs

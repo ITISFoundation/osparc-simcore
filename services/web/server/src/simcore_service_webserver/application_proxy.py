@@ -26,6 +26,7 @@ from .reverse_proxy.abc import ServiceResolutionPolicy
 
 logger = logging.getLogger(__name__)
 
+
 @attr.s(auto_attribs=True)
 class ServiceMonitor(ServiceResolutionPolicy):
     app: web.Application
@@ -51,8 +52,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
     # override
     async def get_image_name(self, service_identifier: str) -> str:
         data = await self._request_info(service_identifier)
-        return data.get('service_key')
-
+        return data.get("service_key")
 
     # override
     async def find_url(self, service_identifier: str) -> URL:
@@ -60,30 +60,32 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
         """
         data = await self._request_info(service_identifier)
-        base_url = URL.build(scheme="http",
-                        host=data.get('service_host'),
-                        port=data.get('service_port'),
-                        path=data.get('service_basepath'))
+        base_url = URL.build(
+            scheme="http",
+            host=data.get("service_host"),
+            port=data.get("service_port"),
+            path=data.get("service_basepath"),
+        )
 
-        if not os.environ.get('IS_CONTAINER_CONTEXT'):
+        if not os.environ.get("IS_CONTAINER_CONTEXT"):
             # If server is not in swarm (e.g. during testing) then host:port = localhost:data['published_port']
-            base_url = base_url.with_host('127.0.0.1') \
-                               .with_port(data['published_port'])
+            base_url = base_url.with_host("127.0.0.1").with_port(data["published_port"])
 
         return base_url
 
 
-
-
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=["simcore_service_webserver.director", ],
-    logger=logger)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.director",],
+    logger=logger,
+)
 def setup(app: web.Application):
 
     monitor = ServiceMonitor(app, base_url=app[APP_DIRECTOR_API_KEY])
 
     setup_reverse_proxy(app, monitor)
-    assert "reverse_proxy" in app.router # nosec
+    assert "reverse_proxy" in app.router  # nosec
 
     app["reverse_proxy.basemount"] = monitor.base_mountpoint
 
@@ -92,6 +94,4 @@ def setup(app: web.Application):
 setup_app_proxy = setup
 
 
-__all__ = (
-    'setup_app_proxy'
-)
+__all__ = "setup_app_proxy"
