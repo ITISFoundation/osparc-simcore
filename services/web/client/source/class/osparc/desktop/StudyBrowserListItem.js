@@ -37,7 +37,9 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium") + " " +
+      qx.locale.Date.getDateFormat("medium")
+    );
+    this._timeFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getTimeFormat("short")
     );
 
@@ -92,6 +94,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     _dateFormat: null,
+    _timeFormat: null,
     _forwardStates: {
       focused : true,
       hovered : true,
@@ -175,8 +178,16 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
     _applylastChangeDate: function(value, old) {
       let label = this.getChildControl("lastChangeDate");
       if (value) {
-        const dateStr = this._dateFormat.format(value);
-        label.setValue("Last change: <b>" + dateStr + "</b>");
+        let dateStr = null;
+        if (value.getDate() === (new Date()).getDate()) {
+          dateStr = this.tr("Today");
+        } else if (value.getDate() === (new Date()).getDate() - 1) {
+          dateStr = this.tr("Yesterday");
+        } else {
+          dateStr = this._dateFormat.format(value);
+        }
+        const timeStr = this._timeFormat.format(value);
+        label.setValue(dateStr + " " + timeStr);
       } else {
         label.resetValue();
       }
@@ -257,6 +268,8 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   destruct : function() {
     this._dateFormat.dispose();
     this._dateFormat = null;
+    this._timeFormat.dispose();
+    this._timeFormat = null;
     this.removeListener("pointerover", this._onPointerOver, this);
     this.removeListener("pointerout", this._onPointerOut, this);
   }
