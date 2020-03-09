@@ -1,14 +1,21 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import subprocess
-import os
+from typing import Dict
+import pytest
 
 
-
-def test_ujson_installation_in_director():
-    registry = os.environ.get("DOCKER_REGISTRY", "local")
-    tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+@pytest.mark.parametrize("service", [
+    'director',
+    'webserver',
+])
+def test_ujson_installation(service:str, osparc_deploy: Dict):
+    image_name = osparc_deploy['simcore']['services'][service]['image']
 
     assert subprocess.run(
-        f'docker run -t --rm {registry}/director:{tag} python -c "import ujson; print(ujson.__version__)"',
+        f'docker run -t --rm {image_name} python -c "import ujson; print(ujson.__version__)"',
         shell=True,
         check=True,
     )
