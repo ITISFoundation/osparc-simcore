@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
 
   events: {
     /** (Fired by {@link qx.ui.form.List}) */
-    "action" : "qx.event.type.Event"
+    "action": "qx.event.type.Event"
   },
 
   properties: {
