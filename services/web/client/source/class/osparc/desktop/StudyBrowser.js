@@ -454,38 +454,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
 
       item.subscribeToFilterGroup("studyBrowser");
 
-      item.addListener("dbltap", e => {
-        const studyData = this.__getStudyData(item.getUuid(), isTemplate);
-        if (isTemplate) {
-          this.__createStudyBtnClkd(studyData);
-        } else {
-          this.__startStudy(studyData);
-        }
-      });
-
       item.addListener("execute", () => {
-        // Selection logic
-        if (item.getValue()) {
-          if (isTemplate) {
-            this.__userStudyContainer.resetSelection();
-            this.__templateStudyContainer.selectOne(item);
-          } else {
-            this.__templateStudyContainer.resetSelection();
-          }
-          this.__itemSelected(item.getUuid(), isTemplate);
-        } else if (isTemplate) {
-          this.__itemSelected(null);
-          this.__templateDeleteButton.exclude();
-        } else {
-          const selection = this.__userStudyContainer.getSelection();
-          if (selection.length) {
-            this.__itemSelected(selection[0].getUuid());
-          } else {
-            this.__studiesDeleteButton.exclude();
-            this.__itemSelected(null);
-          }
-        }
+        this.__itemClicked(item, isTemplate);
       }, this);
+
+      item.addListener("dbltap", () => {
+        this.__itemDblClicked(item, isTemplate);
+      });
 
       return item;
     },
@@ -506,6 +481,39 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __getStudyData: function(id, isTemplate) {
       const matchesId = study => study.uuid === id;
       return isTemplate ? this.__templateStudies.find(matchesId) : this.__userStudies.find(matchesId);
+    },
+
+    __itemClicked: function(item, isTemplate) {
+      // Selection logic
+      if (item.getValue()) {
+        if (isTemplate) {
+          this.__userStudyContainer.resetSelection();
+          this.__templateStudyContainer.selectOne(item);
+        } else {
+          this.__templateStudyContainer.resetSelection();
+        }
+        this.__itemSelected(item.getUuid(), isTemplate);
+      } else if (isTemplate) {
+        this.__itemSelected(null);
+        this.__templateDeleteButton.exclude();
+      } else {
+        const selection = this.__userStudyContainer.getSelection();
+        if (selection.length) {
+          this.__itemSelected(selection[0].getUuid());
+        } else {
+          this.__studiesDeleteButton.exclude();
+          this.__itemSelected(null);
+        }
+      }
+    },
+
+    __itemDblClicked: function(item, isTemplate) {
+      const studyData = this.__getStudyData(item.getUuid(), isTemplate);
+      if (isTemplate) {
+        this.__createStudyBtnClkd(studyData);
+      } else {
+        this.__startStudy(studyData);
+      }
     },
 
     __itemSelected: function(studyId, isTemplate = false) {
