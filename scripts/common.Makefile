@@ -100,6 +100,10 @@ buil%: ## builds docker image (using main services/docker-compose-build.yml)
 #	# building docker image for ${APP_NAME} ...
 #	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
+.PHONY: shell
+shell: ## runs shell in production container
+	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory shell target=${APP_NAME}
+
 #
 # SUBTASKS
 #
