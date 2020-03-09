@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
 
-  construct: function() {
+  construct: function(hasMenu = true) {
     this.base(arguments);
     this.set({
       width: 210
@@ -43,10 +43,22 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    let layout = new qx.ui.layout.VBox(5).set({
+    this._setLayout(new qx.ui.layout.Canvas());
+
+    let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
       alignY: "middle"
+    }));
+    this._add(mainLayout, {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
     });
-    this._setLayout(layout);
+
+    if (hasMenu !== null) {
+      const menu = this.__getMenu();
+      this.setMenu(menu);
+    }
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
@@ -61,6 +73,14 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
     appearance: {
       refine : true,
       init : "pb-listitem"
+    },
+
+    /** The menu instance to show when tapping on the button */
+    menu: {
+      check : "qx.ui.menu.Menu",
+      nullable : true,
+      apply : "_applyMenu",
+      event : "changeMenu"
     },
 
     uuid: {
@@ -102,10 +122,24 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       dragover : true
     },
 
+    __mainLayout: null,
+
     // overridden
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "menu-button":
+          control = new qx.ui.form.MenuButton().set({
+            width: 30,
+            height: 30,
+            icon: "@FontAwesome5Solid/ellipsis-v/16",
+            focusable: false
+          });
+          this._add(control, {
+            top: 0,
+            right: 0
+          });
+          break;
         case "studyTitle":
           control = new qx.ui.basic.Label(this.getStudyTitle()).set({
             margin: [5, 0],
@@ -113,7 +147,25 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
             anonymous: true
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_title");
-          this._addAt(control, 0);
+          this.__mainLayout.addAt(control, 0);
+          break;
+        case "creator":
+          control = new qx.ui.basic.Label(this.getCreator()).set({
+            rich: true,
+            allowGrowY: false,
+            anonymous: true
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
+          this.__mainLayout.addAt(control, 1);
+          break;
+        case "lastChangeDate":
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            allowGrowY: false,
+            anonymous: true
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
+          this.__mainLayout.addAt(control, 2);
           break;
         case "icon":
           control = new qx.ui.basic.Image(this.getIcon()).set({
@@ -123,36 +175,37 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
             allowStretchY: true,
             height: 120
           });
-          this._addAt(control, 1);
-          break;
-        case "creator":
-          control = new qx.ui.basic.Label(this.getCreator()).set({
-            rich: true,
-            allowGrowY: false,
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
-          this._addAt(control, 2);
-          break;
-        case "lastChangeDate":
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            allowGrowY: false,
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
-          this._addAt(control, 3);
+          this.__mainLayout.addAt(control, 3);
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
-          this._addAt(control, 4);
+          this.__mainLayout.addAt(control, 4);
           break;
       }
 
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    __getMenu: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+      const undoButton = new qx.ui.menu.Button("Undo");
+      const redoButton = new qx.ui.menu.Button("Redo");
+      menu.add(undoButton);
+      menu.add(redoButton);
+      return menu;
+    },
+
+    _applyMenu: function(value, old) {
+      const menuButton = this.getChildControl("menu-button");
+      if (value) {
+        menuButton.setMenu(value);
+      }
+      menuButton.setVisibility(value ? "visible" : "excluded");
+    },
+
+    // overridden
     _applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
