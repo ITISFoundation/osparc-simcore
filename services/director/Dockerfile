@@ -51,12 +51,16 @@ ENV SC_BUILD_TARGET build
 #
 RUN apk update && \
     apk add --no-cache \
-      libpq
+      libpq \
+      libstdc++
+
+#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
+
 
 # Installing build dependencies (will be deleted in production)
 RUN apk add --virtual .build-deps \
       git \
-      gcc \
+      g++ \
       libc-dev \
       python-dev \
       musl-dev \
@@ -149,9 +153,6 @@ FROM build as development
 
 ENV SC_BUILD_TARGET development
 
-
-# WORKDIR /build
-# NOTE: can copy from /build if necessary
 
 WORKDIR /devel
 VOLUME  /devel/packages
