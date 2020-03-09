@@ -36,10 +36,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
     });
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
-    this._dateFormat = new qx.util.format.DateFormat(
+    this.__dateFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getDateFormat("medium")
     );
-    this._timeFormat = new qx.util.format.DateFormat(
+    this.__timeFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getTimeFormat("short")
     );
 
@@ -113,8 +113,9 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _dateFormat: null,
-    _timeFormat: null,
+    __dateFormat: null,
+    __timeFormat: null,
+
     _forwardStates: {
       focused : true,
       hovered : true,
@@ -237,9 +238,9 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
         } else if (value.getDate() === (new Date()).getDate() - 1) {
           dateStr = this.tr("Yesterday");
         } else {
-          dateStr = this._dateFormat.format(value);
+          dateStr = this.__dateFormat.format(value);
         }
-        const timeStr = this._timeFormat.format(value);
+        const timeStr = this.__timeFormat.format(value);
         label.setValue(dateStr + " " + timeStr);
       } else {
         label.resetValue();
@@ -319,10 +320,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   },
 
   destruct : function() {
-    this._dateFormat.dispose();
-    this._dateFormat = null;
-    this._timeFormat.dispose();
-    this._timeFormat = null;
+    this.__dateFormat.dispose();
+    this.__dateFormat = null;
+    this.__timeFormat.dispose();
+    this.__timeFormat = null;
     this.removeListener("pointerover", this._onPointerOver, this);
     this.removeListener("pointerout", this._onPointerOut, this);
   }
