@@ -34,6 +34,10 @@ build: openapi-specs ## builds docker image (using main services/docker-compose-
 	@$(MAKE) -C ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
+.PHONY: shell
+shell: ## runs shell in production container
+	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
+
 .PHONY: version-patch version-minor
 version-patch version-minor: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
 	# upgrades as $(subst version-,,$@) version, commits and tags
