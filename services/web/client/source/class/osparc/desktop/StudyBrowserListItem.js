@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
 
-  construct: function(hasMenu = true) {
+  construct: function(menu) {
     this.base(arguments);
     this.set({
       width: 210
@@ -55,8 +55,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       left: 0
     });
 
-    if (hasMenu !== null) {
-      const menu = this.__getMenu();
+    if (menu !== null) {
       this.setMenu(menu);
     }
 
@@ -185,17 +184,6 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       }
 
       return control || this.base(arguments, id);
-    },
-
-    __getMenu: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-      const undoButton = new qx.ui.menu.Button("Undo");
-      const redoButton = new qx.ui.menu.Button("Redo");
-      menu.add(undoButton);
-      menu.add(redoButton);
-      return menu;
     },
 
     _applyMenu: function(value, old) {

@@ -437,11 +437,13 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudyItem: function(study, isTemplate) {
+      const menu = this.__getStudyItemMenu();
+
       const tags =
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
-      const item = new osparc.desktop.StudyBrowserListItem().set({
+      const item = new osparc.desktop.StudyBrowserListItem(menu).set({
         uuid: study.uuid,
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
@@ -486,6 +488,19 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
       }, this);
 
       return item;
+    },
+
+    __getStudyItemMenu: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+      const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));
+      const selectButton = new qx.ui.menu.Button(this.tr("Select"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      menu.add(moreInfoButton);
+      menu.add(selectButton);
+      menu.add(deleteButton);
+      return menu;
     },
 
     __getStudyData: function(id, isTemplate) {
