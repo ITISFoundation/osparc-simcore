@@ -85,7 +85,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                 try:
                     payload = json.loads(ex.text)
                     if not is_enveloped_from_map(payload):
-                        payload = wrap_as_envelope(data=payload)
+                        payload = wrap_as_envelope(data=payload, as_null=True)
                         ex.text = json.dumps(payload)
                 except Exception as err:  # pylint: disable=broad-except
                     _process_and_raise_unexpected_error(request, err)

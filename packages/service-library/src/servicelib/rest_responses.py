@@ -41,9 +41,9 @@ def wrap_as_envelope(data=None, error=None, as_null=True):
     """
     payload = {}
     if data or as_null:
-        payload["data"] = data
+        payload["data"] = data or {}
     if error or as_null:
-        payload["error"] = error
+        payload["error"] = error or {}
     return payload
 
 
@@ -61,9 +61,12 @@ def create_data_response(data) -> web.Response:
     response = None
     try:
         if not is_enveloped(data):
-            payload = wrap_as_envelope(data)
+            payload = wrap_as_envelope(data, as_null=True)
         else:
-            payload = data
+            # NOTE: avoids error=None or data=None
+            payload = wrap_as_envelope(
+                data=data["data"], error=data["error"], as_null=True
+            )
 
         response = web.json_response(payload, dumps=jsonify)
     except (TypeError, ValueError) as err:
