@@ -152,7 +152,6 @@ components:
         error:
           type: object
           nullable: true
-          default: null
     HealthCheckType:
       type: object
       properties:
