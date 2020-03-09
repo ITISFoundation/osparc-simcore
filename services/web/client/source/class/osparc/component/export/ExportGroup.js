@@ -105,16 +105,18 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         flex: 1
       });
 
-      const exportBtn = new qx.ui.form.Button(this.tr("Export")).set({
-        allowGrowX: false,
-        alignX: "right"
-      });
+      const exportBtn = new qx.ui.toolbar.Button(this.tr("Export"));
       exportBtn.addListener("execute", () => {
         if (manager.validate()) {
           this.__exportAsMacroService(exportBtn);
         }
       }, this);
-      this._add(exportBtn);
+      const actionsBar = new qx.ui.toolbar.ToolBar();
+      const actionsPart = new qx.ui.toolbar.Part();
+      actionsBar.addSpacer();
+      actionsPart.add(exportBtn);
+      actionsBar.add(actionsPart);
+      this._add(actionsBar);
     },
 
     __buildMetaDataForm: function() {

@@ -73,10 +73,6 @@ qx.Class.define("osparc.component.filter.UIFilter", {
         data
       };
       osparc.component.filter.UIFilterController.getInstance().publish(filterData);
-    },
-
-    reapply: function() {
-      osparc.component.filter.UIFilterController.getInstance().dispatch(this.getGroupId());
     }
   }
 });
