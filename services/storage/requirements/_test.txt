@@ -11,6 +11,7 @@ aiohttp==3.6.2            # via -r _base.txt, aiobotocore, aiozipkin, pytest-aio
 aiopg[sa]==1.0.0          # via -r _base.txt
 aiozipkin==0.6.0          # via -r _base.txt
 apipkg==1.5               # via -r _base.txt, execnet
+appdirs==1.4.3            # via virtualenv
 astroid==2.3.3            # via pylint
 async-generator==1.10     # via -r _base.txt, aiobotocore
 async-timeout==3.0.1      # via -r _base.txt, aiohttp
@@ -20,18 +21,21 @@ boto3==1.9.252            # via -r _base.txt, aiobotocore, blackfynn
 botocore==1.12.252        # via -r _base.txt, aiobotocore, boto3, s3transfer
 certifi==2019.3.9         # via -r _base.txt, requests
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
-codecov==2.0.15           # via -r _test.in
+codecov==2.0.16           # via -r _test.in
 configparser==3.7.4       # via -r _base.txt, blackfynn
 coverage==4.5.1           # via -r _test.in, codecov, coveralls, pytest-cov
-coveralls==1.10.0         # via -r _test.in
+coveralls==1.11.1         # via -r _test.in
 deprecated==1.2.5         # via -r _base.txt, blackfynn
+distlib==0.3.0            # via virtualenv
 docopt==0.6.2             # via -r _base.txt, blackfynn, coveralls
 docutils==0.15.2          # via -r _base.txt, botocore
 execnet==1.6.0            # via -r _base.txt
+filelock==3.0.12          # via virtualenv
 future==0.17.1            # via -r _base.txt, blackfynn
 idna-ssl==1.1.0           # via -r _base.txt, aiohttp
 idna==2.8                 # via -r _base.txt, idna-ssl, requests, yarl
-importlib-metadata==1.3.0  # via -r _base.txt, jsonschema, pluggy, pytest
+importlib-metadata==1.3.0  # via -r _base.txt, importlib-resources, jsonschema, pluggy, pytest, virtualenv
+importlib-resources==1.3.1  # via virtualenv
 isodate==0.6.0            # via -r _base.txt, openapi-core
 isort==4.3.21             # via pylint
 jmespath==0.9.4           # via -r _base.txt, boto3, botocore
@@ -44,7 +48,7 @@ multidict==4.5.2          # via -r _base.txt, aiohttp, yarl
 numpy==1.16.3             # via -r _base.txt, blackfynn, pandas
 openapi-core==0.13.2      # via -r _base.txt
 openapi-spec-validator==0.2.7  # via -r _base.txt, openapi-core
-packaging==20.0           # via pytest, pytest-sugar
+packaging==20.3           # via pytest, pytest-sugar
 pandas==0.24.2            # via -r _base.txt, blackfynn
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1  # via -r _base.txt
@@ -58,12 +62,12 @@ pyparsing==2.4.6          # via packaging
 pyrsistent==0.15.2        # via -r _base.txt, jsonschema
 pytest-aiohttp==0.3.0     # via -r _test.in
 pytest-cov==2.8.1         # via -r _test.in
-pytest-docker==0.6.1      # via -r _test.in
+pytest-docker==0.7.2      # via -r _test.in
 pytest-instafail==0.4.1.post0  # via -r _test.in
 pytest-mock==2.0.0        # via -r _test.in
 pytest-runner==5.2        # via -r _test.in
 pytest-sugar==0.9.2       # via -r _test.in
-pytest==5.3.2             # via -r _test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest==5.3.5             # via -r _test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.0    # via -r _base.txt, botocore, pandas
 pytz==2019.1              # via -r _base.txt, blackfynn, pandas
 pyyaml==5.3               # via -r _base.txt, openapi-spec-validator, trafaret-config
@@ -71,24 +75,24 @@ requests==2.22.0          # via -r _base.txt, blackfynn, codecov, coveralls
 s3transfer==0.2.1         # via -r _base.txt, boto3
 semantic-version==2.6.0   # via -r _base.txt
 semver==2.8.1             # via -r _base.txt, blackfynn
-six==1.12.0               # via -r _base.txt, astroid, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, protobuf, pyrsistent, python-dateutil, tenacity, websocket-client
+six==1.12.0               # via -r _base.txt, astroid, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, protobuf, pyrsistent, python-dateutil, tenacity, virtualenv, websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.4  # via -r _base.txt, aiopg
 strict-rfc3339==0.7       # via -r _base.txt, openapi-core
 tenacity==6.1.0           # via -r _base.txt
 termcolor==1.1.0          # via pytest-sugar
 trafaret-config==2.0.2    # via -r _base.txt
 trafaret==2.0.2           # via -r _base.txt, trafaret-config
-typed-ast==1.4.0          # via astroid
+typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.2  # via -r _base.txt, aiohttp
 ujson==1.35               # via -r _base.txt
 urllib3==1.24.3           # via -r _base.txt, botocore, requests
-virtualenv==16.7.9        # via -r _test.in
+virtualenv==20.0.9        # via -r _test.in
 wcwidth==0.1.8            # via pytest
 websocket-client==0.56.0  # via -r _base.txt, blackfynn
 werkzeug==1.0.0           # via -r _base.txt, openapi-core
 wrapt==1.11.2             # via -r _base.txt, aiobotocore, astroid, deprecated
 yarl==1.3.0               # via -r _base.txt, aiohttp
-zipp==0.6.0               # via -r _base.txt, importlib-metadata
+zipp==0.6.0               # via -r _base.txt, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
