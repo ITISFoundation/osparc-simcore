@@ -11,7 +11,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 PATH_PARAMETER_PATTERN = r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)'
 
 
-class AiohttpOpenAPIRequestFactory(object):
+class AiohttpOpenAPIRequestFactory:
 
     path_regex = re.compile(PATH_PARAMETER_PATTERN)
 

@@ -4,7 +4,7 @@ from aiohttp.web import Response
 from openapi_core.validation.response.datatypes import OpenAPIResponse
 
 
-class AiohttpOpenAPIResponseFactory(object):
+class AiohttpOpenAPIResponseFactory:
     @classmethod
     def create(cls, response: Response) -> OpenAPIResponse:
         return OpenAPIResponse(
