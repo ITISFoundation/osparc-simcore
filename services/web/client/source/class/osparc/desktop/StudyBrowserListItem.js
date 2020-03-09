@@ -61,6 +61,8 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
+
+    this.addListener("changeValue", this.__onToggleChange, this);
   },
 
   events: {
@@ -133,6 +135,18 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/ellipsis-v/16",
+            focusable: false
+          });
+          this._add(control, {
+            top: 0,
+            right: 0
+          });
+          break;
+        case "tick-selected":
+          control = new qx.ui.form.MenuButton().set({
+            width: 30,
+            height: 30,
+            icon: "@FontAwesome5Solid/check-circle/16",
             focusable: false
           });
           this._add(control, {
@@ -250,6 +264,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
         tagsContainer.removeAll();
         tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
       }
+    },
+
+    __onToggleChange: function(e) {
+      this.getChildControl("tick-selected").setVisibility(e.getData() ? "visible" : "excluded");
     },
 
     /**
