@@ -4,69 +4,69 @@
 #
 #    pip-compile --output-file=_base.txt _base.in
 #
-aio-pika==6.5.2           # via -r _base.in (line 12)
-aiodebug==1.1.2           # via -r _base.in (line 34)
-aiohttp-jinja2==1.1.1     # via -r _base.in (line 14)
-aiohttp-security==0.4.0   # via -r _base.in (line 16)
-aiohttp-session[secure]==2.7.0  # via -r _base.in (line 15)
-aiohttp-swagger[performance]==1.0.14  # via -r _base.in (line 17)
-aiohttp==3.6.2            # via -r ../../../../packages/service-library/requirements/_base.in (line 10), -r _base.in (line 13), aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin
-aiopg[sa]==1.0.0          # via -r ../../../../packages/service-library/requirements/_base.in (line 11), -r _base.in (line 18)
-aioredis==1.3.0           # via -r _base.in (line 19)
+aio-pika==6.5.2           # via -r _base.in
+aiodebug==1.1.2           # via -r _base.in
+aiohttp-jinja2==1.1.1     # via -r _base.in
+aiohttp-security==0.4.0   # via -r _base.in
+aiohttp-session[secure]==2.7.0  # via -r _base.in
+aiohttp-swagger[performance]==1.0.14  # via -r _base.in
+aiohttp==3.6.2            # via -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin
+aiopg[sa]==1.0.0          # via -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in
+aioredis==1.3.0           # via -r _base.in
 aiormq==3.2.1             # via aio-pika
-aiosmtplib==1.0.5         # via -r _base.in (line 20)
-aiozipkin==0.6.0          # via -r ../../../../packages/service-library/requirements/_base.in (line 12)
+aiosmtplib==1.0.5         # via -r _base.in
+aiozipkin==0.6.0          # via -r ../../../../packages/service-library/requirements/_base.txt
 amqp==2.4.2               # via kombu
 asn1crypto==0.24.0        # via cryptography
-async-timeout==3.0.1      # via aiohttp, aioredis
-asyncpg==0.18.3           # via -r _base.in (line 21)
-attrs==19.1.0             # via -r ../../../../packages/service-library/requirements/_base.in (line 19), aiohttp, jsonschema, openapi-core
+async-timeout==3.0.1      # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp, aioredis
+asyncpg==0.18.3           # via -r _base.in
+attrs==19.3.0             # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp, jsonschema, openapi-core
 billiard==3.6.0.0         # via celery
-celery==4.3.0             # via -r _base.in (line 22)
+celery==4.3.0             # via -r _base.in
 cffi==1.12.3              # via cryptography
-change-case==0.5.2        # via -r _base.in (line 24)
-chardet==3.0.4            # via aiohttp
-cryptography==2.6.1       # via -r _base.in (line 23), aiohttp-session
-expiringdict==1.2.0       # via -r _base.in (line 25)
+change-case==0.5.2        # via -r _base.in
+chardet==3.0.4            # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp
+cryptography==2.6.1       # via -r _base.in, aiohttp-session
+expiringdict==1.2.0       # via -r _base.in
 hiredis==1.0.1            # via aioredis
 idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, yarl
+idna==2.8                 # via -r ../../../../packages/service-library/requirements/_base.txt, idna-ssl, yarl
 importlib-metadata==0.23  # via jsonschema
-isodate==0.6.0            # via openapi-core
-jinja-app-loader==1.0.2   # via -r _base.in (line 26)
+isodate==0.6.0            # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
+jinja-app-loader==1.0.2   # via -r _base.in
 jinja2==2.10.1            # via aiohttp-jinja2, aiohttp-swagger
-jsondiff==1.1.2           # via -r _base.in (line 27)
-jsonschema==3.2.0         # via -r ../../../../packages/service-library/requirements/_base.in (line 15), openapi-spec-validator
+jsondiff==1.1.2           # via -r _base.in
+jsonschema==3.2.0         # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-spec-validator
 kombu==4.5.0              # via celery
-lazy-object-proxy==1.4.3  # via openapi-core
+lazy-object-proxy==1.4.1  # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
 markupsafe==1.1.1         # via jinja2
 more-itertools==7.2.0     # via zipp
-multidict==4.5.2          # via aiohttp, yarl
-openapi-core==0.12.0      # via -r ../../../../packages/service-library/requirements/_base.in (line 16)
-openapi-spec-validator==0.2.8  # via openapi-core
+multidict==4.5.2          # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp, yarl
+openapi-core==0.13.2      # via -r ../../../../packages/service-library/requirements/_base.txt
+openapi-spec-validator==0.2.7  # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
 pamqp==2.3.0              # via aiormq
-passlib==1.7.1            # via -r _base.in (line 28)
-prometheus-client==0.7.1  # via -r ../../../../packages/service-library/requirements/_base.in (line 17)
-psycopg2-binary==2.8.4    # via -r ../../../../packages/service-library/requirements/_base.in (line 7), -r _base.in (line 8), aiopg, sqlalchemy
+passlib==1.7.1            # via -r _base.in
+prometheus-client==0.7.1  # via -r ../../../../packages/service-library/requirements/_base.txt
+psycopg2-binary==2.8.4    # via -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in, aiopg, sqlalchemy
 pycparser==2.19           # via cffi
-pyrsistent==0.15.6        # via jsonschema
+pyrsistent==0.15.2        # via -r ../../../../packages/service-library/requirements/_base.txt, jsonschema
 python-engineio==3.9.3    # via python-socketio
-python-socketio==4.3.1    # via -r _base.in (line 29)
+python-socketio==4.3.1    # via -r _base.in
 pytz==2019.1              # via celery
-pyyaml==5.3               # via -r ../../../../packages/service-library/requirements/_base.in (line 6), aiohttp-swagger, openapi-spec-validator, trafaret-config
-semantic-version==2.6.0   # via -r _base.in (line 30)
-six==1.12.0               # via cryptography, isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, python-engineio, python-socketio, tenacity
-sqlalchemy[postgresql_psycopg2binary]==1.3.4  # via -r ../../../../packages/postgres-database/requirements/_base.in (line 7), -r ../../../../packages/service-library/requirements/_base.in (line 5), -r _base.in (line 9), aiopg
-strict-rfc3339==0.7       # via openapi-core
-tenacity==6.0.0           # via -r ../../../../packages/service-library/requirements/_base.in (line 18), -r _base.in (line 31)
-trafaret-config==2.0.2    # via -r _base.in (line 33)
-trafaret==1.2.0           # via -r ../../../../packages/service-library/requirements/_base.in (line 20), -r _base.in (line 32), trafaret-config
+pyyaml==5.3               # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp-swagger, openapi-spec-validator, trafaret-config
+semantic-version==2.6.0   # via -r _base.in
+six==1.12.0               # via -r ../../../../packages/service-library/requirements/_base.txt, cryptography, isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, python-engineio, python-socketio, tenacity
+sqlalchemy[postgresql_psycopg2binary]==1.3.4  # via -r ../../../../packages/postgres-database/requirements/_base.in, -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in, aiopg
+strict-rfc3339==0.7       # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
+tenacity==6.1.0           # via -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in
+trafaret-config==2.0.2    # via -r _base.in
+trafaret==2.0.2           # via -r ../../../../packages/service-library/requirements/_base.txt, -r _base.in, trafaret-config
 typing-extensions==3.7.2  # via aiohttp
 typing==3.7.4.1           # via expiringdict
-ujson==1.35               # via -r ../../../../packages/service-library/requirements/_base.in (line 13), aiohttp-swagger
+ujson==1.35               # via -r ../../../../packages/service-library/requirements/_base.txt, aiohttp-swagger
 vine==1.3.0               # via amqp, celery
-werkzeug==0.16.0          # via -r ../../../../packages/service-library/requirements/_base.in (line 14)
-yarl==1.3.0               # via -r ../../../../packages/postgres-database/requirements/_base.in (line 9), aio-pika, aiohttp, aiormq
+werkzeug==1.0.0           # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
+yarl==1.3.0               # via -r ../../../../packages/postgres-database/requirements/_base.in, -r ../../../../packages/service-library/requirements/_base.txt, aio-pika, aiohttp, aiormq
 zipp==1.0.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
