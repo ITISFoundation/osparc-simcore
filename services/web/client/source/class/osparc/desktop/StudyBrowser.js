@@ -445,7 +445,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         uuid: study.uuid,
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
-        creator: study.prjOwner ? "Created by: <b>" + study.prjOwner + "</b>" : null,
+        creator: study.prjOwner ? study.prjOwner : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         tags
       });
