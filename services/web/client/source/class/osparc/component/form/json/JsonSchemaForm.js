@@ -25,7 +25,15 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ]);
     ajvLoader.addListener("ready", e => {
       this.__ajv = new Ajv();
-      osparc.utils.Utils.fetchJSON(schemaUrl)
+      var myHeaders = new Headers();
+      myHeaders.append('pragma', 'no-cache');
+      myHeaders.append('cache-control', 'no-cache');
+      
+      var myInit = {
+        method: 'GET',
+        headers: myHeaders,
+      };
+      fetch(schemaUrl, myInit).then(resp => resp.json())
         .then(schema => {
           if (this.__validate(schema.$schema, schema)) {
             // If schema is valid
@@ -83,6 +91,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
             } else {
               submitBtn.setFetching(false);
             }
+          } else {
+            submitBtn.setFetching(false);
           }
         }, this);
         buttonContainer.add(submitBtn);

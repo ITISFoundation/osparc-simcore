@@ -251,7 +251,15 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       });
 
       testDataButton.addListener("execute", () => {
-        osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+        var myHeaders = new Headers();
+        myHeaders.append('pragma', 'no-cache');
+        myHeaders.append('cache-control', 'no-cache');
+        
+        var myInit = {
+          method: 'GET',
+          headers: myHeaders,
+        };
+        fetch("/resource/form/service-data.json", myInit).then(resp => resp.json())
           .then(data => {
             formData = data;
             displayForm();
